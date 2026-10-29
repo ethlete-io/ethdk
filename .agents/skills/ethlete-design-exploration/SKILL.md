@@ -92,7 +92,9 @@ Every frame loads the product's `foundations/tokens` stylesheet once, before the
 A part file default-exports its `definePart(...)` and may also export named helpers, such as a piece of its
 markup: `import { studioMark } from '@system/foundations/logo'`. Import a piece from the part that draws it;
 never copy its markup into another part. A piece that uses the part's classes needs its stylesheet too
-(`@system/foundations/logo.css?inline`). The layer rules hold for these imports as well.
+(`@system/foundations/logo.css?inline`), or from the part's default export when the part sets
+`definePart({ styles })`: every drawing of that part gets it, so `render` returns only extra styles. The layer
+rules hold for these imports as well.
 
 A component a host embeds exports its markup as such a helper, and a wrapper only its own frame needs, such as
 padding that makes room for a focus ring, goes in `render` alone, never in that helper: the host places the

@@ -15,6 +15,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * One part of a product's design system. `note` records why the part has its current shape, and
  * `madeBy` the model ids that drew it, written by a sketch merge.
  * `states` names each state it is drawn in with the props for that state, and `render` draws it.
+ * `styles` is the part's stylesheet: every drawing of the part gets it before the styles `render` returns, and a
+ * host that embeds a piece of the part's markup takes it from the default export.
  * A part that responds to its width lists the container `widths` it is drawn at; without them a
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
@@ -27,6 +29,7 @@ export type Part<TProps, TState extends string = string> = {
   note: string;
   madeBy?: string[];
   states: Record<TState, TProps>;
+  styles?: string;
   widths?: number[];
   interactions?: Interaction[];
   grid?: StateGrid<TState>;
@@ -58,9 +61,13 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   render: (props: TProps) => Drawing | Promise<Drawing>;
 };
 
-const forced = (drawn: Drawing, interaction: Interaction): Drawing => ({
+const finished = (
+  drawn: Drawing,
+  { styles, interaction }: { styles?: string; interaction?: Interaction },
+): Drawing => ({
   ...drawn,
-  body: forceBody(drawn.body, interaction),
+  body: interaction ? forceBody(drawn.body, interaction) : drawn.body,
+  styles: [styles, drawn.styles].filter(Boolean).join('\n'),
 });
 
 /**
@@ -77,8 +84,10 @@ export const definePart = <TProps, const TState extends string = string, const T
     const drawn = part.render(props);
     const interaction = options?.interaction;
 
-    if (!interaction) return drawn;
+    if (!interaction && !part.styles) return drawn;
 
-    return drawn instanceof Promise ? drawn.then((done) => forced(done, interaction)) : forced(drawn, interaction);
+    return drawn instanceof Promise
+      ? drawn.then((done) => finished(done, { styles: part.styles, interaction }))
+      : finished(drawn, { styles: part.styles, interaction });
   },
 });

@@ -54,6 +54,21 @@ describe('definePart', () => {
     });
   });
 
+  it('exposes its styles statically and draws them before the styles render returns', async () => {
+    const styled = definePart({
+      ...source,
+      styles: '.b{}',
+      render: ({ label }: Props) => ({ body: label, styles: '' }),
+    });
+    const later = definePart({ ...styled, render: async ({ label }: Props) => ({ body: label, styles: '.x{}' }) });
+
+    expect(styled.styles).toBe('.b{}');
+    expect(button.styles).toBeUndefined();
+    expect(styled.render({ label: 'a' }, { interaction: 'hover' })).toEqual({ body: 'a', styles: '.b{}' });
+    expect(await later.render({ label: 'a' })).toEqual({ body: 'a', styles: '.b{}\n.x{}' });
+    expect(markPart(styled, 'components/b').styles).toBe('.b{}');
+  });
+
   it('keeps the interaction through the part mark the design server adds', () => {
     expect(markPart(button, 'components/button').render({ label: 'a' }, { interaction: 'focus-visible' })).toEqual({
       body: '<button data-et-part="components/button" data-et-force="focus-visible" class="b">a</button>',
