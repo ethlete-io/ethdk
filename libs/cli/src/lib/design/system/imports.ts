@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
 import { sourceFileOf } from '../vite-paths';
 import { assetFileOf, assetPathOf, ASSETS_PREFIX, cssAssetPathsOf } from './assets';
@@ -47,8 +47,48 @@ export const classifyImport = (specifier: string): PartImport => {
 
 export const importsOfPart = (part: ResolvedPart) => importsOf(part.source).map(classifyImport);
 
-export const partDependenciesOf = (part: ResolvedPart) =>
-  importsOfPart(part).flatMap((imported) => (imported.kind === 'part' ? [imported] : []));
+/** The modules of the part's own folder its file imports, directly or through another such module. */
+const folderModulesOf = (part: ResolvedPart) => {
+  const folder = dirname(part.file);
+  const seen = new Set<string>([part.file]);
+  const queue = [{ file: part.file, source: part.source }];
+  const modules: { file: string; source: string }[] = [];
+
+  for (let current = queue.shift(); current !== undefined; current = queue.shift()) {
+    for (const specifier of importsOf(current.source)) {
+      if (!specifier.startsWith('.') || STYLESHEET.test(specifier)) continue;
+
+      const file = sourceFileOf(resolve(dirname(current.file), specifier.split('?')[0] ?? specifier));
+      const path = file === null ? '..' : relative(folder, file);
+
+      if (file === null || seen.has(file) || path.startsWith('..') || isAbsolute(path)) continue;
+
+      seen.add(file);
+
+      const module = { file, source: readFileSync(file, 'utf8') };
+
+      modules.push(module);
+      queue.push(module);
+    }
+  }
+
+  return modules;
+};
+
+/** The parts a part imports, from its file or from a plain module of its own folder that the file imports. */
+export const partDependenciesOf = (part: ResolvedPart) => {
+  const seen = new Set<string>();
+
+  return [part, ...folderModulesOf(part)]
+    .flatMap((module) => importsOf(module.source).map(classifyImport))
+    .flatMap((imported) => {
+      if (imported.kind !== 'part' || seen.has(imported.specifier)) return [];
+
+      seen.add(imported.specifier);
+
+      return [imported];
+    });
+};
 
 const leavesFolder = (part: ResolvedPart, specifier: string) => {
   const folder = dirname(part.file);
