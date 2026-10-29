@@ -77,6 +77,13 @@ const withSketch = (context: Context, run: (found: { product: ResolvedProduct; s
   return typeof found === 'string' ? fail(found) : run(found);
 };
 
+const partFileOf = (options: { root: string; sketch: Sketch; variant: string }) => {
+  const { root, sketch, variant } = options;
+  const name = sketch.target.split('/').pop() ?? '';
+
+  return relative(root, resolve(sketch.dir, variant, sketch.target, `${name}.ts`));
+};
+
 const created = (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
@@ -106,6 +113,8 @@ const created = (context: Context) => {
   if (typeof sketch === 'string') return fail(sketch);
 
   console.log(`${sketch.target} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`);
+
+  for (const variant of sketch.variants) console.log(`  ${variant}: ${partFileOf({ root: target, sketch, variant })}`);
 
   return 0;
 };
@@ -161,6 +170,7 @@ const varied = (context: Context) =>
       if (previous) console.log(`notes of round ${previous.key} ${previous.title}: ${previous.note}`);
 
       console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
+      console.log(`  ${variant}: ${partFileOf({ root: context.target, sketch: added, variant })}`);
 
       if (title === undefined) return 0;
 

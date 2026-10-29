@@ -253,12 +253,16 @@ describe('designSketch', () => {
     expect(variant('c', '--from', 'z')).toBe(1);
     expect(lines.pop()).toBe('components/button has no variant "z" - it has a, b');
     expect(variant('c', '--from', 'a', '--round', 'Combined', '--note', 'the user wants a with b')).toBe(0);
-    expect(lines.slice(-2)).toEqual([
+    expect(lines.slice(-3)).toEqual([
       'notes of round r1 Pill or square: the user wants a with b',
       'components/button in progress: variant c from a in round r2',
+      `  c: ${DESIGN_DIR}/acme/sketches/components-button/c/components/button/button.ts`,
     ]);
     expect(variant('d', '--from', 'c')).toBe(0);
-    expect(lines.pop()).toBe('components/button in progress: variant d from c in round r2');
+    expect(lines.splice(-2)).toEqual([
+      'components/button in progress: variant d from c in round r2',
+      `  d: ${DESIGN_DIR}/acme/sketches/components-button/d/components/button/button.ts`,
+    ]);
     expect(run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
       variants: ['a', 'b', 'c', 'd'],
@@ -347,7 +351,11 @@ describe('designSketch', () => {
     expect(write(target, 'new', 'components/button', '--variants', 'a,b')).toBe(1);
     expect(lines.pop()).toBe('more than one product - pass --product <name>; config.json declares acme-base, acme.');
     expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe(`components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`);
+    expect(lines.splice(-3)).toEqual([
+      `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
+      `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts`,
+      `  b: ${DESIGN_DIR}/acme/sketches/components-button/b/components/button/button.ts`,
+    ]);
     expect(write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme')).toBe(0);
     expect(run(target, 'list')).toBe(0);
     expect(lines.slice(-2)).toEqual(['acme  components/button  in progress  a, b', '  r1    a, b  - n']);
