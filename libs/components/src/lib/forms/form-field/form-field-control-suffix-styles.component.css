@@ -27,8 +27,14 @@
       inset: -4px;
       border-radius: 50%;
       background: transparent;
-      transition: background-color 150ms ease;
       pointer-events: none;
+
+      /* Hover-only: a tap's :active transition ends on this pseudo-element in the frame the button
+         starts to leave, and Angular's animate.leave takes that transitionend (its target is the
+         button) as the end of the fade-out and removes the button at once. */
+      @media (hover: hover) {
+        transition: background-color 150ms ease;
+      }
     }
 
     /* Ends halfway into the gap, so a neighbouring picker trigger's own hit area keeps the other half. */
