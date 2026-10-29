@@ -127,6 +127,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
+### 4.8 `design shot` cannot redraw a merged sketch - open
+
+- **Pain:** `shot --states --variants` needs an open sketch. After a merge, the contact sheet of
+  that sketch cannot be drawn again, so a late look at merged against variant is gone.
+- **Where:** `shot-command.ts` in `libs/cli/src/lib/design`.
+- **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
+
+### 4.9 Diff cells of a page make the contact sheet very wide - open
+
+- **Pain:** the diff row (5.15) draws each cell at the natural PNG size, so a page diff makes the
+  sheet wide.
+- **Where:** `contact-sheet.ts` in `libs/cli/src/lib/design`.
+- **Fix option:** scale diff cells to the width of the state cell above them.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -134,19 +148,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
-
-### 5.15 Assets in a sketch: path, size and format - open
-
-- **Pain:** from the first asset sketch (`foundations/logo`, 2026-10-29):
-  - `sketch new` prints the part file path but not that the variant's assets go to
-    `<variant>/assets/`. The agent read `assets.ts` to find out.
-  - An SVG asset has no size input. `studioMark(size)` replaces `width="32" height="32"` as a
-    string, which breaks silently when the attributes change.
-  - Prettier has no SVG parser, so an SVG asset is not formatted and not checked.
-  - `design shot --states --variants` shows merged and variant rows, but no pixel diff.
-- **Fix options:** print `<variant>/assets/` in `sketch new` and name it in the skill; a small
-  `svgAsset(raw, { size })` helper that sets `width`/`height` on the root `<svg>`; an SVG format
-  check (or a prettier XML plugin); a diff row in `design shot` that marks changed pixels.
 
 ## 6. Agent process
 

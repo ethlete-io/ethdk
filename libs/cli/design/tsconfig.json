@@ -10,5 +10,13 @@
     "noEmit": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["web/**/*.ts", "define-call.ts", "define-part.ts", "embed-page.ts", "mark-part.ts", "wireframe-kit.ts"]
+  "include": [
+    "web/**/*.ts",
+    "define-call.ts",
+    "define-part.ts",
+    "embed-page.ts",
+    "mark-part.ts",
+    "svg-asset.ts",
+    "wireframe-kit.ts"
+  ]
 }

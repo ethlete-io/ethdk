@@ -13,6 +13,7 @@ import { scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
+import { badSvgAssetsOf } from './rules/svg-asset';
 import { badWidthsOf } from './rules/widths';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
@@ -30,6 +31,7 @@ const RULES = [
   unknownInteractionsOf,
   kitOutsidePagesOf,
   flowProblemsOf,
+  badSvgAssetsOf,
 ];
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */

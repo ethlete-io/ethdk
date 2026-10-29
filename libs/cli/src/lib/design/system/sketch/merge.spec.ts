@@ -315,7 +315,7 @@ describe('mergeSketch with assets', () => {
 
     mkdirSync(join(variant, 'assets/icons'), { recursive: true });
     writeFileSync(join(variant, 'assets/mark.png'), 'new');
-    writeFileSync(join(variant, 'assets/icons/dot.svg'), '<svg/>');
+    writeFileSync(join(variant, 'assets/icons/dot.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
     writeFileSync(
       hero,
       `import mark from '@assets/mark.png';\n${readFileSync(hero, 'utf8')}\nexport const url = mark;\n`,
@@ -323,7 +323,7 @@ describe('mergeSketch with assets', () => {
 
     expect(merge(target, found)).toEqual(['elements/hero']);
     expect(readFileSync(join(assets, 'mark.png'), 'utf8')).toBe('new');
-    expect(readFileSync(join(assets, 'icons/dot.svg'), 'utf8')).toBe('<svg/>');
+    expect(readFileSync(join(assets, 'icons/dot.svg'), 'utf8')).toBe('<svg xmlns="http://www.w3.org/2000/svg"/>');
     expect(readFileSync(join(assets, 'keep.png'), 'utf8')).toBe('keep');
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
 

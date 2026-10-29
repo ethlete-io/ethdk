@@ -1,5 +1,6 @@
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
+import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
@@ -87,6 +88,12 @@ const partFileOf = (options: { root: string; sketch: Sketch; variant: string }) 
   return relative(root, resolve(sketch.dir, variant, sketch.target, `${name}.ts`));
 };
 
+const variantLineOf = (options: { root: string; sketch: Sketch; variant: string }) => {
+  const { root, sketch, variant } = options;
+
+  return `  ${variant}: ${partFileOf(options)}  assets: ${relative(root, resolve(sketch.dir, variant, ASSETS_FOLDER))}/`;
+};
+
 const created = (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
@@ -117,7 +124,7 @@ const created = (context: Context) => {
 
   console.log(`${sketch.target} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`);
 
-  for (const variant of sketch.variants) console.log(`  ${variant}: ${partFileOf({ root: target, sketch, variant })}`);
+  for (const variant of sketch.variants) console.log(variantLineOf({ root: target, sketch, variant }));
 
   return 0;
 };
@@ -173,7 +180,7 @@ const varied = (context: Context) =>
       if (previous) console.log(`notes of round ${previous.key} ${previous.title}: ${previous.note}`);
 
       console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
-      console.log(`  ${variant}: ${partFileOf({ root: context.target, sketch: added, variant })}`);
+      console.log(variantLineOf({ root: context.target, sketch: added, variant }));
 
       if (title === undefined) return 0;
 

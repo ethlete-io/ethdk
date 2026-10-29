@@ -16,6 +16,37 @@ type Axis = { label: string; sketch: SketchVariant | null };
 
 type Plan = { label: string; address: PartAddress };
 
+/**
+ * The sheet with a row after each variant row that marks, per state, the pixels the variant changes from the merged
+ * row; unchanged when there is no merged row.
+ */
+export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: SheetCell[][] }): SheetCell[][] => {
+  const { rows, plan, sheet } = options;
+  const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
+
+  if (mergedIndex === -1 || rows.length < 2) return sheet;
+
+  const merged = new Map(
+    (plan[mergedIndex] ?? []).flatMap((entry, index) => {
+      const cell = sheet[mergedIndex]?.[index];
+
+      return cell && 'png' in cell ? [[entry.address.state, cell.png] as const] : [];
+    }),
+  );
+
+  return sheet.flatMap((row, rowIndex) => {
+    if (rowIndex === mergedIndex) return [row];
+
+    const diffs = row.flatMap((cell, index) => {
+      const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '');
+
+      return before && 'png' in cell ? [{ label: `${cell.label} vs merged`, before, after: cell.png }] : [];
+    });
+
+    return diffs.length > 0 ? [row, diffs] : [row];
+  });
+};
+
 /** Rows of cells: one row per variant when `variants` is set, else one row; one column per state when `states` is set. */
 export const planOf = (options: {
   base: Omit<PartAddress, 'state' | 'sketch'>;
@@ -193,7 +224,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return 1;
       }
 
-      const png = await queue.run((browser) => contactSheetOf({ browser, rows: sheet }));
+      const png = await queue.run((browser) =>
+        contactSheetOf({ browser, rows: variants ? withDiffRows({ rows, plan, sheet }) : sheet }),
+      );
       const out = resolve(
         target,
         args.values['--out'] ?? `${workRootOf(target)}/shots/${product}-${part.replace('/', '-')}.png`,

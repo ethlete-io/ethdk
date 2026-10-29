@@ -43,7 +43,8 @@ finished while the user is still talking about it.
 **Do not send a screenshot.** The user keeps the call open. Screenshot only for your own
 check that a variant renders. In a repository with `et design`, take it with
 `et design shot <layer>/<name> --states [--variants]`: one contact sheet of every state, and
-every variant of the open sketch, with a label per cell. It prints the PNG path. It draws
+every variant of the open sketch, with a label per cell; below each variant row, a diff row marks
+the pixels that differ from the merged state in red, or says "no pixel change". It prints the PNG path. It draws
 undimmed, whatever Studio shows. Do not write a scratch script for batch shots.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.
@@ -141,8 +142,11 @@ for `<img src>`; an SVG that must follow tokens (`currentColor`, `var(--accent)`
 `?raw` and goes inline, for example `@assets/icons/<name>.svg?raw`. A stylesheet, the product's
 `styles.css` or a part's, uses `url('@assets/<file>')`, for example in an `@font-face`. A foundation
 part may wrap an asset in a named export. A product finds its base product's assets too. A sketch
-variant adds or changes an asset in its own `assets/` folder, and a merge copies it into the
-product's. The part hash behind `design check` and "changed outside a sketch" counts the bytes of
+variant adds or changes an asset in its own `<variant>/assets/` folder (`sketch new` and `sketch variant`
+print it next to the part file), and a merge copies it into the product's. Size an inline SVG with
+`svgAsset(mark, { size: 32 })` from `@design-system`, never by replacing its `width`/`height` as a
+string. `design check` fails an SVG asset with no root `<svg>` or without
+`xmlns="http://www.w3.org/2000/svg"` (an `<img src>` and an image viewer do not draw it). The part hash behind `design check` and "changed outside a sketch" counts the bytes of
 the assets a part uses.
 
 Every change to a merged part goes through a sketch, also a small one: new copy, sample data, an

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { designShot, planOf, rowsOf } from './shot-command';
+import { designShot, planOf, rowsOf, withDiffRows } from './shot-command';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
 
@@ -92,5 +92,42 @@ describe('rowsOf', () => {
 
   it('draws only the variants when the part is not merged yet', () => {
     expect(rowsOf({ part: 'pages/a', variants: ['one'], merged: false }).map((row) => row.label)).toEqual(['one']);
+  });
+});
+
+describe('withDiffRows', () => {
+  it('adds a row after each variant row that compares each state with the merged one', () => {
+    const rows = rowsOf({ part: 'components/button', variants: ['a', 'b'], merged: true });
+    const plan = planOf({
+      base,
+      rows,
+      statesOf: (axis) => (axis.label === 'b' ? ['rest', 'new'] : ['rest']),
+      states: true,
+      state: null,
+    });
+    const png = (text: string) => Buffer.from(text);
+    const sheet = [
+      [{ label: 'merged / rest', png: png('m') }],
+      [{ label: 'a / rest', png: png('a') }],
+      [
+        { label: 'b / rest', error: 'boom' },
+        { label: 'b / new', png: png('b') },
+      ],
+    ];
+
+    expect(withDiffRows({ rows, plan, sheet })).toEqual([
+      sheet[0],
+      sheet[1],
+      [{ label: 'a / rest vs merged', before: png('m'), after: png('a') }],
+      sheet[2],
+    ]);
+  });
+
+  it('leaves a sheet without a merged row as it is', () => {
+    const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: false });
+    const plan = planOf({ base, rows, statesOf: () => ['rest'], states: true, state: null });
+    const sheet = [[{ label: 'a / rest', png: Buffer.from('a') }]];
+
+    expect(withDiffRows({ rows, plan, sheet })).toBe(sheet);
   });
 });

@@ -5,6 +5,8 @@ export { css, drawing, html, ng } from './define-call';
 export type { Drawing } from './define-call';
 export { embedPage } from './embed-page';
 export type { EmbedPageOptions } from './embed-page';
+export { svgAsset } from './svg-asset';
+export type { SvgAssetOptions } from './svg-asset';
 
 /** An interaction Studio can force on a part's root element. Rest is always drawn and never listed. */
 export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';

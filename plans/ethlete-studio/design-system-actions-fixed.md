@@ -596,3 +596,22 @@ sketch` until the next merge of the part.
   difference. Only body and styles both equal skip the pixels.
 - **Also seen:** in the `sidebar` state the active nav item of variant a looked a little lighter
   than merged in `design shot`, with unchanged CSS. Not checked; option 1 would show it.
+
+### 5.15 Assets in a sketch: path, size and format - fixed, one open point
+
+- **Pain:** from the first asset sketch (`foundations/logo`, 2026-10-29):
+  - `sketch new` prints the part file path but not that the variant's assets go to
+    `<variant>/assets/`. The agent read `assets.ts` to find out.
+  - An SVG asset has no size input. `studioMark(size)` replaces `width="32" height="32"` as a
+    string, which breaks silently when the attributes change.
+  - Prettier has no SVG parser, so an SVG asset is not formatted and not checked.
+  - `design shot --states --variants` shows merged and variant rows, but no pixel diff.
+- **Fix done:** `sketch new` and `sketch variant` print `assets: <sketch>/<variant>/assets/`, and
+  the skill names it. `svgAsset(raw, { size })` from `@design-system` sets `width` and `height` on
+  the root `<svg>`. `design check` has a rule `SVG-ASSET` for an SVG without a root `<svg>` or
+  without `xmlns`. `design shot --states --variants` adds a row "<cell> vs merged" with changed
+  pixels in red, or "no pixel change".
+- **Also seen:** the merged `assets/studio-mark.svg` has no `xmlns`, so VS Code cannot preview it.
+  `SVG-ASSET` now flags it; a sketch on `foundations/logo` fixes it.
+- **Open:** no XML well-formedness check. No XML parser is a dependency of `@ethlete/cli`, and the
+  check rules are synchronous.
