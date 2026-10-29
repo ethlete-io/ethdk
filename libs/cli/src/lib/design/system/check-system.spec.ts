@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
+import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
+import { createSketch, variantDirOf } from './sketch/sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -173,6 +175,23 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings).toEqual([expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/)]);
     expect(lines.at(-1)).toBe('ok');
+  }, 60_000);
+
+  it('fails on a type error in a variant of an open sketch', async () => {
+    const target = acme();
+    const lines = output();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a', 'b'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    writeFileSync(
+      join(variantDirOf(sketch, 'b'), 'elements/hero/hero.ts'),
+      "const broken: number = 'text';\nexport default broken;\n",
+    );
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines).toEqual([expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/)]);
   }, 60_000);
 
   it('checks one product with --product', async () => {

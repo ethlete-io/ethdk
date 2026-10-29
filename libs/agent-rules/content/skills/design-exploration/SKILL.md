@@ -355,7 +355,7 @@ A dialog without its own URL is an element that a page state shows ("login open"
 ### Check a product
 
 ```bash
-et design check --product <name>   # layer dependencies, hard-coded colours, undefined tokens, copied components, scripted motion, tsc, render
+et design check --product <name>   # layer dependencies, hard-coded colours, undefined tokens, copied components, scripted motion, tsc (open sketch variants too), render
 et design system --json            # each part's origin, note, states, presets and problems
 ```
 

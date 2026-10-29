@@ -15,7 +15,9 @@ import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { badWidthsOf } from './rules/widths';
+import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 
 const RULES = [
@@ -47,6 +49,25 @@ const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
 type CheckOptions = { target: string; config: DesignConfig; products: string[]; known?: string[] };
+
+const typecheckOpenSketches = (options: { target: string; product: ResolvedProduct }): Problem[] =>
+  listSketches({ productDir: options.product.dir, product: options.product.name }).flatMap((sketch) =>
+    typeof sketch === 'string'
+      ? []
+      : sketch.variants.flatMap((variant): Problem[] => {
+          const result = typecheckVariant({ ...options, sketch, variant });
+
+          return result.kind === 'ok'
+            ? []
+            : [
+                {
+                  rule: 'TYPE-ERROR',
+                  file: variantDirOf(sketch, variant),
+                  message: `\n${result.kind === 'failed' ? result.output : result.message}`,
+                },
+              ];
+        }),
+  );
 
 const warnChangedOutsideSketch = (product: ResolvedProduct) => {
   for (const part of changedOutsideSketchOf(product))
@@ -100,6 +121,8 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
     }
 
     if (result.kind === 'failed') report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` });
+
+    if (options.warn) typecheckOpenSketches({ target, product }).forEach(report);
   }
 
   return failed ? 1 : 0;
