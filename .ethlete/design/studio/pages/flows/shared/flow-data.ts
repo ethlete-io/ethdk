@@ -1,6 +1,7 @@
 import { formField } from '@ethlete/components/design/form-field';
 import { select } from '@ethlete/components/design/select';
 import { embedPage, html } from '@design-system';
+import button from '@system/components/button';
 import partTree from '@system/elements/part-tree';
 
 export type FlowProps = { flow: 'open' | 'none' };
@@ -70,11 +71,28 @@ export const arrow = (direction: 'right' | 'down') => ARROW[direction];
 
 export const caption = (text: string) => html`<span class="text-text-muted text-ui-sm">${text}</span>`;
 
-export const emptyCanvas = html`<div
-  class="h-full flex flex-col items-center justify-center gap-space-2 ps-(--st-shell-inset-left)"
->
-  <p class="text-text text-ui-sm">Keine Flows in diesem Produkt</p>
-  <p class="text-text-muted text-ui-sm">Ein Agent legt Flows unter studio/flows/&lt;name&gt;.json an.</p>
+const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
+
+export const emptyStyles = copy.styles;
+
+const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-surface-sunken text-text text-ui-sm">
+  Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.
+</p>`;
+const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-surface-border bg-surface"></span>';
+const ghostLine = '<span class="block w-10 h-px bg-surface-border"></span>';
+
+export const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
+  <div class="w-[420px] flex flex-col items-center gap-space-4 text-center text-ui-sm">
+    <div class="flex items-center gap-space-2" aria-hidden="true">
+      ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
+    </div>
+    <p class="m-0 text-text font-ui-strong text-ui-md">Noch keine Flows</p>
+    <p class="m-0 text-text-muted">
+      Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn
+      an. Bitte ihn zum Beispiel so:
+    </p>
+    ${prompt} ${copy.body}
+  </div>
 </div>`;
 
 export const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-sm">Noch keine Flows.</p>`;

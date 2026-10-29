@@ -6,6 +6,7 @@ import {
   type FlowProps,
   emptyCanvas,
   emptySide,
+  emptyStyles,
   flatFlowList,
   flowGraph,
   pageHeader,
@@ -32,6 +33,6 @@ export default definePart<FlowProps>({
       content: flow === 'open' ? content : emptyCanvas,
     });
 
-    return drawing({ body: shell.body, styles: shell.styles + list.styles + selectStyles });
+    return drawing({ body: shell.body, styles: shell.styles + list.styles + selectStyles + emptyStyles });
   },
 });
