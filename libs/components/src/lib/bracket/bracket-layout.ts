@@ -71,11 +71,11 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
   dataLayout: BracketDataLayout;
 
   /** Positions the linked bracket's rounds and matches into a grid of columns. */
-  // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
   createGrid: (
     bracket: Bracket<TRoundData, TMatchData>,
     options: CreateBracketGridConfig,
     components: BracketComponents<TRoundData, TMatchData>,
+    // eslint-disable-next-line max-params -- grid builder signature (data, options, components)
   ) => ComputedBracketGrid<TRoundData, TMatchData>;
 
   /**
@@ -97,11 +97,11 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
    * Sections a round under a heading in `<et-bracket-rounds-list>` - double elimination separates
    * upper bracket, lower bracket and finals. Unset renders every round under no heading.
    */
-  // eslint-disable-next-line max-params -- (round, bracket, labels) mirrors the list's question
   listSection?: (
     round: BracketRound<TRoundData, TMatchData>,
     bracket: Bracket<TRoundData, TMatchData>,
     labels: BracketLabels,
+    // eslint-disable-next-line max-params -- (round, bracket, labels) mirrors the list's question
   ) => BracketListSection;
 
   /**

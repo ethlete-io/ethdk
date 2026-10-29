@@ -986,7 +986,12 @@ class Vendored {
       await migrateViewportService(tree);
 
       const readPaths = readSpy.mock.calls.map(([path]) => path);
-      expect(readPaths.filter((path) => path.startsWith('node_modules') || path.startsWith('dist'))).toEqual([]);
+      const ignoreFile = /(^|\/)\.(git|nx)ignore$/;
+      expect(
+        readPaths.filter(
+          (path) => (path.startsWith('node_modules') || path.startsWith('dist')) && !ignoreFile.test(path),
+        ),
+      ).toEqual([]);
       expect(tree.read('node_modules/pkg/vendored.ts', 'utf-8')).toBe(vendored);
       expect(tree.read('dist/out/bundle.ts', 'utf-8')).toBe(vendored);
     });
