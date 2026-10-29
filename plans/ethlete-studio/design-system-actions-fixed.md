@@ -1348,3 +1348,24 @@ check` warns early.
   but the count rows filled only "rest". Nothing flagged that a count could break on focus.
 - **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
 - **Fix done (16c34193b):** The option, in `gridReportOf` (`list-system.ts`), so `design check` and `sketch check` both print it: when a grid has two or more interaction columns (`rest` plus the `INTERACTIONS`) and some rows fill all of them while others leave some out, the render check prints `WARNING GRID-COVERAGE` naming the short rows grouped by the columns they leave out, and still passes. Columns that are no interactions never count. On studio `components/comment-pin` now fills every column, so it is quiet; the one hit is `components/tree-row`: rows `leaf-flat`, `group-closed`, `group-open`, `part-closed`, `part-open`, `inert`, `mark-*`, `selected-marks` fill only `rest`, while `leaf` and `selected` fill all four.
+
+### 5.54 `drawing()` still needs `styles` after `definePart({ styles })` - fixed (8f31c1530)
+
+- **Pain:** with the styles on `definePart`, `render` has nothing to return, but `drawing()`
+  requires `styles`, so the variant writes `styles: ''`.
+- **Fix option:** make `Drawing.styles` optional.
+
+### 5.55 `embedPage` cannot mark or restyle inside the embedded page - open
+
+- **Pain:** `pages/merge` variant a (round "No page import") embeds `pages/system`. The merge CSS
+  cannot reach into the iframe, so the button loses its accent ring, and the "After merging" side
+  cannot show the new look. Only the 200 % crop still shows the change.
+- **Fix option:** an `embedPage` option, for example `{ mark: '.et-button', css: '...' }`, that the
+  embedded frame applies inside itself.
+
+### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - open
+
+- **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
+  shrinks the page twice. Nothing warns.
+- **Fix option:** the skill says to use one or the other; a check warns when both are set.
+- **Fix done (8f31c1530):** The option: `Drawing.styles` is optional, so a variant draws `drawing({ body })`. `definePart` always answers a string of styles (the part's stylesheet plus what `render` returned, `''` for none) through the new `DrawnPart` type, so a host still adds up `x.styles`; the frame and the unchanged-states check take a missing `styles` as `''`.
