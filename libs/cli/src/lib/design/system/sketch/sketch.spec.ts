@@ -62,6 +62,26 @@ describe('parseTarget', () => {
 });
 
 describe('createSketch', () => {
+  it('scaffolds a new page like its siblings: tokens, madeBy, the product widths and no stylesheet', () => {
+    const target = acme();
+    const parsed = parseTarget('pages/start');
+
+    if (typeof parsed === 'string') throw new Error(parsed);
+
+    const created = createSketch({ product: resolveAcme(target), sketch: parsed, variants: ['a'], author: 'model-x' });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const folder = join(target, DESIGN_DIR, 'acme/sketches/pages-start/a/pages/start');
+    const source = readFileSync(join(folder, 'start.ts'), 'utf8');
+
+    expect(source).toContain("import tokens from '@system/foundations/tokens.css?inline';");
+    expect(source).toContain("madeBy: ['model-x']");
+    expect(source).toContain('widths: [390, 1280]');
+    expect(source).toContain('styles: tokens');
+    expect(existsSync(join(folder, 'start.css'))).toBe(false);
+  });
+
   it('writes sketch.json in progress with the baseline and starts each variant from the resolved part', () => {
     const target = acme();
     const sketch = open(target, 'components/card');
