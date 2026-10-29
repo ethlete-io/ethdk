@@ -206,12 +206,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frame. The render check reported nothing.
 - **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
 
-### 4.26 A new state gets no line in the "vs merged" row - open
-
-- **Pain:** the `tree-row` "Pressed state" sketch added `active`. The diff row of
-  `design shot --states --variants` listed only the merged states, with no "new state" line.
-- **Fix option:** print "new state" for a state the merged part does not have.
-
 ### 4.28 A sketch that adds a `grid` never shows the grid before the merge - open
 
 - **Pain:** the `tree-row` "State grid" sketch: `design shot --states --variants` drew one flat

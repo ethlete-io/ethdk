@@ -1142,3 +1142,10 @@ check` warns early.
 - **Fix options:** 1. `design shot --state <a,b>` filter (recommended). 2.
   `design shot --compare <v>/<state> <v>/<state>` prints the pixel delta.
 - **Fix done (28d2c6a6f):** `design shot <part> --state <a>,<b>` draws only the named states (implies `--states`; a part with a grid keeps its grid order), and a name the part lacks prints the states it has. The design-exploration skill names it.
+
+### 4.26 A new state gets no line in the "vs merged" row - fixed (4670fd413)
+
+- **Pain:** the `tree-row` "Pressed state" sketch added `active`. The diff row of
+  `design shot --states --variants` listed only the merged states, with no "new state" line.
+- **Fix option:** print "new state" for a state the merged part does not have.
+- **Fix done (4670fd413):** the diff row of `design shot --variants` draws a "new state" note for a state the merged part lacks, and prints `<variant> / <state> vs merged: new state` among the diff lines.
