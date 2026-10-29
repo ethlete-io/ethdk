@@ -160,7 +160,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** both sketch agents of 2026-10-29 had to `mkdir` `<variant>/assets/`.
 - **Fix option:** create the folder, or print "(create it when needed)".
 
-### 5.17 Each part adds the product tokens to its own CSS - open
+### 5.17 Each part adds the product tokens to its own CSS - step 1 fixed, step 2 open
 
 - **Pain:** `shell-main`, `part-tree`, `canvas-frames` and `pages/start` each import
   `@system/foundations/tokens.css?inline` and write `styles: tokens + styles`. `pages/system`
@@ -168,6 +168,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   unresolved `var(--…)` in its own frame, but resolves them inside a page.
 - **Fix option:** the frame loads the product tokens one time; parts stop importing them. Then
   "used in" for tokens comes from the frame, not from imports.
+
+- **Step 1 done:** `libs/cli/design/web/frame.ts` loads one `<style>` with the product tokens
+  (the product's own `foundations/tokens`, else the base's), before the part's style. A tokens edit
+  redraws every part; the new-page stub no longer imports tokens; "used in" counts the tokens part
+  for every page. Shots of `part-tree` and `pages/system` stayed byte-identical.
+- **Step 2 open:** one-variant sketches that drop `import tokens` and `tokens +` from
+  `shell-main`, `part-tree`, `canvas-frames`, `pages/start` (studio) and `button`, `form-field`,
+  `select` (sdk). Each should show no pixel change and auto merge.
 
 ## 6. Agent process
 
