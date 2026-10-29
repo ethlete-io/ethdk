@@ -502,3 +502,71 @@ sketch` until the next merge of the part.
 - **Pain:** the output ended at `... in progress: <dir> with a`. The agent listed the folder to find
   `a/foundations/logo/logo.ts`.
 - **Fix done (`7666803d3`):** `sketch new` and `sketch variant` print one line per variant with the part file path.
+
+### 3.18 `sketch report` prints nothing and exits 0 - fixed
+
+- **Pain:** `sketch report` printed nothing and exited 0, also on a `ready` sketch. There it recorded
+  a report that Studio never shows.
+- **Fix done (`4d9b46aa5`):** it prints `reported on <part> variant <v>: <text>`. On a sketch not in
+  progress it records nothing, says why, and exits non-zero.
+- **Checked 2026-10-29:** the spec bites: on a sketch not in progress, no report file is written.
+
+### 3.21 `sketch check` blocks `ready` for a comment of a merged sketch - fixed, open points
+
+- **Pain:** a reply by the user reopens a comment on a merged sketch. Then `sketch check` raised
+  `COMMENT ... the sketch on pages/start no longer exists - answer or drop the comment`. This blocked
+  `ready` on a new sketch of the same part until the user resolved the comment.
+- **Fix done (`4ec57e079`):** a comment of a merged, discarded or replaced sketch is a warning, not a
+  problem, in `sketch ready`, `sketch check` and `design check`. The message names `comment reply
+--by` or a resolve in Studio. Comments of the current sketch fail as before.
+- **Open point:** the warning prints once per variant.
+
+### 5.13 No rule for assets (marks, logos, icons, images) - fixed, open points
+
+- **Pain:** the Studio mark lives as inline SVG in `foundations/logo`, in `pages/start` and as a
+  separate glyph in `elements/shell-main`; the app has a fourth copy in
+  `apps/ethlete-studio/src/app/components/studio-mark.component.ts`. No rule says where an asset
+  lives, how a part draws it, or how it reaches the real app.
+- **Decision (Tom, 2026-10-29):** the shell glyph stays its own design for now.
+- **Fix options:** (1) assets are named exports of a foundation part (`studioMark`, 5.7); (2) an
+  `assets/` folder per product, imported by parts and by the app; (3) the app's component is the
+  source and the design system embeds it.
+- **Decision (Tom, 2026-10-29):** option 2 with (1) as a thin wrapper, but for every file type, not
+  only SVG. Example: a header picture as PNG.
+- **Rule:**
+  - An asset is a file in `.ethlete/design/<product>/assets/`: SVG, PNG, WebP, JPEG, or another
+    type. One file is the only source.
+  - A part imports it as `@assets/<file>`. The default import is a URL for `<img src>`. An SVG that
+    must follow tokens (`var(--accent)`, `currentColor`) imports with `?raw` and goes inline.
+  - A foundation part may wrap an asset in a named export, for example `studioMark(size)`.
+  - A product finds the assets of its base product too (`studio` finds `sdk` assets).
+  - A sketch variant can add or change an asset in its own `assets/`; a merge copies it.
+  - `design check` and the "changed outside a sketch" hash count the bytes of the assets a part
+    imports.
+  - The app gets the same files when a design goes into the real app; not part of this build.
+- **Extension (Tom, 2026-10-29):** the rule covers fonts and icons too.
+  - Fonts: files in `assets/fonts/` (`woff2`). The product's `styles.css` declares `@font-face`
+    with `url('@assets/fonts/<file>')`; `foundations/tokens` names the family in a `--font-*`
+    token. Only fonts whose license allows the repo.
+  - Icons: one SVG per icon in `assets/icons/<name>.svg`, `currentColor`, square `viewBox`. A part
+    imports it with `?raw` and inlines it. The same text is the `data` of an SDK `IconDefinition`
+    (`provideIcons`), so the app registers the same files.
+  - A `foundations/icons` part that shows the whole set is design work: a sketch after this build.
+- **Fix done (`5b73392d9`):**
+  - `@assets/<file>` looks in the `assets/` of the variant, then of the product, then of the base
+    product. The default import is a URL (any file type). `?raw` is text.
+  - CSS `url('@assets/...')` works in part stylesheets and in the product `styles.css`.
+  - `libs/cli/design/assets.d.ts` types the imports.
+  - `design check` flags a missing asset (IMPORT).
+  - A merge copies the `assets/` of the variant.
+  - `partHashOf` counts the bytes of the assets a part uses. Parts without assets hash as before.
+- **Checked 2026-10-29:** 72 spec files / 468 tests pass. `design check --product studio` is ok on the
+  real tree (old hashes valid). A scratch run with `design shot` drew a PNG `<img>`, an inline `?raw`
+  SVG from `icons/` with `currentColor`, a CSS background PNG, a woff2 from the base product loaded
+  through `@font-face` in `styles.css`, and a variant PNG that replaced the product PNG. Merge is only
+  checked in specs.
+- **Open points:**
+  - The `assets/` of a variant does not reach the product `styles.css`.
+  - `url(@assets)` in a CSS `@import`-ed sheet is not rewritten.
+  - A query or fragment after a CSS asset URL (`#iefix`) is dropped.
+  - Assets used only by `styles.css` are in no part hash.

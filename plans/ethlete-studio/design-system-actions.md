@@ -78,14 +78,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 3. Feedback, rounds and merge
 
-### 3.18 `sketch report` prints nothing and exits 0 - open
-
-- **Pain:** `sketch report` prints nothing and exits 0, also on a `ready` sketch. There it records a
-  report that Studio never shows.
-- **Where:** `reported` in `libs/cli/src/lib/design/sketch-command.ts`, and `reportSketch` in
-  `libs/cli/src/lib/design/system/sketch/sketch.ts`.
-- **Fix option:** print "reported", and warn when the sketch is not in progress.
-
 ### 3.19 The merge preview compare grid is unreadable and slow - open
 
 - **Pain:** the compare grid of the merge preview fits at 3-4% zoom, and the text is not readable.
@@ -102,15 +94,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Where:** the product switch in the System view. Seen one time, from a script race. Not
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
-
-### 3.21 `sketch check` blocks `ready` for a comment of a merged sketch - open
-
-- **Pain:** a reply by the user reopens a comment on a merged sketch. Then `sketch check` raises
-  `COMMENT ... the sketch on pages/start no longer exists - answer or drop the comment`. This blocks
-  `ready` on a new sketch of the same part until the user resolves the comment.
-- **Where:** the `COMMENT` rule in `sketch check`.
-- **Fix option:** name the action in the message (reply, or the user resolves the comment). Do not
-  block `ready` for a comment whose sketch was merged.
 
 ## 4. Render checks and shots
 
@@ -143,37 +126,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.13 No rule for assets (marks, logos, icons, images) - decided, building
+### 5.14 A merge can mark unedited parts as "changed outside a sketch" - open
 
-- **Pain:** the Studio mark lives as inline SVG in `foundations/logo`, in `pages/start` and as a
-  separate glyph in `elements/shell-main`; the app has a fourth copy in
-  `apps/ethlete-studio/src/app/components/studio-mark.component.ts`. No rule says where an asset
-  lives, how a part draws it, or how it reaches the real app.
-- **Decision (Tom, 2026-10-29):** the shell glyph stays its own design for now.
-- **Fix options:** (1) assets are named exports of a foundation part (`studioMark`, 5.7); (2) an
-  `assets/` folder per product, imported by parts and by the app; (3) the app's component is the
-  source and the design system embeds it.
-- **Decision (Tom, 2026-10-29):** option 2 with (1) as a thin wrapper, but for every file type, not
-  only SVG. Example: a header picture as PNG.
-- **Rule:**
-  - An asset is a file in `.ethlete/design/<product>/assets/`: SVG, PNG, WebP, JPEG, or another
-    type. One file is the only source.
-  - A part imports it as `@assets/<file>`. The default import is a URL for `<img src>`. An SVG that
-    must follow tokens (`var(--accent)`, `currentColor`) imports with `?raw` and goes inline.
-  - A foundation part may wrap an asset in a named export, for example `studioMark(size)`.
-  - A product finds the assets of its base product too (`studio` finds `sdk` assets).
-  - A sketch variant can add or change an asset in its own `assets/`; a merge copies it.
-  - `design check` and the "changed outside a sketch" hash count the bytes of the assets a part
-    imports.
-  - The app gets the same files when a design goes into the real app; not part of this build.
-- **Extension (Tom, 2026-10-29):** the rule covers fonts and icons too.
-  - Fonts: files in `assets/fonts/` (`woff2`). The product's `styles.css` declares `@font-face`
-    with `url('@assets/fonts/<file>')`; `foundations/tokens` names the family in a `--font-*`
-    token. Only fonts whose license allows the repo.
-  - Icons: one SVG per icon in `assets/icons/<name>.svg`, `currentColor`, square `viewBox`. A part
-    imports it with `?raw` and inlines it. The same text is the `data` of an SDK `IconDefinition`
-    (`provideIcons`), so the app registers the same files.
-  - A `foundations/icons` part that shows the whole set is design work: a sketch after this build.
+- **Pain:** when a merge changes an asset that other merged parts also use, those parts can show
+  "changed outside a sketch" although nobody edited them.
+- **Where:** `partHashOf` and the "changed outside a sketch" check in `libs/cli/src/lib/design`.
+- **Fix options:** (1) a merge re-records the hash of every merged part that uses a changed asset and
+  lists them in the merge output; (2) the sketch baseline lists dependent parts, and Studio shows them
+  in the merge preview (as for element-in-context). Recommendation: (1) with the list in the output.
 
 ## 6. Agent process
 
