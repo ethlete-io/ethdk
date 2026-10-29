@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import { commentPinMark, commentPinStyles } from '@system/components/comment-pin';
+import commentPin, { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
@@ -227,6 +227,6 @@ export default definePart<Props>({
       content: pinned(frames.body, visible, (c) => pins.get(c.id) ?? ''),
     });
 
-    return drawing({ body: shell.body, styles: shell.styles + frames.styles + commentPinStyles + styles });
+    return drawing({ body: shell.body, styles: shell.styles + frames.styles + commentPin.styles + styles });
   },
 });

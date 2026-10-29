@@ -2,7 +2,7 @@ import { formField } from '@ethlete/components/design/form-field';
 import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
-import { commentPinMark, commentPinStyles } from '@system/components/comment-pin';
+import commentPin, { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
@@ -168,7 +168,7 @@ export default definePart<Props>({
         discard.styles +
         merge.styles +
         fit.styles +
-        commentPinStyles +
+        commentPin.styles +
         selectStyles +
         kit +
         styles +
