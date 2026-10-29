@@ -175,7 +175,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
   had a folded round.
 
-### 3.8 A variant stylesheet edit marks every state as changed - open
+### 3.8 A variant stylesheet edit marks every state as changed - fixed
 
 - **Pain:** a variant of `pages/sketches` changed the part's `sketches.css` for one new state.
   Studio then showed every state of every variant as changed, 16 screens. Tom: "totally
@@ -191,6 +191,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
      effect then changes nothing.
   2. `sketch check` warns when a variant edits a stylesheet that more states than the round's
      state use.
+- **Fixed by 3.15:** a state with the same body and other styles now folds when each frame draws the
+  same pixels. The `below.css` convention is no longer needed.
 
 ### 3.9 `sketch variant` adds an answer to comments to the running round - open
 
