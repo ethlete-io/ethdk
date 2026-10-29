@@ -140,6 +140,21 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`987871473`):** `sketch round <sketch> <round> --title --note`. `sketch list` shows
   the rounds.
 
+### 3.6 A merge silently drops states of the part - open (`e26e219ca`)
+
+- **Pain:** Tom merged variant g of `pages/sketches`. The page lost its states `open` and
+  `page-sketch`, and the live canvas camera (`mountCanvasViewport`). Only `zoomed-page` is left.
+  Neither Studio nor the CLI warned before the merge.
+- **Cause:** a merge copies the variant folder over the part, as designed. The variants of this
+  sketch held only the state under discussion. Their `sketches.ts` was a new mock, not the product
+  page with one state changed. A variant cannot change one state and keep the others.
+- **Now:** nothing. The loss shows only after the merge.
+- **Fix options:**
+  1. `sketch check` and `sketch ready` fail when a variant has fewer states than the part, unless
+     the round says it removes them.
+  2. The merge preview in Studio lists states that the merge removes, and asks before it merges.
+  3. A variant can change one state of a part and inherit the other states from the product.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
