@@ -152,6 +152,15 @@ check` warns early.
 - **Fix options:** 1. `sketch check --fix` runs Prettier on the variant files (recommended). 2. one
   Prettier command for all variants in the output.
 
+### 3.35 One of three refactor sketches with no pixel change did not auto-merge - open
+
+- **Pain:** "Use the agent logos asset" on three hosts, each with 0 px diff in every state.
+  `sketch ready` auto-merged `pages/sketches` and `components/comment-pin`, but only printed
+  "pages/inbox is ready"; Tom had to merge it. `design shot pages/inbox --states --variants`
+  confirms "no pixel change" in all five states. Cause not known (suspects: open comments on the
+  part, the folded states, or a stale hash).
+- **Fix options:** 1. find the cause; `sketch ready` names why it did not auto-merge (recommended). 2. always say "auto-merge skipped: <reason>".
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
