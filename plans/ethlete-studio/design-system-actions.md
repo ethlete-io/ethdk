@@ -236,13 +236,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Sketch (2026-10-29):** `foundations/tokens` "Warning colour", a amber, b muted ochre, c orange,
   is `ready` (agent recommends a). After the merge, a one-variant `tree-row` sketch uses `--warning`.
 
-### 5.27 `design check` does not see a class that no CSS defines - open
-
-- **Pain:** `pages/flows` draws its flow list with `st-tree-row`, `st-tree-lead` and `st-tree-label`.
-  Since `part-tree` draws with `tree-row` (`561cbea6c`), no CSS defines them. No check reported it.
-- **Fix option:** a render check rule that reports a class in a part's markup that no loaded
-  stylesheet and no utility defines.
-
 ### 5.31 Studio has no pressed surface token - open
 
 - **Pain:** `tree-row`'s `:active` fill is a `color-mix` of `--surface-raised` and

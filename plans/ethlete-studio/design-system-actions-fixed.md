@@ -1323,3 +1323,11 @@ check` warns early.
   it by hand.
 - **Fix option:** follow imports through non-part modules when the check collects dependants.
 - **Fix done (358d2417f):** The option, at the root: `partDependenciesOf` in `imports.ts` also reads every plain `.ts` module of the part's own folder that the part file reaches by relative import, so `mergePreviewOf` (the `sketch check` list), `partsReachedFrom`, `part remove` and the rules all see a part used through such a module. On studio this surfaces a real problem: `UPWARD-DEPENDENCY pages/merge/merge.ts: ... not @system/pages/system` (the import sits in `pages/merge/merge-data.ts`), so `design check --product studio` fails until that page stops importing `pages/system`.
+
+### 5.27 `design check` does not see a class that no CSS defines - fixed (a0912de97)
+
+- **Pain:** `pages/flows` draws its flow list with `st-tree-row`, `st-tree-lead` and `st-tree-label`.
+  Since `part-tree` draws with `tree-row` (`561cbea6c`), no CSS defines them. No check reported it.
+- **Fix option:** a render check rule that reports a class in a part's markup that no loaded
+  stylesheet and no utility defines.
+- **Fix done (a0912de97):** The option, scoped to the product prefix: the render check collects the prefixes (`st-`, `ib-`, `mg-`, ..., never the SDK's `et-`) of the classes the product's part CSS defines, and in each frame warns `WARNING UNDEFINED-CLASS` for a class with such a prefix that no stylesheet of the frame defines; once per class, at the first part that draws it, and the check still passes. Tailwind utilities never match. On studio (the `st-tree-*` classes are already gone from `pages/flows`): `components/tree-row` `st-trow-chevron`, `st-trow-mark`; `elements/shell-main` `st-shell-mark`, `st-shell-icon`; `pages/inbox` `ib-group-count`; `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
