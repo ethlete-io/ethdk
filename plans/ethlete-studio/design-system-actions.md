@@ -334,11 +334,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   it by hand.
 - **Fix option:** follow imports through non-part modules when the check collects dependants.
 
-### 5.37 The page shot is too small to judge hairlines - open
-
-- **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.
-- **Fix option:** a `clip=x,y,w,h` parameter on the shot endpoint and `--crop` on `design shot`.
-
 ### 5.44 A grid of interaction states cannot be built with a helper - open
 
 - **Pain:** `components/comment-pin`: `definePart({ grid })` needs literal state names. A helper

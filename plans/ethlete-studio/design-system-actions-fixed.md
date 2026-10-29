@@ -1175,3 +1175,9 @@ check` warns early.
 - **Fix option:** read the grid per axis (merged and each variant) and lay out each axis with its
   own grid, in the shot and in the Studio sketch compare.
 - **Fix done (ebdcea64e):** `design shot --states --variants` reads the `grid` of the merged part and of each variant and lays out each row by its own grid, a diff row after each grid row (no grid: one row as before). The Studio sketch compare (apps/ethlete-studio, open point of 2.10) is not changed.
+
+### 5.37 The page shot is too small to judge hairlines - fixed (5cf9a2076)
+
+- **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.
+- **Fix option:** a `clip=x,y,w,h` parameter on the shot endpoint and `--crop` on `design shot`.
+- **Fix done (5cf9a2076):** `/__design/shot?clip=x,y,width,height` (CSS pixels from the part root of a fitted shot, from the page top left of a preset shot; 400 for a malformed clip) and `design shot --crop x,y,width,height` cut each picture to that box; with `--scale 4` a 1 px edge is 4 px. The design-exploration skill names it.
