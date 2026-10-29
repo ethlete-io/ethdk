@@ -9,6 +9,7 @@ import {
   authorsOf,
   createSketch,
   decideSketch,
+  editRound,
   findSketch,
   listSketches,
   markSketchReady,
@@ -330,18 +331,19 @@ describe('addVariant', () => {
     const sketch = open(target, 'elements/hero');
 
     reportSketch({ checkout: target, sketch, variant: 'a', author: 'gpt-5.6-sol', message: 'phone' });
+    editRound({ sketch: find(target), round: 'r1', note: 'pill and square' });
 
     addVariant({
       sketch: find(target),
       variant: 'c',
       from: 'a',
-      round: { title: 'Solid a, outline b', lostNote: 'pill or square; the user wants both' },
+      round: { title: 'Solid a, outline b', lostNote: 'pill or square; the user wants both', note: 'two buttons' },
     });
     addVariant({ sketch: find(target), variant: 'd', from: 'c' });
 
     expect(find(target).rounds).toEqual([
-      { key: 'r1', title: '', note: 'pill or square; the user wants both' },
-      { key: 'r2', title: 'Solid a, outline b', note: '' },
+      { key: 'r1', title: '', note: 'pill and square', lost: 'pill or square; the user wants both' },
+      { key: 'r2', title: 'Solid a, outline b', note: 'two buttons' },
     ]);
     expect(find(target).variantInfo).toEqual({
       a: { authors: ['gpt-5.6-sol'], round: 'r1' },

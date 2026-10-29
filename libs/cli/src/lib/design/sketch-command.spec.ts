@@ -337,9 +337,21 @@ describe('designSketch', () => {
     expect(lines.pop()).toContain('usage: sketch variant');
     expect(variant('c', '--from', 'z')).toBe(1);
     expect(lines.pop()).toBe('components/button has no variant "z" - it has a, b');
-    expect(variant('c', '--from', 'a', '--round', 'Combined', '--note', 'the user wants a with b')).toBe(0);
+    expect(
+      variant(
+        'c',
+        '--from',
+        'a',
+        '--round',
+        'Combined',
+        '--note',
+        'the user wants a with b',
+        '--round-note',
+        'a with b',
+      ),
+    ).toBe(0);
     expect(lines.slice(-3)).toEqual([
-      'notes of round r1 Pill or square: the user wants a with b',
+      'why round r1 Pill or square lost: the user wants a with b',
       'components/button in progress: variant c from a in round r2',
       `  c: ${DESIGN_DIR}/acme/sketches/components-button/c/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/c/assets/`,
     ]);
@@ -352,8 +364,8 @@ describe('designSketch', () => {
     expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
       variants: ['a', 'b', 'c', 'd'],
       rounds: [
-        { key: 'r1', title: 'Pill or square', note: 'the user wants a with b' },
-        { key: 'r2', title: 'Combined', note: '' },
+        { key: 'r1', title: 'Pill or square', lost: 'the user wants a with b' },
+        { key: 'r2', title: 'Combined', note: 'a with b' },
       ],
       variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, c: { round: 'r2' }, d: { round: 'r2' } },
     });
@@ -399,7 +411,7 @@ describe('designSketch', () => {
         'components/button has 2 open comment(s) - a variant that answers them starts a new round:',
         '  on-a on a: Rounder.',
         '  on-b on b: Rounder.',
-        'sketch variant components/button c --from <variant> --round "<title>" --note "<why the running round lost>"',
+        'sketch variant components/button c --from <variant> --round "<title>" --note "<why the running round lost>" --round-note "<what the new round shows>"',
         'if the variant answers none of them, close each first with: inbox done <id> --note <text>',
       ].join('\n'),
     );

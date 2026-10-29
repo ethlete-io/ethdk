@@ -32,8 +32,8 @@ export type SketchDecision =
 /** What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report, and the key of its round. */
 export type SketchVariantInfo = { authors?: string[]; round?: string };
 
-/** One round of variants: its title, and the note on what it showed and why its variants lost. */
-export type SketchRound = { key: string; title: string; note: string; drops?: string[] };
+/** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
+export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
 
 export type SketchFile = {
   target: string;
@@ -155,6 +155,7 @@ const isRounds = (value: unknown): value is SketchRound[] =>
       round.key !== '' &&
       typeof round.title === 'string' &&
       typeof round.note === 'string' &&
+      (round.lost === undefined || typeof round.lost === 'string') &&
       (round.drops === undefined || (Array.isArray(round.drops) && round.drops.every((d) => typeof d === 'string'))),
   ) &&
   new Set(value.map((round: SketchRound) => round.key)).size === value.length;
@@ -567,14 +568,14 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
 
 /**
  * Copies variant `from` into a new variant by `author`, sets the sketch back to in progress and clears a pick. A discard decision is refused.
- * The new variant joins the running round, or starts the round `round` names after writing its `lostNote` into the
- * running round's note.
+ * The new variant joins the running round, or starts the round `round` names, with `note` as its note, after writing
+ * `lostNote` into the running round's `lost`.
  */
 export const addVariant = (options: {
   sketch: Sketch;
   variant: string;
   from: string;
-  round?: { title: string; lostNote: string };
+  round?: { title: string; lostNote: string; note?: string };
   author?: string;
 }): Sketch | string => {
   const { sketch, variant, from, round, author } = options;
@@ -592,8 +593,8 @@ export const addVariant = (options: {
   const running = runningRoundOf(sketch);
   const rounds = round
     ? [
-        ...sketch.rounds.map((entry) => (entry === running ? { ...entry, note: round.lostNote.trim() } : entry)),
-        { key: nextRoundKeyOf(sketch.rounds), title: round.title.trim(), note: '' },
+        ...sketch.rounds.map((entry) => (entry === running ? { ...entry, lost: round.lostNote.trim() } : entry)),
+        { key: nextRoundKeyOf(sketch.rounds), title: round.title.trim(), note: round.note?.trim() ?? '' },
       ]
     : sketch.rounds;
 

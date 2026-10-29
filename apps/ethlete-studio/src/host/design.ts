@@ -402,8 +402,8 @@ export type ListedSketch = {
   rounds?: SketchRound[];
 };
 
-/** A round of a sketch: `note` says why its variants lost, once a newer round runs. */
-export type SketchRound = { key: string; title: string; note: string };
+/** A round of a sketch: `note` says what it shows, `lost` why its variants lost once a newer round runs. */
+export type SketchRound = { key: string; title: string; note: string; lost?: string };
 
 export type SketchTarget = {
   variant: string;

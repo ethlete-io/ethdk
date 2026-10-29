@@ -35,7 +35,7 @@ import {
 
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]',
-  'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
+  'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
@@ -130,7 +130,7 @@ const created = (context: Context) => {
 };
 
 const VARIANT_USAGE =
-  'usage: sketch variant <layer>/<name> <variant> --from <variant> [--round <title> --note <why the running round lost>]';
+  'usage: sketch variant <layer>/<name> <variant> --from <variant> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]]';
 
 const varied = (context: Context) =>
   withSketch(
@@ -144,8 +144,15 @@ const varied = (context: Context) =>
       const from = values['--from'];
       const title = values['--round'];
       const lostNote = values['--note'];
+      const roundNote = values['--round-note'];
 
-      if (positional.length !== 2 || !variant || !from || (title === undefined) !== (lostNote === undefined))
+      if (
+        positional.length !== 2 ||
+        !variant ||
+        !from ||
+        (title === undefined) !== (lostNote === undefined) ||
+        (title === undefined && roundNote !== undefined)
+      )
         return fail(VARIANT_USAGE);
 
       const open =
@@ -158,7 +165,7 @@ const varied = (context: Context) =>
           [
             `${sketch.target} has ${open.length} open comment(s) - a variant that answers them starts a new round:`,
             ...open.map((comment) => `  ${comment.id} on ${comment.sketch?.variant ?? ''}: ${comment.text}`),
-            `sketch variant ${sketch.target} ${variant} --from <variant> --round "<title>" --note "<why the running round lost>"`,
+            `sketch variant ${sketch.target} ${variant} --from <variant> --round "<title>" --note "<why the running round lost>" --round-note "<what the new round shows>"`,
             `if the variant answers none of them, close each first with: inbox done <id> --note <text>`,
           ].join('\n'),
         );
@@ -168,7 +175,7 @@ const varied = (context: Context) =>
         variant,
         from,
         author: authorOf(context.args) ?? undefined,
-        ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote } } : {}),
+        ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote, note: roundNote } } : {}),
       });
 
       if (typeof added === 'string') return fail(added);
@@ -177,10 +184,15 @@ const varied = (context: Context) =>
 
       const previous = title === undefined ? undefined : added.rounds[added.rounds.length - 2];
 
-      if (previous) console.log(`notes of round ${previous.key} ${previous.title}: ${previous.note}`);
+      if (previous) console.log(`why round ${previous.key} ${previous.title} lost: ${previous.lost ?? ''}`);
 
       console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
       console.log(variantLineOf({ root: context.target, sketch: added, variant }));
+
+      if (title !== undefined && round?.note === '')
+        console.log(
+          `round ${round.key} has no note yet - sketch ready needs one: sketch round ${added.target} ${round.key} --note "<what the round shows>" --by <model id>`,
+        );
 
       if (title === undefined) return 0;
 
@@ -237,7 +249,7 @@ const listed = (context: Context) => {
         const variants = sketch.variants.filter((variant) => sketch.variantInfo[variant]?.round === round.key);
 
         console.log(
-          `  ${round.key}  ${round.title}  ${variants.join(', ')}${round.note === '' ? '' : `  - ${round.note}`}`,
+          `  ${round.key}  ${round.title}  ${variants.join(', ')}${round.note === '' ? '' : `  - ${round.note}`}${round.lost ? `  - lost: ${round.lost}` : ''}`,
         );
       }
     }
@@ -294,7 +306,7 @@ const roundEdited = (context: Context) =>
     const entry = edited.rounds.find((candidate) => candidate.key === round);
 
     console.log(
-      `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}`,
+      `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.lost ? ` - lost: ${entry.lost}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}`,
     );
 
     return 0;
@@ -558,6 +570,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--by',
     '--from',
     '--round',
+    '--round-note',
     '--title',
     '--like',
     '--drops',

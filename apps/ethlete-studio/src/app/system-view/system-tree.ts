@@ -712,7 +712,8 @@ export const sketchMatrixOf = ({
   const roundHeads: CanvasRowHead[] = [];
   const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): MatrixColumn[] => {
     const name = roundNameOf(round);
-    const note = round.note === '' ? {} : { note: round.note };
+    const shownNote = [round.note, round.lost && `Lost: ${round.lost}`].filter(Boolean).join('\n\n');
+    const note = shownNote === '' ? {} : { note: shownNote };
     const section = roundColumnKeyOf(round.key);
 
     if (round.variants.length === 0) return [];
@@ -723,7 +724,7 @@ export const sketchMatrixOf = ({
       roundHeads.push({
         key: section,
         label,
-        title: [`Open ${label}`, round.note].filter(Boolean).join('\n\n'),
+        title: [`Open ${label}`, shownNote].filter(Boolean).join('\n\n'),
         open: false,
         section,
         ...note,
@@ -735,7 +736,7 @@ export const sketchMatrixOf = ({
     const group = {
       key: section,
       label: name,
-      title: [`Fold ${name}`, round.note].filter(Boolean).join('\n\n'),
+      title: [`Fold ${name}`, shownNote].filter(Boolean).join('\n\n'),
       ...note,
     };
 
