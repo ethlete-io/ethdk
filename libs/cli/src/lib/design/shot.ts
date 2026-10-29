@@ -8,6 +8,7 @@ import {
   callDrawsFrom,
   createDrawQueue,
   DRAW_TIMEOUT_MS,
+  DrawPriority,
   openFrame,
   send,
   sendShot,
@@ -202,17 +203,26 @@ export const createPartShooter = (options: {
     params: URLSearchParams;
     size: Size | null;
     clip?: boolean;
+    priority: DrawPriority;
   }) => {
     const theme = themeOf(options.params);
     const key = JSON.stringify([...options.key, theme.surface, theme.color]);
     const kept = cache.get(key);
 
-    if (kept) return kept.shot;
+    if (kept) {
+      if (options.priority === 'high') drawQueue.hurry(kept.shot);
+
+      return kept.shot;
+    }
+
     if (theme.surface) options.search.set('surface', theme.surface);
     if (theme.color) options.search.set('color', theme.color);
 
     const search = options.search.toString();
-    const shot = drawQueue.run((browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false }));
+    const shot = drawQueue.run(
+      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false }),
+      options.priority,
+    );
 
     cache.set(key, { drawn: options.drawn, shot });
     shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
@@ -220,16 +230,22 @@ export const createPartShooter = (options: {
     return shot;
   };
 
-  const partShotOf = (options: PartAddress & { params: URLSearchParams }) => {
+  const partShotOf = (options: PartAddress & { params: URLSearchParams; priority: DrawPriority }) => {
     const frame = partFrameOf({ system, ...options });
 
     if (frame instanceof ThumbMissingError) return Promise.reject(frame);
 
-    return cached({ ...frame, params: options.params });
+    return cached({ ...frame, params: options.params, priority: options.priority });
   };
 
-  const callShotOf = (options: { slug: string; variant: string; width: number; params: URLSearchParams }) => {
-    const { slug, variant, width, params } = options;
+  const callShotOf = (options: {
+    slug: string;
+    variant: string;
+    width: number;
+    params: URLSearchParams;
+    priority: DrawPriority;
+  }) => {
+    const { slug, variant, width, params, priority } = options;
 
     return cached({
       key: ['call', slug, variant, width],
@@ -237,12 +253,14 @@ export const createPartShooter = (options: {
       search: new URLSearchParams({ call: slug, variant }),
       params,
       size: { width },
+      priority,
     });
   };
 
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
+      const priority: DrawPriority = params.get('priority') === 'low' ? 'low' : 'high';
       const [slug, variant, width, sketch, product] = ['call', 'variant', 'width', 'sketch', 'product'].map((name) =>
         params.get(name),
       );
@@ -262,7 +280,7 @@ export const createPartShooter = (options: {
 
         sendShot(
           response,
-          callShotOf({ slug, variant, width: pixels, params }).then((picture) => picture.png),
+          callShotOf({ slug, variant, width: pixels, params, priority }).then((picture) => picture.png),
         );
 
         return;
@@ -303,11 +321,15 @@ export const createPartShooter = (options: {
           sketch: sketch && variant ? { target: sketch, variant } : null,
           interaction: params.get('interaction'),
           params,
+          priority,
         }).then((picture) => picture.png),
       );
     },
-    /** Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. */
-    pictureOf: partShotOf,
+    /**
+     * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds,
+     * ahead of every shot asked with `priority=low`.
+     */
+    pictureOf: (options: PartAddress & { params: URLSearchParams }) => partShotOf({ ...options, priority: 'high' }),
     /** Drops the pictures of the parts `change` redraws. */
     forget: (change: PartsChange) => {
       for (const [key, { drawn }] of cache) {

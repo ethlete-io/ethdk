@@ -201,6 +201,45 @@ describe('createPartShooter', () => {
     expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('interaction')).toBe(false);
   });
 
+  it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long';
+
+    goto.mockImplementationOnce(() => held);
+
+    const asked = [
+      ask(shots, `${card}&interaction=first&priority=low`),
+      ask(shots, `${card}&interaction=low&priority=low`),
+      ask(shots, `${card}&interaction=hurried&priority=low`),
+      ask(shots, `${card}&interaction=hurried`),
+      ask(shots, `${card}&interaction=asked`),
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset: null,
+        width: null,
+        sketch: null,
+        interaction: 'compared',
+        params: new URLSearchParams(),
+      }),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+    release();
+    await Promise.all(asked);
+
+    expect(goto.mock.calls.map(([url]) => new URL(url).searchParams.get('interaction'))).toEqual([
+      'first',
+      'hurried',
+      'asked',
+      'compared',
+      'low',
+    ]);
+  });
+
   it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 

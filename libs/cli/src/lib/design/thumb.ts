@@ -59,15 +59,20 @@ export const openFrame = async (page: Page, url: string) => {
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
+export type DrawPriority = 'high' | 'low';
+
 /**
- * One shared headless Chromium, launched on the first ask, that runs one drawing at a time. A failed
- * launch is not kept, so the next ask tries again.
+ * One shared headless Chromium, launched on the first ask, that runs one drawing at a time. A waiting
+ * `high` drawing runs before every waiting `low` one, each lane in the order asked. A failed launch is
+ * not kept, so the next ask tries again.
  */
 export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf }) => {
   const { target } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
-  let queue: Promise<unknown> = Promise.resolve();
+  const waiting: Record<DrawPriority, (() => Promise<void>)[]> = { high: [], low: [] };
+  const jobs = new WeakMap<Promise<unknown>, () => Promise<void>>();
+  let drawing = false;
 
   const launch = () => {
     browser ??= resolveChromium(target).then((resolved) => {
@@ -89,13 +94,37 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
     return browser;
   };
 
-  return {
-    run: <T>(draw: (browser: Browser) => Promise<T>) => {
-      const drawn = queue.then(async () => draw(await launch()));
+  const next = () => {
+    const job = drawing ? undefined : (waiting.high.shift() ?? waiting.low.shift());
 
-      queue = drawn.catch(() => undefined);
+    if (!job) return;
+
+    drawing = true;
+    void job().finally(() => {
+      drawing = false;
+      next();
+    });
+  };
+
+  return {
+    run: <T>(draw: (browser: Browser) => Promise<T>, priority: DrawPriority = 'high') => {
+      let job = () => Promise.resolve();
+      const drawn = new Promise<T>((resolve, reject) => {
+        job = () => launch().then(draw).then(resolve, reject);
+      });
+
+      jobs.set(drawn, job);
+      waiting[priority].push(job);
+      next();
 
       return drawn;
+    },
+    /** Moves a drawing `run` returned into the high lane, unless it already started. */
+    hurry: (drawn: Promise<unknown>) => {
+      const job = jobs.get(drawn);
+      const at = job ? waiting.low.indexOf(job) : -1;
+
+      if (job && at >= 0) waiting.high.push(...waiting.low.splice(at, 1));
     },
     close: async () => {
       const running = browser;

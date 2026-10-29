@@ -1,14 +1,13 @@
-### 2.7 "used in" lists every page for a part that every page uses - fixed, one open point
+### 4.12 One serial draw queue for every shot - fixed, open points
 
-- **Pain:** on `foundations/tokens`, the "used in" row draws one frame for each page (`flows`,
-  `inbox`, `sketches`, `start`, `system`). Every page reaches the tokens, so the row tells
-  nothing and makes the canvas longer (Tom, 2026-10-29).
-- **Where:** `usedInOf` in `libs/cli/src/lib/design/system/list-system.ts` (static import reach),
-  and the `used in` row in `apps/ethlete-studio/src/app/system-view/system-tree.ts`.
-- **Agreed fix:** when every page uses the part, draw no frames and show one label "used in all N
-  pages". Keep the frames when only some pages use it.
-- **Fix done:** in `framesOf` (`system-tree.ts`), when a product has more than one page and every
-  page uses the part, the row label is "used in all N pages" and the row holds one dashed `empty`
-  cell. With one page, the frame stays.
-- **Open:** the canvas draws a row label only from a frame, so the row needs the placeholder cell.
-  A label-only row needs a canvas change. Not checked visually.
+- **Pain:** the merge compare, canvas shots and thumbnails share one Chromium and one queue
+  (`createDrawQueue` in `libs/cli/src/lib/design/thumb.ts`). A compare waits behind every queued
+  thumbnail, so "Comparing…" can run 25 s for 3.5 s of work.
+- **Fix options:** a priority lane for the compare; or two or three pages in parallel; or drop
+  queued thumbnails that are no longer on screen.
+- **Fix done:** a priority lane in `createDrawQueue`. Every `pictureOf` call (merge compare, merge
+  preview, shot commands) and every `/__design/shot` without `priority=low` is high. Studio's canvas
+  images send `&priority=low`. A high request for a shot that waits in the low lane promotes it.
+- **Open:** the frame in view still waits behind off-screen frames, because Studio loads every
+  canvas `<img>` at once; lazy loading would fix it. An aborted request does not drop its queued
+  thumbnail. Not measured again after the fix.

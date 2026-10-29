@@ -189,9 +189,12 @@ export const frameUrl = ({ port, slug, variant, epoch, revision, surface, color 
   (epoch ? `&epoch=${epoch}` : '') +
   (revision ? `&revision=${revision}` : '');
 
-/** The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`. */
+/**
+ * The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`.
+ * The design server draws it after every shot asked without `priority=low`.
+ */
 export const callShotUrl = ({ width, ...address }: FrameAddress & { width: number }) =>
-  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}`;
+  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}&priority=low`;
 
 export type DesignRoots = {
   /** The folder a scan walks. Empty until the user names one. */
@@ -320,7 +323,8 @@ export const partFrameUrl = (address: PartAddress) =>
 
 /**
  * The address of a PNG of one state of a part at one preset or one container width, or fitted to its
- * content with neither, renewed with each `revision`.
+ * content with neither, renewed with each `revision`. The design server draws it after every shot asked
+ * without `priority=low`.
  */
 export const partShotUrl = (address: PartAddress & { preset?: string; width?: number }) =>
   `http://localhost:${address.port}/__design/shot?${partQuery(address)}` +
@@ -328,7 +332,8 @@ export const partShotUrl = (address: PartAddress & { preset?: string; width?: nu
   (address.width ? `&width=${address.width}` : '') +
   themeQuery(address) +
   (address.epoch ? `&epoch=${address.epoch}` : '') +
-  (address.revision ? `&revision=${address.revision}` : '');
+  (address.revision ? `&revision=${address.revision}` : '') +
+  '&priority=low';
 
 /** A call of the old design-call workflow, as the design server lists it. One that fails to load carries its error. */
 export type ListedCall =

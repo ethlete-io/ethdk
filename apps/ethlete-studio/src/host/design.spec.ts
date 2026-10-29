@@ -27,9 +27,11 @@ describe('callShotUrl', () => {
   it('asks the shot route for the variant at a width, under its theme, renewed by revision', () => {
     expect(
       callShotUrl({ port: 1, slug: 'shop/a b', variant: 'v', surface: 'dark', epoch: 2, width: 1280, revision: 3 }),
-    ).toBe('http://localhost:1/__design/shot?call=shop%2Fa%20b&variant=v&surface=dark&epoch=2&revision=3&width=1280');
+    ).toBe(
+      'http://localhost:1/__design/shot?call=shop%2Fa%20b&variant=v&surface=dark&epoch=2&revision=3&width=1280&priority=low',
+    );
     expect(callShotUrl({ port: 1, slug: 's', variant: 'v', width: 390 })).toBe(
-      'http://localhost:1/__design/shot?call=s&variant=v&width=390',
+      'http://localhost:1/__design/shot?call=s&variant=v&width=390&priority=low',
     );
   });
 });

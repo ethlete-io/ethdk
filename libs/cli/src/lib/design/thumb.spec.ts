@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createThumbnailer } from './thumb';
+import { createDrawQueue, createThumbnailer } from './thumb';
 
 const sent: Record<string, unknown>[] = [];
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -148,5 +148,40 @@ describe('createThumbnailer', () => {
     await ask(middleware, '/?call=app/one&variant=a');
     await close();
     expect(closeBrowser).toHaveBeenCalledOnce();
+  });
+});
+
+describe('createDrawQueue', () => {
+  it('draws a high job before the low jobs queued ahead of it, and each lane in order', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const order: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const job = (name: string) => async () => void order.push(name);
+
+    const drawn = [
+      queue.run(async () => {
+        await held;
+        order.push('running');
+      }, 'low'),
+      ...['low 1', 'low 2', 'low 3'].map((name) => queue.run(job(name), 'low')),
+      queue.run(job('high 1'), 'high'),
+      queue.run(job('high 2')),
+    ];
+
+    await vi.waitFor(() => expect(launch).toHaveBeenCalled());
+    release();
+    await Promise.all(drawn);
+
+    expect(order).toEqual(['running', 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
+  });
+
+  it('keeps drawing after a failed job', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const failed = queue.run(async () => Promise.reject(new Error('broken')), 'low');
+    const next = queue.run(async () => 'drawn', 'low');
+
+    await expect(failed).rejects.toThrow('broken');
+    await expect(next).resolves.toBe('drawn');
   });
 });

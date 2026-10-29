@@ -147,14 +147,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
 <name> --hex` that prints the resolved colour.
 
-### 4.12 One serial draw queue for every shot - open
-
-- **Pain:** the merge compare, canvas shots and thumbnails share one Chromium and one queue
-  (`createDrawQueue` in `libs/cli/src/lib/design/thumb.ts`). A compare waits behind every queued
-  thumbnail, so "Comparing…" can run 25 s for 3.5 s of work.
-- **Fix options:** a priority lane for the compare; or two or three pages in parallel; or drop
-  queued thumbnails that are no longer on screen.
-
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
