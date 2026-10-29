@@ -190,6 +190,19 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     webview in Rust (recommended), B update Safari, C accept. Part API slice runs (5.49, 5.46,
     5.47, 5.34, 5.44, 5.28, 5.21). Then: 5.26 + checks slice (with 4.23, 4.24), then 3.36, 3.37,
     5.51, 5.52, 6.3, 6.4, then tokens split 2.12.
+    Update 21:45: all CLI slices done (5.26 `part remove`, checks, 6.3/6.4, 3.36-3.40, 5.27, 4.34,
+    4.37, 5.28, 5.44, 5.46, 5.47, 5.49, 5.54). `dist/libs/cli` builds are safe in parallel now.
+    Merged: tree-row status colours + inbox agent logos (`d65df411d`), the part API refactors of
+    agent-logos, comment-pin, tree-row, flows (auto, `cdf2b4c24`). Open, waits for Tom: sketch
+    `pages/merge` "No page import" (a `embedPage`, recommended; b crop-only, has a label overlap);
+    its merge clears the UPWARD-DEPENDENCY that fails `design check`. Rust agent for 1.1 option A
+    (Tom picked A: rebuild the webview on WebContent termination, macOS only) runs; its files in
+    `apps/ethlete-studio/src-tauri` are uncommitted until it reports. Still open: 5.21, 5.34
+    (only if Tom picks a grouped look), 3.39, 4.39 (GRID-COVERAGE contradicts the per-axis rule,
+    recommend option 1), 4.40 (UNDEFINED-CLASS cleanup sketches), 5.51, 5.52, 5.55, 5.56; comment-pin
+    hosts: one-variant sketches on `pages/inbox` and `pages/sketches` switch to `commentPin.styles`,
+    then a comment-pin sketch drops `commentPinStyles`. Then tokens split 2.12 (`design part
+    remove` exists now).
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
