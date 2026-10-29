@@ -5,12 +5,14 @@ import { contactSheetOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { workRootOf } from './paths';
+import { extractSketchAt } from './sketch-at';
+import { parseTarget } from './system/sketch/sketch';
 import { createPartShooter, PartAddress } from './shot';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
 export const SHOT_USAGE =
-  'shot <layer>/<name> --states [--variants] [--state <name>] [--preset <preset> | --width <px>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]';
+  'shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--preset <preset> | --width <px>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]';
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -97,7 +99,7 @@ const stringsOf = (states: unknown) => (states && typeof states === 'object' ? O
  */
 export const designShot = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--state', '--preset', '--width', '--surface', '--color', '--out']);
+  const args = argsOf(argv, ['--product', '--at', '--state', '--preset', '--width', '--surface', '--color', '--out']);
   const usage = `usage: ${invocation} ${SHOT_USAGE}`;
 
   if (typeof args === 'string') {
@@ -116,6 +118,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     !part ||
     extra.length > 0 ||
     (!states && !variants) ||
+    (args.values['--at'] !== undefined && !variants) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width)
   ) {
@@ -141,7 +144,37 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const product = resolved.name;
-  const system = createSystemModules({ target, config });
+  const at = args.values['--at'];
+  let sketchesRoot: string | undefined;
+
+  if (at !== undefined) {
+    const sketchTarget = parseTarget(part);
+    const productDir = createSystemModules({ target, config }).productOf(product)?.dir;
+
+    if (typeof sketchTarget === 'string' || !productDir) {
+      console.error(`design-explore: --at needs a <layer>/<name> part of a known product`);
+
+      return 1;
+    }
+
+    const extracted = extractSketchAt({
+      target,
+      productDir,
+      sketch: sketchTarget,
+      commit: at,
+      dest: resolve(workRootOf(target), 'at', `${product}-${at.replace(/[^\w.-]/gu, '_')}`),
+    });
+
+    if ('problem' in extracted) {
+      console.error(`design-explore: ${extracted.problem}`);
+
+      return 1;
+    }
+
+    sketchesRoot = extracted.root;
+  }
+
+  const system = createSystemModules({ target, config, sketchesRoot });
   const sketch = system.sketchesOf(product).find((found) => found.target === part);
   const rows = rowsOf({
     part,
@@ -162,7 +195,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const queue = createDrawQueue({ target });
-  const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  const server = await createDesignServer({ target, config, listen: true, port: 0, sketchesRoot });
 
   try {
     await server.listen();

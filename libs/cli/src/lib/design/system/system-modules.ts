@@ -63,8 +63,8 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
  * inside a module of one product. A relative import of a source file stays in the importer's product
  * and sketch, so a helper file next to a part resolves `@system/...` as the part does.
  */
-export const createSystemModules = (options: { target: string; config: DesignConfig }) => {
-  const { target, config } = options;
+export const createSystemModules = (options: { target: string; config: DesignConfig; sketchesRoot?: string }) => {
+  const { target, config, sketchesRoot } = options;
   const resolved = new Map<string, ResolvedProduct>();
   const sketched = new Map<string, ResolvedProduct | null>();
 
@@ -84,7 +84,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     const product = productOf(name);
 
     return product
-      ? listSketches({ productDir: product.dir, product: name }).filter(
+      ? listSketches({ productDir: sketchesRoot ?? product.dir, product: name }).filter(
           (sketch): sketch is Sketch => typeof sketch !== 'string',
         )
       : [];
@@ -102,7 +102,9 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
     const target = parseTarget(sketch.target);
     const found =
-      typeof target === 'string' ? null : findSketch({ productDir: product.dir, product: name, sketch: target });
+      typeof target === 'string'
+        ? null
+        : findSketch({ productDir: sketchesRoot ?? product.dir, product: name, sketch: target });
     const drawn =
       found && typeof found !== 'string' && found.variants.includes(sketch.variant)
         ? overlaySketch({ product, sketch: found, variant: sketch.variant })
@@ -119,7 +121,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
   const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
     const { product, sketch, path } = options;
     const target = sketch ? parseTarget(sketch.target) : null;
-    const productDir = productOf(product)?.dir;
+    const productDir = sketchesRoot ?? productOf(product)?.dir;
 
     if (!target || typeof target === 'string' || !productDir) return null;
 

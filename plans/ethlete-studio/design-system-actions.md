@@ -125,13 +125,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.8 `design shot` cannot redraw a merged sketch - open
-
-- **Pain:** `shot --states --variants` needs an open sketch. After a merge, the contact sheet of
-  that sketch cannot be drawn again, so a late look at merged against variant is gone.
-- **Where:** `shot-command.ts` in `libs/cli/src/lib/design`.
-- **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
-
 ### 4.15 The pixel diff compares byte by byte - open
 
 - **Pain (measured 2026-10-29, Node, synthetic images):** `diffPixelsOf` in `contact-sheet.ts`

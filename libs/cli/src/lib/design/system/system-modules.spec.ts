@@ -77,6 +77,24 @@ describe('createSystemModules', () => {
     expect(sketchOfModuleId(productModuleIdOf({ file: 'x.ts', product: 'acme' }))).toBeNull();
   });
 
+  it('reads sketches from sketchesRoot instead of the product folder', () => {
+    const { target, system } = acme();
+    const product = system.productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const empty = mkdtempSync(join(tmpdir(), 'cli-design-root-'));
+    const elsewhere = createSystemModules({ target, config: readConfig(target) ?? {}, sketchesRoot: empty });
+    const sketch = { target: 'components/button', variant: 'a' };
+
+    expect(system.sketchesOf('acme')).toHaveLength(1);
+    expect(elsewhere.sketchesOf('acme')).toEqual([]);
+    expect(elsewhere.partOf({ product: 'acme', part: 'components/button', sketch })).toBeNull();
+  });
+
   it("resolves @shared/ inside a sketch variant to the sketch's shared folder, and keeps a relative helper in the product", () => {
     const { target, system } = acme();
     const product = system.productOf('acme');

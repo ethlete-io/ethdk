@@ -89,6 +89,8 @@ const helpOf = (invocation: string) =>
     `${invocation} ${SHOT_USAGE}`,
     '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
     '  PNG with a label per cell, and print its path. Without --state, --variants alone draws the first state.',
+    '  With --variants --at <commit>, the sketch is read from that commit instead, so a merged sketch (its folder',
+    '  is deleted at merge) draws again against the part as it is now; pick the last commit that still held it.',
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '',
     `${invocation} ${ASSET_SHOT_USAGE}`,

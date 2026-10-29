@@ -577,8 +577,9 @@ export const createDesignServer = async (options: {
   listen: boolean;
   port?: number;
   host?: string;
+  sketchesRoot?: string;
 }) => {
-  const { target, config, listen } = options;
+  const { target, config, listen, sketchesRoot } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
   const port = own ? await freePortOf() : options.port;
@@ -592,7 +593,7 @@ export const createDesignServer = async (options: {
   const { createServer } = await import('vite');
   const { default: tailwind } = await import('@tailwindcss/postcss');
   const here = assetRoot();
-  const system = createSystemModules({ target, config });
+  const system = createSystemModules({ target, config, sketchesRoot });
 
   if (listen) {
     for (const name of system.products()) {

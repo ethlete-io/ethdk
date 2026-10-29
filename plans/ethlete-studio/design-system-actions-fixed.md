@@ -724,3 +724,12 @@ sketch` until the next merge of the part.
 - **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
 <name> --hex` that prints the resolved colour.
 - **Fix done:** `design shot --asset <file> [--product <p>] [--width <n>]` inlines the image as a `data:` URL and draws it; `design token <name> [--product <p>] --hex` prints the colour a token resolves to in Chromium (oklch included). A name with leading dashes parses as a flag, so pass `color-x`, not `--color-x`.
+
+### 4.8 `design shot` cannot redraw a merged sketch - fixed
+
+- **Pain:** `shot --states --variants` needs an open sketch. After a merge, the contact sheet of
+  that sketch cannot be drawn again, so a late look at merged against variant is gone.
+- **Where:** `shot-command.ts` in `libs/cli/src/lib/design`.
+- **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
+- **Fix done:** `design shot <part> --states --variants --at <commit>` reads the sketch folder from git (`git archive`, working tree untouched) and draws it against the part as it is now. Example: `--at e26e219ca^`.
+- **Open:** the user must name the parent of the merge commit; the CLI could find the last commit that held the sketch. Specs write temp folders into `src/lib/design`, so `stamp.spec.ts` failed once in a parallel run.

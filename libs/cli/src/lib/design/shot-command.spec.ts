@@ -69,6 +69,10 @@ describe('designShot', () => {
     expect(text).toContain('usage: et design shot <layer>/<name> --states');
   });
 
+  it('rejects --at without --variants', async () => {
+    expect((await run(['components/button', '--states', '--at', 'HEAD'])).code).toBe(2);
+  });
+
   it('rejects a preset together with a width, and a bad width', async () => {
     expect((await run(['components/button', '--states', '--preset', 'phone', '--width', '300'])).code).toBe(2);
     expect((await run(['components/button', '--states', '--width', 'wide'])).code).toBe(2);
