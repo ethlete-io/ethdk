@@ -1,6 +1,7 @@
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { checkDesign } from './check';
+import { findCheckoutRoot } from './paths';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
@@ -16,7 +17,7 @@ import { designSystem } from './system/system-command';
 const splitCheckout = (argv: string[], root: string) => {
   const index = argv.indexOf('--checkout');
 
-  if (index === -1) return { target: root, rest: argv };
+  if (index === -1) return { target: findCheckoutRoot(root), rest: argv };
 
   return { target: resolve(root, argv[index + 1] ?? '.'), rest: [...argv.slice(0, index), ...argv.slice(index + 2)] };
 };

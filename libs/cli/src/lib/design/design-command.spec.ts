@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { designCommand } from './design-command';
 import * as stamp from './stamp';
@@ -63,5 +66,23 @@ describe('designCommand', () => {
 
     expect(log).toHaveBeenCalledWith('{"version":"1.2.3","build":"abc"}');
     vi.restoreAllMocks();
+  });
+
+  it('finds the design config in a parent folder, as git finds its repository', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'design-root-')));
+    const sub = join(root, 'a', 'b');
+    mkdirSync(sub, { recursive: true });
+    mkdirSync(join(root, '.ethlete/design'), { recursive: true });
+    writeFileSync(join(root, '.ethlete/design/config.json'), '{}');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await designCommand({ root: sub, argv: ['sketch', 'list'], invocation: 'et design' });
+
+    const text = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    log.mockRestore();
+    rmSync(root, { recursive: true, force: true });
+    expect(text).not.toContain('no config at');
   });
 });

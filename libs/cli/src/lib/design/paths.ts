@@ -1,5 +1,5 @@
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from 'fs';
-import { relative, resolve } from 'path';
+import { dirname, relative, resolve } from 'path';
 
 /** Where every repository keeps its design work. The layout is convention, not configuration. */
 export const DESIGN_DIR = '.ethlete/design';
@@ -105,6 +105,21 @@ export const snapshotPackage = (target: string) => {
   packageRoot = dir;
 
   return dir;
+};
+
+/** The nearest folder at or above `start` that holds a design config, as git finds its repository. Falls back to `start`. */
+export const findCheckoutRoot = (start: string) => {
+  let dir = resolve(start);
+
+  for (;;) {
+    if (existsSync(resolve(dir, DESIGN_DIR, 'config.json'))) return dir;
+
+    const parent = dirname(dir);
+
+    if (parent === dir) return resolve(start);
+
+    dir = parent;
+  }
 };
 
 export const configPathOf = (target: string) => resolve(target, DESIGN_DIR, 'config.json');
