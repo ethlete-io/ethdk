@@ -96,6 +96,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
+### 3.25 `sketch variant --round --note` replaces the old round's note - open
+
+- **Pain:** on `pages/merge` round r2 the note "why it lost" overwrote round r1's description. The
+  agent restored it by hand with `sketch round pages/merge r1 --note`.
+- **Fix options:** 1. store "why it lost" as its own field (recommended). 2. refuse without
+  `--replace-note` and print the old note.
+
+### 3.26 A new round starts with an empty note - open
+
+- **Pain:** `sketch variant --round` gives the new round no note, and `sketch ready` refuses it. The
+  agent had to run `sketch round <part> r2 --note` as an extra step.
+- **Fix option:** a `--round-note` flag on `sketch variant --round`.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -164,6 +177,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frames with a CSS override of the radius.
 - **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
   Studio itself need it.
+
+### 5.22 The system button part takes no `class` or icon - open
+
+- **Pain:** a full-width Merge and an icon-only close X need descendant CSS on `.et-button` in the
+  sketch stylesheet. The X's accessible name sits on the SVG, not on the button.
+- **Fix option:** pass `class` and `icon` through `@system/components/button` from
+  `ButtonMockOptions`.
 
 ## 6. Agent process
 

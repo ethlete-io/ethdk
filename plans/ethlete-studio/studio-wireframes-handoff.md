@@ -111,7 +111,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
 7. Merge compare page, then components, then page states, then the real app. Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
-   section for merge, the drawings use `'Sketches'`. Its friction is 4.16-4.18, 5.19-5.21.
+   section for merge, the drawings use `'Sketches'`. Its friction is 4.16-4.18, 5.19-5.21. Tom took c; round r2 (d: back link on top + hint under the
+   note, e: Cancel next to Merge, f: close X + label on the button; agent recommends d) is `ready`,
+   friction 3.25, 3.26, 5.22.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
 :4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and
