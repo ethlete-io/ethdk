@@ -1,0 +1,24 @@
+{
+  "part": "pages/system",
+  "state": "many-states",
+  "size": "desktop",
+  "text": "selected active fehlt noch",
+  "point": {
+    "x": 967,
+    "y": 114
+  },
+  "sketch": {
+    "target": "pages/system",
+    "variant": "e",
+    "createdAt": "2026-10-29T17:24:37.094Z"
+  },
+  "createdAt": "2026-10-29T17:47:38.440Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Neuer State selected-active im Sketch auf components/tree-row (ready). Er hat auch einen Fehler behoben: gedrückt verlor die gewählte Zeile ihren Akzent. Nach dem Merge zeigt e die Zelle.",
+      "createdAt": "2026-10-29T17:49:41.544Z"
+    }
+  ]
+}

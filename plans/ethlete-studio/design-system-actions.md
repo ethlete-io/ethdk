@@ -381,6 +381,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.30 (shot path).
 
+### 5.39 A combo of two forced states was never drawn, and its bug slipped through - open
+
+- **Pain:** the "Pressed state" sketch claimed a pressed selected row keeps its tint. There was no
+  `selected-active` state, so nobody saw that `.st-trow:active` replaced the accent with grey.
+  Tom found the gap in the grid of "Many states" ("selected active fehlt noch").
+- **Fix options:** 1. the grid shows an empty cell where a row has states in other columns, and
+  `sketch check` lists empty cells (recommended; the grid made the gap visible). 2. `sketch check`
+  draws every row x column combination of a grid in a scratch pass and flags cells that look like
+  another row.
+
 ### 5.35 Sketch commands need `--product` although only one product has the sketch - open
 
 - **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
