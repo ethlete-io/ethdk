@@ -213,6 +213,19 @@ sketch` until the next merge of the part.
 - **Fix option:** look for `.ethlete/design/config.json` in the parent folders, as git does.
 - **Now:** fixed in 7f42e56f3; every command walks up to the nearest `.ethlete/design/config.json`.
 
+### 5.7 A foundation cannot give its pieces to a page - fixed
+
+- **Pain:** `pages/start` needs the Studio mark. `foundations/logo` draws it, but only as the
+  `sizes` and `sidebar` states. The page copied the SVG, and `shell-main` holds a third copy.
+- **Cause:** a part exports one `render`; nothing exports a piece of a part.
+- **Fix option:** let a part file export named helpers that other parts may import, or extract
+  the mark into an element.
+- **Decision (Tom, 2026-10-29):** a part file may export named helpers that other parts import.
+- **Fix done (`9bb1fb247`):** the CLI already allowed named exports. Specs now lock it in, and the
+  skill says to import a piece instead of copying it.
+- **Open:** `foundations/logo` keeps the mark private. A sketch on logo exports it as `studioMark`.
+  Then sketches on `pages/start` (line 11) and `elements/shell-main` (line 35) import it.
+
 ### 5.8 `sketch new` for a page writes a bare scaffold - fixed
 
 - **Pain:** the scaffold for `pages/start` held a `start.css` with a `.start` class, no `madeBy`,

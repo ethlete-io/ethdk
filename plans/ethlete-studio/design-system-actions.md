@@ -260,15 +260,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.7 A foundation cannot give its pieces to a page - open
-
-- **Pain:** `pages/start` needs the Studio mark. `foundations/logo` draws it, but only as the
-  `sizes` and `sidebar` states. The page copied the SVG, and `shell-main` holds a third copy.
-- **Cause:** a part exports one `render`; nothing exports a piece of a part.
-- **Fix option:** let a part file export named helpers that other parts may import, or extract
-  the mark into an element.
-- **Decision (Tom, 2026-10-29):** a part file may export named helpers that other parts import.
-
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
