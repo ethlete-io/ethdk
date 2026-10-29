@@ -1419,3 +1419,12 @@ check` warns early.
   start: pinch 5 times, and note whether the crashes start only after a WebContent kill or a hang.
 - **Fix done (54bbc9a50):** Option (a). On macOS the host registers `on_web_content_process_terminate` (`src-tauri/src/webview_rebuild.rs`), which replaces wry's reload: it builds a new window from the `main` config at the old URL, position, size, maximized and fullscreen state, then destroys the old one. The new window gets a new label (`main-1`, `main-2`, ...; the capability allows `main-*`), because wry keys a webview's protocol handlers by label and frees the old webview's after the new one exists, so a reused `main` never loads. Linux (CEF) and Windows are unchanged.
 - **Verified (2026-10-29, ethlete-mac, Safari 18.6 WebKit):** the Studio host built with a stub page, driven by gesture CGEvents posted to the HID tap: SIGSTOP WebContent, pinch with no end, SIGKILL, then 4 pinches. Before the fix: 4 terminations in 4 pinches, 2 of 2 runs. With the fix: 0 terminations, 4 of 4 runs; each pinch reaches the rebuilt page (`gesturestart`), the URL fragment and the window frame stay the same, and `invoke` works in the rebuilt window. Not verified: the real Studio frontend and Tom's real trackpad.
+
+### 4.39 GRID-COVERAGE warns on a grid that follows the per-axis rule - fixed (ee9b8ad8d)
+
+- **Pain:** the 4.37 rule (`16c34193b`) warns on `components/tree-row`: `leaf` and `selected` fill
+  all interaction columns, the other rows only `rest`. That is Tom's rule (2026-10-29): states per
+  axis, not every combination; `pages/system` `many-states` even groups "Rest only" rows.
+- **Fix options:** 1. warn only when a row fills some but not all interaction columns
+  (recommended). 2. drop the rule.
+- **Fix done (ee9b8ad8d):** Option 1. `coverageWarningsOf` in `libs/cli/src/lib/design/system/list-system.ts` warns only about a row that fills at least one interaction column besides `rest` and still leaves one out. A rest-only row is the per-axis rule and stays quiet. `design check --product studio` shows no GRID-COVERAGE now.
