@@ -262,6 +262,26 @@ sketch` until the next merge of the part.
   2. `sketch new --from-tree`: open a one-variant sketch from the working tree and restore the
      product, so the normal merge path covers the edit.
 
+### 3.14 The states of a page drift apart - open
+
+- **Pain:** the states of `pages/sketches` showed the same chrome in different ways. The variant
+  heads had other font sizes, another Merge position and a "Gemergt" label in one state only. In
+  `zoomed-page` the head of variant b had no agent and no subline. Tom found each difference by eye,
+  one sketch at a time.
+- **Cause:** each state draws its own markup. `page-sketch` builds its heads from `PAGE_VARIANTS`
+  with `sk-variant-head`; `zoomed-page` writes them by hand with `zc-attached`. The workflow makes it
+  worse: a round changes only the state of its question (the rule against a wall of changed screens),
+  so a decision lands in one copy and the other copies keep the old look. 3.10 is one case of this.
+- **Now:** nothing finds it. Only Tom's eye compares the states.
+- **Fix options:**
+  1. A state is data, not markup: every state of a page calls the same render with other props, so
+     shared chrome exists once.
+  2. Shared chrome that more states draw becomes an element of its own early, before the page has
+     more than one state. This conflicts with "draw pages first, extract later" (section 6) and needs
+     Tom's decision.
+  3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
+     and warns when its computed styles differ between states.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
