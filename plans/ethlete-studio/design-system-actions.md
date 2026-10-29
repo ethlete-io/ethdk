@@ -209,6 +209,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   resolve as in the app (recommended, check first why it does not). 2. `design check` warns on an
   SDK surface token in a product without that context.
 
+### 5.24 A component sketch does not see what its hosts draw - open
+
+- **Pain:** `components/tree-row` was merged without the part-with-frames row and the warning
+  triangle that `elements/part-tree` draws. The adoption sketch on part-tree then mapped the
+  warning to "in progress" and lost the bright part row (467 px diff). It was discarded; tree-row
+  gets round r2.
+- **Fix options:** 1. `sketch new` on a component lists the parts whose markup it will replace, and
+  the brief says to draw every case they draw (recommended, a skill rule). 2. a CLI check that
+  compares the classes a host uses with the component's states.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
