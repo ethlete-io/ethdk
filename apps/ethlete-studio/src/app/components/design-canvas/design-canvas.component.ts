@@ -37,6 +37,7 @@ import {
   Rect,
   Size,
   boundingRect,
+  fitRect,
   focusRect,
   layoutGrid,
   layoutMatrix,
@@ -689,6 +690,16 @@ export class DesignCanvasComponent {
     const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
 
     if (camera) this.moveCamera(camera, true);
+  }
+
+  /** Selects a frame and zooms the camera so the frame fills the view. */
+  public zoomToFrame(id: string) {
+    const placed = this.framesById().get(id);
+
+    if (!placed) return;
+
+    this.selectedId.set(placed.owner);
+    this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING }), true);
   }
 
   protected activate(id: string) {

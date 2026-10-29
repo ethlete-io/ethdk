@@ -776,35 +776,15 @@ export class SketchViewComponent {
 
   /** Moves the camera to a comment: back to the matrix, into its round and its folded state, and to its size and interaction first, when the matrix offers them; `ALL` stays. */
   public jumpTo(comment: NumberedComment) {
-    const size = String(comment.size);
-    const interaction = comment.interaction ?? REST;
-    const resize = size !== this.matrix().size && this.matrix().sizes.includes(size);
-    const reinteract =
-      this.matrix().interaction !== ALL &&
-      interaction !== this.matrix().interaction &&
-      this.matrix().interactions.includes(interaction);
-    const leaveMerge = this.showing() === 'merge';
-    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
-    const folded = shown.find((round) => !round.open && round.variants.includes(comment.sketch?.variant ?? ''));
-    const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
-    const unfold = this.matrix().rowHeads.some((head) => !head.open && head.key === stateRowKeyOf(comment.state));
-    const states = unfold ? { ...this.openStates(), [comment.state]: true } : null;
-
-    if (resize) this.size.set(size);
-    if (reinteract) this.interaction.set(interaction);
-    if (leaveMerge) this.shownMode.set('matrix');
-    if (rounds) this.openRounds.set(rounds);
-    if (states) this.openStates.set(states);
-    this.remember({
-      ...(resize && { size }),
-      ...(reinteract && { interaction }),
-      ...(leaveMerge && { merge: false }),
-      ...(rounds && { rounds, roundsFor: this.sketch().createdAt }),
-      ...(states && { states }),
-    });
-    if (resize || reinteract || leaveMerge || rounds || states)
-      afterNextRender(() => this.focusComment(comment), { injector: this.injector });
-    else this.focusComment(comment);
+    this.reveal(
+      {
+        size: String(comment.size),
+        interaction: comment.interaction ?? REST,
+        variant: comment.sketch?.variant ?? '',
+        state: comment.state,
+      },
+      () => this.focusComment(comment),
+    );
   }
 
   protected rememberCamera(camera: Camera | null) {
@@ -829,7 +809,16 @@ export class SketchViewComponent {
   }
 
   protected toggleMark(variant: string, line: DiffLine) {
-    this.marked.set(this.isMarked(variant, line) ? null : { variant, state: line.state });
+    if (this.isMarked(variant, line) || !line.box) {
+      this.marked.set(null);
+
+      return;
+    }
+
+    const frame = diffOutlineOf({ variant, state: line.state, box: line.box }).frameId;
+
+    this.marked.set({ variant, state: line.state });
+    this.reveal({ interaction: REST, variant, state: line.state }, () => this.canvasRef().zoomToFrame(frame));
   }
 
   protected pickable(variant: string) {
@@ -889,6 +878,38 @@ export class SketchViewComponent {
 
     this.confirmingDiscard.set(false);
     this.run('discard', discardSketch$(this.address()));
+  }
+
+  private reveal(
+    { size, interaction, variant, state }: { size?: string; interaction: string; variant: string; state: string },
+    focus: () => void,
+  ) {
+    const resize = size !== undefined && size !== this.matrix().size && this.matrix().sizes.includes(size);
+    const reinteract =
+      this.matrix().interaction !== ALL &&
+      interaction !== this.matrix().interaction &&
+      this.matrix().interactions.includes(interaction);
+    const leaveMerge = this.showing() === 'merge';
+    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
+    const folded = shown.find((round) => !round.open && round.variants.includes(variant));
+    const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
+    const unfold = this.matrix().rowHeads.some((head) => !head.open && head.key === stateRowKeyOf(state));
+    const states = unfold ? { ...this.openStates(), [state]: true } : null;
+
+    if (resize) this.size.set(size);
+    if (reinteract) this.interaction.set(interaction);
+    if (leaveMerge) this.shownMode.set('matrix');
+    if (rounds) this.openRounds.set(rounds);
+    if (states) this.openStates.set(states);
+    this.remember({
+      ...(resize && { size }),
+      ...(reinteract && { interaction }),
+      ...(leaveMerge && { merge: false }),
+      ...(rounds && { rounds, roundsFor: this.sketch().createdAt }),
+      ...(states && { states }),
+    });
+    if (resize || reinteract || leaveMerge || rounds || states) afterNextRender(focus, { injector: this.injector });
+    else focus();
   }
 
   private remember(pick: SketchViewPick) {

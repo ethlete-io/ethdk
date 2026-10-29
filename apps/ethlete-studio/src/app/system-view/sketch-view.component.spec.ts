@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { THEMES } from '../../themes';
+import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
@@ -144,6 +145,52 @@ describe('SketchViewComponent merge preview', () => {
 
     expect(outline?.style.width).toBe('8px');
     expect(outline?.style.height).toBe('4px');
+  });
+
+  it('leaves an interaction for rest and zooms to the frame of a marked changed box', async () => {
+    const zoomed = vi.spyOn(DesignCanvasComponent.prototype, 'zoomToFrame');
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-diff'))
+        return json({
+          target: 'components/card',
+          variant: new URL(url).searchParams.get('variant'),
+          states: [{ state: 'default', box: { x: 4, y: 2, width: 8, height: 4 } }],
+        });
+
+      return new Promise(() => undefined);
+    });
+    localStorage.setItem(
+      'ethlete-studio.call-view',
+      JSON.stringify({ sketchViews: { 'web sketch:components/card': { interaction: 'hover' } } }),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: ['hover'] })),
+    });
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    expect(fixture.componentInstance.interaction()).toBe('hover');
+
+    const root: HTMLElement = fixture.nativeElement;
+
+    root.querySelector<HTMLButtonElement>('[data-variant-diff-summary]')?.click();
+    await settle(fixture);
+    root.querySelector<HTMLButtonElement>('button[data-variant-diff]')?.click();
+    await settle(fixture);
+
+    expect(fixture.componentInstance.interaction()).toBe('rest');
+    expect(zoomed).toHaveBeenCalledWith('a default');
+    zoomed.mockRestore();
   });
 
   it('flips a drawing column to drawn with a note once its report turns 30 minutes old', async () => {
