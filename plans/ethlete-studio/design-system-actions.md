@@ -85,16 +85,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
   does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
 
-### 2.8 Labels and badges overlap very short frames in the sketch matrix - open
-
-- **Pain:** the `components/tree-row` sketch (8 states, 3 interactions, 3 variants, rows about 10 px
-  high) drew a matrix where the "232 px" size labels, the interaction labels and the "Agent still
-  drawing" badges lay over the frames and over each other. Tom: "holy das ist viel".
-- **Fix options:** 1. a row is never lower than its labels and badge; short frames get a minimum
-  row height (recommended). 2. a short part shows the badge once per column, not per frame.
-- **Process side:** a small component sketch draws one composed state (a stack of rows), not one
-  state per case times every interaction.
-
 ### 2.11 The "used in" label of a foundation draws its two lines on top of each other - open
 
 - **Pain:** `foundations/tokens` (Tom's screen, 2026-10-29): "every page of the product uses it"
@@ -120,16 +110,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Where:** the product switch in the System view. Seen one time, from a script race. Not
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
-
-### 3.31 A refactor sketch looks like a copy of "current" in Studio - open
-
-- **Pain:** `pages/sketches` "Use the comment pin" (one variant, a code refactor) shows "current"
-  and a side by side with no visible change. Tom asked "was genau ist hier nun anders?". The agent
-  needed a shot diff to answer: 8 x 4 px at the pin tip in `zoomed-page`, 4 x 1 px in
-  `page-sketch`. Studio shows neither the pixel result nor the changed files. Tom: "komische UX".
-- **Fix options:** 1. each variant head shows the diff result per state ("no pixel change",
-  "8 x 4 px") and a click marks the area on the frame (recommended; the CLI diff exists, see 4.35). 2. the head lists the changed files of the variant. 3. a sketch whose diff is empty or tiny
-  says "Refactor, no visible change" next to the round note.
 
 ### 3.32 `sketch report --done` without an earlier report reads like an error - open
 
