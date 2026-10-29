@@ -819,3 +819,11 @@ sketch` until the next merge of the part.
 - **Fix option:** a `--round-note` flag on `sketch variant --round`.
 - **Built (`1a47bbb78`):** `--round-note <text>`. Without it the CLI prints that `sketch ready`
   needs a note.
+
+### 2.9 Studio folds a changed state as "unchanged" after a `shared/` edit - fixed
+
+- **Pain:** on the `pages/flows` sketch the only change was in the sketch's `shared/flow-data.ts`.
+  Studio showed `flow` and `empty` as "unchanged in a" and folded them; `sketch ready` saw the
+  change. The server cached `unchangedStatesOf` with a key that hashed only the part folders.
+- **Built (`0e6bd90a1`):** the cache key also hashes the sketch's `shared/` and the variant folder.
+  Tom's :4402 needs a restart to get it.
