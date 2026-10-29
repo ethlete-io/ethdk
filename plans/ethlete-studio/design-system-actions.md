@@ -414,6 +414,14 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Also owed:** the button frame grid in Studio still uses the old plain table; Tom wants one look
   ("One grid look" sketch on `elements/canvas-frames`).
 
+### 5.43 No documented way to delete a merged file in a variant - open
+
+- **Pain:** "Use the canvas frames grid" on `pages/system`: the agent `rm`-ed
+  `state-grid.{ts,css}` in the variant; it is unclear whether the merge deletes the base file.
+  `sketch check` lists no unreferenced file left in a sketch folder.
+- **Fix options:** document that a missing variant file deletes the base file on merge (verify
+  first), or add `sketch rm`; `sketch check` lists unreferenced files.
+
 ### 5.35 Sketch commands need `--product` although only one product has the sketch - open
 
 - **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
