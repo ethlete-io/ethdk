@@ -254,7 +254,11 @@ const reported = (context: Context) =>
 
     const reported = reportSketch({ checkout: context.target, sketch, variant, author, message });
 
-    return typeof reported === 'string' ? fail(reported) : 0;
+    if (typeof reported === 'string') return fail(reported);
+
+    console.log(`reported on ${sketch.target} variant ${variant}: ${message}`);
+
+    return 0;
   });
 
 const ROUND_USAGE =

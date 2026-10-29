@@ -184,6 +184,12 @@ describe('status', () => {
     expect(markSketchReady({ checkout: target, sketch: ready as Sketch })).toBe(
       'elements/hero is ready, not in progress',
     );
+    expect(
+      reportSketch({ checkout: target, sketch: ready as Sketch, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
+    ).toBe(
+      'elements/hero is ready, not in progress - Studio shows a report only while the sketch is in progress, so nothing was recorded',
+    );
+    expect(existsSync(path)).toBe(false);
   });
 
   it('keeps the authors of each variant in the order of their first report, without duplicates', () => {

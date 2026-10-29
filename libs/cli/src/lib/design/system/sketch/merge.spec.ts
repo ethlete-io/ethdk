@@ -86,29 +86,38 @@ describe('mergeSketch', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const target = acme();
-    const ready = readySketch(target);
-    const found = { ...ready, sketch: picked(ready.sketch) };
-    const variantDir = join(found.sketch.dir, 'b');
+    const product = resolveAcme(target);
+    let drafted = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const variantDir = join(drafted.dir, 'b');
 
     writeFileSync(join(variantDir, 'elements/hero/hero.css'), '.acme-hero { background: var(--acme-accent); }');
     mkdirSync(join(variantDir, 'components/card'), { recursive: true });
     cpSync(join(target, DESIGN_DIR, 'acme-base/components/card'), join(variantDir, 'components/card'), {
       recursive: true,
     });
-    found.sketch = reportSketch({
+    drafted = reportSketch({
       checkout: target,
-      sketch: found.sketch,
+      sketch: drafted,
       variant: 'b',
       author: 'gpt-5.6-sol',
       message: 'phone',
     }) as Sketch;
-    found.sketch = reportSketch({
+    drafted = reportSketch({
       checkout: target,
-      sketch: found.sketch,
+      sketch: drafted,
       variant: 'b',
       author: 'claude-opus-5-5',
       message: 'phone',
     }) as Sketch;
+
+    const found = {
+      product,
+      sketch: picked(markSketchReady({ checkout: target, sketch: drafted }) as Sketch),
+    };
 
     expect(merge(target, found)).toEqual(['components/card', 'elements/hero']);
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain(
