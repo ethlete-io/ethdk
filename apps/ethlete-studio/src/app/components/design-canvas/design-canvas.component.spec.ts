@@ -519,6 +519,14 @@ describe('DesignCanvasComponent', () => {
     expect(frames()[0]?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
   });
 
+  it('sets the text of an empty frame in its own line height, so wrapped lines stay apart at any zoom', async () => {
+    const fixture = await render([{ ...FITTED, id: 'empty', width: 390, height: 120, empty: 'every page uses it' }]);
+    const cell = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-empty-cell]');
+
+    expect(cell?.classList).toContain('leading-tight');
+    expect(cell?.className).toContain('min(var(--et-design-canvas-label-scale),2)');
+  });
+
   it('draws an outline over a frame at its offset in the frame', async () => {
     const fixture = await render([{ ...FITTED, id: 'wide', width: 320, height: 200 }]);
 
