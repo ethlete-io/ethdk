@@ -1,4 +1,4 @@
-import { HttpClient, HttpEventType, HttpSentEvent, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpSentEvent, provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -11,7 +11,7 @@ describe('createHttpRequest', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
     });
     jest.useFakeTimers();
 

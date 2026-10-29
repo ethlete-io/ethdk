@@ -22,13 +22,6 @@ module.exports = [
   {
     files: ['**/*.ts'],
     rules: {
-      '@angular-eslint/directive-selector': [
-        'error',
-        {
-          type: 'attribute',
-          prefix: 'et',
-        },
-      ],
       '@angular-eslint/component-selector': [
         'error',
         {
@@ -38,6 +31,8 @@ module.exports = [
         },
       ],
       '@angular-eslint/no-input-rename': 'off',
+      '@angular-eslint/directive-selector': 'off',
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
     },
   },
   {

@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   displayName: 'cli',
   preset: '../../jest.preset.js',
   transform: {

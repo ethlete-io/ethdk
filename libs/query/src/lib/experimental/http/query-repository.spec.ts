@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DestroyRef, ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -12,7 +12,7 @@ describe('createQueryRepository', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
     });
 
     TestBed.runInInjectionContext(() => {

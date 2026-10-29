@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, ChangeDetectionStrategy } from '@angular/core';
 import { DialogImports, provideDialog } from '../../dialog.imports';
 import { DialogService } from '../../services';
 import { createDialogConfig } from '../../utils';
@@ -15,6 +15,7 @@ import { DialogStorybookComponent } from './dialog.storybook.component';
     }
   `,
   imports: [DialogImports],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [provideDialog()],
 })
 export class DialogHostStorybookComponent {

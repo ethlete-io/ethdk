@@ -9,6 +9,7 @@ import {
   inject,
   signal,
   viewChild,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import {
   CurrentElementVisibility,
@@ -43,6 +44,7 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
     },
   ],
   hostDirectives: [RootBoundaryDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'et-overlay-body',
   },

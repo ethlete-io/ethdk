@@ -18,3 +18,4 @@ CHANGELOG.md
 /.nx/workspace-data
 
 /.claude
+.nx/self-healing

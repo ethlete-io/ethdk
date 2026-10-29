@@ -386,7 +386,7 @@
                     </div>
                     <div class="et-qd-list-item">
                       <p>State</p>
-                      <pre>{{ query?.state$ | async | json }}</pre>
+                      <pre>{{ $safeNavigationMigration(query?.state$) | async | json }}</pre>
                     </div>
                   </ng-container>
                 }

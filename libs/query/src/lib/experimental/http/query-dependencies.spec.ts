@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideQueryClient } from './query-client';
@@ -10,7 +10,7 @@ describe('setupQueryDependencies', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideQueryClient(queryClientConfig), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideQueryClient(queryClientConfig), provideHttpClient(withXhr()), provideHttpClientTesting()],
     });
   });
 

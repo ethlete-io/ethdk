@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbImports } from '../../breadcrumb.imports';
 import { BreadcrumbItemDirective } from '../../directives';
@@ -6,6 +6,7 @@ import { BreadcrumbItemDirective } from '../../directives';
 @Component({
   selector: 'et-router-component-one',
   template: ` <h1>One</h1> `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class RouterOneComponent {}
@@ -27,6 +28,7 @@ export class RouterOneComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class RouterTwoComponent {}
@@ -51,6 +53,7 @@ export class RouterTwoComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class RouterThreeComponent {}
@@ -78,6 +81,7 @@ export class RouterThreeComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class RouterFourComponent {}
@@ -108,6 +112,7 @@ export class RouterFourComponent {}
     </ng-template>
   `,
   imports: [RouterLink, BreadcrumbImports, BreadcrumbItemDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class RouterFiveComponent {}

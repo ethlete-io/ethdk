@@ -40,7 +40,7 @@ export class AnimatableDirective implements OnInit {
 
   @Input('etAnimatable')
   set animatedElement(value: string | HTMLElement | null | undefined) {
-    let newElement: HTMLElement | null = null;
+    let newElement: HTMLElement | null;
     if (value === null || value === undefined || value === '') {
       newElement = this._elementRef.nativeElement;
     } else if (typeof value === 'string') {

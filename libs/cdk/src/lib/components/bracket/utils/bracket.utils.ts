@@ -210,8 +210,8 @@ export class Bracket {
     const isWinnerBracket = isUpperBracketMatch(currentRound);
     const isDoubleElimination = this.bracketType === 'double';
 
-    let colStart = 0;
-    let colEnd = 0;
+    let colStart: number;
+    let colEnd: number;
 
     let rowStart = isWinnerBracket ? this.winnerRowStart : this.loserRowStart;
     let rowEnd = isWinnerBracket ? this.winnerRowEnd : this.loserRowEnd;

@@ -9,16 +9,16 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "20.3.34",
-    "@angular/core": "20.3.34",
-    "@angular/forms": "20.3.34",
-    "@angular/router": "20.3.34",
+    "@angular/common": "22.2.3",
+    "@angular/core": "22.2.3",
+    "@angular/forms": "22.2.3",
+    "@angular/router": "22.2.3",
     "@ethlete/core": "^4.0.3",
     "@ethlete/types": "^1.6.2",
-    "@nx/devkit": "21.6.11",
+    "@nx/devkit": "24.0.2",
     "rxjs": "7.8.2",
     "socket.io-client": "4.8.4",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "generators": "./generators/generators.json"
 }

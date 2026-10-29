@@ -28,7 +28,7 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   selector: 'et-inline-tab-body',
   templateUrl: 'inline-tab-body.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   animations: [tabAnimations.translateTab],
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {

@@ -1,9 +1,7 @@
-import { FocusMonitor, FocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
-import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, NgZone, ViewEncapsulation, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -15,7 +13,6 @@ import { Subject, fromEvent, merge, takeUntil, tap } from 'rxjs';
 import { SwipeHandlerService } from '../../../../../../services';
 import { ProvideThemeDirective, THEME_PROVIDER } from '../../../../../../theming';
 import { SwipeEndEvent, SwipeUpdateEvent } from '../../../../../../types';
-import { OVERLAY_CONFIG } from '../../constants';
 import { OverlayConfig, OverlayDragToDismissConfig } from '../../types';
 import { OverlayRef } from '../../utils';
 
@@ -66,16 +63,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
   readonly elementRef = this._elementRef;
 
   constructor() {
-    super(
-      inject(ElementRef),
-      inject(FocusTrapFactory),
-      inject(DOCUMENT),
-      inject(OVERLAY_CONFIG),
-      inject(InteractivityChecker),
-      inject(NgZone),
-      inject(CdkOverlayRef),
-      inject(FocusMonitor),
-    );
+    super();
 
     if (this._parentThemeProvider) {
       this._themeProvider.syncWithProvider(this._parentThemeProvider);

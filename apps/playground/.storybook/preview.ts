@@ -67,6 +67,6 @@ const customViewports = {
 };
 
 export const parameters: AngularParameters = {
-  viewport: { viewports: customViewports },
+  viewport: { options: customViewports },
 };
 export const tags = ['autodocs'];

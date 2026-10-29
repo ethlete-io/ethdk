@@ -27,6 +27,7 @@ module.exports = [
         {
           type: 'attribute',
           prefix: 'et',
+          style: 'camelCase',
         },
       ],
       '@angular-eslint/component-selector': [

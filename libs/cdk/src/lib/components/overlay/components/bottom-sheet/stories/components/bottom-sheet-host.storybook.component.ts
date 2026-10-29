@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, ChangeDetectionStrategy } from '@angular/core';
 import { BottomSheetImports, provideBottomSheet } from '../../bottom-sheet.imports';
 import { BottomSheetService } from '../../services';
 import { createBottomSheetConfig } from '../../utils';
@@ -15,6 +15,7 @@ import { BottomSheetStorybookComponent } from './bottom-sheet.storybook.componen
     }
   `,
   imports: [BottomSheetImports],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [provideBottomSheet()],
 })
 export class BottomSheetHostStorybookComponent {

@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpResponse, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   createEnvironmentInjector,
@@ -36,7 +36,7 @@ describe('createQuerySnapshotFn', () => {
     queryClientRef = createQueryClientConfig({ baseUrl: 'https://example.com', name: 'test' });
 
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideQueryClient(queryClientRef)],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideQueryClient(queryClientRef)],
     });
 
     const environmentInjector = TestBed.inject(EnvironmentInjector);

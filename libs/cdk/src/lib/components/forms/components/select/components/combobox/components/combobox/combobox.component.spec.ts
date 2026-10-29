@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -14,6 +14,7 @@ type Option = { label: string; value: string };
       <et-combobox [options]="options()" [multiple]="false" bindLabel="label" bindValue="value" />
     </et-select-field>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ComboboxImports, ReactiveFormsModule],
 })
 class AsyncOptionsComboboxHostComponent {

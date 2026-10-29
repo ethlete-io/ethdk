@@ -1,4 +1,12 @@
-import { Component, inject, Injectable, Injector, ViewContainerRef, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  inject,
+  Injectable,
+  Injector,
+  ViewContainerRef,
+  ViewEncapsulation,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { OverlayImports } from '../../overlay.imports';
 import { OverlayService } from '../../services';
@@ -63,6 +71,7 @@ export class StorybookExampleService {}
   `,
   imports: [OverlayImports],
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     .et-bottom-sheet,
     .et-overlay,

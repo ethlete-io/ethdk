@@ -4,10 +4,10 @@
 </div>
 
 <p>Posts 0:</p>
-<pre *etQuery="postsQuery() as posts">{{ posts?.[0] | json }}</pre>
+<pre *etQuery="postsQuery() as posts">{{ $safeNavigationMigration(posts?.[0]) | json }}</pre>
 
 <p>Response Signal Posts 0:</p>
-<pre>{{ posts()?.[0] | json }}</pre>
+<pre>{{ $safeNavigationMigration(posts()?.[0]) | json }}</pre>
 
 <p>Post</p>
 <pre *etQuery="postQuery() as post">{{ post | json }}</pre>

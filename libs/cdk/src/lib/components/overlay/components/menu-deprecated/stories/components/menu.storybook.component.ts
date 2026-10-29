@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CdkMenuModule } from '../../menu-module';
 
 @Component({
@@ -24,6 +24,7 @@ import { CdkMenuModule } from '../../menu-module';
     <p>{{ activeOption }}</p>
   `,
   imports: [CdkMenuModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .my-menu {

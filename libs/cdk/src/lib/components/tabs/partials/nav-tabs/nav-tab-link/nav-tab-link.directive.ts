@@ -15,6 +15,7 @@ import {
   numberAttribute,
   OnDestroy,
   OnInit,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NavTabsComponent } from '../../../components/nav-tabs/nav-tabs.component';
@@ -33,6 +34,7 @@ let nextUniqueId = 0;
   host: {
     class: 'et-nav-tab-link',
   },
+  changeDetection: ChangeDetectionStrategy.Eager,
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, FocusableOption {
@@ -53,10 +55,11 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
       return false;
     }
 
-    const options: boolean | IsActiveMatchOptions = this._linkConfig
-      ? isActiveMatchOptions(this._linkConfig?.routerLinkActiveOptions)
-        ? this._linkConfig?.routerLinkActiveOptions
-        : this._linkConfig?.routerLinkActiveOptions.exact
+    const activeOptions = this._linkConfig?.routerLinkActiveOptions;
+    const options: boolean | Partial<IsActiveMatchOptions> = activeOptions
+      ? isActiveMatchOptions(activeOptions)
+        ? activeOptions
+        : 'exact' in activeOptions && activeOptions.exact
       : false;
 
     // Stolen from https://github.com/angular/angular/blob/main/packages/router/src/directives/router_link_active.ts#L217
@@ -181,6 +184,8 @@ export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, Fo
   };
 }
 
-function isActiveMatchOptions(options: { exact: boolean } | IsActiveMatchOptions): options is IsActiveMatchOptions {
-  return !!(options as IsActiveMatchOptions).paths;
+function isActiveMatchOptions(
+  options: { exact: boolean } | Partial<IsActiveMatchOptions>,
+): options is Partial<IsActiveMatchOptions> {
+  return !!(options as Partial<IsActiveMatchOptions>).paths;
 }
