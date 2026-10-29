@@ -958,3 +958,13 @@ sketch` until the next merge of the part.
 - **Fix options:** document that a missing variant file deletes the base file on merge (verified
   first), or add `sketch rm`; `sketch check` lists unreferenced files.
 - **Fix done (84b559f6a):** the skill documents that a merge deletes the product file the picked variant no longer holds; `sketch check` warns of a variant `.ts`/`.css` file nothing imports.
+
+### 3.35 One of three refactor sketches with no pixel change did not auto-merge - fixed (1ceb1ca77)
+
+- **Pain:** "Use the agent logos asset" on three hosts, each with 0 px diff in every state.
+  `sketch ready` auto-merged `pages/sketches` and `components/comment-pin`, but only printed
+  "pages/inbox is ready"; Tom had to merge it. `design shot pages/inbox --states --variants`
+  confirms "no pixel change" in all five states. Cause not known (suspects: open comments on the
+  part, the folded states, or a stale hash).
+- **Fix options:** 1. find the cause; `sketch ready` names why it did not auto-merge (recommended). 2. always say "auto-merge skipped: <reason>".
+- **Fix done (1ceb1ca77):** `sketch ready` prints `auto-merge skipped: <reason>` (the changed states, a failed shot with its message, a variant holding another part). Cause: a rerun of the `pages/inbox` check now passes all five states, so the miss was transient; the old code swallowed every shot error as a change, most likely one of the three parallel `ready` runs failed a shot while the others merged.
