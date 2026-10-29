@@ -5,7 +5,9 @@ import { Browser } from './thumb';
  * changed pixels it marks.
  */
 export type SheetCell =
-  { label: string; png: Buffer } | { label: string; error: string } | { label: string; before: Buffer; after: Buffer };
+  | { label: string; png: Buffer }
+  | { label: string; error: string }
+  | { label: string; before: Buffer; after: Buffer; over?: string };
 
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
 
@@ -59,14 +61,28 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
     context.drawImage(image, 0, 0);
     return context.getImageData(0, 0, canvas.width, canvas.height);
   };
-  for (const canvas of document.querySelectorAll('canvas[data-before]')) {
-    const [before, after] = await Promise.all([pixelsOf(canvas.dataset.before), pixelsOf(canvas.dataset.after)]);
-    const diff = diffPixelsOf(before, after);
-    canvas.width = diff.width;
-    canvas.height = diff.height;
-    canvas.getContext('2d').putImageData(new ImageData(diff.data, diff.width, diff.height), 0, 0);
-    canvas.previousElementSibling.textContent += diff.changed === 0 ? ' - no pixel change' : \` - \${diff.changed} px changed\`;
+  const lines = [];
+  for (const figure of document.querySelectorAll('figure[data-diff]')) {
+    const caption = figure.firstElementChild;
+    const label = caption.textContent;
+    const canvas = figure.querySelector('canvas');
+    let result = 'no pixel change';
+    if (canvas) {
+      const [before, after] = await Promise.all([pixelsOf(canvas.dataset.before), pixelsOf(canvas.dataset.after)]);
+      const diff = diffPixelsOf(before, after);
+      canvas.width = diff.width;
+      canvas.height = diff.height;
+      canvas.getContext('2d').putImageData(new ImageData(diff.data, diff.width, diff.height), 0, 0);
+      const above = [...(figure.parentElement.previousElementSibling?.children ?? [])].find(
+        (sibling) => sibling.firstElementChild.textContent === figure.dataset.over,
+      );
+      if (above) canvas.style.width = above.getBoundingClientRect().width + 'px';
+      if (diff.changed > 0) result = diff.changed + ' px changed';
+      caption.textContent += ' - ' + result;
+    }
+    lines.push(label + ': ' + result);
   }
+  return lines;
 })(${diff})`;
 
 const escapeHtml = (text: string) =>
@@ -84,19 +100,19 @@ export const contactSheetHtml = (rows: SheetCell[][]) => {
           ? `<pre class="same">no pixel change</pre>`
           : `<canvas data-before="${dataUrlOf(entry.before)}" data-after="${dataUrlOf(entry.after)}"></canvas>`;
   const cell = (entry: SheetCell) =>
-    `<figure><figcaption>${escapeHtml(entry.label)}</figcaption>${pictureOf(entry)}</figure>`;
+    `<figure${'before' in entry ? ` data-diff data-over="${escapeHtml(entry.over ?? '')}"` : ''}><figcaption>${escapeHtml(entry.label)}</figcaption>${pictureOf(entry)}</figure>`;
 
   return `<!doctype html><meta charset="utf-8"><style>
 body{margin:0;padding:16px;width:max-content;background:#d4d4d8;font:600 13px/1.2 system-ui,sans-serif;color:#18181b}
 .row{display:flex;align-items:flex-start;gap:16px}.row+.row{margin-top:24px}
 figure{margin:0}figcaption{margin-bottom:6px}
-img,canvas{display:block;background:#fff}
+img,canvas{display:block;background:#fff}canvas{height:auto}
 pre{margin:0;max-width:420px;padding:8px;background:#fee2e2;color:#7f1d1d;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap}
 .same{background:#dcfce7;color:#14532d}
 </style>${rows.map((row) => `<div class="row">${row.map(cell).join('')}</div>`).join('')}`;
 };
 
-/** Draws the cells into one PNG in the given browser. */
+/** Draws the cells into one PNG in the given browser, and returns one line per diff cell with its pixel result. */
 export const contactSheetOf = async (options: { browser: Browser; rows: SheetCell[][] }) => {
   const context = await options.browser.newContext({ viewport: { width: 1280, height: 1 } });
 
@@ -106,14 +122,15 @@ export const contactSheetOf = async (options: { browser: Browser; rows: SheetCel
     await page.setContent(contactSheetHtml(options.rows));
     await page.evaluate(`Promise.all([...document.images].map((image) => image.decode()))`);
 
-    if (options.rows.some((row) => row.some((cell) => 'before' in cell)))
-      await page.evaluate(drawDiffs(diffPixelsOf.toString()));
+    const diffs = options.rows.some((row) => row.some((cell) => 'before' in cell))
+      ? ((await page.evaluate(drawDiffs(diffPixelsOf.toString()))) as string[])
+      : [];
 
     const width = (await page.evaluate('document.body.scrollWidth')) as number;
 
     await page.setViewportSize({ width: Math.max(width, 1), height: 1 });
 
-    return await page.screenshot({ fullPage: true, type: 'png' });
+    return { png: await page.screenshot({ fullPage: true, type: 'png' }), diffs };
   } finally {
     await context.close();
   }

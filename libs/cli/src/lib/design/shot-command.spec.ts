@@ -118,7 +118,7 @@ describe('withDiffRows', () => {
     expect(withDiffRows({ rows, plan, sheet })).toEqual([
       sheet[0],
       sheet[1],
-      [{ label: 'a / rest vs merged', before: png('m'), after: png('a') }],
+      [{ label: 'a / rest vs merged', before: png('m'), after: png('a'), over: 'a / rest' }],
       sheet[2],
     ]);
   });

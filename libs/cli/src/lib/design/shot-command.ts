@@ -40,7 +40,9 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
     const diffs = row.flatMap((cell, index) => {
       const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '');
 
-      return before && 'png' in cell ? [{ label: `${cell.label} vs merged`, before, after: cell.png }] : [];
+      return before && 'png' in cell
+        ? [{ label: `${cell.label} vs merged`, before, after: cell.png, over: cell.label }]
+        : [];
     });
 
     return diffs.length > 0 ? [row, diffs] : [row];
@@ -224,7 +226,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return 1;
       }
 
-      const png = await queue.run((browser) =>
+      const { png, diffs } = await queue.run((browser) =>
         contactSheetOf({ browser, rows: variants ? withDiffRows({ rows, plan, sheet }) : sheet }),
       );
       const out = resolve(
@@ -235,6 +237,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, png);
       console.log(out);
+
+      for (const line of diffs) console.log(line);
 
       return 0;
     } finally {

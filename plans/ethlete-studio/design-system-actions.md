@@ -126,19 +126,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Where:** `shot-command.ts` in `libs/cli/src/lib/design`.
 - **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
 
-### 4.9 Diff cells of a page make the contact sheet very wide - open
-
-- **Pain:** the diff row (5.15) draws each cell at the natural PNG size, so a page diff makes the
-  sheet wide.
-- **Where:** `contact-sheet.ts` in `libs/cli/src/lib/design`.
-- **Fix option:** scale diff cells to the width of the state cell above them.
-
-### 4.10 `design shot` keeps the pixel diff result inside the PNG - open
-
-- **Pain:** `shot --states --variants` prints only the PNG path. The agent must open the image to
-  learn "no pixel change" or "N px changed".
-- **Fix option:** print one line per diff cell, for example `a / sizes: no pixel change`.
-
 ### 4.11 No standalone render of an asset - open
 
 - **Pain:** to check `studio-mark.svg` outside Studio, the agent wrote a Playwright script. Its
@@ -154,6 +141,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+### 5.18 An unknown colour theme name draws without a warning - open
+
+- **Pain (4.10 agent, 2026-10-29):** the agent set `color: 'success'` on an sdk button variant. The
+  sdk tokens define only `accent` and `danger`, so the button drew in the fallback colour, and no
+  check said why.
+- **Fix option:** `design check` (or the render check) flags a theme name the product tokens do
+  not define.
 
 ## 6. Agent process
 

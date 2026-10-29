@@ -700,3 +700,18 @@ sketch` until the next merge of the part.
 - **Fix option:** create the folder, or print "(create it when needed)".
 - **Fix done:** `sketch new` and `sketch variant` create `<variant>/assets/`. A merge copies only
   the files below it, so an empty folder changes nothing.
+
+### 4.10 `design shot` keeps the pixel diff result inside the PNG - fixed
+
+- **Pain:** `shot --states --variants` prints only the PNG path. The agent must open the image to
+  learn "no pixel change" or "N px changed".
+- **Fix option:** print one line per diff cell, for example `a / sizes: no pixel change`.
+- **Fix done:** `design shot --states --variants` prints one line per diff cell after the PNG path, for example `a / danger vs merged: 2836 px changed`.
+
+### 4.9 Diff cells of a page make the contact sheet very wide - fixed
+
+- **Pain:** the diff row (5.15) draws each cell at the natural PNG size, so a page diff makes the
+  sheet wide.
+- **Where:** `contact-sheet.ts` in `libs/cli/src/lib/design`.
+- **Fix option:** scale diff cells to the width of the state cell above them.
+- **Fix done:** a diff cell is as wide as the state cell above it; a page diff no longer widens the sheet.

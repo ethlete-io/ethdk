@@ -22,12 +22,13 @@ describe('contactSheetHtml', () => {
   it('marks a diff of equal PNGs as no pixel change, and draws one of different PNGs into a canvas', () => {
     const html = contactSheetHtml([
       [
-        { label: 'a vs merged', before: Buffer.from('a'), after: Buffer.from('a') },
-        { label: 'b vs merged', before: Buffer.from('a'), after: Buffer.from('b') },
+        { label: 'a vs merged', before: Buffer.from('a'), after: Buffer.from('a'), over: 'a' },
+        { label: 'b vs merged', before: Buffer.from('a'), after: Buffer.from('b'), over: 'b' },
       ],
     ]);
 
     expect(html).toContain('<pre class="same">no pixel change</pre>');
+    expect(html).toContain('<figure data-diff data-over="b"><figcaption>b vs merged</figcaption>');
     expect(html).toContain(
       '<canvas data-before="data:image/png;base64,YQ==" data-after="data:image/png;base64,Yg=="></canvas>',
     );
@@ -77,9 +78,10 @@ describe('contactSheetOf', () => {
     const context = { newPage: vi.fn().mockResolvedValue(page), close: vi.fn() };
     const browser = { newContext: vi.fn().mockResolvedValue(context) } as unknown as Browser;
 
-    const png = await contactSheetOf({ browser, rows: [[{ label: 'x', png: Buffer.from('a') }]] });
+    const { png, diffs } = await contactSheetOf({ browser, rows: [[{ label: 'x', png: Buffer.from('a') }]] });
 
     expect(png.toString()).toBe('png');
+    expect(diffs).toEqual([]);
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 900, height: 1 });
     expect(page.screenshot).toHaveBeenCalledWith({ fullPage: true, type: 'png' });
     expect(context.close).toHaveBeenCalled();
@@ -88,16 +90,25 @@ describe('contactSheetOf', () => {
   it('draws the diff cells in the page before it measures the sheet', async () => {
     const page = {
       setContent: vi.fn(),
-      evaluate: vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined).mockResolvedValueOnce(700),
+      evaluate: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(['x vs merged: 12 px changed'])
+        .mockResolvedValueOnce(700),
       setViewportSize: vi.fn(),
       screenshot: vi.fn().mockResolvedValue(Buffer.from('png')),
     };
     const context = { newPage: vi.fn().mockResolvedValue(page), close: vi.fn() };
     const browser = { newContext: vi.fn().mockResolvedValue(context) } as unknown as Browser;
 
-    await contactSheetOf({ browser, rows: [[{ label: 'x', before: Buffer.from('a'), after: Buffer.from('b') }]] });
+    const { diffs } = await contactSheetOf({
+      browser,
+      rows: [[{ label: 'x', before: Buffer.from('a'), after: Buffer.from('b') }]],
+    });
 
+    expect(diffs).toEqual(['x vs merged: 12 px changed']);
     expect(page.evaluate.mock.calls[1]?.[0]).toContain('function diffPixelsOf');
+    expect(page.evaluate.mock.calls[1]?.[0]).toContain('canvas.style.width = above.getBoundingClientRect().width');
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 700, height: 1 });
   });
 });
