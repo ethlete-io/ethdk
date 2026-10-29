@@ -1,5 +1,122 @@
 # ethlete-studio
 
+## 0.2.0-next.10
+
+### Minor Changes
+
+- Comments show an "Addressed in round …" badge once the agent, a new round, a merge or a discard answered them, and each thread has a Resolve button: only you resolve a comment.
+- A merged part that changed outside a sketch shows a "changed" badge in the part list and above its frame.
+- `sketch new --variant-note` keeps each variant's note in `sketch.json` instead of overwriting the part's merged note; Studio shows it in the variant's head, and a merge gives it to a new part.
+- A part with a `grid` draws the states it places in one dense frame, a labelled cell per state, instead of a frame per state.
+- The Flows view draws a page that exists only as an open sketch from that sketch's first variant.
+- The sketch matrix folds a state that no shown variant changes into one thin row below the changed rows. A click opens or folds it again, and the sketch view remembers the choice.
+- The comment sidebar hides resolved threads and shows them read-only, with who resolved them and why, behind a "Show resolved" toggle.
+- The sketch view says under each variant how many states differ in pixels from the merged part; the list names each changed box, and a click outlines it on the frame.
+- Studio names the agent model that made something: each sketch variant head shows its first author and "+N", an agent reply shows its model, a part shows "made by", and the report tooltip names its author.
+- Tell a real agent question from an answered thread: the tree badge reads "question" or "answered", and only questions count in "N ?". The sketch view pins only sketch comments and links to the product part's comments.
+- You can read and reply to a comment thread in its pin. A question from the agent shows in the sidebar, on its pin, in the tree and on the Comment button.
+- The sketch of an element shows each page that uses it with every variant swapped in, and the part view shows the pages that use a part.
+- The design canvas lays frames out left to right along lines and draws each line with its label.
+- Comment on flow frames: a comment there belongs to the state at the shown preset, so it also pins on the part canvas. A flow remembers its picked preset.
+- The system tree lists a product's flows; a flow shows its states at one preset, picked at the top, with the lines between them.
+- A file change reloads only the frames of the parts it touches, at most four at a time with visible frames first; a waiting frame shows an accent dot and the status bar counts "Rendering N frames".
+- The sketch matrix has an interaction switch for all cells, and a comment on a hover, focus, active or disabled cell keeps its interaction: its pin shows only there, other cells count it.
+- The sketch merge preview "Where <part> is used" shows only states the merge visibly changes, outlines the part in the accent colour, groups unchanged states per part into one line, and shows a failed row as an error.
+- A merge refused for a stale baseline shows the reason, the changed parts and the rebase command with a copy button. The sidebar marks a running merge "merging", and a successful merge selects the target part.
+- The New product screen has a form: a name and an optional base product. Studio creates the product through the design server and picks it; a refusal shows in red.
+- Studio shows notes on states on the part canvas and in every flow, and free flow notes as headings. A Note mode writes, changes and deletes them.
+- The part view shows a small part as a grid of state tiles fitted to their content, and a part with `widths` at each width.
+- The part view is a table: a row per state, a column for rest and each interaction the part declares, drawn with the interaction forced.
+- The product picker names a base by its last folder ("inherits from web"). The New product form offers `@ethlete/components` as a base.
+- The product picker is always a select, also with one product. Its last option, "New product", shows the command that creates a product, with a copy button.
+- Remove the old Calls view: Studio opens on the design system view, where legacy calls live under Legacy.
+- SDK components in Studio take their surfaces, teal accent, control heights, radii and font sizes from the Studio tokens. The font and radius tokens no longer resolve to an invalid value.
+- Every state grid, the button grid too, draws as one sheet whose cells sit on the surface colour.
+- The sketch view shows each state of the part as now and as every variant side by side, at one picked size, with a merge preview.
+- While an agent still draws a sketch round, the sketch view dims each frame of its variants under an "Agent still drawing" label.
+- The sketch view shows each round as its own band with its title, newest on top.
+- The sketch matrix groups variant columns by round. The newest round is open; an older round folds into one column with its title, note and variants. A click opens or folds a round, remembered per sketch.
+- Show open sketches in the system view: a Sketches group, a "sketch open" badge on the target part, a sketch canvas with the current part beside each variant, and pick, merge (with its preview) and discard.
+- Draw a small part in one canvas frame: a grid with a column per interaction and a row per state. A comment on a cell still targets that state and interaction.
+- A part's state grid draws its cells as one sheet on a sunken frame, grouped into states by interaction and rest-only states packed a line per column count.
+- The System view lists the old design calls under Legacy, draws each one's variants on the canvas, and can mark a call transferred.
+- Studio gets a System view that lists a product's parts by layer and draws the picked part's states on the canvas at every preset.
+- The part tree lists a part's frames instead of its states, and a click opens that frame. A part drawn in one frame is a leaf.
+- The tree lists a page that uses wireframe kit parts under Wireframes, with the number of kit parts next to it.
+
+### Patch Changes
+
+- The design server sends a `flows` event when a flow file changes, and Studio reads the flows again, so a flow edit shows without a server restart.
+- The design frame page posts `Esc` to its parent. The Studio canvas now leaves an active cross-origin frame on `Esc` and takes its height from the frame page.
+- The design server draws merge compares and plain `/__design/shot` asks before Studio's canvas shots, which now ask with `priority=low`.
+- The app icon is the Studio mark: a stroke S, dark on a teal tile.
+- The sidebar header shows the Studio mark beside a "Studio" label.
+- Note cards no longer cover frames: the notes of a grid cell hang below the whole grid, every layout keeps room below a noted frame, and a note column stops growing at twice its size when zoomed out.
+- Merging a sketch variant no longer needs a note.
+- Open comments on a sketch no longer disable Merge and Discard.
+- A click on a changed state under a sketch variant now also moves the camera to that state's rest frame and zooms in, so the outlined box is visible.
+- `sketch variant --round` stores why the running round lost in its own `lost` field instead of overwriting the round's note, and `--round-note` sets the new round's note so `sketch ready` accepts it.
+- A Legacy call frame shows a picture that matches its live page, and no longer flashes white when it turns live.
+- The canvas fits its frames at the top of the view, and fits again once fitted frames report their size.
+- The canvas stacks frames, flow lines, notes, comment pins and open popovers in that order, so a note card no longer covers an open comment thread or the note editor.
+- Canvas frames no longer flash white on a design change, and fitted frames no longer open huge after a reload.
+- The part and sketch views have a comment mode (`C` or the Comment button): click a frame or a state label to write a comment, and withdraw one from its pin.
+- A comment sidebar lists the product's open comments and jumps to their pins, open comments lock a sketch's merge, and the sketch matrix marks missing states.
+- A design server no longer outlives a Studio that dies without a clean exit.
+- In a dev build, the design server line reads `stale` when the `libs/cli` source is newer than the built cli runtime, or a source file was deleted. A restart rebuilds it.
+- Remove the host commands only the old Calls view used: call statuses, verdicts, modes, closed states, new variants and check receipts.
+- Studio: a frame sized to its content no longer grows, shrinks and grows again when the part uses `100vh` or `100vw`; it drops the measure its own resize caused.
+- A long flow line label widens the gap between its two frames, up to a limit; above it the label wraps.
+- Flow frames note the comments made at another size, as the part canvas does.
+- Clicking a comment keeps the canvas zoom, an open pin shows an accent ring, and sketch rows drop their layer prefix.
+- A new sketch round folds the older rounds again, even when the user opened one of them before.
+- Studio forgets the fitted cameras older builds saved, so a part such as `components/button` opens fitted at the top instead of zoomed and pushed down.
+- A frame on the canvas shows its border on all four edges at fractional screen scales. The border is drawn above the live page and its screenshot instead of beneath them.
+- A page frame's label names its state as well as its size ("comment open · desktop"), so two states at one size can be told apart.
+- A fitted frame drops its border, a live frame shows a "Live · Esc" marker and ends when comment mode starts, and closing a frame no longer throws a cross-origin `SecurityError`.
+- A frame that throws at runtime now reloads on the next change that redraws errored frames, like a frame with a build error.
+- Show the system tree with the SDK tree. Legacy starts folded beside products and splits its calls into folded stage sections with a count. The open groups survive a reload.
+- Give every fitted tile in a matrix column the width of the widest one, so the right edges line up. The part keeps its own size at the left.
+- A matrix row of very short frames keeps room for its labels and the "Agent still drawing" badge, so they no longer reach into the next row.
+- In the part matrix the next row starts below the tallest note column of the row above, so a note card no longer covers a frame or its label.
+- The sketch merge preview shows the rendering dot while it compares the states before and after the merge.
+- The merge preview fits its first changed row at a readable zoom instead of the whole column, and shows the part count and elapsed seconds while it compares.
+- Studio: include native panic backtraces in diagnostic output.
+- Canvas frames have no resize handle any more, and a size dragged in an older Studio is forgotten: a fitted tile always takes its measured content size.
+- An in-progress sketch says "Not ready yet" instead of "The agent is still drawing"; a live agent report still shows as its own line.
+- Note cards give way to their marker once the canvas is zoomed out past where labels hold their size.
+- Turning on note mode also turns on Show notes, so a new note stays in view after save.
+- A pointed note's marker and card share a number, and their line shows only on hover. A pointed note shows only at its size; the frame label counts notes at other sizes.
+- Studio says "The design server is older than Studio - restart it" when a design request gets an HTML page instead of JSON.
+- The part table no longer labels a frame with comments in another interaction, since each interaction has its own column there.
+- A note with a point shows a small marker at that point, while its card sits below the frame with the other notes, joined to the marker by a thin line, so no card covers the design.
+- A tree row with a question now shows only the "question" badge, not also "comment open".
+- On macOS, a crashed WebKit content process now gets a new Studio window at the same URL and size, so later trackpad pinches no longer crash it again.
+- Studio opens the checkout picked last after a restart.
+- Studio restores the picked entry, its zoom, and a sketch's size, interaction and merge preview after a reload. The sketch header shows the picked variant in the accent colour, a labelled note field, and "Needs a note".
+- In a dev build, restarting the design server first rebuilds the CLI runtime and shows the build in the footer log; a failed build keeps the server stopped.
+- Studio starts its own design server and draws the frames again when a server it did not start ends.
+- Restore the host command that reports sketch report changes, so a drawing agent's progress reaches Studio live again.
+- A new sketch on a part no longer opens with its round folded: Studio keeps the open and folded rounds for the sketch they belong to.
+- Studio remembers only a camera the user moved; a fit forgets it, so an old fit no longer comes back as a zoom after a reload.
+- Select lists open on Linux again, a call clicked beside the project picker opens, and a tile says when the checkout's `@ethlete/cli` draws no pictures.
+- The canvas 100 % button and `Shift+0` show the selected frame at its top-left instead of zooming around the middle.
+- A "Show notes" toggle in the toolbar hides or shows the notes on the canvas. It starts on and is remembered per product.
+- The sketch matrix shows every interaction by default, a row per state and interaction; a single interaction stays a filter, and Studio remembers the pick.
+- A sketch shows only the comments made in it. The comments of an earlier sketch on the same target no longer appear as pins on the new variants or as a comment mark in the tree.
+- Shrink the space between state groups in a sketch matrix: a group now starts twice the row gap below the row above, not two and a half times.
+- Studio loads its tokens from the three design parts colors, type and spacing instead of one tokens sheet.
+- A sketch report older than 30 minutes no longer blocks its variant: Studio draws the variant's frames and notes "No report for 30 min" in the column head. A new report restores the drawing state.
+- The system view remembers its product, the selected entry and the canvas camera per entry over a reload. A group that holds the selection opens when the selection changes and can then fold.
+- The system view picks its themes per shown entry: a part wears its product's themes, a Legacy call its design project's. The empty state shows the `et design product new` command with a copy button.
+- The select picker shadow takes its colour from the surface and colour theming tokens instead of hardcoded values.
+- Studio turns off the Tailwind colour palette, tints its shadows with the shadow colour token, and finds its error colour by theme type. The unused canvas demo view is gone.
+- Keep tree row badges on one line and give the comment draft popover a bordered form field.
+- Prevent macOS WebKit freezes when design frames reload, and keep previous content visible while asynchronous drawings finish loading.
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+- The `used in` row of a part view shows one "used in all N pages" label instead of a frame per page when every page of the product uses the part.
+- The text of an empty frame, like "every page of the product uses it", keeps its wrapped lines apart and inside the box when zoomed out.
+
 ## 0.2.0-next.9
 
 ### Minor Changes
