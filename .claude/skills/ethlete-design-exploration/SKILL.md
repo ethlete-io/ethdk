@@ -167,7 +167,7 @@ part may wrap an asset in a named export. A product finds its base product's ass
 variant adds or changes an asset in its own `<variant>/assets/` folder (`sketch new` and `sketch variant`
 print it next to the part file), and a merge copies it into the product's. Size an inline SVG with
 `svgAsset(mark, { size: 32 })` from `@design-system`, never by replacing its `width`/`height` as a
-string. `design check` fails an SVG asset with no root `<svg>` or without
+string; `class` and `attrs` (`{ 'aria-hidden': 'true' }`) set the rest of the root's attributes. `design check` fails an SVG asset with no root `<svg>` or without
 `xmlns="http://www.w3.org/2000/svg"` (an `<img src>` and an image viewer do not draw it). The part hash behind `design check` and "changed outside a sketch" counts the bytes of
 the assets a part uses.
 

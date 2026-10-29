@@ -25,6 +25,20 @@ describe('svgAsset', () => {
     );
   });
 
+  it('sets a class and attributes on the root svg, replacing ones it already has', () => {
+    const raw = '<svg class="old" aria-hidden="false" viewBox="0 0 8 8"><path class="x" d="M0 0h8"/></svg>';
+
+    expect(svgAsset(raw, { size: 16, class: 'st-logo', attrs: { 'aria-hidden': 'true', focusable: 'false' } })).toBe(
+      '<svg width="16" height="16" class="st-logo" aria-hidden="true" focusable="false" viewBox="0 0 8 8"><path class="x" d="M0 0h8"/></svg>',
+    );
+  });
+
+  it('escapes quotes in attribute values', () => {
+    expect(svgAsset('<svg viewBox="0 0 8 8"/>', { size: 8, attrs: { 'aria-label': 'a "b" & c' } })).toBe(
+      '<svg width="8" height="8" aria-label="a &quot;b&quot; &amp; c" viewBox="0 0 8 8"/>',
+    );
+  });
+
   it('throws on a string without an svg element', () => {
     expect(() => svgAsset('<div></div>', { size: 16 })).toThrow('no <svg> element');
   });
