@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
+import { AddressInfo, createServer as createNetServer } from 'net';
 import { basename, dirname, relative, resolve, sep } from 'path';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
@@ -511,13 +512,27 @@ const designExplore = ({
  * (0 picks a free one), quiet, unwatched and with a dependency cache of its own, so a command can draw
  * while the user's server runs.
  */
+const freePortOf = () =>
+  new Promise<number>((resolvePort, reject) => {
+    const probe = createNetServer();
+
+    probe.once('error', reject);
+    probe.listen(0, () => {
+      const { port } = probe.address() as AddressInfo;
+
+      probe.close(() => resolvePort(port));
+    });
+  });
+
 export const createDesignServer = async (options: {
   target: string;
   config: DesignConfig;
   listen: boolean;
   port?: number;
+  host?: string;
 }) => {
   const { target, config, listen, port } = options;
+  const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && port !== undefined;
 
   writeCallsTsconfig(target);
@@ -566,7 +581,7 @@ export const createDesignServer = async (options: {
       // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
       hmr: false,
       ...(listen
-        ? { port: port ?? portOf(config), strictPort: true, ...(own ? { watch: null } : {}) }
+        ? { port: port ?? portOf(config), ...(host ? { host } : {}), strictPort: true, ...(own ? { watch: null } : {}) }
         : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
@@ -606,8 +621,8 @@ const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {
  * Starts the design server for a checkout and keeps it running. The returned exit code is the
  * command's, not the server's: a listening server holds the process open on its own.
  */
-export const serveDesign = async (options: { target: string }): Promise<number> => {
-  const { target } = options;
+export const serveDesign = async (options: { target: string; host?: string }): Promise<number> => {
+  const { target, host } = options;
   const config = readConfig(target);
 
   if (!config) {
@@ -618,7 +633,7 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
 
   snapshotPackage(target);
 
-  const server = await createDesignServer({ target, config, listen: true });
+  const server = await createDesignServer({ target, config, listen: true, host });
 
   await server.listen();
   console.log(`design-explore: drawing ${target}`);

@@ -12,7 +12,7 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 type ServerOptions = {
   root: string;
   cacheDir: string;
-  server: { port: number; strictPort: boolean };
+  server: { port: number; strictPort: boolean; host?: string };
   resolve: { alias: { find: RegExp; replacement: string }[] };
   plugins: {
     load: (id: string) => string | null;
@@ -107,6 +107,20 @@ describe('serveDesign', () => {
     await new Promise((done) => setTimeout(done, 0));
     expect(exit).toHaveBeenCalledWith(0);
     vi.unstubAllEnvs();
+  });
+
+  it('listens on the host it is given, or DE_HOST, and on Vite default otherwise', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    await serveDesign({ target });
+    await serveDesign({ target, host: '0.0.0.0' });
+    vi.stubEnv('DE_HOST', '192.168.0.5');
+    await serveDesign({ target });
+    await serveDesign({ target, host: '0.0.0.0' });
+    vi.unstubAllEnvs();
+
+    expect(created.map((options) => options.server.host)).toEqual([undefined, '0.0.0.0', '192.168.0.5', '0.0.0.0']);
   });
 
   it('gives each checkout its own Vite cache, stable across restarts', async () => {

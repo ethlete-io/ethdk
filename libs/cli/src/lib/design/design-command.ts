@@ -25,8 +25,9 @@ const splitCheckout = (argv: string[], root: string) => {
 
 const helpOf = (invocation: string) =>
   [
-    `${invocation} [checkout]`,
-    '  Serve the variant frames of a checkout. The checkout defaults to the working directory.',
+    `${invocation} [checkout] [--host <address>]`,
+    '  Serve the variant frames of a checkout. The checkout defaults to the working directory. The server listens on',
+    '  localhost; --host (or DE_HOST) names another address, e.g. 0.0.0.0 to reach it over the LAN.',
     '',
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
@@ -236,7 +237,11 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return designStatus({ target, argv: rest, invocation });
   }
 
-  const { target, rest } = splitCheckout(argv, root);
+  const { target, rest: afterCheckout } = splitCheckout(argv, root);
+  const hostIndex = afterCheckout.indexOf('--host');
+  const host = hostIndex === -1 ? undefined : afterCheckout[hostIndex + 1];
+  const rest =
+    hostIndex === -1 ? afterCheckout : [...afterCheckout.slice(0, hostIndex), ...afterCheckout.slice(hostIndex + 2)];
   const positional = rest[0];
 
   if (positional && !existsSync(resolve(root, positional))) {
@@ -246,5 +251,5 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 2;
   }
 
-  return serveDesign({ target: positional ? resolve(root, positional) : target });
+  return serveDesign({ target: positional ? resolve(root, positional) : target, host });
 };
