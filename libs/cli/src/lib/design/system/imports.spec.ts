@@ -59,12 +59,35 @@ describe('importProblemsOf', () => {
     expect(importProblemsOf(resolveAcme(target))).toEqual([
       expect.objectContaining({ rule: 'IMPORT', message: expect.stringContaining('only a part in a sketch variant') }),
     ]);
+    mkdirSync(join(target, 'shared'));
+    writeFileSync(join(target, 'shared/data.ts'), 'export const data = 1;\n');
     expect(importProblemsOf({ ...resolveAcme(target), sharedDir: join(target, 'shared') })).toEqual([]);
     expect(classifyImport('@shared/data/list')).toEqual({
       kind: 'shared',
       path: 'data/list',
       specifier: '@shared/data/list',
     });
+  });
+
+  it('flags an @shared/ import whose file the shared folder lacks', () => {
+    const target = acme();
+    const shared = join(target, 'shared');
+
+    mkdirSync(join(shared, 'list'), { recursive: true });
+    writeFileSync(join(shared, 'list/index.ts'), '');
+    writeFileSync(join(shared, 'pin.css'), '');
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      part(
+        "import { logo } from '@shared/agent-logos';\nimport { list } from '@shared/list';\nimport pin from '@shared/pin.css?inline';\nimport gone from '@shared/gone.css?inline';",
+      ),
+    );
+
+    expect(importProblemsOf({ ...resolveAcme(target), sharedDir: shared }).map(({ message }) => message)).toEqual([
+      "@shared/agent-logos resolves to no file in the sketch's shared/ folder",
+      "@shared/gone.css?inline resolves to no file in the sketch's shared/ folder",
+    ]);
   });
 
   it('flags an @assets/ import or stylesheet url() with no file, and finds one in the base or the variant', () => {

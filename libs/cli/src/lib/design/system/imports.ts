@@ -1,4 +1,6 @@
+import { existsSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
+import { sourceFileOf } from '../vite-paths';
 import { assetFileOf, assetPathOf, ASSETS_PREFIX, cssAssetPathsOf } from './assets';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -55,6 +57,12 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
   return path.startsWith('..') || isAbsolute(path);
 };
 
+const sharedFileExists = (sharedDir: string, path: string) => {
+  const file = resolve(sharedDir, path.split('?')[0] ?? path);
+
+  return STYLESHEET.test(file) ? existsSync(file) : sourceFileOf(file) !== null;
+};
+
 /**
  * Imports and stylesheet `url(@assets/...)` that name no part, fixture set or asset file, `@shared/` imports outside a sketch variant (`sharedDir` is the
  * sketch's `shared/` folder, `assetsDir` the variant's `assets/`), and relative imports that reach into another part.
@@ -86,6 +94,8 @@ export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string
         return problem(
           `${imported.specifier} - only a part in a sketch variant may import the sketch's ${SHARED_PREFIX}`,
         );
+      if (imported.kind === 'shared' && !sharedFileExists(product.sharedDir ?? '', imported.path))
+        return problem(`${imported.specifier} resolves to no file in the sketch's shared/ folder`);
       if (imported.kind === 'asset' && !assetFileOf({ product, path: imported.path }))
         return problem(`${imported.specifier} resolves to no file in an assets/ folder`);
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))
