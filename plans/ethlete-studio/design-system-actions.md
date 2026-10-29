@@ -197,6 +197,22 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** `sketch variant` fails without `--round` when comments on the sketch arrived after
   the last `ready`. It names the comments.
 
+### 3.10 A merge leaves sibling states with the old design - open
+
+- **Pain:** Tom merged variant i of `pages/sketches`. It gave the header of state `zoomed-below` no
+  status badge and a muted round select close under the title. State `zoomed-page` of the same page
+  kept the old header, with the badge and the round line at 68 px. Tom found it after the merge:
+  "this now has weird spacing". A second sketch was needed.
+- **Cause:** the rule "a variant changes only the state the question is about" protects Tom from a
+  wall of changed screens. However, a decision about shared chrome, for example the header, applies
+  to every state that draws it. Neither the agent nor the tool compared the sibling states.
+- **Now:** nothing. The mismatch shows only when Tom opens the other state.
+- **Fix options:**
+  1. The merge preview in Studio shows each unchanged state next to the changed one, so a mismatch
+     is visible before the merge.
+  2. The round note names which states the decision applies to. `sketch ready` warns when a named
+     state is unchanged.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
@@ -291,19 +307,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
 
-| Pain                                                                                                    | Rule                                                                                       | Ref        |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
-| The agent said "visually checked" after static fit shots only                                           | Define the check from the design claim first. Report exactly which states and actions ran. | L2720      |
-| The exploration became a second canvas implementation                                                   | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940      |
-| One unchosen idea grew into four screens                                                                | Draw about three different alternatives next to each other.                                | L3020      |
-| The agent blamed the wrong cause for an alignment comment                                               | Look at the real render before you name a cause.                                           | L2659      |
-| A synthetic `dblclick` passed, a real double-click failed                                               | Use real pointer sequences.                                                                | L2818      |
-| The agent extended the sketch while the tool was broken                                                 | Stop the design work while a broken tool is repaired.                                      | L2982      |
-| New controls duplicated accepted controls                                                               | List the accepted controls before you draw. Name what you reuse.                           | L2579      |
-| Shared elements were extracted too early                                                                | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607      |
-| The agent changed a ready variant without a report; Tom saw it change while no one was drawing          | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.  | 2026-10-29 |
-| The agent guessed the direction of "spacing passt nicht" and drew one answer; it made the spacing worse | If a comment does not say which way, draw both directions as variants, or ask.             | 2026-10-29 |
-| The agent answered Tom's comments with a variant in the running round; `sketch variant` defaults to it  | An answer to comments opens a new round (`--round`, `--note`).                             | 2026-10-29 |
+| Pain                                                                                                          | Rule                                                                                                   | Ref        |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
+| The agent said "visually checked" after static fit shots only                                                 | Define the check from the design claim first. Report exactly which states and actions ran.             | L2720      |
+| The exploration became a second canvas implementation                                                         | Name the visual question and the smallest artifact first. Reuse the real canvas.                       | L2940      |
+| One unchosen idea grew into four screens                                                                      | Draw about three different alternatives next to each other.                                            | L3020      |
+| The agent blamed the wrong cause for an alignment comment                                                     | Look at the real render before you name a cause.                                                       | L2659      |
+| A synthetic `dblclick` passed, a real double-click failed                                                     | Use real pointer sequences.                                                                            | L2818      |
+| The agent extended the sketch while the tool was broken                                                       | Stop the design work while a broken tool is repaired.                                                  | L2982      |
+| New controls duplicated accepted controls                                                                     | List the accepted controls before you draw. Name what you reuse.                                       | L2579      |
+| Shared elements were extracted too early                                                                      | Draw pages first. Record repeats as findings. Compare before you extract.                              | L2607      |
+| The agent changed a ready variant without a report; Tom saw it change while no one was drawing                | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.              | 2026-10-29 |
+| The agent guessed the direction of "spacing passt nicht" and drew one answer; it made the spacing worse       | If a comment does not say which way, draw both directions as variants, or ask.                         | 2026-10-29 |
+| The agent answered Tom's comments with a variant in the running round; `sketch variant` defaults to it        | An answer to comments opens a new round (`--round`, `--note`).                                         | 2026-10-29 |
+| A header decision went into one state; the sibling state kept the old header and Tom found it after the merge | Before `ready`, shoot every state that draws the changed chrome. Carry the decision into each, or ask. | 2026-10-29 |
 
 ## 7. Open checks
 
