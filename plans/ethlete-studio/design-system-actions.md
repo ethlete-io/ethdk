@@ -334,14 +334,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   it by hand.
 - **Fix option:** follow imports through non-part modules when the check collects dependants.
 
-### 5.44 A grid of interaction states cannot be built with a helper - open
-
-- **Pain:** `components/comment-pin`: `definePart({ grid })` needs literal state names. A helper
-  that builds `${prefix}-hover` keys fails with a long type error, so the agent wrote 20 states and
-  the grid by hand.
-- **Fix options:** 1. a typed `interactionRow(prefix)` helper in `@design-system` (recommended). 2.
-  a shorter type error that names the state.
-
 ### 5.45 Agent logos exist in three copies - open
 
 - **Pain:** a component cannot import from a page, so the `components/comment-pin` sketch holds a

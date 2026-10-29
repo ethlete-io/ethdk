@@ -1206,3 +1206,12 @@ check` warns early.
   result.
 - **Fix option:** the part's default export exposes `styles` statically.
 - **Fix done (8e09942cd):** `definePart({ styles })` puts the stylesheet on the default export (`part.styles`) and adds it before the styles `render` returns in every drawing; the design-exploration skill names it. `components/comment-pin` still exports `commentPinStyles` and passes `styles` to `drawing()`; it should adopt `styles` on `definePart` through a sketch, and its hosts `pages/inbox` and `pages/sketches` then read `commentPin.styles`.
+
+### 5.44 A grid of interaction states cannot be built with a helper - fixed (1e65f8c62)
+
+- **Pain:** `components/comment-pin`: `definePart({ grid })` needs literal state names. A helper
+  that builds `${prefix}-hover` keys fails with a long type error, so the agent wrote 20 states and
+  the grid by hand.
+- **Fix options:** 1. a typed `interactionRow(prefix)` helper in `@design-system` (recommended). 2.
+  a shorter type error that names the state.
+- **Fix done (1e65f8c62):** `interactionRows(rows, { interactions, force })` from `@design-system` builds `states` (`<row>`, `<row>-<interaction>`) and a `grid` (`rest` plus each interaction) to spread into `definePart`, with the state names typed; the design-exploration skill names it. `components/comment-pin` still lists its 40 states and grid by hand (`shared/comment-pin.ts`) and should adopt it through a sketch.
