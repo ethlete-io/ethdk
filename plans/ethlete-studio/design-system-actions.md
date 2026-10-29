@@ -190,22 +190,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** take a free port, as the render check does.
 - **Not reproduced:** `design shot` starts its server on port 0 since `1902a2675`. A run with 5173
   taken wrote the sheet. The message may come from a stale `dist`. Close if it does not return.
-
-### 4.13 A second design server breaks the first through the shared Vite cache - open
-
-- **Pain:** on 2026-10-29 Tom's :4402 failed every page with "Failed to fetch dynamically imported
-  module"; `@design-system.js` answered 504 (Outdated Optimize Dep).
-- **Cause:** a subagent's design server on a scratch checkout shares `node_modules` by symlink, and
-  `serve.ts` sets `cacheDir` to `<work root>/vite` under `node_modules/.design-explore`. The second
-  server rewrote the deps of the first.
-- **Now:** restart :4402.
-- **Fix options:** a Vite cache folder per server (per pid or per hashed target path).
-
-### 4.14 No merged and variant cells side by side in one sheet - open
-
-- **Pain:** `design shot --variants --state X` draws only the variant cells; a comparison needs two
-  runs and a manual diff.
-- **Fix option:** draw the merged state as the first cell.
+- **Seen again:** `check-system.spec` "warns of a merged part..." fails with `Port 5173 is already in use`
+  when the whole `src/lib/design` folder runs, and passes alone. Some test path still uses a fixed port.
 
 ## 5. Drawing parts and pages
 
@@ -232,16 +218,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.10 Two stylesheets of one part define the same class without a warning - open
+### 5.12 `sketch new` does not print the variant file path - open
 
-- **Pain:** `sketch-data.css` still defines `.sk-head`; a new `.sk-head` in the variant broke the
-  layout silently.
-- **Fix option:** `sketch check` warns when two stylesheets of one part define the same class.
-
-### 5.11 `sketch new --round` asks for `--note` before any work exists - open
-
-- **Pain:** the agent wrote a placeholder note and fixed it later with `sketch round`.
-- **Fix option:** make `--note` optional on `sketch new`; require it at `sketch ready`.
+- **Pain:** the output ends at `... in progress: <dir> with a`; the agent listed the folder to find
+  `a/foundations/logo/logo.ts`.
+- **Fix option:** print the path of each variant's part file.
 
 ## 6. Agent process
 

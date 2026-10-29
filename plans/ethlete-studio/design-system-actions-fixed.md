@@ -260,6 +260,24 @@ sketch` until the next merge of the part.
 - **Fix option:** one line per variant and state, with the result.
 - **Fix done (`070a374f1`):** one line per variant and state, then the issues and `ok`.
 
+### 4.13 A second design server breaks the first through the shared Vite cache - fixed
+
+- **Pain:** on 2026-10-29 Tom's :4402 failed every page with "Failed to fetch dynamically imported
+  module"; `@design-system.js` answered 504 (Outdated Optimize Dep).
+- **Cause:** a subagent's design server on a scratch checkout shares `node_modules` by symlink, and
+  `serve.ts` sets `cacheDir` to `<work root>/vite` under `node_modules/.design-explore`. The second
+  server rewrote the deps of the first.
+- **Now:** restart :4402.
+- **Fix options:** a Vite cache folder per server (per pid or per hashed target path).
+- **Fix done (`5eb5fff4c`):** each server gets a cache folder named by a hash of its resolved target path.
+
+### 4.14 No merged and variant cells side by side in one sheet - fixed
+
+- **Pain:** `design shot --variants --state X` draws only the variant cells; a comparison needs two
+  runs and a manual diff.
+- **Fix option:** draw the merged state as the first cell.
+- **Fix done (`0a97acb2c`):** `design shot --variants` draws a `merged` row first.
+
 ## 5. Drawing parts and pages
 
 ### 5.3 Editor and typecheck gaps - fixed (L833, L1009, L975)
@@ -315,3 +333,16 @@ sketch` until the next merge of the part.
   formatted text.
 - **Now:** `sketch check` and `sketch ready` run the checkout's own Prettier over each variant and fail
   with `FORMAT` per unformatted file.
+
+### 5.10 Two stylesheets of one part define the same class without a warning - fixed
+
+- **Pain:** `sketch-data.css` still defines `.sk-head`; a new `.sk-head` in the variant broke the
+  layout silently.
+- **Fix option:** `sketch check` warns when two stylesheets of one part define the same class.
+- **Fix done (`5aa652f54`):** `sketch check` and `ready` warn on a class defined in two stylesheets of a part.
+
+### 5.11 `sketch new --round` asks for `--note` before any work exists - fixed
+
+- **Pain:** the agent wrote a placeholder note and fixed it later with `sketch round`.
+- **Fix option:** make `--note` optional on `sketch new`; require it at `sketch ready`.
+- **Fix done (`1f5daef48`):** `sketch new --round` needs no note; `sketch ready` refuses a round without one.
