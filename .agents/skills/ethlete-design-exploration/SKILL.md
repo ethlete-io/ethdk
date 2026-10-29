@@ -135,7 +135,8 @@ neither. Use `sketch list` to see the open ones.
 `sketch check` also runs tsc over each variant with its `@shared/` and `@system/` imports, so never write a
 tsconfig of your own. It warns of a variant stylesheet that restyles a class of `shared/`, of a
 variant file nothing imports, and of a `shared/` export the variant does not import; `design check` warns of
-an export in a merged part's `shared/` that nothing imports. To delete a file of a part, delete it in the variant: a merge deletes the
+an export in a merged part's `shared/` that nothing imports, and (`STALE-REPLACE`) of a `.replace('<…')` or
+`.replace(/<…/)` on markup that neither the part nor a part it uses draws. To delete a file of a part, delete it in the variant: a merge deletes the
 product file the picked variant no longer holds.
 
 Each variant's note, what it is and what it costs, goes in with `sketch new --variant-note a=<text>`, once

@@ -48,7 +48,7 @@ export const classifyImport = (specifier: string): PartImport => {
 export const importsOfPart = (part: ResolvedPart) => importsOf(part.source).map(classifyImport);
 
 /** The modules of the part's own folder its file imports, directly or through another such module. */
-const folderModulesOf = (part: ResolvedPart) => {
+export const folderModulesOf = (part: ResolvedPart) => {
   const folder = dirname(part.file);
   const seen = new Set<string>([part.file]);
   const queue = [{ file: part.file, source: part.source }];
