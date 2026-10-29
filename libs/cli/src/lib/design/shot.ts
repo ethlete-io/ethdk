@@ -29,6 +29,12 @@ const isPositiveWhole = (pixels: number) => Number.isInteger(pixels) && pixels >
 
 const VIEWPORT_HEIGHT = 800;
 
+const MAX_SCALE = 4;
+
+const scaleOf = (params: URLSearchParams) => Number(params.get('scale') ?? 1);
+
+const isScale = (scale: number) => Number.isInteger(scale) && scale >= 1 && scale <= MAX_SCALE;
+
 const FIT_VIEWPORT_WIDTH = 1280;
 
 /** The viewport a frame of this size is drawn in. */
@@ -41,7 +47,7 @@ type Drawn = { part: DrawnPart } | { slug: string };
 
 type Size = Pick<DesignPreset, 'width' | 'height'>;
 
-type Frame = { search: string; size: Size | null; clip: boolean };
+type Frame = { search: string; size: Size | null; clip: boolean; scale: number };
 
 type GraphModule = { id: string | null; importers: Set<GraphModule> };
 
@@ -141,7 +147,10 @@ export const createPartShooter = (options: {
   const boxes = new Map<string, Promise<ChangedBox | null>>();
 
   const draw = async (browser: Browser, frame: Frame): Promise<Picture> => {
-    const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+    const context = await browser.newContext({
+      viewport: viewportOf(frame.size),
+      ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
+    });
 
     try {
       const page = await context.newPage();
@@ -213,7 +222,8 @@ export const createPartShooter = (options: {
     priority: DrawPriority;
   }) => {
     const theme = themeOf(options.params);
-    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill]);
+    const scale = scaleOf(options.params);
+    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale]);
     const kept = cache.get(key);
 
     if (kept) {
@@ -228,7 +238,7 @@ export const createPartShooter = (options: {
 
     const search = options.search.toString();
     const shot = drawQueue.run(
-      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false }),
+      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale }),
       options.priority,
     );
 
@@ -283,6 +293,17 @@ export const createPartShooter = (options: {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
       const priority: DrawPriority = params.get('priority') === 'low' ? 'low' : 'high';
+
+      if (!isScale(scaleOf(params))) {
+        send(response, {
+          status: 400,
+          type: 'text/plain; charset=utf-8',
+          body: `design-explore: scale is a whole number from 1 to ${MAX_SCALE}`,
+        });
+
+        return;
+      }
+
       const [slug, variant, width, sketch, product] = ['call', 'variant', 'width', 'sketch', 'product'].map((name) =>
         params.get(name),
       );

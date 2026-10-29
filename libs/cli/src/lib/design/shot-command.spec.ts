@@ -131,6 +131,14 @@ describe('designShot', () => {
     expect((await run(['components/button', '--states', '--width', 'wide'])).code).toBe(2);
   });
 
+  it('rejects a scale that is not a whole number from 1 to 4', async () => {
+    for (const scale of ['0', '5', '1.5', 'big']) {
+      expect((await run(['components/button', '--states', '--scale', scale])).code).toBe(2);
+    }
+
+    expect((await run(['components/button', '--states', '--scale', '2'])).text).toContain('no config at');
+  });
+
   it('says so when the checkout has no design config', async () => {
     const { code, text } = await run(['components/button', '--states']);
 

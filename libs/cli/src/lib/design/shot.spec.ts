@@ -258,6 +258,25 @@ describe('createPartShooter', () => {
     ]);
   });
 
+  it('draws a state at the asked scale as a picture of its own, and answers 400 for a bad scale', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&scale=3`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 3 });
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 } });
+
+    for (const scale of ['0', '5', '1.5', 'big']) {
+      const answer = await ask(shots, `${part}&scale=${scale}`);
+
+      expect(answer.status).toBe(400);
+      expect(String(answer.body)).toContain('scale');
+    }
+
+    expect(newContext).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 

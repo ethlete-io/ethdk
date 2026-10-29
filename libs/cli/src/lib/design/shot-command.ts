@@ -15,7 +15,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant } from './system/
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
 export const SHOT_USAGE =
-  'shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--preset <preset> | --width <px>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]';
+  'shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]';
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -153,7 +153,17 @@ const stringsOf = (states: unknown) => (states && typeof states === 'object' ? O
  */
 export const designShot = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--at', '--state', '--preset', '--width', '--surface', '--color', '--out']);
+  const args = argsOf(argv, [
+    '--product',
+    '--at',
+    '--state',
+    '--preset',
+    '--width',
+    '--scale',
+    '--surface',
+    '--color',
+    '--out',
+  ]);
   const usage = `usage: ${invocation} ${SHOT_USAGE}`;
 
   if (typeof args === 'string') {
@@ -167,6 +177,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const variants = args.flags.has('--variants');
   const width = args.values['--width'] === undefined ? null : Number(args.values['--width']);
   const preset = args.values['--preset'] ?? null;
+  const scale = Number(args.values['--scale'] ?? 1);
 
   if (
     !part ||
@@ -174,7 +185,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     (!states && !variants) ||
     (args.values['--at'] !== undefined && !variants) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
-    (preset && width)
+    (preset && width) ||
+    !(Number.isInteger(scale) && scale >= 1 && scale <= 4)
   ) {
     console.error(usage);
 
@@ -281,7 +293,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const chosenPreset = preset ?? (isPage ? (Object.keys(presets)[0] ?? null) : null);
     const params = new URLSearchParams();
 
-    for (const name of ['surface', 'color']) {
+    for (const name of ['surface', 'color', 'scale']) {
       const value = args.values[`--${name}`];
 
       if (value) params.set(name, value);
