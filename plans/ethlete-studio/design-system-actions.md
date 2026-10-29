@@ -119,6 +119,25 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
+### 4.16 `design check` passes while open sketches have type errors - open
+
+- **Pain:** on the `pages/merge` round (2026-10-29), `design check --product studio` said "ok" while
+  all three variants had TypeScript errors. Only `design sketch check pages/merge` found them.
+- **Fix options:** 1. the product check also types open sketches (recommended). 2. it prints "N open
+  sketches not checked, run `sketch check`".
+
+### 4.17 CLIPPED and WRAP do not name their escape - open
+
+- **Pain:** scaled thumbnail frames trip CLIPPED and WRAP by design. The agent found
+  `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
+- **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
+
+### 4.18 `shot --variants` on a new part gives no reason for the missing rows - open
+
+- **Pain:** a sketch on a part that does not exist yet draws no "now" row and no diff row, and the
+  sheet does not say why.
+- **Fix option:** one line in the sheet: "new part, nothing to compare with".
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -126,6 +145,25 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+### 5.19 The Studio `button` part has no `disabled` prop - open
+
+- **Pain:** `{ disabled: true }` gave TS2353. A disabled button only comes from the second
+  argument, `button.render(props, { interaction: 'disabled' })`, found by reading `canvas-frames.ts`.
+- **Fix options:** 1. the part accepts `disabled` (recommended, a page state needs it). 2. the part
+  note names the interaction argument.
+
+### 5.20 Variants of one sketch cannot share files - open
+
+- **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
+- **Fix option:** a sketch-level `sketches/<name>/shared/` folder with an alias.
+
+### 5.21 A sketch cannot draw another part at a sketch variant - open
+
+- **Pain:** the merge page needs `components/button` "after merging b". The agent faked the after
+  frames with a CSS override of the radius.
+- **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
+  Studio itself need it.
 
 ## 6. Agent process
 
