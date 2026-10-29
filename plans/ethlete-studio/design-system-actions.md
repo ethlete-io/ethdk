@@ -106,6 +106,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   Studio packs small frames side by side when they fit.
 - **Design case:** after the fix, a sketch on `pages/system` adds a state such as `many-states`
   that shows `tree-row` in the new look.
+- **Built (option 1, 2026-10-29):** `definePart({ grid: { columns, rows } })`, typed against the
+  state names; Studio draws the placed states as one frame `grid`, `design shot --states` one sheet
+  row per grid row. Open: cells draw in rest only (`interactions` apply to states outside the grid);
+  the sketch compare and merge preview still draw one row per state; the design-exploration skill
+  does not name `grid` yet; no runtime check for unknown or repeated grid states.
 
 ## 3. Feedback, rounds and merge
 
