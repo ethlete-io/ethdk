@@ -1157,3 +1157,11 @@ check` warns early.
 - **Fix option:** `shot --diff-props <variant>` draws the merged part with the variant's state
   props, so the diff shows only the visual change.
 - **Fix done (235fad1b7):** `design shot --variants --diff-props` also draws the merged part with each variant's state props (frame params `props=<sketch>&props-variant=<variant>`) and compares the variant with that, labelled "vs merged with its props"; a failed props draw is a note. The design-exploration skill names it.
+
+### 4.35 "No pixel change" when both sides miss the same content - fixed (99d110f7a)
+
+- **Pain:** on the inbox sketch the shot diff said "no pixel change" because merged and variant
+  both lacked the pin. It read like success.
+- **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
+  output says so.
+- **Fix done (99d110f7a):** a shot now keeps the `#root` markup of each frame; when a variant cell and its merged cell differ in markup but not in pixels, the diff row says "no pixel change, but the markup differs" (sheet and printed line). On `pages/inbox` a it fires for the states whose agent logo SVG gained `width`/`height` attributes. The design-exploration skill names it.

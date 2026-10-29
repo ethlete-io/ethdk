@@ -229,13 +229,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
   regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
 
-### 4.35 "No pixel change" when both sides miss the same content - open
-
-- **Pain:** on the inbox sketch the shot diff said "no pixel change" because merged and variant
-  both lacked the pin. It read like success.
-- **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
-  output says so.
-
 ### 4.37 No check sees grid rows that skip the interaction columns - open
 
 - **Pain:** the merged `components/comment-pin` grid had hover, pressed and focus cells for faces,
