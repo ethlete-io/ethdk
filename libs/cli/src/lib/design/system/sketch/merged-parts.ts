@@ -43,6 +43,34 @@ export const recordMerged = (options: { product: HashedProduct; parts: string[] 
   writeFileSync(mergedFileOf(productDir), `${JSON.stringify(sorted, null, 2)}\n`);
 };
 
+/** The recorded parts of the product, outside `except`, whose files still match their recorded hash, with that hash. */
+export const unchangedMergedOf = (options: { product: ResolvedProduct; except: string[] }) => {
+  const { product, except } = options;
+  const merged = readMerged(product.dir);
+
+  return product.parts.flatMap((part) => {
+    const key = partKeyOf(part);
+    const hash = partHashOf({ product, dir: dirname(part.file) });
+
+    return part.origin !== 'base' && !except.includes(key) && merged[key] === hash ? [{ key, hash }] : [];
+  });
+};
+
+/** Records the parts of `before` whose hash differs now, and answers with their keys: an asset they use changed in a merge. */
+export const rerecordChangedMerged = (options: {
+  product: ResolvedProduct;
+  before: { key: string; hash: string }[];
+}) => {
+  const { product, before } = options;
+  const changed = before
+    .filter(({ key, hash }) => partHashOf({ product, dir: resolve(product.dir, key) }) !== hash)
+    .map(({ key }) => key);
+
+  if (changed.length > 0) recordMerged({ product, parts: changed });
+
+  return changed;
+};
+
 export const sketchedPartsOf = (product: ResolvedProduct) =>
   new Set(
     listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>

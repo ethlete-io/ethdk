@@ -6,7 +6,7 @@ import { DESIGN_DIR, readConfig } from '../../paths';
 import { commentsOnSketch, CommentFile, createComment, DesignComment, replyToComment } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
-import { changedOutsideSketchOf, readMerged } from './merged-parts';
+import { changedOutsideSketchOf, readMerged, recordMerged } from './merged-parts';
 import {
   createSketch,
   decideSketch,
@@ -330,6 +330,52 @@ describe('mergeSketch with assets', () => {
     writeFileSync(join(assets, 'mark.png'), 'newer');
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
+  }, 120_000);
+});
+
+describe('mergeSketch with an asset another part uses', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const withDependents = (options: { foreignEdit: boolean }) => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = acme();
+    const assets = join(target, DESIGN_DIR, 'acme/assets');
+    const home = join(target, DESIGN_DIR, 'acme/pages/home');
+    const homeFile = join(home, 'home.ts');
+
+    mkdirSync(assets);
+    writeFileSync(join(assets, 'mark.png'), 'old');
+    writeFileSync(
+      homeFile,
+      `import mark from '@assets/mark.png';\n${readFileSync(homeFile, 'utf8')}\nexport const m = mark;\n`,
+    );
+    recordMerged({ product: resolveAcme(target), parts: ['pages/home'] });
+
+    if (options.foreignEdit) writeFileSync(join(home, 'home.css'), '.acme-home { margin: 0; }');
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+
+    mkdirSync(join(found.sketch.dir, 'b/assets'), { recursive: true });
+    writeFileSync(join(found.sketch.dir, 'b/assets/mark.png'), 'new');
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+
+    return { target, log };
+  };
+
+  it('re-records the hash of a part that uses the changed asset, and lists it', () => {
+    const { target, log } = withDependents({ foreignEdit: false });
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+    expect(log).toHaveBeenCalledWith('Asset change also updates: pages/home');
+  }, 120_000);
+
+  it('keeps a part with a foreign edit before the merge showing as changed outside a sketch', () => {
+    const { target, log } = withDependents({ foreignEdit: true });
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['pages/home']);
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('Asset change also updates'));
   }, 120_000);
 });
 

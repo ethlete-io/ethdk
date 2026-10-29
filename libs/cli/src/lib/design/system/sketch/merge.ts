@@ -9,7 +9,7 @@ import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { carryShared, sharedPlanOf } from './merge-shared';
-import { recordMerged } from './merged-parts';
+import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
 
@@ -116,11 +116,15 @@ const mergeOrReason = (options: {
 
   if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
 
+  const mergedKeys = [...new Set([sketch.target, ...parts.map(partKeyOf)])];
+  const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
+  const untouched = assetFiles.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
+
   const swapped = swap([
     ...(inherited ? [{ from: dirname(inherited.file), to: targetDir }] : []),
     ...parts.map((part) => ({ from: dirname(part.file), to: resolve(product.dir, part.layer, part.name) })),
     ...(fixtures ? [{ from: fixtures, to: resolve(product.dir, 'fixtures.ts') }] : []),
-    ...filesBelow(resolve(dir, ASSETS_FOLDER)).map((file) => ({
+    ...assetFiles.map((file) => ({
       from: file,
       to: resolve(product.dir, ASSETS_FOLDER, relative(resolve(dir, ASSETS_FOLDER), file)),
     })),
@@ -137,7 +141,12 @@ const mergeOrReason = (options: {
   }
 
   swapped.drop();
-  recordMerged({ product, parts: [...new Set([sketch.target, ...parts.map(partKeyOf)])] });
+  recordMerged({ product, parts: mergedKeys });
+
+  const alsoChanged = rerecordChangedMerged({ product, before: untouched });
+
+  if (alsoChanged.length > 0) console.log(`Asset change also updates: ${alsoChanged.join(', ')}`);
+
   addressSketchComments({ sketch, reason: 'merge', author, note });
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
