@@ -63,6 +63,12 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   render: (props: TProps) => Drawing | Promise<Drawing>;
 };
 
+/**
+ * Forces `interaction` on the first element of `markup`, as a frame forces it on a part's root: for a state that
+ * shows one element of the part, such as a row of a list, hovered or disabled.
+ */
+export const forceInteraction = (markup: string, interaction: Interaction) => forceBody(markup, interaction);
+
 const finished = (
   drawn: Drawing,
   { styles, interaction }: { styles?: string; interaction?: Interaction },

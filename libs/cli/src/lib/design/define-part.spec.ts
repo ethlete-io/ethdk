@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definePart } from '../../../design/define-part';
+import { definePart, forceInteraction } from '../../../design/define-part';
 import { markPart } from '../../../design/mark-part';
 
 type Props = { label: string };
@@ -67,6 +67,19 @@ describe('definePart', () => {
     expect(styled.render({ label: 'a' }, { interaction: 'hover' })).toEqual({ body: 'a', styles: '.b{}' });
     expect(await later.render({ label: 'a' })).toEqual({ body: 'a', styles: '.b{}\n.x{}' });
     expect(markPart(styled, 'components/b').styles).toBe('.b{}');
+  });
+
+  it('forces an interaction on one element of the markup, below the root', () => {
+    const row = (label: string, hovered: boolean) => {
+      const markup = `<li class="row">${label}</li>`;
+
+      return hovered ? forceInteraction(markup, 'hover') : markup;
+    };
+
+    expect(`<ul class="stack">${row('a', false)}${row('b', true)}</ul>`).toBe(
+      '<ul class="stack"><li class="row">a</li><li data-et-force="hover" class="row">b</li></ul>',
+    );
+    expect(forceInteraction('<button>x</button>', 'disabled')).toBe('<button disabled aria-disabled="true">x</button>');
   });
 
   it('keeps the interaction through the part mark the design server adds', () => {

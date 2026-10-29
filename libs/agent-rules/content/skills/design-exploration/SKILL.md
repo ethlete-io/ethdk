@@ -483,6 +483,10 @@ not a component.
 When each of several cases is drawn at rest and in the same interactions, build the states and their grid with
 `interactionRows(rows, { interactions: ['hover', 'active'], force: (props, interaction) => ({ ...props, interaction }) })`
 from `@design-system` and spread the result into `definePart`; never write those states and the grid by hand.
+`definePart({ interactions })` forces an interaction on the part's root only. To draw one element of the part
+hovered, focused, pressed or disabled, such as one row of a list, wrap that element's markup in
+`forceInteraction(markup, 'hover')` from `@design-system` inside `render`, driven by a prop; never write
+`data-et-force` by hand.
 
 ## Draw from the design system
 
