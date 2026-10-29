@@ -5,7 +5,6 @@ import styles from './comment-pin.css?inline';
 export type { Props } from './shared/comment-pin';
 
 export const commentPinMark = (props: Props) => pin(props);
-export const commentPinStyles = styles;
 
 export default definePart({
   note: "Merged variant a of Count alignment: the count is a badge on the teardrop's head.",
