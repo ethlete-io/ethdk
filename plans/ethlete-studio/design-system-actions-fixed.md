@@ -72,6 +72,22 @@ The fixed entries of `design-system-actions.md`, with their numbers kept. `Lnnn`
 - **Now:** the CLI stamps the sketch's `createdAt` into each new comment on a variant. Studio pins and
   tree marks show a comment only in the sketch with that `createdAt`, so older comments stay hidden.
 
+### 3.12 `inbox done --note` overwrites the part note in the product - fixed
+
+- **Pain:** an agent closed a comment on a sketch variant with
+  `design inbox done <id> --note "Variante c"`. The command replaced the whole `note` of the product
+  part `pages/sketches` with "Variante c". Studio then said the product changed since the sketch
+  was made, and asked for a rebase.
+- **Cause:** `done` writes `--note` into the part the thread is about. The thread was about a sketch
+  variant, but the command wrote into the product, not into the variant. The flag name reads like a
+  short closing remark, and `sketch round --note` and `sketch variant --note` use it that way.
+- **Now:** the agent restored the product note by hand.
+- **Fix options:**
+  1. For a thread on a sketch variant, write the note into that variant, never into the product.
+  2. Rename the flag to `--part-note`, and add a separate `--reason` for the closing remark.
+  3. Fail when the new note is much shorter than the old one, unless `--force` is given.
+- **Now:** `done` on a sketch thread writes the note into the variant's copy of the part. It never touches the product. If the variant does not hold the part, no part file changes and the comment is only addressed.
+
 ### 3.15 A sketch shows the states it does not change - fixed
 
 - **Pain:** the sketch "Leerer Flows-Bereich mit Anleitung" changes only the `empty` state of
