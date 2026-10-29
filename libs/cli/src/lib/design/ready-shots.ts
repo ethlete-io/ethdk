@@ -9,14 +9,14 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 /**
  * Shoots every state of every variant of the sketch and of the product's part on a render server of its own
- * (a free port), and says whether all of them match pixel for pixel. Any failure to shoot answers `false`.
+ * (a free port). `true` when all of them match pixel for pixel; otherwise why not, a failure to shoot included.
  */
 export const shotsShowNoChange = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-}): Promise<boolean> => {
+}): Promise<true | string> => {
   const { target, config, product, sketch } = options;
   let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
 
@@ -43,8 +43,8 @@ export const shotsShowNoChange = async (options: {
     } finally {
       await shooter.close();
     }
-  } catch {
-    return false;
+  } catch (error) {
+    return `the shots failed: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     await server?.close();
   }

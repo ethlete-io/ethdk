@@ -7,7 +7,9 @@ import { shotsShowNoChange } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
-vi.mock('./ready-shots', () => ({ shotsShowNoChange: vi.fn(async () => false) }));
+vi.mock('./ready-shots', () => ({
+  shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
+}));
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-command-'));
@@ -94,10 +96,9 @@ describe('designSketch', () => {
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
   });
 
-  it('keeps a sketch ready when a state shows a change', async () => {
+  it('keeps a sketch ready when a state shows a change and names why', async () => {
     const target = acme();
-
-    output();
+    const lines = output();
     write(
       target,
       'new',
@@ -115,6 +116,7 @@ describe('designSketch', () => {
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(true);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/accepted.json'))).toBe(false);
+    expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
   });
 
   it('names an unknown command and prints the usage', () => {
@@ -589,7 +591,7 @@ describe('designSketch', () => {
     expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button is in progress - mark it ready before a merge');
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe('components/button is ready');
+    expect(lines.splice(-2)).toEqual(['components/button is ready', 'auto-merge skipped: variant a changes default']);
     expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
     expect(write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);

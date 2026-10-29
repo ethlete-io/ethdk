@@ -43,17 +43,17 @@ describe('sketchShowsNoChange', () => {
     expect(await sketchShowsNoChange({ product, sketch, load, pictureOf: pictureWith(() => 0) })).toBe(true);
   });
 
-  it('is false when one pixel differs', async () => {
+  it('names the changed states when one pixel differs', async () => {
     const { product, sketch, css } = acme();
 
     writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* one pixel */\n`);
 
     expect(await sketchShowsNoChange({ product, sketch, load, pictureOf: pictureWith((sketched) => +sketched) })).toBe(
-      false,
+      'variant a changes default',
     );
   });
 
-  it('is false when a shot fails', async () => {
+  it('names the failed shot', async () => {
     const { product, sketch, css } = acme();
 
     writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* broken */\n`);
@@ -62,6 +62,8 @@ describe('sketchShowsNoChange', () => {
       throw new Error('no browser');
     };
 
-    expect(await sketchShowsNoChange({ product, sketch, load, pictureOf })).toBe(false);
+    expect(await sketchShowsNoChange({ product, sketch, load, pictureOf })).toBe(
+      'variant a changes default - a shot failed: no browser',
+    );
   });
 });

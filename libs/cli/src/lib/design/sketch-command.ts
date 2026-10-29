@@ -470,8 +470,13 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   if (!again) console.log(`${sketch.target} is ready`);
 
-  if (!(await shotsShowNoChange({ target: context.target, config: context.config, product, sketch })))
+  const noChange = await shotsShowNoChange({ target: context.target, config: context.config, product, sketch });
+
+  if (noChange !== true) {
+    console.log(`auto-merge skipped: ${noChange}`);
+
     return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
+  }
 
   const author = authorOf(context.args) ?? undefined;
   const variant = sketch.variants[0] ?? '';
