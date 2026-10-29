@@ -32,6 +32,7 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
   if (mergedIndex === -1) return [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...sheet];
   if (rows.length < 2) return sheet;
 
+  const mergedStates = new Set((plan[mergedIndex] ?? []).map((entry) => entry.address.state));
   const merged = new Map(
     (plan[mergedIndex] ?? []).flatMap((entry, index) => {
       const cell = sheet[mergedIndex]?.[index];
@@ -43,12 +44,14 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
   return sheet.flatMap((row, rowIndex) => {
     if (rowIndex === mergedIndex) return [row];
 
-    const diffs = row.flatMap((cell, index) => {
-      const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '');
+    const diffs = row.flatMap((cell, index): SheetCell[] => {
+      const state = plan[rowIndex]?.[index]?.address.state ?? '';
+      const before = merged.get(state);
 
-      return before && 'png' in cell
-        ? [{ label: `${cell.label} vs merged`, before, after: cell.png, over: cell.label }]
-        : [];
+      if (!('png' in cell)) return [];
+      if (!mergedStates.has(state)) return [{ label: `${cell.label} vs merged`, note: 'new state' }];
+
+      return before ? [{ label: `${cell.label} vs merged`, before, after: cell.png, over: cell.label }] : [];
     });
 
     return diffs.length > 0 ? [row, diffs] : [row];
@@ -120,7 +123,14 @@ export const rowsOf = (options: { part: string; variants: string[] | null; merge
   ];
 };
 
-export const shotReportOf = (options: { out: string; diffs: string[] }) => [...options.diffs, options.out];
+/** The diff lines of the sheet, a line per new state, and the PNG path last. */
+export const shotReportOf = (options: { out: string; diffs: string[]; sheet: SheetCell[][] }) => [
+  ...options.diffs,
+  ...options.sheet.flatMap((row) =>
+    row.flatMap((cell) => ('note' in cell && cell.label.endsWith(' vs merged') ? [`${cell.label}: ${cell.note}`] : [])),
+  ),
+  options.out,
+];
 
 /**
  * The product a shot draws: the one `--product` names or the only one the config declares, else the only product
@@ -352,9 +362,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return 1;
       }
 
-      const { png, diffs } = await queue.run((browser) =>
-        contactSheetOf({ browser, rows: variants ? withDiffRows({ rows, plan, sheet }) : sheet }),
-      );
+      const shown = variants ? withDiffRows({ rows, plan, sheet }) : sheet;
+      const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
       const out = resolve(
         target,
         args.values['--out'] ?? `${workRootOf(target)}/shots/${product}-${part.replace('/', '-')}.png`,
@@ -362,7 +371,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, png);
-      for (const line of shotReportOf({ out, diffs })) console.log(line);
+      for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
 
       return 0;
     } finally {

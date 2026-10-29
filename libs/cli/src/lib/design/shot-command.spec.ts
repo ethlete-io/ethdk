@@ -204,12 +204,20 @@ describe('shotProductOf', () => {
 });
 
 describe('shotReportOf', () => {
-  it('prints the PNG path after the diff lines', () => {
-    expect(shotReportOf({ out: '/tmp/sheet.png', diffs: ['a vs merged: 3 px', 'b vs merged: 0 px'] })).toEqual([
-      'a vs merged: 3 px',
-      'b vs merged: 0 px',
+  it('names a new state among the diff lines', () => {
+    const sheet = [[{ label: 'b / new vs merged', note: 'new state' }], [{ label: 'merged', note: 'new part' }]];
+
+    expect(shotReportOf({ out: '/tmp/sheet.png', diffs: ['b / rest vs merged: 0 px'], sheet })).toEqual([
+      'b / rest vs merged: 0 px',
+      'b / new vs merged: new state',
       '/tmp/sheet.png',
     ]);
+  });
+
+  it('prints the PNG path after the diff lines', () => {
+    expect(
+      shotReportOf({ out: '/tmp/sheet.png', diffs: ['a vs merged: 3 px', 'b vs merged: 0 px'], sheet: [] }),
+    ).toEqual(['a vs merged: 3 px', 'b vs merged: 0 px', '/tmp/sheet.png']);
   });
 });
 
@@ -251,6 +259,7 @@ describe('withDiffRows', () => {
       sheet[1],
       [{ label: 'a / rest vs merged', before: png('m'), after: png('a'), over: 'a / rest' }],
       sheet[2],
+      [{ label: 'b / new vs merged', note: 'new state' }],
     ]);
   });
 
