@@ -9,8 +9,9 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
-import { dirname, resolve } from 'path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { statusPath } from '../../status';
+import { SHARED_PREFIX } from '../imports';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
@@ -72,6 +73,41 @@ export const variantDirOf = (sketch: Sketch, variant: string) => resolve(sketch.
 export const SHARED_FOLDER = 'shared';
 
 export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, SHARED_FOLDER);
+
+const SOURCE = /\.(?:ts|js|mjs)$/u;
+
+export const sourceFilesIn = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true }) as string[])
+        .filter((path) => SOURCE.test(path))
+        .map((path) => resolve(dir, path))
+    : [];
+
+const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
+  const { partDir, sketchSharedDir } = options;
+  const shared = resolve(partDir, SHARED_FOLDER);
+
+  if (!existsSync(shared)) return;
+
+  for (const file of sourceFilesIn(partDir)) {
+    const source = readFileSync(file, 'utf8');
+    const rewritten = source.replace(
+      /(['"])(\.{1,2}\/[^'"]+)\1/gu,
+      (...[match = '', quote = '', specifier = '']: string[]) => {
+        const path = relative(shared, resolve(dirname(file), specifier));
+
+        return path.startsWith('..') || isAbsolute(path)
+          ? match
+          : `${quote}${SHARED_PREFIX}${path.split(sep).join('/')}${quote}`;
+      },
+    );
+
+    if (rewritten !== source) writeFileSync(file, rewritten);
+  }
+
+  cpSync(shared, sketchSharedDir, { recursive: true });
+  rmSync(shared, { recursive: true });
+};
 
 /** Reads `<layer>/<name>` as a sketch target, or answers with why it is not one. */
 export const parseTarget = (value: string | undefined): SketchTarget | string => {
@@ -311,7 +347,8 @@ const variantInfoOf = (round: string, author: string | undefined): SketchVariant
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
  * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
- * target is new. A target holds one open sketch at a time.
+ * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
+ * sketch at a time.
  */
 export const createSketch = (options: {
   product: ResolvedProduct;
@@ -344,8 +381,10 @@ export const createSketch = (options: {
 
     if (like) {
       copyPartAs({ from: like, to: folder, name: sketch.name });
+      liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
     } else if (existing) {
       cpSync(resolve(existing.file, '..'), folder, { recursive: true });
+      liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
     } else {
       if (sketch.layer === 'pages') {
         const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);

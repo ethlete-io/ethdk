@@ -1,20 +1,11 @@
-import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, relative, resolve, sep } from 'path';
 import { SHARED_PREFIX } from '../imports';
 import { partKeyOf } from '../resolve-product';
 import { importsOf } from '../ts-source';
-import { SHARED_FOLDER, sharedDirOf, Sketch } from './sketch';
+import { SHARED_FOLDER, sharedDirOf, Sketch, sourceFilesIn } from './sketch';
 
 type PartFile = { layer: string; name: string; file: string };
-
-const SOURCE = /\.(?:ts|js|mjs)$/u;
-
-const sourceFilesIn = (dir: string) =>
-  existsSync(dir)
-    ? (readdirSync(dir, { recursive: true }) as string[])
-        .filter((path) => SOURCE.test(path))
-        .map((path) => resolve(dir, path))
-    : [];
 
 const importsShared = (file: string) =>
   importsOf(readFileSync(file, 'utf8')).some((specifier) => specifier.startsWith(SHARED_PREFIX));

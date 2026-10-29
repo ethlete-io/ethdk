@@ -115,6 +115,19 @@ The fixed entries of `design-system-actions.md`, with their numbers kept. `Lnnn`
   `emptyStyles` to every state. A state with the same body and other styles now folds when each frame
   draws the same pixels in the default theme.
 
+### 3.16 A sketch on a merged part copies its `shared/` into each variant - fixed
+
+- **Pain:** the empty-state sketch on `pages/flows` got `a/pages/flows/shared/flow-data.ts` and
+  `b/pages/flows/shared/flow-data.ts`, two copies. A change to common code had to go into both.
+- **Cause:** a merge moves the sketch's `shared/` into the part folder (`pages/flows/shared/`, imported
+  relatively). `sketch new` then copies the whole part folder into each variant.
+- **Now:** this breaks the rule "common code goes in the sketch's `shared/`, never into copies per
+  variant".
+- **Fix option:** `sketch new` moves the part's `shared/` back into the sketch's `shared/` and rewrites
+  the imports to `@shared/`, the reverse of the merge.
+- **Fix done:** `sketch new` (also with `--like` on a merged part) moves the part's `shared/` into
+  the sketch's `shared/` and rewrites the relative imports to `@shared/`. A spec checks it.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)

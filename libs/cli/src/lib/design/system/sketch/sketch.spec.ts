@@ -391,6 +391,31 @@ describe('the shared folder of a sketch', () => {
   });
 });
 
+describe('a sketch on a part with a shared folder', () => {
+  it("moves the part's shared folder into the sketch's and imports it as @shared/", () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero');
+
+    mkdirSync(join(hero, 'shared'));
+    writeFileSync(join(hero, 'shared/data.ts'), "export { more as data } from './more';\n");
+    writeFileSync(join(hero, 'shared/more.ts'), 'export const more = 1;\n');
+    writeFileSync(
+      join(hero, 'hero.ts'),
+      `import { data } from './shared/data';\n${readFileSync(join(hero, 'hero.ts'), 'utf8')}`,
+    );
+
+    const sketch = open(target, 'elements/hero');
+
+    for (const variant of ['a', 'b']) {
+      expect(existsSync(join(sketch.dir, variant, 'elements/hero/shared'))).toBe(false);
+      expect(readFileSync(join(sketch.dir, variant, 'elements/hero/hero.ts'), 'utf8')).toContain("from '@shared/data'");
+    }
+    expect(readFileSync(join(sketch.dir, 'shared/data.ts'), 'utf8')).toContain("from '@shared/more'");
+    expect(existsSync(join(sketch.dir, 'shared/more.ts'))).toBe(true);
+    expect(existsSync(join(hero, 'shared/data.ts'))).toBe(true);
+  });
+});
+
 describe('sketch new --like', () => {
   it('starts each variant as a copy of the named part, renamed to the target and without madeBy', () => {
     const target = acme();

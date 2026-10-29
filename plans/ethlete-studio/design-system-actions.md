@@ -200,17 +200,6 @@ sketch` until the next merge of the part.
   3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
      and warns when its computed styles differ between states.
 
-### 3.16 A sketch on a merged part copies its `shared/` into each variant - open
-
-- **Pain:** the empty-state sketch on `pages/flows` got `a/pages/flows/shared/flow-data.ts` and
-  `b/pages/flows/shared/flow-data.ts`, two copies. A change to common code had to go into both.
-- **Cause:** a merge moves the sketch's `shared/` into the part folder (`pages/flows/shared/`, imported
-  relatively). `sketch new` then copies the whole part folder into each variant.
-- **Now:** this breaks the rule "common code goes in the sketch's `shared/`, never into copies per
-  variant".
-- **Fix option:** `sketch new` moves the part's `shared/` back into the sketch's `shared/` and rewrites
-  the imports to `@shared/`, the reverse of the merge.
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
