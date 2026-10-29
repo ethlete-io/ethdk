@@ -1,12 +1,13 @@
 import { definePart, drawing, html } from '@design-system';
 import tokens from './tokens.css?inline';
 
-type Group = 'surfaces' | 'accent' | 'warning' | 'type' | 'spacing';
+type Group = 'surfaces' | 'accent' | 'warning' | 'error' | 'type' | 'spacing';
 
 const groups: Record<Group, { title: string; owns: (name: string) => boolean }> = {
   surfaces: { title: 'Surfaces and text', owns: (name) => /^surface(-|$)/.test(name) || /^text(-muted)?$/.test(name) },
   accent: { title: 'Accent', owns: (name) => /^(accent|on-accent|focus-ring)/.test(name) },
   warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
+  error: { title: 'Error', owns: (name) => /^(on-)?danger/.test(name) },
   type: { title: 'Type scale', owns: (name) => /^(font-|weight-|text-(xs|sm|md|lg|xl))/.test(name) },
   spacing: { title: 'Spacing, radius and heights', owns: (name) => /^(space-|radius-|control-|row$)/.test(name) },
 };
@@ -24,7 +25,8 @@ const sampleOf = (name: string) => {
   if (name === 'focus-ring') return html`<span class="tk-ring">Focus</span>`;
   if (name === 'on-accent') return html`<span class="tk-fill">Merge</span>`;
   if (name === 'on-warning') return html`<span class="tk-fill tk-fill--warning">Check again</span>`;
-  if (groups.surfaces.owns(name) || groups.accent.owns(name) || groups.warning.owns(name))
+  if (name === 'on-danger') return html`<span class="tk-fill tk-fill--danger">Discard sketch</span>`;
+  if (groups.surfaces.owns(name) || groups.accent.owns(name) || groups.warning.owns(name) || groups.error.owns(name))
     return html`<span class="tk-swatch" style="background: var(--${name})"></span>`;
   if (name.startsWith('font-')) return html`<span style="font-family: var(--${name})">Aa 0123 {}</span>`;
   if (name.startsWith('weight-')) return html`<span style="font-weight: var(--${name})">Merge sketch</span>`;
@@ -101,6 +103,18 @@ const warningCard = (surface: string) =>
     >
   </div>`;
 
+const errorCard = (surface: string) =>
+  html`<div class="tk-surface" style="background: var(--${surface})">
+    <span class="tk-surface-name">${surface}</span>
+    <span class="tk-trows">
+      ${markRow('button', 'ready')}${markRow('select', 'warning')}${markRow('dialog', 'error')}
+    </span>
+    <span class="tk-danger-ink">Render check: 1 error</span>
+    <span class="tk-danger-note"
+      ><span class="tk-mark tk-mark--error">${marks.error}</span>The dialog story threw while rendering.</span
+    >
+  </div>`;
+
 const typeSample = (step: string) =>
   html`<div class="tk-type">
     <span class="tk-name">--text-${step}</span
@@ -126,6 +140,7 @@ const samples: Record<Group, string> = {
   surfaces: html`<div class="tk-grid">${surfaces.map(surfaceCard).join('')}</div>`,
   accent: html`<div class="tk-grid">${surfaces.map(accentCard).join('')}</div>`,
   warning: html`<div class="tk-grid">${surfaces.map(warningCard).join('')}</div>`,
+  error: html`<div class="tk-grid">${surfaces.map(errorCard).join('')}</div>`,
   type: html`<div class="tk-stack">${steps.map(typeSample).join('')}</div>`,
   spacing: spacingSample,
 };
@@ -148,12 +163,13 @@ const fillValues = (root: HTMLElement) => {
 };
 
 export default definePart<{ group: Group }>({
-  note: 'The settled Studio tokens, one state per group: neutral grey surfaces, teal accent, amber warning, compact type, balanced 4 px spacing. Each value is read from the CSS at runtime.',
+  note: 'Signal red, hue 25: the classic error red lifted to oklch 0.68 for the dark surfaces.',
   madeBy: ['claude-opus-5-5'],
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
     warning: { group: 'warning' },
+    error: { group: 'error' },
     type: { group: 'type' },
     spacing: { group: 'spacing' },
   },
@@ -190,15 +206,18 @@ export default definePart<{ group: Group }>({
         .tk-fill { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border-radius: var(--radius-control-md); background: var(--accent); color: var(--on-accent); font-weight: var(--weight-medium); }
         .tk-fill--hover { background: var(--accent-hover); }
         .tk-fill--warning { background: var(--warning); color: var(--on-warning); }
+        .tk-fill--danger { background: var(--danger); color: var(--on-danger); }
         .tk-trows { align-self: stretch; display: flex; flex-direction: column; }
         .tk-trow { display: flex; align-items: center; gap: var(--space-2); height: var(--row); padding: 0 var(--space-2); }
         .tk-trow-label { flex: 1; }
         .tk-mark { display: flex; flex: none; }
         .tk-mark--ready { color: var(--accent); }
-        .tk-mark--error { color: var(--color-et-danger); }
+        .tk-mark--error { color: var(--danger); }
         .tk-mark--warning { color: var(--warning); }
         .tk-warning-ink { color: var(--warning-text); font-weight: var(--weight-medium); }
         .tk-warning-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--warning-subtle); }
+        .tk-danger-ink { color: var(--danger-text); font-weight: var(--weight-medium); }
+        .tk-danger-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--danger-subtle); }
         .tk-ink { color: var(--accent-text); font-weight: var(--weight-medium); }
         .tk-subtle { align-self: stretch; display: flex; align-items: center; height: var(--row); padding: 0 var(--space-2); border-radius: var(--radius-control-sm); background: var(--accent-subtle); }
         .tk-ring { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); background: var(--surface-raised); outline: 2px solid var(--focus-ring); outline-offset: 2px; }
