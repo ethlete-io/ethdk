@@ -161,6 +161,18 @@ check` warns early.
   part, the folded states, or a stale hash).
 - **Fix options:** 1. find the cause; `sketch ready` names why it did not auto-merge (recommended). 2. always say "auto-merge skipped: <reason>".
 
+### 3.36 `--variant-note` overwrites the part's merged note - open
+
+- **Pain:** `foundations/tokens` "Error colour": the variant note replaced the settled tokens note
+  in every variant; a merge drops the old note.
+- **Fix options:** 1. store the variant note apart from `definePart({ note })` (recommended). 2. append it to the merged note.
+
+### 3.37 `sketch report --done` answers differently for the same case - open
+
+- **Pain:** after a live text report on each of a, b and c, `--done` printed "had no live report"
+  for a and b and "is no longer drawing" for c.
+- **Fix option:** one consistent "a: done" line (with 3.32).
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -507,6 +519,9 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   `--surface-overlay`. Below AA for text everywhere and below 3:1 for a mark on overlay.
 - **Fix options:** 1. a `foundations/tokens` sketch that gives `danger` a Studio tone, about
   oklch(0.68 0.19 25) (recommended). 2. only a `--danger-text` alias.
+- **Sketch (2026-10-29):** "Error colour", a signal red, b rose, c soft coral, is `ready` (agent
+  recommends a). A white `--on-danger` cannot pass AA with a mark >= 3 on overlay; all variants use
+  a dark ink on the fill.
 
 ### 5.51 No contrast numbers next to colour tokens - open
 
@@ -569,6 +584,13 @@ section without a page.
 - **Pain:** about 2.4 s per call; noticeable in a check-and-shot loop. Agents switch to
   `node dist/libs/cli/src/index.js design` on their own.
 - **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
+
+### 6.4 `dist/libs/cli` disappears while another agent builds the CLI - open
+
+- **Pain:** a sketch agent got MODULE_NOT_FOUND from `sketch check` while a parallel agent ran
+  `nx build cli`; a retry worked.
+- **Fix options:** 1. build to a temp dir and rename it into place (recommended). 2. the skill
+  says to retry once.
 
 ## 7. Open checks
 
