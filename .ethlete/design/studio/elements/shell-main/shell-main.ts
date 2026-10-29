@@ -1,5 +1,4 @@
 import { definePart, drawing, html } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 import styles from './shell-main.css?inline';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
@@ -92,6 +91,6 @@ export default definePart<Props>({
           ${panel === 'hidden' ? '' : sidePanel(product, side)}
         </div>
       </div>`,
-      styles: tokens + styles,
+      styles,
     }),
 });

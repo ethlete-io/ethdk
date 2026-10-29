@@ -1,7 +1,6 @@
 import { formField } from '@ethlete/components/design/form-field';
 import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { value?: string; open?: boolean; active?: string };
 
@@ -13,6 +12,7 @@ const OPTIONS = [
 
 export default definePart<Props>({
   note: 'The SDK select inside a form field, drawn by its mock from @ethlete/components/design.',
+  madeBy: ['claude-opus-5-5'],
   states: {
     placeholder: {},
     selected: { value: 'review' },
@@ -28,6 +28,6 @@ export default definePart<Props>({
         open,
         control: select({ options: OPTIONS, value, active, placeholder: 'Pick a status', panelColor: 'accent' }),
       }),
-      styles: tokens + selectStyles,
+      styles: selectStyles,
     }),
 });

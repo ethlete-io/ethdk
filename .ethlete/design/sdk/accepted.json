@@ -1,0 +1,34 @@
+[
+  {
+    "part": "components/button",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "2db89c8afb6f9a78",
+    "at": "2026-10-29T15:05:11.103Z",
+    "auto": true
+  },
+  {
+    "part": "components/form-field",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "126362df5518a865",
+    "at": "2026-10-29T15:05:14.457Z",
+    "auto": true
+  },
+  {
+    "part": "components/select",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "377e000333dd8649",
+    "at": "2026-10-29T15:05:17.559Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/tokens",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "5de1294e8aa0984c",
+    "at": "2026-10-29T15:05:40.646Z",
+    "auto": true
+  }
+]

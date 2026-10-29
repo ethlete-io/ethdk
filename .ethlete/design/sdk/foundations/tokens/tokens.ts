@@ -12,7 +12,8 @@ const SWATCHES = [
 ] as const;
 
 export default definePart<Props>({
-  note: 'Neutral SDK themes: a light and a dark surface, the colour themes accent and danger. Every part draws with it through @system/foundations/tokens.css?inline, so the tokens part of a product replaces it everywhere.',
+  note: 'Neutral SDK themes: a light and a dark surface, the colour themes accent and danger. Every frame loads it before the part styles, so the tokens part of a product replaces it everywhere.',
+  madeBy: ['claude-opus-5-5'],
   states: { light: { surface: 'light' }, dark: { surface: 'dark' } },
   render: ({ surface }) =>
     drawing({

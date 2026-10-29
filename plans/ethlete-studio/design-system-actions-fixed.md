@@ -675,3 +675,21 @@ sketch` until the next merge of the part.
 - **Open:** the frame in view still waits behind off-screen frames, because Studio loads every
   canvas `<img>` at once; lazy loading would fix it. An aborted request does not drop its queued
   thumbnail. Not measured again after the fix.
+
+### 5.17 Each part adds the product tokens to its own CSS - fixed
+
+- **Pain:** `shell-main`, `part-tree`, `canvas-frames` and `pages/start` each import
+  `@system/foundations/tokens.css?inline` and write `styles: tokens + styles`. `pages/system`
+  composes three of them and gets the token CSS three times. A new part without the import draws
+  unresolved `var(--…)` in its own frame, but resolves them inside a page.
+- **Fix option:** the frame loads the product tokens one time; parts stop importing them. Then
+  "used in" for tokens comes from the frame, not from imports.
+
+- **Step 1 done:** `libs/cli/design/web/frame.ts` loads one `<style>` with the product tokens
+  (the product's own `foundations/tokens`, else the base's), before the part's style. A tokens edit
+  redraws every part; the new-page stub no longer imports tokens; "used in" counts the tokens part
+  for every page. Shots of `part-tree` and `pages/system` stayed byte-identical.
+- **Step 2 done:** one-variant sketches dropped the import from `shell-main`, `part-tree`,
+  `canvas-frames`, `pages/start`, `foundations/logo` (studio) and `button`, `form-field`, `select`
+  (sdk). Each merged automatically with no visible change. The note of `sdk/foundations/tokens`
+  names the frame now, not the import.

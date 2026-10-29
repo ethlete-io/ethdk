@@ -1,11 +1,11 @@
 import { formField, formFieldStyles, input } from '@ethlete/components/design/form-field';
 import { definePart, drawing } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { value?: string; hint?: string; error?: string; focused?: boolean; disabled?: boolean };
 
 export default definePart<Props>({
   note: 'The SDK form field with a text input, drawn by its mock from @ethlete/components/design.',
+  madeBy: ['claude-opus-5-5'],
   states: {
     empty: { hint: 'Shown on your profile' },
     filled: { value: 'Ada Lovelace' },
@@ -17,6 +17,6 @@ export default definePart<Props>({
   render: ({ value, ...field }) =>
     drawing({
       body: formField({ id: 'name', label: 'Name', errorColor: 'danger', control: input({ value }), ...field }),
-      styles: tokens + formFieldStyles,
+      styles: formFieldStyles,
     }),
 });

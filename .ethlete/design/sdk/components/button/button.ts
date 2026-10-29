@@ -1,11 +1,11 @@
 import { button, buttonStyles, ButtonMockOptions } from '@ethlete/components/design/button';
 import { definePart, drawing } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = Pick<ButtonMockOptions, 'label' | 'variant' | 'size' | 'color' | 'pressed'>;
 
 export default definePart<Props>({
   note: 'The SDK button, drawn by its mock from @ethlete/components/design.',
+  madeBy: ['claude-opus-5-5'],
   states: {
     filled: { label: 'Save', variant: 'filled' },
     outline: { label: 'Cancel', variant: 'outline' },
@@ -16,5 +16,5 @@ export default definePart<Props>({
     small: { label: 'Save', variant: 'filled', size: 'sm' },
   },
   interactions: ['hover', 'focus-visible', 'active', 'disabled'],
-  render: (props) => drawing({ body: button(props), styles: tokens + buttonStyles }),
+  render: (props) => drawing({ body: button(props), styles: buttonStyles }),
 });

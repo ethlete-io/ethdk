@@ -1,7 +1,6 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
-import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { repo?: string };
 
@@ -65,6 +64,6 @@ export default definePart<Props>({
       body: html`<div class="h-full min-h-[900px] flex flex-col bg-surface">
         ${header(repo)} ${repo ? noProducts(repo) : noRepo}
       </div>`,
-      styles: tokens + open.styles + copy.styles + other.styles,
+      styles: open.styles + copy.styles + other.styles,
     }),
 });

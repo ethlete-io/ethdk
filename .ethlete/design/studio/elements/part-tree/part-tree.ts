@@ -1,5 +1,4 @@
 import { definePart, drawing, html } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 import styles from './part-tree.css?inline';
 
 type TreeState = { name: string; inert?: boolean; selected?: boolean };
@@ -55,6 +54,6 @@ export default definePart({
   render: ({ layers }: Props) =>
     drawing({
       body: html`<div class="st-tree">${layers.flatMap(layerRows).join('')}</div>`,
-      styles: tokens + styles,
+      styles: styles,
     }),
 });

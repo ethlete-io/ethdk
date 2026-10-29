@@ -1,5 +1,4 @@
 import { definePart, drawing, html, svgAsset } from '@design-system';
-import tokens from '@system/foundations/tokens.css?inline';
 import mark from '@assets/studio-mark.svg?raw';
 import styles from './logo.css?inline';
 
@@ -33,5 +32,5 @@ export default definePart<{ view: View }>({
   note: 'best',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { sizes: { view: 'sizes' }, sidebar: { view: 'sidebar' } },
-  render: ({ view }) => drawing({ body: view === 'sizes' ? sizes : sidebar, styles: `${tokens}${styles}` }),
+  render: ({ view }) => drawing({ body: view === 'sizes' ? sizes : sidebar, styles }),
 });

@@ -1,6 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
-import tokens from '@system/foundations/tokens.css?inline';
 import styles from './canvas-frames.css?inline';
 
 type Props = { part: string; states: string[]; zoom: string };
@@ -60,7 +59,7 @@ export default definePart({
         </figure>
         <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">${zoom}</span></div>
       </div>`,
-      styles: tokens + first?.styles + styles,
+      styles: first?.styles + styles,
     });
   },
 });
