@@ -1,11 +1,9 @@
-import { drawing, html } from '@design-system';
+import { drawing } from '@design-system';
 import treeRow from '@system/components/tree-row';
 import partTree from '@system/elements/part-tree';
+import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
+import type { StateGridDrawing } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
-import styles from './many-states.css?inline';
-
-export type GridRow = { label: string; cells: (string | undefined)[] };
-export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 
 type StateName = keyof typeof treeRow.states;
 
@@ -46,23 +44,16 @@ const treeSelected = {
   ],
 };
 
-const frame = (label: string, width: string, body: string) =>
-  html`<figure class="st-many-frame">
-    <figcaption class="st-many-head">
-      ${label}${width ? `<span class="st-many-head-width">${width}</span>` : ''}
-    </figcaption>
-    ${body}
-  </figure>`;
-
-export const manyStatesView = async (grid: string, gridStyles: string) => {
+export const manyStatesView = async (grid: StateGridDrawing) => {
   const tree = await partTree.render(treeSelected);
   const rowDrawing = await treeRow.render(treeRow.states.tree);
-  const canvas = html`<div class="st-many">
-    <div class="st-many-frames">
-      ${frame('grid', '', grid)} ${frame('tree', '280', `<div class="st-many-tree">${rowDrawing.body}</div>`)}
-    </div>
-    <div class="st-many-zoom"><span>Fit</span><span class="st-many-zoom-value">75%</span></div>
-  </div>`;
+  const canvas = canvasView(
+    [
+      canvasFrame('grid', stateGrid(grid)),
+      canvasFrame('tree', `<div style="width: 280px">${rowDrawing.body}</div>`, '280'),
+    ],
+    '75%',
+  );
   const shell = await shellMain.render({ section: 'System', product: 'studio', side: tree.body, content: canvas });
-  return drawing({ body: shell.body, styles: shell.styles + tree.styles + rowDrawing.styles + styles + gridStyles });
+  return drawing({ body: shell.body, styles: shell.styles + tree.styles + rowDrawing.styles + canvasFrameStyles });
 };
