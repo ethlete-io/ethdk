@@ -199,15 +199,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frame. The render check reported nothing.
 - **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
 
-### 4.28 A sketch that adds a `grid` never shows the grid before the merge - open
-
-- **Pain:** the `tree-row` "State grid" sketch: `design shot --states --variants` drew one flat
-  row of 19 cells for merged and for `a`; `shot-command.ts` reads the grid only without
-  `--variants`, and then only from the merged part. The Studio sketch compare also draws one row
-  per state (open point of 2.10).
-- **Fix option:** read the grid per axis (merged and each variant) and lay out each axis with its
-  own grid, in the shot and in the Studio sketch compare.
-
 ### 4.31 `sketch check` says nothing about a `grid` - open
 
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.

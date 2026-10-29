@@ -1165,3 +1165,13 @@ check` warns early.
 - **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
   output says so.
 - **Fix done (99d110f7a):** a shot now keeps the `#root` markup of each frame; when a variant cell and its merged cell differ in markup but not in pixels, the diff row says "no pixel change, but the markup differs" (sheet and printed line). On `pages/inbox` a it fires for the states whose agent logo SVG gained `width`/`height` attributes. The design-exploration skill names it.
+
+### 4.28 A sketch that adds a `grid` never shows the grid before the merge - fixed (ebdcea64e)
+
+- **Pain:** the `tree-row` "State grid" sketch: `design shot --states --variants` drew one flat
+  row of 19 cells for merged and for `a`; `shot-command.ts` reads the grid only without
+  `--variants`, and then only from the merged part. The Studio sketch compare also draws one row
+  per state (open point of 2.10).
+- **Fix option:** read the grid per axis (merged and each variant) and lay out each axis with its
+  own grid, in the shot and in the Studio sketch compare.
+- **Fix done (ebdcea64e):** `design shot --states --variants` reads the `grid` of the merged part and of each variant and lays out each row by its own grid, a diff row after each grid row (no grid: one row as before). The Studio sketch compare (apps/ethlete-studio, open point of 2.10) is not changed.
