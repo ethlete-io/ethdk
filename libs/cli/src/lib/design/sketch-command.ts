@@ -482,6 +482,12 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   if (!again) console.log(`${sketch.target} is ready`);
 
+  if (!product.parts.some((part) => partKeyOf(part) === sketch.target)) {
+    console.log('auto-merge skipped: new part, the user merges');
+
+    return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
+  }
+
   const noChange = await shotsShowNoChange({ target: context.target, config: context.config, product, sketch });
 
   if (noChange !== true) {

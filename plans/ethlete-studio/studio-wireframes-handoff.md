@@ -218,6 +218,25 @@ remove` exists now).
     cells, probably from the failed frames). Open from tonight: 2.13 (sdk `tokens` shows "from
     base" in studio), 3.42, 4.41, 4.42, 5.57, 5.58. Next: these findings, then switch and project
     switcher (list every host first, 5.24).
+    Resume update 2026-10-29: 2.13, 3.42, 4.42, 5.58 built and moved to fixed (appended).
+    4.41 built: Vite full-reload bridges to Studio parts SSE and clears image caches; regression
+    passes. Tom's existing :4402 still returns 504 for @design-system; restart requested, no reply
+    yet. Do not stop it. Isolated colors contact sheet: all four states render cleanly, no overlaps;
+    isolated `design check --product studio` passes. CLI build, typecheck, lint and the focused
+    regression suites pass (one cwd-dependent test corrected). Docs and changesets added.
+    5.57: NEW sketch `foundations/sheet`, a, is ready and needs Tom's merge. Helpers `tokenSheet`,
+    `fillTokenValues`; take styles from default part `.styles`. No merged design files changed.
+    After merge: check/format/commit the part; one-variant sketches on colors, type and spacing
+    adopt the helper, preserving all states/pixels. Then close 5.57; then switch and project switcher.
+    Host inventory started: switch exists only in pages/inbox (`ib-switch`, on/off via
+    showResolved). Project switcher exists in elements/shell-main (`st-shell-project`), inherited
+    by all composed pages. Check the two-host rule before extracting; don't invent a second host.
+    New native finding 1.5: Tom reports frequent nested Tokio runtime panic plus CEF/Mesa messages.
+    No concrete runtime caller found. Native lib.rs now captures a forced backtrace in its panic
+    hook, preserving the prior hook; requires native rebuild/restart and stderr log. Root cause
+    remains open; ask for triggering action/next full stack (already asked asynchronously).
+    User edits existed on resume: design-system.md modified; designer-workflow.md and
+    sdk-component-catalog.md untracked. Leave them alone.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 

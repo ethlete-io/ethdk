@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -72,6 +72,20 @@ describe('designPart remove', () => {
       expect.stringMatching(/open sketch/),
     ]);
     expect(existsSync(join(productDir, 'elements/hero'))).toBe(true);
+    expect(existsSync(join(productDir, 'pages/home'))).toBe(true);
+  });
+
+  it('refuses source imports of files inside the part and reports their lines', () => {
+    const errors: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void errors.push(String(line)));
+    const { target, productDir } = acme();
+    mkdirSync(join(target, 'apps/app/src'), { recursive: true });
+    writeFileSync(
+      join(target, 'apps/app/src/styles.css'),
+      `/* styles */\n@import "../../../.ethlete/design/acme/pages/home/home.css";\n`,
+    );
+    expect(remove(target, 'pages/home')).toBe(1);
+    expect(errors[0]).toContain('apps/app/src/styles.css:2');
     expect(existsSync(join(productDir, 'pages/home'))).toBe(true);
   });
 

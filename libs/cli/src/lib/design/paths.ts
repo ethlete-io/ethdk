@@ -46,6 +46,8 @@ export type DesignProduct = DesignProject & {
   base?: string;
   presets?: Record<string, DesignPreset>;
   tokens?: string[];
+  /** Inherited parts to omit; a product's own part with the same key remains visible. */
+  hideBaseParts?: string[];
 };
 
 export type DesignConfig = {

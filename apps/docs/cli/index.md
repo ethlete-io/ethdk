@@ -51,3 +51,31 @@ Changesets runs through the package manager the repo uses (`yarn changeset`, `pn
 - `et design [checkout]` - serve the design system in the `.ethlete/design` folder of a checkout to Ethlete Studio (the current repo by default, or a path, or `--checkout <path>`). `et design check` checks the system and names each problem. Studio's tiles are pictures the server draws in headless Chromium, so they need `playwright` or `playwright-core` (with its Chromium) in the checkout or next to the cli; without it a tile stays blank.
 
 Running `et` with no command, `--help` or an unknown command prints the command list.
+
+## Design product configuration
+
+In `.ethlete/design/config.json`, a product can hide parts inherited from its base:
+
+```json
+{
+  "products": {
+    "studio": {
+      "base": ".ethlete/design/sdk",
+      "hideBaseParts": ["foundations/tokens"],
+      "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"]
+    }
+  }
+}
+```
+
+`hideBaseParts` defaults to an empty list. It hides inherited parts from the resolved system;
+a product's own part with the same key remains available. `tokens` lists the parts whose CSS
+every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
+
+`et design check` warns with `TOKEN-SELECTOR` when a listed token stylesheet contains a selector
+outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
+instead of the globally loaded token CSS.
+
+`et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
+application source imports files under that part, and reports each importing file and line.
+Remove or update those imports first.

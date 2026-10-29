@@ -62,6 +62,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproducing case. Reopen with a `sample` of WebContent if Studio hangs again. A hang plus a
   manual WebContent kill during a pinch can also cause finding 1.1.
 
+### 1.5 Studio logs a nested Tokio runtime panic - open
+
+- **Pain (Tom, 2026-10-29):** frequent `tokio-rt-worker` panic: "Cannot start a runtime from within a runtime" at Tokio 1.54.1 scheduler/multi_thread/mod.rs:89.
+- **Investigation:** no concrete nested-runtime caller found in Studio commands or the pinned CEF event dispatch. No speculative runtime fix applied.
+- **Diagnostic built:** Studio preserves the existing panic hook and force-captures a backtrace to stderr. Requires a rebuilt/restarted native app. Four focused Rust agent tests and rustfmt pass.
+- **Next:** capture the next panic's full stack plus triggering action, then fix that call path. Root cause remains open.
+- **Other reported output:** DevTools remote debugging disallowed by system admin, rejected Blink Widget message, Mesa loader permission denied for `/usr/lib64/gbm/dri_gbm.so`, and CEF browser-info timeouts. Their relation to the panic is unproven; retain them with the next stack.
+
 ## 2. Review on the canvas
 
 ### 2.2 A new sketch adds controls that already exist - unverified (L2562)
@@ -71,12 +79,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done:** the shared canvas element (2.1). No check for repeated markup.
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
-
-### 2.13 A removed product part comes back as the base part - open
-
-- **Pain:** after `design part remove foundations/tokens` on studio, the tree shows `tokens` "from
-  base": the sdk part. On :4402 its frames failed. Studio has no own tokens part any more.
-- **Fix options:** 1. a product config key that hides named base parts (recommended). 2. accept it.
 
 ## 3. Feedback, rounds and merge
 
@@ -108,11 +110,6 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the
   skip line, so the agent sees noise.
 
-### 3.42 `sketch ready` on a new part reads like a regression - open
-
-- **Pain:** a new part prints "auto-merge skipped: variant a changes surfaces, accent ...".
-- **Fix option:** print "auto-merge skipped: new part, the user merges".
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -136,7 +133,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.41 Tom's server serves outdated dependency links after a part removal - open
+### 4.41 Tom's server serves outdated dependency links after a part removal - unverified
 
 - **Pain:** after the tokens split, :4402 answered 504 "Outdated Optimize Dep" for
   `@design-system.js`, so every frame of `foundations/colors` and the base `tokens` failed with
@@ -144,12 +141,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix options:** 1. the server does a full reload of its frames after a dependency re-optimize
   (recommended). 2. pre-bundle `@design-system` once, so a part change never re-optimizes it.
 
-### 4.42 A token part's CSS can hold class rules that leak into every frame - open
-
-- **Pain:** a listed `tokens` part's stylesheet loads globally, and nothing warns about class rules
-  in it.
-- **Fix option:** `design check` warns about selectors other than `:root`, `html`, `body` and
-  `.et-*` in a token part's CSS (recommended).
+- **Built 2026-10-29:** The server forwards Vite client full-reload messages through Studio's parts event stream and clears shot/thumbnail caches. Regression verifies the full refresh with HMR disabled. Live :4402 still needs Tom's restart to load this fix; its current dependency URL returns 504.
 
 ## 5. Drawing parts and pages
 
@@ -276,12 +268,7 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Fix options:** 1. a merged `foundations/sheet` helper (`tokenSheet({ title, sample, names })`)
   that the foundations import (recommended). 2. `sketch new <part> --from <part> --take <states>`.
 
-### 5.58 `part remove` does not see an app import of the part's files - open
-
-- **Pain:** `apps/ethlete-studio/src/styles.css` imported `foundations/tokens/tokens.css`; after the
-  removal every frame failed to load until the import named the three new files.
-- **Fix option:** `part remove` greps the repo for the part's path and refuses or lists the hits
-  (recommended).
+- **Built 2026-10-29:** `foundations/sheet`, variant a, is ready. Exports `tokenSheet`, `fillTokenValues`, and its stylesheet through the default part's `styles`. Own overview inspected; sketch type/render check passes. Tom merges the new part; then three one-variant host sketches adopt it without changing the token pages. Finding remains open until those adoptions merge.
 
 ## 6. Agent process
 

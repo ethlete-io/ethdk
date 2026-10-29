@@ -58,6 +58,7 @@
     "studio": {
       "styles": [".ethlete/design/studio/styles.css"],
       "base": ".ethlete/design/sdk",
+      "hideBaseParts": ["foundations/tokens"],
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],
       "presets": {
         "desktop": {

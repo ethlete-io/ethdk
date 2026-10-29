@@ -119,6 +119,29 @@ describe('designSketch', () => {
     expect(lines.pop()).toBe('auto-merge skipped: variant a changes default');
   });
 
+  it('skips automatic merge for a new part without comparing shots', async () => {
+    const target = acme();
+    const lines = output();
+    write(
+      target,
+      'new',
+      'components/new-part',
+      '--variants',
+      'a',
+      '--round',
+      'New',
+      '--note',
+      'new',
+      '--product',
+      'acme',
+    );
+    vi.mocked(shotsShowNoChange).mockClear();
+
+    expect(await write(target, 'ready', 'components/new-part', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('auto-merge skipped: new part, the user merges');
+    expect(shotsShowNoChange).not.toHaveBeenCalled();
+  });
+
   it('names an unknown command and prints the usage', () => {
     const lines = output();
 

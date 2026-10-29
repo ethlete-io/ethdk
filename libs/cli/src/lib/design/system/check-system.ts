@@ -12,6 +12,7 @@ import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
+import { tokenSelectorsOf } from './rules/token-selectors';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
@@ -111,6 +112,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
     goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
     unusedSharedExportsOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
     staleReplacesOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
+    tokenSelectorsOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
 
     ruleProblemsOf(product).forEach(report);
 

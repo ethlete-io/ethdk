@@ -120,6 +120,15 @@ pub fn run() {
         return;
     }
 
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        previous_hook(info);
+        eprintln!(
+            "Studio panic backtrace:\n{}",
+            std::backtrace::Backtrace::force_capture()
+        );
+    }));
+
     widen_path();
     child_env::remember();
 

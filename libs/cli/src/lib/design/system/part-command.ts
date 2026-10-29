@@ -1,5 +1,6 @@
-import { rmSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { dirname, isAbsolute, relative, resolve } from 'path';
+import ts from 'typescript';
 import { listComments, resolveComment } from './comments/comment';
 import { partDependenciesOf } from './imports';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -10,7 +11,48 @@ import { writeEditorTsconfig } from './system-tsconfig';
 
 export const PART_USAGE = 'part remove <layer>/<name> --by <model id> [--product <name>]';
 
-const removalProblemOf = (product: ResolvedProduct, key: string) => {
+const sourceImportsOf = (target: string, folder: string) => {
+  const hits: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (
+        entry.name.startsWith('.') ||
+        ['node_modules', 'dist', 'build', 'coverage', 'docs', 'generated'].includes(entry.name)
+      )
+        continue;
+      const file = resolve(dir, entry.name);
+      if (entry.isDirectory()) {
+        visit(file);
+        continue;
+      }
+      if (!entry.isFile() || !/\.(?:[cm]?[jt]sx?|css|scss)$/u.test(entry.name)) continue;
+      const source = readFileSync(file, 'utf8');
+      const imports = /\.(?:css|scss)$/u.test(entry.name)
+        ? [
+            ...source
+              .replace(/\/\*[\s\S]*?\*\//gu, (comment) => comment.replace(/[^\n]/gu, ' '))
+              .matchAll(/@(?:import|use|forward)\s+(?:url\(\s*)?["']([^"']+)["']/gu),
+          ].map((match) => ({
+            fileName: match[1],
+            pos: match.index,
+          }))
+        : ts.preProcessFile(source, true, true).importedFiles;
+      for (const imported of imports) {
+        const specifier = imported.fileName?.split('?')[0];
+        if (!specifier) continue;
+        const path = specifier.startsWith('.') ? resolve(dirname(file), specifier) : resolve(target, specifier);
+        const inside = relative(folder, path);
+        if (inside.startsWith('..') || isAbsolute(inside)) continue;
+        const line = source.slice(0, imported.pos).split('\n').length;
+        hits.push(`${relative(target, file)}:${line}`);
+      }
+    }
+  };
+  visit(target);
+  return hits;
+};
+
+const removalProblemOf = ({ target, product, key }: { target: string; product: ResolvedProduct; key: string }) => {
   const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
 
   if (!part) return `NO PART "${key}" in ${product.name}`;
@@ -27,6 +69,10 @@ const removalProblemOf = (product: ResolvedProduct, key: string) => {
     .map(partKeyOf);
 
   if (importers.length > 0) return `${key} is imported by ${importers.join(', ')} - remove those imports first`;
+
+  const sourceImports = sourceImportsOf(target, dirname(part.file));
+
+  if (sourceImports.length > 0) return `${key} is imported by ${sourceImports.join(', ')} - remove those imports first`;
 
   return null;
 };
@@ -73,7 +119,7 @@ export const designPart = (options: { target: string; argv: string[]; invocation
   }
 
   const key = partKeyOf(parsed);
-  const problem = removalProblemOf(product, key);
+  const problem = removalProblemOf({ target, product, key });
 
   if (problem) {
     console.error(problem);

@@ -410,6 +410,25 @@ const designExplore = ({
       events.signal('parts', { revision, ...change });
     };
 
+    const hot = vite.environments?.['client']?.hot;
+
+    if (hot) {
+      const send = hot.send.bind(hot);
+
+      hot.send = (
+        payload: import('vite', { with: { 'resolution-mode': 'import' } }).HotPayload | string,
+        data?: unknown,
+      ) => {
+        // HMR is disabled: Studio must replace frames when Vite invalidates optimized dependency URLs.
+        if (typeof payload === 'object' && payload.type === 'full-reload') {
+          thumbs.clear();
+          redraw(ALL_PARTS);
+        }
+
+        return typeof payload === 'string' ? send(payload, data) : send(payload);
+      };
+    }
+
     const configPath = configPathOf(target);
 
     const reloadConfig = () => {

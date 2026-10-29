@@ -1446,3 +1446,36 @@ check` warns early.
   `foundations/spacing`, one tree entry each (recommended; a sketch after the error colour merge). 2. Studio lays out the groups of one part in columns that fit the viewport. 3. one tree leaf per
   group inside `tokens`.
 - **Fix done (e74f21315, 8c1671e23):** Option 1. The CLI loads token CSS from a per-product list `tokens` in `.ethlete/design/config.json` (default `foundations/tokens`). Studio lists `foundations/colors`, `/type`, `/spacing`; Tom merged the three sketches, `foundations/tokens` is removed, and the Studio app imports the three stylesheets. Open: 2.13 (the base tokens part shows again), 5.57.
+
+### 2.13 A removed product part comes back as the base part - fixed
+
+- **Pain:** after `design part remove foundations/tokens` on studio, the tree shows `tokens` "from
+  base": the sdk part. On :4402 its frames failed. Studio has no own tokens part any more.
+- **Fix options:** 1. a product config key that hides named base parts (recommended). 2. accept it.
+
+- **Checked 2026-10-29:** `hideBaseParts` in product config filters inherited parts while preserving own overrides. Studio hides `foundations/tokens`. Resolver regression passes; isolated Studio design check passes.
+
+### 3.42 `sketch ready` on a new part reads like a regression - fixed
+
+- **Pain:** a new part prints "auto-merge skipped: variant a changes surfaces, accent ...".
+- **Fix option:** print "auto-merge skipped: new part, the user merges".
+
+- **Checked 2026-10-29:** `sketch ready` detects a new target before comparing shots and prints "auto-merge skipped: new part, the user merges". Regression verifies no comparison shots run.
+
+### 4.42 A token part's CSS can hold class rules that leak into every frame - fixed
+
+- **Pain:** a listed `tokens` part's stylesheet loads globally, and nothing warns about class rules
+  in it.
+- **Fix option:** `design check` warns about selectors other than `:root`, `html`, `body` and
+  `.et-*` in a token part's CSS (recommended).
+
+- **Checked 2026-10-29:** `design check` emits TOKEN-SELECTOR warnings for unscoped selectors in listed token stylesheets. PostCSS and selector parsing handle layers, nesting and keyframes. Three tests pass, including the real Studio sheets.
+
+### 5.58 `part remove` does not see an app import of the part's files - fixed
+
+- **Pain:** `apps/ethlete-studio/src/styles.css` imported `foundations/tokens/tokens.css`; after the
+  removal every frame failed to load until the import named the three new files.
+- **Fix option:** `part remove` greps the repo for the part's path and refuses or lists the hits
+  (recommended).
+
+- **Checked 2026-10-29:** `part remove` scans repository TS/JS/CSS/SCSS source imports before deleting a part, refuses on hits and reports file:line. The app stylesheet regression passes and confirms the folder remains.

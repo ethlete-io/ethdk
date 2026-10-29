@@ -40,6 +40,19 @@ describe('resolveProduct', () => {
     expect(product.problems).toEqual([]);
   });
 
+  it('hides inherited parts but retains product overrides', () => {
+    const target = acme();
+    const config = readConfig(target)?.products?.['acme'] ?? {};
+    const product = resolveProduct({
+      target,
+      name: 'acme',
+      config: { ...config, hideBaseParts: ['foundations/tokens', 'components/button'] },
+    });
+
+    expect(product.parts.some((part) => part.name === 'tokens')).toBe(false);
+    expect(product.parts.find((part) => part.name === 'button')?.origin).toBe('overridden');
+  });
+
   it('takes the presets of the base when the product has none', () => {
     const target = acme();
 

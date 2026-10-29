@@ -46,11 +46,14 @@ export const resolveProduct = (options: { target: string; name: string; config: 
   const loaded = config.base ? loadBase({ target, base: config.base, configFile }) : { base: null, problems: [] };
   const base = loaded.base;
   const inherited = base ? partFilesOf(base.dir) : { parts: [], problems: [] };
+  const hidden = new Set(config.hideBaseParts ?? []);
   const ownKeys = new Set(own.parts.map(partKeyOf));
   const baseKeys = new Set(inherited.parts.map(partKeyOf));
   const parts = [
     ...own.parts.map((part) => read(part, baseKeys.has(partKeyOf(part)) ? 'overridden' : 'product')),
-    ...inherited.parts.filter((part) => !ownKeys.has(partKeyOf(part))).map((part) => read(part, 'base')),
+    ...inherited.parts
+      .filter((part) => !ownKeys.has(partKeyOf(part)) && !hidden.has(partKeyOf(part)))
+      .map((part) => read(part, 'base')),
   ].sort((a, b) => LAYERS.indexOf(a.layer) - LAYERS.indexOf(b.layer) || a.name.localeCompare(b.name));
   const basePresets = base?.config.presets;
   const presets = hasPresets(config.presets) ? config.presets : hasPresets(basePresets) ? basePresets : {};

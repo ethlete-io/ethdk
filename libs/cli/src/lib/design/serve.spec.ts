@@ -275,6 +275,7 @@ const serveAcme = async (target: string) => {
       getModulesByFile: (file: string) => modulesByFile.get(file),
     },
     ws: { send: (message: unknown) => sent.push(message) },
+    environments: { client: { hot: { send: (message: unknown) => sent.push(message) } } },
     middlewares: { use: (path: string, handler: Handler) => handlers.set(path, handler) },
     httpServer: { on: () => undefined },
     watcher: {
@@ -312,10 +313,38 @@ const serveAcme = async (target: string) => {
       handlers.get(path)?.(request as unknown as IncomingMessage, response as unknown as ServerResponse);
     });
 
-  return { plugin, ask, handlers, watchers, sent, invalidated, loaded, modulesByFile };
+  return {
+    plugin,
+    ask,
+    handlers,
+    watchers,
+    sent,
+    invalidated,
+    loaded,
+    modulesByFile,
+    hot: vite.environments.client.hot,
+  };
 };
 
 describe('the design server for a design system', () => {
+  it('replaces Studio frames after Vite re-optimizes dependencies with HMR disabled', async () => {
+    const { handlers, hot, sent } = await serveAcme(acme());
+    const written: string[] = [];
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
+    );
+    hot.send({ type: 'full-reload', path: '*' });
+
+    expect(written).toHaveLength(2);
+    expect(written[1]).toContain('event: parts\n');
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({ revision: 1, all: true });
+    expect(sent).toEqual([{ type: 'full-reload', path: '*' }]);
+    hot.send({ type: 'connected' });
+    expect(written).toHaveLength(2);
+  });
+
   it('answers the parts list of every product, or of one, and 404 for an unknown one', async () => {
     const { ask, loaded } = await serveAcme(acme());
     const all = await ask('/__design/system');
