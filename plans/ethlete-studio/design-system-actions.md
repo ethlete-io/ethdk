@@ -20,7 +20,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 1. Studio app (native and WebKit)
 
-### 1.1 Trackpad pinch kills the WebKit content process - open (L2844)
+### 1.1 Trackpad pinch kills the WebKit content process - cause found (L2844)
 
 - **Pain:** a pinch on the macOS trackpad crashes the content process, and Studio reloads fully.
   All view state is lost.
@@ -66,7 +66,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   swapping iframe). Expect no `CRASH` line; send the log if one shows. Then in Studio after a fresh
   start: pinch 5 times, and note whether the crashes start only after a WebContent kill or a hang.
 
-### 1.2 Studio freezes at 100% CPU during frame reloads - reopened (L2697, L2965, L3076)
+### 1.2 Studio freezes at 100% CPU during frame reloads - not reproduced (L2697, L2965, L3076)
 
 - **Pain:** Studio hung two times. Cmd+R and SIGTERM did not help. Only a kill of the WebContent
   process helped.
