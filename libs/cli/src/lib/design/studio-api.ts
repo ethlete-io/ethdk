@@ -32,6 +32,7 @@ import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
+import { BoxOf, diffVariant } from './variant-diff';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
 import { decideSketch, findSketch, listSketches, parseTarget, readSketchReport, Sketch } from './system/sketch/sketch';
@@ -42,6 +43,7 @@ import { SketchVariant } from './system/system-modules';
 export const SKETCHES_PATH = '/__design/sketches';
 export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
 export const SKETCH_COMPARE_PATH = '/__design/sketch-compare';
+export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
 export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
@@ -69,7 +71,14 @@ export type VariantPartLoader = (options: {
   sketch: SketchVariant | null;
 }) => Promise<unknown>;
 
-type Asked = { target: string; url: URL; request: IncomingMessage; load?: VariantPartLoader; pictureOf?: PictureOf };
+type Asked = {
+  target: string;
+  url: URL;
+  request: IncomingMessage;
+  load?: VariantPartLoader;
+  pictureOf?: PictureOf;
+  boxOf?: BoxOf;
+};
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
 
@@ -266,6 +275,32 @@ export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sk
       params: asked.url.searchParams,
       pictureOf,
       load: ({ file, product: name }) => load({ file, product: name, sketch: null }),
+    }),
+  };
+});
+
+/**
+ * `?product=&sketch=&variant=&size=`: per state of the sketched part, the box of the pixels the variant changes
+ * against the product now, at rest, in the theme of `surface` and `color`.
+ */
+export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
+  const variant = asked.url.searchParams.get('variant') ?? '';
+  const { load, pictureOf, boxOf } = asked;
+
+  if (!sketch.variants.includes(variant)) return failure(404, `${sketch.target} has no variant "${variant}"`);
+  if (!load || !pictureOf || !boxOf) return failure(503, 'this server draws no pictures');
+
+  return {
+    status: 200,
+    body: await diffVariant({
+      product,
+      sketch,
+      variant,
+      size: asked.url.searchParams.get('size'),
+      params: asked.url.searchParams,
+      pictureOf,
+      boxOf,
+      load,
     }),
   };
 });

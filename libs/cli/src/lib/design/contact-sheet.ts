@@ -11,10 +11,13 @@ export type SheetCell =
 
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
 
+/** The smallest rectangle around every changed pixel, in pixels from the top left of the picture. */
+export type ChangedBox = { x: number; y: number; width: number; height: number };
+
 /**
- * `after` faded to grey with each pixel that differs from `before` in red, over the larger of both sizes; a pixel
- * only one of them covers counts as changed. Runs in the sheet's page through its source, so it may use nothing
- * outside its own body.
+ * `after` faded to grey with each pixel that differs from `before` in red, over the larger of both sizes, with the
+ * count of changed pixels and the `box` around them (`null` without one); a pixel only one of them covers counts as
+ * changed. Runs in a browser page through its source, so it may use nothing outside its own body.
  */
 export function diffPixelsOf(before: Pixels, after: Pixels) {
   const width = Math.max(before.width, after.width);
@@ -28,6 +31,10 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
   // Word layout is little-endian RGBA (red in the low byte), as on every platform a browser runs on.
   const red = 0xff0000ff;
   let changed = 0;
+  let left = width;
+  let top = height;
+  let right = -1;
+  let bottom = -1;
 
   for (let y = 0; y < height; y++) {
     const inBoth = y < before.height && y < after.height;
@@ -46,11 +53,17 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
       } else {
         changed++;
         out[index] = red;
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = y;
       }
     }
   }
 
-  return { width, height, data, changed };
+  const box = changed > 0 ? { x: left, y: top, width: right - left + 1, height: bottom - top + 1 } : null;
+
+  return { width, height, data, changed, box };
 }
 
 const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
@@ -88,6 +101,40 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
   }
   return lines;
 })(${diff})`;
+
+const changedBoxIn = (diff: string, urls: string[]) => `(async ([before, after]) => {
+  const pixelsOf = async (src) => {
+    const image = new Image();
+    image.src = src;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  };
+  const [beforePixels, afterPixels] = await Promise.all([pixelsOf(before), pixelsOf(after)]);
+  return (${diff})(beforePixels, afterPixels).box;
+})(${JSON.stringify(urls)})`;
+
+/** The box around the pixels `after` changes from `before`, or `null` when both draw the same pixels. */
+export const changedBoxOf = async (options: { browser: Browser; before: Buffer; after: Buffer }) => {
+  const { browser, before, after } = options;
+
+  if (before.equals(after)) return null;
+
+  const context = await browser.newContext();
+
+  try {
+    const page = await context.newPage();
+    const urls = [before, after].map((png) => `data:image/png;base64,${png.toString('base64')}`);
+
+    return (await page.evaluate(changedBoxIn(diffPixelsOf.toString(), urls))) as ChangedBox | null;
+  } finally {
+    await context.close();
+  }
+};
 
 const escapeHtml = (text: string) =>
   text.replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;').replace(/"/gu, '&quot;');

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { contactSheetHtml, contactSheetOf, diffPixelsOf } from './contact-sheet';
+import { changedBoxOf, contactSheetHtml, contactSheetOf, diffPixelsOf } from './contact-sheet';
 import { Browser } from './thumb';
 
 describe('contactSheetHtml', () => {
@@ -51,6 +51,7 @@ describe('diffPixelsOf', () => {
       height: 1,
       data: new Uint8ClampedArray([191, 191, 191, 255, 255, 0, 0, 255]),
       changed: 1,
+      box: { x: 1, y: 0, width: 1, height: 1 },
     });
   });
 
@@ -58,6 +59,16 @@ describe('diffPixelsOf', () => {
     const diff = diffPixelsOf(pixels(1, 1, [9, 9, 9, 255]), pixels(1, 2, [9, 9, 9, 255, 9, 9, 9, 255]));
 
     expect([diff.width, diff.height, diff.changed]).toEqual([1, 2, 1]);
+  });
+
+  it('boxes every changed pixel, and gives no box without one', () => {
+    const grey = [9, 9, 9, 255];
+    const red = [255, 0, 0, 255];
+    const before = pixels(3, 3, [...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey]);
+    const after = pixels(3, 3, [...grey, ...red, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...red]);
+
+    expect(diffPixelsOf(before, after).box).toEqual({ x: 1, y: 0, width: 2, height: 3 });
+    expect(diffPixelsOf(before, before).box).toBeNull();
   });
 
   it('runs from its own source, as the sheet page runs it', () => {
@@ -110,5 +121,30 @@ describe('contactSheetOf', () => {
     expect(page.evaluate.mock.calls[1]?.[0]).toContain('function diffPixelsOf');
     expect(page.evaluate.mock.calls[1]?.[0]).toContain('canvas.style.width = above.getBoundingClientRect().width');
     expect(page.setViewportSize).toHaveBeenCalledWith({ width: 700, height: 1 });
+  });
+});
+
+describe('changedBoxOf', () => {
+  it('opens no page for equal pictures', async () => {
+    const browser = { newContext: vi.fn() } as unknown as Browser;
+
+    expect(await changedBoxOf({ browser, before: Buffer.from('a'), after: Buffer.from('a') })).toBeNull();
+    expect(browser.newContext).not.toHaveBeenCalled();
+  });
+
+  it('diffs both pictures in a page and closes the context', async () => {
+    const page = { evaluate: vi.fn().mockResolvedValue({ x: 1, y: 2, width: 3, height: 4 }) };
+    const context = { newPage: vi.fn().mockResolvedValue(page), close: vi.fn() };
+    const browser = { newContext: vi.fn().mockResolvedValue(context) } as unknown as Browser;
+
+    expect(await changedBoxOf({ browser, before: Buffer.from('a'), after: Buffer.from('b') })).toEqual({
+      x: 1,
+      y: 2,
+      width: 3,
+      height: 4,
+    });
+    expect(page.evaluate.mock.calls[0]?.[0]).toContain('function diffPixelsOf');
+    expect(page.evaluate.mock.calls[0]?.[0]).toContain('data:image/png;base64,YQ==');
+    expect(context.close).toHaveBeenCalled();
   });
 });

@@ -86,6 +86,66 @@ describe('SketchViewComponent merge preview', () => {
     expect(preview?.querySelector('[data-merge-compare-rendering]')).not.toBeNull();
   });
 
+  it('shows the pixel diff per state under each variant and marks a changed box on its frame on a click', async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(url);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-diff'))
+        return json({
+          target: 'components/card',
+          variant: new URL(url).searchParams.get('variant'),
+          states: [
+            { state: 'default', box: { x: 4, y: 2, width: 8, height: 4 } },
+            { state: 'empty', box: null },
+          ],
+        });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: ['a', 'b'].map((variant) => ({ variant, states: ['default', 'empty'], interactions: [] })),
+    });
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+    const summaries = [...root.querySelectorAll<HTMLButtonElement>('[data-variant-diff-summary]')];
+
+    expect(summaries.map((summary) => summary.textContent?.trim())).toEqual([
+      '1 of 2 states differs in pixels',
+      '1 of 2 states differs in pixels',
+    ]);
+    expect(root.querySelector('[data-variant-diff]')).toBeNull();
+
+    summaries[0]?.click();
+    await settle(fixture);
+
+    const lines = [...root.querySelectorAll('[data-variant-diff]')].map((line) => line.textContent?.trim());
+
+    expect(lines).toEqual(['default · 8 × 4 px']);
+    expect(
+      asked.some((url) => url.includes('/__design/sketch-diff?product=web&sketch=components%2Fcard&variant=b')),
+    ).toBe(true);
+    expect(root.querySelector('[data-part-outline]')).toBeNull();
+
+    root.querySelector<HTMLButtonElement>('button[data-variant-diff]')?.click();
+    await settle(fixture);
+
+    const outline = root.querySelector<HTMLElement>('[data-part-outline]');
+
+    expect(outline?.style.width).toBe('8px');
+    expect(outline?.style.height).toBe('4px');
+  });
+
   it('flips a drawing column to drawn with a note once its report turns 30 minutes old', async () => {
     vi.stubGlobal('fetch', (url: string) =>
       url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),

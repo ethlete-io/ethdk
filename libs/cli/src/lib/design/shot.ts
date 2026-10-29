@@ -1,5 +1,7 @@
+import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
 import { chromiumOf } from './browser';
+import { ChangedBox, changedBoxOf } from './contact-sheet';
 import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
 import { SketchVariant, SystemModules } from './system/system-modules';
@@ -20,6 +22,8 @@ import {
 } from './thumb';
 
 export const SHOT_PATH = '/__design/shot';
+
+const BOX_CACHE_LIMIT = 500;
 
 const isPositiveWhole = (pixels: number) => Number.isInteger(pixels) && pixels > 0;
 
@@ -133,6 +137,7 @@ export const createPartShooter = (options: {
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
+  const boxes = new Map<string, Promise<ChangedBox | null>>();
 
   const draw = async (browser: Browser, frame: Frame): Promise<Picture> => {
     const context = await browser.newContext({ viewport: viewportOf(frame.size) });
@@ -332,6 +337,21 @@ export const createPartShooter = (options: {
      * ahead of every shot asked with `priority=low`.
      */
     pictureOf: (options: PartAddress & { params: URLSearchParams }) => partShotOf({ ...options, priority: 'high' }),
+    /** The box around the pixels `after` changes from `before`, kept per pair of pictures; drawn after every waiting shot. */
+    changedBoxOf: (before: Buffer, after: Buffer) => {
+      const key = [before, after].map((png) => createHash('sha256').update(png).digest('hex')).join(' ');
+      const kept = boxes.get(key);
+
+      if (kept) return kept;
+      if (boxes.size >= BOX_CACHE_LIMIT) boxes.delete(boxes.keys().next().value ?? '');
+
+      const box = drawQueue.run((browser) => changedBoxOf({ browser, before, after }), 'low');
+
+      boxes.set(key, box);
+      box.catch(() => boxes.get(key) === box && boxes.delete(key));
+
+      return box;
+    },
     /** Drops the pictures of the parts `change` redraws. */
     forget: (change: PartsChange) => {
       for (const [key, { drawn }] of cache) {
@@ -347,6 +367,7 @@ export const createPartShooter = (options: {
     clear: () => cache.clear(),
     close: async () => {
       cache.clear();
+      boxes.clear();
       await drawQueue.close();
     },
   };

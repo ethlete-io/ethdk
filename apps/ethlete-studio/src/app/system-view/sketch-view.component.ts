@@ -15,7 +15,20 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { Observable, catchError, concatMap, finalize, from, map, of, startWith, switchMap, tap, timer } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  combineLatest,
+  concatMap,
+  finalize,
+  from,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 import {
   ListedPart,
   ListedProduct,
@@ -46,6 +59,7 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
+import { DiffLine, diffLinesOf, diffOutlineOf, diffSummaryOf, variantDiff$ } from './variant-diff';
 import {
   SketchCompare,
   comparingTextOf,
@@ -126,6 +140,57 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             >
               {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
             </button>
+            @if (diffSummaries()[variant]; as summary) {
+              @if (summary.listed.length === 0) {
+                <span class="text-[var(--et-surface-color-subtle-solid)]" data-variant-diff-summary>{{
+                  summary.text
+                }}</span>
+              } @else {
+                <button
+                  [attr.aria-expanded]="openDiffs()[variant] === true"
+                  (click)="toggleDiffs(variant)"
+                  class="justify-start"
+                  et-button
+                  type="button"
+                  variant="transparent"
+                  color="surface"
+                  size="xs"
+                  data-variant-diff-summary
+                >
+                  {{ summary.text }}
+                </button>
+                @if (openDiffs()[variant]) {
+                  <div class="flex max-h-48 flex-col overflow-y-auto">
+                    @for (line of summary.listed; track line.state) {
+                      @if (line.box) {
+                        <button
+                          [pressed]="isMarked(variant, line)"
+                          [title]="'Mark the changed pixels of ' + line.state + ' on its frame'"
+                          (click)="toggleMark(variant, line)"
+                          class="justify-start font-mono"
+                          et-button
+                          type="button"
+                          variant="transparent"
+                          color="surface"
+                          pressedColor="inherit"
+                          size="xs"
+                          data-variant-diff
+                        >
+                          {{ line.text }}
+                        </button>
+                      } @else {
+                        <span
+                          [title]="line.title ?? ''"
+                          class="font-mono text-[var(--et-surface-color-subtle-solid)]"
+                          data-variant-diff
+                          >{{ line.text }}</span
+                        >
+                      }
+                    }
+                  </div>
+                }
+              }
+            }
             @for (problem of problemsOf(variant); track $index) {
               <span
                 [title]="problem.file"
@@ -567,7 +632,54 @@ export class SketchViewComponent {
     this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
   );
 
-  protected outlines = computed(() => (this.showing() === 'merge' ? mergeOutlinesOf(this.shownRows() ?? []) : []));
+  public diffLines = toSignal(
+    toObservable(
+      computed(
+        () => ({
+          address: this.address(),
+          variants: this.sketch().variants,
+          size: this.matrix().size,
+          surface: this.surface(),
+          color: this.color(),
+          revision: this.revision(),
+        }),
+        { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+      ),
+    ).pipe(
+      switchMap(({ address, variants, size, surface, color }) =>
+        variants.length === 0
+          ? of<Record<string, DiffLine[]>>({})
+          : combineLatest(
+              variants.map((variant) =>
+                variantDiff$({ ...address, variant, size, surface, color }).pipe(
+                  map(diffLinesOf),
+                  catchError(() => of<DiffLine[]>([])),
+                ),
+              ),
+            ).pipe(map((lines) => Object.fromEntries(variants.map((variant, index) => [variant, lines[index] ?? []])))),
+      ),
+    ),
+    { initialValue: {} as Record<string, DiffLine[]> },
+  );
+
+  protected diffSummaries = computed(() =>
+    Object.fromEntries(Object.entries(this.diffLines()).map(([variant, lines]) => [variant, diffSummaryOf(lines)])),
+  );
+
+  protected openDiffs = signal<Record<string, boolean>>({});
+
+  private marked = signal<{ variant: string; state: string } | null>(null);
+
+  private markedOutline = computed(() => {
+    const marked = this.marked();
+    const box = marked && this.diffLines()[marked.variant]?.find((line) => line.state === marked.state)?.box;
+
+    return marked && box ? [diffOutlineOf({ ...marked, box })] : [];
+  });
+
+  protected outlines = computed(() =>
+    this.showing() === 'merge' ? mergeOutlinesOf(this.shownRows() ?? []) : this.markedOutline(),
+  );
 
   public canvas = computed(() => (this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix()));
 
@@ -704,6 +816,20 @@ export class SketchViewComponent {
 
     this.shownMode.set(merge ? 'merge' : 'matrix');
     this.remember({ merge });
+  }
+
+  protected isMarked(variant: string, line: DiffLine) {
+    const marked = this.marked();
+
+    return marked?.variant === variant && marked.state === line.state;
+  }
+
+  protected toggleDiffs(variant: string) {
+    this.openDiffs.update((open) => ({ ...open, [variant]: open[variant] !== true }));
+  }
+
+  protected toggleMark(variant: string, line: DiffLine) {
+    this.marked.set(this.isMarked(variant, line) ? null : { variant, state: line.state });
   }
 
   protected pickable(variant: string) {
