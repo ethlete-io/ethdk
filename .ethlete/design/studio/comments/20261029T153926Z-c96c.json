@@ -1,0 +1,24 @@
+{
+  "part": "pages/merge",
+  "state": "open",
+  "size": "desktop",
+  "text": "der part hier ist noch unschön",
+  "point": {
+    "x": 189,
+    "y": 779
+  },
+  "sketch": {
+    "target": "pages/merge",
+    "variant": "c",
+    "createdAt": "2026-10-29T15:32:18.973Z"
+  },
+  "createdAt": "2026-10-29T15:39:26.331Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T15:40:55.578Z",
+    "note": "r1 showed three merge-compare layouts; the human took c's review panel, but its note/Merge area at the bottom reads untidy and there is no way back out of the merge view",
+    "round": "r2"
+  }
+}
