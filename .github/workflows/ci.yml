@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -98,7 +98,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -113,7 +113,7 @@ jobs:
       - run: yarn nx run treeshake:bundle-goldens
 
       - if: inputs.docs_target != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docs-dist
           path: dist/apps/docs
@@ -128,7 +128,7 @@ jobs:
     outputs:
       e2e-folders: ${{ steps.e2e-selection.outputs.folders }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -151,7 +151,7 @@ jobs:
 
       - run: yarn nx run storybook:build-storybook:ci
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: storybook-dist
           path: dist/storybook
@@ -164,7 +164,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -193,7 +193,7 @@ jobs:
       E2E_FOLDERS: ${{ needs.storybook.outputs.e2e-folders }}
     steps:
       - if: env.E2E_FOLDERS != ''
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - if: env.E2E_FOLDERS != ''
         uses: ./.github/actions/setup
@@ -202,7 +202,7 @@ jobs:
         run: yarn playwright install --with-deps chromium
 
       - if: env.E2E_FOLDERS != ''
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: storybook-dist
           path: dist/storybook
@@ -220,7 +220,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -242,7 +242,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - uses: ./.github/actions/setup
         with:
@@ -262,7 +262,7 @@ jobs:
       # than the build it saves.
       CARGO_PROFILE_DEV_DEBUG: line-tables-only
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -335,16 +335,16 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - if: inputs.storybook_target != ''
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: storybook-dist
           path: dist/storybook
 
       - if: inputs.storybook_target != ''
-        uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
+        uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
@@ -354,13 +354,13 @@ jobs:
           firebaseToolsVersion: 15.34.0
 
       - if: inputs.docs_target != ''
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: docs-dist
           path: dist/apps/docs
 
       - if: inputs.docs_target != ''
-        uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
+        uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'

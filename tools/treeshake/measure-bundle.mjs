@@ -14,7 +14,7 @@
  *   --entries   JSON `{ "<entry-name>": "<entry source code>" }` (default: entries.example.json)
  *   --cache     where the linked+optimized FESMs live (default:
  *               <tmp>/ethlete-treeshake/linked-<fingerprint>, keyed on the dist FESMs' size+mtime).
- *               The babel pass over ~4.6 MB of FESM takes ~5-60 s and is only paid once per build.
+ *               The oxc pass over ~4.6 MB of FESM takes ~5-60 s and is only paid once per build.
  *   --external  mark every non-@ethlete package external, so the number is "how much @ethlete code
  *               lands in the app" without the ~85 kB gz Angular runtime constant. Deltas between
  *               entries are identical in both modes; this mode is less noisy and much faster.

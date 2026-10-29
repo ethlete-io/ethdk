@@ -52,6 +52,9 @@
         "development": {
           "buildTarget": "ethlete-studio:build:development"
         }
+      },
+      "readyWhen": {
+        "signal": true
       }
     },
     "test": {

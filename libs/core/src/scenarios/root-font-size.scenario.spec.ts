@@ -116,7 +116,7 @@ describe('root font size scenarios', () => {
     expect(s.warnings).toEqual([]);
   });
 
-  it('stays silent in plain jsdom, which computes no font sizes', () => {
+  it('stays silent when the page sets the 10px root', () => {
     const s = scenario();
 
     s.flush();

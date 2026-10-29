@@ -64,6 +64,9 @@
           "port": 4211,
           "watch": false
         }
+      },
+      "readyWhen": {
+        "signal": true
       }
     },
     "typecheck": {

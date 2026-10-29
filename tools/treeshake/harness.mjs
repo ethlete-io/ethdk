@@ -70,41 +70,24 @@ export const assertOutsideRepo = (p, what = 'output') => {
   return abs;
 };
 
+const angularBuildRequire = createRequire(join(REPO, 'node_modules/@angular/build/package.json'));
+
 /**
- * The babel passes an Angular application build applies to a `sideEffects: false`, non-`@angular`
- * package, in the same order and with the same options as
- * node_modules/@angular/build/src/tools/esbuild/javascript-transformer-worker.js.
+ * The single oxc link + optimize pass an Angular application build applies to a `sideEffects: false`,
+ * non-`@angular` package, with the same options as
+ * node_modules/@angular/build/src/tools/javascript-transformer/javascript-transformer-worker.js.
  */
-const babelPlugins = () => {
-  const { createEs2015LinkerPlugin } = repoRequire('@angular/compiler-cli/linker/babel');
-  const {
-    adjustStaticMembers,
-    adjustTypeScriptEnums,
-    elideAngularMetadata,
-    markTopLevelPure,
-    // @angular/build's `exports` map blocks this deep subpath, so require it by absolute path.
-  } = repoRequire(join(REPO, 'node_modules/@angular/build/src/tools/babel/plugins/index.js'));
-
-  const linker = createEs2015LinkerPlugin({
-    linkerJitMode: false,
-    sourceMapping: false,
-    logger: { level: 2, debug: () => undefined, info: () => undefined, warn: console.warn, error: console.error },
-    fileSystem: {
-      resolve: path.resolve,
-      exists: fs.existsSync,
-      dirname: path.dirname,
-      relative: path.relative,
-      readFile: fs.readFileSync,
-    },
+const linkAndOptimize = (filename, code, sourcemap) => {
+  // @angular/build's `exports` map blocks this deep subpath, so require it by absolute path.
+  const { transform } = repoRequire(join(REPO, 'node_modules/@angular/build/src/tools/oxc/oxc-transform.js'));
+  return transform(filename, code, {
+    link: true,
+    jit: false,
+    advancedOptimizations: true,
+    sourcemap,
+    sideEffects: false,
+    topLevelSafeMode: true,
   });
-
-  return [
-    linker,
-    [markTopLevelPure, { topLevelSafeMode: true }],
-    elideAngularMetadata,
-    adjustTypeScriptEnums,
-    [adjustStaticMembers, { wrapDecorators: true }],
-  ];
 };
 
 /** hash of the dist FESMs' size+mtime, so a rebuilt dist re-links and an unchanged one is instant */
@@ -126,34 +109,27 @@ export const distFingerprint = async (distLibs) => {
  * Link + optimize every FESM found under `distLibs` into `cacheDir`, and return the
  * `{ '@ethlete/x': <path> }` alias map esbuild needs. Already-processed files are reused.
  *
- * `sourceMaps: true` chains the dist FESM's own map through babel and writes a `.map` next to each
+ * `sourceMaps: true` chains the dist FESM's own map through the oxc pass and writes a `.map` next to each
  * output, which is what decompose.mjs needs to attribute bundle bytes back to original sources.
  */
 export const processPackages = async (distLibs, cacheDir, { sourceMaps = false, log = process.stderr } = {}) => {
   assertOutsideRepo(cacheDir, 'linked-FESM cache');
   const aliases = {};
-  let plugins;
   for (const [pkg, rel] of Object.entries(PACKAGES)) {
     const src = join(distLibs, rel);
     if (!existsSync(src)) continue;
     const dest = join(cacheDir, rel);
     aliases[pkg] = dest;
     if (existsSync(dest) && (!sourceMaps || existsSync(`${dest}.map`))) continue;
-    plugins ??= babelPlugins();
     log.write(`  link+optimize${sourceMaps ? '(+map)' : ''} ${pkg} ...`);
     const t0 = Date.now();
     const inMap = `${src}.map`;
-    const { transformAsync } = repoRequire('@babel/core');
-    const res = await transformAsync(await readFile(src, 'utf8'), {
-      filename: src,
-      babelrc: false,
-      configFile: false,
-      browserslistConfigFile: false,
-      compact: false,
-      sourceMaps,
-      inputSourceMap: sourceMaps && existsSync(inMap) ? JSON.parse(await readFile(inMap, 'utf8')) : undefined,
-      plugins,
-    });
+    const res = linkAndOptimize(src, await readFile(src, 'utf8'), sourceMaps);
+    if (sourceMaps) {
+      const remapping = angularBuildRequire('@ampproject/remapping');
+      const chain = [res.map, ...(existsSync(inMap) ? [JSON.parse(await readFile(inMap, 'utf8'))] : [])];
+      res.map = (remapping.default ?? remapping)(chain, () => null);
+    }
     await mkdir(dirname(dest), { recursive: true });
     const code = res.code.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
     if (sourceMaps) {
@@ -175,7 +151,7 @@ export const processPackages = async (distLibs, cacheDir, { sourceMaps = false, 
   return aliases;
 };
 
-/** build the alias map for an already-populated cache dir, without touching babel */
+/** build the alias map for an already-populated cache dir, without re-running the oxc pass */
 export const cacheAliases = (cacheDir) => {
   const aliases = {};
   for (const [pkg, rel] of Object.entries(PACKAGES)) {

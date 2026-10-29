@@ -73,7 +73,9 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
       pending.get(id)?.(result);
       pending.delete(id);
     });
-    started.on('error', (error) => settleAll(`design-explore: the render worker failed: ${error.message}`));
+    started.on('error', (error) =>
+      settleAll(`design-explore: the render worker failed: ${error instanceof Error ? error.message : String(error)}`),
+    );
     started.on('exit', () => {
       if (started === worker) worker = null;
     });
