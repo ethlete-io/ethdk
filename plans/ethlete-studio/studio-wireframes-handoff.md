@@ -123,10 +123,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    is the open step; Tom agreed. Click, select and expand stay out of drawings until the prototype
    stage. Next component: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches; axes: avatar
    or agent logo, with or without count, interaction); the inbox row stays in `pages/inbox` (one
-   host). Then switch and project switcher. Tom restarts :4402 to get `0e6bd90a1`. "Pressed state" sketch on `tree-row` is `ready`
-   and waits for Tom's merge (then `design check`, prettier, commit). Tom's pick for the next work
-   is open: finding 2.10 (state grid, system first, then a `pages/system` state `many-states`;
-   recommended) or the comment pin. Before a component sketch, list every host that draws the case
+   host). Then switch and project switcher. Tom restarts :4402 to get `0e6bd90a1`. "Pressed state" on `tree-row` merged
+   (`2a39a5c7d`). Tom picked finding 2.10 (state grid option 1, system first, then a `pages/system`
+   state `many-states`), then the comment pin. 2.10 system part is in progress (subagent). Before a component sketch, list every host that draws the case
    (5.24). Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
