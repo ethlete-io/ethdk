@@ -715,3 +715,12 @@ sketch` until the next merge of the part.
 - **Where:** `contact-sheet.ts` in `libs/cli/src/lib/design`.
 - **Fix option:** scale diff cells to the width of the state cell above them.
 - **Fix done:** a diff cell is as wide as the state cell above it; a page diff no longer widens the sheet.
+
+### 4.11 No standalone render of an asset - fixed
+
+- **Pain:** to check `studio-mark.svg` outside Studio, the agent wrote a Playwright script. Its
+  first try returned no image and no error (`setContent` on `about:blank` cannot load `file://`).
+  To find hex fallbacks for oklch tokens, it wrote a second script.
+- **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
+<name> --hex` that prints the resolved colour.
+- **Fix done:** `design shot --asset <file> [--product <p>] [--width <n>]` inlines the image as a `data:` URL and draws it; `design token <name> [--product <p>] --hex` prints the colour a token resolves to in Chromium (oklch included). A name with leading dashes parses as a flag, so pass `color-x`, not `--color-x`.

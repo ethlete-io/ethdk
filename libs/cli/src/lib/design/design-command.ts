@@ -8,6 +8,7 @@ import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
 import { serveDesign } from './serve';
+import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
 import { designSketch, SKETCH_USAGE } from './sketch-command';
 import { buildStampOf } from './stamp';
@@ -89,6 +90,14 @@ const helpOf = (invocation: string) =>
     '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
     '  PNG with a label per cell, and print its path. Without --state, --variants alone draws the first state.',
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
+    '',
+    `${invocation} ${ASSET_SHOT_USAGE}`,
+    '  Draw an image file (svg, png, webp, ...) of a path, or of a product assets/ folder with --product, into a PNG',
+    '  and print its path. --width sets the drawn width in px.',
+    '',
+    `${invocation} ${TOKEN_USAGE}`,
+    '  Print the colour a custom property of the product tokens resolves to, as hex; oklch and color-mix resolve in',
+    '  Chromium. The product defaults to the only one of config.json.',
     '',
     `${invocation} inbox [--json] | inbox done <id> --note <text> --by <model id>`,
     '  List open comment threads where the user has the last word and the sketches that need a rebase, oldest first,',
@@ -216,7 +225,15 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
   if (argv[0] === 'shot') {
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
-    return designShot({ target, argv: rest, invocation });
+    return rest.includes('--asset')
+      ? designAssetShot({ target, argv: rest, invocation })
+      : designShot({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'token') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designToken({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'inbox') {

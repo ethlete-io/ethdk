@@ -96,6 +96,12 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
+### 3.24 `design` with no subcommand starts the server on :4402 - open
+
+- **Pain (4.11 agent, 2026-10-29):** the agent ran `design` alone to read the help. It started the
+  design server on `[::1]:4402`, the port of Tom's Studio, and the agent could not stop it.
+- **Fix option:** `design` alone prints the help; the server starts only with `design serve`.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -125,14 +131,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   that sketch cannot be drawn again, so a late look at merged against variant is gone.
 - **Where:** `shot-command.ts` in `libs/cli/src/lib/design`.
 - **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
-
-### 4.11 No standalone render of an asset - open
-
-- **Pain:** to check `studio-mark.svg` outside Studio, the agent wrote a Playwright script. Its
-  first try returned no image and no error (`setContent` on `about:blank` cannot load `file://`).
-  To find hex fallbacks for oklch tokens, it wrote a second script.
-- **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
-<name> --hex` that prints the resolved colour.
 
 ### 4.15 The pixel diff compares byte by byte - open
 
