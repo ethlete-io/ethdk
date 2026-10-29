@@ -3,7 +3,7 @@ import { DesignConfig } from './paths';
 import { addressSketchComments } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
-import { openSketchProblemsOf, typecheckVariant } from './system/sketch/check-sketches';
+import { openSketchProblemsOf, typecheckVariant, variantProblemsOf } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -243,7 +243,17 @@ const roundEdited = (context: Context) =>
   });
 
 const readied = (context: Context) =>
-  withSketch(context, ({ sketch }) => {
+  withSketch(context, ({ product, sketch }) => {
+    const problems = variantProblemsOf({ product, sketch }).flatMap(({ variant, problems }) =>
+      problems.map(
+        (problem) =>
+          `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`,
+      ),
+    );
+
+    if (problems.length > 0)
+      return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+
     const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
 
     if (typeof ready === 'string') return fail(ready);

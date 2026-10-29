@@ -1,20 +1,48 @@
 import { TypecheckResult } from '../../typecheck';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
-import { ResolvedProduct } from '../resolve-product';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { typecheckProduct } from '../system-tsconfig';
-import { overlaySketch } from './overlay';
+import { overlaySketch, SketchedProduct } from './overlay';
+import { stateNamesOf } from './part-definition';
 import { listSketches, Sketch, sketchFolderOf } from './sketch';
 
 export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[] };
 
-/** The rule problems of each variant of a sketch, laid over the product. */
+const droppedStatesOf = (product: ResolvedProduct, overlaid: SketchedProduct): Problem[] =>
+  overlaid.parts
+    .filter((part) => overlaid.sketched.includes(partKeyOf(part)))
+    .flatMap((part) => {
+      const own = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part));
+      const before = own ? stateNamesOf(own.source) : null;
+      const after = stateNamesOf(part.source);
+
+      if (before === null || after === null) return [];
+
+      const dropped = before.filter((state) => !after.includes(state));
+
+      return dropped.length === 0
+        ? []
+        : [
+            {
+              rule: 'STATES',
+              file: part.file,
+              message: `drops the state${dropped.length === 1 ? '' : 's'} ${dropped.join(', ')} that ${partKeyOf(part)} has in ${product.name} - a variant keeps every state of the part`,
+            },
+          ];
+    });
+
+/** The rule problems of each variant of a sketch laid over the product, and the states it drops from a part. */
 export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: Sketch }): VariantProblems[] =>
-  options.sketch.variants.map((variant) => ({
-    sketch: options.sketch,
-    variant,
-    problems: ruleProblemsOf(overlaySketch({ ...options, variant })),
-  }));
+  options.sketch.variants.map((variant) => {
+    const overlaid = overlaySketch({ ...options, variant });
+
+    return {
+      sketch: options.sketch,
+      variant,
+      problems: [...ruleProblemsOf(overlaid), ...droppedStatesOf(options.product, overlaid)],
+    };
+  });
 
 /**
  * The rule problems of every variant of every open sketch of a product. A sketch folder that

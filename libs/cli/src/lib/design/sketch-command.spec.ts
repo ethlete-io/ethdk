@@ -105,6 +105,20 @@ describe('designSketch', () => {
     });
   });
 
+  it('refuses ready while a variant drops a state of the part', () => {
+    const target = acme();
+    const lines = output();
+    const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    writeFileSync(button, readFileSync(button, 'utf8').replace(/, long: \{[^}]*\}/u, ''));
+
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      'components/button b: STATES .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: drops the state long that components/button has in acme - a variant keeps every state of the part\ncomponents/button has problems - fix them before ready',
+    );
+  });
+
   it('records the author of every variant that new, variant and ready write', () => {
     const target = acme();
     const lines = output();
