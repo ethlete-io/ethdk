@@ -141,7 +141,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
       @if (shown.status === 'in progress') {
         <p class="text-[var(--et-surface-color-subtle-solid)]">
-          The agent is still drawing. You can pick once the sketch is ready.
+          Not ready yet. You can pick once the agent marks the sketch ready.
         </p>
       }
 
