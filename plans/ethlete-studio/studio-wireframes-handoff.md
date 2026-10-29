@@ -159,6 +159,27 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    it warns, commit. Next: agent logos as a foundation asset (5.45; three copies now), then switch
    and project switcher. Open findings from tonight: 3.29, 3.30, 4.32-4.37, 5.44-5.48, 6.2.
 
+10. 2026-10-29 night: Tom asked to build all open findings. Done: pin hosts merged (`6848e7de1`);
+    `foundations/agent-logos` asset (`9594be0c0`, hosts `80d869ec7`; `pages/inbox` host sketch is
+    `ready` but did not auto-merge despite 0 px, finding 3.35); Studio colour themes `warning` amber
+    (`9594be0c0`) and `danger` signal red with Studio aliases (`96eff57ce`, 5.50). Wireframes are on
+    hold (Tom; 5.5 closed `7d8f34fe2`). Built: CLI sketch commands (`e2a5a22f5`, `84b559f6a`), 3.31
+    diff line under the Pick button (`6b4748a5c`), 2.8 (`49cb0ea40`). Tom decided on 3.31: keep the
+    line there, a click zooms to the frame, compare rest only. Subagents running at handoff (check
+    `git log` for their commits; each moves its fixed entries): CLI slice (3.35, 3.32-3.34, 3.36,
+    3.37, 4.38, 5.53, 5.48, 5.26, checks 4.16/4.32/4.17/4.31/4.34/4.37/5.27/5.30/5.40); Studio UI
+    (3.31 zoom-to-frame, 2.11, 2.6, 2.8 on screen); Mac over SSH (1.2 LAN rerun with unthrottled
+    probe, 1.1 synthetic pinch; the Mac is free to use, Tom said); sketch `components/tree-row`
+    "Status colours" (warning mark to `--warning`), then `sketch ready`.
+    Still to build, not yet started: shot slice 4.18-4.30, 4.33, 4.35, 4.36, 5.37, 5.41; part API
+    slice 5.21, 5.28, 5.34, 5.44, 5.46, 5.47, 5.49; 3.36, 3.37 if the CLI slice did not reach them;
+    5.51, 5.52, 6.3, 6.4. Blocked: 5.31 waits for the switch (Tom). Next design step after the
+    findings: split `foundations/tokens` into `foundations/colors`, `/type`, `/spacing` (2.12, Tom
+    approved option 1); needs 5.26 (`design part remove`) and a check how frames load the product
+    tokens (5.17). Then switch and project switcher (list every host first, 5.24).
+    Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
+    `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
+
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
 :4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and
 variant rows without :4402. Skill source is `libs/agent-rules/content/skills/`, then
