@@ -219,6 +219,29 @@ describe('createPartShooter', () => {
     expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('interaction')).toBe(false);
   });
 
+  it('draws the merged part with the state props of a sketch variant as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf({ ...address, props: { target: 'components/card', variant: 'a' } });
+    await shots.pictureOf(address);
+
+    expect(newContext).toHaveBeenCalledTimes(2);
+    expect(new URL(goto.mock.calls[0]?.[0] ?? '').search).toBe(
+      '?product=acme&part=components%2Fcard&state=long&fit=&props=components%2Fcard&props-variant=a',
+    );
+    expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('props')).toBe(false);
+  });
+
   it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
     const { shots } = acme();
     let release = () => undefined as void;

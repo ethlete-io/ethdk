@@ -96,11 +96,12 @@ export type PartAddress = {
   width: number | null;
   sketch: SketchVariant | null;
   interaction: string | null;
+  props?: SketchVariant | null;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction } = options;
+  const { system, product, part, state, preset, width, sketch, interaction, props } = options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -113,7 +114,19 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
   if (preset && !size) return new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`);
 
   return {
-    key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant, interaction] as unknown[],
+    key: [
+      'part',
+      product,
+      part,
+      state,
+      preset,
+      width,
+      sketch?.target,
+      sketch?.variant,
+      interaction,
+      props?.target,
+      props?.variant,
+    ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
       product,
@@ -122,6 +135,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       ...(size ? {} : { fit: '' }),
       ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
       ...(interaction ? { interaction } : {}),
+      ...(props ? { props: props.target, 'props-variant': props.variant } : {}),
     }),
     size: size ?? null,
     clip: !preset,
@@ -257,7 +271,8 @@ export const createPartShooter = (options: {
 
     if (!statesOf) return draw();
 
-    const { product, part, sketch, state } = options;
+    const { product, part, state } = options;
+    const sketch = options.props ?? options.sketch;
 
     return statesOf({ product, part, sketch }).then((names) => {
       if (!names || names.includes(state)) return draw();

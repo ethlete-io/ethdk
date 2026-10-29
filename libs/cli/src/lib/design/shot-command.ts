@@ -15,7 +15,7 @@ import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -23,10 +23,16 @@ type Plan = { label: string; address: PartAddress };
 
 /**
  * The sheet with a row after each variant row that marks, per state, the pixels the variant changes from the merged
- * row; headed by a note that the part is new when there is no merged row.
+ * row; headed by a note that the part is new when there is no merged row. A cell of `props` at the place of a variant
+ * cell is the merged part drawn with that variant's state props, and replaces the merged cell in the comparison.
  */
-export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: SheetCell[][] }): SheetCell[][] => {
-  const { rows, plan, sheet } = options;
+export const withDiffRows = (options: {
+  rows: Axis[];
+  plan: Plan[][];
+  sheet: SheetCell[][];
+  props?: SheetCell[][];
+}): SheetCell[][] => {
+  const { rows, plan, sheet, props } = options;
   const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
 
   if (mergedIndex === -1) return [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...sheet];
@@ -50,6 +56,16 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
 
       if (!('png' in cell)) return [];
       if (!mergedStates.has(state)) return [{ label: `${cell.label} vs merged`, note: 'new state' }];
+
+      const own = props?.[rowIndex]?.[index];
+
+      if (own) {
+        const label = `${cell.label} vs merged with its props`;
+
+        if ('png' in own) return [{ label, before: own.png, after: cell.png, over: cell.label }];
+
+        return [{ label, note: 'error' in own ? own.error : 'not drawn' }];
+      }
 
       return before ? [{ label: `${cell.label} vs merged`, before, after: cell.png, over: cell.label }] : [];
     });
@@ -127,7 +143,7 @@ export const rowsOf = (options: { part: string; variants: string[] | null; merge
 export const shotReportOf = (options: { out: string; diffs: string[]; sheet: SheetCell[][] }) => [
   ...options.diffs,
   ...options.sheet.flatMap((row) =>
-    row.flatMap((cell) => ('note' in cell && cell.label.endsWith(' vs merged') ? [`${cell.label}: ${cell.note}`] : [])),
+    row.flatMap((cell) => ('note' in cell && cell.label.includes(' vs merged') ? [`${cell.label}: ${cell.note}`] : [])),
   ),
   options.out,
 ];
@@ -190,6 +206,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const asked = args.values['--state']?.split(',').filter(Boolean) ?? [];
   const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
+  const diffProps = args.flags.has('--diff-props');
   const width = args.values['--width'] === undefined ? null : Number(args.values['--width']);
   const preset = args.values['--preset'] ?? null;
   const scale = Number(args.values['--scale'] ?? 1);
@@ -199,7 +216,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     !part ||
     extra.length > 0 ||
     (!states && !variants) ||
-    (args.values['--at'] !== undefined && !variants) ||
+    ((args.values['--at'] !== undefined || diffProps) && !variants) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
     !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
@@ -339,21 +356,38 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
 
     try {
+      const shoot = (label: string, address: PartAddress): Promise<SheetCell> =>
+        shooter.pictureOf({ ...address, params }).then(
+          ({ png }) => ({ label, png }),
+          (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
+        );
       const sheet: SheetCell[][] = [];
 
       for (const row of drawn) {
         const cells: SheetCell[] = [];
 
+        for (const { label, address } of row) cells.push(await shoot(label, address));
+
+        sheet.push(cells);
+      }
+
+      const mergedStates = new Set(
+        plan[rows.findIndex((axis) => axis.sketch === null)]?.map((cell) => cell.address.state),
+      );
+      const props: SheetCell[][] = [];
+
+      for (const row of diffProps ? plan : []) {
+        const cells: SheetCell[] = [];
+
         for (const { label, address } of row) {
           cells.push(
-            await shooter.pictureOf({ ...address, params }).then(
-              ({ png }) => ({ label, png }),
-              (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
-            ),
+            address.sketch && mergedStates.has(address.state)
+              ? await shoot(label, { ...address, sketch: null, props: address.sketch })
+              : { label, note: '' },
           );
         }
 
-        sheet.push(cells);
+        props.push(cells);
       }
 
       if (sheet.every((row) => row.length === 0)) {
@@ -362,7 +396,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return 1;
       }
 
-      const shown = variants ? withDiffRows({ rows, plan, sheet }) : sheet;
+      const shown = variants ? withDiffRows({ rows, plan, sheet, props: diffProps ? props : undefined }) : sheet;
       const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
       const out = resolve(
         target,

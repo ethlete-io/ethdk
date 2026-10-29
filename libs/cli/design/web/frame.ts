@@ -13,6 +13,8 @@ const sketch = product ? params.get('sketch') : null;
 const sketchVariant = params.get('variant') ?? '';
 const fit = product !== null && params.has('fit');
 const interaction = product ? params.get('interaction') : null;
+const propsSketch = product ? params.get('props') : null;
+const propsVariant = params.get('props-variant') ?? '';
 
 // Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
 let errored = false;
@@ -97,12 +99,18 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
         : `design-explore: product "${name}" has no part "${partKey}"`,
     );
 
+  const loadProps = propsSketch ? sketchParts[name]?.[propsSketch]?.[propsVariant]?.[partKey] : load;
+  if (!loadProps)
+    return fail(
+      `design-explore: variant "${propsVariant}" of the sketch on ${propsSketch} in product "${name}" has no part "${partKey}"`,
+    );
+
   try {
-    const part = (await load()).default;
+    const [{ default: part }, { default: holder }] = await Promise.all([load(), loadProps()]);
 
-    if (!(key in part.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
+    if (!(key in holder.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
 
-    return await part.render(part.states[key]);
+    return await part.render(holder.states[key]);
   } catch (error) {
     return fail(`design-explore: state "${key}" of "${partKey}" failed\n${messageOf(error)}`);
   }

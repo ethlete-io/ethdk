@@ -165,6 +165,11 @@ describe('designShot', () => {
     expect((await run(['components/button', '--state', 'rest,busy'])).text).toContain('no config at');
   });
 
+  it('takes --diff-props only with --variants', async () => {
+    expect((await run(['components/button', '--states', '--diff-props'])).code).toBe(2);
+    expect((await run(['components/button', '--variants', '--diff-props'])).text).toContain('no config at');
+  });
+
   it('says so when the checkout has no design config', async () => {
     const { code, text } = await run(['components/button', '--states']);
 
@@ -260,6 +265,34 @@ describe('withDiffRows', () => {
       [{ label: 'a / rest vs merged', before: png('m'), after: png('a'), over: 'a / rest' }],
       sheet[2],
       [{ label: 'b / new vs merged', note: 'new state' }],
+    ]);
+  });
+
+  it("compares a variant with the merged part drawn with the variant's state props when it has them", () => {
+    const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: true });
+    const plan = planOf({ base, rows, statesOf: () => ['rest', 'busy'], states: true, state: null });
+    const png = (text: string) => Buffer.from(text);
+    const sheet = [
+      [
+        { label: 'merged / rest', png: png('m') },
+        { label: 'merged / busy', png: png('n') },
+      ],
+      [
+        { label: 'a / rest', png: png('a') },
+        { label: 'a / busy', png: png('b') },
+      ],
+    ];
+    const props = [
+      [],
+      [
+        { label: 'a / rest', png: png('p') },
+        { label: 'a / busy', error: 'boom' },
+      ],
+    ];
+
+    expect(withDiffRows({ rows, plan, sheet, props })[2]).toEqual([
+      { label: 'a / rest vs merged with its props', before: png('p'), after: png('a'), over: 'a / rest' },
+      { label: 'a / busy vs merged with its props', note: 'boom' },
     ]);
   });
 
