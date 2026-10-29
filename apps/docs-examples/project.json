@@ -44,6 +44,9 @@
         "development": {
           "buildTarget": "docs-examples:build:development"
         }
+      },
+      "readyWhen": {
+        "signal": true
       }
     },
     "typecheck": {
