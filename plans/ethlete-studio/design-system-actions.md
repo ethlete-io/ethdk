@@ -395,11 +395,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   it by hand.
 - **Fix option:** follow imports through non-part modules when the check collects dependants.
 
-### 5.41 `/__design/shot` without `state=` returns a bare 400 - open
-
-- **Pain:** for `pages/merge` the agent got a 400 with no body.
-- **Fix option:** default to the first state, or name the valid states in the body.
-
 ### 5.37 The page shot is too small to judge hairlines - open
 
 - **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.

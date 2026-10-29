@@ -1048,3 +1048,9 @@ check` warns early.
   find it.
 - **Fix option:** print the path last.
 - **Fix done (54ed0065f):** `design shot` prints the diff lines first and the PNG path as the last line (`shotReportOf`).
+
+### 5.41 `/__design/shot` without `state=` returns a bare 400 - fixed (94072d4f3)
+
+- **Pain:** for `pages/merge` the agent got a 400 with no body.
+- **Fix option:** default to the first state, or name the valid states in the body.
+- **Fix done (94072d4f3):** the shooter takes a `statesOf` loader (vite SSR in `serve.ts`); a part shot without `state=` answers 400 `pass state=<one of: …>` with the states of the merged part or of the asked variant.
