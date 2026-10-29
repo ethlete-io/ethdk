@@ -879,7 +879,7 @@ export interface ControlValueSignalOptions {
 
 export const controlValueSignal = <
   TControlInput extends Signal<AbstractControl | null> | AbstractControl,
-  TControl extends TControlInput extends Signal<infer TSignalControl> ? TSignalControl : TControlInput,
+  TControl extends (TControlInput extends Signal<infer TSignalControl> ? TSignalControl : TControlInput),
 >(
   control: TControlInput,
   options?: ControlValueSignalOptions,
