@@ -121,6 +121,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** `foundations/agent-logos`: `--done` printed "variant a had no live report"; the agent
   could not tell if `--done` was recorded.
 - **Fix option:** print "a marked done" and drop the warning when `--done` is passed.
+- **Seen again:** `foundations/tokens` "Warning colour", same message.
 
 ### 3.33 `sketch ready` fails on a round without a note - open
 
@@ -128,6 +129,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   stopped with "round r1 has no note". The brief and `sketch new` did not say a note is needed.
 - **Fix options:** 1. `sketch new --round` asks for `--note` up front (recommended). 2. `sketch
 check` warns early.
+
+### 3.34 `sketch check` reports FORMAT but does not fix it - open
+
+- **Pain:** `foundations/tokens` "Warning colour": a variant file patched by script failed FORMAT;
+  the agent ran Prettier by hand.
+- **Fix options:** 1. `sketch check --fix` runs Prettier on the variant files (recommended). 2. one
+  Prettier command for all variants in the output.
 
 ## 4. Render checks and shots
 
@@ -339,9 +347,11 @@ check` warns early.
 ### 5.25 Studio has no warning colour theme - open
 
 - **Pain:** tree-row's warning mark needs a semantic warning colour. Studio's tokens have only the
-  accent theme and `danger`; the SDK `--et-theme-color-*` aliases resolve to SDK blue. Both
-  variants used `--accent-text`.
+  accent theme and `danger`; the SDK `--et-theme-color-*` aliases resolve to SDK blue. The merged
+  `tree-row` draws the mark in `--color-et-danger` (`tree-row.css:61`).
 - **Fix option:** a sketch on Studio's foundations that adds a theme of type `warning`.
+- **Sketch (2026-10-29):** `foundations/tokens` "Warning colour", a amber, b muted ochre, c orange,
+  is `ready` (agent recommends a). After the merge, a one-variant `tree-row` sketch uses `--warning`.
 
 ### 5.26 The CLI cannot remove a merged part - open
 
@@ -488,6 +498,28 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   patched them in with `.replace('<svg', ...)`.
 - **Fix options:** 1. `svgAsset(raw, { size, class?, attrs? })` (recommended). 2. `size: null`, and
   CSS sizes the SVG.
+
+### 5.50 Studio's danger colour fails contrast on its dark surfaces - open
+
+- **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on
+  `--surface-overlay`. Below AA for text everywhere and below 3:1 for a mark on overlay.
+- **Fix options:** 1. a `foundations/tokens` sketch that gives `danger` a Studio tone, about
+  oklch(0.68 0.19 25) (recommended). 2. only a `--danger-text` alias.
+
+### 5.51 No contrast numbers next to colour tokens - open
+
+- **Pain:** the warning sketch agent wrote its own oklch-to-sRGB and WCAG script, because the raw
+  `.et-color--*` vars take rgb triplets and the Studio aliases are oklch.
+- **Fix options:** 1. the tokens drawing prints the contrast ratio of each colour token against
+  each surface (recommended; it reads computed styles already). 2. a `design contrast <fg> <bg>`
+  command.
+
+### 5.52 One colour theme spans three hand-kept blocks - open
+
+- **Pain:** a theme lives in the `:root` aliases, the `.et-color--x` raw block and the Studio
+  aliases in `tokens.css`, plus the group regex of the tokens drawing.
+- **Fix options:** 1. `design tokens theme add <name> --type <type> --oklch ...` writes all blocks
+  (recommended). 2. the skill names the places.
 
 ## 6. Agent process
 
