@@ -195,9 +195,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     Merged: tree-row status colours + inbox agent logos (`d65df411d`), the part API refactors of
     agent-logos, comment-pin, tree-row, flows (auto, `cdf2b4c24`). Open, waits for Tom: sketch
     `pages/merge` "No page import" (a `embedPage`, recommended; b crop-only, has a label overlap);
-    its merge clears the UPWARD-DEPENDENCY that fails `design check`. Rust agent for 1.1 option A
-    (Tom picked A: rebuild the webview on WebContent termination, macOS only) runs; its files in
-    `apps/ethlete-studio/src-tauri` are uncommitted until it reports. Still open: 5.21, 5.34
+    Tom merged a (`b2858fbcc`); `design check --product studio` is ok again. 1.1 option A built
+    (`54bbc9a50`, `webview_rebuild.rs`, new window labels `main-N`), verified on ethlete-mac with
+    synthetic pinches only; Tom still pinches on the real trackpad after a Studio update. Still open: 5.21, 5.34
     (only if Tom picks a grouped look), 3.39, 4.39 (GRID-COVERAGE contradicts the per-axis rule,
     recommend option 1), 4.40 (UNDEFINED-CLASS cleanup sketches), 5.51, 5.52, 5.55, 5.56; comment-pin
     hosts: one-variant sketches on `pages/inbox` and `pages/sketches` switch to `commentPin.styles`,
