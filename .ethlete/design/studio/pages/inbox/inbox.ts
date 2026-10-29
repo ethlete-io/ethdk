@@ -1,4 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
+import { commentPinMark, commentPinStyles } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from './agent-logos';
@@ -159,13 +160,13 @@ const activeGroup = (comments: Comment[]) =>
 
 const empty = `<div class="ib-empty">${icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-empty-icon')}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
-const pinned = (body: string, comments: Comment[]) => {
+const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
-  return body.replace(/<div class="st-canvas-cell">/gu, (match) => {
+  return body.replace(/<div class="st-sgrid-cell">/gu, (match) => {
     index += 1;
     const c = comments.find((comment) => comment.cell === index);
     if (!c) return match;
-    return `<div class="st-canvas-cell ib-pinned"><span class="ib-pin"${c.id === SELECTED ? ' data-selected' : ''}>${c.agent ? agentLogo(c.agent, 'ib-logo') : c.initials}</span>`;
+    return `<div class="st-sgrid-cell ib-pinned"><span class="ib-pin-at">${pin(c)}</span>`;
   });
 };
 
@@ -196,6 +197,17 @@ export default definePart<Props>({
     const visible = comments.filter((c) => showResolved || !c.resolved);
     const unresolved = comments.filter((c) => !c.resolved).length;
     const frames = await canvasFrames.render(canvasFrames.states.default);
+    const pins = new Map(
+      visible.map((c) => [
+        c.id,
+        commentPinMark({
+          author: c.author,
+          initials: c.initials,
+          ...(c.agent ? { agent: c.agent } : {}),
+          selected: c.id === SELECTED,
+        }),
+      ]),
+    );
     const side = html`<div class="ib">
       <div class="ib-bar">
         <span class="ib-bar-title">${unresolved} offen</span>
@@ -212,9 +224,9 @@ export default definePart<Props>({
       section: 'Inbox',
       product: 'studio',
       side,
-      content: pinned(frames.body, visible),
+      content: pinned(frames.body, visible, (c) => pins.get(c.id) ?? ''),
     });
 
-    return drawing({ body: shell.body, styles: shell.styles + frames.styles + styles });
+    return drawing({ body: shell.body, styles: shell.styles + frames.styles + commentPinStyles + styles });
   },
 });

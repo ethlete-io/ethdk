@@ -1,4 +1,5 @@
 import { html } from '@design-system';
+import { type Props as CommentPinProps } from '@system/components/comment-pin';
 import { type Agent, agentLogo } from './agent-logos';
 
 export type VariantKey = 'current' | 'g' | 'h' | 'i';
@@ -20,19 +21,14 @@ export type Comment = {
 
 export type Pin = { variant: VariantKey; state: string; thread: Comment[]; selected?: boolean };
 
-export const avatar = (comment: Comment, cls: string) =>
-  comment.agent
-    ? `<span class="${cls}" data-agent>${agentLogo(comment.agent, 'sk-logo')}</span>`
-    : `<span class="${cls}">${comment.initials}</span>`;
-
-export const pinMark = (pin: Pin | undefined) => {
-  if (!pin) return '';
-  const first = pin.thread[0];
-  if (!first) return '';
-  const count = pin.thread.length > 1 ? `<span class="sk-pin-count">${pin.thread.length}</span>` : '';
-  return html`<span class="sk-pin" ${pin.selected ? ' data-selected' : ''}
-    >${avatar(first, 'sk-pin-face')}${count}</span
-  >`;
+export const pinProps = ({ thread, selected }: Pin): CommentPinProps => {
+  const first = thread[0];
+  return {
+    author: first?.author ?? '',
+    ...(first?.agent ? { agent: first.agent } : { initials: first?.initials ?? '' }),
+    count: thread.length,
+    ...(selected ? { selected } : {}),
+  };
 };
 
 export type PageVariant = { key: 'current' | 'a' | 'b'; label: string; note: string; author?: Variant['author'] };

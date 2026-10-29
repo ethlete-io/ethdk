@@ -2,10 +2,11 @@ import { formField } from '@ethlete/components/design/form-field';
 import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
+import { commentPinMark, commentPinStyles } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
-import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinMark } from './sketch-data';
+import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
@@ -40,6 +41,7 @@ const discard = await button.render({ label: 'Verwerfen', variant: 'transparent'
 const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
 const fit = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
 const reset = await button.render({ label: '100%', variant: 'transparent', size: 'sm' });
+const pagePin = commentPinMark(pinProps(PAGE_PIN));
 const open = await systemPage();
 const hidden = await systemPage('hidden');
 const pages: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
@@ -65,7 +67,7 @@ const variantHead = (variant: PageVariant) =>
 
 const frame = (variant: PageVariant, selected: boolean) =>
   html`<figure class="sk-frame flex m-0" ${selected ? ' data-selected' : ''}>
-    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? pinMark(PAGE_PIN) : '')}
+    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="sk-pin">${pagePin}</span>` : '')}
   </figure>`;
 
 const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, frames: Rect[]) => {
@@ -166,6 +168,7 @@ export default definePart<Props>({
         discard.styles +
         merge.styles +
         fit.styles +
+        commentPinStyles +
         selectStyles +
         kit +
         styles +
