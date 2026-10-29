@@ -188,6 +188,15 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   2. `sketch check` warns when a variant edits a stylesheet that more states than the round's
      state use.
 
+### 3.9 `sketch variant` adds an answer to comments to the running round - open
+
+- **Pain:** the agent answered two comments on g with variant h. The CLI put h into the running round
+  r4 without a question. Tom: "why is this not a new round?"
+- **Now:** a new round opens only with `--round`. Nothing tells the agent that comments arrived
+  since the last `sketch ready`.
+- **Fix option:** `sketch variant` fails without `--round` when comments on the sketch arrived after
+  the last `ready`. It names the comments.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
@@ -282,17 +291,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
 
-| Pain                                                                                           | Rule                                                                                       | Ref        |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
-| The agent said "visually checked" after static fit shots only                                  | Define the check from the design claim first. Report exactly which states and actions ran. | L2720      |
-| The exploration became a second canvas implementation                                          | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940      |
-| One unchosen idea grew into four screens                                                       | Draw about three different alternatives next to each other.                                | L3020      |
-| The agent blamed the wrong cause for an alignment comment                                      | Look at the real render before you name a cause.                                           | L2659      |
-| A synthetic `dblclick` passed, a real double-click failed                                      | Use real pointer sequences.                                                                | L2818      |
-| The agent extended the sketch while the tool was broken                                        | Stop the design work while a broken tool is repaired.                                      | L2982      |
-| New controls duplicated accepted controls                                                      | List the accepted controls before you draw. Name what you reuse.                           | L2579      |
-| Shared elements were extracted too early                                                       | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607      |
-| The agent changed a ready variant without a report; Tom saw it change while no one was drawing | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.  | 2026-10-29 |
+| Pain                                                                                                    | Rule                                                                                       | Ref        |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
+| The agent said "visually checked" after static fit shots only                                           | Define the check from the design claim first. Report exactly which states and actions ran. | L2720      |
+| The exploration became a second canvas implementation                                                   | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940      |
+| One unchosen idea grew into four screens                                                                | Draw about three different alternatives next to each other.                                | L3020      |
+| The agent blamed the wrong cause for an alignment comment                                               | Look at the real render before you name a cause.                                           | L2659      |
+| A synthetic `dblclick` passed, a real double-click failed                                               | Use real pointer sequences.                                                                | L2818      |
+| The agent extended the sketch while the tool was broken                                                 | Stop the design work while a broken tool is repaired.                                      | L2982      |
+| New controls duplicated accepted controls                                                               | List the accepted controls before you draw. Name what you reuse.                           | L2579      |
+| Shared elements were extracted too early                                                                | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607      |
+| The agent changed a ready variant without a report; Tom saw it change while no one was drawing          | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.  | 2026-10-29 |
+| The agent guessed the direction of "spacing passt nicht" and drew one answer; it made the spacing worse | If a comment does not say which way, draw both directions as variants, or ask.             | 2026-10-29 |
+| The agent answered Tom's comments with a variant in the running round; `sketch variant` defaults to it  | An answer to comments opens a new round (`--round`, `--note`).                             | 2026-10-29 |
 
 ## 7. Open checks
 
