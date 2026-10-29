@@ -1199,3 +1199,10 @@ check` warns early.
 - **Fix options:** 1. the stage lives in the part's `render` only, the markup a host embeds has
   none (recommended). 2. hosts may set position, inset and z-index on a component root.
 - **Fix done (b0bb81a78):** Option 1 as a rule: the design-exploration skill says a component exports the markup a host embeds as a helper and keeps a frame-only wrapper (focus-ring padding) in `render` alone. Doc-only, so no spec. `components/comment-pin` already follows it (`commentPinMark` without `.st-pin-stage`, hosts `pages/inbox` and `pages/sketches` import it, the inbox offset is `-1.4rem`); option 2 not done.
+
+### 5.47 A page gets a component's styles only through `render()` - fixed (8e09942cd)
+
+- **Pain:** the inbox sketch called `commentPin.render()` per pin and took `styles` from the first
+  result.
+- **Fix option:** the part's default export exposes `styles` statically.
+- **Fix done (8e09942cd):** `definePart({ styles })` puts the stylesheet on the default export (`part.styles`) and adds it before the styles `render` returns in every drawing; the design-exploration skill names it. `components/comment-pin` still exports `commentPinStyles` and passes `styles` to `drawing()`; it should adopt `styles` on `definePart` through a sketch, and its hosts `pages/inbox` and `pages/sketches` then read `commentPin.styles`.

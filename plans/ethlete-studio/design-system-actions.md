@@ -350,12 +350,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Fix option:** the agent logos become a foundation asset: an icon set in `assets/` with a named
   export in a foundations part, then the pages and the pin import it (recommended, follows 5.13).
 
-### 5.47 A page gets a component's styles only through `render()` - open
-
-- **Pain:** the inbox sketch called `commentPin.render()` per pin and took `styles` from the first
-  result.
-- **Fix option:** the part's default export exposes `styles` statically.
-
 ### 5.50 Studio's danger colour fails contrast on its dark surfaces - open
 
 - **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on
