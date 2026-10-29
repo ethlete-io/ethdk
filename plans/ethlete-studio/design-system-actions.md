@@ -85,6 +85,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
   does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
 
+### 2.7 "used in" lists every page for a part that every page uses - open
+
+- **Pain:** on `foundations/tokens`, the "used in" row draws one frame for each page (`flows`,
+  `inbox`, `sketches`, `start`, `system`). Every page reaches the tokens, so the row tells
+  nothing and makes the canvas longer (Tom, 2026-10-29).
+- **Where:** `usedInOf` in `libs/cli/src/lib/design/system/list-system.ts` (static import reach),
+  and the `used in` row in `apps/ethlete-studio/src/app/system-view/system-tree.ts`.
+- **Agreed fix:** when every page uses the part, draw no frames and show one label "used in all N
+  pages". Keep the frames when only some pages use it.
+
 ## 3. Feedback, rounds and merge
 
 ### 3.19 The merge preview compare grid is unreadable and slow - open
@@ -167,6 +177,15 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** both sketch agents of 2026-10-29 had to `mkdir` `<variant>/assets/`.
 - **Fix option:** create the folder, or print "(create it when needed)".
+
+### 5.17 Each part adds the product tokens to its own CSS - open
+
+- **Pain:** `shell-main`, `part-tree`, `canvas-frames` and `pages/start` each import
+  `@system/foundations/tokens.css?inline` and write `styles: tokens + styles`. `pages/system`
+  composes three of them and gets the token CSS three times. A new part without the import draws
+  unresolved `var(--…)` in its own frame, but resolves them inside a page.
+- **Fix option:** the frame loads the product tokens one time; parts stop importing them. Then
+  "used in" for tokens comes from the frame, not from imports.
 
 ## 6. Agent process
 
