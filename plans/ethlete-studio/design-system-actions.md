@@ -280,6 +280,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
   marks a forced element. Both: one paragraph in the skill.
 
+### 5.29 `sketch new` puts a page's `shared/` outside the variant - open
+
+- **Pain:** on `pages/flows` the list data lives in `pages/flows/shared/flow-data.ts`. `sketch new`
+  copied it to `sketches/pages-flows/shared/`, not into `a/`, so the brief "edit only inside the
+  variant folder" could not be followed. The agent found it by search.
+- **Fix option:** `sketch new` prints where it copied each `shared/` file; the brief allows the
+  sketch's `shared/`.
+
+### 5.30 `design check` does not report an unused export in `shared/` - open
+
+- **Pain:** `flowList` and `stepTree` in `pages/flows/shared/flow-data.ts` had no importer. They
+  kept a dead `part-tree` import alive. Found by hand.
+- **Fix option:** `design check` warns about an export in a part's `shared/` that nothing imports.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
