@@ -166,6 +166,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   - `design check` and the "changed outside a sketch" hash count the bytes of the assets a part
     imports.
   - The app gets the same files when a design goes into the real app; not part of this build.
+- **Extension (Tom, 2026-10-29):** the rule covers fonts and icons too.
+  - Fonts: files in `assets/fonts/` (`woff2`). The product's `styles.css` declares `@font-face`
+    with `url('@assets/fonts/<file>')`; `foundations/tokens` names the family in a `--font-*`
+    token. Only fonts whose license allows the repo.
+  - Icons: one SVG per icon in `assets/icons/<name>.svg`, `currentColor`, square `viewBox`. A part
+    imports it with `?raw` and inlines it. The same text is the `data` of an SDK `IconDefinition`
+    (`provideIcons`), so the app registers the same files.
+  - A `foundations/icons` part that shows the whole set is design work: a sketch after this build.
 
 ## 6. Agent process
 
