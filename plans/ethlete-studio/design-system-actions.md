@@ -173,12 +173,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.31 `sketch check` says nothing about a `grid` - open
-
-- **Pain:** no line confirmed that the grid was read or that each cell names a real state.
-  Unknown names fail typecheck, but repeated or dropped states pass silently.
-- **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
-
 ### 4.34 A page's replace on another part's markup can match nothing, silently - open
 
 - **Pain:** merge `a47a64158` renamed the canvas cell class from `st-canvas-cell` to `st-sgrid-cell`.

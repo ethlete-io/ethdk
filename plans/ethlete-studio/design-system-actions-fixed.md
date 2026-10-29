@@ -1272,3 +1272,10 @@ check` warns early.
 - **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
   `overflow: hidden`).
 - **Fix done (fea807331):** Option 1, underlines only. For an element with an underline, `CLIPPED` finds each text line's baseline (canvas `fontBoundingBoxDescent`), adds `text-underline-offset` (auto: 0.1em), the thickness (auto: 1/16 em, at least 1px) and 3px for `wavy`, and reports `underline <n>px past <ancestor>` when that ink passes the nearest clipping ancestor, the element itself included, while the baseline is inside it. Overline and line-through are not measured.
+
+### 4.31 `sketch check` says nothing about a `grid` - fixed (48262bd14)
+
+- **Pain:** no line confirmed that the grid was read or that each cell names a real state.
+  Unknown names fail typecheck, but repeated or dropped states pass silently.
+- **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
+- **Fix done (48262bd14):** The option, done in the render check (it already loads each drawn part module) rather than `variantWarningsOf` (sync, loads none): `gridReportOf` in `list-system.ts` sums up a declared `grid`; `sketch check` prints `<part> grid 13 rows x 4 columns ok` or `..., leaves out <states>`, and a state in two cells or a cell naming no state is a `GRID` render issue that fails `sketch check` and `design check`. No comparison with the merged part's grid; the left-out list covers a dropped state. On studio, `components/tree-row` variant a: `grid 13 rows x 4 columns, leaves out tree`.
