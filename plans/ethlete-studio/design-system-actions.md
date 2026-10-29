@@ -113,6 +113,9 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. store "why it lost" as its own field (recommended). 2. refuse without
   `--replace-note` and print the old note.
 
+- **Seen again (2026-10-29):** on `components/tree-row` r2 the original r1 note was lost; I
+  rewrote it from memory.
+
 ### 3.26 A new round starts with an empty note - open
 
 - **Pain:** `sketch variant --round` gives the new round no note, and `sketch ready` refuses it. The
