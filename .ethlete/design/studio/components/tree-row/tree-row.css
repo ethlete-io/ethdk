@@ -58,7 +58,7 @@
   .st-trow-warning {
     display: flex;
     flex: none;
-    color: var(--color-et-danger);
+    color: var(--warning);
   }
 
   .st-trow-status {

@@ -2,7 +2,7 @@ import { definePart, drawing, html } from '@design-system';
 import { commentPinMark, commentPinStyles } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
-import { type Agent, agentLogo } from './agent-logos';
+import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import styles from './inbox.css?inline';
 
 type Props = { showResolved: boolean; openOn: 'all' | 'active' | 'others' | 'none' };
@@ -178,7 +178,7 @@ export const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export default definePart<Props>({
   note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, and no open comments at all.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     open,
     'with-resolved': withResolved,
