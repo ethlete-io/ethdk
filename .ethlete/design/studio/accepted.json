@@ -188,5 +188,21 @@
     "hash": "2b4be1d0f3c2319f",
     "at": "2026-10-29T20:36:51.944Z",
     "auto": true
+  },
+  {
+    "part": "foundations/colors",
+    "by": "gpt-6",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "381e98c4b6071890",
+    "at": "2026-10-29T22:31:18.960Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/type",
+    "by": "gpt-6",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "9105d20e46cd8ba3",
+    "at": "2026-10-29T22:32:25.846Z",
+    "auto": true
   }
 ]
