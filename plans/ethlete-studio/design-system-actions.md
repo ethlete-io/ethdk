@@ -20,52 +20,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 1. Studio app (native and WebKit)
 
-### 1.1 Trackpad pinch kills the WebKit content process - cause found (L2844)
-
-- **Pain:** a pinch on the macOS trackpad crashes the content process, and Studio reloads fully.
-  All view state is lost.
-- **Where:** page exploration of the Sketches page, on Tom's real trackpad.
-- **Now:** do not pinch. Use the zoom chip.
-- **Fix:** the cause is not known. Do these steps in order:
-  1. Get the result of Tom's retest after the full restart (L2872).
-  2. Reproduce on a new, empty WKWebView.
-  3. Compare a pinch over the chrome, over a live iframe, and over an inactive iframe.
-  4. Record the order of the native events.
-  5. Then choose: gesture handling in the canvas / a minimal wry repro for upstream / a native
-     workaround.
-- Do not ship a fix on a guess. Log each crash of the content process, because the automatic
-  reload hides it.
-- **Result (2026-10-29, ethlete-mac, macOS 15.7.7, WebKit 20621.3.11.11.3 = Safari 18.6):** cause
-  reproduced in a minimal WKWebView, `tools/scripts/verify-webkit-pinch.swift`.
-  - Synthetic pinches alone do not crash: 280 magnify, rotate and smart-magnify gestures (paced,
-    burst, mixed with scroll events, no end phase, iframes replaced mid-gesture) over chrome, a
-    live, an inactive (`pointer-events:none`) and a swapped cross-origin iframe: 0 terminations.
-    Each pinch reaches the page as `gesturestart/change/end` plus Ctrl+wheel events.
-  - The crash needs stale state: kill WebContent while gesture replies are pending (`--stale`:
-    block the page for 2 s, pinch, SIGKILL). After the automatic reload, each following pinch
-    kills the new content process, 4 terminations in 4 pinches, 3 of 3 runs. The unified log shows
-    Tom's signature exactly: `WebPageProxy.cpp 10644: Invalid message dispatched ...didReceiveEvent`,
-    `Received an invalid message 'EventDispatcher_GestureEventReply'`, `reason=Crash`. Control (the
-    same kill without a pending gesture): 0 terminations.
-  - Cause in WebKit: `WebPageProxy` keeps a queue of sent gesture events and checks each reply
-    against its head. A dead process never answers, and Safari 18 (branch `safari-7621`, also
-    `7622`, `7623`) does not clear the queue when WebContent exits. The stale head makes every
-    later reply a type mismatch, and a MESSAGE_CHECK kills the process. WebKit `main` and
-    `safari-7624` and later clear the queue in `resetStateAfterProcessExited`.
-  - Workaround proven in the harness: on a WebContent termination, create a new WKWebView instead
-    of reloading the old one (`--stale --recreate`): 0 terminations after the kill, 3 of 3 runs.
-  - Open: which first termination left the stale gesture in Studio. A candidate is finding 1.2: a
-    hang and a manual WebContent kill while a pinch waits. Not proven.
-- **Options now:** (a) Studio native: on `webViewWebContentProcessDidTerminate`, rebuild the
-  webview (or the window) instead of wry's reload; needs Tom's OK, Rust only. (b) Update Safari on
-  the Mac to a release from `safari-7624` or later, and retest with `--stale`. (c) Accept: a full
-  Studio restart clears it.
-- **Check (Tom, by hand on the real trackpad):** on ethlete-mac, with a design server running,
-  `swift tools/scripts/verify-webkit-pinch.swift "<frame-url>" --seconds 90`. Pinch, rotate and
-  double-tap with two fingers over each of the four columns (chrome, live iframe, inactive iframe,
-  swapping iframe). Expect no `CRASH` line; send the log if one shows. Then in Studio after a fresh
-  start: pinch 5 times, and note whether the crashes start only after a WebContent kill or a hang.
-
 ### 1.2 Studio freezes at 100% CPU during frame reloads - not reproduced (L2697, L2965, L3076)
 
 - **Pain:** Studio hung two times. Cmd+R and SIGTERM did not help. Only a kill of the WebContent

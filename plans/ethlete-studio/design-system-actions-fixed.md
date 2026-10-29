@@ -1371,3 +1371,51 @@ check` warns early.
   next step.
 - **Fix option:** `sketch new` prints the next steps, including `report --done`.
 - **Fix done (8520cb051):** The option: `sketch new` ends with `Next:` and the commands with the sketch and product filled in: `sketch report` while you draw a variant, `report --done` with the hint that no report runs yet so none is needed now, `sketch round --note` when the running round has no note, then `sketch check` and `sketch ready`. The skill says the same.
+
+### 1.1 Trackpad pinch kills the WebKit content process - fixed (54bbc9a50)
+
+- **Pain:** a pinch on the macOS trackpad crashes the content process, and Studio reloads fully.
+  All view state is lost.
+- **Where:** page exploration of the Sketches page, on Tom's real trackpad.
+- **Now:** do not pinch. Use the zoom chip.
+- **Fix:** the cause is not known. Do these steps in order:
+  1. Get the result of Tom's retest after the full restart (L2872).
+  2. Reproduce on a new, empty WKWebView.
+  3. Compare a pinch over the chrome, over a live iframe, and over an inactive iframe.
+  4. Record the order of the native events.
+  5. Then choose: gesture handling in the canvas / a minimal wry repro for upstream / a native
+     workaround.
+- Do not ship a fix on a guess. Log each crash of the content process, because the automatic
+  reload hides it.
+- **Result (2026-10-29, ethlete-mac, macOS 15.7.7, WebKit 20621.3.11.11.3 = Safari 18.6):** cause
+  reproduced in a minimal WKWebView, `tools/scripts/verify-webkit-pinch.swift`.
+  - Synthetic pinches alone do not crash: 280 magnify, rotate and smart-magnify gestures (paced,
+    burst, mixed with scroll events, no end phase, iframes replaced mid-gesture) over chrome, a
+    live, an inactive (`pointer-events:none`) and a swapped cross-origin iframe: 0 terminations.
+    Each pinch reaches the page as `gesturestart/change/end` plus Ctrl+wheel events.
+  - The crash needs stale state: kill WebContent while gesture replies are pending (`--stale`:
+    block the page for 2 s, pinch, SIGKILL). After the automatic reload, each following pinch
+    kills the new content process, 4 terminations in 4 pinches, 3 of 3 runs. The unified log shows
+    Tom's signature exactly: `WebPageProxy.cpp 10644: Invalid message dispatched ...didReceiveEvent`,
+    `Received an invalid message 'EventDispatcher_GestureEventReply'`, `reason=Crash`. Control (the
+    same kill without a pending gesture): 0 terminations.
+  - Cause in WebKit: `WebPageProxy` keeps a queue of sent gesture events and checks each reply
+    against its head. A dead process never answers, and Safari 18 (branch `safari-7621`, also
+    `7622`, `7623`) does not clear the queue when WebContent exits. The stale head makes every
+    later reply a type mismatch, and a MESSAGE_CHECK kills the process. WebKit `main` and
+    `safari-7624` and later clear the queue in `resetStateAfterProcessExited`.
+  - Workaround proven in the harness: on a WebContent termination, create a new WKWebView instead
+    of reloading the old one (`--stale --recreate`): 0 terminations after the kill, 3 of 3 runs.
+  - Open: which first termination left the stale gesture in Studio. A candidate is finding 1.2: a
+    hang and a manual WebContent kill while a pinch waits. Not proven.
+- **Options now:** (a) Studio native: on `webViewWebContentProcessDidTerminate`, rebuild the
+  webview (or the window) instead of wry's reload; needs Tom's OK, Rust only. (b) Update Safari on
+  the Mac to a release from `safari-7624` or later, and retest with `--stale`. (c) Accept: a full
+  Studio restart clears it.
+- **Check (Tom, by hand on the real trackpad):** on ethlete-mac, with a design server running,
+  `swift tools/scripts/verify-webkit-pinch.swift "<frame-url>" --seconds 90`. Pinch, rotate and
+  double-tap with two fingers over each of the four columns (chrome, live iframe, inactive iframe,
+  swapping iframe). Expect no `CRASH` line; send the log if one shows. Then in Studio after a fresh
+  start: pinch 5 times, and note whether the crashes start only after a WebContent kill or a hang.
+- **Fix done (54bbc9a50):** Option (a). On macOS the host registers `on_web_content_process_terminate` (`src-tauri/src/webview_rebuild.rs`), which replaces wry's reload: it builds a new window from the `main` config at the old URL, position, size, maximized and fullscreen state, then destroys the old one. The new window gets a new label (`main-1`, `main-2`, ...; the capability allows `main-*`), because wry keys a webview's protocol handlers by label and frees the old webview's after the new one exists, so a reused `main` never loads. Linux (CEF) and Windows are unchanged.
+- **Verified (2026-10-29, ethlete-mac, Safari 18.6 WebKit):** the Studio host built with a stub page, driven by gesture CGEvents posted to the HID tap: SIGSTOP WebContent, pinch with no end, SIGKILL, then 4 pinches. Before the fix: 4 terminations in 4 pinches, 2 of 2 runs. With the fix: 0 terminations, 4 of 4 runs; each pinch reaches the rebuilt page (`gesturestart`), the URL fragment and the window frame stay the same, and `invoke` works in the rebuilt window. Not verified: the real Studio frontend and Tom's real trackpad.
