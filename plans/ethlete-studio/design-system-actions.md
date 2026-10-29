@@ -155,11 +155,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.16 `sketch new` prints the assets folder but does not create it - open
-
-- **Pain:** both sketch agents of 2026-10-29 had to `mkdir` `<variant>/assets/`.
-- **Fix option:** create the folder, or print "(create it when needed)".
-
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.

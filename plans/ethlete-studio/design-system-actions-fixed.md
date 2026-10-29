@@ -693,3 +693,10 @@ sketch` until the next merge of the part.
   `canvas-frames`, `pages/start`, `foundations/logo` (studio) and `button`, `form-field`, `select`
   (sdk). Each merged automatically with no visible change. The note of `sdk/foundations/tokens`
   names the frame now, not the import.
+
+### 5.16 `sketch new` prints the assets folder but does not create it - fixed
+
+- **Pain:** both sketch agents of 2026-10-29 had to `mkdir` `<variant>/assets/`.
+- **Fix option:** create the folder, or print "(create it when needed)".
+- **Fix done:** `sketch new` and `sketch variant` create `<variant>/assets/`. A merge copies only
+  the files below it, so an empty folder changes nothing.

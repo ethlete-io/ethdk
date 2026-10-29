@@ -11,6 +11,7 @@ import {
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { statusPath } from '../../status';
+import { ASSETS_FOLDER } from '../assets';
 import { SHARED_PREFIX } from '../imports';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -377,6 +378,7 @@ export const createSketch = (options: {
     const folder = resolve(dir, variant, sketch.layer, sketch.name);
 
     mkdirSync(folder, { recursive: true });
+    mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });
 
     if (like) {
       copyPartAs({ from: like, to: folder, name: sketch.name });
@@ -596,6 +598,7 @@ export const addVariant = (options: {
     : sketch.rounds;
 
   cpSync(variantDirOf(sketch, from), variantDirOf(sketch, variant), { recursive: true });
+  mkdirSync(resolve(variantDirOf(sketch, variant), ASSETS_FOLDER), { recursive: true });
 
   const { decision: _decision, ...undecided } = sketch;
   const added: Sketch = {

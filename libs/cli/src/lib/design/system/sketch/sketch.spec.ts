@@ -97,6 +97,7 @@ describe('createSketch', () => {
     });
     expect(readFileSync(join(dir, 'b/components/card/card.ts'), 'utf8')).toContain("note: 'A card with one action.'");
     expect(existsSync(join(dir, 'a/components/card/card.css'))).toBe(true);
+    expect(existsSync(join(dir, 'b/assets'))).toBe(true);
   });
 
   it('starts a new part from a stub', () => {
@@ -289,6 +290,7 @@ describe('addVariant', () => {
     const dir = sketch.dir;
 
     writeFileSync(join(dir, 'b/elements/hero/hero.css'), '.acme-hero { gap: 1rem; }');
+    rmSync(join(dir, 'b/assets'), { recursive: true });
     decideSketch({
       sketch: markSketchReady({ checkout: target, sketch }) as Sketch,
       decision: { kind: 'pick', variant: 'a' },
@@ -298,6 +300,7 @@ describe('addVariant', () => {
 
     expect(added.variants).toEqual(['a', 'b', 'c']);
     expect(readFileSync(join(dir, 'c/elements/hero/hero.css'), 'utf8')).toBe('.acme-hero { gap: 1rem; }');
+    expect(existsSync(join(dir, 'c/assets'))).toBe(true);
     expect(sketchJson(target, 'elements-hero')).toMatchObject({
       status: 'in progress',
       rounds: [{ key: 'r1', title: '', note: '' }],

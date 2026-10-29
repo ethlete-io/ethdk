@@ -101,7 +101,7 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    `studioMark = svgAsset(...)` (`b39f15b06`); `pages/start` imports `studioMark(24)` (`121c26650`).
    Then 4.12 priority lane (`d68239bd9`) and 5.17 step 1, the frame loads the product tokens
    (`43cec7ae9`). 5.17 step 2 done: no part imports the tokens; every sketch auto merged. Tom
-   restarts Studio to get the CLI fixes. Open, free to build next: 4.10, 4.11, 5.16, 6.1, 4.8, 4.9.
+   restarts Studio to get the CLI fixes. Open, free to build next: 4.10, 4.11, 6.1, 4.8, 4.9 (5.16 fixed).
    `design-system-actions-fixed.md` lost 52 entries from `d3726201c` to `d68239bd9` (each commit
    replaced the file); restored. Append a fixed entry, never rewrite the file.
 7. Merge compare page, then components, then page states, then the real app.
