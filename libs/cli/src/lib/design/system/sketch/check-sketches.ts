@@ -9,8 +9,14 @@ import { listSketches, Sketch, sketchFolderOf } from './sketch';
 
 export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[] };
 
-const droppedStatesOf = (product: ResolvedProduct, overlaid: SketchedProduct): Problem[] =>
-  overlaid.parts
+const droppedStatesOf = (options: {
+  product: ResolvedProduct;
+  overlaid: SketchedProduct;
+  allowed: string[];
+}): Problem[] => {
+  const { product, overlaid, allowed } = options;
+
+  return overlaid.parts
     .filter((part) => overlaid.sketched.includes(partKeyOf(part)))
     .flatMap((part) => {
       const own = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part));
@@ -19,7 +25,7 @@ const droppedStatesOf = (product: ResolvedProduct, overlaid: SketchedProduct): P
 
       if (before === null || after === null) return [];
 
-      const dropped = before.filter((state) => !after.includes(state));
+      const dropped = before.filter((state) => !after.includes(state) && !allowed.includes(state));
 
       return dropped.length === 0
         ? []
@@ -31,16 +37,21 @@ const droppedStatesOf = (product: ResolvedProduct, overlaid: SketchedProduct): P
             },
           ];
     });
+};
 
 /** The rule problems of each variant of a sketch laid over the product, and the states it drops from a part. */
 export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: Sketch }): VariantProblems[] =>
   options.sketch.variants.map((variant) => {
     const overlaid = overlaySketch({ ...options, variant });
+    const round = options.sketch.rounds.find((entry) => entry.key === options.sketch.variantInfo[variant]?.round);
 
     return {
       sketch: options.sketch,
       variant,
-      problems: [...ruleProblemsOf(overlaid), ...droppedStatesOf(options.product, overlaid)],
+      problems: [
+        ...ruleProblemsOf(overlaid),
+        ...droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] }),
+      ],
     };
   });
 

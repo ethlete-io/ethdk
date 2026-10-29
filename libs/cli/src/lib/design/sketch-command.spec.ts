@@ -46,13 +46,17 @@ describe('designSketch', () => {
     write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme');
 
     expect(round('r1')).toBe(1);
-    expect(lines.pop()).toBe('pass --title <text> or --note <text>');
+    expect(lines.pop()).toBe('pass --title <text>, --note <text> or --drops <state,state>');
     expect(round('r9', '--title', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button has no round "r9" - it has r1');
     expect(round('r1', '--title', 'Pill or square', '--note', 'a won')).toBe(0);
     expect(round('r1', '--note', 'a clearly won')).toBe(0);
     expect(run(target, 'list', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('  r1  Pill or square  a, b  - a clearly won');
+    expect(round('r1', '--drops', 'empty, long')).toBe(0);
+    expect(lines.pop()).toBe('components/button round r1: Pill or square - a clearly won - drops empty, long');
+    expect(round('r1', '--drops', '')).toBe(0);
+    expect(lines.pop()).toBe('components/button round r1: Pill or square - a clearly won');
   });
 
   it('says --product when report finds more than one product', () => {

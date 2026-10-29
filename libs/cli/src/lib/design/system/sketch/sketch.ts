@@ -31,7 +31,7 @@ export type SketchDecision =
 export type SketchVariantInfo = { authors?: string[]; round?: string };
 
 /** One round of variants: its title, and the note on what it showed and why its variants lost. */
-export type SketchRound = { key: string; title: string; note: string };
+export type SketchRound = { key: string; title: string; note: string; drops?: string[] };
 
 export type SketchFile = {
   target: string;
@@ -117,7 +117,8 @@ const isRounds = (value: unknown): value is SketchRound[] =>
       typeof round?.key === 'string' &&
       round.key !== '' &&
       typeof round.title === 'string' &&
-      typeof round.note === 'string',
+      typeof round.note === 'string' &&
+      (round.drops === undefined || (Array.isArray(round.drops) && round.drops.every((d) => typeof d === 'string'))),
   ) &&
   new Set(value.map((round: SketchRound) => round.key)).size === value.length;
 
@@ -545,24 +546,37 @@ export const addVariant = (options: {
   return added;
 };
 
-/** Changes the title and the note of the round with key `round`; a field left out stays as it is. */
+const withDrops = (round: SketchRound, drops: string[] | undefined): SketchRound => {
+  const { drops: _previous, ...rest } = round;
+
+  return drops && drops.length > 0 ? { ...rest, drops } : rest;
+};
+
+/** Changes the title, the note and the dropped states of the round with key `round`; a field left out stays as it is. */
 export const editRound = (options: {
   sketch: Sketch;
   round: string;
   title?: string;
   note?: string;
+  drops?: string[];
 }): Sketch | string => {
-  const { sketch, round, title, note } = options;
+  const { sketch, round, title, note, drops } = options;
 
   if (!sketch.rounds.some((entry) => entry.key === round))
     return `${sketch.target} has no round "${round}" - it has ${sketch.rounds.map((entry) => entry.key).join(', ')}`;
-  if (title === undefined && note === undefined) return 'pass --title <text> or --note <text>';
+  if (title === undefined && note === undefined && drops === undefined)
+    return 'pass --title <text>, --note <text> or --drops <state,state>';
   if (title !== undefined && title.trim() === '') return 'a round needs a title';
 
   const edited: Sketch = {
     ...sketch,
     rounds: sketch.rounds.map((entry) =>
-      entry.key === round ? { ...entry, title: title?.trim() ?? entry.title, note: note?.trim() ?? entry.note } : entry,
+      entry.key === round
+        ? withDrops(
+            { ...entry, title: title?.trim() ?? entry.title, note: note?.trim() ?? entry.note },
+            drops ?? entry.drops,
+          )
+        : entry,
     ),
   };
 

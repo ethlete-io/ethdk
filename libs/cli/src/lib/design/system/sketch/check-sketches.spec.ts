@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { openSketchProblemsOf, typecheckVariant } from './check-sketches';
-import { createSketch, Sketch } from './sketch';
+import { createSketch, editRound, Sketch } from './sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-check-sketches-'));
@@ -87,6 +87,45 @@ describe('openSketchProblemsOf', () => {
       ],
       ['c', []],
     ]);
+  });
+
+  it('lets the round of a variant drop a state on purpose, and no other', () => {
+    const target = acme();
+    const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
+    const productHero = heroOf(join(target, DESIGN_DIR, 'acme'));
+    const withStates = (source: string, states: string) =>
+      source.replace(/states: \{ default: .*\} \},/u, `states: { ${states} },`);
+    const film = 'default: { film: films[0] ?? { title: "" } }';
+
+    writeFileSync(
+      productHero,
+      withStates(
+        readFileSync(productHero, 'utf8'),
+        `${film}, empty: { film: { title: "" } }, long: { film: { title: "x" } }`,
+      ),
+    );
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    writeFileSync(heroOf(join(sketch.dir, 'b')), withStates(readFileSync(productHero, 'utf8'), film));
+
+    const messageOf = () =>
+      openSketchProblemsOf(product).variants.find(({ variant }) => variant === 'b')?.problems[0]?.message;
+
+    expect(messageOf()).toContain('drops the states empty, long');
+
+    editRound({ sketch, round: 'r1', drops: ['empty'] });
+
+    expect(messageOf()).toContain('drops the state long that');
+
+    editRound({ sketch, round: 'r1', drops: ['empty', 'long'] });
+
+    expect(messageOf()).toBeUndefined();
   });
 
   it('reports a sketch folder without sketch.json', () => {

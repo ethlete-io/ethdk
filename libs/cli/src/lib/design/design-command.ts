@@ -65,7 +65,7 @@ const helpOf = (invocation: string) =>
     '  Tell Studio what you build on a variant now ("phone, outline state"), which also records you as one of its',
     '  authors, then mark the sketch ready for the user to pick.',
     '',
-    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
+    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
     '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
     '',
     `${invocation} sketch merge <layer>/<name> [--note <reason>] --by <model id> | sketch discard <layer>/<name> --by <model id>`,

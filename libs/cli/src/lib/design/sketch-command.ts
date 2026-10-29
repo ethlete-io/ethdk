@@ -25,7 +25,7 @@ import {
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]',
   'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
-  'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id> [--product <name>]',
+  'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -222,7 +222,8 @@ const reported = (context: Context) =>
     return typeof reported === 'string' ? fail(reported) : 0;
   });
 
-const ROUND_USAGE = 'usage: sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id>';
+const ROUND_USAGE =
+  'usage: sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id>';
 
 const roundEdited = (context: Context) =>
   withSketch(context, ({ sketch }) => {
@@ -231,13 +232,24 @@ const roundEdited = (context: Context) =>
 
     if (positional.length !== 2 || !round) return fail(ROUND_USAGE);
 
-    const edited = editRound({ sketch, round, title: values['--title'], note: values['--note'] });
+    const edited = editRound({
+      sketch,
+      round,
+      title: values['--title'],
+      note: values['--note'],
+      drops: values['--drops']
+        ?.split(',')
+        .map((state) => state.trim())
+        .filter((state) => state !== ''),
+    });
 
     if (typeof edited === 'string') return fail(edited);
 
     const entry = edited.rounds.find((candidate) => candidate.key === round);
 
-    console.log(`${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}`);
+    console.log(
+      `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}`,
+    );
 
     return 0;
   });
@@ -420,6 +432,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--round',
     '--title',
     '--like',
+    '--drops',
   ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
