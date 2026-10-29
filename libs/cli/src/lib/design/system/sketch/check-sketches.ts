@@ -2,6 +2,7 @@ import { TypecheckResult } from '../../typecheck';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { overlaySketch, SketchedProduct } from './overlay';
@@ -62,7 +63,10 @@ export const variantWarningsOf = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
-}): string[] => duplicateClassWarningsOf({ target: options.target, product: overlaySketch(options) });
+}): string[] => [
+  ...duplicateClassWarningsOf({ target: options.target, product: overlaySketch(options) }),
+  ...goneSketchCommentWarningsOf(options.product),
+];
 
 /**
  * The rule problems of every variant of every open sketch of a product. A sketch folder that

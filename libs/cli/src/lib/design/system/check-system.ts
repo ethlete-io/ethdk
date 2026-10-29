@@ -10,7 +10,7 @@ import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { scriptedMotionOf } from './rules/motion';
-import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
+import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badWidthsOf } from './rules/widths';
@@ -71,6 +71,8 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
     const product = resolveProduct({ target, name, config: entry });
 
     if (options.warn) warnChangedOutsideSketch(product);
+
+    goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
 
     ruleProblemsOf(product).forEach(report);
 

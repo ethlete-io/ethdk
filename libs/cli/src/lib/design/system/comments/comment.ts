@@ -286,6 +286,17 @@ const openSketchOf = ({ product, target }: { product: ResolvedProduct; target: s
   return sketch && typeof sketch !== 'string' ? sketch : null;
 };
 
+/** Whether the sketch a comment was made on was merged, discarded or replaced by a later one on the same target. */
+export const sketchGoneOf = (options: { product: ResolvedProduct; comment: Pick<CommentFile, 'sketch'> }) => {
+  const { product, comment } = options;
+
+  if (!comment.sketch) return false;
+
+  const sketch = openSketchOf({ product, target: comment.sketch.target });
+
+  return !sketch || (comment.sketch.createdAt !== undefined && comment.sketch.createdAt !== sketch.createdAt);
+};
+
 /**
  * Why a comment no longer points at anything: its sketch variant, part, state, size or interaction is gone.
  * `null` when it still does. A part whose states are not an object literal keeps any state.
@@ -300,8 +311,7 @@ export const staleReasonOf = (options: {
   if (comment.sketch) {
     const sketch = openSketchOf({ product, target: comment.sketch.target });
 
-    if (!sketch || (comment.sketch.createdAt !== undefined && comment.sketch.createdAt !== sketch.createdAt))
-      return `the sketch on ${comment.sketch.target} no longer exists`;
+    if (!sketch || sketchGoneOf({ product, comment })) return `the sketch on ${comment.sketch.target} no longer exists`;
     if (!sketch.variants.includes(comment.sketch.variant))
       return `the sketch on ${comment.sketch.target} has no variant "${comment.sketch.variant}"`;
 

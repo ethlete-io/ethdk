@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { MISSING_NOTE_SIZE } from '../notes/note';
 import { resolveProduct } from '../resolve-product';
-import { staleCommentsOf, staleNotesOf } from './stale-comment';
+import { createSketch, parseTarget } from '../sketch/sketch';
+import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './stale-comment';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-stale-comment-'));
@@ -79,6 +80,36 @@ describe('staleCommentsOf', () => {
 
     expect(staleCommentsOf(resolveAcme(target))).toEqual([
       expect.objectContaining({ file, message: expect.stringContaining('part elements/hero no longer exists') }),
+    ]);
+  });
+
+  it('warns instead of failing for a comment whose sketch was merged', () => {
+    const target = acme();
+    comment(target, 'merged', { sketch: { target: 'pages/home', variant: 'a', createdAt: 'old' } });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([]);
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))).toEqual([
+      expect.stringContaining('the sketch on pages/home no longer exists - reply with `comment reply --by`'),
+    ]);
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))[0]).toContain('comments/merged.json');
+  });
+
+  it('keeps an open comment of the current sketch as it was', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({ product, sketch: parseTarget('pages/home') as never, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    comment(target, 'live', { sketch: { target: 'pages/home', variant: 'a', createdAt: sketch.createdAt } });
+    const bad = comment(target, 'bad', {
+      sketch: { target: 'pages/home', variant: 'a', createdAt: sketch.createdAt },
+      state: 'nope',
+    });
+
+    expect(goneSketchCommentWarningsOf(resolveAcme(target))).toEqual([]);
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      expect.objectContaining({ file: bad, message: expect.stringContaining('has no state "nope"') }),
     ]);
   });
 
