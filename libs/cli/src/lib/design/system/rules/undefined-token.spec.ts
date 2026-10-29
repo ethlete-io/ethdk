@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -40,6 +40,27 @@ describe('undefinedTokensOf', () => {
 
     expect(messagesOf(target)).toEqual([
       'hero.css: var(--space-8) has no fallback, and no stylesheet of the product or its base defines --space-8',
+    ]);
+  });
+
+  it('flags a token in another stylesheet the part imports, and reads the tokens its files define', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/extra.css`,
+      '.hero-extra { --hero-extra: 1px; gap: var(--hero-extra); width: var(--hero-w); padding: var(--radius-md); }',
+    );
+    write(target, `${hero}/hero-data.ts`, 'export const sized = `<div style="--hero-w: 2px"></div>`;\n');
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import extra from './extra.css?inline';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+
+    expect(messagesOf(target)).toEqual([
+      'extra.css: var(--radius-md) has no fallback, and no stylesheet of the product or its base defines --radius-md',
     ]);
   });
 
