@@ -1,5 +1,11 @@
 # @ethlete/types
 
+## 1.11.5
+
+### Patch Changes
+
+- [`b0edf17`](https://github.com/ethlete-io/ethdk/commit/b0edf17fd258765db473b8d2ecfd98d009f29e03) Thanks [@TomTomB](https://github.com/TomTomB)! - Skip version 1.11.4, which npm no longer accepts because it was published and unpublished before.
+
 ## 1.11.4
 
 ### Patch Changes
