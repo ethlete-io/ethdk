@@ -237,6 +237,20 @@ remove` exists now).
     remains open; ask for triggering action/next full stack (already asked asynchronously).
     User edits existed on resume: design-system.md modified; designer-workflow.md and
     sdk-component-catalog.md untracked. Leave them alone.
+    Follow-up after Tom merged sheet: sheet committed bbe2852a0; colors 9807ff8a3;
+    type 083b839c9; spacing and findings 84f17bd6d. All three use the common helper;
+    every state is pixel-identical and auto-merged. Full product check passes. All four
+    colors states now also render correctly on Tom's restarted :4402, no overlap.
+    4.41 and 5.57 moved to fixed (appended); all six requested findings are done.
+    Next visual question is the Switch in its only current host pages/inbox, not a new
+    extracted component: variants a compact SDK 32x18, b standard SDK 40x22, round
+    "Switch sizing". READY, waits for Tom; root recommends a. Both retain all five page
+    states; type/lint/render checks and full/cropped off/on shots pass. Shared inbox.ts/css
+    owns the page, two variants call inbox(true/false). ng() returns HTML with embedded
+    styles, not a Drawing; embed that string directly. SDK switch has an explicit aria-label.
+    After Tom's choice, merge/check/
+    format/commit, then project switcher in its only current host elements/shell-main.
+    The native panic root cause (1.5) remains open; diagnostic backtrace only.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
