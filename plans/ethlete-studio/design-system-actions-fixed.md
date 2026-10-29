@@ -1279,3 +1279,11 @@ check` warns early.
   Unknown names fail typecheck, but repeated or dropped states pass silently.
 - **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
 - **Fix done (48262bd14):** The option, done in the render check (it already loads each drawn part module) rather than `variantWarningsOf` (sync, loads none): `gridReportOf` in `list-system.ts` sums up a declared `grid`; `sketch check` prints `<part> grid 13 rows x 4 columns ok` or `..., leaves out <states>`, and a state in two cells or a cell naming no state is a `GRID` render issue that fails `sketch check` and `design check`. No comparison with the merged part's grid; the left-out list covers a dropped state. On studio, `components/tree-row` variant a: `grid 13 rows x 4 columns, leaves out tree`.
+
+### 6.4 `dist/libs/cli` disappears while another agent builds the CLI - fixed (b2142f3c1)
+
+- **Pain:** a sketch agent got MODULE_NOT_FOUND from `sketch check` while a parallel agent ran
+  `nx build cli`; a retry worked.
+- **Fix options:** 1. build to a temp dir and rename it into place (recommended). 2. the skill
+  says to retry once.
+- **Fix done (b2142f3c1):** Option 1, per file: `cli:compile` (the old `@nx/js:tsc` target) writes `tmp/cli-build`; `cli:build` runs `libs/cli/scripts/move-into-place.mts`, which renames each file over its twin in `dist/libs/cli` and then drops files the new build lacks, so the folders stay and `src/index.js` never vanishes (a plain folder swap still missed it 4 times in 1.1M probes; this one 0). A cached build now takes about 0.1 s.

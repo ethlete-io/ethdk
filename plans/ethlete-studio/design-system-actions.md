@@ -350,13 +350,6 @@ section without a page.
   `node dist/libs/cli/src/index.js design` on their own.
 - **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
 
-### 6.4 `dist/libs/cli` disappears while another agent builds the CLI - open
-
-- **Pain:** a sketch agent got MODULE_NOT_FOUND from `sketch check` while a parallel agent ran
-  `nx build cli`; a retry worked.
-- **Fix options:** 1. build to a temp dir and rename it into place (recommended). 2. the skill
-  says to retry once.
-
 ## 7. Open checks
 
 These fixes are built, but nobody checked them in the real Studio.
