@@ -45,7 +45,7 @@ const sharedCssOf = (sharedDir: string) =>
  */
 export const sharedClassWarningsOf = (options: { target: string; product: SketchedProduct }): string[] => {
   const { target, product } = options;
-  const shared = sharedCssOf(product.sharedDir);
+  const shared = [...sharedCssOf(product.variantSharedDir), ...sharedCssOf(product.sharedDir)];
 
   if (shared.length === 0) return [];
 

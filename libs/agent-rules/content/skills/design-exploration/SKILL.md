@@ -143,7 +143,9 @@ copies the product's `pages/system` into each variant, renamed to the target and
 Code the variants of one sketch have in common (sample data, a switch, a helper) goes in the
 sketch's `shared/` folder, next to the variant folders, never into copies per variant. A part in a
 variant imports it as `@shared/<path>`, and a shared file may import `@system/...` and
-`@shared/...`. A part outside a sketch may not import `@shared/`. On a merge, `shared/` moves into
+`@shared/...`. A part outside a sketch may not import `@shared/`. A variant that needs a shared file
+changed holds its own copy at `<variant>/shared/<path>`; `@shared/<path>` finds that copy first, and a merge
+of that variant takes it. On a merge, `shared/` moves into
 the target's folder as `shared/` with its imports made relative; when no part imports it, it is
 dropped. Only the target may import it: a merge refuses while another part of the picked variant
 does, so move that code into the part. `sketch new` prints each file it puts in `shared/`, for example

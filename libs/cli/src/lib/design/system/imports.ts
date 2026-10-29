@@ -57,17 +57,31 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
   return path.startsWith('..') || isAbsolute(path);
 };
 
-const sharedFileExists = (sharedDir: string, path: string) => {
-  const file = resolve(sharedDir, path.split('?')[0] ?? path);
+export type SharedDirs = { sharedDir?: string; variantSharedDir?: string };
 
-  return STYLESHEET.test(file) ? existsSync(file) : sourceFileOf(file) !== null;
+/** The folders `@shared/<path>` looks in, the variant's own `shared/` first. */
+export const sharedDirsOf = (product: SharedDirs) =>
+  [product.variantSharedDir, product.sharedDir].filter((dir): dir is string => dir !== undefined);
+
+/** The file `@shared/<path>` resolves to, the variant's own copy first; `null` when no folder holds it. */
+export const sharedFileOf = (options: { dirs: string[]; path: string }) => {
+  const path = options.path.split('?')[0] ?? options.path;
+
+  for (const dir of options.dirs) {
+    const file = resolve(dir, path);
+    const found = STYLESHEET.test(file) ? (existsSync(file) ? file : null) : sourceFileOf(file);
+
+    if (found) return found;
+  }
+
+  return null;
 };
 
 /**
  * Imports and stylesheet `url(@assets/...)` that name no part, fixture set or asset file, `@shared/` imports outside a sketch variant (`sharedDir` is the
  * sketch's `shared/` folder, `assetsDir` the variant's `assets/`), and relative imports that reach into another part.
  */
-export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string; assetsDir?: string }): Problem[] => {
+export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { assetsDir?: string }): Problem[] => {
   const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
 
   const missingCssAssets = (part: ResolvedPart): Problem[] =>
@@ -94,8 +108,8 @@ export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string
         return problem(
           `${imported.specifier} - only a part in a sketch variant may import the sketch's ${SHARED_PREFIX}`,
         );
-      if (imported.kind === 'shared' && !sharedFileExists(product.sharedDir ?? '', imported.path))
-        return problem(`${imported.specifier} resolves to no file in the sketch's shared/ folder`);
+      if (imported.kind === 'shared' && !sharedFileOf({ dirs: sharedDirsOf(product), path: imported.path }))
+        return problem(`${imported.specifier} resolves to no file in the variant's or the sketch's shared/ folder`);
       if (imported.kind === 'asset' && !assetFileOf({ product, path: imported.path }))
         return problem(`${imported.specifier} resolves to no file in an assets/ folder`);
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))

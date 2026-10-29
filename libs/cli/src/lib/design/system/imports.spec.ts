@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { classifyImport, importProblemsOf } from './imports';
+import { classifyImport, importProblemsOf, sharedFileOf } from './imports';
 import { resolveProduct } from './resolve-product';
 
 const acme = () => {
@@ -69,6 +69,19 @@ describe('importProblemsOf', () => {
     });
   });
 
+  it("resolves @shared/ to the variant's own copy first, then to the sketch's", () => {
+    const target = acme();
+    const [variant, sketch] = [join(target, 'a/shared'), join(target, 'shared')];
+
+    [variant, sketch].forEach((dir) => mkdirSync(dir, { recursive: true }));
+    writeFileSync(join(sketch, 'pin.ts'), '');
+    writeFileSync(join(sketch, 'list.ts'), '');
+    writeFileSync(join(variant, 'pin.ts'), '');
+
+    expect(sharedFileOf({ dirs: [variant, sketch], path: 'pin' })).toBe(join(variant, 'pin.ts'));
+    expect(sharedFileOf({ dirs: [variant, sketch], path: 'list' })).toBe(join(sketch, 'list.ts'));
+  });
+
   it('flags an @shared/ import whose file the shared folder lacks', () => {
     const target = acme();
     const shared = join(target, 'shared');
@@ -85,8 +98,8 @@ describe('importProblemsOf', () => {
     );
 
     expect(importProblemsOf({ ...resolveAcme(target), sharedDir: shared }).map(({ message }) => message)).toEqual([
-      "@shared/agent-logos resolves to no file in the sketch's shared/ folder",
-      "@shared/gone.css?inline resolves to no file in the sketch's shared/ folder",
+      "@shared/agent-logos resolves to no file in the variant's or the sketch's shared/ folder",
+      "@shared/gone.css?inline resolves to no file in the variant's or the sketch's shared/ folder",
     ]);
   });
 

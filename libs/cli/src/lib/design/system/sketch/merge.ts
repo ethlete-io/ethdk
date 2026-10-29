@@ -134,7 +134,7 @@ const mergeOrReason = (options: {
 
   writeFileSync(noteFile, noted);
 
-  if (shared === 'carry') carryShared({ sketch, targetDir });
+  if (shared === 'carry') carryShared({ sketch, variant, targetDir });
 
   if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
     swapped.restore();

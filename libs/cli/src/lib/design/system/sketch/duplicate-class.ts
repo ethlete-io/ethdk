@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { classesOf, cssBlocksOf } from '../css-source';
-import { classifyImport, SHARED_PREFIX } from '../imports';
+import { classifyImport, sharedDirsOf, sharedFileOf, SHARED_PREFIX } from '../imports';
 import { partKeyOf, ResolvedPart } from '../resolve-product';
 import { importsOf } from '../ts-source';
 import { SketchedProduct } from './overlay';
@@ -26,7 +26,11 @@ export const stylesheetsOf = (options: { product: SketchedProduct; part: Resolve
     if (!path.endsWith('.css')) continue;
 
     if (imported.kind === 'relative') files.add(resolve(dirname(part.file), path));
-    else if (imported.kind === 'shared') files.add(resolve(product.sharedDir, path.slice(SHARED_PREFIX.length)));
+    else if (imported.kind === 'shared')
+      files.add(
+        sharedFileOf({ dirs: sharedDirsOf(product), path: path.slice(SHARED_PREFIX.length) }) ??
+          resolve(product.sharedDir, path.slice(SHARED_PREFIX.length)),
+      );
     else if (imported.kind === 'part' && imported.stylesheet) {
       const owner = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(imported));
 

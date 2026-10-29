@@ -3,7 +3,7 @@ import { dirname, relative, resolve, sep } from 'path';
 import { SHARED_PREFIX } from '../imports';
 import { partKeyOf } from '../resolve-product';
 import { importsOf } from '../ts-source';
-import { SHARED_FOLDER, sharedDirOf, Sketch, sourceFilesIn } from './sketch';
+import { SHARED_FOLDER, sharedDirOf, Sketch, sourceFilesIn, variantSharedDirOf } from './sketch';
 
 type PartFile = { layer: string; name: string; file: string };
 
@@ -39,12 +39,16 @@ const relativeSpecifierOf = (options: { from: string; to: string }) => {
   return path.startsWith('.') ? path : `./${path}`;
 };
 
-/** Copies the sketch's `shared/` folder into the merged target's folder and turns each `@shared/` import there into a relative one. */
-export const carryShared = (options: { sketch: Sketch; targetDir: string }) => {
-  const { sketch, targetDir } = options;
+/**
+ * Copies the sketch's `shared/` folder, then the picked variant's own `shared/` over it, into the merged target's folder
+ * and turns each `@shared/` import there into a relative one.
+ */
+export const carryShared = (options: { sketch: Sketch; variant: string; targetDir: string }) => {
+  const { sketch, variant, targetDir } = options;
   const shared = resolve(targetDir, SHARED_FOLDER);
 
-  if (existsSync(sharedDirOf(sketch))) cpSync(sharedDirOf(sketch), shared, { recursive: true });
+  for (const dir of [sharedDirOf(sketch), variantSharedDirOf(sketch, variant)])
+    if (existsSync(dir)) cpSync(dir, shared, { recursive: true });
 
   for (const file of sourceFilesIn(targetDir)) {
     const source = readFileSync(file, 'utf8');

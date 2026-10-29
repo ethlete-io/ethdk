@@ -3,10 +3,10 @@ import { dirname, resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
-import { classifyImport } from './imports';
+import { classifyImport, sharedFileOf as sharedFileIn } from './imports';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
-import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch } from './sketch/sketch';
+import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
 
 const PRODUCT_QUERY = 'design-product';
 const SKETCH_QUERY = 'design-sketch';
@@ -127,7 +127,9 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
     const found = findSketch({ productDir, product, sketch: target });
 
-    return found && typeof found !== 'string' ? sourceFileOf(resolve(sharedDirOf(found), path)) : null;
+    return found && typeof found !== 'string' && sketch
+      ? sharedFileIn({ dirs: [variantSharedDirOf(found, sketch.variant), sharedDirOf(found)], path })
+      : null;
   };
 
   const resolveId = (specifier: string, importer: string | undefined) => {
@@ -151,6 +153,12 @@ export const createSystemModules = (options: { target: string; config: DesignCon
       return existsSync(file)
         ? stylesheetModuleIdOf({ file, query: specifier.split('?')[1], product: name, sketch })
         : null;
+    }
+
+    if (imported.kind === 'shared' && STYLESHEET_FILE.test(fileOfModuleId(specifier))) {
+      const file = sharedFileOf({ product: name, sketch, path: imported.path });
+
+      return file ? stylesheetModuleIdOf({ file, query: specifier.split('?')[1], product: name, sketch }) : null;
     }
 
     if (imported.kind === 'relative' || imported.kind === 'shared') {

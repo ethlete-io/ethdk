@@ -5,9 +5,14 @@ import { LAYER_USES, LAYERS } from '../layers';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { Sketch, sharedDirOf, variantDirOf } from './sketch';
+import { Sketch, sharedDirOf, variantDirOf, variantSharedDirOf } from './sketch';
 
-export type SketchedProduct = ResolvedProduct & { sketched: string[]; sharedDir: string; assetsDir: string };
+export type SketchedProduct = ResolvedProduct & {
+  sketched: string[];
+  sharedDir: string;
+  variantSharedDir: string;
+  assetsDir: string;
+};
 
 const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name: string }) =>
   partKeyOf(part) === sketch.target || part.layer === sketch.layer || LAYER_USES[sketch.layer].includes(part.layer);
@@ -15,7 +20,8 @@ const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name:
 /**
  * The product as one variant of a sketch draws it: each part the variant holds replaces the part the
  * product resolves under the same name, or joins it when the product has none. `sketched` names the
- * parts the variant holds, `sharedDir` the sketch's `shared/` folder its parts import as `@shared/...`, and
+ * parts the variant holds, `sharedDir` the sketch's `shared/` folder its parts import as `@shared/...` (the
+ * variant's own `variantSharedDir` first), and
  * `assetsDir` the variant's own `assets/` folder, which `@assets/...` looks in first.
  */
 export const overlaySketch = (options: {
@@ -52,6 +58,7 @@ export const overlaySketch = (options: {
     problems: [...product.problems, ...own.problems, ...outside],
     sketched: [...keys],
     sharedDir: sharedDirOf(sketch),
+    variantSharedDir: variantSharedDirOf(sketch, variant),
     assetsDir: resolve(dir, ASSETS_FOLDER),
   };
 };

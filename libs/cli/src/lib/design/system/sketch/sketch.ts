@@ -76,6 +76,10 @@ export const SHARED_FOLDER = 'shared';
 
 export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, SHARED_FOLDER);
 
+/** A variant's own `shared/` folder: a file there wins over the sketch's `shared/` file of the same path. */
+export const variantSharedDirOf = (sketch: Sketch, variant: string) =>
+  resolve(variantDirOf(sketch, variant), SHARED_FOLDER);
+
 const SOURCE = /\.(?:ts|js|mjs)$/u;
 
 export const sourceFilesIn = (dir: string) =>

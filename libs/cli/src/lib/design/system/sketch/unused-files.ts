@@ -4,13 +4,13 @@ import { ASSETS_FOLDER } from '../assets';
 import { classifyImport } from '../imports';
 import { fixturesOf, partFilesOf } from '../product';
 import { importsOf } from '../ts-source';
-import { Sketch, variantDirOf } from './sketch';
+import { SHARED_FOLDER, Sketch, variantDirOf } from './sketch';
 
 const CODE = /\.(?:ts|css)$/u;
 
 const codeFilesIn = (dir: string) =>
   (readdirSync(dir, { recursive: true }) as string[])
-    .filter((path) => CODE.test(path) && path.split(sep)[0] !== ASSETS_FOLDER)
+    .filter((path) => CODE.test(path) && path.split(sep)[0] !== ASSETS_FOLDER && path.split(sep)[0] !== SHARED_FOLDER)
     .map((path) => resolve(dir, path));
 
 const candidatesOf = (path: string) => [path, `${path}.ts`, resolve(path, 'index.ts')];
