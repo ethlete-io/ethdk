@@ -1041,3 +1041,10 @@ check` warns early.
   parameter to the shared `pin()`. It merges even when a or c wins.
 - **Fix option:** a variant may hold its own copy of a shared file, which wins over `shared/`.
 - **Fix done (cfccfd910):** a variant may hold `<variant>/shared/<path>`; `@shared/<path>` resolves to it before the sketch's `shared/` in Vite (`system-modules.ts`, also `.css`), the tsconfig paths, the IMPORT rule, duplicate/shared-class warnings; `unused-files` skips it; a merge copies it over the sketch's `shared/`. The skill documents it.
+
+### 4.30 `design shot` prints the PNG path before the diff lines - fixed (54ed0065f)
+
+- **Pain:** the path came before about 20 "vs merged" lines; the agent ran the shot again to
+  find it.
+- **Fix option:** print the path last.
+- **Fix done (54ed0065f):** `design shot` prints the diff lines first and the PNG path as the last line (`shotReportOf`).

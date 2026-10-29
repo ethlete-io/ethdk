@@ -240,12 +240,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   sit right after the label. Only `--width 280` shows the real layout.
 - **Fix option:** a non-page part with `widths` is shot at `widths[0]` by default.
 
-### 4.30 `design shot` prints the PNG path before the diff lines - open
-
-- **Pain:** the path came before about 20 "vs merged" lines; the agent ran the shot again to
-  find it.
-- **Fix option:** print the path last.
-
 ### 4.31 `sketch check` says nothing about a `grid` - open
 
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.
