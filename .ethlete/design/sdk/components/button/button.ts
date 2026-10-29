@@ -1,7 +1,7 @@
 import { button, buttonStyles, ButtonMockOptions } from '@ethlete/components/design/button';
 import { definePart, drawing } from '@design-system';
 
-type Props = Pick<ButtonMockOptions, 'label' | 'variant' | 'size' | 'color' | 'pressed'>;
+type Props = ButtonMockOptions;
 
 export default definePart<Props>({
   note: 'The SDK button, drawn by its mock from @ethlete/components/design.',

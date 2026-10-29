@@ -30,5 +30,13 @@
     "hash": "5de1294e8aa0984c",
     "at": "2026-10-29T15:05:40.646Z",
     "auto": true
+  },
+  {
+    "part": "components/button",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "b9bb3d3ff96bc85a",
+    "at": "2026-10-29T16:04:18.390Z",
+    "auto": true
   }
 ]
