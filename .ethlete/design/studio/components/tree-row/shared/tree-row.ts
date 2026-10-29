@@ -1,4 +1,4 @@
-export type RowInteraction = 'hover' | 'focus-visible';
+export type RowInteraction = 'hover' | 'focus-visible' | 'active';
 
 export type Row = {
   label: string;
@@ -85,6 +85,7 @@ export const states = {
   'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: 'Render check: 1 warning' }),
   'mark-comments': one({ ...button, label: 'part-tree', comments: 3 }),
   hover: one({ ...button, interaction: 'hover' }),
+  active: one({ ...button, interaction: 'active' }),
   'focus-visible': one({ ...button, interaction: 'focus-visible' }),
   selected: one({ ...button, selected: true }),
   'selected-hover': one({ ...button, selected: true, interaction: 'hover' }),
