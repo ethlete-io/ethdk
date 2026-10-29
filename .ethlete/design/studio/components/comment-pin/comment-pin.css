@@ -1,0 +1,103 @@
+@layer components {
+  .st-pin-stage {
+    display: inline-flex;
+    padding: var(--space-2);
+  }
+
+  .st-pin {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .st-pin:focus-visible {
+    outline: none;
+  }
+
+  .st-pin-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50% 50% 50% 0;
+    background: var(--surface-overlay);
+    box-shadow: 0 0 0 1px var(--surface-border);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-strong);
+    line-height: 1;
+  }
+
+  .st-pin-logo {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .st-pin-count {
+    padding: 0 0.4rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-strong);
+    line-height: var(--text-xs-line);
+  }
+
+  .st-pin:hover .st-pin-face {
+    background: var(--surface-raised);
+    box-shadow: 0 0 0 1px var(--text-muted);
+    color: var(--text);
+  }
+
+  .st-pin:active .st-pin-face {
+    background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+  }
+
+  .st-pin:focus-visible .st-pin-face {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .st-pin[data-selected] .st-pin-face {
+    background: var(--accent);
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 4px var(--accent-subtle);
+    color: var(--on-accent);
+  }
+
+  .st-pin[data-selected]:hover .st-pin-face {
+    background: var(--accent-hover);
+    color: var(--on-accent);
+  }
+
+  .st-pin[data-selected]:active .st-pin-face {
+    background: color-mix(in srgb, var(--accent), var(--surface-sunken) 25%);
+  }
+
+  .st-pin[data-selected] .st-pin-face[data-agent] {
+    background: var(--surface-overlay);
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 4px var(--accent-subtle);
+  }
+
+  .st-pin[data-selected]:hover .st-pin-face[data-agent] {
+    background: var(--surface-raised);
+  }
+
+  .st-pin[data-selected]:active .st-pin-face[data-agent] {
+    background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+  }
+
+  .st-pin[data-selected]:focus-visible .st-pin-face {
+    outline-offset: 5px;
+  }
+}
