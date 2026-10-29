@@ -251,6 +251,24 @@ describe('designSketch', () => {
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 
+  it('names the next steps after sketch new, and says report --done is not needed yet', () => {
+    const target = acme();
+    const lines = output();
+
+    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme')).toBe(0);
+
+    const next = lines.slice(lines.indexOf('Next:'));
+
+    expect(next).toEqual([
+      'Next:',
+      expect.stringContaining('sketch report components/button --product acme --variant a --by <model id> "'),
+      expect.stringMatching(/sketch report .* --done .*none is needed now/u),
+      expect.stringContaining('sketch round components/button r1 --product acme --note'),
+      '  sketch check components/button --product acme',
+      '  sketch ready components/button --product acme --by <model id>',
+    ]);
+  });
+
   it('warns of a class two stylesheets of one part define, and still readies', async () => {
     const target = acme();
 
@@ -368,7 +386,7 @@ describe('designSketch', () => {
     writeFileSync(join(part, 'data.ts'), 'export const rows = [];\n');
     write(target, 'new', 'components/button', '--variants', 'a', '--product', 'acme');
 
-    expect(lines.slice(-2)).toEqual([
+    expect(lines.slice(lines.indexOf('Next:') - 2, lines.indexOf('Next:'))).toEqual([
       '  shared by every variant, imported as @shared/<path>; edit it here, not in a copy:',
       `    ${DESIGN_DIR}/acme/sketches/components-button/shared/data.ts`,
     ]);
@@ -624,6 +642,7 @@ describe('designSketch', () => {
     expect(write(target, 'new', 'components/button', '--variants', 'a,b')).toBe(1);
     expect(lines.pop()).toBe('more than one product - pass --product <name>; config.json declares acme-base, acme.');
     expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme')).toBe(0);
+    expect(lines.splice(lines.indexOf('Next:')).length).toBe(5);
     expect(lines.splice(-3)).toEqual([
       `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
       `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/a/assets/`,

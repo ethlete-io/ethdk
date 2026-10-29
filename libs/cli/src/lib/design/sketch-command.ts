@@ -213,7 +213,28 @@ const created = (context: Context) => {
     shared.forEach((file) => console.log(`    ${relative(target, file)}`));
   }
 
+  nextStepsOf(sketch, product.name).forEach((line) => console.log(line));
+
   return 0;
+};
+
+const nextStepsOf = (sketch: Sketch, product: string) => {
+  const at = `${sketch.target} --product ${product}`;
+  const first = sketch.variants[0] ?? '<key>';
+  const running = runningRoundOf(sketch);
+
+  return [
+    'Next:',
+    `  sketch report ${at} --variant ${first} --by <model id> "<what you draw>"   while you draw a variant`,
+    `  sketch report ${at} --variant ${first} --by <model id> --done              when you stop drawing it; no report runs yet, so none is needed now`,
+    ...(running.note.trim() === ''
+      ? [
+          `  sketch round ${sketch.target} ${running.key} --product ${product} --note "<what the round shows>" --by <model id>`,
+        ]
+      : []),
+    `  sketch check ${at}`,
+    `  sketch ready ${at} --by <model id>`,
+  ];
 };
 
 const variantNotesOf = (pairs: string[], variants: string[]): Map<string, string> | string => {

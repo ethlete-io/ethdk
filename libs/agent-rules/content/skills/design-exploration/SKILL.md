@@ -195,7 +195,8 @@ variant adds its token group as a state, or extends that group's state. It never
 drawing with a demo scene, since the merge would drop every other group. A demo may be an extra state.
 
 Name the variant you work on with `--variant`. Studio marks it as drawing, and hides its frames,
-while the latest report names it. `sketch new`, `sketch variant` and each report record your
+while the latest report names it. `sketch new` starts no report, so `report --done` follows only a report
+of your own; it prints the next steps. `sketch new`, `sketch variant` and each report record your
 model id as an author of the variants they write, and `sketch ready` records it on every variant
 that has no author yet. A merge adds the picked variant's authors to the `madeBy` the part file
 already holds, and never removes it.
