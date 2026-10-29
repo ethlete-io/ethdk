@@ -230,6 +230,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** store the sketch's `createdAt` in the comment, as the 3.7 fix does for round
   flags. Show a comment only in the sketch it was made in. Comments without it stay hidden in a
   sketch.
+- **Seen again (2026-10-29):** the empty-state sketch on `pages/flows` showed the three addressed
+  round-2 comments (pins 32, 33, 34) of the merged flows sketch on its new variant a.
 
 ### 3.12 `inbox done --note` overwrites the part note in the product - open
 
@@ -281,6 +283,20 @@ sketch` until the next merge of the part.
      Tom's decision.
   3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
      and warns when its computed styles differ between states.
+
+### 3.15 A sketch shows the states it does not change - open
+
+- **Pain:** the sketch "Leerer Flows-Bereich mit Anleitung" changes only the `empty` state of
+  `pages/flows`. Studio also draws the `flow` state in current, a and b, three identical frames.
+  Tom: "since we only worked on the empty state why is the flow design showing".
+- **Cause:** a variant must keep every state of the part (`sketch check` and `sketch ready` fail on
+  a dropped state), and Studio draws every state of every variant.
+- **Now:** Tom compares identical frames to find the one state that changed.
+- **Fix options:**
+  1. Studio compares the drawn markup of a state with current and folds an unchanged state into one
+     collapsed row, "flow: unchanged in a, b".
+  2. The sketch names the states of its question (`sketch new --states empty`). Studio draws those
+     first and puts the rest behind a toggle.
 
 ## 4. Render checks and shots
 
