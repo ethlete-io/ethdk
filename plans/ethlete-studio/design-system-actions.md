@@ -429,6 +429,15 @@ sketch` until the next merge of the part.
 - **Fix option:** scaffold a page like its siblings: tokens import, `madeBy` from `--by`, the
   product widths, and no CSS file.
 
+### 5.9 A Prettier run after a merge counts as a change outside a sketch - open
+
+- **Pain:** `pages/start` merged unformatted, so `prettier --check` failed. After `prettier --write`,
+  `design check` warns `pages/start changed outside a sketch`.
+- **Cause:** `sketch check` and `sketch ready` do not check the format, and the merge hash covers
+  the raw file text.
+- **Fix option:** format the variant files at `sketch ready` or at the merge, or hash the
+  formatted text.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
