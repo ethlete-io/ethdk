@@ -189,6 +189,29 @@ sketch` until the next merge of the part.
 - **Open:** `pages/flows` still has `checks: { skip: ['CLIPPED'] }`. Take it out with a one-variant
   sketch.
 
+### 4.9 A failed shot answers 200 with a picture of the error - fixed
+
+- **Pain:** on 2026-10-29 every shot on :4402 failed with "Failed to fetch dynamically imported
+  module", also for merged pages. The endpoint answered HTTP 200 with a PNG of the error text, so a
+  plain `curl` looked like it worked.
+- **Fix options:** answer 5xx for a failed state, or add an `X-Design-Error` header.
+- **Fix done (`070a374f1`):** a failed state answers 500 with the error PNG; the contact sheet
+  shows the error text.
+
+### 4.10 `preset` and `width` together give a 400 that is easy to miss - fixed
+
+- **Pain:** the agent brief passed `preset=desktop&width=1440`; the endpoint refused with 400. With
+  `curl -s` the agent saw nothing.
+- **Fix options:** accept the pair when the width matches the preset, or name the rule in the
+  skill's shot command.
+- **Fix done (`070a374f1`):** a width equal to the preset's width is accepted; a mismatch names both.
+
+### 4.11 `sketch check` prints only `ok` - fixed
+
+- **Pain:** the output does not name the states it rendered, so an agent cannot tell what passed.
+- **Fix option:** one line per variant and state, with the result.
+- **Fix done (`070a374f1`):** one line per variant and state, then the issues and `ok`.
+
 ## 5. Drawing parts and pages
 
 ### 5.3 Editor and typecheck gaps - fixed (L833, L1009, L975)

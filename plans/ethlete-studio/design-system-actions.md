@@ -210,30 +210,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.9 A failed shot answers 200 with a picture of the error - open
-
-- **Pain:** on 2026-10-29 every shot on :4402 failed with "Failed to fetch dynamically imported
-  module", also for merged pages. The endpoint answered HTTP 200 with a PNG of the error text, so a
-  plain `curl` looked like it worked.
-- **Fix options:** answer 5xx for a failed state, or add an `X-Design-Error` header.
-
-### 4.10 `preset` and `width` together give a 400 that is easy to miss - open
-
-- **Pain:** the agent brief passed `preset=desktop&width=1440`; the endpoint refused with 400. With
-  `curl -s` the agent saw nothing.
-- **Fix options:** accept the pair when the width matches the preset, or name the rule in the
-  skill's shot command.
-
-### 4.11 `sketch check` prints only `ok` - open
-
-- **Pain:** the output does not name the states it rendered, so an agent cannot tell what passed.
-- **Fix option:** one line per variant and state, with the result.
-
 ### 4.12 `design shot` fails on a busy port 5173 and writes nothing - open
 
 - **Pain:** `design shot pages/flows --states --variants` printed only `Port 5173 is already in use`
   and exited without a sheet.
 - **Fix option:** take a free port, as the render check does.
+- **Not reproduced:** `design shot` starts its server on port 0 since `1902a2675`. A run with 5173
+  taken wrote the sheet. The message may come from a stale `dist`. Close if it does not return.
 
 ## 5. Drawing parts and pages
 
