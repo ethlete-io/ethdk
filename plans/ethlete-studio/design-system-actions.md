@@ -50,6 +50,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Result (2026-10-29, ethlete-mac, macOS 15.7.7):** 100 cycles with 3 frames: 1 hang in 4 runs
   (after batch 80, WebContent at 100% CPU until the watchdog). 40 cycles passed. Other sessions
   loaded the Mac at the time. Next: 10 runs of 100 on an idle Mac after a fresh `nx build cli`.
+- **Result 2 (2026-10-29, fresh `dist`, Mac mostly idle):** 1 hang in 10 runs of 100 (run 6, after
+  batch 74). Sample `/tmp/wk-samples/hang-6.txt`: main thread 100% busy in
+  `MicrotaskQueue::performMicrotaskCheckpoint` -> `ScriptModuleLoader::evaluate` ->
+  `WTF::URLParser` (`parseIPv4Host`), no deadlock. Same shape as the first two hangs. The probe used
+  a LAN IPv4 URL; a run against `localhost` is not done. Next: repeat 10 x 100 on `localhost`
+  (run the server on the Mac or tunnel over SSH), then decide between a minimal WebKit repro for
+  upstream and a workaround (e.g. never remove a frame while its module evaluates).
 
 ### 1.3 The design server listens on `[::1]` only - open
 

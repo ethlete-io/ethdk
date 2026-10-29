@@ -78,9 +78,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    its copy. `elements/shell-main` keeps its own glyph (Tom, 2026-10-29).
 2. Asset question (5.13 in `design-system-actions.md`): Tom asked how we handle assets in general.
    Draw up the options with a recommendation and ask him; no build before his pick.
-3. Finding 1.2: a subagent ran 10 x 100-cycle WebKit runs on ethlete-mac (Tom: the Mac is free).
-   If its result is not in 1.2 yet, run it again (brief: own design server on a scratch copy, port
-   4630 + TCP forwarder on 0.0.0.0:4631, swift script copied to `~/tmp/webkit-reload/`).
+3. Finding 1.2 is reopened: 1 hang in 10 x 100 runs, stack in the 1.2 entry. Next step there:
+   the same runs against `localhost` (SSH tunnel), then pick repro or workaround with Tom.
+   Script fix 1.4 is in `2d3e44cae` (move 1.4 to the fixed doc).
 4. Two verification runs (3.1, 3.2, 3.4, 3.6, 3.7, 5.1, 5.2, 7.1-7.4; and 2.1, 2.2, 2.3, 2.6, 7.6)
    may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
    report-only, own servers on 4610-4629.
