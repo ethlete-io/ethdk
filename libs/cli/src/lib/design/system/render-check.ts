@@ -150,6 +150,66 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
 
+  const px = (value) => parseFloat(value) || 0;
+  const invisible = (colour) => colour === 'transparent' || /^rgba\\(.*,\\s*0\\)$/.test(colour);
+  const frameBox = () => {
+    if (options.fit) return { name: 'the frame', box: root.getBoundingClientRect() };
+    const bottom = options.fixed ? page.clientHeight - scrollY : Infinity;
+    return { name: 'the frame', box: { left: -scrollX, right: page.clientWidth - scrollX, top: options.fixed ? -scrollY : -Infinity, bottom } };
+  };
+  const clipOf = (from) => {
+    for (let at = from; at && at !== root; at = at.parentElement) {
+      const style = getComputedStyle(at);
+      if (style.overflowX === 'visible' && style.overflowY === 'visible') continue;
+      const rect = at.getBoundingClientRect();
+      const left = rect.left + at.clientLeft;
+      const top = rect.top + at.clientTop;
+      const box = {
+        left: style.overflowX === 'visible' ? -Infinity : left,
+        right: style.overflowX === 'visible' ? Infinity : left + at.clientWidth,
+        top: style.overflowY === 'visible' ? -Infinity : top,
+        bottom: style.overflowY === 'visible' ? Infinity : top + at.clientHeight,
+      };
+      return { name: pathOf(at), box };
+    }
+    return frameBox();
+  };
+  const pastOf = (rect, reach, box) =>
+    Math.max(
+      rect.left >= box.left ? box.left - (rect.left - reach.left) : 0,
+      rect.right <= box.right ? rect.right + reach.right - box.right : 0,
+      rect.top >= box.top ? box.top - (rect.top - reach.top) : 0,
+      rect.bottom <= box.bottom ? rect.bottom + reach.bottom - box.bottom : 0,
+    );
+  const shadowReachOf = (value) => {
+    const reach = { left: 0, right: 0, top: 0, bottom: 0 };
+    if (value === 'none') return reach;
+    for (const shadow of value.split(/,(?![^(]*\\))/)) {
+      if (/\\binset\\b/.test(shadow)) continue;
+      const colour = shadow.match(/(rgba?|oklch|oklab|lab|lch|hsla?|color)\\([^)]*\\)|transparent/)?.[0] ?? '';
+      if (invisible(colour)) continue;
+      const [x = 0, y = 0, blur = 0, spread = 0] = [...shadow.replace(/\\w+\\([^)]*\\)/g, '').matchAll(/-?[\\d.]+px/g)].map((match) => px(match[0]));
+      if (blur > 0) continue;
+      reach.left = Math.max(reach.left, spread - x);
+      reach.right = Math.max(reach.right, spread + x);
+      reach.top = Math.max(reach.top, spread - y);
+      reach.bottom = Math.max(reach.bottom, spread + y);
+    }
+    return reach;
+  };
+  for (const element of root.querySelectorAll('*')) {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) continue;
+    const outline = style.outlineStyle !== 'none' && !invisible(style.outlineColor) ? Math.max(0, px(style.outlineWidth) + px(style.outlineOffset)) : 0;
+    const shadow = shadowReachOf(style.boxShadow);
+    const clip = clipOf(element.parentElement);
+    const outlinePast = outline > 0 ? pastOf(rect, { left: outline, right: outline, top: outline, bottom: outline }, clip.box) : 0;
+    const shadowPast = pastOf(rect, shadow, clip.box);
+    if (outlinePast > 1) report('CLIPPED', element, 'outline ' + Math.round(outlinePast) + 'px past ' + clip.name);
+    else if (shadowPast > 1) report('CLIPPED', element, 'box-shadow ' + Math.round(shadowPast) + 'px past ' + clip.name);
+  }
+
   const singleLine = (element) => {
     for (let at = element; at && at !== root; at = at.parentElement)
       if (at.matches(${JSON.stringify(SINGLE_LINE)}) || [...at.classList].some((name) => /(^|[-_])(badge|chip|pill|tab)$/.test(name)))

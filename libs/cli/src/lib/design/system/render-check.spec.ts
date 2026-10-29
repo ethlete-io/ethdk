@@ -31,6 +31,16 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
   'components/themed': {
     body: '<style>.et-color--known { color: red }</style><div class="et-color--known et-color--inherited"><p class="et-color--ghost" style="margin: 0">Themed</p></div>',
   },
+  'components/ring-cut': {
+    body: '<div style="overflow: hidden"><button style="display: block; outline: 3px solid">Go</button></div>',
+  },
+  'components/shadow-cut': {
+    body: '<div style="overflow: hidden"><p style="margin: 0; box-shadow: 0 0 0 4px currentColor">Lifted</p></div>',
+  },
+  'components/ring-frame': { body: '<p style="margin: 0; outline: 2px solid; outline-offset: 20px">Ring</p>' },
+  'components/ring-room': {
+    body: '<div style="overflow: hidden; padding: 8px"><button style="display: block; outline: 3px solid; box-shadow: 0 0 0 9px transparent, 0 8px 24px currentColor, inset 0 0 0 20px currentColor">Go</button></div>',
+  },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
@@ -90,6 +100,9 @@ describe('renderIssuesOf', () => {
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part} ${issue.size}`).sort()).toEqual([
       'CLIPPED components/cut fitted',
       'CLIPPED components/embed-cut fitted',
+      'CLIPPED components/ring-cut fitted',
+      'CLIPPED components/ring-frame fitted',
+      'CLIPPED components/shadow-cut fitted',
       'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
@@ -97,6 +110,16 @@ describe('renderIssuesOf', () => {
     ]);
     expect(rendered.issues.map(renderIssueLineOf).filter((line) => line.startsWith('WRAP'))).toEqual([
       'WRAP shop components/wrapped default at fitted: button[data-et-part=components/wrapped] - "Save the draft now" breaks onto 4 lines; on purpose: data-et-skip="WRAP" on the element, or definePart({ checks: { skip: [\'WRAP\'] } })',
+    ]);
+    expect(
+      rendered.issues
+        .filter((issue) => issue.part.startsWith('components/ring-') || issue.part === 'components/shadow-cut')
+        .map((issue) => issue.detail.split(';')[0])
+        .sort(),
+    ).toEqual([
+      'box-shadow 4px past div[data-et-part=components/shadow-cut]',
+      'outline 3px past div[data-et-part=components/ring-cut]',
+      'outline 6px past the frame',
     ]);
     expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
       'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
