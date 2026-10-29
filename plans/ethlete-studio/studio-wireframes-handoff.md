@@ -178,6 +178,10 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     findings: split `foundations/tokens` into `foundations/colors`, `/type`, `/spacing` (2.12, Tom
     approved option 1); needs 5.26 (`design part remove`) and a check how frames load the product
     tokens (5.17). Then switch and project switcher (list every host first, 5.24).
+    Update 20:10: the CLI slice built 3.32-3.35, 4.38, 5.48, 5.53 (`f3c8208c9`). Not reached:
+    5.26, 3.36, 3.37 and the checks 4.16/4.32 (`typecheckVariant` in `check-system.ts`), 4.17,
+    4.31, 4.34, 4.37, 5.27, 5.30, 5.40. Shot slice part 1 runs (4.30, 5.41, 4.19, 4.36, 4.18,
+    4.20, 4.29, 4.25, 4.33). Only one CLI agent at a time: parallel builds break `dist` (6.4).
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
