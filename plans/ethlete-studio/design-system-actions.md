@@ -442,12 +442,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   result.
 - **Fix option:** the part's default export exposes `styles` statically.
 
-### 5.48 A variant cannot change a file in `shared/` - open
-
-- **Pain:** "Count alignment" variant b needed other markup, so the agent added a `placement`
-  parameter to the shared `pin()`. It merges even when a or c wins.
-- **Fix option:** a variant may hold its own copy of a shared file, which wins over `shared/`.
-
 ### 5.49 `svgAsset` cannot set a class or attributes - open
 
 - **Pain:** `foundations/agent-logos` needs a host class and `aria-hidden` on the SVG; the agent

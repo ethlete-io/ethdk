@@ -1034,3 +1034,10 @@ check` warns early.
 - **Fix option:** `sketch check` reports an `@shared/...` import that resolves to nothing
   (recommended).
 - **Fix done (e93b17cb2):** the IMPORT rule reports `@shared/<path>` that resolves to no `.ts`/`index.ts`/stylesheet in the sketch's `shared/` folder, so `sketch check` and `sketch ready` name it.
+
+### 5.48 A variant cannot change a file in `shared/` - fixed (cfccfd910)
+
+- **Pain:** "Count alignment" variant b needed other markup, so the agent added a `placement`
+  parameter to the shared `pin()`. It merges even when a or c wins.
+- **Fix option:** a variant may hold its own copy of a shared file, which wins over `shared/`.
+- **Fix done (cfccfd910):** a variant may hold `<variant>/shared/<path>`; `@shared/<path>` resolves to it before the sketch's `shared/` in Vite (`system-modules.ts`, also `.css`), the tsconfig paths, the IMPORT rule, duplicate/shared-class warnings; `unused-files` skips it; a merge copies it over the sketch's `shared/`. The skill documents it.
