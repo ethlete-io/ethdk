@@ -186,13 +186,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
 - **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
 
-### 4.22 The diff row is all red when a variant changes its state props - open
-
-- **Pain:** tree-row r1 b and c add rows to the `tree` state, so every row moved and the diff said
-  "22944 px changed". The agent checked by eye that rows a already drew look the same.
-- **Fix option:** `shot --diff-props <variant>` draws the merged part with the variant's state
-  props, so the diff shows only the visual change.
-
 ### 4.23 The render check misses a clipped text decoration - open
 
 - **Pain:** in tree-row r4 i, the label's `overflow: hidden` cut off the red wavy underline. CLIPPED

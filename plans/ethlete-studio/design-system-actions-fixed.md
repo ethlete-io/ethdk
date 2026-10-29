@@ -1149,3 +1149,11 @@ check` warns early.
   `design shot --states --variants` listed only the merged states, with no "new state" line.
 - **Fix option:** print "new state" for a state the merged part does not have.
 - **Fix done (4670fd413):** the diff row of `design shot --variants` draws a "new state" note for a state the merged part lacks, and prints `<variant> / <state> vs merged: new state` among the diff lines.
+
+### 4.22 The diff row is all red when a variant changes its state props - fixed (235fad1b7)
+
+- **Pain:** tree-row r1 b and c add rows to the `tree` state, so every row moved and the diff said
+  "22944 px changed". The agent checked by eye that rows a already drew look the same.
+- **Fix option:** `shot --diff-props <variant>` draws the merged part with the variant's state
+  props, so the diff shows only the visual change.
+- **Fix done (235fad1b7):** `design shot --variants --diff-props` also draws the merged part with each variant's state props (frame params `props=<sketch>&props-variant=<variant>`) and compares the variant with that, labelled "vs merged with its props"; a failed props draw is a note. The design-exploration skill names it.
