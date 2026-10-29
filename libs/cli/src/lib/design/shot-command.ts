@@ -10,12 +10,12 @@ import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget } from './system/sketch/sketch';
-import { createPartShooter, PartAddress } from './shot';
+import { createPartShooter, cropOf, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -218,6 +218,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     '--preset',
     '--width',
     '--scale',
+    '--crop',
     '--surface',
     '--color',
     '--out',
@@ -248,6 +249,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
     !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
+    cropOf(args.values['--crop']) === undefined ||
     (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction))
   ) {
     console.error(usage);
@@ -369,6 +371,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       if (value) params.set(name, value);
     }
+
+    if (args.values['--crop']) params.set('clip', args.values['--crop']);
 
     const plan = planOf({
       base: { product, part, preset: chosenPreset, width, interaction },

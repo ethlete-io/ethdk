@@ -170,6 +170,11 @@ describe('designShot', () => {
     expect((await run(['components/button', '--variants', '--diff-props'])).text).toContain('no config at');
   });
 
+  it('takes a crop of four whole numbers', async () => {
+    expect((await run(['components/button', '--states', '--crop', '1,2,3'])).code).toBe(2);
+    expect((await run(['components/button', '--states', '--crop', '0,0,40,20'])).text).toContain('no config at');
+  });
+
   it('says so when the checkout has no design config', async () => {
     const { code, text } = await run(['components/button', '--states']);
 

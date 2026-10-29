@@ -13,7 +13,9 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
-const boundingBox = vi.fn<() => Promise<{ width: number; height: number } | null>>(async () => ({
+const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
+  x: 10,
+  y: 20,
   width: 200,
   height: 80,
 }));
@@ -287,6 +289,27 @@ describe('createPartShooter', () => {
     ]);
   });
 
+  it('crops a picture to the asked clip from the part root or the page, and answers 400 for a bad clip', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&clip=2,3,40,10`)).toMatchObject({ status: 200, body: Buffer.from('png') });
+    expect(screenshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({ fullPage: true, clip: { x: 12, y: 23, width: 40, height: 10 } }),
+    );
+    expect(await ask(shots, `${part}&preset=phone&clip=2,3,40,10`)).toMatchObject({ status: 200 });
+    expect(screenshot).toHaveBeenLastCalledWith(
+      expect.objectContaining({ fullPage: true, clip: { x: 2, y: 3, width: 40, height: 10 } }),
+    );
+
+    for (const clip of ['1,2,3', '0,0,0,4', '-1,0,4,4', 'a,b,c,d']) {
+      const answer = await ask(shots, `${part}&clip=${clip}`);
+
+      expect(answer.status).toBe(400);
+      expect(String(answer.body)).toContain('clip');
+    }
+  });
+
   it('draws a state at the asked scale as a picture of its own, and answers 400 for a bad scale', async () => {
     const { shots } = acme();
     const part = 'product=acme&part=components/card&state=long';
@@ -384,7 +407,7 @@ describe('createPartShooter', () => {
   it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {
     const { shots } = acme();
 
-    boundingBox.mockResolvedValueOnce({ width: 320, height: 0 });
+    boundingBox.mockResolvedValueOnce({ x: 0, y: 0, width: 320, height: 0 });
     expect(await ask(shots, 'product=acme&part=components/card&state=long')).toMatchObject({
       status: 422,
       type: 'text/plain; charset=utf-8',

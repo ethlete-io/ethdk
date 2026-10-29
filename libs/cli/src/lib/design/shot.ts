@@ -35,6 +35,21 @@ const scaleOf = (params: URLSearchParams) => Number(params.get('scale') ?? 1);
 
 const isScale = (scale: number) => Number.isInteger(scale) && scale >= 1 && scale <= MAX_SCALE;
 
+/** The `x,y,width,height` crop of a picture in CSS pixels, `null` without one, `undefined` for a malformed one. */
+export const cropOf = (raw: string | null | undefined) => {
+  if (raw === null || raw === undefined) return null;
+
+  const [x, y, width, height, ...rest] = raw.split(',').map((part) => (part.trim() === '' ? NaN : Number(part)));
+
+  if (rest.length > 0 || x === undefined || y === undefined || width === undefined || height === undefined)
+    return undefined;
+  if (![x, y, width, height].every(Number.isInteger) || x < 0 || y < 0 || width < 1 || height < 1) return undefined;
+
+  return { x, y, width, height };
+};
+
+type Crop = NonNullable<ReturnType<typeof cropOf>>;
+
 const FIT_VIEWPORT_WIDTH = 1280;
 
 /** The viewport a frame of this size is drawn in. */
@@ -47,7 +62,7 @@ type Drawn = { part: DrawnPart } | { slug: string };
 
 type Size = Pick<DesignPreset, 'width' | 'height'>;
 
-type Frame = { search: string; size: Size | null; clip: boolean; scale: number };
+type Frame = { search: string; size: Size | null; clip: boolean; scale: number; crop: Crop | null };
 
 type GraphModule = { id: string | null; importers: Set<GraphModule> };
 
@@ -195,10 +210,18 @@ export const createPartShooter = (options: {
           );
       }
 
+      const origin = frame.crop && frame.clip ? await root.boundingBox() : null;
+      const crop = frame.crop && {
+        ...frame.crop,
+        x: frame.crop.x + (origin?.x ?? 0),
+        y: frame.crop.y + (origin?.y ?? 0),
+      };
       const png = await (
-        frame.clip
-          ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
-          : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
+        crop
+          ? page.screenshot({ type: 'png', fullPage: true, clip: crop, timeout: DRAW_TIMEOUT_MS })
+          : frame.clip
+            ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
+            : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
       ).catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
 
@@ -243,7 +266,8 @@ export const createPartShooter = (options: {
   }) => {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
-    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale]);
+    const crop = cropOf(options.params.get('clip')) ?? null;
+    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop]);
     const kept = cache.get(key);
 
     if (kept) {
@@ -258,7 +282,7 @@ export const createPartShooter = (options: {
 
     const search = options.search.toString();
     const shot = drawQueue.run(
-      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale }),
+      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop }),
       options.priority,
     );
 
@@ -320,6 +344,16 @@ export const createPartShooter = (options: {
           status: 400,
           type: 'text/plain; charset=utf-8',
           body: `design-explore: scale is a whole number from 1 to ${MAX_SCALE}`,
+        });
+
+        return;
+      }
+
+      if (cropOf(params.get('clip')) === undefined) {
+        send(response, {
+          status: 400,
+          type: 'text/plain; charset=utf-8',
+          body: 'design-explore: clip is x,y,width,height in whole CSS pixels, width and height above 0',
         });
 
         return;
