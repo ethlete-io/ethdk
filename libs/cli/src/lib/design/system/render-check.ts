@@ -393,6 +393,7 @@ export const renderIssuesOf = async (options: {
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
     const grids: RenderedGrid[] = [];
+    const gridWarnings: RenderIssue[] = [];
     for (const { product, sketch, parts } of jobs) {
       const skips: Record<string, string[]> = {};
 
@@ -440,6 +441,18 @@ export const renderIssuesOf = async (options: {
           grid.problems.forEach((detail) =>
             issues.push({ rule: 'GRID', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
           );
+          grid.warnings.forEach((detail) =>
+            gridWarnings.push({
+              rule: 'GRID-COVERAGE',
+              product,
+              part: key,
+              state: '-',
+              size: '-',
+              path: '-',
+              detail,
+              sketch,
+            }),
+          );
         }
 
         const widths = widthsOf(definition?.widths);
@@ -478,7 +491,7 @@ export const renderIssuesOf = async (options: {
 
     return {
       issues,
-      warnings: firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule))),
+      warnings: [...gridWarnings, ...firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule)))],
       grids,
       drawn: frames.map(({ address }) => ({
         product: address.product,

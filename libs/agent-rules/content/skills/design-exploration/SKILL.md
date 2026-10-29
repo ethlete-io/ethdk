@@ -386,6 +386,8 @@ A `WARNING` line does not fail the check:
 
 - `UNDEFINED-CLASS` - a class carries a prefix the product's part CSS uses (`st-`, not the SDK's
   `et-`), but no stylesheet of the frame defines it. Named once, at the first part that draws it.
+- `GRID-COVERAGE` - some `grid` rows fill every interaction column (`rest`, `hover`, `active`,
+  `focus-visible`, `disabled`) and others leave some out, so a state can break there unseen.
 
 A part that breaks a rule on purpose names it: `definePart({ checks: { skip: ['CLIPPED'] }, … })`;
 the skip covers the part wherever it is drawn. Without Playwright Chromium the check prints

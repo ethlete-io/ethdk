@@ -314,12 +314,43 @@ describe('gridReportOf', () => {
     ).toEqual({
       line: 'grid 2 rows x 2 columns ok',
       problems: [],
+      warnings: [],
     });
     expect(
       gridReportOf({ columns: ['x', 'y'], rows: { r1: { x: 'a', y: 'a' }, r2: { x: 'b', y: 'gone' } } }, states),
     ).toEqual({
       line: 'grid 2 rows x 2 columns, leaves out c, d',
       problems: ['grid names the state a twice (r1 x, r1 y)', 'grid cell r2 y names gone, which is no state'],
+      warnings: [],
     });
+  });
+
+  it('warns of rows that skip interaction columns other rows fill', () => {
+    const states = ['face', 'face-hover', 'face-focus', 'count', 'count-hover', 'badge', 'mark'];
+    const grid = (rows: Record<string, Record<string, string>>) => ({
+      columns: ['rest', 'hover', 'focus-visible'],
+      rows,
+    });
+
+    expect(
+      gridReportOf(
+        grid({
+          face: { rest: 'face', hover: 'face-hover', 'focus-visible': 'face-focus' },
+          count: { rest: 'count', hover: 'count-hover' },
+          badge: { rest: 'badge' },
+          mark: { rest: 'mark' },
+        }),
+        states,
+      )?.warnings,
+    ).toEqual([
+      'grid row count leaves out focus-visible; rows badge, mark leave out hover, focus-visible, which face fills - a state can break there unseen',
+    ]);
+    expect(gridReportOf(grid({ badge: { rest: 'badge' }, mark: { rest: 'mark' } }), states)?.warnings).toEqual([]);
+    expect(
+      gridReportOf(
+        { columns: ['light', 'dark'], rows: { r1: { light: 'face', dark: 'mark' }, r2: { light: 'badge' } } },
+        states,
+      )?.warnings,
+    ).toEqual([]);
   });
 });

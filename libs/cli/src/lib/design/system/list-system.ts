@@ -109,7 +109,43 @@ const countOf = (count: number, noun: string) => `${count} ${noun}${count === 1 
  * The summary line of a part's `grid` and the problems that fail it: a state in two cells, a cell
  * naming no state. `null` when the part declares no grid.
  */
-export const gridReportOf = (grid: unknown, states: string[]): { line: string; problems: string[] } | null => {
+const isInteractionColumn = (column: string) =>
+  column === 'rest' || INTERACTIONS.some((interaction) => interaction === column);
+
+const coverageWarningsOf = (columns: string[], rows: [string, unknown][]) => {
+  const interactions = columns.filter(isInteractionColumn);
+
+  if (interactions.length < 2) return [];
+
+  const filled = rows.map(([row, cells]) => ({
+    row,
+    missing: interactions.filter((column) => !isRecord(cells) || typeof cells[column] !== 'string'),
+  }));
+  const full = filled.filter(({ missing }) => missing.length === 0).map(({ row }) => row);
+  const partial = filled.filter(({ missing }) => missing.length > 0);
+
+  if (full.length === 0 || partial.length === 0) return [];
+
+  const byMissing = new Map<string, string[]>();
+
+  for (const { row, missing } of partial)
+    byMissing.set(missing.join(', '), [...(byMissing.get(missing.join(', ')) ?? []), row]);
+
+  const skips = [...byMissing].map(([missing, skipping]) =>
+    skipping.length === 1
+      ? `row ${skipping[0]} leaves out ${missing}`
+      : `rows ${skipping.join(', ')} leave out ${missing}`,
+  );
+
+  return [
+    `grid ${skips.join('; ')}, which ${full.join(', ')} ${full.length === 1 ? 'fills' : 'fill'} - a state can break there unseen`,
+  ];
+};
+
+export const gridReportOf = (
+  grid: unknown,
+  states: string[],
+): { line: string; problems: string[]; warnings: string[] } | null => {
   if (!isRecord(grid) || !Array.isArray(grid['columns']) || !isRecord(grid['rows'])) return null;
 
   const columns = grid['columns'].filter((column): column is string => typeof column === 'string');
@@ -139,6 +175,7 @@ export const gridReportOf = (grid: unknown, states: string[]): { line: string; p
   return {
     line: left.length === 0 ? `${size} ok` : `${size}, leaves out ${left.join(', ')}`,
     problems: [...twice, ...problems],
+    warnings: coverageWarningsOf(columns, rows),
   };
 };
 
