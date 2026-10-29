@@ -6,6 +6,10 @@ This plan replaces the call model (project → feature → call → variant, the
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
 a real system exists.
 
+Importing existing frontend code into independent Studio designs is a separate planned
+direction: [Existing code import](existing-code-import.md). It preserves the separation
+between design and production code; later design-to-frontend translation remains separate.
+
 ## Why
 
 The tomflix exploration (`~/dev/tomflix/.ethlete/design/calls/tomflix`) has 40 numbered calls
