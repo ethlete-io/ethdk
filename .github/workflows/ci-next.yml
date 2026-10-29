@@ -21,7 +21,7 @@ jobs:
 
       - run: corepack enable
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '22.20.0'
           cache: 'yarn'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Create and publish prereleases
         id: changesets
-        uses: changesets/action@e0538e686673de0265c8a3e2904b8c76beaa43fd # v1.5.2
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           version: yarn changeset:prerelease
           commit: 'chore: 🤖 update prereleases'
