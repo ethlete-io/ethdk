@@ -6,10 +6,11 @@ Working tree: clean at handoff. No open sketch.
 ## Goal
 
 Design Ethlete Studio in its own design product `studio` (`.ethlete/design/studio/`, base
-`.ethlete/design/sdk`), real look. The process mainly TESTS Studio and the design CLI as a product:
-every friction goes as a finding with a prevention idea into `plans/ethlete-studio/design-system.md`
-(section "Studio as a product, findings from the clean-slate session", newest at its end). Talk to
-Tom in German.
+`.ethlete/design/sdk`), real look, and fix the design tool by using it. The tool fixes are the main
+output; the design is the side product (Tom, 2026-10-29). Every friction with Studio or the design CLI
+goes as a finding with fix options into `plans/ethlete-studio/design-system-actions.md`. Fix the
+findings in `libs/cli` and `apps/ethlete-studio`, then move each fixed entry, number kept, to
+`design-system-actions-fixed.md`. Talk to Tom in German.
 
 ## Structure (fixed today, Tom: "das system fällt doch schon wieder auseinander")
 
@@ -60,10 +61,26 @@ Tom in German.
   Gemini) with provider logos from `pages/inbox/agent-logos.ts`. Studio is agent-agnostic: UI copy
   says "Agent", never "Claude". Comments are committed to git (plan "Comments live in git").
 
-## Next steps
+## Next steps (state 2026-10-29)
 
-PAUSED. Tom on 2026-10-28: "keine weiteren designs nun mehr bitte". Start no new sketch until Tom
-asks. When he does: Sketches page (variant matrix), Flows page, merge compare.
+The pause of 2026-10-28 is over. Merged on 2026-10-29:
+
+- `pages/sketches`: page-only design, zoomed page with quiet header, grouped round line and inline
+  variant heads (`6f6032799`, `49e56a200`).
+- `pages/flows` and its empty state (`e1f8113a1`, `080ff322c`).
+- `pages/start` and the empty `pages/system` (`290fcc73e`).
+
+Next, in this order:
+
+1. Fix the open findings in `design-system-actions.md`. Recommended next: 3.9 (an answer to comments
+   opens a new round).
+2. Merge compare page, the last page without a design.
+3. A one-variant sketch on `foundations/tokens` that takes the accent mapping out of
+   `pages/sketches/sketch-data.css` (not done yet).
+4. Components after all pages, then page states, then the real app.
+
+The dated sections below are the history of 2026-10-28. The parked points on `pages/sketches` are in
+`design-system-actions.md` under "Parked".
 
 ## Built (2026-10-28, builder)
 
