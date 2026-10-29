@@ -20,29 +20,33 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
   const width = Math.max(before.width, after.width);
   const height = Math.max(before.height, after.height);
   const data = new Uint8ClampedArray(width * height * 4);
+  const words = (pixels: Pixels) =>
+    new Uint32Array(pixels.data.buffer, pixels.data.byteOffset, pixels.width * pixels.height);
+  const beforeWords = words(before);
+  const afterWords = words(after);
+  const out = new Uint32Array(data.buffer);
+  // Word layout is little-endian RGBA (red in the low byte), as on every platform a browser runs on.
+  const red = 0xff0000ff;
   let changed = 0;
 
   for (let y = 0; y < height; y++) {
+    const inBoth = y < before.height && y < after.height;
+    const commonWidth = inBoth ? Math.min(before.width, after.width) : 0;
+
     for (let x = 0; x < width; x++) {
-      const out = (y * width + x) * 4;
-      const inBefore = x < before.width && y < before.height;
-      const inAfter = x < after.width && y < after.height;
-      const b = (y * before.width + x) * 4;
-      const a = (y * after.width + x) * 4;
-      let same = inBefore && inAfter;
+      const index = y * width + x;
+      const pixel = afterWords[y * after.width + x] as number;
 
-      for (let channel = 0; same && channel < 4; channel++) same = before.data[b + channel] === after.data[a + channel];
+      if (x < commonWidth && beforeWords[y * before.width + x] === pixel) {
+        const grey = Math.round(
+          255 - (255 - ((pixel & 255) + ((pixel >>> 8) & 255) + ((pixel >>> 16) & 255)) / 3) * 0.25,
+        );
 
-      if (same) {
-        const grey = ((after.data[a] ?? 0) + (after.data[a + 1] ?? 0) + (after.data[a + 2] ?? 0)) / 3;
-
-        data.fill(Math.round(255 - (255 - grey) * 0.25), out, out + 3);
+        out[index] = 0xff000000 | (grey << 16) | (grey << 8) | grey;
       } else {
         changed++;
-        data[out] = 255;
+        out[index] = red;
       }
-
-      data[out + 3] = 255;
     }
   }
 

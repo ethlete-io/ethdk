@@ -733,3 +733,12 @@ sketch` until the next merge of the part.
 - **Fix option:** `--sketch <commit>` or `--round` that reads the variant files from git.
 - **Fix done:** `design shot <part> --states --variants --at <commit>` reads the sketch folder from git (`git archive`, working tree untouched) and draws it against the part as it is now. Example: `--at e26e219ca^`.
 - **Open:** the user must name the parent of the merge commit; the CLI could find the last commit that held the sketch. Specs write temp folders into `src/lib/design`, so `stamp.spec.ts` failed once in a parallel run.
+
+### 4.15 The pixel diff compares byte by byte - fixed
+
+- **Pain (measured 2026-10-29, Node, synthetic images):** `diffPixelsOf` in `contact-sheet.ts`
+  takes 29 ms at 1440x900, 122 ms at 1440x4000 and 489 ms at 2880x8000. A same-size `Uint32Array`
+  loop takes 4, 13 and 59 ms. Decode plus `getImageData` of a 5840x6627 shot costs about 0.4 s
+  per image in Chromium, so WASM would save little after the `Uint32` loop.
+- **Fix option:** a `Uint32Array` fast path when both images have the same size; no WASM.
+- **Fix done:** `diffPixelsOf` compares and writes 32-bit words. Same output as before (checked on three size pairs); 9, 35 and 135 ms instead of 29, 134 and 525 ms in Node.

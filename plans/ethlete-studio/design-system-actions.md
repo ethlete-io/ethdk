@@ -125,14 +125,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.15 The pixel diff compares byte by byte - open
-
-- **Pain (measured 2026-10-29, Node, synthetic images):** `diffPixelsOf` in `contact-sheet.ts`
-  takes 29 ms at 1440x900, 122 ms at 1440x4000 and 489 ms at 2880x8000. A same-size `Uint32Array`
-  loop takes 4, 13 and 59 ms. Decode plus `getImageData` of a 5840x6627 shot costs about 0.4 s
-  per image in Chromium, so WASM would save little after the `Uint32` loop.
-- **Fix option:** a `Uint32Array` fast path when both images have the same size; no WASM.
-
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
