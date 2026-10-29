@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -229,6 +229,46 @@ describe('createSystemModules', () => {
       `url("/@fs${join(design, 'acme/sketches/elements-hero/a/assets/mark.png')}")`,
     );
     expect(system.withAssetUrls(css, join(design, 'acme/elements/hero/hero.css'))).toBeNull();
+  });
+
+  it('lists the stylesheets of the default tokens part when a product names none', () => {
+    const { target, system } = acme();
+
+    expect(system.tokenStylesheetsOf({ product: 'acme' })).toEqual([
+      join(target, DESIGN_DIR, 'acme-base/foundations/tokens/tokens.css'),
+    ]);
+  });
+
+  it('lists the stylesheets of every part a product names as tokens, in order, skips a missing one, and takes a sketch variant first', () => {
+    const { target } = acme();
+    const design = join(target, DESIGN_DIR);
+    const configFile = join(design, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.tokens = [
+      'foundations/palette',
+      'foundations/missing',
+      'foundations/tokens',
+      'foundations/fresh',
+    ];
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const system = createSystemModules({ target, config: readConfig(target) ?? {} });
+    const product = system.productOf('acme');
+    const parsed = parseTarget('foundations/fresh');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const palette = join(design, 'acme/foundations/palette/palette.css');
+    const tokens = join(design, 'acme-base/foundations/tokens/tokens.css');
+
+    expect(system.tokenStylesheetsOf({ product: 'acme' })).toEqual([palette, tokens]);
+    expect(
+      system.tokenStylesheetsOf({ product: 'acme', sketch: { target: 'foundations/fresh', variant: 'a' } }),
+    ).toEqual([palette, tokens, join(design, 'acme/sketches/foundations-fresh/a/foundations/fresh/fresh.css')]);
+    expect(system.tokenStylesheetsOf({ product: 'acme-base' })).toEqual([tokens]);
   });
 
   it('keeps a resolved product until forget', () => {

@@ -17,7 +17,10 @@ export type ResolvedProduct = ProductSource & {
   problems: Problem[];
 };
 
-export const TOKENS_PART = 'foundations/tokens';
+const DEFAULT_TOKEN_PARTS = ['foundations/tokens'];
+
+/** The parts whose stylesheets every frame of a product draws under, in order. */
+export const tokenPartsOf = (config: DesignProduct) => config.tokens ?? DEFAULT_TOKEN_PARTS;
 
 export const partKeyOf = (part: { layer: string; name: string }) => `${part.layer}/${part.name}`;
 

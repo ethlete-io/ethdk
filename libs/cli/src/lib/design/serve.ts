@@ -59,7 +59,7 @@ import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
-import { partKeyOf, ResolvedPart, TOKENS_PART } from './system/resolve-product';
+import { partKeyOf, ResolvedPart } from './system/resolve-product';
 import {
   createSystemModules,
   productModuleIdOf,
@@ -196,14 +196,20 @@ const sketchRegistry = (system: SystemModules, product: string) =>
     )
     .join('\n');
 
-/** The loader of the tokens stylesheet a product, or one sketch variant, draws under; `null` without one. */
+/** The loader of the tokens stylesheets a product, or one sketch variant, draws under, in order; `null` without one. */
 const tokensLoaderOf = (options: { system: SystemModules; product: string; sketch?: SketchVariant }) => {
   const { system, product, sketch } = options;
-  const css = system.partOf({ product, part: TOKENS_PART, sketch })?.css;
+  const imports = system
+    .tokenStylesheetsOf({ product, sketch })
+    .map(
+      (css) =>
+        `import(${JSON.stringify(fsUrl(stylesheetModuleIdOf({ file: css, query: 'inline', product, sketch: sketch ?? null })))})`,
+    );
 
-  return css && existsSync(css)
-    ? `() => import(${JSON.stringify(fsUrl(stylesheetModuleIdOf({ file: css, query: 'inline', product, sketch: sketch ?? null })))})`
-    : null;
+  if (imports.length === 0) return null;
+  if (imports.length === 1) return `() => ${imports[0]}`;
+
+  return `() => Promise.all([${imports.join(', ')}]).then((sheets) => ({ default: sheets.map((sheet) => sheet.default).join('\\n') }))`;
 };
 
 const tokensRegistry = (system: SystemModules) =>

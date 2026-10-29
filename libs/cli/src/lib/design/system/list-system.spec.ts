@@ -92,6 +92,21 @@ describe('listSystem', () => {
     expect(tokens(base)).toEqual([{ product: 'acme', part: 'pages/home' }]);
   });
 
+  it('lists every part a product names as tokens as used by its pages, and skips a named part that does not exist', async () => {
+    const target = acme();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.tokens = ['foundations/tokens', 'foundations/missing', 'foundations/palette'];
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const [product] = await list(target, ['acme']);
+    const usedIn = (part: string) => product?.parts.find((listed) => `${listed.layer}/${listed.name}` === part)?.usedIn;
+
+    expect(usedIn('foundations/tokens')).toEqual([{ product: 'acme', part: 'pages/home' }]);
+    expect(usedIn('foundations/palette')).toEqual([{ product: 'acme', part: 'pages/home' }]);
+  });
+
   it("lists each product's own theme names, not its base's", async () => {
     const target = acme();
     const file = join(target, DESIGN_DIR, 'config.json');
@@ -342,9 +357,7 @@ describe('gridReportOf', () => {
         }),
         states,
       )?.warnings,
-    ).toEqual([
-      'grid row count leaves out focus-visible, which face fills - a state can break there unseen',
-    ]);
+    ).toEqual(['grid row count leaves out focus-visible, which face fills - a state can break there unseen']);
     expect(gridReportOf(grid({ badge: { rest: 'badge' }, mark: { rest: 'mark' } }), states)?.warnings).toEqual([]);
     expect(
       gridReportOf(

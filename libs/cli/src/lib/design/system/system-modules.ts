@@ -4,7 +4,7 @@ import { DesignConfig } from '../paths';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport, sharedFileOf as sharedFileIn } from './imports';
-import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
+import { partKeyOf, resolveProduct, ResolvedProduct, tokenPartsOf } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
 
@@ -118,6 +118,19 @@ export const createSystemModules = (options: { target: string; config: DesignCon
   const partOf = (options: { product: string; part: string; sketch?: SketchVariant | null }) =>
     drawnOf(options.product, options.sketch)?.parts.find((part) => partKeyOf(part) === options.part) ?? null;
 
+  const tokenStylesheetsOf = (options: { product: string; sketch?: SketchVariant | null }) => {
+    const { product, sketch } = options;
+    const entry = config.products?.[product];
+
+    return entry
+      ? tokenPartsOf(entry).flatMap((part) => {
+          const css = partOf({ product, part, sketch })?.css;
+
+          return css && existsSync(css) ? [css] : [];
+        })
+      : [];
+  };
+
   const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
     const { product, sketch, path } = options;
     const target = sketch ? parseTarget(sketch.target) : null;
@@ -212,6 +225,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     sketchesOf,
     drawnOf,
     partOf,
+    tokenStylesheetsOf,
     resolveId,
     withAssetUrls,
     forget: () => {

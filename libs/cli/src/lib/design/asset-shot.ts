@@ -3,7 +3,6 @@ import { dirname, extname, resolve } from 'path';
 import { workRootOf } from './paths';
 import { assetFileOf, assetPathOf } from './system/assets';
 import { argsOf, configOf, oneProductOf } from './system/sketch/cli-args';
-import { TOKENS_PART } from './system/resolve-product';
 import { createSystemModules } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
@@ -185,10 +184,9 @@ export const designToken = async (options: { target: string; argv: string[]; inv
 
   if (typeof resolved === 'string') return fail(resolved);
 
-  const css = createSystemModules({ target, config }).partOf({ product: resolved.name, part: TOKENS_PART })?.css;
+  const sheets = createSystemModules({ target, config }).tokenStylesheetsOf({ product: resolved.name });
 
-  if (!css || !existsSync(css))
-    return fail(`design-explore: product "${resolved.name}" has no ${TOKENS_PART} stylesheet`);
+  if (sheets.length === 0) return fail(`design-explore: product "${resolved.name}" has no tokens stylesheet`);
 
   const property = propertyOf(name);
   const queue = createDrawQueue({ target });
@@ -199,7 +197,7 @@ export const designToken = async (options: { target: string; argv: string[]; inv
 
       try {
         await page.setContent('<!doctype html><html><body><div id="probe"></div></body></html>');
-        await page.addStyleTag({ content: readFileSync(css, 'utf8') });
+        await page.addStyleTag({ content: sheets.map((sheet) => readFileSync(sheet, 'utf8')).join('\n') });
 
         return (await page.evaluate(colorOf(property))) as number[] | null;
       } finally {

@@ -639,6 +639,22 @@ describe('the design server for sketches and comments', () => {
     );
   });
 
+  it('registers one loader that joins the stylesheets of every part a product names as tokens, in order', async () => {
+    const target = acme();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.tokens = ['foundations/tokens', 'foundations/missing', 'foundations/palette'];
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /\n {2}"acme": \(\) => Promise\.all\(\[import\("[^"]*tokens\/tokens\.css\?inline&design-product=acme"\), import\("[^"]*palette\/palette\.css\?inline&design-product=acme"\)\]\)\.then\(/,
+    );
+  });
+
   it('registers no tokens for a product whose system has no tokens part', async () => {
     const target = acme();
 

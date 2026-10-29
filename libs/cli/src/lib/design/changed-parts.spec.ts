@@ -20,17 +20,24 @@ afterEach(async () => {
 
 const SKETCH_A = { target: 'components/card', variant: 'a' };
 
-const serveAcme = async (options: { styles?: string[] } = {}) => {
+const serveAcme = async (options: { styles?: string[]; tokens?: string[] } = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-changed-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
   const config = readConfig(target) ?? {};
 
-  if (options.styles) {
+  if (options.styles || options.tokens) {
     const acme = config.products?.['acme'] ?? {};
 
-    config.products = { ...config.products, acme: { ...acme, styles: options.styles } };
+    config.products = {
+      ...config.products,
+      acme: {
+        ...acme,
+        ...(options.styles ? { styles: options.styles } : {}),
+        ...(options.tokens ? { tokens: options.tokens } : {}),
+      },
+    };
     writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(config));
   }
 
@@ -130,6 +137,14 @@ describe('the parts event of the design server', () => {
     expect(keysOf(changes()[0])).toEqual(
       expect.arrayContaining(['acme pages/home ', 'acme pages/home a', 'acme-base components/card ']),
     );
+  });
+
+  it('redraws every part drawn under any of the tokens parts a product names, though no part imports it', async () => {
+    const { emit, changes, keysOf } = await serveAcme({ tokens: ['foundations/tokens', 'foundations/palette'] });
+
+    emit('change', 'acme/foundations/palette/palette.css');
+
+    expect(keysOf(changes()[0])).toEqual(expect.arrayContaining(['acme pages/home ', 'acme pages/home a']));
   });
 
   it('redraws only the importers of the fixtures', async () => {

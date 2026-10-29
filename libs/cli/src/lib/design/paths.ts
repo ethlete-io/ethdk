@@ -38,11 +38,14 @@ export type DesignPreset = { width: number; height?: number };
 
 /**
  * One product's design system: the render settings of a project, the product folder it extends
- * (`base`, a path from the checkout root, or `@ethlete/components`), and its viewport presets.
+ * (`base`, a path from the checkout root, or `@ethlete/components`), its viewport presets, and the
+ * parts (`<layer>/<name>`) whose stylesheets every frame draws under, in order (`tokens`,
+ * `['foundations/tokens']` when left out).
  */
 export type DesignProduct = DesignProject & {
   base?: string;
   presets?: Record<string, DesignPreset>;
+  tokens?: string[];
 };
 
 export type DesignConfig = {

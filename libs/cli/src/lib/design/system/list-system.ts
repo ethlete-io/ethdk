@@ -5,7 +5,7 @@ import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
-import { partKeyOf, PartOrigin, ResolvedPart, TOKENS_PART } from './resolve-product';
+import { partKeyOf, PartOrigin, ResolvedPart, tokenPartsOf } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { SystemModules } from './system-modules';
 
@@ -190,15 +190,14 @@ const pageReachOf = (system: SystemModules) =>
 
     if (!product) return [];
 
-    const tokens = product.parts.find((part) => partKeyOf(part) === TOKENS_PART);
+    const tokenParts = new Set(tokenPartsOf(product.config));
+    const tokens = product.parts.filter((part) => tokenParts.has(partKeyOf(part)));
 
     return product.parts
       .filter((part) => part.layer === 'pages')
       .map((page) => ({
         use: { product: name, part: partKeyOf(page) },
-        files: new Set(
-          [...partsReachedFrom({ product, from: page }), ...(tokens ? [tokens] : [])].map((part) => part.file),
-        ),
+        files: new Set([...partsReachedFrom({ product, from: page }), ...tokens].map((part) => part.file)),
       }));
   });
 
