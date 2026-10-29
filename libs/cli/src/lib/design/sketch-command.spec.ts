@@ -214,11 +214,11 @@ describe('designSketch', () => {
     }) as Sketch;
 
     expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe('components/button variant a had no live report');
+    expect(lines.pop()).toBe('components/button variant a marked done');
     expect(readSketchReport({ checkout: target, sketch })?.variant).toBe('b');
 
     expect(write(target, 'report', 'components/button', '--variant', 'b', '--done', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe('components/button variant b is no longer drawing');
+    expect(lines.pop()).toBe('components/button variant b marked done');
     expect(readSketchReport({ checkout: target, sketch })).toBeNull();
   });
 

@@ -401,13 +401,8 @@ const reported = (context: Context) =>
       );
 
     if (done) {
-      const cleared = finishSketchReport({ checkout: context.target, sketch, variant });
-
-      console.log(
-        cleared
-          ? `${sketch.target} variant ${variant} is no longer drawing`
-          : `${sketch.target} variant ${variant} had no live report`,
-      );
+      finishSketchReport({ checkout: context.target, sketch, variant });
+      console.log(`${sketch.target} variant ${variant} marked done`);
 
       return 0;
     }
