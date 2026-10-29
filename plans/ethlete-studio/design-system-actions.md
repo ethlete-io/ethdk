@@ -168,6 +168,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** use the product of the open sketch or the only product with that part, as
   `sketch` commands already do.
 
+### 4.20 `design shot` ignores a component's `widths` - open
+
+- **Pain:** without `--width`, `design shot` shrink-wraps a component and ignores `widths` from
+  `definePart`. On `components/tree-row` the flex row collapsed and the end marks sat right after
+  the label.
+- **Fix option:** draw a component at its first `widths` entry by default.
+
+### 4.21 `design shot` has no `--interaction` flag - open
+
+- **Pain:** the agent found the `interaction=` query parameter of `/__design/shot` only in
+  `shot.spec.ts`.
+- **Fix option:** add `--interaction <name>` and name it in `--help`.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -187,6 +200,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frames with a CSS override of the radius.
 - **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
   Studio itself need it.
+
+### 5.23 The SDK hover token draws light on Studio's dark frames - open
+
+- **Pain:** in `components/tree-row`, `--et-surface-interaction-hover-solid` came out light grey,
+  and the hovered label became unreadable. The agent used `--surface-raised` instead.
+- **Fix options:** 1. a part frame gets the product's dark surface context, so SDK surface tokens
+  resolve as in the app (recommended, check first why it does not). 2. `design check` warns on an
+  SDK surface token in a product without that context.
 
 ## 6. Agent process
 
