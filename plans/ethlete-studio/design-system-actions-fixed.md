@@ -1364,3 +1364,10 @@ check` warns early.
 - **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
   regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
 - **Fix done (0ab3e0e3c):** Option 2, static: `rules/stale-replace.ts` reads every `.replace` / `.replaceAll` whose first argument is a string or regex literal containing `<`, in a part file and the plain modules of its folder, and tests it against the source of the part and of every part it reaches (`partsReachedFrom`), with the replace patterns themselves blanked out. `design check` prints `WARNING STALE-REPLACE <file>: replace(<pattern>) matches no markup of <part> or the parts it uses (...), so it changes nothing` and still passes. On studio: no hit - `pages/inbox` `pinned()` already replaces `st-sgrid-cell`; with the old `st-canvas-cell` pattern put back in a scratch copy, the rule names it.
+
+### 3.40 `sketch new` does not say if `report --done` is needed - fixed (8520cb051)
+
+- **Pain:** the agent ran `sketch report --done` to be safe; the output of `sketch new` names no
+  next step.
+- **Fix option:** `sketch new` prints the next steps, including `report --done`.
+- **Fix done (8520cb051):** The option: `sketch new` ends with `Next:` and the commands with the sketch and product filled in: `sketch report` while you draw a variant, `report --done` with the hint that no report runs yet so none is needed now, `sketch round --note` when the running round has no note, then `sketch check` and `sketch ready`. The skill says the same.

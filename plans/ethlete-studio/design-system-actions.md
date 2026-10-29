@@ -146,12 +146,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. let a component sketch carry host edits that only change an import
   (recommended). 2. a page variant resolves a part from another open sketch (5.21).
 
-### 3.40 `sketch new` does not say if `report --done` is needed - open
-
-- **Pain:** the agent ran `sketch report --done` to be safe; the output of `sketch new` names no
-  next step.
-- **Fix option:** `sketch new` prints the next steps, including `report --done`.
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
