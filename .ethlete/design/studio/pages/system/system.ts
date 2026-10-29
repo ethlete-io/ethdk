@@ -3,6 +3,8 @@ import button from '@system/components/button';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
+import { manyStatesView, treeRowGrid } from './shared/many-states';
+import { stateGrid } from './state-grid';
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
@@ -25,11 +27,16 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
 
 const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-sm">Noch keine Teile.</p>`;
 
-export default definePart<{ empty?: boolean }>({
+export default definePart<{ empty?: boolean; manyStates?: boolean }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
   madeBy: ['claude-opus-5-5'],
-  states: { part: {}, empty: { empty: true } },
-  render: async ({ empty }) => {
+  states: { part: {}, empty: { empty: true }, 'many-states': { manyStates: true } },
+  render: async ({ empty, manyStates }) => {
+    if (manyStates) {
+      const grid = stateGrid(await treeRowGrid());
+      return manyStatesView(grid.body, grid.styles);
+    }
+
     if (empty) {
       const shell = await shellMain.render({
         section: 'System',

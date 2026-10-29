@@ -20,5 +20,10 @@
       "text": "Neuer State selected-active im Sketch auf components/tree-row (ready). Er hat auch einen Fehler behoben: gedrückt verlor die gewählte Zeile ihren Akzent. Nach dem Merge zeigt e die Zelle.",
       "createdAt": "2026-10-29T17:49:41.544Z"
     }
-  ]
+  ],
+  "addressed": {
+    "by": "user",
+    "reason": "merge",
+    "addressedAt": "2026-10-29T17:51:55.425Z"
+  }
 }
