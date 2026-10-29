@@ -23,11 +23,12 @@ must store a state.
 ### Roles
 
 - Studio shows and lets the user decide: view the system, compare variants, pick, comment.
-  Editor functions are out of scope for now. Do not design anything that rules them out later.
+  Direct editing is a planned extension; see [Designer workflow](designer-workflow.md).
 - The agent writes files through one core. The CLI and an MCP server are thin layers over that
   core. Everything deterministic is a core operation: create a sketch, screenshot, check, inbox.
-- Chat stays in the CLI. The chat integration and the 1-7 workflow leave the Studio UI. The
-  chat code stays in the repo, unused by the UI.
+- The earlier decision to keep chat in the CLI is superseded by the 2026-10-29 direction:
+  agent chat will move into Studio. The old Calls and 1-7 workflow remain retired. See
+  [Designer workflow](designer-workflow.md) for the planned chat, editing and repository work.
 
 ### Structure
 
@@ -3097,3 +3098,19 @@ reproducer is `tools/scripts/verify-webkit-frame-reloads.swift`, accepting full 
 `WEBKIT_RELOAD_ITERATIONS` controls the count. A 100-cycle run and broader checks were started
 before the user's immediate commit/push request. Record their result when available. The
 separate native GestureEventReply/pinch failure is not claimed fixed by this change.
+
+### SDK catalog inheritance (2026-10-29)
+
+Tom: a product may change everything about an inherited SDK component. Tier 3 default
+components cover most cases and are the starting point. A product may use the Tier 2
+headless variants for its own structure and styling; inheritance must not restrict it
+to token overrides or the default component's template.
+
+The catalog acquisition and rendering approach is still open. Existing stories supply
+examples and states to investigate. Any proposal must account for product part replacement
+inside compositions, as well as rendering real default and headless components. The three
+current SDK mocks do not establish the final catalog approach.
+
+Implementation planning, scope, phases and acceptance criteria:
+[SDK component catalog](sdk-component-catalog.md). This supersedes the earlier mock-based
+catalog direction; implementation and component design work have not started.
