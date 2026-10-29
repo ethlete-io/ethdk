@@ -173,12 +173,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.17 CLIPPED and WRAP do not name their escape - open
-
-- **Pain:** scaled thumbnail frames trip CLIPPED and WRAP by design. The agent found
-  `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
-- **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
-
 ### 4.23 The render check misses a clipped text decoration - open
 
 - **Pain:** in tree-row r4 i, the label's `overflow: hidden` cut off the red wavy underline. CLIPPED

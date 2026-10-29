@@ -1250,3 +1250,10 @@ check` warns early.
 - **Fix options:** 1. `design check` also type-checks open sketches (recommended). 2. it prints that
   it skips open sketches.
 - **Fix done (a5b7715fe):** Option 1. `design check` (the rendered product check) runs `typecheckVariant` over each variant of every open sketch and reports a `TYPE-ERROR <variant dir>` line with the tsc output, failing the check. The check a merge runs (`checkSystem`) still types only the product, so a broken sketch does not block merging another. 4.32 is the same fix.
+
+### 4.17 CLIPPED and WRAP do not name their escape - fixed (184611356)
+
+- **Pain:** scaled thumbnail frames trip CLIPPED and WRAP by design. The agent found
+  `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
+- **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
+- **Fix done (184611356):** Each `CLIPPED` and `WRAP` line ends with `; on purpose: data-et-skip="<RULE>" on the element, or definePart({ checks: { skip: ['<RULE>'] } })`.
