@@ -96,8 +96,11 @@ describe('renderIssuesOf', () => {
       'ZERO-SIZE components/empty fitted',
     ]);
     expect(rendered.issues.map(renderIssueLineOf).filter((line) => line.startsWith('WRAP'))).toEqual([
-      'WRAP shop components/wrapped default at fitted: button[data-et-part=components/wrapped] - "Save the draft now" breaks onto 4 lines',
+      'WRAP shop components/wrapped default at fitted: button[data-et-part=components/wrapped] - "Save the draft now" breaks onto 4 lines; on purpose: data-et-skip="WRAP" on the element, or definePart({ checks: { skip: [\'WRAP\'] } })',
     ]);
+    expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
+      'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
+    );
   }, 120_000);
 
   it('answers why it can not draw when no browser resolves', async () => {

@@ -684,7 +684,7 @@ export default definePart({
 
     expect(code).toBe(1);
     expect(lines).toContain(
-      'elements/hero b: WRAP acme elements/hero default at fitted: button[data-et-part=elements/hero] - "Save the draft now" breaks onto 4 lines',
+      'elements/hero b: WRAP acme elements/hero default at fitted: button[data-et-part=elements/hero] - "Save the draft now" breaks onto 4 lines; on purpose: data-et-skip="WRAP" on the element, or definePart({ checks: { skip: [\'WRAP\'] } })',
     );
     expect(lines).toContain('elements/hero a: elements/hero default at fitted ok');
     expect(lines).toContain('elements/hero b: elements/hero default at fitted WRAP');

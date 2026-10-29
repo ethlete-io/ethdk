@@ -50,6 +50,8 @@ const SINGLE_LINE =
  * Reads the rule breaks in a drawn frame. A string, not a function: the build would add helpers to a
  * function that the page does not have.
  */
+const ESCAPABLE = ['CLIPPED', 'WRAP'];
+
 const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<string, string[]> }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
@@ -86,7 +88,8 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
     const path = pathOf(element);
     if (skipsOf(element).has(rule) || seen.has(rule + path)) return;
     seen.add(rule + path);
-    found.push({ rule, path, detail });
+    const escape = '; on purpose: data-et-skip="' + rule + '" on the element, or definePart({ checks: { skip: [\\'' + rule + '\\'] } })';
+    found.push({ rule, path, detail: options.escapable.includes(rule) ? detail + escape : detail });
   };
   const sizeOf = (element) =>
     element.scrollWidth + 'x' + element.scrollHeight + ' in ' + element.clientWidth + 'x' + element.clientHeight;
@@ -182,7 +185,7 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
   }
 
   return found;
-})(${JSON.stringify(options)})`;
+})(${JSON.stringify({ ...options, escapable: ESCAPABLE })})`;
 
 const stringsOf = (value: unknown) =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
