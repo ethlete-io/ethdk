@@ -1,0 +1,24 @@
+{
+  "part": "pages/system",
+  "state": "many-states",
+  "size": "desktop",
+  "text": "schwer auszumachen was hier die komponente ist und was unser system bg",
+  "point": {
+    "x": 493,
+    "y": 215
+  },
+  "sketch": {
+    "target": "pages/system",
+    "variant": "c",
+    "createdAt": "2026-10-29T17:24:37.094Z"
+  },
+  "createdAt": "2026-10-29T17:43:18.321Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T17:44:30.109Z",
+    "note": "r1 drew today's grid, a denser one and a grouped one (c). Tom prefers c's grouping and density, but on c the transparent tree rows sit straight on the frame's surface, so one cannot tell the component from Studio's own background.",
+    "round": "r2"
+  }
+}
