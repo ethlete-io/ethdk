@@ -413,13 +413,6 @@ check` warns early.
 - **Fix option:** a sketch on `elements/canvas-frames` that exports frame head, frame box and zoom
   chip as named parts.
 
-### 5.33 The agent wrote its own tsconfig to typecheck sketch variants - open
-
-- **Pain:** `pages/system` "Many states": the product `tsconfig.json` leaves out sketch files and
-  the `@shared/*` path, so the agent wrote a temporary tsconfig. `design check --tsconfig` exists
-  but the agent did not find it.
-- **Fix option:** `sketch check` runs the typecheck over the variants itself.
-
 ### 5.34 `StateGrid` has no row groups - open
 
 - **Pain:** variant c of "Many states" groups rows ("States by interaction", "Rest only") by
@@ -450,25 +443,10 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** for `pages/merge` the agent got a 400 with no body.
 - **Fix option:** default to the first state, or name the valid states in the body.
 
-### 5.43 No documented way to delete a merged file in a variant - open
-
-- **Pain:** "Use the canvas frames grid" on `pages/system`: the agent `rm`-ed
-  `state-grid.{ts,css}` in the variant; it is unclear whether the merge deletes the base file.
-  `sketch check` lists no unreferenced file left in a sketch folder.
-- **Verified:** a merge deletes a base file the variant removed (`pages/system`, 2026-10-29).
-- **Fix options:** document that a missing variant file deletes the base file on merge (verified
-  first), or add `sketch rm`; `sketch check` lists unreferenced files.
-
 ### 5.37 The page shot is too small to judge hairlines - open
 
 - **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.
 - **Fix option:** a `clip=x,y,w,h` parameter on the shot endpoint and `--crop` on `design shot`.
-
-### 5.38 A variant can restyle a class of the sketch's `shared/` folder silently - open
-
-- **Pain:** variant f overrode `.st-many-frame` from `shared/` through `:has()`; after a merge
-  that is a hidden coupling.
-- **Fix option:** `sketch check` warns on a selector that targets a class from `@shared`.
 
 ### 5.44 A grid of interaction states cannot be built with a helper - open
 

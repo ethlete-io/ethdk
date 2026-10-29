@@ -933,3 +933,28 @@ sketch` until the next merge of the part.
 - **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
 - **Fix option:** a sketch-level `sketches/<name>/shared/` folder with an alias.
 - **Fix done (4927aeac8):** the sketch `shared/` folder, imported as `@shared/<path>` (see 3.16 and the fixed entry on `4927aeac8` in section 5).
+
+### 5.33 The agent wrote its own tsconfig to typecheck sketch variants - fixed (84b559f6a)
+
+- **Pain:** `pages/system` "Many states": the product `tsconfig.json` leaves out sketch files and
+  the `@shared/*` path, so the agent wrote a temporary tsconfig. `design check --tsconfig` exists
+  but the agent did not find it.
+- **Fix option:** `sketch check` runs the typecheck over the variants itself.
+- **Fix done (84b559f6a):** `sketch check` already typed each variant with `@shared/` and `@system/` paths; a spec now pins it and the skill says so and that no own tsconfig is needed.
+
+### 5.38 A variant can restyle a class of the sketch's `shared/` folder silently - fixed (84b559f6a)
+
+- **Pain:** variant f overrode `.st-many-frame` from `shared/` through `:has()`; after a merge
+  that is a hidden coupling.
+- **Fix option:** `sketch check` warns on a selector that targets a class from `@shared`.
+- **Fix done (84b559f6a):** `sketch check` warns when a variant stylesheet's selector subject is a class a `shared/` stylesheet defines (also through `:has()`).
+
+### 5.43 No documented way to delete a merged file in a variant - fixed (84b559f6a)
+
+- **Pain:** "Use the canvas frames grid" on `pages/system`: the agent `rm`-ed
+  `state-grid.{ts,css}` in the variant; it is unclear whether the merge deletes the base file.
+  `sketch check` lists no unreferenced file left in a sketch folder.
+- **Verified:** a merge deletes a base file the variant removed (`pages/system`, 2026-10-29).
+- **Fix options:** document that a missing variant file deletes the base file on merge (verified
+  first), or add `sketch rm`; `sketch check` lists unreferenced files.
+- **Fix done (84b559f6a):** the skill documents that a merge deletes the product file the picked variant no longer holds; `sketch check` warns of a variant `.ts`/`.css` file nothing imports.
