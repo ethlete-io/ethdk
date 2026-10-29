@@ -85,6 +85,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
   does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
 
+### 2.8 Labels and badges overlap very short frames in the sketch matrix - open
+
+- **Pain:** the `components/tree-row` sketch (8 states, 3 interactions, 3 variants, rows about 10 px
+  high) drew a matrix where the "232 px" size labels, the interaction labels and the "Agent still
+  drawing" badges lay over the frames and over each other. Tom: "holy das ist viel".
+- **Fix options:** 1. a row is never lower than its labels and badge; short frames get a minimum
+  row height (recommended). 2. a short part shows the badge once per column, not per frame.
+- **Process side:** a small component sketch draws one composed state (a stack of rows), not one
+  state per case times every interaction.
+
 ## 3. Feedback, rounds and merge
 
 ### 3.20 A product switch keeps the entry of the old product - triage
