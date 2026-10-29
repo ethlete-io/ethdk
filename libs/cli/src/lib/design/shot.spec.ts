@@ -307,6 +307,32 @@ describe('createPartShooter', () => {
     expect(screenshot).not.toHaveBeenCalled();
   });
 
+  it('answers 404 with a reason, never a png, for a state the merged part or the variant lacks', async () => {
+    const { target, config, shots } = acme(async ({ sketch }) => (sketch ? ['short', 'new'] : ['short', 'long']));
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const merged = await ask(shots, 'product=acme&part=components/button&state=new');
+    const variant = await ask(
+      shots,
+      'product=acme&part=components/button&state=long&sketch=components/button&variant=a',
+    );
+
+    expect(merged).toMatchObject({ status: 404, type: 'text/plain; charset=utf-8' });
+    expect(String(merged.body)).toContain(
+      'state "new" is not in the merged part components/button - it has: short, long',
+    );
+    expect(String(variant.body)).toContain(
+      'state "long" is not in variant "a" of components/button - it has: short, new',
+    );
+    expect(screenshot).not.toHaveBeenCalled();
+    expect(rootScreenshot).not.toHaveBeenCalled();
+  });
+
   it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {
     const { shots } = acme();
 

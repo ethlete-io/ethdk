@@ -243,7 +243,21 @@ export const createPartShooter = (options: {
 
     if (frame instanceof ThumbMissingError) return Promise.reject(frame);
 
-    return cached({ ...frame, params: options.params, priority: options.priority });
+    const draw = () => cached({ ...frame, params: options.params, priority: options.priority });
+
+    if (!statesOf) return draw();
+
+    const { product, part, sketch, state } = options;
+
+    return statesOf({ product, part, sketch }).then((names) => {
+      if (!names || names.includes(state)) return draw();
+
+      const holder = sketch ? `variant "${sketch.variant}" of ${sketch.target}` : `the merged part ${part}`;
+
+      throw new ThumbMissingError(
+        `design-explore: state "${state}" is not in ${holder} - it has: ${names.join(', ') || 'no states'}`,
+      );
+    });
   };
 
   const callShotOf = (options: {
