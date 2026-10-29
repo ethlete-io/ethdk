@@ -95,6 +95,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Process side:** a small component sketch draws one composed state (a stack of rows), not one
   state per case times every interaction.
 
+### 2.10 A component with many small states needs a lot of scrolling - open
+
+- **Pain (Tom, 2026-10-29):** `components/tree-row` has 19 states. Studio draws each one as its
+  own 280 px frame with its own head and a large gap, so one row of 20 px costs about 75 px of
+  height. The button already solved this with a frame grid (`elements/canvas-frames`; the tree
+  lists frames, not states).
+- **Fix options:** 1. a part declares its states as a grid of two axes (for `tree-row`: kind and
+  end mark as rows, interaction as columns), and Studio draws one dense frame (recommended). 2.
+  Studio packs small frames side by side when they fit.
+- **Design case:** after the fix, a sketch on `pages/system` adds a state such as `many-states`
+  that shows `tree-row` in the new look.
+
 ## 3. Feedback, rounds and merge
 
 ### 3.20 A product switch keeps the entry of the old product - triage
