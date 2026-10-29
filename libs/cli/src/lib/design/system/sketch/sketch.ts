@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
+import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER } from '../assets';
 import { SHARED_PREFIX } from '../imports';
@@ -247,7 +248,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
   };
 
-  writeFileSync(resolve(sketch.dir, SKETCH_FILE), `${JSON.stringify(file, null, 2)}\n`);
+  writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
 };
 
 const stubOf = (name: string) =>

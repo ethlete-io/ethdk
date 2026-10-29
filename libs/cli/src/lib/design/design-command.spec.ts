@@ -43,8 +43,10 @@ describe('designCommand', () => {
     expect(sketchNew).not.toContain('sketch variant');
 
     const sketchVariant = await helpOf('sketch', 'variant', '-h');
-    expect(sketchVariant).toContain('usage: et design sketch variant <layer>/<name> <variant> --from');
+    expect(sketchVariant).toContain('usage: et design sketch variant <layer>/<name> <variant>[,<variant>…] --from');
     expect(sketchVariant).not.toContain('sketch new');
+    expect(sketchVariant).toContain('  --from          the variant to copy');
+    expect(sketchNew).toContain('  --variant-note  ');
 
     const inboxDone = await helpOf('inbox', 'done', '--help');
     expect(inboxDone).toContain('inbox done <id>');

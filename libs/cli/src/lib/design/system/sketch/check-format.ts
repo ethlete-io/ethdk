@@ -1,9 +1,9 @@
 import { spawnSync } from 'child_process';
-import { readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { binaryOf } from '../../typecheck';
 import { Problem } from '../problem';
-import { Sketch, variantDirOf } from './sketch';
+import { sharedDirOf, Sketch, SKETCH_FILE, variantDirOf } from './sketch';
 
 const FORMATTED = /\.(ts|css|html|json)$/u;
 
@@ -45,4 +45,20 @@ export const formatProblemsOf = (options: { target: string; sketch: Sketch; vari
         message: `is not formatted - run prettier --write ${relative(target, file)}`,
       };
     });
+};
+
+/** Writes the variants, the `shared/` folder and `sketch.json` of a sketch in the checkout's Prettier format, when the checkout has Prettier. */
+export const formatSketch = (options: { target: string; sketch: Sketch; variants: string[] }) => {
+  const { target, sketch, variants } = options;
+  const prettier = binaryOf({ target, pkg: 'prettier', bin: 'prettier' });
+
+  if (!prettier) return;
+
+  const dirs = [...variants.map((variant) => variantDirOf(sketch, variant)), sharedDirOf(sketch)].filter(existsSync);
+  const files = [...dirs.flatMap(filesOf), resolve(sketch.dir, SKETCH_FILE)];
+
+  spawnSync(process.execPath, [prettier, '--write', '--log-level', 'warn', ...files], {
+    cwd: target,
+    encoding: 'utf8',
+  });
 };

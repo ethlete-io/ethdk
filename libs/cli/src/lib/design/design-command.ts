@@ -10,7 +10,7 @@ import { designProduct } from './product-command';
 import { serveDesign } from './serve';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
-import { designSketch, SKETCH_USAGE } from './sketch-command';
+import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designSystem } from './system/system-command';
@@ -147,7 +147,9 @@ const subcommandHelpOf = (invocation: string, argv: string[]) => {
   if (command === 'sketch') {
     const lines = SKETCH_USAGE.filter((line) => line.startsWith(`sketch ${subcommand} `));
 
-    return (lines.length > 0 ? lines : SKETCH_USAGE).map((line) => `usage: ${invocation} ${line}`).join('\n');
+    return lines.length > 0
+      ? lines.flatMap((line) => [`usage: ${invocation} ${line}`, ...sketchFlagHelpOf(line)]).join('\n')
+      : SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n');
   }
 
   const precise = subcommand.startsWith('-') ? [] : matchingBlocksOf(invocation, [command, subcommand]);

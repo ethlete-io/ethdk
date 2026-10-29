@@ -1,11 +1,17 @@
 import { configPathOf, DesignConfig, readConfig } from '../../paths';
 import { resolveProduct, ResolvedProduct } from '../resolve-product';
 
-export type Args = { positional: string[]; values: Record<string, string>; flags: Set<string> };
+/** `values` holds the last value of each flag, `repeated` every value in order. */
+export type Args = {
+  positional: string[];
+  values: Record<string, string>;
+  repeated: Record<string, string[]>;
+  flags: Set<string>;
+};
 
 /** Splits an argument list into positionals, the flags that take a value, and switches. */
 export const argsOf = (argv: string[], valueFlags: string[]): Args | string => {
-  const args: Args = { positional: [], values: {}, flags: new Set() };
+  const args: Args = { positional: [], values: {}, repeated: {}, flags: new Set() };
 
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index] ?? '';
@@ -16,6 +22,7 @@ export const argsOf = (argv: string[], valueFlags: string[]): Args | string => {
       if (value === undefined) return `${arg} needs a value`;
 
       args.values[arg] = value;
+      args.repeated[arg] = [...(args.repeated[arg] ?? []), value];
       index++;
     } else if (arg.startsWith('--')) {
       args.flags.add(arg);

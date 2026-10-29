@@ -1,10 +1,12 @@
+import { readFileSync, writeFileSync } from 'fs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
-import { formatProblemsOf } from './system/sketch/check-format';
+import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
+import { withNote } from './system/sketch/part-definition';
 import {
   openSketchProblemsOf,
   typecheckVariant,
@@ -24,22 +26,25 @@ import {
   editRound,
   findSketch,
   finishSketchReport,
+  isVariantName,
   listSketches,
   markSketchReady,
   parseTarget,
   rebaseSketch,
   reportSketch,
   runningRoundOf,
+  sharedDirOf,
   Sketch,
   sketchSourceOf,
+  sourceFilesIn,
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]',
-  'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
+  'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--product <name>]',
+  'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
-  'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
+  'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
@@ -47,6 +52,38 @@ export const SKETCH_USAGE = [
   'sketch merge <layer>/<name> [--note <reason>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
 ];
+
+const FLAG_HELP: Record<string, string> = {
+  '--variants': 'the variant folders to open, a comma list: a,b,c',
+  '--variant-note': 'the note of one variant, written into its definePart({ note }); repeat it per variant: a=<text>',
+  '--by': 'the exact model id the coordinator gave you, e.g. claude-opus-5-5',
+  '--like': 'start each variant from another part, or from a variant of the open sketch on it',
+  '--round': 'the title of a new round',
+  '--round-note': 'what the new round shows',
+  '--from': 'the variant to copy',
+  '--title': 'the new title of the round',
+  '--drops': 'the states the round drops on purpose, a comma list',
+  '--variant': 'the variant the report is about',
+  '--done': 'end the live report of the variant',
+  '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
+  '--json': 'print JSON',
+};
+
+const NOTE_HELP: Record<string, string> = {
+  new: 'what the first round shows',
+  variant: 'why the running round lost; needed with --round',
+  round: 'what the round shows',
+  merge: 'why this variant',
+};
+
+/** One line per flag the usage line names, for `sketch <command> --help`. */
+export const sketchFlagHelpOf = (usage: string) => {
+  const help: Record<string, string | undefined> = { ...FLAG_HELP, '--note': NOTE_HELP[usage.split(' ')[1] ?? ''] };
+
+  return [...new Set(usage.match(/--[a-z-]+/gu) ?? [])].flatMap((flag) =>
+    help[flag] === undefined ? [] : [`  ${flag.padEnd(16)}${help[flag]}`],
+  );
+};
 
 const WRITES = new Set(['new', 'variant', 'round', 'report', 'ready', 'rebase', 'merge', 'discard']);
 
@@ -58,9 +95,41 @@ const fail = (message: string) => {
   return 1;
 };
 
-const productAndSketchOf = (context: Context): { product: ResolvedProduct; sketch: Sketch } | string => {
+const productsWithSketchOf = (context: Context, has: (productDir: string, product: string) => boolean) =>
+  Object.keys(context.config.products ?? {}).filter((name) =>
+    has(productDirOf({ target: context.target, product: name }), name),
+  );
+
+/**
+ * The product a sketch command works on: the one `--product` names or the only one the config declares, else the
+ * only product with an open sketch on the target - or with any open sketch when the command names no target.
+ */
+const sketchProductOf = (context: Context): ResolvedProduct | string => {
   const { target, config, args } = context;
-  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+  const asked = args.values['--product'];
+  const declared = Object.keys(config.products ?? {});
+
+  if (asked !== undefined || declared.length < 2) return oneProductOf({ target, config, asked });
+
+  const parsed = parseTarget(args.positional[0]);
+  const holders =
+    args.positional[0] === undefined
+      ? productsWithSketchOf(context, (productDir, product) =>
+          listSketches({ productDir, product }).some((sketch) => typeof sketch !== 'string'),
+        )
+      : typeof parsed === 'string'
+        ? []
+        : productsWithSketchOf(
+            context,
+            (productDir, product) => findSketch({ productDir, product, sketch: parsed }) !== null,
+          );
+
+  return oneProductOf({ target, config, asked: holders.length === 1 ? holders[0] : undefined });
+};
+
+const productAndSketchOf = (context: Context): { product: ResolvedProduct; sketch: Sketch } | string => {
+  const { args } = context;
+  const product = sketchProductOf(context);
 
   if (typeof product === 'string') return product;
 
@@ -106,6 +175,10 @@ const created = (context: Context) => {
   if (typeof parsed === 'string') return fail(parsed);
 
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
+  const notes = variantNotesOf(args.repeated['--variant-note'] ?? [], variants);
+
+  if (typeof notes === 'string') return fail(notes);
+
   const asked = args.values['--like'];
   const like = asked === undefined ? undefined : sketchSourceOf({ product, like: asked });
 
@@ -123,15 +196,48 @@ const created = (context: Context) => {
 
   if (typeof sketch === 'string') return fail(sketch);
 
+  for (const [variant, note] of notes) {
+    const file = resolve(target, partFileOf({ root: target, sketch, variant }));
+    const noted = withNote(readFileSync(file, 'utf8'), note);
+
+    if (noted === null)
+      console.warn(`${relative(target, file)} holds no definePart({ note: '…' }) - write the note there`);
+    else writeFileSync(file, noted);
+  }
+
+  formatSketch({ target, sketch, variants: sketch.variants });
   console.log(`${sketch.target} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`);
 
   for (const variant of sketch.variants) console.log(variantLineOf({ root: target, sketch, variant }));
 
+  const shared = sourceFilesIn(sharedDirOf(sketch));
+
+  if (shared.length > 0) {
+    console.log(`  shared by every variant, imported as @shared/<path>; edit it here, not in a copy:`);
+    shared.forEach((file) => console.log(`    ${relative(target, file)}`));
+  }
+
   return 0;
 };
 
+const variantNotesOf = (pairs: string[], variants: string[]): Map<string, string> | string => {
+  const notes = new Map<string, string>();
+
+  for (const pair of pairs) {
+    const split = pair.indexOf('=');
+    const variant = pair.slice(0, split);
+
+    if (split < 1 || !variants.includes(variant))
+      return `--variant-note needs <variant>=<text> with one of ${variants.join(', ') || 'the --variants'}; got "${pair}"`;
+
+    notes.set(variant, pair.slice(split + 1).trim());
+  }
+
+  return notes;
+};
+
 const VARIANT_USAGE =
-  'usage: sketch variant <layer>/<name> <variant> --from <variant> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]]';
+  'usage: sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]]';
 
 const varied = (context: Context) =>
   withSketch(
@@ -171,24 +277,45 @@ const varied = (context: Context) =>
           ].join('\n'),
         );
 
-      const added = addVariant({
-        sketch,
-        variant,
-        from,
-        author: authorOf(context.args) ?? undefined,
-        ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote, note: roundNote } } : {}),
-      });
+      const variants = variant.split(',').filter((name) => name !== '');
+      const taken = variants.find((name, index) => sketch.variants.includes(name) || variants.indexOf(name) !== index);
 
-      if (typeof added === 'string') return fail(added);
+      const invalid = variants.find((name) => !isVariantName(name));
 
-      const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
+      if (invalid !== undefined)
+        return fail(`"${invalid}" is no variant name - use lower case letters, digits and dashes, and not "shared"`);
+      if (taken !== undefined) return fail(`${sketch.target} already has a variant "${taken}"`);
+
+      let added = sketch;
+
+      for (const [index, name] of variants.entries()) {
+        const next = addVariant({
+          sketch: added,
+          variant: name,
+          from,
+          author: authorOf(context.args) ?? undefined,
+          ...(index === 0 && title !== undefined && lostNote !== undefined
+            ? { round: { title, lostNote, note: roundNote } }
+            : {}),
+        });
+
+        if (typeof next === 'string') return fail(next);
+
+        added = next;
+      }
+
+      const round = added.rounds.find((entry) => entry.key === added.variantInfo[variants[0] ?? '']?.round);
 
       const previous = title === undefined ? undefined : added.rounds[added.rounds.length - 2];
 
       if (previous) console.log(`why round ${previous.key} ${previous.title} lost: ${previous.lost ?? ''}`);
 
-      console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
-      console.log(variantLineOf({ root: context.target, sketch: added, variant }));
+      formatSketch({ target: context.target, sketch: added, variants });
+
+      for (const name of variants) {
+        console.log(`${added.target} in progress: variant ${name} from ${from} in round ${round?.key ?? ''}`);
+        console.log(variantLineOf({ root: context.target, sketch: added, variant: name }));
+      }
 
       if (title !== undefined && round?.note === '')
         console.log(
@@ -411,7 +538,7 @@ const rebased = (context: Context) =>
 
 const checked = async (context: Context) => {
   const { target, config, args } = context;
-  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+  const product = sketchProductOf(context);
 
   if (typeof product === 'string') return fail(product);
 
@@ -588,6 +715,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--title',
     '--like',
     '--drops',
+    '--variant-note',
   ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 

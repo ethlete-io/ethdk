@@ -283,6 +283,103 @@ describe('designSketch', () => {
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
   });
 
+  it('writes new and added variants and sketch.json in the format the checkout holds them to', async () => {
+    const target = acme();
+    const lines = output();
+    const product = join(target, DESIGN_DIR, 'acme');
+
+    rmSync(join(target, '.prettierignore'));
+    writeFileSync(join(target, '.prettierrc'), '{ "printWidth": 40 }\n');
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.join('\n')).not.toContain('FORMAT');
+    expect(readFileSync(join(product, 'sketches/components-button/sketch.json'), 'utf8')).toContain(
+      '"authors": ["claude-opus-5-5"]',
+    );
+  });
+
+  it('writes the note --variant-note names into the part file of that variant', () => {
+    const target = acme();
+    const lines = output();
+    const fileOf = (variant: string) =>
+      join(target, DESIGN_DIR, `acme/sketches/components-button/${variant}/components/button/button.ts`);
+
+    expect(
+      write(target, 'new', 'components/button', '--variants', 'a,b', '--variant-note', 'z=x', '--product', 'acme'),
+    ).toBe(1);
+    expect(lines.pop()).toContain('--variant-note needs <variant>=<text>');
+    expect(
+      write(
+        target,
+        'new',
+        'components/button',
+        '--variants',
+        'a,b',
+        '--variant-note',
+        'a=Pill shape',
+        '--variant-note',
+        "b=Square, it's flat",
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    expect(readFileSync(fileOf('a'), 'utf8')).toContain("note: 'Pill shape'");
+    expect(readFileSync(fileOf('b'), 'utf8')).toContain("note: 'Square, it\\'s flat'");
+  });
+
+  it('lists the shared files a page sketch moves out of the part', () => {
+    const target = acme();
+    const lines = output();
+    const part = join(target, DESIGN_DIR, 'acme/components/button/shared');
+    mkdirSync(part, { recursive: true });
+    writeFileSync(join(part, 'data.ts'), 'export const rows = [];\n');
+    write(target, 'new', 'components/button', '--variants', 'a', '--product', 'acme');
+
+    expect(lines.slice(-2)).toEqual([
+      '  shared by every variant, imported as @shared/<path>; edit it here, not in a copy:',
+      `    ${DESIGN_DIR}/acme/sketches/components-button/shared/data.ts`,
+    ]);
+  });
+
+  it('takes the product that holds the sketch when --product is missing', async () => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'components/button', '--variants', 'a', '--product', 'acme');
+
+    expect(write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
+    expect(lines.pop()).toContain('acme/sketches/components-button/b/');
+    expect(await run(target, 'check', 'components/button')).toBe(0);
+    expect(await run(target, 'check')).toBe(0);
+    expect(write(target, 'variant', 'components/card', 'b', '--from', 'a')).toBe(1);
+    expect(lines.pop()).toContain('more than one product - pass --product');
+  });
+
+  it('adds every variant of a comma list, the first one opening the round', () => {
+    const target = acme();
+    const lines = output();
+    const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme');
+
+    expect(variant('d,a', '--from', 'a')).toBe(1);
+    expect(lines.pop()).toBe('components/button already has a variant "a"');
+    expect(variant('d,E', '--from', 'a')).toBe(1);
+    expect(lines.pop()).toContain('"E" is no variant name');
+    expect(variant('d,e,f', '--from', 'a', '--round', 'Mixed', '--note', 'a won')).toBe(0);
+    expect(run(target, 'list', '--json')).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
+      variants: ['a', 'b', 'd', 'e', 'f'],
+      rounds: [
+        { key: 'r1', lost: 'a won' },
+        { key: 'r2', title: 'Mixed' },
+      ],
+      variantInfo: { d: { round: 'r2' }, e: { round: 'r2' }, f: { round: 'r2' } },
+    });
+  });
+
   it('records the author of every variant that new, variant and ready write', async () => {
     const target = acme();
     const lines = output();
@@ -356,7 +453,7 @@ describe('designSketch', () => {
     write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill or square', '--product', 'acme');
 
     expect(variant('c')).toBe(1);
-    expect(lines.pop()).toContain('usage: sketch variant <layer>/<name> <variant> --from <variant>');
+    expect(lines.pop()).toContain('usage: sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant>');
     expect(variant('c', '--from', 'a', '--round', 'Combined')).toBe(1);
     expect(lines.pop()).toContain('usage: sketch variant');
     expect(variant('c', '--from', 'z')).toBe(1);

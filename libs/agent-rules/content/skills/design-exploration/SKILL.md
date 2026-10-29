@@ -105,7 +105,7 @@ A change to a part, or a new part, is a **sketch**: the question is the part, th
 answers. Variants are drawn at the same geometry, and one variant wins only against the others.
 
 ```bash
-et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--product <p>]   # each variant starts as a copy of the part
+et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--variant-note a=<text>]… [--product <p>]   # each variant starts as a copy of the part
 et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
 et design sketch report <layer>/<name> --variant b --by <model id> --done         # you stopped drawing b; Studio shows its frames
 et design sketch check [<layer>/<name>]                                            # each variant laid over the product
@@ -125,6 +125,11 @@ variants, each with what it costs, and run `sketch check` before `ready`. A vari
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
 and `sketch ready` fail on a dropped state, and warn when two stylesheets of one part define the same class. Use `sketch list` to see the open ones.
 
+Each variant's note, what it is and what it costs, goes in the `definePart({ note })` of its part file;
+a merge keeps the picked variant's note. `sketch new --variant-note a=<text>`, once per variant, writes it.
+`sketch new` and `sketch variant` write their files in the checkout's Prettier format. A sketch command
+without `--product` takes the product that holds the sketch.
+
 Start a new part from a close one with `--like`: `sketch new pages/inbox --like pages/system`
 copies the product's `pages/system` into each variant, renamed to the target and without its
 `madeBy`; `--like pages/system:b` copies variant b of the open sketch on it, with that sketch's
@@ -136,7 +141,16 @@ variant imports it as `@shared/<path>`, and a shared file may import `@system/..
 `@shared/...`. A part outside a sketch may not import `@shared/`. On a merge, `shared/` moves into
 the target's folder as `shared/` with its imports made relative; when no part imports it, it is
 dropped. Only the target may import it: a merge refuses while another part of the picked variant
-does, so move that code into the part.
+does, so move that code into the part. `sketch new` prints each file it puts in `shared/`, for example
+the `shared/` folder of a merged page: edit it there, as part of the sketch, not in a variant copy.
+
+```ts
+// sketches/pages-flows/shared/flow-data.ts
+export const flows = [{ name: 'Checkout', steps: 4 }];
+
+// sketches/pages-flows/a/pages/flows/flows.ts
+import { flows } from '@shared/flow-data';
+```
 
 An asset (a mark, logo, icon, picture or font) is one file in `.ethlete/design/<product>/assets/`,
 never a copy inlined into parts. A part imports it as `@assets/<file>`: the default import is a URL
@@ -180,7 +194,8 @@ et design sketch variant <layer>/<name> c --from a --by <model id> --round "Soli
 pick; it refuses while the decision is a discard (the user picks a variant first). Without `--round` the new variant joins the running round; with it, `--note` is required and
 goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
 The command prints the notes of the previous round. Fix a round's title or note later with `sketch round <layer>/<name> <round> --title … --note … --by <model id>`; `sketch list` shows each sketch's rounds.
-Letters continue across rounds (r1: a, b; r2: c, d). A new round answers the comments on the
+Letters continue across rounds (r1: a, b; r2: c, d). `sketch variant <layer>/<name> c,d --from a` adds
+several variants at once; with `--round` they all start the new round. A new round answers the comments on the
 `--from` variant and marks them "addressed in round" with the new round's key. A variant without `--round` fails while the sketch has open comments and lists them: a variant that answers a comment starts a new round. Draw the combined
 variant and mark the sketch `ready` again. `sketch new --round <title>` names
 round 1, and `--note <text>` sets its note. `sketch ready` refuses while the running round has no note; set it with `sketch round`.
