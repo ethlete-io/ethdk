@@ -325,7 +325,7 @@ describe('gridReportOf', () => {
     });
   });
 
-  it('warns of rows that skip interaction columns other rows fill', () => {
+  it('warns of rows that fill some interaction columns but skip others, and leaves rest-only rows alone', () => {
     const states = ['face', 'face-hover', 'face-focus', 'count', 'count-hover', 'badge', 'mark'];
     const grid = (rows: Record<string, Record<string, string>>) => ({
       columns: ['rest', 'hover', 'focus-visible'],
@@ -343,7 +343,7 @@ describe('gridReportOf', () => {
         states,
       )?.warnings,
     ).toEqual([
-      'grid row count leaves out focus-visible; rows badge, mark leave out hover, focus-visible, which face fills - a state can break there unseen',
+      'grid row count leaves out focus-visible, which face fills - a state can break there unseen',
     ]);
     expect(gridReportOf(grid({ badge: { rest: 'badge' }, mark: { rest: 'mark' } }), states)?.warnings).toEqual([]);
     expect(

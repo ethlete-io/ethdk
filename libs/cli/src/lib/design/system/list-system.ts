@@ -117,12 +117,17 @@ const coverageWarningsOf = (columns: string[], rows: [string, unknown][]) => {
 
   if (interactions.length < 2) return [];
 
-  const filled = rows.map(([row, cells]) => ({
-    row,
-    missing: interactions.filter((column) => !isRecord(cells) || typeof cells[column] !== 'string'),
-  }));
+  const filled = rows.map(([row, cells]) => {
+    const has = (column: string) => isRecord(cells) && typeof cells[column] === 'string';
+
+    return {
+      row,
+      missing: interactions.filter((column) => !has(column)),
+      interactive: interactions.some((column) => column !== 'rest' && has(column)),
+    };
+  });
   const full = filled.filter(({ missing }) => missing.length === 0).map(({ row }) => row);
-  const partial = filled.filter(({ missing }) => missing.length > 0);
+  const partial = filled.filter(({ missing, interactive }) => interactive && missing.length > 0);
 
   if (full.length === 0 || partial.length === 0) return [];
 
