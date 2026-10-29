@@ -182,6 +182,14 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     5.26, 3.36, 3.37 and the checks 4.16/4.32 (`typecheckVariant` in `check-system.ts`), 4.17,
     4.31, 4.34, 4.37, 5.27, 5.30, 5.40. Shot slice part 1 runs (4.30, 5.41, 4.19, 4.36, 4.18,
     4.20, 4.29, 4.25, 4.33). Only one CLI agent at a time: parallel builds break `dist` (6.4).
+    Update 21:00: shot slices done except 4.23, 4.24 (plan: extend the CLIPPED script in
+    `system/render-check.ts` by the decoration ink box, and by outline and box-shadow extent).
+    Studio UI done: 3.31, 2.11, 2.6 (`fe8130d06`), 2.8 checked. Mac: 1.2 not reproduced in 4000
+    cycles; 1.1 cause found (WebKit gesture reply queue not cleared on WebContent exit, fixed from
+    `safari-7624`), harness `tools/scripts/verify-webkit-pinch.swift`; Tom picks A rebuild the
+    webview in Rust (recommended), B update Safari, C accept. Part API slice runs (5.49, 5.46,
+    5.47, 5.34, 5.44, 5.28, 5.21). Then: 5.26 + checks slice (with 4.23, 4.24), then 3.36, 3.37,
+    5.51, 5.52, 6.3, 6.4, then tokens split 2.12.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
