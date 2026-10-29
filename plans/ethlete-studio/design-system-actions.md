@@ -350,15 +350,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Fix option:** the agent logos become a foundation asset: an icon set in `assets/` with a named
   export in a foundations part, then the pages and the pin import it (recommended, follows 5.13).
 
-### 5.46 A component's frame padding leaks into its hosts - open
-
-- **Pain:** `components/comment-pin` wraps its button in `.st-pin-stage` with `var(--space-2)`
-  padding, so the focus ring fits the frame. Both hosts get that padding too: on `pages/sketches` the
-  pin moved 4 px left; `pages/inbox` offsets it with `calc(-1.4rem - var(--space-2))`. `sketch check`
-  flags host placement on the component root as COMPONENT-COPY, so hosts need a wrapper span.
-- **Fix options:** 1. the stage lives in the part's `render` only, the markup a host embeds has
-  none (recommended). 2. hosts may set position, inset and z-index on a component root.
-
 ### 5.47 A page gets a component's styles only through `render()` - open
 
 - **Pain:** the inbox sketch called `commentPin.render()` per pin and took `styles` from the first

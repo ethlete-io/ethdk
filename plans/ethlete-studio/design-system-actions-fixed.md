@@ -1189,3 +1189,13 @@ check` warns early.
 - **Fix options:** 1. `svgAsset(raw, { size, class?, attrs? })` (recommended). 2. `size: null`, and
   CSS sizes the SVG.
 - **Fix done (6d28e7c7d):** `svgAsset(raw, { size, class?, attrs? })` sets the class and attributes on the root `<svg>`, replacing the asset's own, values escaped; the design-exploration skill names it. `foundations/agent-logos` still patches with `.replace('<svg', ...)` and should adopt it through a sketch.
+
+### 5.46 A component's frame padding leaks into its hosts - fixed (b0bb81a78)
+
+- **Pain:** `components/comment-pin` wraps its button in `.st-pin-stage` with `var(--space-2)`
+  padding, so the focus ring fits the frame. Both hosts get that padding too: on `pages/sketches` the
+  pin moved 4 px left; `pages/inbox` offsets it with `calc(-1.4rem - var(--space-2))`. `sketch check`
+  flags host placement on the component root as COMPONENT-COPY, so hosts need a wrapper span.
+- **Fix options:** 1. the stage lives in the part's `render` only, the markup a host embeds has
+  none (recommended). 2. hosts may set position, inset and z-index on a component root.
+- **Fix done (b0bb81a78):** Option 1 as a rule: the design-exploration skill says a component exports the markup a host embeds as a helper and keeps a frame-only wrapper (focus-ring padding) in `render` alone. Doc-only, so no spec. `components/comment-pin` already follows it (`commentPinMark` without `.st-pin-stage`, hosts `pages/inbox` and `pages/sketches` import it, the inbox offset is `-1.4rem`); option 2 not done.
