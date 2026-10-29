@@ -441,7 +441,9 @@ export class SketchViewComponent {
 
   public interaction = linkedSignal(() => this.remembered().interaction ?? null);
 
-  private openRounds = linkedSignal(() => this.remembered().rounds ?? {});
+  private openRounds = linkedSignal(() =>
+    this.remembered().roundsFor === this.sketch().createdAt ? (this.remembered().rounds ?? {}) : {},
+  );
 
   private openStates = linkedSignal(() => this.remembered().states ?? {});
 
@@ -612,7 +614,7 @@ export class SketchViewComponent {
     const rounds = { ...openRoundsOf(shown), [round.key]: !round.open };
 
     this.openRounds.set(rounds);
-    this.remember({ rounds });
+    this.remember({ rounds, roundsFor: this.sketch().createdAt });
   }
 
   protected toggleState(key: string) {
@@ -664,7 +666,7 @@ export class SketchViewComponent {
       ...(resize && { size }),
       ...(reinteract && { interaction }),
       ...(leaveMerge && { merge: false }),
-      ...(rounds && { rounds }),
+      ...(rounds && { rounds, roundsFor: this.sketch().createdAt }),
       ...(states && { states }),
     });
     if (resize || reinteract || leaveMerge || rounds || states)

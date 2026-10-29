@@ -146,8 +146,8 @@ describe('remembered view', () => {
     expect(rememberedView().sketchViews).toEqual({ a: { interaction: 'hover' } });
   });
 
-  it('keeps the open and folded rounds per sketch view and drops flags that are not booleans', () => {
-    rememberSketchView('web sketch:elements/rating', { rounds: { r1: true, r2: false } });
+  it('keeps the open and folded rounds with the sketch they belong to and drops flags that are not booleans or have no sketch', () => {
+    rememberSketchView('web sketch:elements/rating', { rounds: { r1: true, r2: false }, roundsFor: 'x' });
     localStorage.setItem(
       KEY,
       JSON.stringify({
@@ -155,14 +155,16 @@ describe('remembered view', () => {
         sketchViews: {
           ...rememberedView().sketchViews,
           b: { rounds: { r1: 'yes' } },
-          c: { size: '520', rounds: { r1: 1, r2: true } },
+          c: { size: '520', rounds: { r1: 1, r2: true }, roundsFor: 'y' },
+          d: { size: '520', rounds: { r1: true } },
         },
       }),
     );
 
     expect(rememberedView().sketchViews).toEqual({
-      'web sketch:elements/rating': { rounds: { r1: true, r2: false } },
-      c: { size: '520', rounds: { r2: true } },
+      'web sketch:elements/rating': { rounds: { r1: true, r2: false }, roundsFor: 'x' },
+      c: { size: '520', rounds: { r2: true }, roundsFor: 'y' },
+      d: { size: '520' },
     });
   });
 

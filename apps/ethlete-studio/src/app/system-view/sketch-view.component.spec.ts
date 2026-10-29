@@ -169,6 +169,39 @@ describe('SketchViewComponent merge preview', () => {
 
     expect(rows()).toEqual(['empty']);
   });
+
+  it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+    localStorage.setItem(
+      'ethlete-studio.call-view',
+      JSON.stringify({
+        sketchViews: {
+          'web sketch:components/card': { rounds: { r1: false }, roundsFor: '2026-10-20T10:00:00Z' },
+        },
+      }),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', { ...SKETCH, rounds: [{ key: 'r1', title: 'First', note: '' }] });
+    fixture.componentRef.setInput('part', {
+      layer: 'components',
+      name: 'card',
+      origin: 'product',
+      note: null,
+      states: ['default'],
+      problems: [],
+    } satisfies ListedPart);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    expect(fixture.componentInstance['matrix']().columns.map((column) => column.key)).toContain('a');
+  });
 });
 
 describe('SketchViewComponent merge without a note', () => {
