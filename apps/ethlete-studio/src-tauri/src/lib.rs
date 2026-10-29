@@ -11,6 +11,8 @@ mod design_watch;
 mod error;
 mod tools;
 mod update;
+#[cfg(target_os = "macos")]
+mod webview_rebuild;
 
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
@@ -126,6 +128,8 @@ pub fn run() {
     let builder = builder.runtime(tauri_runtime_cef::Cef::default());
     #[cfg(not(target_os = "linux"))]
     let builder = builder.runtime(tauri_runtime_wry::Wry::default());
+    #[cfg(target_os = "macos")]
+    let builder = builder.on_web_content_process_terminate(webview_rebuild::on_terminate);
 
     builder
         .plugin(tauri_plugin_updater::Builder::new().build())
