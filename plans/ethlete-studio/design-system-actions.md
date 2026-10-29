@@ -96,11 +96,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.24 `design` with no subcommand starts the server on :4402 - open
+### 3.24 A stray `design <checkout>` took the port of Tom's Studio - open, Tom picks
 
-- **Pain (4.11 agent, 2026-10-29):** the agent ran `design` alone to read the help. It started the
-  design server on `[::1]:4402`, the port of Tom's Studio, and the agent could not stop it.
-- **Fix option:** `design` alone prints the help; the server starts only with `design serve`.
+- **Pain (4.11 agent, 2026-10-29):** the agent started `design /home/tom/dev/ethlete-sdk` while
+  it read the help. The server bound `[::1]:4402`, and Tom's Studio then used that server (the host
+  reuses any server on the port). The agent could not stop it, and Tom needs it alive.
+- **Why "bare `design` prints help" is not enough:** the Studio host itself starts
+  `design <checkout>` (`apps/ethlete-studio/src-tauri/src/design_server.rs:343`), and the stray
+  process had the same command line.
+- **Fix options:** (1) the host passes `design serve <checkout>` and the CLI serves only with
+  `serve`; needs a Tauri rebuild and keeps old hosts working only with a fallback. (2) A server not
+  started by the host (no host env marker) refuses the Studio port and picks a free one.
+  (3) Only a rule in the subagent brief. Recommendation: (2), no host change.
 
 ## 4. Render checks and shots
 
