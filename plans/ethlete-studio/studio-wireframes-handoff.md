@@ -148,11 +148,16 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    friction 3.25, 3.26, 5.22. Tom took d and asked if the merge note is needed: no, it is optional
    in the tool. Round r3 (g: no note field, h: quiet "Add a note"; recommendation g) is `ready`,
    friction 4.19.
-9. 2026-10-29: 2.10 and 5.42 moved to fixed (`fb2dfc743`). Hosts of the comment pin: only
-   `pages/inbox` (`ib-pin`) and `pages/sketches` (`sk-pin`). Sketch `components/comment-pin` is
-   `ready` (a: fill by face, recommended; b: ring always; c: fill always + count badge); waits for
-   Tom's pick. Friction 3.29, 4.32, 4.33, 5.44, 5.45, 6.2. After the merge: adoption sketches on
-   both hosts, and agent logos as a foundation asset (5.45).
+9. 2026-10-29 late: `components/comment-pin` merged (a, `a7bda83fb`), then "Count alignment" a
+   (count badge on the teardrop head, `0c22850c3`; Tom picked a, agent had recommended c). The part
+   exports `commentPinMark(props)` (no stage padding) and `commentPinStyles` for hosts (5.46, 5.47).
+   Prettier after that merge needed `design accept` (5.9 seen again, `e8d95750d`). Built:
+   `sketch report --done` (3.28, `ef9fac592`); Studio says "Not ready yet" instead of "still
+   drawing" on an idle sketch (`3086abc36`). `ready`, waiting for Tom: one-variant sketches
+   `pages/inbox` and `pages/sketches` "Use the comment pin". The inbox one also brings back the pins
+   lost since `a47a64158` (4.34). After the merges: `design check`, prettier, `design accept` if
+   it warns, commit. Next: agent logos as a foundation asset (5.45; three copies now), then switch
+   and project switcher. Open findings from tonight: 3.29, 3.30, 4.32-4.37, 5.44-5.48, 6.2.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
 :4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and
