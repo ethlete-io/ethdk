@@ -157,7 +157,10 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   });
 
   if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-  else rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+  else {
+    rendered.warnings.forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
+    rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+  }
 
   if ('issues' in rendered && rendered.issues.length > 0) return 1;
 

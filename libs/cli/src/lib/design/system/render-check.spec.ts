@@ -6,7 +6,7 @@ import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { renderIssueLineOf, renderIssuesOf } from './render-check';
 
-const PARTS: Record<string, { body: string; extra?: string }> = {
+const PARTS: Record<string, { body: string; extra?: string; css?: string }> = {
   'pages/tall': { body: '<div style="height: 300px; border: 1px solid">Tall</div>' },
   'components/cut': {
     body: '<div style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div>',
@@ -51,6 +51,10 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
     body: '<p style="margin: 0">Grid</p>',
     extra: "grid: { columns: ['x', 'y'], rows: { r1: { x: 'default', y: 'default' } } },",
   },
+  'components/styled': {
+    body: '<p class="shop-known shop-gone loose" style="margin: 0"><span class="shop-ghost">Styled</span></p>',
+    css: '.shop-known { color: red; }',
+  },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
@@ -65,20 +69,22 @@ const checkout = () => {
     JSON.stringify({ products: { shop: { presets: { desktop: { width: 400, height: 300 } } } } }),
   );
 
-  for (const [key, { body, extra = '' }] of Object.entries(PARTS)) {
+  for (const [key, { body, extra = '', css }] of Object.entries(PARTS)) {
     const [layer = '', name = ''] = key.split('/');
     const dir = join(design, 'shop', layer, name);
 
     mkdirSync(dir, { recursive: true });
+    if (css) writeFileSync(join(dir, `${name}.css`), css);
     writeFileSync(
       join(dir, `${name}.ts`),
       `import { definePart, drawing, html } from '@design-system';
+${css ? `import styles from './${name}.css?inline';` : ''}
 
 export default definePart({
   note: 'A fixture.',
   states: { default: {} },
   ${extra}
-  render: () => drawing({ body: html\`${body}\`, styles: '' }),
+  render: () => drawing({ body: html\`${body}\`, styles: ${css ? 'styles' : "''"} }),
 });
 `,
     );
@@ -119,6 +125,10 @@ describe('renderIssuesOf', () => {
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
+    ]);
+    expect(rendered.warnings.map(renderIssueLineOf)).toEqual([
+      'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] - class "shop-gone" is defined by no stylesheet of the frame',
+      'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] > span.shop-ghost - class "shop-ghost" is defined by no stylesheet of the frame',
     ]);
     expect(rendered.issues.map(renderIssueLineOf).filter((line) => line.startsWith('WRAP'))).toEqual([
       'WRAP shop components/wrapped default at fitted: button[data-et-part=components/wrapped] - "Save the draft now" breaks onto 4 lines; on purpose: data-et-skip="WRAP" on the element, or definePart({ checks: { skip: [\'WRAP\'] } })',

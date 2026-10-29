@@ -492,10 +492,17 @@ const markedReady = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
 ): number | { ready: Sketch } => {
-  const problems = variantProblemsOf({ product, sketch }).flatMap(({ variant, problems }) =>
-    [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map(
-      (problem) =>
-        `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`,
+  const lineOf = (variant: string, problem: Problem) =>
+    `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
+  const found = variantProblemsOf({ product, sketch });
+
+  found.forEach(({ variant, before }) =>
+    before.forEach((problem) => console.warn(`NOTE (was there before) ${lineOf(variant, problem)}`)),
+  );
+
+  const problems = found.flatMap(({ variant, problems }) =>
+    [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map((problem) =>
+      lineOf(variant, problem),
     ),
   );
 
@@ -555,8 +562,14 @@ const checked = async (context: Context) => {
       console.error(`${problem.rule} ${relative(target, problem.file)}: ${problem.message}`),
     );
 
-  for (const { sketch, variant, problems } of chosen) {
+  for (const { sketch, variant, problems, before } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
+
+    before.forEach((problem) =>
+      console.warn(
+        `NOTE (was there before) ${sketch.target} ${variant}: ${problem.rule} ${relative(target, problem.file)}: ${problem.message}`,
+      ),
+    );
 
     variantWarningsOf({ target, product, sketch, variant }).forEach((warning) =>
       console.warn(`${sketch.target} ${variant}: ${warning}`),
@@ -619,6 +632,9 @@ const checked = async (context: Context) => {
 
     rendered.grids.forEach(({ sketch, part, line }) =>
       console.log(`${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${line}`),
+    );
+    rendered.warnings.forEach((issue) =>
+      console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
     );
     rendered.issues.forEach((issue) =>
       console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),

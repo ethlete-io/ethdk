@@ -3,3 +3,7 @@
   --acme-text: #1a1a1a;
   --acme-accent: oklch(60% 0.2 250);
 }
+
+.acme-token {
+  font-family: monospace;
+}

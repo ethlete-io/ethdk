@@ -1,6 +1,7 @@
 import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
+import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
@@ -36,6 +37,7 @@ type Frame = {
   fixed: boolean;
   fit: boolean;
   skips: Record<string, string[]>;
+  namespaces: string[];
 };
 
 type PartModule = { default?: { states?: unknown; widths?: unknown; grid?: unknown; checks?: { skip?: unknown } } };
@@ -56,7 +58,14 @@ const SINGLE_LINE =
  */
 const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
-const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<string, string[]> }) => `((options) => {
+const WARNING_RULES = new Set(['UNDEFINED-CLASS']);
+
+const inspectFrame = (options: {
+  fixed: boolean;
+  fit: boolean;
+  skips: Record<string, string[]>;
+  namespaces: string[];
+}) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
   if (refused.startsWith('design-explore:')) return [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n')[0] }];
@@ -115,6 +124,11 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
       // the SDK's runtime marker for keeping the parent colour, not a theme
       if (theme && theme !== 'inherited' && !themes.has(theme)) report('UNKNOWN-THEME', element, 'colour theme "' + theme + '" is defined by no stylesheet of the frame, so it draws in the fallback colour');
     }
+  const defined = new Set([...sheets.matchAll(/\\.(-?[_a-zA-Z][\\w-]*)/g)].map((match) => match[1]));
+  for (const element of root.querySelectorAll('[class]')) {
+    const missing = [...element.classList].filter((name) => options.namespaces.some((prefix) => name.startsWith(prefix)) && !defined.has(name));
+    if (missing.length > 0) report('UNDEFINED-CLASS', element, 'class ' + missing.map((name) => '"' + name + '"').join(', ') + ' is defined by no stylesheet of the frame');
+  }
 
   const box = partRoot.getBoundingClientRect();
   if (box.width === 0 || box.height === 0) {
@@ -279,6 +293,35 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
 const stringsOf = (value: unknown) =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 
+const SDK_PREFIX = 'et-';
+
+const namespacesOf = (cssSources: (string | null)[]) => [
+  ...new Set(
+    cssSources.flatMap((source) =>
+      source
+        ? cssBlocksOf(source)
+            .selectors.flatMap(classesOf)
+            .flatMap((name) => /^[a-z]{2,}-/.exec(name)?.[0] ?? [])
+            .filter((prefix) => prefix !== SDK_PREFIX)
+        : [],
+    ),
+  ),
+];
+
+const firstOfEach = (issues: RenderIssue[]) => {
+  const seen = new Set<string>();
+
+  return issues.filter((issue) => {
+    const key = JSON.stringify([issue.sketch, issue.rule, issue.detail]);
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+
+    return true;
+  });
+};
+
 const widthsOf = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((width): width is number => typeof width === 'number' && Number.isInteger(width) && width > 0)
@@ -298,7 +341,12 @@ const inspect = async (options: { browser: Browser; base: string; frames: Frame[
       await page.evaluate(settled);
 
       const found = (await page.evaluate(
-        inspectFrame({ fixed: frame.fixed, fit: frame.fit, skips: frame.skips }),
+        inspectFrame({
+          fixed: frame.fixed,
+          fit: frame.fit,
+          skips: frame.skips,
+          namespaces: frame.namespaces,
+        }),
       )) as Found[];
       const { product, part, state, sketch } = frame.address;
 
@@ -321,11 +369,14 @@ export const renderIssuesOf = async (options: {
   config: DesignConfig;
   jobs: RenderJob[];
   chromiumOf?: typeof chromiumOf;
-}): Promise<{ issues: RenderIssue[]; grids: RenderedGrid[]; drawn: RenderedState[] } | { unavailable: string }> => {
+}): Promise<
+  | { issues: RenderIssue[]; warnings: RenderIssue[]; grids: RenderedGrid[]; drawn: RenderedState[] }
+  | { unavailable: string }
+> => {
   const { target, config, jobs } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
 
-  if (jobs.length === 0) return { issues: [], grids: [], drawn: [] };
+  if (jobs.length === 0) return { issues: [], warnings: [], grids: [], drawn: [] };
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -348,6 +399,8 @@ export const renderIssuesOf = async (options: {
       const drawn = system.drawnOf(product, sketch);
 
       if (!drawn) continue;
+
+      const namespaces = namespacesOf(drawn.parts.map((part) => part.cssSource));
 
       for (const part of drawn.parts) {
         const key = partKeyOf(part);
@@ -412,16 +465,20 @@ export const renderIssuesOf = async (options: {
               fixed: frame.size?.height !== undefined,
               fit: frame.size === null,
               skips,
+              namespaces,
             });
           }
         }
       }
     }
 
-    issues.push(...(await queue.run((browser) => inspect({ browser, base, frames }))));
+    const inspected = await queue.run((browser) => inspect({ browser, base, frames }));
+
+    issues.push(...inspected.filter((issue) => !WARNING_RULES.has(issue.rule)));
 
     return {
       issues,
+      warnings: firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule))),
       grids,
       drawn: frames.map(({ address }) => ({
         product: address.product,

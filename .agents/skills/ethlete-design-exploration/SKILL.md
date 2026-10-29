@@ -380,6 +380,11 @@ product, part, state, size and a selector path:
 - `UNKNOWN-THEME` - a `et-color--<name>` class names a colour theme no stylesheet of the frame defines, so it draws in the fallback colour.
 - `RENDER` - the frame refused to draw, or the part did not load.
 
+A `WARNING` line does not fail the check:
+
+- `UNDEFINED-CLASS` - a class carries a prefix the product's part CSS uses (`st-`, not the SDK's
+  `et-`), but no stylesheet of the frame defines it. Named once, at the first part that draws it.
+
 A part that breaks a rule on purpose names it: `definePart({ checks: { skip: ['CLIPPED'] }, … })`;
 the skip covers the part wherever it is drawn. Without Playwright Chromium the check prints
 `RENDER CHECK SKIPPED` and passes on the other rules.
