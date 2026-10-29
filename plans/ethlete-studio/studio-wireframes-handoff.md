@@ -114,9 +114,10 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    (bright, chevron), leaf; `inert`; exported `Row`; stack without padding. End marks are ONE
    family of 12px line icons (pencil = in progress, check = ready, red triangle = warning, bubble =
    open comments, no count); details go in tooltips (Tom). Rejected: accent or red diamond, dots
-   mixed with icons, red underline. Next: a one-variant sketch so `elements/part-tree` uses it
-   (a first try was discarded because tree-row lacked part rows and warnings, 5.24), then the next
-   component. Sketch `pages/merge`
+   mixed with icons, red underline. `elements/part-tree` draws its rows with it (merged
+   2026-10-29). Next component: recommendation comment card (inbox and sketches draw it), then
+   switch and project switcher. Before a component sketch, list every host that draws the case
+   (5.24). Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
    section for merge, the drawings use `'Sketches'`. Its friction is 4.16-4.18, 5.19-5.21. Tom took c; round r2 (d: back link on top + hint under the
