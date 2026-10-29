@@ -47,7 +47,8 @@ const forced = (drawn: Drawing, interaction: Interaction): Drawing => ({
 });
 
 /**
- * Types a part where it is written. A part file default-exports the result. Without type
+ * Types a part where it is written. A part file default-exports the result, and may export named
+ * helpers next to it that other parts import from `@system/<layer>/<name>`. Without type
  * arguments, `TProps` comes from the props `render` takes and the state names stay in the type, so
  * `part.states['open']` is `TProps` and an unknown name does not compile.
  */

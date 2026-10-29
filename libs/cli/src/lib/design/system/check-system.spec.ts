@@ -88,6 +88,31 @@ export default definePart({
     ]);
   }, 60_000);
 
+  it('lets a page import a named helper of a foundation, and refuses a foundation that imports one of a page', () => {
+    const target = acme();
+    const lines = output();
+    const palette = join(target, DESIGN_DIR, 'acme/foundations/palette/palette.ts');
+    const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+
+    writeFileSync(palette, `${readFileSync(palette, 'utf8')}\nexport const accent = (): string => 'Accent';\n`);
+    writeFileSync(
+      home,
+      `import { accent } from '@system/foundations/palette';\n${readFileSync(home, 'utf8').replace('<main>', '<main>${accent()}')}`,
+    );
+
+    expect(check(target, ['acme'])).toBe(0);
+    expect(lines).toEqual(['ok']);
+
+    lines.length = 0;
+    writeFileSync(
+      palette,
+      `import { HomeProps } from '@system/pages/home';\n${readFileSync(palette, 'utf8')}\nexport type Films = HomeProps['films'];\n`,
+    );
+
+    expect(check(target, ['acme'])).toBe(1);
+    expect(lines).toEqual([expect.stringMatching(/^UPWARD-DEPENDENCY .*palette\.ts: /)]);
+  }, 60_000);
+
   it('fails on a type error', () => {
     const target = acme();
     const lines = output();

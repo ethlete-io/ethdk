@@ -88,6 +88,11 @@ A part that uses tokens imports them with
 Never list a `tokens.css` in config `styles`. A product's own `foundations/tokens`, or a sketch of
 it, then replaces the base's tokens in every part.
 
+A part file default-exports its `definePart(...)` and may also export named helpers, such as a piece of its
+markup: `import { studioMark } from '@system/foundations/logo'`. Import a piece from the part that draws it;
+never copy its markup into another part. A piece that uses the part's classes needs its stylesheet too
+(`@system/foundations/logo.css?inline`). The layer rules hold for these imports as well.
+
 A product whose app uses Tailwind lists one stylesheet in config `styles` that imports the app's styles and
 registers the drawing folders with `@source './'`. Sketches then use the app's utilities; plain CSS stays for what
 utilities cannot express, such as camera geometry.

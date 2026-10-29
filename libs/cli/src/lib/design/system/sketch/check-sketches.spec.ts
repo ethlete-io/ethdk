@@ -167,4 +167,36 @@ describe('typecheckVariant', () => {
       output: expect.stringContaining('hero.ts'),
     });
   }, 120_000);
+
+  it("types a page that imports a named helper of the variant's own foundation", () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'pages', name: 'home' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const palette = join(product.dir, 'foundations/palette');
+
+    for (const variant of ['a', 'b']) {
+      const home = join(sketch.dir, variant, 'pages/home/home.ts');
+
+      writeFileSync(
+        home,
+        `import { accent } from '@system/foundations/palette';\n${readFileSync(home, 'utf8').replace('<main>', '<main>${accent()}')}`,
+      );
+    }
+
+    cpSync(palette, join(sketch.dir, 'a/foundations/palette'), { recursive: true });
+    writeFileSync(
+      join(sketch.dir, 'a/foundations/palette/palette.ts'),
+      `${readFileSync(join(palette, 'palette.ts'), 'utf8')}\nexport const accent = (): string => 'Accent';\n`,
+    );
+
+    expect(typecheckVariant({ target, product, sketch, variant: 'a' })).toEqual({ kind: 'ok' });
+    expect(typecheckVariant({ target, product, sketch, variant: 'b' })).toEqual({
+      kind: 'failed',
+      output: expect.stringContaining("no exported member 'accent'"),
+    });
+  }, 120_000);
 });

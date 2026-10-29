@@ -140,4 +140,48 @@ describe('renderIssuesOf', () => {
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant}`)).toEqual(['CLIPPED a']);
   }, 120_000);
+
+  it("draws a page with a named helper of another part, the sketched part's helper in a variant", async (context) => {
+    const target = checkout();
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const sketch = join(shop, 'sketches', 'pages-uses');
+    const helper = (markup: string) => `${readFileSync(join(shop, 'components/clean/clean.ts'), 'utf8')}
+export const filler = (): string => '${markup}';
+`;
+    const page = `import { definePart, drawing, html } from '@design-system';
+import { filler } from '@system/components/clean';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { default: {} },
+  render: () => drawing({ body: html\`<main>\${filler()}</main>\`, styles: '' }),
+});
+`;
+
+    mkdirSync(join(shop, 'pages/uses'), { recursive: true });
+    mkdirSync(join(sketch, 'a/pages/uses'), { recursive: true });
+    mkdirSync(join(sketch, 'a/components/clean'), { recursive: true });
+    writeFileSync(join(sketch, 'a/components/clean/clean.ts'), helper('<div style="height: 900px">Tall</div>'));
+    writeFileSync(join(shop, 'components/clean/clean.ts'), helper('<p style="margin: 0">Short</p>'));
+    writeFileSync(join(shop, 'pages/uses/uses.ts'), page);
+    writeFileSync(join(sketch, 'a/pages/uses/uses.ts'), page);
+    writeFileSync(
+      join(sketch, 'sketch.json'),
+      JSON.stringify({ target: 'pages/uses', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [null, { target: 'pages/uses', variant: 'a' }].map((drawn) => ({
+        product: 'shop',
+        sketch: drawn,
+        parts: ['pages/uses'],
+      })),
+    });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant ?? 'base'}`)).toEqual(['OVERFLOW a']);
+  }, 120_000);
 });
