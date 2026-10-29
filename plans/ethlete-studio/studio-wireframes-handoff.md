@@ -251,6 +251,21 @@ remove` exists now).
     After Tom's choice, merge/check/
     format/commit, then project switcher in its only current host elements/shell-main.
     The native panic root cause (1.5) remains open; diagnostic backtrace only.
+    Latest: Tom picked Inbox switch a, but Studio merge FAILED (3.43) because its
+    target default-exported inbox(true) and the metadata writer needs definePart({note}).
+    A is still picked, sketch still ready. Both wrappers repaired with literal note/madeBy;
+    off/on crop images before/after repair are byte-identical and all 10 states pass.
+    Requested Tom retry the merge in Studio; do NOT merge it from CLI. Once it lands:
+    check, format all Inbox/shared files, commit merged.json and the full page folder.
+    Preventive CLI check (90f3b9b48) now rejects unwritable target metadata before ready;
+    41 sketch tests, lint, build pass. User feedback logged: 4.43 small changes hidden in
+    full-page comparisons (open; recommend same-region enlarged comparison), 3.43 fixed.
+    Project-picker sketch elements/shell-main a,b is READY; a popover above footer,
+    b beside sidebar over canvas. Same entries; all shell open/hidden states preserved,
+    project-picker is first. Root recommends a. SDK transparent sm button is reused for
+    the action; type/lint/render checks pass, including all host pages. Final crops inspected.
+    Shared base shell CSS duplication/token-discovery gap is recorded as 5.59 (open).
+    Leave user plan edits untouched.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 

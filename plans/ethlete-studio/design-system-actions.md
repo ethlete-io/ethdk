@@ -259,6 +259,14 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
 
+### 5.59 Token discovery misses CSS reached through a sketch shared helper - open
+
+- **Pain:** the project-picker sketch keeps identical base `shell-main.css` copies in A and B, despite shared drawing code. Moving the stylesheet into sketch `shared/` prevented custom shell tokens from being discovered.
+- **Where:** `elements/shell-main`, round "Project picker placement". The shared helper imports the common picker CSS, while the target variant imports its base shell CSS directly.
+- **Cause:** `rules/undefined-token.ts` follows relative CSS imports from the target TS and scans its folder. A sketch-level `@shared/` dependency is outside that folder and is not traversed.
+- **Now:** keep the existing base CSS in each variant; shared picker markup and CSS stay in shared/.
+- **Fix options:** 1. collect token definitions over the same resolved relative/@shared/@system stylesheet dependency closure used by rendering (recommended). 2. explicitly scan sketch shared/ as a narrower first step, accounting for variant overrides.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
