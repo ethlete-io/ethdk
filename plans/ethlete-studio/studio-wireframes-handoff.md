@@ -109,7 +109,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    `design-system-actions-fixed.md` lost 52 entries from `d3726201c` to `d68239bd9` (each commit
    replaced the file); restored. Append a fixed entry, never rewrite the file.
 7. Done: `pages/merge` merged as variant g (`acbdd9c92`). Next: components (button, switch, tree
-   row, comment card, project switcher...), then page states, then the real app. Sketch `pages/merge`
+   row, comment card, project switcher...), then page states, then the real app.
+   `components/tree-row` merged as variant a (one composed state `tree`). Next: a one-variant
+   sketch so `elements/part-tree` uses it, then the next component. Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
    section for merge, the drawings use `'Sketches'`. Its friction is 4.16-4.18, 5.19-5.21. Tom took c; round r2 (d: back link on top + hint under the
