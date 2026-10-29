@@ -1054,3 +1054,11 @@ check` warns early.
 - **Pain:** for `pages/merge` the agent got a 400 with no body.
 - **Fix option:** default to the first state, or name the valid states in the body.
 - **Fix done (94072d4f3):** the shooter takes a `statesOf` loader (vite SSR in `serve.ts`); a part shot without `state=` answers 400 `pass state=<one of: …>` with the states of the merged part or of the asked variant.
+
+### 4.19 `design shot` without `--product` does not infer the product - fixed (da143ee2f)
+
+- **Pain:** `design shot pages/merge --states --variants` only printed "More than one product -
+  pass --product <name>", though only `studio` has an open sketch on `pages/merge`.
+- **Fix option:** use the product of the open sketch or the only product with that part, as
+  `sketch` commands already do.
+- **Fix done (da143ee2f):** `shotProductOf`: without `--product`, `design shot` takes the only product with an open sketch on the part, else the only product with the part, else asks as before.
