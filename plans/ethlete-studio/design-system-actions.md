@@ -183,12 +183,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
   regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
 
-### 4.37 No check sees grid rows that skip the interaction columns - open
-
-- **Pain:** the merged `components/comment-pin` grid had hover, pressed and focus cells for faces,
-  but the count rows filled only "rest". Nothing flagged that a count could break on focus.
-- **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
-
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open

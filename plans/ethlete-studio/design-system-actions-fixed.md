@@ -1341,3 +1341,10 @@ check` warns early.
 - **Fix options:** 1. report errors the merged product already had as a note ("was there
   before"), as the merge does; block only on new errors (recommended). 2. a `--force` flag.
 - **Fix done (bee3d509a):** Option 1: `variantProblemsOf` splits each variant's rule problems into the ones it brings in and the ones the product already has (`before`, matched by rule, part-relative file and message). `sketch check` and `sketch ready` fail only on the first and print the rest as `NOTE (was there before)`, as the merge does. On studio, `sketch check components/tree-row` passes with the note for `UPWARD-DEPENDENCY pages/merge/merge.ts`.
+
+### 4.37 No check sees grid rows that skip the interaction columns - fixed (16c34193b)
+
+- **Pain:** the merged `components/comment-pin` grid had hover, pressed and focus cells for faces,
+  but the count rows filled only "rest". Nothing flagged that a count could break on focus.
+- **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
+- **Fix done (16c34193b):** The option, in `gridReportOf` (`list-system.ts`), so `design check` and `sketch check` both print it: when a grid has two or more interaction columns (`rest` plus the `INTERACTIONS`) and some rows fill all of them while others leave some out, the render check prints `WARNING GRID-COVERAGE` naming the short rows grouped by the columns they leave out, and still passes. Columns that are no interactions never count. On studio `components/comment-pin` now fills every column, so it is quiet; the one hit is `components/tree-row`: rows `leaf-flat`, `group-closed`, `group-open`, `part-closed`, `part-open`, `inert`, `mark-*`, `selected-marks` fill only `rest`, while `leaf` and `selected` fill all four.
