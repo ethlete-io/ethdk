@@ -1355,3 +1355,12 @@ check` warns early.
   requires `styles`, so the variant writes `styles: ''`.
 - **Fix option:** make `Drawing.styles` optional.
 - **Fix done (8f31c1530):** The option: `Drawing.styles` is optional, so a variant draws `drawing({ body })`. `definePart` always answers a string of styles (the part's stylesheet plus what `render` returned, `''` for none) through the new `DrawnPart` type, so a host still adds up `x.styles`; the frame and the unchanged-states check take a missing `styles` as `''`.
+
+### 4.34 A page's replace on another part's markup can match nothing, silently - fixed (0ab3e0e3c)
+
+- **Pain:** merge `a47a64158` renamed the canvas cell class from `st-canvas-cell` to `st-sgrid-cell`.
+  `pages/inbox` `pinned()` still replaces `<div class="st-canvas-cell">`, so the merged inbox shows
+  no pin in any state. No check noticed it; the "Use the comment pin" sketch found it.
+- **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
+  regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
+- **Fix done (0ab3e0e3c):** Option 2, static: `rules/stale-replace.ts` reads every `.replace` / `.replaceAll` whose first argument is a string or regex literal containing `<`, in a part file and the plain modules of its folder, and tests it against the source of the part and of every part it reaches (`partsReachedFrom`), with the replace patterns themselves blanked out. `design check` prints `WARNING STALE-REPLACE <file>: replace(<pattern>) matches no markup of <part> or the parts it uses (...), so it changes nothing` and still passes. On studio: no hit - `pages/inbox` `pinned()` already replaces `st-sgrid-cell`; with the old `st-canvas-cell` pattern put back in a scratch copy, the rule names it.

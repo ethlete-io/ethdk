@@ -175,14 +175,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.34 A page's replace on another part's markup can match nothing, silently - open
-
-- **Pain:** merge `a47a64158` renamed the canvas cell class from `st-canvas-cell` to `st-sgrid-cell`.
-  `pages/inbox` `pinned()` still replaces `<div class="st-canvas-cell">`, so the merged inbox shows
-  no pin in any state. No check noticed it; the "Use the comment pin" sketch found it.
-- **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
-  regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
-
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
