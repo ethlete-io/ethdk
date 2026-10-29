@@ -186,6 +186,8 @@ in the product since the sketch was created, the merge refuses: bring each varia
 current shape. The user's reason is optional: with one, the merge sets the note from it; without
 one, the part keeps the `note` the picked variant file holds, so write that note while you draw.
 
+After the user approves a direct edit of a merged part (no sketch), run `et design accept <layer>/<name> --product <p> --by <model id> --note <why>` so `design check` stops warning `changed outside a sketch`. Never accept an edit the user did not approve.
+
 ### Read the inbox
 
 The user comments on a state of a part in Studio, at a point, or on a sketch variant. The sketch of

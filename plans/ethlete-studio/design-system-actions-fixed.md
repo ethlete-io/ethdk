@@ -98,6 +98,25 @@ The fixed entries of `design-system-actions.md`, with their numbers kept. `Lnnn`
   3. Fail when the new note is much shorter than the old one, unless `--force` is given.
 - **Now:** `done` on a sketch thread writes the note into the variant's copy of the part. It never touches the product. If the variant does not hold the part, no part file changes and the comment is only addressed.
 
+### 3.13 No way to accept a direct edit the user approved - fixed
+
+- **Pain:** Tom approved a cleanup of `pages/sketches` without a sketch (dead code removed, 0 changed
+  pixels in both states). After the commit, `design check` warns `pages/sketches changed outside a
+sketch` until the next merge of the part.
+- **Cause:** the check compares the part folder with the hash in `merged.json`. Only a merge writes
+  that hash. A one-variant sketch needs the product folder back at HEAD first, which is extra work
+  for a change that does not change the drawing.
+- **Now:** the warning stays (Tom chose this). Editing `merged.json` by hand would record a merge
+  that did not happen.
+- **Fix options:**
+  1. `design accept <part> --by <model id> --note <why>`: write the new hash and log who approved the
+     direct edit.
+  2. `sketch new --from-tree`: open a one-variant sketch from the working tree and restore the
+     product, so the normal merge path covers the edit.
+- **Decision (Tom, 2026-10-29):** option 1, `design accept`.
+- **Fix done (`382320daf`):** `design accept` writes the hash into `merged.json` and logs who and
+  why in `accepted.json`. It refuses an unknown part, an open sketch and a part without a change.
+
 ### 3.15 A sketch shows the states it does not change - fixed
 
 - **Pain:** the sketch "Leerer Flows-Bereich mit Anleitung" changes only the `empty` state of

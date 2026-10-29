@@ -166,23 +166,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
      state is unchanged.
 - **Decision (Tom, 2026-10-29):** solved through 3.14 option 1.
 
-### 3.13 No way to accept a direct edit the user approved - open
-
-- **Pain:** Tom approved a cleanup of `pages/sketches` without a sketch (dead code removed, 0 changed
-  pixels in both states). After the commit, `design check` warns `pages/sketches changed outside a
-sketch` until the next merge of the part.
-- **Cause:** the check compares the part folder with the hash in `merged.json`. Only a merge writes
-  that hash. A one-variant sketch needs the product folder back at HEAD first, which is extra work
-  for a change that does not change the drawing.
-- **Now:** the warning stays (Tom chose this). Editing `merged.json` by hand would record a merge
-  that did not happen.
-- **Fix options:**
-  1. `design accept <part> --by <model id> --note <why>`: write the new hash and log who approved the
-     direct edit.
-  2. `sketch new --from-tree`: open a one-variant sketch from the working tree and restore the
-     product, so the normal merge path covers the edit.
-- **Decision (Tom, 2026-10-29):** option 1, `design accept`.
-
 ### 3.14 The states of a page drift apart - open
 
 - **Pain:** the states of `pages/sketches` showed the same chrome in different ways. The variant
