@@ -94,6 +94,10 @@ markup: `import { studioMark } from '@system/foundations/logo'`. Import a piece 
 never copy its markup into another part. A piece that uses the part's classes needs its stylesheet too
 (`@system/foundations/logo.css?inline`). The layer rules hold for these imports as well.
 
+A component a host embeds exports its markup as such a helper, and a wrapper only its own frame needs, such as
+padding that makes room for a focus ring, goes in `render` alone, never in that helper: the host places the
+component itself and would inherit the wrapper's offset.
+
 A product whose app uses Tailwind lists one stylesheet in config `styles` that imports the app's styles and
 registers the drawing folders with `@source './'`. Sketches then use the app's utilities; plain CSS stays for what
 utilities cannot express, such as camera geometry.
