@@ -111,12 +111,25 @@ describe('designSketch', () => {
     });
   });
 
+  it('opens a round without a note, and refuses ready until the round has one', () => {
+    const target = acme();
+    const lines = output();
+
+    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme')).toBe(
+      0,
+    );
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
+    expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
+
   it('refuses ready while a variant drops a state of the part', () => {
     const target = acme();
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     writeFileSync(button, readFileSync(button, 'utf8').replace(/, long: \{[^}]*\}/u, ''));
 
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -144,7 +157,19 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    run(target, 'new', 'components/button', '--variants', 'a,b', '--by', 'gpt-5.6-sol', '--product', 'acme');
+    run(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a,b',
+      '--note',
+      'n',
+      '--by',
+      'gpt-5.6-sol',
+      '--product',
+      'acme',
+    );
     run(target, 'variant', 'components/button', 'c', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
     run(target, 'variant', 'components/button', 'd', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
 
@@ -300,11 +325,11 @@ describe('designSketch', () => {
 
     expect(write(target, 'new', 'components/button', '--variants', 'a,b')).toBe(1);
     expect(lines.pop()).toBe('more than one product - pass --product <name>; config.json declares acme-base, acme.');
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme')).toBe(0);
+    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe(`components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`);
     expect(write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme')).toBe(0);
     expect(run(target, 'list')).toBe(0);
-    expect(lines.slice(-2)).toEqual(['acme  components/button  in progress  a, b', '  r1    a, b']);
+    expect(lines.slice(-2)).toEqual(['acme  components/button  in progress  a, b', '  r1    a, b  - n']);
     expect(run(target, 'preview', 'components/button', 'a', '--product', 'acme', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')).toEqual({
       changed: ['components/button'],

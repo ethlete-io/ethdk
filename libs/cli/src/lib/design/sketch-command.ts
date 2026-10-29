@@ -19,6 +19,7 @@ import {
   parseTarget,
   rebaseSketch,
   reportSketch,
+  runningRoundOf,
   Sketch,
   sketchSourceOf,
 } from './system/sketch/sketch';
@@ -281,6 +282,13 @@ const readied = (context: Context) =>
 
     if (problems.length > 0)
       return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+
+    const running = runningRoundOf(sketch);
+
+    if (running.note.trim() === '')
+      return fail(
+        `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
+      );
 
     const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
 
