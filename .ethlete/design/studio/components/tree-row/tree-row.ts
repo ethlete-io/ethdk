@@ -9,6 +9,24 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   widths: [280],
   states,
+  grid: {
+    columns: ['rest', 'hover', 'active', 'focus-visible'],
+    rows: {
+      leaf: { rest: 'leaf', hover: 'hover', active: 'active', 'focus-visible': 'focus-visible' },
+      selected: { rest: 'selected', hover: 'selected-hover', 'focus-visible': 'selected-focus-visible' },
+      'leaf-flat': { rest: 'leaf-flat' },
+      'group-closed': { rest: 'group-closed' },
+      'group-open': { rest: 'group-open' },
+      'part-closed': { rest: 'part-closed' },
+      'part-open': { rest: 'part-open' },
+      inert: { rest: 'inert' },
+      'mark-in-progress': { rest: 'mark-in-progress' },
+      'mark-ready': { rest: 'mark-ready' },
+      'mark-warning': { rest: 'mark-warning' },
+      'mark-comments': { rest: 'mark-comments' },
+      'selected-marks': { rest: 'selected-marks' },
+    },
+  },
   render: ({ rows }: Props) =>
     drawing({ body: html`<div class="st-trow-stack">${rows.map(row).join('')}</div>`, styles }),
 });
