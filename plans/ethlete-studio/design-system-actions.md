@@ -264,13 +264,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Sketch (2026-10-29):** `foundations/tokens` "Warning colour", a amber, b muted ochre, c orange,
   is `ready` (agent recommends a). After the merge, a one-variant `tree-row` sketch uses `--warning`.
 
-### 5.26 The CLI cannot remove a merged part - open
-
-- **Pain:** to fold `components/tree-row` back into its host, the agent found no command. A manual
-  `git rm` leaves its comments, its `merged.json` entry and its `tsconfig.json` path behind.
-- **Fix option:** `design part remove <layer>/<name>`. It refuses while a part imports it, and it
-  resolves the part's comments.
-
 ### 5.27 `design check` does not see a class that no CSS defines - open
 
 - **Pain:** `pages/flows` draws its flow list with `st-tree-row`, `st-tree-lead` and `st-tree-label`.

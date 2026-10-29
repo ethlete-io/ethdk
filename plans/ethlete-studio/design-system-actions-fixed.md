@@ -1226,3 +1226,11 @@ check` warns early.
   `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
   marks a forced element. Both: one paragraph in the skill.
 - **Fix done (9dc18ce5e):** Option 2, not the recommended 1: states hold props by type (the frame, diffs and `--diff-props` read them as props), and a state interaction would still force only the root, which is the pain. `forceInteraction(markup, interaction)` from `@design-system` forces one element (`data-et-force`, or `disabled` plus `aria-disabled`); the design-exploration skill has the paragraph. `components/tree-row` and `components/comment-pin` (both `shared/`) still write `data-et-force` by hand and should adopt it through a sketch.
+
+### 5.26 The CLI cannot remove a merged part - fixed (d4b68de7e)
+
+- **Pain:** to fold `components/tree-row` back into its host, the agent found no command. A manual
+  `git rm` leaves its comments, its `merged.json` entry and its `tsconfig.json` path behind.
+- **Fix option:** `design part remove <layer>/<name>`. It refuses while a part imports it, and it
+  resolves the part's comments.
+- **Fix done (d4b68de7e):** Option 1. `et design part remove <layer>/<name> --by <model id> [--product <p>]` deletes the folder and its `merged.json` entry, rewrites the product `tsconfig.json` paths, and resolves its comments (note `<part> removed by <model id>`). It refuses a part another part imports, a base part, and a part an open sketch targets. The design-exploration skill names it.
