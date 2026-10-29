@@ -95,30 +95,92 @@ export class CanvasFrameCellComponent {
   }
 }
 
-/** The cells of a frame's grid under a header row of interactions, each row led by its state. */
+/**
+ * The cells of a frame's grid under a header row of interactions, each row led by its state. A `sheet` grid draws its
+ * cells as one sheet on a sunken body: the rows that use more than the first column as that table, the others packed
+ * as many to a line as the grid has columns, each under its state.
+ */
 @Component({
   selector: 'ethlete-canvas-frame-grid',
   template: `
-    <div
-      #table
-      [style.grid-template-columns]="'auto repeat(' + grid().columns.length + ', auto)'"
-      class="absolute left-0 top-0 grid w-max items-center gap-x-[3.2rem] gap-y-[2.4rem] p-[2.4rem] text-[1.2rem] text-text-muted"
-    >
-      <span></span>
-      @for (column of grid().columns; track column) {
-        <span data-grid-column>{{ column }}</span>
-      }
-      @for (row of grid().rows; track row) {
-        <span class="pr-[0.8rem]" data-grid-row>{{ row }}</span>
-        @for (column of grid().columns; track column) {
-          @if (cellOf(row, column); as cell) {
-            <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
-          } @else {
-            <span></span>
+    @if (sheet(); as sheet) {
+      <div
+        #table
+        [style.grid-template-columns]="'minmax(12rem, max-content) repeat(' + grid().columns.length + ', max-content)'"
+        class="absolute left-0 top-0 grid w-max gap-px bg-surface-sunken px-[2.4rem] pb-[2.4rem] pt-[1.6rem] text-[1.1rem]/[1.4rem] text-text-muted"
+        data-grid-sheet
+      >
+        @if (sheet.interactive.length > 0) {
+          <span
+            class="col-span-full mb-[0.8rem] border-b border-surface-border pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
+            data-grid-group
+            >States by interaction</span
+          >
+          <span></span>
+          @for (column of grid().columns; track column) {
+            <span class="self-end pb-[0.4rem] font-code" data-grid-column>{{ column }}</span>
+          }
+          @for (row of sheet.interactive; track row) {
+            <span class="self-center pr-[0.8rem] font-code" data-grid-row>{{ row }}</span>
+            @for (column of grid().columns; track column) {
+              <div class="bg-surface p-space-1 ring-1 ring-surface-border" data-grid-cell>
+                @if (cellOf(row, column); as cell) {
+                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+                }
+              </div>
+            }
           }
         }
-      }
-    </div>
+        @if (sheet.packed.length > 0) {
+          <span
+            class="col-span-full mb-[0.8rem] mt-[2.4rem] border-b border-surface-border pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em] first:mt-0"
+            data-grid-group
+            >Rest only</span
+          >
+          @for (line of sheet.packed; track $index; let firstLine = $first) {
+            <span></span>
+            @for (row of line; track row) {
+              <span [class.pt-3]="!firstLine" class="self-end pb-[0.4rem] font-code" data-grid-row>{{ row }}</span>
+            }
+            @for (blank of blanksOf(line); track $index) {
+              <span></span>
+            }
+            <span></span>
+            @for (row of line; track row) {
+              <div class="bg-surface p-space-1 ring-1 ring-surface-border" data-grid-cell>
+                @if (cellOf(row, sheet.first); as cell) {
+                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+                }
+              </div>
+            }
+            @for (blank of blanksOf(line); track $index) {
+              <span></span>
+            }
+          }
+        }
+      </div>
+    } @else {
+      <div
+        #table
+        [style.grid-template-columns]="'auto repeat(' + grid().columns.length + ', auto)'"
+        class="absolute left-0 top-0 grid w-max items-center gap-x-[3.2rem] gap-y-[2.4rem] p-[2.4rem] text-[1.2rem] text-text-muted"
+      >
+        <span></span>
+        @for (column of grid().columns; track column) {
+          <span data-grid-column>{{ column }}</span>
+        }
+        @for (row of grid().rows; track row) {
+          <span class="pr-[0.8rem]" data-grid-row>{{ row }}</span>
+          @for (column of grid().columns; track column) {
+            @if (cellOf(row, column); as cell) {
+              <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+            } @else {
+              <span></span>
+            }
+          }
+        }
+      </div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [CanvasFrameCellComponent],
@@ -131,21 +193,50 @@ export class CanvasFrameGridComponent {
   /** Each cell's box in CSS pixels from the grid's top left corner, by cell id. */
   public cellsChange = output<Record<string, Rect>>();
 
-  private table = viewChild.required<ElementRef<HTMLElement>>('table');
+  private table = viewChild<ElementRef<HTMLElement>>('table');
   private cells = viewChildren('cell', { read: ElementRef<HTMLElement> });
 
   private cellAt = computed(
     () => new Map<string, FrameCell>(this.grid().cells.map((cell) => [cellKeyOf(cell.row, cell.column), cell])),
   );
 
+  private observed = computed(() => {
+    const table = this.table()?.nativeElement;
+
+    return table ? [table, ...this.cells().map((cell) => cell.nativeElement)] : [];
+  });
+
+  protected sheet = computed(() => {
+    const { columns, rows, sheet } = this.grid();
+
+    if (!sheet) return null;
+
+    const [first = ''] = columns;
+    const restOnly = (row: string) => columns.slice(1).every((column) => !this.cellOf(row, column));
+    const rest = rows.filter(restOnly);
+    const perLine = Math.max(columns.length, 1);
+
+    return {
+      first,
+      interactive: rows.filter((row) => !restOnly(row)),
+      packed: Array.from({ length: Math.ceil(rest.length / perLine) }, (_, line) =>
+        rest.slice(line * perLine, (line + 1) * perLine),
+      ),
+    };
+  });
+
   constructor() {
-    toObservable(this.cells)
+    toObservable(this.observed)
       .pipe(
-        switchMap((cells) => this.resized$([this.table().nativeElement, ...cells.map((cell) => cell.nativeElement)])),
+        switchMap((elements) => this.resized$(elements)),
         tap(() => this.report()),
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  protected blanksOf(line: string[]) {
+    return Array.from({ length: this.grid().columns.length - line.length });
   }
 
   protected cellOf(row: string, column: string) {
@@ -153,7 +244,9 @@ export class CanvasFrameGridComponent {
   }
 
   private report() {
-    const table = this.table().nativeElement;
+    const table = this.table()?.nativeElement;
+
+    if (!table) return;
 
     this.sizeChange.emit({ width: table.offsetWidth, height: table.offsetHeight });
     this.cellsChange.emit(

@@ -55,7 +55,8 @@ export type FrameCell = {
   place?: FramePlace;
 };
 
-export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[] };
+/** `sheet` draws a part's declared grid: its cells as one sheet, rows past the first column apart from the rest. */
+export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[]; sheet?: true };
 
 /** The frames that take comments: each cell of a grid in place of its frame. */
 export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>

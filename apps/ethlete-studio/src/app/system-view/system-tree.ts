@@ -354,6 +354,7 @@ const gridFrameOf = (options: {
     src: '',
     label: GRID,
     grid: {
+      sheet: true,
       columns: grid.columns,
       rows: grid.rows,
       cells: grid.cells.map(({ row, column, state }) => {

@@ -240,6 +240,7 @@ describe('framesOf', () => {
     expect(frames.map((frame) => [frame.id, frame.label, frame.row, frame.width, frame.place])).toEqual([
       ['components/button', 'components/button', undefined, undefined, undefined],
     ]);
+    expect(frames[0]?.grid?.sheet).toBeUndefined();
     expect(frames[0]?.grid?.columns).toEqual(['rest']);
     expect(frames[0]?.grid?.rows).toEqual(['default', 'disabled']);
     expect(frames[0]?.grid?.cells[0]?.src).toBe(
@@ -360,6 +361,7 @@ describe('a part with a grid', () => {
       ['tree 280 focus-visible', 'tree'],
       ['grid', undefined],
     ]);
+    expect(gridFrame?.grid?.sheet).toBe(true);
     expect(gridFrame?.grid?.columns).toEqual(['rest', 'hover']);
     expect(gridFrame?.grid?.rows).toEqual(['leaf', 'selected']);
     expect(gridFrame?.grid?.cells.map((cell) => [cell.id, cell.row, cell.column, cell.label, cell.width])).toEqual([
