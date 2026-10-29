@@ -185,6 +185,8 @@ round 1, and `--note <text>` sets its note. `sketch ready` refuses while the run
 `sketch ready` also shoots every state of every variant and of the product's part: when not one pixel differs
 in any of them, it merges the sketch itself and logs it as an `auto` entry in the product's `accepted.json`
 ("No visible change in any state: merged automatically."). Any difference or failed shot leaves it `ready`.
+A problem the product already had before the merge does not block it (the check prints it as a note); only a problem the merge adds does.
+Run `sketch ready` again on a `ready` sketch to repeat the check and the auto merge.
 
 ### Your model id: `--by`
 

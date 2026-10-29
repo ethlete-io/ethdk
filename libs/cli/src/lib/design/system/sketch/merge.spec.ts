@@ -169,6 +169,25 @@ describe('mergeSketch', () => {
     );
   }, 240_000);
 
+  it('merges past a problem the product already had and prints it as a note', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+
+    mkdirSync(join(target, DESIGN_DIR, 'acme/assets'), { recursive: true });
+    writeFileSync(join(target, DESIGN_DIR, 'acme/assets/mark.svg'), '<svg viewBox="0 0 8 8"/>');
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+    expect(existsSync(found.sketch.dir)).toBe(false);
+    expect([...log.mock.calls, ...warn.mock.calls].flat().join('\n')).toContain('SVG-ASSET');
+  }, 240_000);
+
   it('puts the old files back and keeps the sketch when the check fails', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);

@@ -104,19 +104,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.23 A problem in another part stops the auto merge - open
-
-- **Pain:** `sketch ready pages/start` showed no visible change, but did not merge: "the check
-  failed after the merge". The only problem was `SVG-ASSET` on the merged
-  `assets/studio-mark.svg`, which the sketch does not touch. A problem that was there before the
-  merge blocks every auto merge until another sketch fixes it.
-- **Where:** the check after the auto merge (3.17) in `libs/cli/src/lib/design/system/sketch/`.
-- **Fix option:** block only on problems the merge adds. Compare the problem list before and after
-  the merge, and print the old ones as a note.
-- **Also:** after the problem was fixed, a second `sketch ready pages/start` printed "ready, not
-  in progress" and did not try the auto merge again. Let `sketch ready` on a `ready` sketch run the
-  unchanged check again.
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)

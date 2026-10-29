@@ -309,15 +309,16 @@ const readied = (context: Context) => {
 
   if (typeof status === 'number') return status;
 
-  return autoMerged({ context, ...found, sketch: status.ready });
+  return autoMerged({ context, ...found, sketch: status.ready, again: found.sketch.status === 'ready' });
 };
 
-const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch }) => {
-  const { context, product, sketch } = options;
+const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch; again: boolean }) => {
+  const { context, product, sketch, again } = options;
 
-  console.log(`${sketch.target} is ready`);
+  if (!again) console.log(`${sketch.target} is ready`);
 
-  if (!(await shotsShowNoChange({ target: context.target, config: context.config, product, sketch }))) return 0;
+  if (!(await shotsShowNoChange({ target: context.target, config: context.config, product, sketch })))
+    return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
 
   const author = authorOf(context.args) ?? undefined;
   const variant = sketch.variants[0] ?? '';
@@ -364,6 +365,8 @@ const markedReady = (
     return fail(
       `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
     );
+
+  if (sketch.status === 'ready') return { ready: sketch };
 
   const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
 

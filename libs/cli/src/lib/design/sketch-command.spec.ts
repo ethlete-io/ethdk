@@ -64,6 +64,36 @@ describe('designSketch', () => {
     ]);
   });
 
+  it('runs the check and the auto merge again on a sketch that is already ready', async () => {
+    const target = acme();
+    const lines = output();
+    const product = join(target, DESIGN_DIR, 'acme');
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a',
+      '--round',
+      'Same',
+      '--note',
+      'no change',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(existsSync(join(product, 'sketches/components-button'))).toBe(true);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe('components/button is ready, not in progress');
+
+    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
+  });
+
   it('keeps a sketch ready when a state shows a change', async () => {
     const target = acme();
 

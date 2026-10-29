@@ -34,6 +34,9 @@ const RULES = [
   badSvgAssetsOf,
 ];
 
+export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
+  ruleProblemsOf(product).map((problem) => lineOf(target, problem));
+
 /** Every problem the rules find in a resolved product, its resolution problems first. */
 export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...product.problems,
@@ -43,7 +46,7 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
-type CheckOptions = { target: string; config: DesignConfig; products: string[] };
+type CheckOptions = { target: string; config: DesignConfig; products: string[]; known?: string[] };
 
 const warnChangedOutsideSketch = (product: ResolvedProduct) => {
   for (const part of changedOutsideSketchOf(product))
@@ -57,7 +60,15 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
   const declared = config.products ?? {};
   let failed = false;
   const report = (problem: Problem) => {
-    console.error(lineOf(target, problem));
+    const line = lineOf(target, problem);
+
+    if (options.known?.includes(line)) {
+      console.warn(`NOTE (was there before) ${line}`);
+
+      return;
+    }
+
+    console.error(line);
     failed = true;
   };
 

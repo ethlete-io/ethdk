@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, write
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve } from 'path';
 import { DesignConfig } from '../../paths';
-import { checkSystem } from '../check-system';
+import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
@@ -120,6 +120,8 @@ const mergeOrReason = (options: {
   const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
   const untouched = assetFiles.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
+  const known = ruleLinesOf(target, product);
+
   const swapped = swap([
     ...(inherited ? [{ from: dirname(inherited.file), to: targetDir }] : []),
     ...parts.map((part) => ({ from: dirname(part.file), to: resolve(product.dir, part.layer, part.name) })),
@@ -134,7 +136,7 @@ const mergeOrReason = (options: {
 
   if (shared === 'carry') carryShared({ sketch, targetDir });
 
-  if (checkSystem({ target, config, products: [product.name] }) !== 0) {
+  if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
     swapped.restore();
 
     return `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`;
