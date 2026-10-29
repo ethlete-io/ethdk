@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 4.73.0
+
+### Minor Changes
+
+- [`4dfebf6`](https://github.com/ethlete-io/ethdk/commit/4dfebf65b4a21be3ae101580bc68a6ddf011dd5c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update all dependencies to their latest versions. The peer dependencies now require Angular 22.2 and Angular CDK 22.2, and `@ethlete/core` requires TypeScript 6.0 and `@nx/devkit` 24.
+
+### Patch Changes
+
+- [`bc313e1`](https://github.com/ethlete-io/ethdk/commit/bc313e1fd84e421cb4344745cdf7a8f06c9f530c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update dependencies and the pinned peer dependency versions (Angular 20.3.34, Angular CDK 20.2.14, @floating-ui/dom 1.8.0, @contentful/rich-text-types 17.2.7).
+
 ## 4.72.1
 
 ### Patch Changes
