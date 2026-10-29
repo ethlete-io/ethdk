@@ -95,7 +95,7 @@ A part file default-exports its `definePart(...)` and may also export named help
 markup: `import { studioMark } from '@system/foundations/logo'`. Import a piece from the part that draws it;
 never copy its markup into another part. A piece that uses the part's classes needs its stylesheet too
 (`@system/foundations/logo.css?inline`), or from the part's default export when the part sets
-`definePart({ styles })`: every drawing of that part gets it, so `render` returns only extra styles. The layer
+`definePart({ styles })`: every drawing of that part gets it, so `render` returns only extra styles, or `drawing({ body })` with none. The layer
 rules hold for these imports as well.
 
 A component a host embeds exports its markup as such a helper, and a wrapper only its own frame needs, such as

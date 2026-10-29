@@ -36,8 +36,11 @@ export type Part<TProps, TState extends string = string> = {
   interactions?: Interaction[];
   grid?: StateGrid<TState>;
   checks?: { skip?: RenderCheck[] };
-  render: (props: TProps, options?: RenderOptions) => Drawing | Promise<Drawing>;
+  render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
 };
+
+/** A drawing of a part: its `styles` hold the part's stylesheet and the ones `render` returned, so a host can add them up. */
+export type DrawnPart = Drawing & { styles: string };
 
 /**
  * Small states laid out as one table instead of a frame each: `rows` maps a row label to the state drawn under
@@ -72,7 +75,7 @@ export const forceInteraction = (markup: string, interaction: Interaction) => fo
 const finished = (
   drawn: Drawing,
   { styles, interaction }: { styles?: string; interaction?: Interaction },
-): Drawing => ({
+): DrawnPart => ({
   ...drawn,
   body: interaction ? forceBody(drawn.body, interaction) : drawn.body,
   styles: [styles, drawn.styles].filter(Boolean).join('\n'),
@@ -91,8 +94,6 @@ export const definePart = <TProps, const TState extends string = string, const T
   render: (props, options) => {
     const drawn = part.render(props);
     const interaction = options?.interaction;
-
-    if (!interaction && !part.styles) return drawn;
 
     return drawn instanceof Promise
       ? drawn.then((done) => finished(done, { styles: part.styles, interaction }))

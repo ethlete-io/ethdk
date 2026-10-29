@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definePart, forceInteraction } from '../../../design/define-part';
+import { definePart, drawing, forceInteraction } from '../../../design/define-part';
 import { markPart } from '../../../design/mark-part';
 
 type Props = { label: string };
@@ -67,6 +67,14 @@ describe('definePart', () => {
     expect(styled.render({ label: 'a' }, { interaction: 'hover' })).toEqual({ body: 'a', styles: '.b{}' });
     expect(await later.render({ label: 'a' })).toEqual({ body: 'a', styles: '.b{}\n.x{}' });
     expect(markPart(styled, 'components/b').styles).toBe('.b{}');
+  });
+
+  it('takes a drawing without styles and always draws a string of them', () => {
+    const styled = definePart({ ...source, styles: '.b{}', render: ({ label }: Props) => drawing({ body: label }) });
+    const bare = definePart({ ...source, render: ({ label }: Props) => drawing({ body: label }) });
+
+    expect(styled.render({ label: 'a' })).toEqual({ body: 'a', styles: '.b{}' });
+    expect(bare.render({ label: 'a' })).toEqual({ body: 'a', styles: '' });
   });
 
   it('forces an interaction on one element of the markup, below the root', () => {

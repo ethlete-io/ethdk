@@ -33,8 +33,10 @@ const markupOf = async (part: LoadedPart, props: unknown): Promise<Markup | null
   try {
     const drawn = (await part.render?.(props)) as { body?: unknown; styles?: unknown } | undefined;
 
-    return typeof drawn?.body === 'string' && typeof drawn.styles === 'string'
-      ? { body: hashOf(drawn.body), styles: hashOf(drawn.styles) }
+    const styles = drawn?.styles ?? '';
+
+    return typeof drawn?.body === 'string' && typeof styles === 'string'
+      ? { body: hashOf(drawn.body), styles: hashOf(styles) }
       : null;
   } catch {
     return null;

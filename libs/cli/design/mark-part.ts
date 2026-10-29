@@ -43,7 +43,7 @@ export const forceBody = (body: string, interaction: Interaction) => {
   return `${body.slice(0, attributesAt)}${forced}${body.slice(attributesAt)}`;
 };
 
-const markDrawing = (drawn: Drawing, key: string): Drawing =>
+const markDrawing = <TDrawing extends Drawing>(drawn: TDrawing, key: string): TDrawing =>
   typeof drawn?.body === 'string' ? { ...drawn, body: markBody(drawn.body, key) } : drawn;
 
 /** The part with a `render` that marks the first element of each drawing as the root of the part `key`. */

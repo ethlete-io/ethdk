@@ -137,12 +137,12 @@ export const ngStates = async <TState extends string>(templates: Record<TState, 
 
 /**
  * One drawn answer, as the frame renders it: the markup that goes in the frame root, and the CSS
- * that styles it. `setup` is a function or a list of them, run in order once after the markup is in the frame root, to wire behavior such
+ * that styles it, left out when `definePart({ styles })` carries it. `setup` is a function or a list of them, run in order once after the markup is in the frame root, to wire behavior such
  * as a click that restarts an animation. A `<script>` in `body` never runs.
  */
 export type Drawing = {
   body: string;
-  styles: string;
+  styles?: string;
   setup?: ((root: HTMLElement) => void) | ((root: HTMLElement) => void)[];
 };
 

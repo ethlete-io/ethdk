@@ -179,7 +179,7 @@ const drawFrame = async () => {
 
     const style = document.createElement('style');
 
-    style.textContent = await forced(loaded.styles);
+    style.textContent = await forced(loaded.styles ?? '');
     document.head.append(style);
     const error = mountDrawing(root, loaded);
     const partRoot = partRootOf(root);
