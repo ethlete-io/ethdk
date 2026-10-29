@@ -203,6 +203,14 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     hosts: one-variant sketches on `pages/inbox` and `pages/sketches` switch to `commentPin.styles`,
     then a comment-pin sketch drops `commentPinStyles`. Then tokens split 2.12 (`design part
     remove` exists now).
+    Update 2026-10-29 late night: pin hosts read `commentPin.styles` (`2e4348ab9`),
+    `commentPinStyles` gone (`98e257959`); 4.39 option 1 built (`ee9b8ad8d`); 4.40 cleanup sketches
+    merged (`798fe4cc3`), new finding 3.41 (flaky auto-merge skip). Tokens split 2.12: Tom picked
+    "split the CSS too": a per-product explicit list of token parts in the CLI (default
+    `foundations/tokens`; studio lists tokens, colors, type, spacing). A subagent builds the CLI
+    part. Then three sketches `foundations/colors`, `/type`, `/spacing` go `ready` for Tom's merge,
+    then `design part remove foundations/tokens`, drop it from the list, check, commit. That is the
+    last sketch for today (Tom).
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
