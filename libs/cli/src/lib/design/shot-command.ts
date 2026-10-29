@@ -55,19 +55,24 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
   });
 };
 
-/** Rows of cells: one row per variant when `variants` is set, else one row; one column per state when `states` is set. */
+/**
+ * Rows of cells: one row per variant when `variants` is set, else one row; one column per state when `states` is set.
+ * Without a width or a preset in `base`, a row is drawn at the width `widthOf` gives for it.
+ */
 export const planOf = (options: {
   base: Omit<PartAddress, 'state' | 'sketch'>;
   rows: Axis[];
   statesOf: (axis: Axis) => string[];
+  widthOf?: (axis: Axis) => number | null;
   states: boolean;
   state: string | null;
 }): Plan[][] => {
-  const { base, rows, statesOf, states, state } = options;
+  const { base, rows, statesOf, widthOf, states, state } = options;
   const columns = states ? [...new Set(rows.flatMap(statesOf))] : [state ?? ''];
 
   return rows.map((axis) => {
     const own = statesOf(axis);
+    const width = base.width ?? (base.preset ? null : (widthOf?.(axis) ?? null));
 
     return columns.flatMap((column) => {
       const name = states ? column : (state ?? own[0] ?? '');
@@ -77,7 +82,7 @@ export const planOf = (options: {
       return [
         {
           label: [axis.label, states || axis.sketch === null ? name : ''].filter(Boolean).join(' / '),
-          address: { ...base, state: name, sketch: axis.sketch },
+          address: { ...base, width, state: name, sketch: axis.sketch },
         },
       ];
     });
@@ -251,6 +256,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const loaded = new Map<Axis, string[]>();
+    const widths = new Map<Axis, number>();
     let grid: ListedGrid | undefined;
 
     for (const axis of rows) {
@@ -260,10 +266,13 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       const module = (await server.ssrLoadModule(
         productModuleIdOf({ file: found.file, product, sketch: axis.sketch }),
-      )) as { default?: { states?: unknown; grid?: unknown } };
+      )) as { default?: { states?: unknown; grid?: unknown; widths?: unknown } };
       const names = stringsOf(module.default?.states);
 
+      const first = Array.isArray(module.default?.widths) ? (module.default.widths[0] as unknown) : undefined;
+
       loaded.set(axis, names);
+      if (typeof first === 'number' && Number.isInteger(first) && first > 0) widths.set(axis, first);
       if (!variants) grid = gridOf(module.default?.grid, names).grid;
     }
 
@@ -282,6 +291,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       base: { product, part, preset: chosenPreset, width, interaction: null },
       rows,
       statesOf: (axis) => loaded.get(axis) ?? [],
+      widthOf: (axis) => (isPage ? null : (widths.get(axis) ?? null)),
       states,
       state: args.values['--state'] ?? null,
     });

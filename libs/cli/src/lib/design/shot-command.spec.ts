@@ -57,6 +57,25 @@ describe('planOf', () => {
   });
 });
 
+describe('planOf widths', () => {
+  it("draws each row at its part's first width unless a width or a preset is asked", () => {
+    const rows = [
+      { label: 'merged', sketch: null },
+      { label: 'a', sketch: { target: 'components/button', variant: 'a' } },
+    ];
+    const widthOf = (axis: { sketch: unknown }) => (axis.sketch ? 320 : 280);
+    const statesOf = () => ['rest'];
+
+    const fitted = planOf({ base, rows, statesOf, widthOf, states: true, state: null });
+    const asked = planOf({ base: { ...base, width: 500 }, rows, statesOf, widthOf, states: true, state: null });
+    const preset = planOf({ base: { ...base, preset: 'phone' }, rows, statesOf, widthOf, states: true, state: null });
+
+    expect(fitted.map((row) => row[0]?.address.width)).toEqual([280, 320]);
+    expect(asked.map((row) => row[0]?.address.width)).toEqual([500, 500]);
+    expect(preset.map((row) => row[0]?.address.width)).toEqual([null, null]);
+  });
+});
+
 describe('gridRowsOf', () => {
   it("draws a row per row of the part's grid in its column order, after the states the grid leaves out", () => {
     const [row = []] = planOf({
