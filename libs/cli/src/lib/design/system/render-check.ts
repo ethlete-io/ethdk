@@ -115,12 +115,18 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
   }
 
   const clips = (value) => value === 'hidden' || value === 'clip';
+  const drawnSizeOf = (element) => {
+    if (!element.hasAttribute('data-et-embed-box')) return { width: element.scrollWidth, height: element.scrollHeight };
+    const rect = element.firstElementChild.getBoundingClientRect();
+    return { width: Math.floor(rect.width), height: Math.floor(rect.height) };
+  };
   for (const element of root.querySelectorAll('*')) {
     const style = getComputedStyle(element);
-    const cutX = clips(style.overflowX) && element.scrollWidth > element.clientWidth;
-    const cutY = clips(style.overflowY) && element.scrollHeight > element.clientHeight;
+    const drawn = drawnSizeOf(element);
+    const cutX = clips(style.overflowX) && drawn.width > element.clientWidth;
+    const cutY = clips(style.overflowY) && drawn.height > element.clientHeight;
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none';
-    if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + sizeOf(element));
+    if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
 
   const singleLine = (element) => {

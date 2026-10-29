@@ -144,6 +144,19 @@ The fixed entries of `design-system-actions.md`, with their numbers kept. `Lnnn`
 - **Fix done (`48a1c9a79`):** skips are kept per product, sketch and variant. The scaffold draws a
   label, so the `default` state has a size.
 
+### 4.8 A scaled `embedPage` fails the CLIPPED rule - fixed
+
+- **Pain:** every Flows variant shows pages through `embedPage(..., { scale })`. The check reported
+  `CLIPPED ... content 1440x900 in 288x180` on the embed box, so each variant needs
+  `checks: { skip: ['CLIPPED'] }`. That skip also hides a real clip anywhere else in the page.
+- **Cause:** `embedPage` wraps a scaled iframe in `[data-et-embed-box]` with `overflow: hidden`, and
+  the rule measures the unscaled iframe.
+- **Fix option:** the CLIPPED rule ignores `[data-et-embed-box]`, or measures the scaled size.
+- **Fix done:** the rule measures the scaled iframe inside `[data-et-embed-box]`. A spec checks a
+  scaled embed that fits and one that clips.
+- **Open:** `pages/flows` still has `checks: { skip: ['CLIPPED'] }`. Take it out with a one-variant
+  sketch.
+
 ## 5. Drawing parts and pages
 
 ### 5.3 Editor and typecheck gaps - fixed (L833, L1009, L975)

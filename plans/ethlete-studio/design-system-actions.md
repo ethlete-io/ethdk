@@ -234,15 +234,6 @@ sketch` until the next merge of the part.
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.8 A scaled `embedPage` fails the CLIPPED rule - open
-
-- **Pain:** every Flows variant shows pages through `embedPage(..., { scale })`. The check reported
-  `CLIPPED ... content 1440x900 in 288x180` on the embed box, so each variant needs
-  `checks: { skip: ['CLIPPED'] }`. That skip also hides a real clip anywhere else in the page.
-- **Cause:** `embedPage` wraps a scaled iframe in `[data-et-embed-box]` with `overflow: hidden`, and
-  the rule measures the unscaled iframe.
-- **Fix option:** the CLIPPED rule ignores `[data-et-embed-box]`, or measures the scaled size.
-
 ## 5. Drawing parts and pages
 
 ### 5.1 Page sketches cannot use Tailwind - unverified (L2797)

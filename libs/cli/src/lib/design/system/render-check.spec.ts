@@ -21,6 +21,12 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
   'components/label': {
     body: '<div style="width: 120px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">A label that is cut with dots</div>',
   },
+  'components/embed': {
+    body: '<div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div>',
+  },
+  'components/embed-cut': {
+    body: '<div data-et-embed-box style="overflow: hidden; width: 288px; height: 100px"><iframe style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div>',
+  },
   'components/wrapped': { body: '<button style="width: 60px">Save the draft now</button>' },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
@@ -80,6 +86,7 @@ describe('renderIssuesOf', () => {
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part} ${issue.size}`).sort()).toEqual([
       'CLIPPED components/cut fitted',
+      'CLIPPED components/embed-cut fitted',
       'OVERFLOW pages/tall desktop',
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
