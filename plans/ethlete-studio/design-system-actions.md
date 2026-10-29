@@ -140,7 +140,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`987871473`):** `sketch round <sketch> <round> --title --note`. `sketch list` shows
   the rounds.
 
-### 3.6 A merge silently drops states of the part - open (`e26e219ca`)
+### 3.6 A merge silently drops states of the part - fixed option 1, unverified (`e26e219ca`)
 
 - **Pain:** Tom merged variant g of `pages/sketches`. The page lost its states `open` and
   `page-sketch`, and the live canvas camera (`mountCanvasViewport`). Only `zoomed-page` is left.
@@ -154,6 +154,10 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
      the round says it removes them.
   2. The merge preview in Studio lists states that the merge removes, and asks before it merges.
   3. A variant can change one state of a part and inherit the other states from the product.
+- **Fix done (`ed59b5f18`):** option 1 without the opt-out. `sketch check` and `sketch ready` fail
+  with a `STATES` problem for each part of a variant that drops a state the product's part has. The
+  problem also shows in Studio's sketch problems. A new part has nothing to compare.
+- **Open:** no way yet to drop a state on purpose. Check the problem in the running Studio.
 
 ## 4. Render checks and shots
 
