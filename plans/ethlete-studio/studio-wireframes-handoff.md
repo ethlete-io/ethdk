@@ -70,14 +70,28 @@ The pause of 2026-10-28 is over. Merged on 2026-10-29:
 - `pages/flows` and its empty state (`e1f8113a1`, `080ff322c`).
 - `pages/start` and the empty `pages/system` (`290fcc73e`).
 
-Next, in this order:
+Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
 
-1. Fix the open findings in `design-system-actions.md`. Recommended next: 3.9 (an answer to comments
-   opens a new round).
-2. Merge compare page, the last page without a design.
-3. A one-variant sketch on `foundations/tokens` that takes the accent mapping out of
-   `pages/sketches/sketch-data.css` (not done yet).
-4. Components after all pages, then page states, then the real app.
+1. Tom merges the ready sketch `foundations/logo` (exports `studioMark(size)`, no visible change).
+   Then: `design check --product studio`, prettier on the part files, commit. Then a one-variant
+   sketch on `pages/start` that imports `studioMark(24)` from `@system/foundations/logo` instead of
+   its copy. `elements/shell-main` keeps its own glyph (Tom, 2026-10-29).
+2. Asset question (5.13 in `design-system-actions.md`): Tom asked how we handle assets in general.
+   Draw up the options with a recommendation and ask him; no build before his pick.
+3. Finding 1.2: a subagent ran 10 x 100-cycle WebKit runs on ethlete-mac (Tom: the Mac is free).
+   If its result is not in 1.2 yet, run it again (brief: own design server on a scratch copy, port
+   4630 + TCP forwarder on 0.0.0.0:4631, swift script copied to `~/tmp/webkit-reload/`).
+4. Two verification runs (3.1, 3.2, 3.4, 3.6, 3.7, 5.1, 5.2, 7.1-7.4; and 2.1, 2.2, 2.3, 2.6, 7.6)
+   may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
+   report-only, own servers on 4610-4629.
+5. Open findings that are free to build: 1.3 (`--host`), 4.12 (a test path uses fixed port 5173),
+   5.12. Delegate each to a fresh sonnet subagent (Tom: "gebe die arbeit an sub agents").
+6. Merge compare page, then components, then page states, then the real app.
+
+Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
+:4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and
+variant rows without :4402. Skill source is `libs/agent-rules/content/skills/`, then
+`yarn agents:sync`, never only `.agents/skills/`.
 
 The dated sections below are the history of 2026-10-28. The parked points on `pages/sketches` are in
 `design-system-actions.md` under "Parked".
