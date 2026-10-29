@@ -14,6 +14,7 @@
     "vitest.setup.ts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
+    "scripts/**/*.mts",
     "src/**/*.d.ts"
   ]
 }

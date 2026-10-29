@@ -6,10 +6,18 @@
   "tags": [],
   "targets": {
     "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["compile"],
+      "cache": false,
+      "options": {
+        "command": "node libs/cli/scripts/move-into-place.mts tmp/cli-build dist/libs/cli"
+      }
+    },
+    "compile": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/cli",
+        "outputPath": "tmp/cli-build",
         "main": "libs/cli/src/index.ts",
         "tsConfig": "libs/cli/tsconfig.lib.json",
         "assets": [

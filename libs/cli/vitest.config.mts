@@ -5,7 +5,7 @@ export default defineConfig({
     name: 'cli',
     environment: 'node',
     globals: true,
-    include: ['src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
     setupFiles: ['./vitest.setup.ts'],
     reporters: ['default'],
     coverage: {
