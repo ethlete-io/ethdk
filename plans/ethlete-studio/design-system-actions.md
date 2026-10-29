@@ -120,6 +120,12 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   marked as in progress and hid its frames. Only `sketch ready` clears the mark.
 - **Fix option:** `sketch report --done` clears the drawing mark of that variant.
 
+### 3.29 No clear place for a variant's note in `sketch new` - open
+
+- **Pain:** `components/comment-pin`: the skill does not say where each variant's note goes. The
+  agent put it in each variant's `definePart({ note })`.
+- **Fix option:** a `--variant-note <v>=<text>` option on `sketch new`, and one line in the skill.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -248,6 +254,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.
   Unknown names fail typecheck, but repeated or dropped states pass silently.
 - **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
+
+### 4.32 `design check` says ok while an open sketch has a type error - open
+
+- **Pain:** `components/comment-pin`: `design check --product studio` said "ok" while every variant
+  had a TS error. Only `sketch check` found it.
+- **Fix options:** 1. `design check` also type-checks open sketches (recommended). 2. it prints that
+  it skips open sketches.
+
+### 4.33 A shot of a small part is a thin strip - open
+
+- **Pain:** `components/comment-pin` is 22 px. `/__design/shot` at `width=1440` gives a 1440 x 38
+  strip with the pin in a corner, and the contact sheet cell is tiny. The agent cropped and enlarged
+  with PIL.
+- **Fix options:** 1. a `scale` parameter and a fit-to-content crop for small parts (recommended). 2. only the crop from 5.37.
 
 ## 5. Drawing parts and pages
 
@@ -417,6 +437,22 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   that is a hidden coupling.
 - **Fix option:** `sketch check` warns on a selector that targets a class from `@shared`.
 
+### 5.44 A grid of interaction states cannot be built with a helper - open
+
+- **Pain:** `components/comment-pin`: `definePart({ grid })` needs literal state names. A helper
+  that builds `${prefix}-hover` keys fails with a long type error, so the agent wrote 20 states and
+  the grid by hand.
+- **Fix options:** 1. a typed `interactionRow(prefix)` helper in `@design-system` (recommended). 2.
+  a shorter type error that names the state.
+
+### 5.45 Agent logos exist in three copies - open
+
+- **Pain:** a component cannot import from a page, so the `components/comment-pin` sketch holds a
+  third copy of the agent logos (after `pages/inbox` and `pages/sketches`), with brand hex colours
+  in TS.
+- **Fix option:** the agent logos become a foundation asset: an icon set in `assets/` with a named
+  export in a foundations part, then the pages and the pin import it (recommended, follows 5.13).
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
@@ -449,6 +485,11 @@ section without a page.
 - The head of the "Aktuell" column.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
+
+### 6.2 No example of a sketch with `@shared/` - open
+
+- **Pain:** `components/comment-pin`: the agent found no sketch with `@shared/` to copy from.
+- **Fix option:** a short example in the design-exploration skill.
 
 ## 7. Open checks
 
