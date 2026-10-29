@@ -1,5 +1,6 @@
 import { existsSync } from 'fs';
 import { resolve } from 'path';
+import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { findCheckoutRoot } from './paths';
 import { designComment, designInbox } from './inbox-command';
@@ -77,6 +78,11 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} sketch rebase <layer>/<name> --by <model id>`,
     '  After bringing each variant up to date with the product, record the product as it is now for the merge.',
+    '',
+    `${invocation} ${ACCEPT_USAGE}`,
+    "  Record a direct edit of a merged part that the user approved without a sketch: writes the part's hash to",
+    '  merged.json, so check stops warning of it, and logs who accepted it and why in accepted.json. Refuses an unknown',
+    '  part, a part with an open sketch, and a part with no change outside a sketch.',
     '',
     `${invocation} ${SHOT_USAGE}`,
     '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
@@ -198,6 +204,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designSketch({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'accept') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designAccept({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'shot') {

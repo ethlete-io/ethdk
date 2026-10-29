@@ -40,7 +40,7 @@ export const recordMerged = (options: { productDir: string; parts: string[] }) =
   writeFileSync(mergedFileOf(productDir), `${JSON.stringify(sorted, null, 2)}\n`);
 };
 
-const sketchedPartsOf = (product: ResolvedProduct) =>
+export const sketchedPartsOf = (product: ResolvedProduct) =>
   new Set(
     listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) =>
       typeof sketch === 'string'
@@ -69,4 +69,55 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
   const sketched = sketchedPartsOf(product);
 
   return changed.map(partKeyOf).filter((key) => !sketched.has(key));
+};
+
+export const ACCEPTED_FILE = 'accepted.json';
+
+export type Acceptance = { part: string; by: string; note: string; hash: string; at: string };
+
+export const readAccepted = (productDir: string): Acceptance[] => {
+  const file = resolve(productDir, ACCEPTED_FILE);
+
+  if (!existsSync(file)) return [];
+
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+
+    return Array.isArray(parsed) ? (parsed as Acceptance[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Records a direct edit of a merged part the user approved: writes the part's current hash to `merged.json` and
+ * logs who accepted it and why in `accepted.json`. Answers with why nothing was accepted, or `null`.
+ */
+export const acceptPart = (options: {
+  product: ResolvedProduct;
+  part: string;
+  by: string;
+  note: string;
+}): string | null => {
+  const { product, part, by, note } = options;
+
+  if (!product.parts.some((candidate) => partKeyOf(candidate) === part)) return `NO PART "${part}" in ${product.name}`;
+
+  if (sketchedPartsOf(product).has(part))
+    return `${part} has an open sketch - merge or discard it; a merge records the part`;
+
+  if (!changedOutsideSketchOf(product).includes(part))
+    return `${part} has no change outside a sketch - nothing to accept`;
+
+  recordMerged({ productDir: product.dir, parts: [part] });
+
+  const hash = readMerged(product.dir)[part] ?? '';
+  const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString() };
+
+  writeFileSync(
+    resolve(product.dir, ACCEPTED_FILE),
+    `${JSON.stringify([...readAccepted(product.dir), entry], null, 2)}\n`,
+  );
+
+  return null;
 };
