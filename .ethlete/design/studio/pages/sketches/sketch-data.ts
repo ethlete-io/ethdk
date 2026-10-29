@@ -1,6 +1,6 @@
 import { html } from '@design-system';
 import { type Props as CommentPinProps } from '@system/components/comment-pin';
-import { type Agent, agentLogo } from './agent-logos';
+import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
 export type VariantKey = 'current' | 'g' | 'h' | 'i';
 

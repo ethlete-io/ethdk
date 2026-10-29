@@ -124,7 +124,7 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
 
 export default definePart<Props>({
   note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available.',
-  madeBy: ['claude-opus-5-5', 'gpt-6'],
+  madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
   states: {
     'page-sketch': { camera: 'fit' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },

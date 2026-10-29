@@ -9,7 +9,7 @@ export const commentPinStyles = styles;
 
 export default definePart({
   note: "Merged variant a of Count alignment: the count is a badge on the teardrop's head.",
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states,
   grid,
   render: (props: Props) => drawing({ body: `<span class="st-pin-stage">${commentPinMark(props)}</span>`, styles }),

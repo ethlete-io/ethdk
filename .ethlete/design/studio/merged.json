@@ -1,5 +1,5 @@
 {
-  "components/comment-pin": "4c1c4e7ede5067a1",
+  "components/comment-pin": "30be49b7433bb959",
   "components/tree-row": "7483d6fcd9178be3",
   "elements/canvas-frames": "3cac4c1dfffce8be",
   "elements/part-tree": "bc6764638ee1f7c5",
@@ -10,7 +10,7 @@
   "pages/flows": "b104c674c8fe859f",
   "pages/inbox": "d0e55706c8de0604",
   "pages/merge": "968896f24258aa39",
-  "pages/sketches": "1b6e4ca9b8bfcf30",
+  "pages/sketches": "14c19274a6ceed4a",
   "pages/start": "edb5ce2bbf44011c",
   "pages/system": "2c2356af2649fc97"
 }

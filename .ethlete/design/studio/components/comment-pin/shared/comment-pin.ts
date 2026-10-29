@@ -1,4 +1,4 @@
-import { type Agent, agentLogo } from './agent-logos';
+import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
 export type PinInteraction = 'hover' | 'focus-visible' | 'active';
 
