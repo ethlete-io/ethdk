@@ -445,6 +445,11 @@ draw the same case. Until then it stays in the one element or page that draws it
 host draws it, open a component sketch, and list in its brief every host and every case each one
 draws, so the component covers them all.
 
+A component documents its states per axis, not every combination: for example kind, end mark and
+interaction (rest, hover, focus-visible, selected, inert), plus only the combinations that look
+different. A smaller piece with no states of its own, such as an icon set, is a foundation asset,
+not a component.
+
 ## Draw from the design system
 
 A call that invents its own button, field or row does not match the calls beside it. **Before
