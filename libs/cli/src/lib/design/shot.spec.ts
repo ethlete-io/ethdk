@@ -21,7 +21,13 @@ let overlayCount = 0;
 let frameError: string | null = null;
 const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
 const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
-  script.includes('data-et-part') ? marks : script.includes('data-et-error') ? frameError : true,
+  script.includes('data-et-part')
+    ? marks
+    : script.includes('data-et-error')
+      ? frameError
+      : script.includes('innerHTML')
+        ? '<p>card</p>'
+        : true,
 );
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
@@ -448,8 +454,8 @@ describe('createPartShooter pictures', () => {
         params: new URLSearchParams(),
       });
 
-    expect(await ask(null)).toEqual({ png: Buffer.from('fitted'), marks });
-    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks });
+    expect(await ask(null)).toEqual({ png: Buffer.from('fitted'), marks, markup: '<p>card</p>' });
+    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>' });
     expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
       expect.stringContaining('true ?'),
       expect.stringContaining('false ?'),

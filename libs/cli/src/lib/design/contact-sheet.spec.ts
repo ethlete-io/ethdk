@@ -35,6 +35,16 @@ describe('contactSheetHtml', () => {
       '<canvas data-before="data:image/png;base64,YQ==" data-after="data:image/png;base64,Yg=="></canvas>',
     );
   });
+
+  it('says so when the pixels match but the markup differs', () => {
+    const png = Buffer.from('a');
+    const html = contactSheetHtml([
+      [{ label: 'a vs merged', before: png, after: png, over: 'a', markupDiffers: true }],
+    ]);
+
+    expect(html).toContain('<figure data-diff data-over="a" data-markup-differs>');
+    expect(html).toContain('<pre class="same">no pixel change, but the markup differs</pre>');
+  });
 });
 
 describe('diffPixelsOf', () => {

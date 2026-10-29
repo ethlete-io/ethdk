@@ -296,6 +296,27 @@ describe('withDiffRows', () => {
     ]);
   });
 
+  it('marks a comparison whose markup differs', () => {
+    const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: true });
+    const plan = planOf({ base, rows, statesOf: () => ['rest', 'busy'], states: true, state: null });
+    const png = Buffer.from('m');
+    const sheet = [
+      [
+        { label: 'merged / rest', png, markup: '<p>rest</p>' },
+        { label: 'merged / busy', png, markup: '<p>busy</p>' },
+      ],
+      [
+        { label: 'a / rest', png, markup: '<p>rest</p><i>pin</i>' },
+        { label: 'a / busy', png, markup: '<p>busy</p>' },
+      ],
+    ];
+
+    expect(withDiffRows({ rows, plan, sheet })[2]).toEqual([
+      { label: 'a / rest vs merged', before: png, after: png, over: 'a / rest', markupDiffers: true },
+      { label: 'a / busy vs merged', before: png, after: png, over: 'a / busy' },
+    ]);
+  });
+
   it('heads a sheet without a merged row with a note that the part is new', () => {
     const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: false });
     const plan = planOf({ base, rows, statesOf: () => ['rest'], states: true, state: null });

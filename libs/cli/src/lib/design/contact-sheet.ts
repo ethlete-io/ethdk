@@ -1,14 +1,18 @@
 import { Browser } from './thumb';
 
 /**
- * One picture on a contact sheet: its label, and the PNG, the reason it could not be drawn, a note, or two PNGs whose
- * changed pixels it marks.
+ * One picture on a contact sheet: its label, and the PNG with the markup it drew, the reason it could not be drawn, a
+ * note, or two PNGs whose changed pixels it marks, and whether the markup behind them differs.
  */
 export type SheetCell =
-  | { label: string; png: Buffer }
+  | { label: string; png: Buffer; markup?: string }
   | { label: string; error: string }
   | { label: string; note: string }
-  | { label: string; before: Buffer; after: Buffer; over?: string };
+  | { label: string; before: Buffer; after: Buffer; over?: string; markupDiffers?: boolean };
+
+const SAME_PIXELS = 'no pixel change';
+
+const SAME_PIXELS_OTHER_MARKUP = 'no pixel change, but the markup differs';
 
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
 
@@ -84,7 +88,8 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
     const caption = figure.firstElementChild;
     const label = caption.textContent;
     const canvas = figure.querySelector('canvas');
-    let result = 'no pixel change';
+    let result = '${SAME_PIXELS}';
+    if (figure.hasAttribute('data-markup-differs')) result = '${SAME_PIXELS_OTHER_MARKUP}';
     if (canvas) {
       const [before, after] = await Promise.all([pixelsOf(canvas.dataset.before), pixelsOf(canvas.dataset.after)]);
       const diff = diffPixelsOf(before, after);
@@ -151,10 +156,10 @@ export const contactSheetHtml = (rows: SheetCell[][]) => {
         : 'note' in entry
           ? `<pre class="note">${escapeHtml(entry.note)}</pre>`
           : entry.before.equals(entry.after)
-            ? `<pre class="same">no pixel change</pre>`
+            ? `<pre class="same">${entry.markupDiffers ? SAME_PIXELS_OTHER_MARKUP : SAME_PIXELS}</pre>`
             : `<canvas data-before="${dataUrlOf(entry.before)}" data-after="${dataUrlOf(entry.after)}"></canvas>`;
   const cell = (entry: SheetCell) =>
-    `<figure${'before' in entry ? ` data-diff data-over="${escapeHtml(entry.over ?? '')}"` : ''}><figcaption>${escapeHtml(entry.label)}</figcaption>${pictureOf(entry)}</figure>`;
+    `<figure${'before' in entry ? ` data-diff data-over="${escapeHtml(entry.over ?? '')}"${entry.markupDiffers ? ' data-markup-differs' : ''}` : ''}><figcaption>${escapeHtml(entry.label)}</figcaption>${pictureOf(entry)}</figure>`;
 
   return `<!doctype html><meta charset="utf-8"><style>
 body{margin:0;padding:16px;width:max-content;background:#d4d4d8;font:600 13px/1.2 system-ui,sans-serif;color:#18181b}

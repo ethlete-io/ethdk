@@ -43,7 +43,7 @@ export const withDiffRows = (options: {
     (plan[mergedIndex] ?? []).flatMap((entry, index) => {
       const cell = sheet[mergedIndex]?.[index];
 
-      return cell && 'png' in cell ? [[entry.address.state, cell.png] as const] : [];
+      return cell && 'png' in cell ? [[entry.address.state, cell] as const] : [];
     }),
   );
 
@@ -67,7 +67,19 @@ export const withDiffRows = (options: {
         return [{ label, note: 'error' in own ? own.error : 'not drawn' }];
       }
 
-      return before ? [{ label: `${cell.label} vs merged`, before, after: cell.png, over: cell.label }] : [];
+      if (!before) return [];
+
+      const markupDiffers = before.markup !== undefined && cell.markup !== undefined && before.markup !== cell.markup;
+
+      return [
+        {
+          label: `${cell.label} vs merged`,
+          before: before.png,
+          after: cell.png,
+          over: cell.label,
+          ...(markupDiffers ? { markupDiffers } : {}),
+        },
+      ];
     });
 
     return diffs.length > 0 ? [row, diffs] : [row];
@@ -358,7 +370,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     try {
       const shoot = (label: string, address: PartAddress): Promise<SheetCell> =>
         shooter.pictureOf({ ...address, params }).then(
-          ({ png }) => ({ label, png }),
+          ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
           (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
         );
       const sheet: SheetCell[][] = [];

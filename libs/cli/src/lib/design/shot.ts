@@ -54,8 +54,8 @@ type GraphModule = { id: string | null; importers: Set<GraphModule> };
 /** An element a part render marked as its root, in CSS pixels from the top left of the picture. */
 export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
 
-/** One drawn PNG and the part roots in it. */
-export type Picture = { png: Buffer; marks: PartMark[] };
+/** One drawn PNG, the part roots in it, and the markup of the frame root. */
+export type Picture = { png: Buffer; marks: PartMark[]; markup?: string };
 
 const marksIn = (clip: boolean) => `(() => {
   const origin = ${clip} ? document.getElementById('root').getBoundingClientRect() : { left: -scrollX, top: -scrollY };
@@ -214,7 +214,13 @@ export const createPartShooter = (options: {
 
       if (typeof failure === 'string') throw new ShotFailedError(failure, png);
 
-      return { png, marks: Array.isArray(marks) ? (marks as PartMark[]) : [] };
+      const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
+
+      return {
+        png,
+        marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
+        ...(typeof markup === 'string' ? { markup } : {}),
+      };
     } finally {
       await context.close();
     }
