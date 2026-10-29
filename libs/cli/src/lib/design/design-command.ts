@@ -13,6 +13,7 @@ import { designShot, SHOT_USAGE } from './shot-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
+import { designPart, PART_USAGE } from './system/part-command';
 import { designSystem } from './system/system-command';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
@@ -85,6 +86,10 @@ const helpOf = (invocation: string) =>
     "  Record a direct edit of a merged part that the user approved without a sketch: writes the part's hash to",
     '  merged.json, so check stops warning of it, and logs who accepted it and why in accepted.json. Refuses an unknown',
     '  part, a part with an open sketch, and a part with no change outside a sketch.',
+    '',
+    `${invocation} ${PART_USAGE}`,
+    "  Delete a part's folder and its merged.json entry, rewrite the product tsconfig paths, and resolve its comments.",
+    '  Refuses a base part, a part another part imports, and a part with an open sketch.',
     '',
     `${invocation} ${SHOT_USAGE}`,
     '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
@@ -224,6 +229,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designAccept({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'part') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designPart({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'shot') {

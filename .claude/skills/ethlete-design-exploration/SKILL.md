@@ -241,6 +241,8 @@ one, the part keeps the `note` the picked variant file holds, so write that note
 
 After the user approves a direct edit of a merged part (no sketch), run `et design accept <layer>/<name> --product <p> --by <model id> --note <why>` so `design check` stops warning `changed outside a sketch`. Never accept an edit the user did not approve.
 
+To drop a merged part the user no longer wants (folded back into its host, say), run `et design part remove <layer>/<name> --product <p> --by <model id>`: it deletes the folder, its `merged.json` entry and its tsconfig path, and resolves its comments. It refuses while another part imports it or an open sketch targets it. Never `git rm` a part by hand.
+
 ### Read the inbox
 
 The user comments on a state of a part in Studio, at a point, or on a sketch variant. The sketch of
