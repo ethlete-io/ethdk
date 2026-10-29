@@ -261,13 +261,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `design check` also type-checks open sketches (recommended). 2. it prints that
   it skips open sketches.
 
-### 4.33 A shot of a small part is a thin strip - open
-
-- **Pain:** `components/comment-pin` is 22 px. `/__design/shot` at `width=1440` gives a 1440 x 38
-  strip with the pin in a corner, and the contact sheet cell is tiny. The agent cropped and enlarged
-  with PIL.
-- **Fix options:** 1. a `scale` parameter and a fit-to-content crop for small parts (recommended). 2. only the crop from 5.37.
-
 ### 4.34 A page's replace on another part's markup can match nothing, silently - open
 
 - **Pain:** merge `a47a64158` renamed the canvas cell class from `st-canvas-cell` to `st-sgrid-cell`.

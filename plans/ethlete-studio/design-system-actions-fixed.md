@@ -1099,3 +1099,11 @@ check` warns early.
 - **Fix options:** 1. the contact sheet uses the part's `widths` (recommended). 2. `--scale 2` on
   `shot`.
 - **Fix done (f1046cfef):** the contact sheet draws each state at the part's first `widths` entry (fix of 4.20), so single-row states share one width. Their small size in pixels is 4.33.
+
+### 4.33 A shot of a small part is a thin strip - fixed (95c818e05)
+
+- **Pain:** `components/comment-pin` is 22 px. `/__design/shot` at `width=1440` gives a 1440 x 38
+  strip with the pin in a corner, and the contact sheet cell is tiny. The agent cropped and enlarged
+  with PIL.
+- **Fix options:** 1. a `scale` parameter and a fit-to-content crop for small parts (recommended). 2. only the crop from 5.37.
+- **Fix done (95c818e05):** `/__design/shot?scale=<1-4>` and `design shot --scale <1-4>` draw at that device scale (own cache entry; 400 for a bad scale). The crop already exists: a shot without `width`/`preset` is fitted to the part's content, so `components/comment-pin --states --scale 3` draws legible cells. The design-exploration skill names `--scale`.
