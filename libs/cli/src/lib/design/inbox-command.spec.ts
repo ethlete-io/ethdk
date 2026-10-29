@@ -174,6 +174,48 @@ describe('designComment and designInbox', () => {
     expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).not.toContain('madeBy');
   });
 
+  it('writes the note of inbox done into the variant, never into the product', () => {
+    const target = acme();
+    const lines = output();
+    const config = readConfig(target) ?? {};
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('pages/home');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const homeFile = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+    const variantFile = join(target, DESIGN_DIR, 'acme/sketches/pages-home/a/pages/home/home.ts');
+    const before = readFileSync(homeFile);
+
+    designComment({
+      target,
+      argv: [
+        'pages/home',
+        'empty',
+        '--size',
+        'phone',
+        '--sketch',
+        'pages/home',
+        '--variant',
+        'a',
+        '--product',
+        'acme',
+        'Why?',
+      ],
+      invocation,
+    });
+
+    const id = /^comment (\S+):/u.exec(lines.pop() ?? '')?.[1] ?? '';
+
+    expect(designInbox({ target, argv: ['done', id, '--note', 'Variant a.', '--by', 'gpt-5.6-sol'], invocation })).toBe(
+      0,
+    );
+    expect(readFileSync(homeFile).equals(before)).toBe(true);
+    expect(readFileSync(variantFile, 'utf8')).toContain("note: 'Variant a.'");
+  });
+
   it('refuses a comment without a size, a bad point or a stale part', () => {
     const target = acme();
     const lines = output();

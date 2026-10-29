@@ -33,7 +33,7 @@ const unauthored = (options: { invocation: string; command: string; lines: strin
 /**
  * `et design inbox` lists what waits for the agent - open comment threads whose last word is the user's and the sketches
  * that need a rebase, oldest first - then the threads and the pick and discard decisions waiting for the user.
- * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about and marks the thread addressed.
+ * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about (in the variant, for a thread on a sketch variant) and marks the thread addressed.
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -59,7 +59,7 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
 
     if (!note || note.trim() === '')
       return fail(
-        'inbox done needs --note "<reason>": the note replaces the note of the part the comment was made on, so write it to explain the whole shape of the part - pass the old note unchanged if it still holds.',
+        'inbox done needs --note "<reason>": the note replaces the note of the part the comment was made on (in the sketch variant, for a comment on one), so write it to explain the whole shape of the part - pass the old note unchanged if it still holds.',
       );
 
     const products: ResolvedProduct[] = [];

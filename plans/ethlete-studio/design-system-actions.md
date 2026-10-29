@@ -173,7 +173,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   2. The round note names which states the decision applies to. `sketch ready` warns when a named
      state is unchanged.
 
-### 3.12 `inbox done --note` overwrites the part note in the product - open
+### 3.12 `inbox done --note` overwrites the part note in the product - fixed
 
 - **Pain:** an agent closed a comment on a sketch variant with
   `design inbox done <id> --note "Variante c"`. The command replaced the whole `note` of the product
@@ -187,6 +187,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   1. For a thread on a sketch variant, write the note into that variant, never into the product.
   2. Rename the flag to `--part-note`, and add a separate `--reason` for the closing remark.
   3. Fail when the new note is much shorter than the old one, unless `--force` is given.
+- **Now:** `done` on a sketch thread writes the note into the variant's copy of the part. It never touches the product. If the variant does not hold the part, no part file changes and the comment is only addressed.
 
 ### 3.13 No way to accept a direct edit the user approved - open
 
