@@ -1,0 +1,18 @@
+{
+  "part": "components/comment-pin",
+  "state": "logo-count",
+  "size": "fitted",
+  "text": "das alignment der zahl ist komisch",
+  "point": {
+    "x": 52,
+    "y": 31
+  },
+  "createdAt": "2026-10-29T18:29:48.737Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-29T18:36:58.631Z",
+    "note": "Merged variant a of Count alignment: the count is a badge on the teardrop's head."
+  }
+}

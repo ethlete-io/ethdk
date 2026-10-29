@@ -4,10 +4,13 @@ import styles from './comment-pin.css?inline';
 
 export type { Props } from './shared/comment-pin';
 
+export const commentPinMark = (props: Props) => pin(props);
+export const commentPinStyles = styles;
+
 export default definePart({
-  note: 'Selection by face, as the inbox draws it: an initials pin fills with the accent, a logo pin keeps its surface and takes an accent ring so the brand colour stays readable. The reply count is an accent pill beside the teardrop. Costs two selected looks to learn; the count widens the pin to the right.',
+  note: "Merged variant a of Count alignment: the count is a badge on the teardrop's head.",
   madeBy: ['claude-opus-5-5'],
   states,
   grid,
-  render: (props: Props) => drawing({ body: pin(props), styles }),
+  render: (props: Props) => drawing({ body: `<span class="st-pin-stage">${commentPinMark(props)}</span>`, styles }),
 });
