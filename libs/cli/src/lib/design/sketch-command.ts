@@ -11,12 +11,15 @@ import {
   variantWarningsOf,
 } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+import { shotsShowNoChange } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { recordAutoMerge } from './system/sketch/merged-parts';
 import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
   addVariant,
   createSketch,
+  decideSketch,
   editRound,
   findSketch,
   listSketches,
@@ -286,39 +289,77 @@ const roundEdited = (context: Context) =>
     return 0;
   });
 
-const readied = (context: Context) =>
-  withSketch(context, ({ product, sketch }) => {
-    const problems = variantProblemsOf({ product, sketch }).flatMap(({ variant, problems }) =>
-      [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map(
-        (problem) =>
-          `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`,
-      ),
-    );
+const readied = (context: Context) => {
+  const found = productAndSketchOf(context);
 
-    sketch.variants.forEach((variant) =>
-      variantWarningsOf({ target: context.target, product, sketch, variant }).forEach((warning) =>
-        console.warn(`${sketch.target} ${variant}: ${warning}`),
-      ),
-    );
+  if (typeof found === 'string') return fail(found);
 
-    if (problems.length > 0)
-      return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+  const status = markedReady(context, found);
 
-    const running = runningRoundOf(sketch);
+  if (typeof status === 'number') return status;
 
-    if (running.note.trim() === '')
-      return fail(
-        `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
-      );
+  return autoMerged({ context, ...found, sketch: status.ready });
+};
 
-    const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
+const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch }) => {
+  const { context, product, sketch } = options;
 
-    if (typeof ready === 'string') return fail(ready);
+  console.log(`${sketch.target} is ready`);
 
-    console.log(`${ready.target} is ready`);
+  if (!(await shotsShowNoChange({ target: context.target, config: context.config, product, sketch }))) return 0;
+
+  const author = authorOf(context.args) ?? undefined;
+  const variant = sketch.variants[0] ?? '';
+  const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
+
+  if (typeof decided === 'string') return fail(decided);
+
+  const result = mergeSketch({ target: context.target, config: context.config, product, sketch: decided, author });
+
+  if (!Array.isArray(result)) {
+    console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
 
     return 0;
-  });
+  }
+
+  recordAutoMerge({ productDir: product.dir, part: sketch.target, by: author ?? 'user' });
+  console.log(`No visible change in any state: merged ${sketch.target} automatically.`);
+
+  return 0;
+};
+
+const markedReady = (
+  context: Context,
+  { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
+): number | { ready: Sketch } => {
+  const problems = variantProblemsOf({ product, sketch }).flatMap(({ variant, problems }) =>
+    [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map(
+      (problem) =>
+        `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`,
+    ),
+  );
+
+  sketch.variants.forEach((variant) =>
+    variantWarningsOf({ target: context.target, product, sketch, variant }).forEach((warning) =>
+      console.warn(`${sketch.target} ${variant}: ${warning}`),
+    ),
+  );
+
+  if (problems.length > 0) return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+
+  const running = runningRoundOf(sketch);
+
+  if (running.note.trim() === '')
+    return fail(
+      `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
+    );
+
+  const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
+
+  if (typeof ready === 'string') return fail(ready);
+
+  return { ready };
+};
 
 const rebased = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {

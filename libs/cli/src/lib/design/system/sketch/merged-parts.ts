@@ -73,7 +73,7 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
 
 export const ACCEPTED_FILE = 'accepted.json';
 
-export type Acceptance = { part: string; by: string; note: string; hash: string; at: string };
+export type Acceptance = { part: string; by: string; note: string; hash: string; at: string; auto?: true };
 
 export const readAccepted = (productDir: string): Acceptance[] => {
   const file = resolve(productDir, ACCEPTED_FILE);
@@ -87,6 +87,26 @@ export const readAccepted = (productDir: string): Acceptance[] => {
   } catch {
     return [];
   }
+};
+
+const logAcceptance = (productDir: string, entry: Acceptance) =>
+  writeFileSync(
+    resolve(productDir, ACCEPTED_FILE),
+    `${JSON.stringify([...readAccepted(productDir), entry], null, 2)}\n`,
+  );
+
+/** Logs a sketch merged by itself because no state showed a visible change, as an `auto` entry in `accepted.json`. */
+export const recordAutoMerge = (options: { productDir: string; part: string; by: string }) => {
+  const { productDir, part, by } = options;
+
+  logAcceptance(productDir, {
+    part,
+    by,
+    note: 'merged automatically: no visible change in any state',
+    hash: folderHashOf(resolve(productDir, part)),
+    at: new Date().toISOString(),
+    auto: true,
+  });
 };
 
 /**
@@ -114,10 +134,7 @@ export const acceptPart = (options: {
   const hash = readMerged(product.dir)[part] ?? '';
   const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString() };
 
-  writeFileSync(
-    resolve(product.dir, ACCEPTED_FILE),
-    `${JSON.stringify([...readAccepted(product.dir), entry], null, 2)}\n`,
-  );
+  logAcceptance(product.dir, entry);
 
   return null;
 };

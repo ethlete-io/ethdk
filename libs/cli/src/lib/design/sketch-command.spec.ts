@@ -3,8 +3,11 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
+import { shotsShowNoChange } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { findSketch, Sketch } from './system/sketch/sketch';
+
+vi.mock('./ready-shots', () => ({ shotsShowNoChange: vi.fn(async () => false) }));
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-command-'));
@@ -31,6 +34,58 @@ const write = (target: string, ...argv: string[]) => run(target, ...argv, '--by'
 
 describe('designSketch', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('merges a ready sketch by itself and logs it auto when no state shows a change', async () => {
+    const target = acme();
+    const lines = output();
+    const product = join(target, DESIGN_DIR, 'acme');
+
+    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a',
+      '--round',
+      'Same',
+      '--note',
+      'no change',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('No visible change in any state: merged components/button automatically.');
+    expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
+    expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
+      { part: 'components/button', by: 'claude-opus-5-5', auto: true },
+    ]);
+  });
+
+  it('keeps a sketch ready when a state shows a change', async () => {
+    const target = acme();
+
+    output();
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a',
+      '--round',
+      'Diff',
+      '--note',
+      'changes',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(true);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/accepted.json'))).toBe(false);
+  });
 
   it('names an unknown command and prints the usage', () => {
     const lines = output();
@@ -111,7 +166,7 @@ describe('designSketch', () => {
     });
   });
 
-  it('opens a round without a note, and refuses ready until the round has one', () => {
+  it('opens a round without a note, and refuses ready until the round has one', async () => {
     const target = acme();
     const lines = output();
 
@@ -121,10 +176,10 @@ describe('designSketch', () => {
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
     expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 
-  it('warns of a class two stylesheets of one part define, and still readies', () => {
+  it('warns of a class two stylesheets of one part define, and still readies', async () => {
     const target = acme();
 
     output();
@@ -139,7 +194,7 @@ describe('designSketch', () => {
     writeFileSync(join(folder, 'button.css'), '.acme-button { color: blue; }');
     writeFileSync(ts, `import extra from './extra.css?inline';\n${readFileSync(ts, 'utf8')}`);
 
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('b: WARNING components/button: .acme-button is defined in'),
     );
@@ -174,7 +229,7 @@ describe('designSketch', () => {
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
   });
 
-  it('records the author of every variant that new, variant and ready write', () => {
+  it('records the author of every variant that new, variant and ready write', async () => {
     const target = acme();
     const lines = output();
 
@@ -198,7 +253,7 @@ describe('designSketch', () => {
     const stored = JSON.parse(readFileSync(file, 'utf8'));
     writeFileSync(file, JSON.stringify({ ...stored, variantInfo: { ...stored.variantInfo, d: { round: 'r1' } } }));
 
-    expect(run(target, 'ready', 'components/button', '--by', 'gpt-5.6-terra', '--product', 'acme')).toBe(0);
+    expect(await run(target, 'ready', 'components/button', '--by', 'gpt-5.6-terra', '--product', 'acme')).toBe(0);
     expect(run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
       a: { authors: ['gpt-5.6-sol'], round: 'r1' },
@@ -344,7 +399,7 @@ describe('designSketch', () => {
     expect(JSON.parse(readFileSync(onPart, 'utf8'))).not.toHaveProperty('addressed');
   });
 
-  it('opens, lists, previews, readies and discards a sketch', () => {
+  it('opens, lists, previews, readies and discards a sketch', async () => {
     const target = acme();
     const lines = output();
 
@@ -370,7 +425,7 @@ describe('designSketch', () => {
     );
     expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button is in progress - mark it ready before a merge');
-    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button is ready');
     expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
