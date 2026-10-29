@@ -353,10 +353,32 @@ const checked = async (context: Context) => {
   });
 
   if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-  else
+  else {
+    for (const { sketch, part, state, size } of rendered.drawn) {
+      const rules = [
+        ...new Set(
+          rendered.issues
+            .filter(
+              (issue) =>
+                issue.sketch?.target === sketch?.target &&
+                issue.sketch?.variant === sketch?.variant &&
+                issue.part === part &&
+                issue.state === state &&
+                issue.size === size,
+            )
+            .map((issue) => issue.rule),
+        ),
+      ];
+
+      console.log(
+        `${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${state} at ${size} ${rules.join(' ') || 'ok'}`,
+      );
+    }
+
     rendered.issues.forEach((issue) =>
       console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
     );
+  }
 
   if ('issues' in rendered && rendered.issues.length > 0) return 1;
 

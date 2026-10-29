@@ -79,5 +79,12 @@ if (process.argv[3] === 'reject') reject(new Error('Environment failed'));
 else release();
 await new Promise(setImmediate);
 await new Promise(setImmediate);
-process.stdout.write(JSON.stringify({ initial, body: dom.window.document.getElementById('root').innerHTML, messages }));
+process.stdout.write(
+  JSON.stringify({
+    initial,
+    body: dom.window.document.getElementById('root').innerHTML,
+    error: dom.window.document.documentElement.getAttribute('data-et-error'),
+    messages,
+  }),
+);
 dom.window.close();

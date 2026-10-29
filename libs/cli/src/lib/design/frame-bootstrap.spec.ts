@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 type Result = {
   initial: { evaluated: boolean; body: string; messages: { type: string }[] };
   body: string;
+  error: string | null;
   messages: { type: string; errored?: boolean }[];
 };
 
@@ -39,6 +40,7 @@ describe('design frame bootstrap', () => {
 
     expect(result.initial.evaluated).toBe(true);
     expect(result.body).toContain('Environment failed');
+    expect(result.error).toContain('Environment failed');
     expect(result.messages.at(-1)).toMatchObject({ type: 'design-explore:height', errored: true });
   });
 });

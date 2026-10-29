@@ -12,6 +12,7 @@ import {
   send,
   sendShot,
   settled,
+  ShotFailedError,
   ShotTimeoutError,
   ShotUnprocessableError,
   ThumbMissingError,
@@ -179,6 +180,10 @@ export const createPartShooter = (options: {
         throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
       });
 
+      const failure: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-error')");
+
+      if (typeof failure === 'string') throw new ShotFailedError(failure, png);
+
       return { png, marks: Array.isArray(marks) ? (marks as PartMark[]) : [] };
     } finally {
       await context.close();
@@ -265,12 +270,23 @@ export const createPartShooter = (options: {
 
       const [part, state, preset] = ['part', 'state', 'preset'].map((name) => params.get(name));
       const pixels = width === null ? null : Number(width);
+      const presetWidth = preset && product ? system.productOf(product)?.presets[preset]?.width : undefined;
 
-      if (!product || !part || !state || (preset && width) || (pixels !== null && !isPositiveWhole(pixels))) {
+      if (!product || !part || !state || (pixels !== null && !isPositiveWhole(pixels))) {
         send(response, {
           status: 400,
           type: 'text/plain; charset=utf-8',
           body: 'design-explore: pass product, part, state and at most one of preset and a width in pixels, or call, variant and width',
+        });
+
+        return;
+      }
+
+      if (preset && pixels !== null && presetWidth !== pixels) {
+        send(response, {
+          status: 400,
+          type: 'text/plain; charset=utf-8',
+          body: `design-explore: preset "${preset}" is ${presetWidth ?? 'unknown'} px wide, so width ${pixels} does not match - pass one of them, or the width the preset has`,
         });
 
         return;
@@ -283,7 +299,7 @@ export const createPartShooter = (options: {
           part,
           state,
           preset: preset ?? null,
-          width: pixels,
+          width: preset ? null : pixels,
           sketch: sketch && variant ? { target: sketch, variant } : null,
           interaction: params.get('interaction'),
           params,

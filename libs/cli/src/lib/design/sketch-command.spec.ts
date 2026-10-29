@@ -369,6 +369,7 @@ export default definePart({
     expect(lines).toContain(
       'elements/hero b: WRAP acme elements/hero default at fitted: button[data-et-part=elements/hero] - "Save the draft now" breaks onto 4 lines',
     );
-    expect(lines.filter((line) => line.startsWith('elements/hero a:'))).toEqual([]);
+    expect(lines).toContain('elements/hero a: elements/hero default at fitted ok');
+    expect(lines).toContain('elements/hero b: elements/hero default at fitted WRAP');
   }, 120_000);
 });

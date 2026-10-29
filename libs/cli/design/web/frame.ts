@@ -39,8 +39,13 @@ if (fit) {
   root.style.padding = '16px';
 }
 
-const fail = (message: string) => {
+const markFailed = (message: string) => {
   errored = true;
+  document.documentElement.setAttribute('data-et-error', message);
+};
+
+const fail = (message: string) => {
+  markFailed(message);
 
   const text = document.createElement('pre');
 
@@ -54,7 +59,7 @@ const fail = (message: string) => {
 };
 
 const showSetupError = (message: string) => {
-  errored = true;
+  markFailed(message);
 
   const banner = document.createElement('pre');
 

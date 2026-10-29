@@ -19,6 +19,9 @@ export type RenderIssue = {
   sketch: SketchVariant | null;
 };
 
+/** One state of a part that was drawn, at the size it was drawn in. */
+export type RenderedState = Pick<RenderIssue, 'product' | 'part' | 'state' | 'size' | 'sketch'>;
+
 /** The parts of one product to draw, as it draws or as one sketch variant draws it; every part when `parts` is null. */
 export type RenderJob = { product: string; sketch: SketchVariant | null; parts: string[] | null };
 
@@ -211,11 +214,11 @@ export const renderIssuesOf = async (options: {
   config: DesignConfig;
   jobs: RenderJob[];
   chromiumOf?: typeof chromiumOf;
-}): Promise<{ issues: RenderIssue[] } | { unavailable: string }> => {
+}): Promise<{ issues: RenderIssue[]; drawn: RenderedState[] } | { unavailable: string }> => {
   const { target, config, jobs } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
 
-  if (jobs.length === 0) return { issues: [] };
+  if (jobs.length === 0) return { issues: [], drawn: [] };
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -300,7 +303,16 @@ export const renderIssuesOf = async (options: {
 
     issues.push(...(await queue.run((browser) => inspect({ browser, base, frames }))));
 
-    return { issues };
+    return {
+      issues,
+      drawn: frames.map(({ address }) => ({
+        product: address.product,
+        part: address.part,
+        state: address.state,
+        size: address.preset ?? (address.width ? `${address.width}px` : 'fitted'),
+        sketch: address.sketch,
+      })),
+    };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
 

@@ -21,6 +21,16 @@ export class ThumbMissingError extends Error {}
 
 export class ShotUnprocessableError extends Error {}
 
+/** A frame that drew its own error text: the shot is that picture, answered with a failing status. */
+export class ShotFailedError extends Error {
+  constructor(
+    message: string,
+    readonly png: Buffer,
+  ) {
+    super(message);
+  }
+}
+
 export class ShotTimeoutError extends Error {}
 
 const frameWidthOf = (slug: string) => `(async (slug) => {
@@ -100,20 +110,25 @@ export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
   void shot.then(
     (body) => send(response, { status: 200, type: 'image/png', body }),
     (error: unknown) =>
-      send(response, {
-        status:
-          error instanceof ThumbUnavailableError
-            ? 503
-            : error instanceof ThumbMissingError
-              ? 404
-              : error instanceof ShotUnprocessableError
-                ? 422
-                : error instanceof ShotTimeoutError
-                  ? 504
-                  : 500,
-        type: 'text/plain; charset=utf-8',
-        body: error instanceof Error ? error.message : String(error),
-      }),
+      send(
+        response,
+        error instanceof ShotFailedError
+          ? { status: 500, type: 'image/png', body: error.png }
+          : {
+              status:
+                error instanceof ThumbUnavailableError
+                  ? 503
+                  : error instanceof ThumbMissingError
+                    ? 404
+                    : error instanceof ShotUnprocessableError
+                      ? 422
+                      : error instanceof ShotTimeoutError
+                        ? 504
+                        : 500,
+              type: 'text/plain; charset=utf-8',
+              body: error instanceof Error ? error.message : String(error),
+            },
+      ),
   );
 
 export const send = (response: ServerResponse, { status, type, body }: Shot) => {

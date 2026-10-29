@@ -18,9 +18,10 @@ const boundingBox = vi.fn<() => Promise<{ width: number; height: number } | null
   height: 80,
 }));
 let overlayCount = 0;
+let frameError: string | null = null;
 const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
 const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
-  script.includes('data-et-part') ? marks : true,
+  script.includes('data-et-part') ? marks : script.includes('data-et-error') ? frameError : true,
 );
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
@@ -46,6 +47,7 @@ const closing: (() => Promise<void>)[] = [];
 beforeEach(() => {
   vi.clearAllMocks();
   overlayCount = 0;
+  frameError = null;
 });
 
 afterEach(async () => {
@@ -211,6 +213,16 @@ describe('createPartShooter', () => {
     expect(newContext).toHaveBeenCalledTimes(3);
   });
 
+  it('accepts a preset with the width the preset has, and names both values in the 400 when they differ', async () => {
+    const { shots } = acme();
+
+    expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=390')).status).toBe(200);
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=480')).toMatchObject({
+      status: 400,
+      body: expect.stringMatching(/phone.*390.*480/),
+    });
+  });
+
   it('answers 400 without a product, part or state, for a preset with a width or a bad width, and 404 for one the product lacks', async () => {
     const { shots } = acme();
 
@@ -255,6 +267,18 @@ describe('createPartShooter broken shots', () => {
       status: 504,
       type: 'text/plain; charset=utf-8',
       body: expect.stringContaining('timed out'),
+    });
+  });
+
+  it('answers 500 with the picture of the error when the frame drew its own error text', async () => {
+    const { shots } = acme();
+
+    frameError = 'design-explore: state "long" failed';
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 500,
+      type: 'image/png',
+      body: Buffer.from('png'),
     });
   });
 
