@@ -85,7 +85,10 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    friction 3.18-3.21 is open. Built and moved: 1.3, 3.17, 4.12, 5.12 (`293caba5c`). Still open:
    2.2, 2.6, 7.x Rust side (needs the Tauri host). The real `foundations/logo` sketch was already
    `ready`, so the new auto-merge does not apply to it; Tom merges it.
-5. Free to build next: 3.18 (`sketch report` silent), 3.21 (`COMMENT` blocks `ready`), 3.19.
+5. Built 2026-10-29: 3.18, 3.21 and assets 5.13 (`5b73392d9`, fonts and icons included), moved to
+   fixed in `3270f820c`. Free to build next: 5.14 (recommendation option 1), 3.19. After Tom merges
+   `foundations/logo`: a one-variant sketch that moves the mark to `assets/studio-mark.svg` and
+   keeps `studioMark(size)` as the wrapper, then `pages/start` imports it.
 6. Merge compare page, then components, then page states, then the real app.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
