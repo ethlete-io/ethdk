@@ -799,3 +799,23 @@ sketch` until the next merge of the part.
 
 - **Fix done:** in `16869af08`, the part passes `class`, `style`, `icon`, `iconAlignment` and `tag` through.
 - **Open:** the mock has no `aria-label`, so an icon-only button still has no accessible name. Fix option: an `ariaLabel` option in `libs/components/design/button.ts`.
+
+### 3.25 `sketch variant --round --note` replaces the old round's note - fixed
+
+- **Pain:** on `pages/merge` round r2 the note "why it lost" overwrote round r1's description. The
+  agent restored it by hand with `sketch round pages/merge r1 --note`.
+- **Fix options:** 1. store "why it lost" as its own field (recommended). 2. refuse without
+  `--replace-note` and print the old note.
+
+- **Seen again (2026-10-29):** on `components/tree-row` r2 the original r1 note was lost; I
+  rewrote it from memory.
+- **Built (`1a47bbb78`):** option 1. `sketch variant --round --note` writes the reason into the
+  running round's `lost` field; its `note` stays. Studio shows "Lost: ..." in the round head.
+
+### 3.26 A new round starts with an empty note - fixed
+
+- **Pain:** `sketch variant --round` gives the new round no note, and `sketch ready` refuses it. The
+  agent had to run `sketch round <part> r2 --note` as an extra step.
+- **Fix option:** a `--round-note` flag on `sketch variant --round`.
+- **Built (`1a47bbb78`):** `--round-note <text>`. Without it the CLI prints that `sketch ready`
+  needs a note.

@@ -106,22 +106,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.25 `sketch variant --round --note` replaces the old round's note - open
-
-- **Pain:** on `pages/merge` round r2 the note "why it lost" overwrote round r1's description. The
-  agent restored it by hand with `sketch round pages/merge r1 --note`.
-- **Fix options:** 1. store "why it lost" as its own field (recommended). 2. refuse without
-  `--replace-note` and print the old note.
-
-- **Seen again (2026-10-29):** on `components/tree-row` r2 the original r1 note was lost; I
-  rewrote it from memory.
-
-### 3.26 A new round starts with an empty note - open
-
-- **Pain:** `sketch variant --round` gives the new round no note, and `sketch ready` refuses it. The
-  agent had to run `sketch round <part> r2 --note` as an extra step.
-- **Fix option:** a `--round-note` flag on `sketch variant --round`.
-
 ### 3.27 `sketch new` writes a `sketch.json` that Prettier rejects - open
 
 - **Pain:** the agent formatted the new `sketch.json` of `components/tree-row` by hand.
@@ -249,6 +233,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   accent theme and `danger`; the SDK `--et-theme-color-*` aliases resolve to SDK blue. Both
   variants used `--accent-text`.
 - **Fix option:** a sketch on Studio's foundations that adds a theme of type `warning`.
+
+### 5.26 The CLI cannot remove a merged part - open
+
+- **Pain:** to fold `components/tree-row` back into its host, the agent found no command. A manual
+  `git rm` leaves its comments, its `merged.json` entry and its `tsconfig.json` path behind.
+- **Fix option:** `design part remove <layer>/<name>`. It refuses while a part imports it, and it
+  resolves the part's comments.
+
+### 5.27 `design check` does not see a class that no CSS defines - open
+
+- **Pain:** `pages/flows` draws its flow list with `st-tree-row`, `st-tree-lead` and `st-tree-label`.
+  Since `part-tree` draws with `tree-row` (`561cbea6c`), no CSS defines them. No check reported it.
+- **Fix option:** a render check rule that reports a class in a part's markup that no loaded
+  stylesheet and no utility defines.
 
 ## 6. Agent process
 
