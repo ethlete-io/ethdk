@@ -506,12 +506,6 @@ const designExplore = ({
   },
 });
 
-/**
- * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
- * middleware mode only to load design modules for a command. With `port`, it listens there instead
- * (0 picks a free one), quiet, unwatched and with a dependency cache of its own, so a command can draw
- * while the user's server runs.
- */
 const freePortOf = () =>
   new Promise<number>((resolvePort, reject) => {
     const probe = createNetServer();
@@ -524,6 +518,12 @@ const freePortOf = () =>
     });
   });
 
+/**
+ * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
+ * middleware mode only to load design modules for a command. With `port`, it listens there instead
+ * (0 picks a free one), quiet, unwatched and with a dependency cache of its own, so a command can draw
+ * while the user's server runs.
+ */
 export const createDesignServer = async (options: {
   target: string;
   config: DesignConfig;
@@ -531,9 +531,10 @@ export const createDesignServer = async (options: {
   port?: number;
   host?: string;
 }) => {
-  const { target, config, listen, port } = options;
+  const { target, config, listen } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
-  const own = listen && port !== undefined;
+  const own = listen && options.port !== undefined;
+  const port = own ? await freePortOf() : options.port;
 
   writeCallsTsconfig(target);
 
