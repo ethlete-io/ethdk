@@ -104,8 +104,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** five cleanup sketches (4.40) went `ready` one after the other. Four merged at once;
   `pages/merge` printed `auto-merge skipped: variant a changes open`. `design shot pages/merge
-  --states --variants` then said "no pixel change, but the markup differs", and a second `sketch
-  ready` merged it. The first shot probably ran against a base that the merges just before had
+--states --variants` then said "no pixel change, but the markup differs", and a second `sketch
+ready` merged it. The first shot probably ran against a base that the merges just before had
   changed (`elements/shell-main`, `components/tree-row`), so the result is flaky.
 - **Fix options:** 1. `autoMerged` draws the merged side fresh after a base change since the
   sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the

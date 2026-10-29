@@ -202,7 +202,7 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     recommend option 1), 4.40 (UNDEFINED-CLASS cleanup sketches), 5.51, 5.52, 5.55, 5.56; comment-pin
     hosts: one-variant sketches on `pages/inbox` and `pages/sketches` switch to `commentPin.styles`,
     then a comment-pin sketch drops `commentPinStyles`. Then tokens split 2.12 (`design part
-    remove` exists now).
+remove` exists now).
     Update 2026-10-29 late night: pin hosts read `commentPin.styles` (`2e4348ab9`),
     `commentPinStyles` gone (`98e257959`); 4.39 option 1 built (`ee9b8ad8d`); 4.40 cleanup sketches
     merged (`798fe4cc3`), new finding 3.41 (flaky auto-merge skip). Tokens split 2.12: Tom picked
