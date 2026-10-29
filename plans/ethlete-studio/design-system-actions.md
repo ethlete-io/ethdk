@@ -196,6 +196,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** `shot --diff-props <variant>` draws the merged part with the variant's state
   props, so the diff shows only the visual change.
 
+### 4.23 The render check misses a clipped text decoration - open
+
+- **Pain:** in tree-row r4 i, the label's `overflow: hidden` cut off the red wavy underline. CLIPPED
+  did not fire; the agent saw it only in the shot.
+- **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
+  `overflow: hidden`).
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
