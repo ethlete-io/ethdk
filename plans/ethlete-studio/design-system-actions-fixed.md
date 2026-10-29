@@ -1354,18 +1354,4 @@ check` warns early.
 - **Pain:** with the styles on `definePart`, `render` has nothing to return, but `drawing()`
   requires `styles`, so the variant writes `styles: ''`.
 - **Fix option:** make `Drawing.styles` optional.
-
-### 5.55 `embedPage` cannot mark or restyle inside the embedded page - open
-
-- **Pain:** `pages/merge` variant a (round "No page import") embeds `pages/system`. The merge CSS
-  cannot reach into the iframe, so the button loses its accent ring, and the "After merging" side
-  cannot show the new look. Only the 200 % crop still shows the change.
-- **Fix option:** an `embedPage` option, for example `{ mark: '.et-button', css: '...' }`, that the
-  embedded frame applies inside itself.
-
-### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - open
-
-- **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
-  shrinks the page twice. Nothing warns.
-- **Fix option:** the skill says to use one or the other; a check warns when both are set.
 - **Fix done (8f31c1530):** The option: `Drawing.styles` is optional, so a variant draws `drawing({ body })`. `definePart` always answers a string of styles (the part's stylesheet plus what `render` returned, `''` for none) through the new `DrawnPart` type, so a host still adds up `x.styles`; the frame and the unchanged-states check take a missing `styles` as `''`.

@@ -287,6 +287,20 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Fix options:** 1. `design tokens theme add <name> --type <type> --oklch ...` writes all blocks
   (recommended). 2. the skill names the places.
 
+### 5.55 `embedPage` cannot mark or restyle inside the embedded page - open
+
+- **Pain:** `pages/merge` variant a (round "No page import") embeds `pages/system`. The merge CSS
+  cannot reach into the iframe, so the button loses its accent ring, and the "After merging" side
+  cannot show the new look. Only the 200 % crop still shows the change.
+- **Fix option:** an `embedPage` option, for example `{ mark: '.et-button', css: '...' }`, that the
+  embedded frame applies inside itself.
+
+### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - open
+
+- **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
+  shrinks the page twice. Nothing warns.
+- **Fix option:** the skill says to use one or the other; a check warns when both are set.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
