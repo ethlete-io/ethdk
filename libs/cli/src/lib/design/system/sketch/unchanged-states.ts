@@ -2,9 +2,9 @@ import { createHash } from 'crypto';
 import { PictureOf } from '../../merge-compare';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
-import { baselineOf } from './baseline';
+import { baselineOf, partHashOf } from './baseline';
 import { overlaySketch } from './overlay';
-import { Sketch } from './sketch';
+import { sharedDirOf, Sketch, variantDirOf } from './sketch';
 
 export type SketchPartLoader = (options: {
   file: string;
@@ -115,7 +115,7 @@ const drawsTheSame = async (options: {
  * does now, with the same widths and interactions, so every frame of them matches. With `pictureOf`, a state
  * with the same markup but other styles is unchanged when every frame draws the same pixels in the default
  * theme. A state the product lacks, or one that fails to render on either side, is never unchanged. Cached by
- * the content hashes of the part folders and fixtures on both sides.
+ * the content hashes of the part folders and fixtures on both sides, the variant folder and the sketch's `shared/`.
  */
 export const unchangedStatesOf = async (options: {
   product: ResolvedProduct;
@@ -133,7 +133,16 @@ export const unchangedStatesOf = async (options: {
   if (!merged || !drawn) return [];
 
   const key = hashOf(
-    JSON.stringify([sketch.dir, sketch.target, variant, baselineOf(product), baselineOf(overlaid), !!pictureOf]),
+    JSON.stringify([
+      sketch.dir,
+      sketch.target,
+      variant,
+      baselineOf(product),
+      baselineOf(overlaid),
+      partHashOf({ product, dir: sharedDirOf(sketch) }),
+      partHashOf({ product, dir: variantDirOf(sketch, variant) }),
+      !!pictureOf,
+    ]),
   );
   const known = cache.get(key);
 

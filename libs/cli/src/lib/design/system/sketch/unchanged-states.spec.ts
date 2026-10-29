@@ -1,10 +1,10 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { createSketch, Sketch, variantDirOf } from './sketch';
+import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 
@@ -162,6 +162,33 @@ describe('unchangedStatesOf', () => {
     expect(calls).toHaveLength(2);
 
     writeFileSync(resolve(hero, 'hero.css'), '.acme-hero { color: red; }');
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'a', load })).toEqual([]);
+    expect(calls).toHaveLength(4);
+  });
+
+  it('renders again after a file in the sketch shared folder changes', async () => {
+    const { product, sketch } = acme();
+    const shared = resolve(sharedDirOf(sketch), 'data.ts');
+    const { calls, load: counted } = counting();
+    const load: SketchPartLoader = async (options) => {
+      const loaded = (await counted(options)) as { default: { render: (props: unknown) => { body: string } } };
+      const spaced = options.sketch !== null && readFileSync(shared, 'utf8').includes('spaced');
+
+      return {
+        default: {
+          ...loaded.default,
+          render: (props: unknown) => ({ ...loaded.default.render(props), ...(spaced ? { body: 'spaced' } : {}) }),
+        },
+      };
+    };
+
+    mkdirSync(dirname(shared), { recursive: true });
+    writeFileSync(shared, 'export const rows = [];');
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'a', load })).toEqual(['default']);
+
+    writeFileSync(shared, 'export const rows = []; // spaced');
 
     expect(await unchangedStatesOf({ product, sketch, variant: 'a', load })).toEqual([]);
     expect(calls).toHaveLength(4);
