@@ -183,7 +183,13 @@ export type MatrixColumnPlace = { name: string; x: number; width: number; y?: nu
 
 export type MatrixLayout = SheetLayout & { columns: MatrixColumnPlace[] };
 
-export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?: number; headGap?: number };
+export type MatrixSpacing = SheetSpacing & {
+  emptyColumnWidth: number;
+  groupGap?: number;
+  headGap?: number;
+  /** The least room a frame row takes, so the labels and badges of a short row do not reach into the next. */
+  minRowHeight?: number;
+};
 
 /** A row without frames, `height` tall: above the frame row `before` names, else below every frame row. */
 export type MatrixHeadRow = { name: string; height: number; before?: string };
@@ -270,7 +276,7 @@ export const layoutMatrix = ({
         });
     }
 
-    y += Math.max(...members.map((m) => m.height + (below[m.id] ?? 0))) + spacing.rowGap;
+    y += Math.max(spacing.minRowHeight ?? 0, ...members.map((m) => m.height + (below[m.id] ?? 0))) + spacing.rowGap;
   }
 
   return { frames: placed, rows, columns: placedColumns };

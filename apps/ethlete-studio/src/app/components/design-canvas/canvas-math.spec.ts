@@ -233,6 +233,21 @@ describe('canvas math', () => {
     ]);
   });
 
+  it('gives a row of short frames at least the minimum row height', () => {
+    const layout = layoutMatrix({
+      frames: [
+        { id: 'a', width: 100, height: 10, row: 'a', column: 'x' },
+        { id: 'b', width: 100, height: 10, row: 'b', column: 'x' },
+        { id: 'c', width: 100, height: 90, row: 'c', column: 'x' },
+        { id: 'd', width: 100, height: 10, row: 'd', column: 'x' },
+      ],
+      columns: ['x'],
+      spacing: { columnGap: 40, rowGap: 48, emptyColumnWidth: 320, minRowHeight: 64 },
+    });
+
+    expect(layout.rows.map((row) => row.y)).toEqual([0, 112, 224, 362]);
+  });
+
   it('starts a matrix row below what hangs under the frames of the row above', () => {
     const layout = layoutMatrix({
       frames: [

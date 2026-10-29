@@ -70,6 +70,7 @@ const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
 const ROW_HEAD_HEIGHT = 48;
 const ROW_HEAD_GAP = 24;
+const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const LABEL_MIN_ZOOM = 0.25;
@@ -272,6 +273,7 @@ export class DesignCanvasComponent {
       rowGap,
       groupGap: rowGap * GROUP_GAP_FACTOR,
       headGap: ROW_HEAD_GAP,
+      minRowHeight: MIN_FRAME_ROW_HEIGHT,
       emptyColumnWidth: FALLBACK_WIDTH,
     };
     const headOf = (head: CanvasRowHead) => ({
