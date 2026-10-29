@@ -988,6 +988,7 @@ sketch` until the next merge of the part.
   state per case times every interaction.
 
 - **Fix:** a matrix frame row takes at least 64 px, so short rows keep room for their labels and badge. Not checked on a live tree-row sketch (none was open).
+- **Checked on screen (2026-10-29):** `studio-lab` `elements/rating` sketch, 57 px frames: rows sit 112 px apart (64 + 48 gap), labels clear of the frames.
 
 ### 3.31 A refactor sketch looks like a copy of "current" in Studio - fixed (6b4748a5c)
 
@@ -1108,3 +1109,28 @@ check` warns early.
   with PIL.
 - **Fix options:** 1. a `scale` parameter and a fit-to-content crop for small parts (recommended). 2. only the crop from 5.37.
 - **Fix done (95c818e05):** `/__design/shot?scale=<1-4>` and `design shot --scale <1-4>` draw at that device scale (own cache entry; 400 for a bad scale). The crop already exists: a shot without `width`/`preset` is fitted to the part's content, so `components/comment-pin --states --scale 3` draws legible cells. The design-exploration skill names `--scale`.
+
+### 2.6 Note cards overlap the next row - fixed (fe8130d06)
+
+- **Pain:** between 25% and 100% zoom, note cards reach into the next row of the matrix.
+- **Fix:** reserve note room at the fitted zoom / accept it.
+- **Check (2026-10-29):** still broken. On `components/button` the cards cover outline-row frames
+  from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
+  does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
+
+- **Fix (option: reserve the room, simplest that keeps every frame clickable; Tom gave no recommendation):** the notes of a grid cell hang below the whole grid frame (they hung below the cell, over the next grid row); sheet and grid layouts keep room below a noted frame like the matrix; a note column stops growing at 2x when zoomed out and the layout reserves that 2x room. Headless on `studio-lab` `components/button`: 0 px² of card over any frame at every zoom from 22 % to 440 %.
+
+### 2.11 The "used in" label of a foundation draws its two lines on top of each other - fixed (410af1a2d)
+
+- **Pain:** `foundations/tokens` (Tom's screen, 2026-10-29): "every page of the product uses it"
+  wraps in a small box and the two lines overlap. Label from `system-tree.ts:509` (finding 2.7).
+- **Fix option:** give the label a real line height and a width that fits one line (recommended).
+
+- **Fix:** the text of an empty frame gets `leading-tight` (it inherited a fixed 22.5 px line height, so at 36 px font the lines overlapped) and its scale stops at 2x, so wrapped lines stay inside the 390 x 120 box. Headless: no overflow at 11 %.
+
+### 4.21 `design shot` has no `--interaction` flag - fixed (f697a3151)
+
+- **Pain:** the agent found the `interaction=` query parameter of `/__design/shot` only in
+  `shot.spec.ts`.
+- **Fix option:** add `--interaction <name>` and name it in `--help`.
+- **Fix done (f697a3151):** `design shot --interaction <hover|focus-visible|active|disabled>` forces the interaction on every cell; a bad name prints the usage, which lists the names. The design-exploration skill names it.

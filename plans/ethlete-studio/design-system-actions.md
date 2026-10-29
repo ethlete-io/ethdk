@@ -118,20 +118,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
 
-### 2.6 Note cards overlap the next row - open (L1140)
-
-- **Pain:** between 25% and 100% zoom, note cards reach into the next row of the matrix.
-- **Fix:** reserve note room at the fitted zoom / accept it.
-- **Check (2026-10-29):** still broken. On `components/button` the cards cover outline-row frames
-  from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
-  does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
-
-### 2.11 The "used in" label of a foundation draws its two lines on top of each other - open
-
-- **Pain:** `foundations/tokens` (Tom's screen, 2026-10-29): "every page of the product uses it"
-  wraps in a small box and the two lines overlap. Label from `system-tree.ts:509` (finding 2.7).
-- **Fix option:** give the label a real line height and a width that fits one line (recommended).
-
 ### 2.12 `foundations/tokens` is one very tall sheet - open
 
 - **Pain:** Tom: "echt unschön, dass tokens so ein langer Block ist". All groups (surfaces, accent,
@@ -199,12 +185,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** scaled thumbnail frames trip CLIPPED and WRAP by design. The agent found
   `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
 - **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
-
-### 4.21 `design shot` has no `--interaction` flag - open
-
-- **Pain:** the agent found the `interaction=` query parameter of `/__design/shot` only in
-  `shot.spec.ts`.
-- **Fix option:** add `--interaction <name>` and name it in `--help`.
 
 ### 4.22 The diff row is all red when a variant changes its state props - open
 
