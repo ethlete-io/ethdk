@@ -10,6 +10,10 @@ export default defineConfig(() => ({
   test: {
     name: 'storybook',
     setupFiles: ['.storybook/vitest.setup.ts'],
+    // Workaround: with an iframe per file, Chromium closes the orchestrator page's websockets
+    // (code 1001) after about 10-30 files, so a runner with few workers fails the run with
+    // VITEST_BROWSER_CONNECTION_CLOSED. Seen with vitest 5.0.5 and @analogjs/vite-plugin-angular 2.9.2.
+    isolate: false,
     browser: {
       enabled: true,
       headless: true,
