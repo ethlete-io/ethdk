@@ -12,6 +12,8 @@ let encoded = String(data: try JSONSerialization.data(withJSONObject: urls), enc
 final class ReloadProbe: NSObject, WKScriptMessageHandler {
     let web = WKWebView(frame: NSRect(x: 0, y: 0, width: 1440, height: 900))
     var window: NSWindow!
+    let startedAt = Date()
+    var lastBatch = "none"
 
     func start() {
         web.configuration.userContentController.add(self, name: "reloadProbe")
@@ -49,17 +51,16 @@ final class ReloadProbe: NSObject, WKScriptMessageHandler {
         window.orderFront(nil)
         web.loadHTMLString("<!doctype html><body></body>", baseURL: URL(string: "http://localhost:4221/"))
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(iterations) * 0.15 + 30) {
-            fputs("FAIL: WebKit stopped responding during frame replacement\n", stderr)
+            fputs("FAIL: WebKit stopped responding during frame replacement, last batch: \(self.lastBatch)\n", stderr)
             exit(1)
         }
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         let text = String(describing: message.body)
-        if text == "PASS" || text == "batch 1" || text.hasSuffix("0") {
-            print(text)
-            fflush(stdout)
-        }
+        if text.hasPrefix("batch") { lastBatch = text }
+        print("\(Int(Date().timeIntervalSince(startedAt) * 1000))ms \(text)")
+        fflush(stdout)
         if text == "PASS" { NSApp.terminate(nil) }
     }
 }
