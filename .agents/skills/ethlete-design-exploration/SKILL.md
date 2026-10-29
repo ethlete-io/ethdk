@@ -130,7 +130,8 @@ own chrome only. A sketch on an element adds no state whose difference is page c
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
-and `sketch ready` fail on a dropped state, and warn when two stylesheets of one part define the same class. Use `sketch list` to see the open ones.
+and `sketch ready` fail on a dropped state, and warn when two stylesheets of one part define the same class. A problem the product already had prints as `NOTE (was there before)` and fails
+neither. Use `sketch list` to see the open ones.
 `sketch check` also runs tsc over each variant with its `@shared/` and `@system/` imports, so never write a
 tsconfig of your own. It warns of a variant stylesheet that restyles a class of `shared/`, of a
 variant file nothing imports, and of a `shared/` export the variant does not import; `design check` warns of

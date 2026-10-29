@@ -3,6 +3,7 @@ import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
 import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
+import { Problem } from './system/problem';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
 import {

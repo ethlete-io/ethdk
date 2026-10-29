@@ -40,6 +40,51 @@ describe('openSketchProblemsOf', () => {
     ]);
   });
 
+  it('keeps a problem the product already has apart from the ones a variant brings in', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const buttonCss = join(productDir, 'components/button/button.css');
+    const heroCss = join(productDir, 'elements/hero/hero.css');
+
+    writeFileSync(buttonCss, `${readFileSync(buttonCss, 'utf8')}\n.acme-button-x { color: #000; }`);
+    writeFileSync(heroCss, `${readFileSync(heroCss, 'utf8')}\n.acme-hero-x { color: #111; }`);
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const sketchedCss = join(sketch.dir, 'b/elements/hero/hero.css');
+
+    writeFileSync(sketchedCss, `${readFileSync(sketchedCss, 'utf8')}\n.acme-hero-y { color: #fff; }`);
+
+    const entries = openSketchProblemsOf(product).variants.map(({ variant, problems, before }) => ({
+      variant,
+      problems: problems.map(({ file, message }) => [file, message]),
+      before: before.map(({ file, message }) => [file, message]),
+    }));
+
+    expect(entries).toEqual([
+      {
+        variant: 'a',
+        problems: [],
+        before: [
+          [buttonCss, '#000 outside foundations - use a foundations token'],
+          [join(sketch.dir, 'a/elements/hero/hero.css'), '#111 outside foundations - use a foundations token'],
+        ],
+      },
+      {
+        variant: 'b',
+        problems: [[sketchedCss, '#fff outside foundations - use a foundations token']],
+        before: [
+          [buttonCss, '#000 outside foundations - use a foundations token'],
+          [sketchedCss, '#111 outside foundations - use a foundations token'],
+        ],
+      },
+    ]);
+  });
+
   it('reports a state a variant drops from the part, and no new part', () => {
     const target = acme();
     const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');

@@ -1,6 +1,7 @@
 import { TypecheckResult } from '../../typecheck';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
+import { relative } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct } from '../system-tsconfig';
@@ -9,9 +10,10 @@ import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf } from './part-definition';
-import { listSketches, Sketch, sketchFolderOf } from './sketch';
+import { listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
 
-export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[] };
+/** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
+export type VariantProblems = { sketch: Sketch; variant: string; problems: Problem[]; before: Problem[] };
 
 const droppedStatesOf = (options: {
   product: ResolvedProduct;
@@ -44,20 +46,29 @@ const droppedStatesOf = (options: {
 };
 
 /** The rule problems of each variant of a sketch laid over the product, and the states it drops from a part. */
-export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: Sketch }): VariantProblems[] =>
-  options.sketch.variants.map((variant) => {
+export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: Sketch }): VariantProblems[] => {
+  const keyOf = (dir: string, problem: Problem) => `${problem.rule} ${relative(dir, problem.file)}: ${problem.message}`;
+  const had = new Set(ruleProblemsOf(options.product).map((problem) => keyOf(options.product.dir, problem)));
+
+  return options.sketch.variants.map((variant) => {
     const overlaid = overlaySketch({ ...options, variant });
     const round = options.sketch.rounds.find((entry) => entry.key === options.sketch.variantInfo[variant]?.round);
+    const variantDir = variantDirOf(options.sketch, variant);
+    const wasThere = (problem: Problem) =>
+      had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
+    const found = ruleProblemsOf(overlaid);
 
     return {
       sketch: options.sketch,
       variant,
       problems: [
-        ...ruleProblemsOf(overlaid),
+        ...found.filter((problem) => !wasThere(problem)),
         ...droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] }),
       ],
+      before: found.filter(wasThere),
     };
   });
+};
 
 /** Warnings that do not fail a variant: a class two stylesheets of one part both define, a class of `shared/` the variant restyles, a file nothing imports. */
 export const variantWarningsOf = (options: {
