@@ -216,6 +216,17 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   2. The round note names which states the decision applies to. `sketch ready` warns when a named
      state is unchanged.
 
+### 3.11 A new sketch shows the comments of an old sketch - open
+
+- **Pain:** a new sketch on `pages/sketches` showed many old comments in its variant a. Tom: "there
+  are now many old comments in the sketch visible".
+- **Cause:** a comment stores its sketch as `{ target, variant }` only. Variant letters start at `a`
+  again in each sketch, so the 8 comments on variant a of the sketch of 2026-10-28 match the new a.
+- **Now:** nothing separates them. The same bug class as 3.7, where round flags were keyed by part.
+- **Fix option:** store the sketch's `createdAt` in the comment, as the 3.7 fix does for round
+  flags. Show a comment only in the sketch it was made in. Comments without it stay hidden in a
+  sketch.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
