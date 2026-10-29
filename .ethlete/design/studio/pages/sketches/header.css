@@ -1,0 +1,6 @@
+@layer components {
+  .sk-page > .zr-picker {
+    align-self: flex-start;
+    margin-block-start: -11px;
+  }
+}

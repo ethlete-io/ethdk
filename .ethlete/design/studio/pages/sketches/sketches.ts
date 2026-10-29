@@ -23,7 +23,6 @@ import {
   pinMark,
   pinOf,
   ROUNDS,
-  roundHead,
   SKETCH,
   typed,
   UNCHANGED_STATES,
@@ -33,6 +32,7 @@ import {
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
+import header from './header.css?inline';
 import { mountCanvasViewport } from 'ethlete-studio/canvas';
 import { agentLogo } from './agent-logos';
 import { belowDrawing, belowRows } from './shared/below';
@@ -76,7 +76,7 @@ const openPageSketch = {
 
 const renderPageSketch = async () => {
   const side = await partTree.render(openPageSketch);
-  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm' });
+  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
   const pick = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
   const open = await systemPage();
   const hidden = await systemPage('hidden');
@@ -107,11 +107,10 @@ const renderPageSketch = async () => {
   const content = html`<div class="sk-page">
     <header class="sk-head">
       <span class="sk-head-title">${PAGE_SKETCH.part}</span>
-      <span class="sk-status">${PAGE_SKETCH.status}</span>
       <span class="sk-head-gap"></span>
       ${discard.body}
     </header>
-    ${roundHead(PAGE_ROUND, 0, 1)}
+    <div class="zr-picker">${zoomedRoundPicker()}</div>
     <div class="sk-fixed-heads">${heads}</div>
     ${canvasTools}
     <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
@@ -124,7 +123,17 @@ const renderPageSketch = async () => {
   return drawing({
     body: shell.body,
     setup: canvasSetup,
-    styles: shell.styles + side.styles + open.styles + discard.styles + pick.styles + kit + styles,
+    styles:
+      shell.styles +
+      side.styles +
+      open.styles +
+      discard.styles +
+      pick.styles +
+      selectStyles +
+      kit +
+      styles +
+      below +
+      header,
   });
 };
 
@@ -277,18 +286,16 @@ export default definePart<{ sketch: 'element' | 'page' | 'zoomed' | 'below' }>({
   note: 'One continuous canvas for components and pages, top-aligned after fit with no extra camera inset. Screen-size variant heads stay within the visible portion of their column; a sliver under 180px hides its head. The header has a stable height before fitting. 100% reveals the nearest frame from its top-left. Double-click focuses state and full-context frames. Pending variants show quiet outlined placeholders instead of unfinished drawings. Earlier rounds follow context content within the canvas, with no fixed footer. Plain Variante labels replace boxed letters. Fit and header geometry reserve space for outlines. Context pages are complete miniature frames that can be zoomed into on the same canvas, not clipped crops. Round titles omit duplicate variant letters, Merge keeps the action compact, and drawing status is quiet inline text beside its author. Native-size frames share one pan/zoom behavior; the initial camera fits the newest round. Variant identities and decision buttons stay at screen size above the canvas. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available. State zoomed-page draws the agreed zoom composition: attached heads above the frame, the canvas behind navigation, and the canvas strip under the open side panel dimmed to 40 percent. State zoomed-below pans a 150% camera below the variant rows: the header holds only the part name and a danger Verwerfen button, with no status badge because a sketch is always in progress and no arrow buttons; the round line sits directly under the header as quiet text, the round name (Runde 3 · Kleinere Baumschrift) with a chevron and no field box, and opens the round select; the variant heads follow directly under it; only the Im Kontext band stays on the canvas, under a screen-size band label aligned to the first visible frame edge, and its frame captions scale with the frames. Cost: the round line takes its own row again under the header, stepping through rounds in order is gone so a far round always needs the select, and comparing rounds side by side on the canvas is gone.',
   madeBy: ['claude-opus-5-5', 'gpt-6'],
   states: {
-    open: { sketch: 'element' },
     'page-sketch': { sketch: 'page' },
     'zoomed-page': { sketch: 'zoomed' },
-    'zoomed-below': { sketch: 'below' },
   },
   render: async ({ sketch }) => {
     if (sketch === 'page') return renderPageSketch();
     if (sketch === 'zoomed') return renderZoomedPage();
     if (sketch === 'below') return renderBelow();
-    const [newest, ...older] = ROUNDS;
+    const [, ...older] = ROUNDS;
     const side = await partTree.render(openSketches);
-    const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm' });
+    const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
     const page = await systemPage();
     const picks = await Promise.all(VARIANTS.map(pickButton));
     const frames = await Promise.all(
@@ -330,11 +337,10 @@ export default definePart<{ sketch: 'element' | 'page' | 'zoomed' | 'below' }>({
     const content = html`<div class="sk-page">
       <header class="sk-head">
         <span class="sk-head-title">${SKETCH.part}</span>
-        <span class="sk-status">${SKETCH.status}</span>
         <span class="sk-head-gap"></span>
         ${discard.body}
       </header>
-      ${newest ? roundHead(newest, 0, ROUNDS.length) : ''}
+      <div class="zr-picker">${roundPicker()}</div>
       <div class="sk-fixed-heads">${heads}</div>
       ${canvasTools}
       <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
@@ -363,7 +369,10 @@ export default definePart<{ sketch: 'element' | 'page' | 'zoomed' | 'below' }>({
         discard.styles +
         (picks[1]?.styles ?? '') +
         kit +
-        styles,
+        styles +
+        selectStyles +
+        below +
+        header,
     });
   },
 });
