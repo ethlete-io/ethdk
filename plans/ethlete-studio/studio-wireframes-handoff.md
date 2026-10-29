@@ -115,8 +115,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    family of 12px line icons (pencil = in progress, check = ready, red triangle = warning, bubble =
    open comments, no count); details go in tooltips (Tom). Rejected: accent or red diamond, dots
    mixed with icons, red underline. `elements/part-tree` draws its rows with it (merged
-   2026-10-29). Next component: recommendation comment card (inbox and sketches draw it), then
-   switch and project switcher. Before a component sketch, list every host that draws the case
+   2026-10-29). Rule (Tom, 2026-10-29): a component needs two hosts that draw the same case.
+   Next component: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches); the inbox row stays
+   in `pages/inbox` (one host). Then switch and project switcher. Before a component sketch, list every host that draws the case
    (5.24). Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail

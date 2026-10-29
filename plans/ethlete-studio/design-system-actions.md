@@ -240,6 +240,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `sketch new` on a component lists the parts whose markup it will replace, and
   the brief says to draw every case they draw (recommended, a skill rule). 2. a CLI check that
   compares the classes a host uses with the component's states.
+- **Rule (Tom, 2026-10-29):** a part becomes a component only when two hosts draw the same case.
+  Option 1 is in the `design-exploration` skill under "The order of a design".
 
 ### 5.25 Studio has no warning colour theme - open
 
@@ -268,6 +270,7 @@ These pains came from how the agent worked, not from the tool. Each one has a ru
 | A header decision went into one state; the sibling state kept the old header and Tom found it after the merge                       | Before `ready`, shoot every state that draws the changed chrome. Carry the decision into each, or ask.                      | 2026-10-29 |
 | After the zoom work the agent proposed more detail on `pages/sketches` (open points 5 to 8); that drifts from the base plan         | Before you propose the next step, read the agreed order: all pages first, then extract components (`design-system.md:905`). | 2026-10-29 |
 | The agent wrote new plain CSS files (`header.css`, `heads.css`) for a sketch, though sketches may use the Studio Tailwind utilities | Use utilities in sketch markup (`f27c66d0e`). Plain CSS only for what utilities cannot express.                             | 2026-10-29 |
+| `components/tree-row` was extracted with one host (`part-tree`); its sketch missed the host's cases and cost an extra round         | A part becomes a component only when two hosts draw the same case. Until then it stays in its host. `tree-row` stays.       | 2026-10-29 |
 
 ### Parked: open points on `pages/sketches` (2026-10-29)
 

@@ -440,8 +440,10 @@ The stages map onto the layers of a product: wireframes, foundations, components
 Legacy call with a stage counts for that stage in this order.
 
 A later stage can show that an earlier one is incomplete. If a page needs a part that the system
-does not have, add it to the inventory and open a component sketch for it. Never draw the part
-inline in the page.
+does not have, add it to the inventory. A part becomes a component only when at least two hosts
+draw the same case. Until then it stays in the one element or page that draws it. When a second
+host draws it, open a component sketch, and list in its brief every host and every case each one
+draws, so the component covers them all.
 
 ## Draw from the design system
 
