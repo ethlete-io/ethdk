@@ -124,6 +124,27 @@ describe('designSketch', () => {
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
 
+  it('warns of a class two stylesheets of one part define, and still readies', () => {
+    const target = acme();
+
+    output();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+
+    const folder = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button');
+    const ts = join(folder, 'button.ts');
+
+    writeFileSync(join(folder, 'extra.css'), '.acme-button { color: red; }');
+    writeFileSync(join(folder, 'button.css'), '.acme-button { color: blue; }');
+    writeFileSync(ts, `import extra from './extra.css?inline';\n${readFileSync(ts, 'utf8')}`);
+
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('b: WARNING components/button: .acme-button is defined in'),
+    );
+  });
+
   it('refuses ready while a variant drops a state of the part', () => {
     const target = acme();
     const lines = output();

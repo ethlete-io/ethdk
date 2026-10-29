@@ -4,7 +4,12 @@ import { addressSketchComments, commentsOnSketch } from './system/comments/comme
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf } from './system/sketch/check-format';
-import { openSketchProblemsOf, typecheckVariant, variantProblemsOf } from './system/sketch/check-sketches';
+import {
+  openSketchProblemsOf,
+  typecheckVariant,
+  variantProblemsOf,
+  variantWarningsOf,
+} from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -280,6 +285,12 @@ const readied = (context: Context) =>
       ),
     );
 
+    sketch.variants.forEach((variant) =>
+      variantWarningsOf({ target: context.target, product, sketch, variant }).forEach((warning) =>
+        console.warn(`${sketch.target} ${variant}: ${warning}`),
+      ),
+    );
+
     if (problems.length > 0)
       return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
 
@@ -328,6 +339,11 @@ const checked = async (context: Context) => {
 
   for (const { sketch, variant, problems } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
+
+    variantWarningsOf({ target, product, sketch, variant }).forEach((warning) =>
+      console.warn(`${sketch.target} ${variant}: ${warning}`),
+    );
+
     const all = [
       ...problems,
       ...formatProblemsOf({ target, sketch, variant }),

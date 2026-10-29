@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { openSketchProblemsOf, typecheckVariant } from './check-sketches';
+import { openSketchProblemsOf, typecheckVariant, variantWarningsOf } from './check-sketches';
 import { createSketch, editRound, Sketch } from './sketch';
 
 const acme = () => {
@@ -199,4 +199,28 @@ describe('typecheckVariant', () => {
       output: expect.stringContaining("no exported member 'accent'"),
     });
   }, 120_000);
+});
+
+describe('variantWarningsOf', () => {
+  it('warns when two stylesheets loaded by one part define the same class', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const folder = join(sketch.dir, 'b/elements/hero');
+    const ts = join(folder, 'hero.ts');
+
+    mkdirSync(join(sketch.dir, 'shared'), { recursive: true });
+    writeFileSync(join(sketch.dir, 'shared/data.css'), '.sk-head { color: red; }');
+    writeFileSync(join(folder, 'hero.css'), '.sk-head { color: blue; }');
+    writeFileSync(ts, `import data from '@shared/data.css?inline';\n${readFileSync(ts, 'utf8')}`);
+
+    expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([]);
+    expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([
+      expect.stringMatching(/^WARNING elements\/hero: \.sk-head is defined in .*hero\.css and .*shared\/data\.css/),
+    ]);
+  });
 });

@@ -3,6 +3,7 @@ import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { typecheckProduct } from '../system-tsconfig';
+import { duplicateClassWarningsOf } from './duplicate-class';
 import { overlaySketch, SketchedProduct } from './overlay';
 import { stateNamesOf } from './part-definition';
 import { listSketches, Sketch, sketchFolderOf } from './sketch';
@@ -54,6 +55,14 @@ export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: S
       ],
     };
   });
+
+/** Warnings that do not fail a variant: a class two stylesheets of one part both define. */
+export const variantWarningsOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+}): string[] => duplicateClassWarningsOf({ target: options.target, product: overlaySketch(options) });
 
 /**
  * The rule problems of every variant of every open sketch of a product. A sketch folder that

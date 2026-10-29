@@ -121,7 +121,7 @@ own chrome only. A sketch on an element adds no state whose difference is page c
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
-and `sketch ready` fail on a dropped state. Use `sketch list` to see the open ones.
+and `sketch ready` fail on a dropped state, and warn when two stylesheets of one part define the same class. Use `sketch list` to see the open ones.
 
 Start a new part from a close one with `--like`: `sketch new pages/inbox --like pages/system`
 copies the product's `pages/system` into each variant, renamed to the target and without its
