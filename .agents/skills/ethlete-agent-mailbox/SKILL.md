@@ -25,6 +25,8 @@ node <skill-dir>/agent-mailbox.mjs down [<name>...]
 node <skill-dir>/agent-mailbox.mjs dispatch
 ```
 
+Where the `ethlete-agents` package is a dependency, `npx ethlete-agents mailbox <command>` runs the same script, so you do not need `<skill-dir>`.
+
 Choose a `<name>` that no other agent uses, for example `agent-a` or
 `agent-b`. Two sessions with one name look like one agent. For two Claude Code sessions, the
 `SendMessage` tool is the better channel. The mailbox is for agents that cannot reach each other

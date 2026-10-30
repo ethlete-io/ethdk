@@ -5,6 +5,7 @@ import { CommandArgs, parseCommandArgs } from './lib/cli-args';
 import { AGENT_TARGETS, CONFIG_FILE_NAME, detectTargets, resolveRepoRoot } from './lib/config';
 import { gitFlowCommand } from './lib/git-flow-command';
 import { loadDefaultVars } from './lib/load-content';
+import { mailboxCommand } from './lib/mailbox-command';
 import { migrate } from './lib/migrate';
 import { outputStyleCommand } from './lib/output-style-command';
 import { detectCommandVars, followPackageManager } from './lib/package-runner';
@@ -25,6 +26,8 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents timetrack Ask the running Timetrack app about Jira - it holds this
                            machine's credentials, so no repo needs a token
                            (status, instance, issue, search, project, create, log)
+  ethlete-agents mailbox   Let several agents in one checkout claim paths, message each other
+                           and wake idle agents through tmux (up, down, claim, inbox, send)
   ethlete-agents migrate   Convert the repo to the AGENTS.md + .agents/skills layout:
                            CLAUDE.md content moves into AGENTS.md (CLAUDE.md becomes an
                            @AGENTS.md import), hand-written .claude/skills move to
@@ -120,6 +123,8 @@ const run = (argv: string[]): number | Promise<number> => {
   switch (command) {
     case 'git-flow':
       return gitFlowCommand({ root, argv: argv.slice(1) });
+    case 'mailbox':
+      return mailboxCommand({ argv: argv.slice(1) });
     case 'output-style':
       return outputStyleCommand({ argv: argv.slice(1) });
     case 'timetrack':
