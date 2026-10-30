@@ -108,3 +108,5 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
   after 2.2 on the same part.
 - 6.6: a skill rule: before `ready`, critique hierarchy, spacing, form nesting and host context; no render gate.
   Stream D.
+- 5.51 / Q42: `--surface-border` (1.2-1.6:1) is marked decorative and exempt from the 3:1 non-text bar (WCAG
+  1.4.11: it only separates surfaces). Controls with a visible boundary (inputs, focus) keep their own 3:1 tokens.
