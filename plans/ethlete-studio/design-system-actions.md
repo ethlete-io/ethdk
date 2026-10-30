@@ -730,6 +730,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   2.7-2.8x faster. **Open:** 1 of 60 (`open`, `toggle`) and 1 of 120 parallel pictures differed from the rest
   (the 4.66 fix had 0 of 90). A `ready` compare can again see a false change. Find the cause before relying on it;
   fallback: draw compare pictures one at a time. Not verified: a real `ready` or the Studio merge view under load.
+- **Probe of the open point (2026-10-30):** not reproduced. About 3,500 drawings of `pages/merge` `open` and
+  `toggle` at 4 at once gave one hash per state, also with 32 CPU burners, 6 probes at once, a cold server and a
+  mixed queue of 480 drawings. The embedded frames of `pages/merge open` have no font face, running animation or
+  unloaded image at screenshot time, so a per-frame wait would fix nothing. Likely cause (timeline only): the old
+  probe ran while `16cfed851` and `86d9f66e9` wrote into `.ethlete/design/studio/`, so a drawing caught a
+  stylesheet rebuild. A replay of both writes on a scratch copy gave no odd picture either. Found on the way:
+  `openFrame` (`thumb.ts`) gives up silently after `DRAW_TIMEOUT_MS`, so a frame that never draws becomes a blank
+  picture with no error. Recommended next: a frame that never draws fails the drawing, and `ready` redraws each
+  changed state one at a time before it accepts the change. Keep 4 at once.
 
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
