@@ -37,3 +37,12 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
 - **As built (2026-10-30):** the guide (`apps/docs/migrating-from-v4.md`) says Nx `^23.0.0`; 23.3.1 is in no doc.
   The peer is `>=23.0.0` in core, query, components, contentful and cdk. The libs use only devkit APIs that exist
   in Nx 23 (by reading, not installed).
+
+## 4. The cdk `to-v5` codemod renames `theme` on app components - open
+
+- **Pain:** reported 2026-10-30 by `fifagg-frontend-a5`, `@ethlete/cdk` 5.0.0-next.44. The codemod `to-v5` renamed
+  `[theme]` to `[color]` and `theme=` to `color=` on about 219 template sites. It matched only the attribute name,
+  so it also renamed app components with their own `theme` input (selectors `fifa-gg-*`, `gg-*`, app button
+  directives). About 150 bindings now go nowhere, and ngc does not flag most of them.
+- **Expected:** rename only on elements that the SDK button and component selectors match.
+- **Evidence:** commit `f920736122` in fifagg-frontend, branch `chore/ethlete-next`.
