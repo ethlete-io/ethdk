@@ -1,0 +1,16 @@
+{
+  "part": "foundations/sheet",
+  "state": "overview",
+  "size": "fitted",
+  "text": "wofür ist das hier genau? das steht alles in spacing auch drin",
+  "point": {
+    "x": 180,
+    "y": 211
+  },
+  "createdAt": "2026-10-30T14:53:27.873Z",
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T15:08:56.120Z",
+    "note": "foundations/sheet removed by claude-opus-5-5"
+  }
+}

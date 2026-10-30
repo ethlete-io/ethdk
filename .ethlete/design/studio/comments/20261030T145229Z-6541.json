@@ -1,0 +1,19 @@
+{
+  "part": "foundations/motion",
+  "state": "scale",
+  "size": "fitted",
+  "text": "hier solten wir (ggf dann mit motion system) auch beispiel motions in loop anzeigen oder als play replay",
+  "point": {
+    "x": 255,
+    "y": 193
+  },
+  "createdAt": "2026-10-30T14:52:29.396Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Eingeplant mit 4.54 (motion.md Slice 1): Beispiel-Motions als Loop oder mit Play/Replay.",
+      "createdAt": "2026-10-30T15:11:31.376Z"
+    }
+  ]
+}

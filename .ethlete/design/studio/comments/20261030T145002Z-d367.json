@@ -1,0 +1,18 @@
+{
+  "part": "foundations/colors",
+  "state": "surfaces",
+  "size": "fitted",
+  "text": "hier sollten wir einen checkup machen ob das zu unserem surface theming system passt",
+  "point": {
+    "x": 143,
+    "y": 459
+  },
+  "createdAt": "2026-10-30T14:50:02.425Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-30T15:11:30.876Z",
+    "note": "Checkup gemacht, Entscheidungen gebaut: Part ist die Quelle (yarn studio:themes), Elevation 0 = Seitenhintergrund. Offen im Plan: --text-subtle, *-disabled, Verweise auf --surface-sunken."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "part": "foundations/colors",
+  "state": "accent",
+  "size": "fitted",
+  "text": "hier sollten wir einen checkup machen ob das zu unserem color theming system passt (gleiches gilt für die anderen 2 color themes)",
+  "point": {
+    "x": 195,
+    "y": 414
+  },
+  "createdAt": "2026-10-30T14:50:25.103Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-30T15:11:31.053Z",
+    "note": "Checkup gemacht, Entscheidungen gebaut: brand = Teal aus dem Part, danger aus dem Part, WARNING_THEME mit type warning. Offen im Plan: *-active und *-disabled als Part-Tokens."
+  }
+}
