@@ -1079,7 +1079,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   - Not verified: the thumbnailer (`thumb.ts`, call thumbnails) and `changedBoxesOf` still open a context per
     draw; Tom's server under real load; the Studio app.
 
-### 4.78 A file change reloads several lists at once - in progress
+### 4.78 A file change reloads several lists at once - built
 
 - **From the code:** each `tick` reloads products, calls, flows, comments and sketches
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
@@ -1094,7 +1094,20 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   not a workaround around the Rust watcher: each change names what changed, and Studio reloads only that list.
   If the watcher and the design server events then overlap, keep one source. A reconnect or an unknown change
   still reloads everything.
-- **In progress (2026-10-30):** a subagent builds it.
+- **As built (2026-10-30, `371d807f2`, `7e912ed22`):** the design server is the one source. It now sends `calls`
+  for any file under the calls root, `sketches` for any file under `<product>/sketches/` (`sketch.json` too), and
+  `parts` with no parts for a system file that redraws no frame (the product list still changes). Studio maps each
+  burst (300 ms) to list revisions: `calls` reloads the call list and call frames, `sketches` the sketch list, `parts`
+  products, sketches and flows (sketch and flow problems overlay the parts), and a reconnect, `parts.all`, an
+  unreadable `parts` or Reload reload every list, comments, notes and the project. The Tauri `design_watch` command
+  (recursive, undebounced, a full `design_project` rescan per burst) is deleted: nothing else used it, `design()` only
+  feeds port and themes (config change = `parts.all`), and the server path also works for headless Studio.
+  `design_status_watch` stays. Bites: the new server spec, the `designChanges$` spec, the studio-view and system-view
+  list specs all fail on the HEAD sources; a mutation coupling sketches to calls fails the system-view spec. Verified:
+  Studio and cli design suites, tsc, eslint, `nx build cli`, `cargo check/test/clippy/fmt`, and a live scratch server
+  (call edit -> `calls` only, `sketch.json` -> `sketches` only, comment -> `comments` only). Not verified: a headless
+  Studio build counting requests. An older `@ethlete/cli` in a checkout sends no `calls`/`sketches`, so its lists
+  refresh only on Reload. Tom must rebuild Studio (Rust changed).
 
 ### 4.79 Four SSE streams to the same host - built
 
