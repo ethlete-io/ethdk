@@ -512,6 +512,14 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Open:** whether a still pair of states is enough evidence, or whether Studio must play the
   transition; and which kinds need one. Not decided, no proposal yet.
 
+### 4.55 A comment on a new part in a sketch cannot be marked done - open
+
+- **Pain (2026-10-30):** `inbox done 20261030T135029Z-35c6 --note "…"` on a comment on the
+  sketch `components/disclosure` variant a answers "components/disclosure is no part of studio -
+  the note has nowhere to go". The part exists only in the sketch, but the variant holds its note.
+- **Fix option:** for a comment on a sketch variant, write the note into the variant even when
+  the merged product does not have the part yet.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
