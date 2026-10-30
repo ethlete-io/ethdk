@@ -13,19 +13,19 @@
     {
       "key": "r1",
       "title": "Form field controls",
-      "note": "Declares the form field's controls so design complete can check them: field hover, press and focus for a text input and a textarea. The pressed look follows the select (Q56 b)."
+      "note": "Declares the form field's controls so design complete can check them: field hover and focus for a text input and a textarea."
     }
   ],
   "variantInfo": {
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "The field border darkens one step while pressed, as on the select. A small CSS rule in the part; differs from focus."
+      "note": "Declares the text input and the textarea as controls of kind field. No pressed look on either (Q61)."
     }
   },
   "hold": {
-    "until": "a text-field control kind in design complete, a textarea mock in @ethlete/components/design/form-field, and a call on the error state's danger contrast",
+    "until": "errorColor danger-on-light after Tom merges foundations/colors (Q51); per-state viewport fix in the design tool (ethlete-sdk-57)",
     "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T22:56:00.104Z"
+    "heldAt": "2026-10-30T23:04:58.519Z"
   }
 }
