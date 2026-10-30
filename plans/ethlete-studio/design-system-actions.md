@@ -523,6 +523,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `.ethlete/design/studio/components/button/button.ts` that overrides the `sdk` base part; the base still declares
   no controls. `design complete components/button --product studio` passes. Open: should a sketch of a base part
   merge into the base, or stay a product override?
+- **In progress (2026-10-30):** Q32 (a): base part sketches merge into the base, `--override` for a product copy;
+  then the button controls move into the base (subagent). Also: `sketch ready` must refuse a variant that does not load.
 - **In progress (2026-10-30):** inventory slice 1 (CLI: inventory data, `inventory.json`, reopen rules,
   `design complete` gap, server endpoints; subagent). Slice 2, the Studio view, follows.
 
