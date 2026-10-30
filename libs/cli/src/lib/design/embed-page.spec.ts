@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { embedPage, embedSearchOf, fitEmbed } from '../../../design/embed-page';
+import { applyEmbed, embedPage, embedSearchOf, fitEmbed } from '../../../design/embed-page';
 
 describe('embedPage', () => {
   it('keeps the product, sketch variant and theme of the embedding frame', () => {
@@ -51,5 +51,27 @@ describe('embedPage', () => {
     expect((host.firstElementChild as HTMLElement).style.height).toBe('450px');
     expect(frame.hasAttribute('data-et-embed-drawn')).toBe(true);
     expect(() => fitEmbed(null, 10)).not.toThrow();
+  });
+
+  it('marks and restyles inside the embedded page', () => {
+    const host = document.createElement('div');
+    const root = document.createElement('div');
+
+    host.innerHTML = embedPage('pages/system', { mark: '.et-button', css: '.et-button { color: "red" }' }).body;
+    root.innerHTML = '<button class="et-button">Merge</button><button class="other">Discard</button>';
+
+    const frame = host.querySelector('iframe');
+
+    applyEmbed(frame, root);
+    applyEmbed(frame, root);
+
+    const styles = document.querySelectorAll('style[data-et-embed-css]');
+
+    expect(root.querySelector('.et-button')?.hasAttribute('data-et-embed-marked')).toBe(true);
+    expect(root.querySelector('.other')?.hasAttribute('data-et-embed-marked')).toBe(false);
+    expect(styles).toHaveLength(1);
+    expect(styles[0]?.textContent).toContain('[data-et-embed-marked] { outline');
+    expect(styles[0]?.textContent).toContain('.et-button { color: "red" }');
+    expect(() => applyEmbed(null, root)).not.toThrow();
   });
 });

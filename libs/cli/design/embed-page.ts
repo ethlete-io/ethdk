@@ -2,9 +2,20 @@ import { Drawing } from './define-call';
 
 /**
  * How a page embeds another: the `state` to draw, the viewport `width` and `height` it is drawn at (`'auto'` grows
- * the frame to the page's content), and the `scale` the frame is shown at.
+ * the frame to the page's content), and the `scale` the frame is shown at. Inside the embedded page, `mark` rings
+ * every element matching its selector (each gets `data-et-embed-marked`), and `css` is added as a stylesheet.
  */
-export type EmbedPageOptions = { state?: string; width?: number; height?: number | 'auto'; scale?: number };
+export type EmbedPageOptions = {
+  state?: string;
+  width?: number;
+  height?: number | 'auto';
+  scale?: number;
+  mark?: string;
+  css?: string;
+};
+
+const MARK_CSS =
+  '[data-et-embed-marked] { outline: 0.2rem solid var(--et-theme-color-primary-solid, Highlight); outline-offset: 0.2rem; }';
 
 const KEPT = ['product', 'sketch', 'variant', 'surface', 'color'];
 
@@ -33,11 +44,12 @@ const attribute = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&
  * Put the answer's `body` into the page's markup; it needs no styles or setup.
  */
 export const embedPage = (page: `pages/${string}`, options: EmbedPageOptions = {}): Drawing => {
-  const { state = 'default', width = 1280, height = 800, scale = 1 } = options;
+  const { state = 'default', width = 1280, height = 800, scale = 1, mark, css } = options;
   const search = embedSearchOf({ page, state, current: globalThis.location?.search ?? '' });
   const auto = height === 'auto';
   const frameHeight = auto ? 0 : height;
-  const frame = `<iframe data-et-embed="${attribute(page)}" data-et-embed-scale="${scale}"${auto ? ' data-et-embed-height="auto"' : ''} title="${attribute(page)}" src="/frame.html?${attribute(search)}" style="display:block;border:0;width:${width}px;height:${frameHeight}px;transform:scale(${scale});transform-origin:0 0"></iframe>`;
+  const inside = `${mark ? ` data-et-embed-mark="${attribute(mark)}"` : ''}${css ? ` data-et-embed-css="${attribute(css)}"` : ''}`;
+  const frame = `<iframe data-et-embed="${attribute(page)}" data-et-embed-scale="${scale}"${auto ? ' data-et-embed-height="auto"' : ''}${inside} title="${attribute(page)}" src="/frame.html?${attribute(search)}" style="display:block;border:0;width:${width}px;height:${frameHeight}px;transform:scale(${scale});transform-origin:0 0"></iframe>`;
 
   return {
     body:
@@ -67,4 +79,25 @@ export const fitEmbed = (embed: Element | null, height: number) => {
   }
 
   frame.dataset['etEmbedDrawn'] = '';
+};
+
+/**
+ * Called by an embedded frame after it draws and on each change of its content: adds the `css` of its `embedPage`
+ * once and marks every element in `root` that matches its `mark`. Does nothing in a frame no page embeds.
+ */
+export const applyEmbed = (embed: Element | null, root: HTMLElement) => {
+  if (!(embed as HTMLElement | null)?.hasAttribute('data-et-embed')) return;
+
+  const { etEmbedMark: mark, etEmbedCss: css } = (embed as HTMLElement).dataset;
+  const document = root.ownerDocument;
+
+  if ((mark || css) && !document.querySelector('style[data-et-embed-css]')) {
+    const style = document.createElement('style');
+
+    style.dataset['etEmbedCss'] = '';
+    style.textContent = `${mark ? MARK_CSS : ''}\n${css ?? ''}`;
+    document.head.append(style);
+  }
+
+  if (mark) for (const element of root.querySelectorAll(mark)) element.setAttribute('data-et-embed-marked', '');
 };

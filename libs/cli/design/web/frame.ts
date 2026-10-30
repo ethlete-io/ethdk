@@ -1,6 +1,6 @@
 import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-call';
 import { Part } from '../define-part';
-import { fitEmbed } from '../embed-page';
+import { applyEmbed, fitEmbed } from '../embed-page';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
@@ -287,7 +287,10 @@ const drawFrame = async () => {
     else if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
   }
 
-  const place = () => placeOverlays(root);
+  const place = () => {
+    applyEmbed(frameElement, root);
+    placeOverlays(root);
+  };
 
   new MutationObserver(place).observe(root, { childList: true, subtree: true });
   new ResizeObserver(place).observe(root);

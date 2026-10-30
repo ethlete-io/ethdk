@@ -308,6 +308,12 @@ control itself declares the controls inside it. An element with `cursor: pointer
 names a `part` belong to that part, and a page embedded with `embedPage` is not walked. A part
 without controls passes when it draws none.
 
+`embedPage(page, { state, width, height, scale, mark, css })` from `@design-system` draws another page
+of the product in a frame of its own. The embedding page's styles never reach into that frame, so
+`mark` and `css` apply inside it: every element matching the `mark` selector gets
+`data-et-embed-marked` and an accent outline, and `css` is added as a stylesheet, for example to show
+the new look of a part next to the old one.
+
 A part that another part renders owns its controls. Every rendered part root carries
 `data-et-part="<layer>/<name>"`, stamped automatically, and markup a host passes in through props
 carries `data-et-slot` and stays the host's. A control inside an embedded part is not declared on
