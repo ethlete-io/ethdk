@@ -470,6 +470,49 @@ describe('SketchViewComponent merge preview', () => {
     expect(heads()).toEqual([]);
   });
 
+  it('drops the folded state heads also when only some variants change no pixel', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const card: ListedPart = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product',
+      note: null,
+      states: ['default', 'empty'],
+      problems: [],
+    };
+    const changes = { note: false, dropped: [] as string[] };
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: [
+        { variant: 'a', states: ['default', 'empty'], unchanged: ['default', 'empty'], changes },
+        { variant: 'b', states: ['default', 'empty'], unchanged: ['default'], changes },
+      ],
+    });
+    fixture.componentRef.setInput('part', card);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const heads = () => fixture.debugElement.query(By.directive(DesignCanvasComponent)).componentInstance.rowHeads();
+    const showAll = () => element.querySelector<HTMLButtonElement>('[data-show-all-states]');
+
+    expect(element.querySelectorAll('[data-pixel-free]').length).toBe(1);
+    expect(heads()).toEqual([]);
+
+    showAll()?.click();
+    await settle(fixture);
+
+    expect(heads().map((head: { key: string }) => head.key).length).toBeGreaterThan(0);
+  });
+
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
     vi.stubGlobal('fetch', (url: string) =>
       url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),

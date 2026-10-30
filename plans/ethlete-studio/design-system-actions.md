@@ -500,6 +500,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   where only some variants are pixel-free keeps the grid. Spec failed on the old source. Not checked visually.
 - **Decision (Tom, 2026-10-30, mixed sketch):** also when only some variants are pixel-free, the folded state heads
   go away until "Show all states"; the grid shows only the states that change in some variant. Open until built.
+- **As built (2026-10-30):** the folded state heads drop as soon as one shown variant is pixel-free and no state head
+  is open; each pixel-free variant keeps its line. Spec (`sketch-view.component.spec.ts`, mixed a/b) failed on the old
+  condition. Not checked visually.
 
 ### 4.52 A pick in Studio shows only after a long delay - done
 

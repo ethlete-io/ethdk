@@ -800,16 +800,12 @@ export class SketchViewComponent {
 
   protected unchangedHeads = computed(() => (this.showing() === 'merge' ? [] : this.matrix().rowHeads));
 
-  public pixelFreeReplacesStates = computed(() => {
-    const shown = this.matrix().columns.filter((column) => this.sketch().variants.includes(column.key));
-
-    return (
+  public pixelFreeReplacesStates = computed(
+    () =>
       this.showing() === 'matrix' &&
-      shown.length > 0 &&
-      this.pixelFreeLines().length === shown.length &&
-      !this.unchangedHeads().some((head) => head.open)
-    );
-  });
+      this.pixelFreeLines().length > 0 &&
+      !this.unchangedHeads().some((head) => head.open),
+  );
 
   protected shownRowHeads = computed(() =>
     this.pixelFreeReplacesStates()
