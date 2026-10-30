@@ -1,0 +1,408 @@
+import { AddressInfo } from 'net';
+import { dirname } from 'path';
+import { chromiumOf } from '../browser';
+import { INTERACTIONS } from '../force-interactions';
+import { DesignConfig } from '../paths';
+import { createDesignServer } from '../serve';
+import { partFrameOf, viewportOf } from '../shot';
+import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
+import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { partHashOf } from './sketch/baseline';
+import { readMerged } from './sketch/merged-parts';
+import { createSystemModules, productModuleIdOf } from './system-modules';
+
+/** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
+export type CompletenessGap = { code: string; target: string; detail: string };
+
+/** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
+export type SeenFrame = {
+  state: string;
+  interaction: string | null;
+  controls: { id: string; forced: { interaction: string; differs: boolean }[] }[];
+  surfaces: { id: string; shown: boolean }[];
+};
+
+type DeclaredControl = { kind: string; input: string[]; surfaces: Record<string, string> };
+
+const CHECKED_KINDS = ['disclosure'];
+
+const INPUT_INTERACTIONS: Record<string, string> = { pointer: 'hover', keyboard: 'focus-visible' };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | null =>
+  isRecord(value)
+    ? Object.fromEntries(
+        Object.entries(value).map(([id, control]) => {
+          const declared = isRecord(control) ? control : {};
+
+          return [
+            id,
+            {
+              kind: typeof declared['kind'] === 'string' ? declared['kind'] : '',
+              input: Array.isArray(declared['input'])
+                ? declared['input'].filter((input): input is string => typeof input === 'string')
+                : [],
+              surfaces: isRecord(declared['surfaces'])
+                ? Object.fromEntries(
+                    Object.entries(declared['surfaces']).filter(
+                      (entry): entry is [string, string] => typeof entry[1] === 'string',
+                    ),
+                  )
+                : {},
+            },
+          ];
+        }),
+      )
+    : null;
+
+const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
+  const { frames, id, interaction } = options;
+  const forced = frames.flatMap((frame) =>
+    frame.controls
+      .filter((control) => control.id === id)
+      .flatMap((control) => control.forced.filter((force) => force.interaction === interaction))
+      .map((force) => ({ state: frame.state, differs: force.differs })),
+  );
+
+  if (forced.some((force) => force.differs)) return null;
+  if (forced.length > 0)
+    return `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest`;
+
+  return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction`;
+};
+
+const disclosureGapsOf = (options: {
+  frames: SeenFrame[];
+  id: string;
+  control: DeclaredControl;
+  states: string[];
+}): [string, string][] => {
+  const { frames, id, control, states } = options;
+  const rest = frames.filter((frame) => frame.interaction === null);
+  const body = control.surfaces['body'];
+  const bodyId = `${id}.body`;
+  const showsBody = (frame: SeenFrame) => frame.surfaces.some((surface) => surface.id === bodyId && surface.shown);
+  const drawsControl = (frame: SeenFrame) => frame.controls.some((seen) => seen.id === id);
+  const gaps: [string, string][] = [];
+
+  for (const input of control.input) {
+    const interaction = INPUT_INTERACTIONS[input];
+    const gap = interaction ? interactionGapOf({ frames, id, interaction }) : null;
+
+    if (gap && interaction) gaps.push([interaction, gap]);
+  }
+
+  if (!rest.some((frame) => drawsControl(frame) && !showsBody(frame)))
+    gaps.push(['collapsed', `every state that draws it also shows its body - draw a state with ${bodyId} closed`]);
+
+  if (body === undefined) gaps.push(['body', 'declares no surfaces.body - name the state that draws it open']);
+  else if (!states.includes(body))
+    gaps.push(['body', `surfaces.body names state ${body}, which the part does not declare`]);
+  else if (!rest.some((frame) => frame.state === body && drawsControl(frame) && showsBody(frame)))
+    gaps.push([
+      'body',
+      `state ${body} draws no visible, non-empty data-et-surface="${bodyId}" next to data-et-control="${id}"`,
+    ]);
+
+  return gaps;
+};
+
+/**
+ * The gaps of one part, from its `controls` declaration, its state names and what each drawn frame showed.
+ * A part that is not `reviewed` (its files differ from its merged.json hash) has no reviewed evidence at all.
+ */
+export const completenessGapsOf = (options: {
+  part: string;
+  controls: unknown;
+  states: string[];
+  frames: SeenFrame[];
+  reviewed: boolean;
+}): CompletenessGap[] => {
+  const { part, states, frames, reviewed } = options;
+  const declared = declaredControlsOf(options.controls);
+
+  if (declared === null)
+    return [
+      {
+        code: 'CONTROLS-MISSING',
+        target: part,
+        detail:
+          'declares no controls - list each control its drawing marks with data-et-control in definePart({ controls })',
+      },
+    ];
+
+  const gaps: CompletenessGap[] = [];
+
+  if (!reviewed)
+    gaps.push({
+      code: 'PART-UNREVIEWED',
+      target: part,
+      detail:
+        'its files differ from the hash merged.json records for it, so no frame of it is reviewed - merge or accept it',
+    });
+
+  const seenIds = new Set(frames.flatMap((frame) => frame.controls.map((control) => control.id)));
+
+  for (const id of [...seenIds].filter((seen) => !(seen in declared)).sort())
+    gaps.push({
+      code: 'CONTROL-UNKNOWN',
+      target: `${part}.${id}`,
+      detail: `data-et-control="${id}" is not in controls`,
+    });
+
+  const surfaceIds = new Set(frames.flatMap((frame) => frame.surfaces.map((surface) => surface.id)));
+
+  for (const id of [...surfaceIds].sort()) {
+    const [control = '', surface = ''] = id.split('.');
+
+    if (!declared[control] || declared[control].surfaces[surface] === undefined)
+      gaps.push({
+        code: 'CONTROL-UNKNOWN',
+        target: `${part}.${control}`,
+        detail: `data-et-surface="${id}" names no surface its control declares`,
+      });
+  }
+
+  for (const [id, control] of Object.entries(declared)) {
+    if (!CHECKED_KINDS.includes(control.kind)) {
+      gaps.push({
+        code: 'CONTROL-KIND',
+        target: `${part}.${id}`,
+        detail: `kind "${control.kind}" is not checked yet - kinds are ${CHECKED_KINDS.join(', ')}`,
+      });
+      continue;
+    }
+
+    if (!seenIds.has(id)) {
+      gaps.push({ code: 'CONTROL-UNDRAWN', target: `${part}.${id}`, detail: `no state draws data-et-control="${id}"` });
+      continue;
+    }
+
+    for (const [requirement, detail] of disclosureGapsOf({ frames, id, control, states }))
+      gaps.push({ code: 'REQUIREMENT-MISSING', target: `${part}.${id}.${requirement}`, detail });
+  }
+
+  return gaps;
+};
+
+export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
+
+const NO_MOTION = '*, *::before, *::after { transition: none !important; animation: none !important; }';
+
+const PAD = 8;
+
+const seeFrame = `(() => {
+  const root = document.getElementById('root');
+  const refused = root.innerText.trim();
+  if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
+  const shown = (element) => {
+    const box = element.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return false;
+    if (['hidden', 'collapse'].includes(getComputedStyle(element).visibility)) return false;
+    for (let at = element; at; at = at.parentElement) if (Number(getComputedStyle(at).opacity) === 0) return false;
+    return element.innerText.trim() !== '' || !!element.querySelector('img, svg, canvas, video, iframe, input, select, textarea');
+  };
+  const controls = [...root.querySelectorAll('[data-et-control]')].map((element, at) => {
+    element.setAttribute('data-et-complete', String(at));
+    const box = element.getBoundingClientRect();
+    const x = Math.max(0, box.x + scrollX - ${PAD});
+    const y = Math.max(0, box.y + scrollY - ${PAD});
+    return {
+      id: element.getAttribute('data-et-control'),
+      at,
+      forced: (element.getAttribute('data-et-force') ?? '').split(' ').filter(Boolean),
+      box: box.width > 0 && box.height > 0 ? { x, y, width: box.width + ${PAD * 2}, height: box.height + ${PAD * 2} } : null,
+    };
+  });
+  const surfaces = [...root.querySelectorAll('[data-et-surface]')].map((element) => ({
+    id: element.getAttribute('data-et-surface'),
+    shown: shown(element),
+  }));
+  return { controls, surfaces };
+})()`;
+
+const forceOn = ({
+  at,
+  interaction,
+  on,
+}: {
+  at: number;
+  interaction: string;
+  on: boolean;
+}) => `((at, interaction, on) => {
+  const element = document.querySelector('[data-et-complete="' + at + '"]');
+  const tokens = new Set((element.getAttribute('data-et-force') ?? '').split(' ').filter(Boolean));
+  if (on) tokens.add(interaction);
+  else tokens.delete(interaction);
+  if (tokens.size > 0) element.setAttribute('data-et-force', [...tokens].join(' '));
+  else element.removeAttribute('data-et-force');
+})(${JSON.stringify(at)}, ${JSON.stringify(interaction)}, ${JSON.stringify(on)})`;
+
+type Seen =
+  | { refused: string }
+  | {
+      controls: {
+        id: string;
+        at: number;
+        forced: string[];
+        box: { x: number; y: number; width: number; height: number } | null;
+      }[];
+      surfaces: { id: string; shown: boolean }[];
+    };
+
+type CompleteFrame = {
+  state: string;
+  interaction: string | null;
+  search: string;
+  size: { width: number; height?: number } | null;
+};
+
+const FORCEABLE = new Set(['hover', 'focus-visible', 'active']);
+
+const seeFrames = async (options: { browser: Browser; base: string; frames: CompleteFrame[] }) => {
+  const { browser, base, frames } = options;
+  const context = await browser.newContext();
+  const seen: SeenFrame[] = [];
+  const refused: string[] = [];
+
+  try {
+    const page = await context.newPage();
+
+    for (const frame of frames) {
+      await page.setViewportSize(viewportOf(frame.size));
+      await openFrame(page, `${base}/frame.html?${frame.search}`);
+      await page.addStyleTag({ content: NO_MOTION });
+      await page.evaluate(settled);
+
+      const found = (await page.evaluate(seeFrame)) as Seen;
+
+      if ('refused' in found) {
+        refused.push(`${frame.state}: ${found.refused}`);
+        continue;
+      }
+
+      const controls: SeenFrame['controls'] = [];
+
+      for (const control of found.controls) {
+        const forced: SeenFrame['controls'][number]['forced'] = [];
+
+        for (const interaction of control.forced.filter((name) => FORCEABLE.has(name))) {
+          if (!control.box) {
+            forced.push({ interaction, differs: false });
+            continue;
+          }
+
+          const shot = () =>
+            page.screenshot({ type: 'png', fullPage: true, clip: control.box ?? undefined, animations: 'disabled' });
+          const drawn = await shot();
+
+          await page.evaluate(forceOn({ at: control.at, interaction, on: false }));
+          await page.evaluate(settled);
+
+          const rest = await shot();
+
+          await page.evaluate(forceOn({ at: control.at, interaction, on: true }));
+          forced.push({ interaction, differs: !drawn.equals(rest) });
+        }
+
+        controls.push({ id: control.id, forced });
+      }
+
+      seen.push({ state: frame.state, interaction: frame.interaction, controls, surfaces: found.surfaces });
+    }
+  } finally {
+    await context.close();
+  }
+
+  return { seen, refused };
+};
+
+type PartModule = { default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown } };
+
+/**
+ * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
+ * and answers the gaps of its `controls` declaration, or why it could not draw.
+ */
+export const completenessOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  chromiumOf?: typeof chromiumOf;
+}): Promise<{ gaps: CompletenessGap[] } | { unavailable: string } | { problem: string }> => {
+  const { target, config, product, part } = options;
+  const resolveChromium = options.chromiumOf ?? chromiumOf;
+  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
+
+  if (!resolved) return { problem: `product "${product.name}" has no part "${part}"` };
+
+  if (!(await resolveChromium(target)))
+    return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
+
+  const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
+  const server = await createDesignServer({ target, config, listen: true, port: 0 });
+
+  try {
+    await server.listen();
+
+    const { port } = server.httpServer?.address() as AddressInfo;
+    const system = createSystemModules({ target, config });
+    const loaded = await server
+      .ssrLoadModule(productModuleIdOf({ file: resolved.file, product: product.name, sketch: null }))
+      .then((module) => ({ module: module as PartModule }))
+      .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+
+    if ('error' in loaded)
+      return { gaps: [{ code: 'RENDER', target: part, detail: loaded.error.split('\n')[0] ?? '' }] };
+
+    const definition = loaded.module.default;
+    const states = isRecord(definition?.states) ? Object.keys(definition.states) : [];
+    const interactions = Array.isArray(definition?.interactions)
+      ? definition.interactions.filter((name): name is string => INTERACTIONS.some((known) => known === name))
+      : [];
+    const presets = Object.keys(system.drawnOf(product.name, null)?.presets ?? {});
+    const widths = Array.isArray(definition?.widths)
+      ? definition.widths.filter((width): width is number => typeof width === 'number')
+      : [];
+    const preset = resolved.layer === 'pages' ? (presets[0] ?? null) : null;
+    const width = preset === null ? (widths[0] ?? null) : null;
+    const frames: CompleteFrame[] = [];
+
+    for (const state of states)
+      for (const interaction of [null, ...interactions]) {
+        const frame = partFrameOf({
+          system,
+          product: product.name,
+          part,
+          state,
+          preset,
+          width,
+          sketch: null,
+          interaction,
+        });
+
+        if (!(frame instanceof Error))
+          frames.push({ state, interaction, search: frame.search.toString(), size: frame.size ?? null });
+      }
+
+    const { seen, refused } = await queue.run((browser) =>
+      seeFrames({ browser, base: `http://localhost:${port}`, frames }),
+    );
+    const reviewed = readMerged(product.dir)[part] === partHashOf({ product, dir: dirname(resolved.file) });
+
+    return {
+      gaps: [
+        ...refused.map((detail) => ({ code: 'RENDER', target: part, detail })),
+        ...completenessGapsOf({ part, controls: definition?.controls, states, frames: seen, reviewed }),
+      ],
+    };
+  } catch (error) {
+    if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
+
+    throw error;
+  } finally {
+    await Promise.all([queue.close(), server.close()]);
+  }
+};

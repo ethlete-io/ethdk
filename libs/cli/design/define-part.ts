@@ -23,6 +23,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
  * `grid` draws the states it names as one table in rest, see `StateGrid`.
+ * `controls` names each control the part draws, keyed by the id its markup carries in `data-et-control`; `design
+ * complete` requires the states and surfaces its `kind` and `input` need, see `Control`.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
@@ -35,6 +37,7 @@ export type Part<TProps, TState extends string = string> = {
   widths?: number[];
   interactions?: Interaction[];
   grid?: StateGrid<TState>;
+  controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
 };
@@ -51,6 +54,20 @@ export type StateGrid<TState extends string = string, TColumn extends string = s
   rows: Record<string, Partial<Record<TColumn, TState>>>;
 };
 
+/** How a control is operated: `pointer` requires a drawn hover, `keyboard` a drawn focus-visible. */
+export type ControlInput = 'pointer' | 'keyboard';
+
+/**
+ * A control `design complete` checks. A `disclosure` needs a state that draws it collapsed and the state its
+ * `surfaces.body` names, which draws the element marked `data-et-surface="<id>.body"` visible and filled.
+ * A required interaction is drawn by a state that forces it on the control, e.g. with `forceInteraction`.
+ */
+export type Control<TState extends string = string> = {
+  kind: 'disclosure';
+  input: ControlInput[];
+  surfaces: { body: TState };
+};
+
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
 
@@ -59,9 +76,10 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'render'
+  'states' | 'grid' | 'controls' | 'render'
 > & {
   states: Record<TState, NoInfer<TProps>>;
+  controls?: Record<string, Control<NoInfer<TState>>>;
   grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
   render: (props: TProps) => Drawing | Promise<Drawing>;
 };

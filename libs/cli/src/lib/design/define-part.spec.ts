@@ -40,6 +40,26 @@ describe('definePart', () => {
     expect(button.grid).toBeUndefined();
   });
 
+  it('types the surfaces of its controls against the state names, and keeps them on the part', () => {
+    const controlled = definePart({
+      ...source,
+      controls: { more: { kind: 'disclosure', input: ['pointer'], surfaces: { body: 'filled' } } },
+    });
+
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      controls: { more: { kind: 'disclosure', input: ['pointer'], surfaces: { body: 'open' } } },
+    });
+    definePart({
+      ...source,
+      // @ts-expect-error a kind design complete does not know
+      controls: { more: { kind: 'slider', input: ['pointer'], surfaces: { body: 'filled' } } },
+    });
+
+    expect(controlled.controls?.['more']?.surfaces.body).toBe('filled');
+  });
+
   it('forces an interaction on the root of the drawing, as a frame does', async () => {
     const later = definePart({ ...button, render: async (props: Props) => button.render(props) });
 

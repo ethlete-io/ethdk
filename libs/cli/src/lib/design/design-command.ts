@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
+import { COMPLETE_USAGE, designComplete } from './system/complete-command';
 import { findCheckoutRoot } from './paths';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
@@ -86,6 +87,12 @@ const helpOf = (invocation: string) =>
     "  Record a direct edit of a merged part that the user approved without a sketch: writes the part's hash to",
     '  merged.json, so check stops warning of it, and logs who accepted it and why in accepted.json. Refuses an unknown',
     '  part, a part with an open sketch, and a part with no change outside a sketch.',
+    '',
+    `${invocation} ${COMPLETE_USAGE}`,
+    '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover for',
+    '  pointer input, focus-visible for keyboard, and for a disclosure a collapsed state and its visible body. A part',
+    '  that changed since its last merge or accept, or declares no controls, fails too. Separate from check and',
+    '  sketch ready: a round can be ready for comparison and still not complete for implementation.',
     '',
     `${invocation} ${PART_USAGE}`,
     "  Delete a part's folder and its merged.json entry, rewrite the product tsconfig paths, and resolve its comments.",
@@ -231,6 +238,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designAccept({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'complete') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designComplete({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'part') {

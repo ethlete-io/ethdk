@@ -95,3 +95,30 @@ export default definePart({
   note: 'Describe this part.',
 });
 ```
+
+`et design complete <layer>/<name> [--product <product>]` exits 1 while the part is not complete
+for implementation. A part declares its controls in `definePart({ controls })` and marks each
+one in its markup with `data-et-control="<id>"`, and each surface with
+`data-et-surface="<id>.<surface>"`:
+
+```ts
+export default definePart({
+  note: 'Describe this part.',
+  states: { rest: {}, hovered: {}, focused: {}, open: {} },
+  controls: {
+    unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } },
+  },
+  render: () => drawing({ body: html`…` }),
+});
+```
+
+`pointer` input needs a state that forces `hover` on the control, and `keyboard` input one that
+forces `focus-visible`, for example with `forceInteraction`. The forced frame must draw different
+pixels in the control's box than the same frame at rest. A `disclosure` also needs a state that
+draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
+A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
+hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.
+Only the `disclosure` kind is checked so far. A part that declares no `controls` fails with
+`CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-UNDRAWN`,
+`CONTROL-UNKNOWN`, `CONTROL-KIND` and `PART-UNREVIEWED`. `sketch ready` and `check` do not run
+it, so a partial round stays reviewable.
