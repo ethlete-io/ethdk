@@ -68,7 +68,7 @@ const SINGLE_LINE =
  */
 const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
-const WARNING_RULES = new Set(['UNDEFINED-CLASS']);
+const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
 const inspectFrame = (options: {
   fixed: boolean;
@@ -139,6 +139,24 @@ const inspectFrame = (options: {
   for (const element of root.querySelectorAll('[class]')) {
     const missing = [...element.classList].filter((name) => options.namespaces.some((prefix) => name.startsWith(prefix)) && !defined.has(name));
     if (missing.length > 0) report('UNDEFINED-CLASS', element, 'class ' + missing.map((name) => '"' + name + '"').join(', ') + ' is defined by no stylesheet of the frame');
+  }
+  const hostScaleOf = (element) => {
+    const style = getComputedStyle(element);
+    const matrix = style.transform === 'none' ? null : new DOMMatrixReadOnly(style.transform);
+    if (matrix && (Math.abs(matrix.a - 1) > 0.001 || Math.abs(matrix.d - 1) > 0.001)) return 'transform ' + style.transform;
+    if (style.scale && style.scale !== 'none' && style.scale !== '1') return 'scale ' + style.scale;
+    if (style.zoom && style.zoom !== '1' && style.zoom !== 'normal') return 'zoom ' + style.zoom;
+    return null;
+  };
+  for (const frame of root.querySelectorAll('iframe[data-et-embed-scale]')) {
+    if (Number(frame.getAttribute('data-et-embed-scale')) === 1) continue;
+    for (let at = frame.parentElement; at && at !== root.parentElement; at = at.parentElement) {
+      const scale = at.hasAttribute('data-et-embed-box') ? null : hostScaleOf(at);
+      if (scale) {
+        report('EMBED-SCALE', at, 'scales an embedPage of scale ' + frame.getAttribute('data-et-embed-scale') + ' with ' + scale + ', so the page shrinks twice: set the scale in one place');
+        break;
+      }
+    }
   }
 
   const box = partRoot.getBoundingClientRect();

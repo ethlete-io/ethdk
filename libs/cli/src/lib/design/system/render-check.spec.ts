@@ -27,6 +27,12 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string }> = {
   'components/embed-cut': {
     body: '<div data-et-embed-box style="overflow: hidden; width: 288px; height: 100px"><iframe style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div>',
   },
+  'components/embed-twice': {
+    body: '<div style="transform: scale(0.5); transform-origin: 0 0"><div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe data-et-embed="pages/tall" data-et-embed-scale="0.2" data-et-embed-drawn style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div></div>',
+  },
+  'components/embed-once': {
+    body: '<div style="transform: translateX(4px)"><div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe data-et-embed="pages/tall" data-et-embed-scale="0.2" data-et-embed-drawn style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div></div>',
+  },
   'components/wrapped': { body: '<button style="width: 60px">Save the draft now</button>' },
   'components/themed': {
     body: '<style>.et-color--known { color: red }</style><div class="et-color--known et-color--inherited"><p class="et-color--ghost" style="margin: 0">Themed</p></div>',
@@ -129,6 +135,7 @@ describe('renderIssuesOf', () => {
       'ZERO-SIZE components/empty fitted',
     ]);
     expect(rendered.warnings.map(renderIssueLineOf)).toEqual([
+      'EMBED-SCALE shop components/embed-twice default at fitted: div[data-et-part=components/embed-twice] - scales an embedPage of scale 0.2 with transform matrix(0.5, 0, 0, 0.5, 0, 0), so the page shrinks twice: set the scale in one place',
       'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] - class "shop-gone" is defined by no stylesheet of the frame',
       'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] > span.shop-ghost - class "shop-ghost" is defined by no stylesheet of the frame',
     ]);

@@ -318,6 +318,8 @@ of the product in a frame of its own. The embedding page's styles never reach in
 `mark` and `css` apply inside it: every element matching the `mark` selector gets
 `data-et-embed-marked` and an accent outline, and `css` is added as a stylesheet, for example to show
 the new look of a part next to the old one.
+`et design check` warns with `EMBED-SCALE` when an element around a frame with a `scale` scales it
+again (`transform`, `scale` or `zoom`), so the page shrinks twice: set the scale in one place.
 
 A part that another part renders owns its controls. Every rendered part root carries
 `data-et-part="<layer>/<name>"`, stamped automatically, and markup a host passes in through props
