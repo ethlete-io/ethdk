@@ -67,4 +67,29 @@ describe('staleReplacesOf', () => {
       'home/pinned.ts: replace(/<div class="acme-gone">/gu) matches no markup of pages/home or the parts it uses (elements/hero, components/button), so it changes nothing',
     ]);
   });
+
+  it('leaves a replace alone on markup a package draws, which the rule cannot read', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/chip/chip.ts',
+      [
+        "import { button } from '@acme/kit/button';",
+        "import { definePart, drawing } from '@design-system';",
+        '',
+        "const tagged = () => button({}).replace(/^<(button|a) /, '<$1 data-tagged ');",
+        'const markup = button({});',
+        '',
+        'export default definePart({',
+        '  states: { default: {} },',
+        "  render: () => drawing({ body: tagged() + markup.replace('<button', '<button data-b') + 'x'.replace('<gone>', ''), styles: '' }),",
+        '});',
+      ].join('\n'),
+    );
+
+    expect(staleReplacesOf(productOf(target)).map((problem) => problem.message)).toEqual([
+      "replace('<gone>') matches no markup of components/chip, so it changes nothing",
+    ]);
+  });
 });

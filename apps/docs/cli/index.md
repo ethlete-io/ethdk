@@ -162,6 +162,10 @@ folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a h
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
 diagram, passes with a `data-et-drawing` attribute.
 
+`et design check` warns with `STALE-REPLACE` when a `.replace` or `.replaceAll` pattern with a `<` matches no markup of
+the part or the parts it uses. A replace on markup a package draws, such as `button(options).replace(...)` with `button`
+from `@ethlete/components`, is not checked: the rule cannot read that markup.
+
 `et design check` fails with `CANONICAL-CLASS` when a Tailwind class in a part, in a TS file below
 its folder, or in a file of a `shared/` folder that it imports, has a canonical form under the product's stylesheets, as Tailwind IntelliSense reports it:
 with a 10px rem base, write `w-2xl` instead of `w-[420px]`.

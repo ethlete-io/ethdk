@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import { folderModulesOf, partsReachedFrom } from '../imports';
+import { classifyImport, folderModulesOf, partsReachedFrom } from '../imports';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 
@@ -27,14 +27,66 @@ const matcherOf = (pattern: ts.Expression): Pick<Replace, 'label' | 'matches'> |
   }
 };
 
+const DESIGN_SYSTEM = '@design-system';
+
+const packageNamesOf = (file: ts.SourceFile) =>
+  new Set(
+    file.statements.filter(ts.isImportDeclaration).flatMap((declaration) => {
+      const specifier = ts.isStringLiteral(declaration.moduleSpecifier) ? declaration.moduleSpecifier.text : '';
+      const clause = declaration.importClause;
+      const bindings = clause?.namedBindings;
+
+      if (classifyImport(specifier).kind !== 'other' || specifier === DESIGN_SYSTEM) return [];
+
+      return [
+        ...(clause?.name ? [clause.name.text] : []),
+        ...(bindings && ts.isNamespaceImport(bindings) ? [bindings.name.text] : []),
+        ...(bindings && ts.isNamedImports(bindings) ? bindings.elements.map((element) => element.name.text) : []),
+      ];
+    }),
+  );
+
+const initializersOf = (file: ts.SourceFile) => {
+  const initializers = new Map<string, ts.Expression>();
+  const visit = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer)
+      initializers.set(node.name.text, node.initializer);
+    ts.forEachChild(node, visit);
+  };
+
+  visit(file);
+
+  return initializers;
+};
+
+/** Whether `node` is markup a package draws: a call or member of a package import, directly or through a local const. */
+const comesFromPackage = (
+  node: ts.Expression,
+  context: { packages: Set<string>; initializers: Map<string, ts.Expression>; seen: Set<string> },
+): boolean => {
+  if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node) || ts.isParenthesizedExpression(node))
+    return comesFromPackage(node.expression, context);
+  if (!ts.isIdentifier(node)) return false;
+  if (context.packages.has(node.text)) return true;
+
+  const initializer = context.initializers.get(node.text);
+
+  if (!initializer || context.seen.has(node.text)) return false;
+
+  return comesFromPackage(initializer, { ...context, seen: new Set([...context.seen, node.text]) });
+};
+
 const replacesOf = (source: string) => {
   const replaces: Replace[] = [];
+  const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
+  const context = { packages: packageNamesOf(file), initializers: initializersOf(file), seen: new Set<string>() };
   const visit = (node: ts.Node) => {
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
       REPLACE_METHODS.has(node.expression.name.text) &&
-      node.arguments[0]
+      node.arguments[0] &&
+      !comesFromPackage(node.expression.expression, context)
     ) {
       const matcher = matcherOf(node.arguments[0]);
 
@@ -50,7 +102,7 @@ const replacesOf = (source: string) => {
     ts.forEachChild(node, visit);
   };
 
-  visit(ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true));
+  visit(file);
 
   return replaces.sort((a, b) => a.start - b.start);
 };
