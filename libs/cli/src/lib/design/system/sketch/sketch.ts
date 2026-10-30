@@ -245,7 +245,8 @@ export const runningRoundOf = (sketch: Pick<Sketch, 'rounds'>) =>
 
 /** The rejection that holds on a variant now, or `null` when it is live. */
 export const rejectionOf = (sketch: Pick<SketchFile, 'rejections'>, variant: string): SketchRejection | null => {
-  const last = sketch.rejections?.[variant]?.at(-1);
+  const history = sketch.rejections?.[variant] ?? [];
+  const last = history[history.length - 1];
 
   return last && !last.reopened ? last : null;
 };
