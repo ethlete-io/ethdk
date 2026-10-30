@@ -101,6 +101,12 @@ Coordinate with stream B on `serve.ts` and with stream C on the timeline.
 
 Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `handoff` status with CI.
 
+- **Built (`aaa57a950`): 4.47 approved exceptions.** `design complete --request <part>.<control>.<requirement> --reason`
+  writes a pending entry to `<product>/exceptions.json` (the owner's for a base part); the gap still fails, marked
+  pending. `POST /__design/exception-approve?product=` `{ key, by }` records `by`, `at` and the part hash; then the gap
+  drops. A later part edit reopens it. `GET /__design/exceptions?product=` lists them; `design complete` prints an
+  `EXCEPTION` line each. Studio has no approve button yet (stream C). Remaining: the `handoff` status with CI.
+
 ## Nothing to build
 
 3.41 (did not reproduce), 4.7 (known limit), 5.21 (parked), 5.23 (SDK issue), 5.24 (done), 6.5 (covered by 4.47).
