@@ -1,5 +1,5 @@
 import { definePart, drawing, html, ng } from '@design-system';
-import commentPin, { commentPinMark } from '@system/components/comment-pin';
+import { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
@@ -279,7 +279,7 @@ export const inbox = () =>
 
       return drawing({
         body: shell.body,
-        styles: shell.styles + frames.styles + commentPin.styles + styles,
+        styles: shell.styles + frames.styles + styles,
       });
     },
   });
