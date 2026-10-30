@@ -93,7 +93,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 
 1. `motions`, the morph, `ctx` and the check rules. In progress (builder, 2026-10-30): 1a the `motions`
    declaration and the static check rules (done); 1b the morph and `ctx` (done).
-2. Shots through the CLI and MCP. CLI done (2026-10-30); the MCP tool waits for the MCP server, see "As built: slice 2".
+2. Shots through the CLI and MCP. Done (2026-10-30): CLI `40087e0a9`, the `motion_shots` tool of `et design mcp` `90724234f`.
 3. The keyframe strip and the timeline in Studio.
 4. `spring()` and `interrupt`.
 5. Flow lines.

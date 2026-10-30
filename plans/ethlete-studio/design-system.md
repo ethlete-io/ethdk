@@ -2349,6 +2349,16 @@ State:
   deleted.
 - No tools for the old calls. The agent reads them as files.
 
+As built (2026-10-30, `90724234f`): `et design mcp` (`libs/cli/src/lib/design/mcp-command.ts`) answers MCP over stdio
+with the tools `parts`, `check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`,
+`sketch_discard`, `inbox`, `inbox_done`. Each tool is a table entry that builds the argv of the `et design` command of the
+same name and runs this same CLI in a child process in the working directory, so command output never lands on the protocol
+stream. A `.png` path the command prints comes back as an image, a `.json` path as text. Bite: the spec fails without the
+image attachment and when a notification gets an answer; one test runs the real commands in process. Verified end to end
+with the built CLI on scratch checkouts (`shot` image, `motion_shots` image and JSON). Open: the `.mcp.json` and Codex
+registration in `ethlete-agents sync`, the agent-rules skill, pointing the Studio chat at `et design mcp` and deleting
+`tools.rs`; the tools for the other sketch commands (variant, round, list, check, preview, rebase) and `comment reply`.
+
 ### Checkup decisions (2026-10-27)
 
 - Merge needs a pick in `sketch.json` and merges only the picked variant. Otherwise it refuses
