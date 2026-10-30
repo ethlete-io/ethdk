@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl } from '@angular/forms';
+import type { Sort } from '@ethlete/query';
 import { SortDefaultOptions, SORT_DEFAULT_OPTIONS, SortDirective } from './partials/sort';
 import { SortImports } from './sort.imports';
 
@@ -24,6 +26,18 @@ class SortHostComponent {
   imports: [SortImports],
 })
 class UnconfiguredSortHostComponent {}
+
+@Component({
+  template: `
+    <div [sortControl]="control()" etSort>
+      <button et-sort-header="name">Name</button>
+    </div>
+  `,
+  imports: [SortImports],
+})
+class SortControlHostComponent {
+  control = signal(new FormControl<Sort | null>({ active: 'name', direction: 'asc' }));
+}
 
 const render = (config: { disableClear?: boolean; defaults?: SortDefaultOptions } = {}) => {
   TestBed.configureTestingModule({
@@ -75,5 +89,22 @@ describe('SortDirective', () => {
     fixture.destroy();
 
     expect(document.querySelectorAll('.cdk-describedby-message-container > *').length).toBe(0);
+  });
+
+  it('follows a swapped sortControl', () => {
+    const fixture = TestBed.createComponent(SortControlHostComponent);
+    fixture.detectChanges();
+    const sort = fixture.debugElement.children[0]!.injector.get(SortDirective);
+    const oldControl = fixture.componentInstance.control();
+    const newControl = new FormControl<Sort | null>({ active: 'name', direction: 'asc' });
+
+    fixture.componentInstance.control.set(newControl);
+    fixture.detectChanges();
+
+    newControl.setValue({ active: 'name', direction: 'desc' });
+    expect(sort.direction).toBe('desc');
+
+    oldControl.setValue({ active: 'name', direction: '' });
+    expect(sort.direction).toBe('desc');
   });
 });

@@ -7,13 +7,14 @@ import {
   OnDestroy,
   OnInit,
   Output,
+  SimpleChanges,
   booleanAttribute,
   inject,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { createDestroy } from '@ethlete/core';
 import { Sort, type SortDirection } from '@ethlete/query';
-import { Observable, Subject, Subscriber, takeUntil } from 'rxjs';
+import { Observable, Subject, Subscriber, Subscription } from 'rxjs';
 import { SortDefaultOptions, Sortable } from './sort.types';
 
 /**
@@ -36,6 +37,8 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
   sortables = new Map<string, Sortable>();
 
   readonly _stateChanges = new Subject<void>();
+
+  private _controlSubscription = new Subscription();
 
   _isInitialized = false;
 
@@ -133,59 +136,81 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
       this.direction = this.sortDirectionControl.value;
     }
 
+    this._watchControls();
+  }
+
+  private _watchControls() {
+    this._controlSubscription.unsubscribe();
+    this._controlSubscription = new Subscription();
+
     if (this.sortControl) {
-      this.sortControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-        if (value) {
-          if (this.active !== value.active) {
-            this.active = value.active;
+      this._controlSubscription.add(
+        this.sortControl.valueChanges.subscribe((value) => {
+          if (value) {
+            if (this.active !== value.active) {
+              this.active = value.active;
+            }
+
+            if (this.direction !== value.direction) {
+              this.direction = value.direction;
+            }
+          } else {
+            this.active = undefined;
+            this.direction = '';
           }
 
-          if (this.direction !== value.direction) {
-            this.direction = value.direction;
-          }
-        } else {
-          this.active = undefined;
-          this.direction = '';
-        }
-
-        this._stateChanges.next();
-      });
+          this._stateChanges.next();
+        }),
+      );
     }
 
     if (this.sortByControl) {
-      this.sortByControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-        if (value) {
-          if (this.active !== value) {
-            this.active = value;
+      this._controlSubscription.add(
+        this.sortByControl.valueChanges.subscribe((value) => {
+          if (value) {
+            if (this.active !== value) {
+              this.active = value;
+            }
+          } else {
+            this.active = undefined;
           }
-        } else {
-          this.active = undefined;
-        }
 
-        this._stateChanges.next();
-      });
+          this._stateChanges.next();
+        }),
+      );
     }
 
     if (this.sortDirectionControl) {
-      this.sortDirectionControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-        if (value) {
-          if (this.direction !== value) {
-            this.direction = value;
+      this._controlSubscription.add(
+        this.sortDirectionControl.valueChanges.subscribe((value) => {
+          if (value) {
+            if (this.direction !== value) {
+              this.direction = value;
+            }
+          } else {
+            this.direction = '';
           }
-        } else {
-          this.direction = '';
-        }
 
-        this._stateChanges.next();
-      });
+          this._stateChanges.next();
+        }),
+      );
     }
   }
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
+    const controlChanged = (['sortControl', 'sortByControl', 'sortDirectionControl'] as const).some(
+      (key) => changes[key] && !changes[key].firstChange,
+    );
+
+    if (controlChanged) {
+      this._watchControls();
+    }
+
     this._stateChanges.next();
   }
 
   ngOnDestroy() {
+    this._controlSubscription.unsubscribe();
     this._stateChanges.complete();
   }
 
