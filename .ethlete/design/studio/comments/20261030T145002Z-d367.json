@@ -14,5 +14,9 @@
     "reason": "done",
     "addressedAt": "2026-10-30T15:11:30.876Z",
     "note": "Checkup gemacht, Entscheidungen gebaut: Part ist die Quelle (yarn studio:themes), Elevation 0 = Seitenhintergrund. Offen im Plan: --text-subtle, *-disabled, Verweise auf --surface-sunken."
+  },
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T15:11:47.710Z"
   }
 }

@@ -14,5 +14,9 @@
     "reason": "done",
     "addressedAt": "2026-10-30T15:11:31.053Z",
     "note": "Checkup gemacht, Entscheidungen gebaut: brand = Teal aus dem Part, danger aus dem Part, WARNING_THEME mit type warning. Offen im Plan: *-active und *-disabled als Part-Tokens."
+  },
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T15:11:57.689Z"
   }
 }
