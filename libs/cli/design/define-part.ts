@@ -12,6 +12,8 @@ export { spring } from './spring';
 export type { Spring } from './spring';
 export { svgAsset } from './svg-asset';
 export type { SvgAssetOptions } from './svg-asset';
+export { tokenSheet } from './token-sheet';
+export type { TokenSheetOptions } from './token-sheet';
 
 /** An interaction Studio can force on a part's root element. Rest is always drawn and never listed. */
 export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';

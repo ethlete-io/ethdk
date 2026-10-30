@@ -137,6 +137,30 @@ damping ratio (below 1 it overshoots), `frequency` the undamped frequency in Hz.
 and `duration`, the ms until it settles (10 s at most); as a string it reads `<duration>ms <easing>`, so
 `` `--motion-capsule: ${spring({ damping: 0.6, frequency: 2 })};` `` gives a token for `transition: width var(--motion-capsule)`.
 
+`tokenSheet({ title, css, sample, sampleOf, sampleClass, only, pixels, styles, setup })` from `@design-system` draws a
+`foundations` part as one sheet, the same in every product: a `sample` panel, then a row per custom property declared in `css`
+(the part's own `./<name>.css?inline`), kept by `only`, with the value the drawing resolves and `sampleOf(name)` next to it.
+`pixels` adds the px size of a rem value. `styles` and `setup` are the part's own, added after the sheet's. The sheet uses the
+product's `--space-*`, `--text-*`, `--surface*` and `--font-*` tokens, so no part types a value by hand.
+
+```ts
+import { definePart, tokenSheet } from '@design-system';
+import tokens from './spacing.css?inline';
+
+export default definePart({
+  note: 'The spacing scale.',
+  states: { scale: {} },
+  render: () =>
+    tokenSheet({
+      title: 'Spacing',
+      css: tokens,
+      sample: '',
+      sampleOf: (name) => `<span style="width: var(--${name})"></span>`,
+      pixels: true,
+    }),
+});
+```
+
 A flow line (`<product>/flows/<name>.json`) animates when it has `"transition": "view"`. `et design motion flow <flow> <line>`
 draws the `from` page, then morphs it to the `to` page inside a same-document View Transition, stepped and shot like a motion, in
 the whole viewport of `--preset` (the product's first preset by default). The `to` page's styles, with its
