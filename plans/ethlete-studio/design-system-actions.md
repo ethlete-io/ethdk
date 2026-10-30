@@ -368,8 +368,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decided (Tom, 2026-10-30):** the proposal as written, with the recommendation for open
   points 1, 2 and 4 to 6. Exceptions differ from point 3: no keychain signature. Only the
   approve button in Studio writes an approval, and git shows every change to it.
-- **Status:** decided, not built. The next step is the first rollout slice: `controls` and
-  `design complete` for the `disclosure` kind on `pages/merge`.
+- **Status:** slice 1 built: `definePart({ controls })`, the `data-et-control` and
+  `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
+  focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
+  box; the part must match its `merged.json` hash). Until discovery lands, a part without
+  `controls` fails as `CONTROLS-MISSING`; `pages/merge` fails that way today. Next: discovery
+  (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
@@ -463,6 +467,23 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (recommended). 2. reload the sketch list and fail visibly when it has no decision.
 - **Acceptance:** a click on "Pick c" shows c as picked at once and enables Merge, also for a variant
   that changes no pixel; a failed pick shows an error instead of a silent reset.
+
+### 4.53 Studio designs use plain CSS where Tailwind utilities would do - open
+
+- **Pain (Tom, 2026-10-30):** many Studio designs style with plain CSS, though the rule is
+  Tailwind utilities in the markup and CSS only where utilities cannot express it.
+- **Evidence:** about 1,800 lines of CSS outside sketches, for example `pages/inbox/shared/inbox.css`
+  (258), `elements/shell-main/shell-main.css` (246), `pages/merge/merge.css` (161),
+  `elements/canvas-frames/canvas-frames.css` (126). `foundations/colors/colors.css` (454) is
+  token definitions and probably stays. The process rule from 2026-10-29 (see the fixed
+  table, "new plain CSS files for a sketch") covers only new sketch code, and no check
+  enforces it.
+- **Fix options:** 1. a `design check` rule that flags a CSS declaration with a matching
+  Studio utility, for example `display: flex` or a spacing or colour token, and lets the
+  rest pass (recommended). Then move the existing parts, one page per commit, with no
+  pixel change. 2. only a one-time manual move, without a rule; new CSS comes back.
+- **Acceptance:** `design check` fails on a new utility-expressible declaration, and the
+  existing pages draw the same pictures with their CSS cut to what utilities cannot do.
 
 ## 5. Drawing parts and pages
 
