@@ -94,7 +94,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 1. `motions`, the morph, `ctx` and the check rules. In progress (builder, 2026-10-30): 1a the `motions`
    declaration and the static check rules (done); 1b the morph and `ctx` (done).
 2. Shots through the CLI and MCP. Done (2026-10-30): CLI `40087e0a9`, the `motion_shots` tool of `et design mcp` `90724234f`.
-3. The keyframe strip and the timeline in Studio.
+3. The keyframe strip and the timeline in Studio. Done (2026-10-30), see "As built: slice 3 Studio".
 4. `spring()` and `interrupt`. Done (2026-10-30), see "As built: slice 4".
 5. Flow lines. Done (2026-10-30), see "As built: slice 5".
 
@@ -175,6 +175,18 @@ Each slice gets an "in progress" note here when it starts.
   redraws the part (`forget`, `clear`), so the JSON and every keyframe image come from one draw.
 - Bit: the endpoint spec counts `motionPicturesOf` calls (JSON then a keyframe image = 1 draw); it fails without the cache.
 - Open: token names in tracks (slice 3, Studio side or here), the keyframe strip and timeline in Studio (stream C).
+
+## As built: slice 3 Studio (2026-10-30, `4b57f37af`)
+
+- `ethlete-motion-strip` (`apps/ethlete-studio/src/app/system-view/`) sits below the part canvas when the part lists
+  motions: a row per motion with its keyframe images from `GET /__design/motion`, a preset toggle (first preset by
+  default) and a Reduced toggle. A keyframe opens `ethlete-motion-timeline` at its time: the keyframe image at or before
+  the slider time, play and pause, speed 0.1/0.25/0.5/1×, and one track per animation (element, properties, duration,
+  easing, a bar and the playhead).
+- Verified: specs (one fails without the "at or before" pick), spec typecheck, eslint, `nx build ethlete-studio` with 0
+  warnings. Not seen live.
+- Open: the strip is a panel below the canvas, not a canvas row; the timeline steps through keyframe images and does not
+  drive the live frame (no `postMessage` switch yet), so speed only paces the playhead; token names in tracks.
 
 ## As built: Q29-Q31 (2026-10-30)
 

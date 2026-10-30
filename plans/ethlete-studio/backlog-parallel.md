@@ -9,7 +9,7 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   false positive, then exceptions and `handoff` run in one subagent.
 - D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
   `UTILITY-CSS` in `RULES`). C1 done (`2a90d0cfd`, Inventory toggle on `pages/*` parts; `by` is `designer`). B, E and G slice 5 run; C2
-  waits for B2; C3 (1.2 re-run) not started; F 5.51 r2 at ready; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
+  done (`4b57f37af`); C3 (1.2 re-run) not started; F 5.51 r2 at ready; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
 - Tom merged `foundations/colors` r2 and `elements/canvas-frames` + `pages/sketches` r1 (`b47bae5e9`). Q43 (zoom
   chip as its own part `elements/zoom-chip`) is now a new sketch on the merged parts - in progress.
@@ -50,7 +50,9 @@ Serial, all in `system/sketch`, `system/complete.ts`, `inventory*.ts`:
 
 1. 4.47 slice 2: the inventory approval view (marked page, list, approve button). Starts when stream A step 1
    lands; build the UI against the CLI output.
-2. Motion slice 3: keyframe strip and timeline. Starts when stream B step 2 lands.
+2. Motion slice 3: keyframe strip and timeline: built (`4b57f37af`). A strip below the part canvas with a row of
+   keyframes per motion (preset and reduced toggles); a keyframe opens a read-only timeline. Specs and build only,
+   not seen live.
 3. 1.2 re-run the 100-cycle frame-reload test and record the result.
 4. 4.47 exception approval: built (`4a15e30a9`). An Exceptions button on a part lists its pending and reopened
    exceptions (key, reason) with an approve button (`by: designer`). Specs and build only, not seen live.
@@ -225,7 +227,7 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   d/e/f ready (`a4ef82110`): `generate-sdk-tokens.mjs --overrides <json>` adds extra themes and patches values,
   default output unchanged. Sketch `components/select` "Select controls" a/b/c ready (`276187bd7`); exception
   request withdrawn after Q56 (`fa2bbed44`). Verified: `sketch check`, `sketch preview`, `design complete
-  --variant` b and c pass. Not verified by eye: the select states, the tokens states other than contrast.
+--variant` b and c pass. Not verified by eye: the select states, the tokens states other than contrast.
 - **Next (builder):** after Tom merges `foundations/tokens` e, move the e values and the three `*-on-light`
   themes into `apps/storybook/src/themes.ts`/`surface-themes.ts` and the generator default set, regenerate the
   Storybook CSS, then `yarn sdk:tokens:check` must pass against the merged CSS. After `data-et-control-part`
