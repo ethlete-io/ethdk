@@ -237,6 +237,7 @@ if (command === 'send' && sender) {
   appendFileSync(mailbox, '');
   let seen = entries().length;
   const wake = (agent) => {
+    if (!unreadFor(agent).unread.length) return;
     const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
     const session = [sessionFor(agent), agent].find(sessionExists);
     if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);

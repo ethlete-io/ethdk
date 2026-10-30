@@ -149,6 +149,30 @@ describe('agent-mailbox', () => {
     }
   });
 
+  it.skipIf(!hasTmux)('does not wake a session whose inbox already holds the message', async () => {
+    const session = `mailbox-spec-read-${process.pid}`;
+    const log = join(dir, 'pane.log');
+
+    spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
+
+    const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+      cwd: dir,
+      env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      run(['send', 'codex', '--to', session, 'hello']);
+      expect(run(['inbox', session]).stdout).toContain('hello');
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      expect(readFileSync(log, 'utf8')).not.toContain('inbox');
+    } finally {
+      dispatch.kill();
+      spawnSync('tmux', ['kill-session', '-t', session]);
+    }
+  });
+
   it.skipIf(!hasTmux)('starts and stops the tmux sessions for up and down', () => {
     const suffix = process.pid;
     const dispatchSession = `mailbox-dispatch-${suffix}`;
