@@ -22,11 +22,7 @@ const TEXT_TOKEN = /^et-surface-(background|color(-muted|-subtle)?)$/u;
 const themeClassOf = (theme: Theme, surface: Surface) => `et-color--${theme}${surface === 'light' ? '-on-light' : ''}`;
 
 const demoNote = (theme: Theme, surface: Surface) =>
-  html`<p class="sdk-note">
-    ${theme} is a demo theme of the SDK Storybook (apps/storybook/src/themes.ts); the SDK ships no theme names, each app
-    registers its
-    own.${surface === 'light' ? ` On a light surface the sheet reads .${themeClassOf(theme, surface)}.` : ''}
-  </p>`;
+  `${theme} is a demo theme of the SDK Storybook (apps/storybook/src/themes.ts); the SDK ships no theme names, each app registers its own.${surface === 'light' ? ` On a light surface the sheet reads .${themeClassOf(theme, surface)}.` : ''}`;
 
 const swatch = (token: string) => html`<span class="sdk-swatch" style="background: rgb(var(--${token}))"></span>`;
 
@@ -75,32 +71,30 @@ const surfacePanel = html`<div class="sdk-card">
     <span class="sdk-elevation sdk-shadow-raised">Raised</span>
   </div>`;
 
-const themePanel = (theme: Theme, surface: Surface) =>
-  html`${demoNote(theme, surface)}
-    <div class="sdk-states">
-      ${STATE_ENDS.map(
-        (end) =>
-          html`<span
-            class="sdk-fill sdk-fill--wide"
-            ${disabledOf(end)}
-            style="background: rgb(var(--et-color-primary${end})); color: rgb(var(--et-color-on-primary${end}))"
-            >${labelOf(end)}</span
-          >`,
-      ).join('')}
-    </div>
-    <div class="sdk-states">
-      ${STATE_ENDS.map(
-        (end) =>
-          html`<span class="sdk-link" ${disabledOf(end)} style="color: rgb(var(--et-color-primary-ink${end}))"
-            >Ink ${labelOf(end)}</span
-          >`,
-      ).join('')}
-    </div>`;
+const themePanel = html`<div class="sdk-states">
+    ${STATE_ENDS.map(
+      (end) =>
+        html`<span
+          class="sdk-fill sdk-fill--wide"
+          ${disabledOf(end)}
+          style="background: rgb(var(--et-color-primary${end})); color: rgb(var(--et-color-on-primary${end}))"
+          >${labelOf(end)}</span
+        >`,
+    ).join('')}
+  </div>
+  <div class="sdk-states">
+    ${STATE_ENDS.map(
+      (end) =>
+        html`<span class="sdk-link" ${disabledOf(end)} style="color: rgb(var(--et-color-primary-ink${end}))"
+          >Ink ${labelOf(end)}</span
+        >`,
+    ).join('')}
+  </div>`;
 
-const scopeClassOf = ({ group, surface }: Props) =>
+const scopeOf = ({ group, surface }: Props) =>
   group === 'surface' || group === 'contrast'
-    ? `et-surface--${surface}`
-    : `et-surface--${surface} ${themeClassOf(group, surface)}`;
+    ? `sdk-colors et-surface--${surface}`
+    : `sdk-colors et-surface--${surface} ${themeClassOf(group, surface)}`;
 
 const titleOf = ({ group, surface }: Props) =>
   group === 'surface'
@@ -115,6 +109,7 @@ const sheetOf = (props: Props) => {
   if (group === 'surface')
     return tokenSheet({
       title: titleOf(props),
+      scope: scopeOf(props),
       css,
       sample: surfacePanel,
       sampleOf: surfaceSample,
@@ -123,6 +118,7 @@ const sheetOf = (props: Props) => {
   if (group === 'contrast')
     return tokenSheet({
       title: titleOf(props),
+      scope: scopeOf(props),
       css,
       sample: contrastSheet(css, surface),
       sampleClass: 'sdk-contrast',
@@ -132,8 +128,10 @@ const sheetOf = (props: Props) => {
 
   return tokenSheet({
     title: titleOf(props),
+    scope: scopeOf(props),
+    note: demoNote(group, surface),
     css,
-    sample: themePanel(group, surface),
+    sample: themePanel,
     sampleOf: colorSample,
     only: (name) => COLOR_TOKEN.test(name),
   });
@@ -148,7 +146,6 @@ const STYLES = `
   .sdk-table { display: flex; flex-direction: column; gap: 0.8rem; }
   .sdk-title { margin: 0; font-size: 1.4rem; font-weight: 600; }
   .sdk-value { font-family: var(--et-font-family-mono); font-size: 1.2rem; color: var(--et-surface-color-muted-solid); white-space: nowrap; }
-  .sdk-note { margin: 0; max-width: 64rem; font-size: 1.2rem; color: var(--et-surface-color-muted-solid); }
   .sdk-card { display: flex; gap: 2.4rem; padding: 1.2rem 1.6rem; border: 0.1rem solid var(--et-surface-border-solid); border-radius: 0.6rem; }
   .sdk-muted { color: var(--et-surface-color-muted-solid); }
   .sdk-subtle { color: var(--et-surface-color-subtle-solid); }
@@ -166,18 +163,10 @@ const STYLES = `
   .sdk-shadow-raised { box-shadow: 0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb) / 0.22), 0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb) / 0.14); }
 `;
 
-const render = (props: Props): Drawing & { styles: string } => {
+const render = (props: Props): Drawing => {
   const sheet = sheetOf(props);
 
-  return {
-    body: html`<div class="sdk-colors ${scopeClassOf(props)}">${sheet.body}</div>`,
-    styles: `${sheet.styles ?? ''}${STYLES}`,
-    // Workaround: tokenSheet reads each value at the frame root, but the SDK scopes its tokens to theme classes.
-    setup: (root) => {
-      const scope = root.querySelector<HTMLElement>('.sdk-colors') ?? root;
-      for (const setup of [sheet.setup ?? []].flat()) setup(scope);
-    },
-  };
+  return { ...sheet, styles: `${sheet.styles ?? ''}${STYLES}` };
 };
 
 export default definePart<Props>({
