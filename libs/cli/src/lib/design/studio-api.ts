@@ -32,7 +32,7 @@ import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
-import { BoxOf, diffVariant } from './variant-diff';
+import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
 import {
@@ -52,6 +52,7 @@ export const SKETCHES_PATH = '/__design/sketches';
 export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
 export const SKETCH_COMPARE_PATH = '/__design/sketch-compare';
 export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
+export const SKETCH_CROP_PATH = '/__design/sketch-crop';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
 
@@ -313,6 +314,37 @@ export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketc
       load,
     }),
   };
+});
+
+/**
+ * `?product=&sketch=&variants=a,b&size=`: `{ area }`, the one crop around every pixel the variants change in any state
+ * against the product now, at rest, and the frame it sits in; `area` is `null` when no pixel changes.
+ */
+export const sketchCropAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
+  const variants = (asked.url.searchParams.get('variants') ?? '').split(',').filter(Boolean);
+  const unknown = variants.find((variant) => !sketch.variants.includes(variant));
+  const { load, pictureOf, boxOf } = asked;
+
+  if (variants.length === 0) return failure(400, 'variants names no variant');
+  if (unknown !== undefined) return failure(404, `${sketch.target} has no variant "${unknown}"`);
+  if (!load || !pictureOf || !boxOf) return failure(503, 'this server draws no pictures');
+
+  const diffs = await Promise.all(
+    variants.map((variant) =>
+      diffVariant({
+        product,
+        sketch,
+        variant,
+        size: asked.url.searchParams.get('size'),
+        params: asked.url.searchParams,
+        pictureOf,
+        boxOf,
+        load,
+      }),
+    ),
+  );
+
+  return { status: 200, body: { area: changedAreaOf(diffs) } };
 });
 
 /**

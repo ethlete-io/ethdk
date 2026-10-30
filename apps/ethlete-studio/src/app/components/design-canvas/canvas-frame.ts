@@ -42,6 +42,45 @@ export type CanvasFrame = {
   at?: { x: number; y: number };
   /** Draws a table of fitted cells inside the frame instead of `src`; each cell takes comments of its own. */
   grid?: FrameGrid;
+  /** Draws only this area of the page, enlarged to the frame's width, below a small picture of the whole page. */
+  crop?: FrameCrop;
+};
+
+/** An area of a page `frame` big, in the page's CSS pixels. */
+export type FrameCrop = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  frame: { width: number; height: number };
+};
+
+const CROP_THUMB_SCALE = 0.2;
+const CROP_THUMB_GAP = 24;
+
+/** Where a cropped frame draws the picture of the whole page and the enlarged area, and its own size. */
+export const croppedLayoutOf = (crop: FrameCrop) => {
+  const { width, height } = crop.frame;
+  const scale = width / crop.width;
+  const thumb = { width: width * CROP_THUMB_SCALE, height: height * CROP_THUMB_SCALE };
+  const top = thumb.height + CROP_THUMB_GAP;
+
+  return {
+    width,
+    height: top + crop.height * scale,
+    thumb: {
+      ...thumb,
+      scale: CROP_THUMB_SCALE,
+      outline: {
+        x: crop.x * CROP_THUMB_SCALE,
+        y: crop.y * CROP_THUMB_SCALE,
+        width: crop.width * CROP_THUMB_SCALE,
+        height: crop.height * CROP_THUMB_SCALE,
+      },
+    },
+    view: { top, scale, x: crop.x, y: crop.y },
+    page: crop.frame,
+  };
 };
 
 /** One fitted page in a frame's grid, at a row and a column of it. */

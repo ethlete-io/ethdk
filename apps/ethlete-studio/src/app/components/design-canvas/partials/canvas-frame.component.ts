@@ -28,7 +28,14 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { CanvasFrame, FrameMessage, MeasuredSide, followedSizes, frameMessageOf } from '../canvas-frame';
+import {
+  CanvasFrame,
+  FrameMessage,
+  MeasuredSide,
+  croppedLayoutOf,
+  followedSizes,
+  frameMessageOf,
+} from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
@@ -103,7 +110,46 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         (sizeChange)="readGridSize($event)"
         (cellsChange)="cellsChange.emit($event)"
       />
+    } @else if (cropped(); as cropped) {
+      @if (frame().screenshot; as screenshot) {
+        <div
+          [style.width.px]="cropped.thumb.width"
+          [style.height.px]="cropped.thumb.height"
+          class="absolute top-0 left-0 overflow-hidden outline outline-surface-border"
+          data-crop-thumb
+        >
+          <img
+            [src]="screenshot"
+            [style.transform]="'scale(' + cropped.thumb.scale + ')'"
+            class="absolute top-0 left-0 max-w-none origin-top-left"
+            alt=""
+          />
+          <div
+            [style.left.px]="cropped.thumb.outline.x"
+            [style.top.px]="cropped.thumb.outline.y"
+            [style.width.px]="cropped.thumb.outline.width"
+            [style.height.px]="cropped.thumb.outline.height"
+            class="absolute outline-2 outline-accent outline-solid"
+            data-crop-outline
+          ></div>
+        </div>
+      }
+      <div [style.top.px]="cropped.view.top" class="absolute right-0 bottom-0 left-0 overflow-hidden" data-crop-view>
+        <div
+          [style.width.px]="cropped.page.width"
+          [style.height.px]="cropped.page.height"
+          [style.transform]="
+            'scale(' + cropped.view.scale + ') translate(' + -cropped.view.x + 'px, ' + -cropped.view.y + 'px)'
+          "
+          class="absolute top-0 left-0 origin-top-left"
+        >
+          <ng-container [ngTemplateOutlet]="page" />
+        </div>
+      </div>
     } @else {
+      <ng-container [ngTemplateOutlet]="page" />
+    }
+    <ng-template #page>
       @if (!painted()) {
         @if (frame().screenshot) {
           <img
@@ -130,7 +176,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           ></iframe>
         }
       }
-    }
+    </ng-template>
     @if (frame().pending; as pending) {
       <div
         class="pointer-events-none absolute inset-0 flex items-start justify-center bg-surface/70 p-[calc(2.4rem_*_var(--et-design-canvas-label-scale))]"
@@ -195,6 +241,11 @@ export class CanvasFrameComponent {
       this.selected() ||
       (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
   );
+  protected cropped = computed(() => {
+    const crop = this.frame().crop;
+
+    return crop ? croppedLayoutOf(crop) : null;
+  });
   private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
 
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */

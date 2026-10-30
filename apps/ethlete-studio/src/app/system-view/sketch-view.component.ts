@@ -60,6 +60,7 @@ import {
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { DiffLine, diffLinesOf, diffOutlineOf, diffSummaryOf, variantDiff$ } from './variant-diff';
+import { AreaRound, ChangedArea, changedArea$, changedAreaViewOf } from './changed-area';
 import {
   SketchCompare,
   comparingTextOf,
@@ -71,6 +72,7 @@ import {
 } from './merge-preview';
 import {
   ALL,
+  CURRENT,
   canPick,
   mergePreviewOf,
   pickedVariantOf,
@@ -416,6 +418,21 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             }
           </div>
         }
+        @if (changedAreaView().toolbar; as areaSwitch) {
+          <button
+            [pressed]="areaSwitch.on"
+            [title]="areaSwitch.title"
+            (click)="switchChangedArea(areaSwitch.key, !areaSwitch.on)"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+            data-changed-area
+          >
+            Changed area
+          </button>
+        }
         @if (unchangedHeads().length > 0) {
           <span class="text-[var(--et-surface-color-subtle-solid)]" data-unchanged-count>
             {{ unchangedCountText() }}
@@ -495,6 +512,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     <ethlete-design-canvas
       [frames]="notedFrames()"
       [columns]="canvasColumns()"
+      [notes]="changedAreaView().notes"
       [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
       [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
       [fitTo]="showing() === 'merge' ? 'first row' : 'all'"
@@ -508,6 +526,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
       (columnToggle)="toggleRound($event)"
+      (groupSwitch)="switchChangedAreaOfGroup($event)"
       (rowToggle)="toggleState($event)"
       class="min-h-0 flex-1"
       arrangement="matrix"
@@ -772,15 +791,6 @@ export class SketchViewComponent {
 
   public canvas = computed(() => (this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix()));
 
-  protected hasToolbar = computed(
-    () =>
-      (this.sketch().status === 'in progress' && !!this.sketch().report) ||
-      this.matrix().sizes.length > 1 ||
-      this.matrix().interactions.length > 1 ||
-      this.unchangedHeads().length > 0 ||
-      (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
-  );
-
   private contextPages = computed(() => new Set(usingPagesOf(this.product(), this.part()).map(partKeyOf)));
 
   private sketchComments = computed(() =>
@@ -797,15 +807,88 @@ export class SketchViewComponent {
 
   protected interactionChoices = computed(() => [ALL, ...this.matrix().interactions]);
 
+  private areaRounds = computed((): AreaRound[] => {
+    const open = sketchRoundsOf(this.sketch(), this.openRounds()).filter(
+      (round) => round.open && round.variants.length > 0,
+    );
+    const newest = open.at(-1)?.key;
+
+    return open.map((round) => ({
+      key: round.key,
+      group: roundColumnKeyOf(round.key),
+      columns: [...(round.key === newest ? [CURRENT] : []), ...round.variants],
+    }));
+  });
+
+  private changedAreas = toSignal(
+    toObservable(
+      computed(
+        () => ({
+          address: this.address(),
+          rounds: this.areaRounds().map(({ key, columns }) => ({
+            key,
+            variants: columns.filter((c) => c !== CURRENT),
+          })),
+          size: this.matrix().size,
+          surface: this.surface(),
+          color: this.color(),
+          revision: this.revision(),
+        }),
+        { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+      ),
+    ).pipe(
+      switchMap(({ address, rounds, size, surface, color }) =>
+        rounds.length === 0
+          ? of<Record<string, ChangedArea | null>>({})
+          : combineLatest(
+              rounds.map(({ variants }) =>
+                changedArea$({ ...address, variants, size, surface, color }).pipe(
+                  map(({ area }) => area),
+                  catchError(() => of(null)),
+                ),
+              ),
+            ).pipe(map((areas) => Object.fromEntries(rounds.map(({ key }, index) => [key, areas[index] ?? null])))),
+      ),
+    ),
+    { initialValue: {} as Record<string, ChangedArea | null> },
+  );
+
+  private changedAreaChoices = linkedSignal<string, Record<string, boolean>>({
+    source: () => this.sketch().createdAt,
+    computation: () => ({}),
+  });
+
+  protected changedAreaView = computed((): ReturnType<typeof changedAreaViewOf> =>
+    this.showing() === 'merge'
+      ? { frames: this.canvas().frames, columns: this.canvas().columns, notes: [], toolbar: null }
+      : changedAreaViewOf({
+          frames: this.matrix().frames,
+          columns: this.matrix().columns,
+          rounds: this.areaRounds(),
+          areas: this.changedAreas(),
+          choices: this.changedAreaChoices(),
+        }),
+  );
+
+  protected hasToolbar = computed(
+    () =>
+      (this.sketch().status === 'in progress' && !!this.sketch().report) ||
+      this.matrix().sizes.length > 1 ||
+      this.matrix().interactions.length > 1 ||
+      this.unchangedHeads().length > 0 ||
+      this.changedAreaView().toolbar !== null ||
+      (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
+  );
+
   protected notedFrames = computed(() =>
-    withOtherSizeNotes(this.canvas().frames, {
+    withOtherSizeNotes(this.changedAreaView().frames, {
       comments: this.sketchComments(),
       everyInteraction: this.showing() === 'matrix' && this.matrix().interaction === ALL,
     }),
   );
 
   protected canvasColumns = computed(() =>
-    this.canvas().columns.map(({ drawing, ...column }) => ({ ...column, muted: drawing })),
+    this.changedAreaView().columns.map(({ drawing, ...column }) => ({ ...column, muted: drawing })),
   );
 
   protected reportTitleOf(report: SketchReport) {
@@ -826,6 +909,17 @@ export class SketchViewComponent {
     this.interaction.set(interaction);
     this.remember({ interaction });
     this.canvasRef().fitAll();
+  }
+
+  protected switchChangedArea(round: string, on: boolean) {
+    this.changedAreaChoices.update((choices) => ({ ...choices, [round]: on }));
+  }
+
+  protected switchChangedAreaOfGroup(group: string) {
+    const round = this.areaRounds().find((candidate) => candidate.group === group);
+    const shown = this.changedAreaView().columns.find((column) => column.group?.key === group)?.group?.switch;
+
+    if (round && shown) this.switchChangedArea(round.key, !shown.on);
   }
 
   protected toggleRound(key: string) {

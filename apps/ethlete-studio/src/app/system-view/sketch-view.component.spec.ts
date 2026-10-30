@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { THEMES } from '../../themes';
@@ -593,5 +594,61 @@ describe('SketchViewComponent on a refused merge', () => {
 
     expect(writeText).toHaveBeenCalledWith(rebase);
     expect(refusal?.querySelector('[data-copy-rebase]')?.textContent?.trim()).toBe('Copied');
+  });
+
+  it('crops the open round to its changed area, with a switch in its header that shows the whole page again', async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(url);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-crop'))
+        return json({ area: { frame: { width: 1440, height: 900 }, crop: { x: 80, y: 182, width: 72, height: 54 } } });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      variants: ['a', 'b', 'c'],
+      rounds: [
+        { key: 'r1', title: 'First', note: '' },
+        { key: 'r2', title: 'Switch sizing', note: 'Two sizes' },
+      ],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r2', note: '32 × 18' }, c: { round: 'r2', note: '40 × 22' } },
+      targets: ['a', 'b', 'c'].map((variant) => ({ variant, states: ['default'], interactions: [] })),
+    });
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+    const canvas = fixture.debugElement.query(By.directive(DesignCanvasComponent))
+      .componentInstance as DesignCanvasComponent;
+    const croppedIds = () => canvas.frames().flatMap((frame) => (frame.crop ? [frame.id] : []));
+    const areaSwitch = () => root.querySelector<HTMLButtonElement>('[data-group-switch="round r2"]');
+
+    expect(asked.filter((url) => url.includes('/__design/sketch-crop'))).toEqual([
+      'http://localhost:4402/__design/sketch-crop?product=web&sketch=components%2Fcard&variants=b%2Cc',
+    ]);
+    expect(croppedIds()).toEqual(['b default', 'c default']);
+    expect(areaSwitch()?.getAttribute('aria-pressed')).toBe('true');
+    expect(canvas.notes().map((note) => [note.text, note.frameId])).toEqual([
+      ['32 × 18', 'b default'],
+      ['40 × 22', 'c default'],
+    ]);
+    expect(canvas.columns().every((column) => column.note === undefined && column.group?.note === undefined)).toBe(
+      true,
+    );
+
+    areaSwitch()?.click();
+    await settle(fixture);
+
+    expect(croppedIds()).toEqual([]);
+    expect(areaSwitch()?.getAttribute('aria-pressed')).toBe('false');
   });
 });

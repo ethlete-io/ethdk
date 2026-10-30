@@ -229,6 +229,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Recommended: half of the frame area, because a larger crop gains little.
 - **Decided (Tom, 2026-10-30):** build the Studio toggle as proposed. It is on by default when
   the crop is less than half of the frame area.
+- **Studio built (2026-10-30, `claude-sdk58`):** "Changed area" button in each round header,
+  crop from the new route `/__design/sketch-crop`. Specs only, not seen rendered. Known gaps:
+  comment pins and the changed-box outline still use full-page coordinates in crop mode; below
+  25 % zoom the variant notes hide; the choice is not remembered across reloads.
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 

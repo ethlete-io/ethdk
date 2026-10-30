@@ -68,6 +68,22 @@
       >
         {{ group.label }}
       </button>
+      @if (group.switch; as groupSwitch) {
+        <button
+          [pressed]="groupSwitch.on"
+          [title]="groupSwitch.title ?? groupSwitch.label"
+          [attr.data-group-switch]="group.key"
+          (click)="switchGroup(group.key, $event)"
+          class="shrink-0"
+          et-button
+          type="button"
+          variant="outline"
+          color="surface"
+          size="sm"
+        >
+          {{ groupSwitch.label }}
+        </button>
+      }
       @if (group.note) {
         <span [title]="group.note" class="min-w-0 truncate text-text-muted">
           {{ group.note }}

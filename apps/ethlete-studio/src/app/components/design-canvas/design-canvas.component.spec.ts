@@ -585,4 +585,57 @@ describe('DesignCanvasComponent', () => {
     expect(isLive()).toBe(false);
     expect(first?.nativeElement.querySelector('[data-live-badge]')).toBeNull();
   });
+
+  it('emits the key of a column group whose switch is clicked, and shows whether it is on', async () => {
+    const fixture = await render([{ ...FITTED, id: 'a', column: 'a', width: 390, height: 844 }]);
+    const switched: string[] = [];
+
+    fixture.componentInstance.groupSwitch.subscribe((key) => switched.push(key));
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [
+      { key: 'a', label: 'a', group: { key: 'round r1', label: 'r1', switch: { label: 'Changed area', on: true } } },
+    ]);
+    await fixture.whenStable();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-group-switch]');
+
+    button?.click();
+
+    expect(button?.textContent?.trim()).toBe('Changed area');
+    expect(button?.getAttribute('aria-pressed')).toBe('true');
+    expect(switched).toEqual(['round r1']);
+    expect(switched).not.toContain('r1');
+  });
+
+  it('draws a cropped frame as a small whole page with the crop outlined, above the crop enlarged to its width', async () => {
+    const crop = { x: 100, y: 200, width: 72, height: 54, frame: { width: 1440, height: 900 } };
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+
+    fixture.componentRef.setInput('frame', {
+      id: 'a',
+      src: 'about:blank',
+      label: 'a',
+      screenshot: 'shot.png',
+      crop,
+      width: 1440,
+      height: 1300,
+    });
+    fixture.componentRef.setInput('width', 1440);
+    await fixture.whenStable();
+
+    const frame = fixture.nativeElement as HTMLElement;
+    const outline = frame.querySelector<HTMLElement>('[data-crop-outline]');
+    const view = frame.querySelector<HTMLElement>('[data-crop-view]');
+
+    expect(frame.querySelector<HTMLElement>('[data-crop-thumb]')?.style.width).toBe('288px');
+    expect([outline?.style.left, outline?.style.top, outline?.style.width]).toEqual(['20px', '40px', '14.4px']);
+    expect(view?.style.top).toBe('204px');
+    expect((view?.firstElementChild as HTMLElement | null)?.style.transform).toBe(
+      'scale(20) translate(-100px, -200px)',
+    );
+  });
 });

@@ -625,7 +625,7 @@ export type SketchMatrix = {
   sections: string[];
 };
 
-const CURRENT = 'current';
+export const CURRENT = 'current';
 const SKETCH_SECTION = 'sketch';
 const IN_CONTEXT = 'in context';
 const contextColumnKeyOf = (column: string) => `${IN_CONTEXT} ${column}`;

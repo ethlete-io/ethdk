@@ -38,6 +38,7 @@ import {
   SKETCH_DECISION_PATH,
   SKETCH_DISCARD_PATH,
   SKETCH_COMPARE_PATH,
+  SKETCH_CROP_PATH,
   SKETCH_DIFF_PATH,
   SKETCH_MERGE_PATH,
   SKETCH_PREVIEW_PATH,
@@ -45,6 +46,7 @@ import {
   sketchDecisionAnswer,
   sketchDiscardAnswer,
   sketchCompareAnswer,
+  sketchCropAnswer,
   sketchDiffAnswer,
   sketchesAnswer,
   sketchMergeAnswer,
@@ -572,6 +574,7 @@ const designExplore = ({ target, config, system }: { target: string; config: Des
       studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
       studio(SKETCH_COMPARE_PATH, sketchCompareAnswer);
       studio(SKETCH_DIFF_PATH, sketchDiffAnswer);
+      studio(SKETCH_CROP_PATH, sketchCropAnswer);
       studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
       studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
       studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);

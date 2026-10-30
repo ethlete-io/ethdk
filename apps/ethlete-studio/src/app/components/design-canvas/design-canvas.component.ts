@@ -79,8 +79,14 @@ const NOTE_MAX_SCALE = 2;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
-/** Neighbouring columns with the same group `key` share one head above their own. */
-export type CanvasColumnGroup = { key: string; label: string; note?: string; title?: string };
+/** Neighbouring columns with the same group `key` share one head above their own; a `switch` there emits `groupSwitch`. */
+export type CanvasColumnGroup = {
+  key: string;
+  label: string;
+  note?: string;
+  title?: string;
+  switch?: { label: string; on: boolean; title?: string };
+};
 
 export type CanvasColumn = {
   key: string;
@@ -204,6 +210,9 @@ export class DesignCanvasComponent {
 
   /** The key of a row head the user clicked. */
   public rowToggle = output<string>();
+
+  /** The key of a column group whose switch the user clicked. */
+  public groupSwitch = output<string>();
 
   private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
   private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
@@ -678,6 +687,11 @@ export class DesignCanvasComponent {
   protected toggleColumn(key: string, event: MouseEvent) {
     event.stopPropagation();
     this.columnToggle.emit(key);
+  }
+
+  protected switchGroup(key: string, event: MouseEvent) {
+    event.stopPropagation();
+    this.groupSwitch.emit(key);
   }
 
   protected togglePin(id: string, event: MouseEvent) {
