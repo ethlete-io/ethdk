@@ -12,7 +12,7 @@ const OPTIONS = [
 
 export default definePart<Props>({
   note: 'The SDK select inside a form field, drawn by its mock from @ethlete/components/design.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     placeholder: {},
     selected: { value: 'review' },
@@ -26,7 +26,7 @@ export default definePart<Props>({
         label: 'Status',
         errorColor: 'danger',
         open,
-        control: select({ options: OPTIONS, value, active, placeholder: 'Pick a status', panelColor: 'accent' }),
+        control: select({ options: OPTIONS, value, active, placeholder: 'Pick a status' }),
       }),
       styles: selectStyles,
     }),

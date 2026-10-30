@@ -38,5 +38,13 @@
     "hash": "b9bb3d3ff96bc85a",
     "at": "2026-10-29T16:04:18.390Z",
     "auto": true
+  },
+  {
+    "part": "components/select",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "164af4eccf857227",
+    "at": "2026-10-30T17:15:19.255Z",
+    "auto": true
   }
 ]
