@@ -47,7 +47,7 @@ const treeSelected = {
 export const manyStatesView = async (grid: StateGridDrawing) => {
   const tree = await partTree.render(treeSelected);
   const rowDrawing = await treeRow.render(treeRow.states.tree);
-  const canvas = canvasView(
+  const canvas = await canvasView(
     [
       canvasFrame('grid', stateGrid(grid)),
       canvasFrame('tree', `<div style="width: 280px">${rowDrawing.body}</div>`, '280'),

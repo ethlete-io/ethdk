@@ -1,13 +1,14 @@
 import { definePart, drawing, html } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
+import zoomChip from '@system/components/zoom-chip';
 import styles from './canvas-frames.css?inline';
 
 export type GridRow = { label: string; cells: (string | undefined)[] };
 export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 export type StateGridOptions = { cellWidth?: string; place?: 'fill' | 'center' };
 
-/** The CSS for `stateGrid`, the frame parts, the zoom chip and `canvasView`; add it once to the drawing's styles. */
+/** The CSS for `stateGrid`, the frame parts and `canvasView`, with the zoom chip's; add it once to the drawing's styles. */
 export const canvasFrameStyles = styles + buttonStyles;
 
 const perLine = 4;
@@ -87,39 +88,14 @@ export const canvasFrameBox = (body: string, head = '') =>
 export const canvasFrame = (name: string, body: string, width = '') =>
   canvasFrameBox(body, canvasFrameHead(name, width));
 
-const chipButton = (label: string, extra = '') =>
-  button.render({ label, variant: 'transparent', color: 'surface', size: 'sm', class: extra || undefined });
-
-const [zoomOut, zoomValue, zoomIn, zoomFit] = await Promise.all([
-  chipButton('−'),
-  chipButton('ZOOM', 'tabular-nums'),
-  chipButton('+'),
-  chipButton('Fit'),
-]);
-
-/**
- * The app's zoom chip in the canvas corner: zoom out, the zoom in percent (resets to 100 %), zoom in, fit.
- * The root has `data-canvas-zoom`; each button sits in a `data-camera-out`, `-reset`, `-in` or `-fit` wrapper for a setup to wire.
- */
-export const canvasZoomChip = (percent: number, extra = '') =>
-  html`<div
-    class="absolute right-space-3 bottom-space-3 flex rounded-control-md border border-surface-border bg-surface${
-      extra ? ` ${extra}` : ''
-    }"
-    data-canvas-zoom
-  >
-    <span class="contents" data-camera-out>${zoomOut.body}</span>
-    <span class="contents" data-camera-reset>${zoomValue.body.replace('ZOOM', `${percent} %`)}</span>
-    <span class="contents" data-camera-in>${zoomIn.body}</span>
-    <span class="contents" data-camera-fit>${zoomFit.body}</span>
-  </div>`;
-
-/** The canvas: the frames from the top left at the given zoom, and the app's zoom chip in the corner. */
-export const canvasView = (frames: string[], zoom: string) =>
-  html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
+/** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
+export const canvasView = async (frames: string[], zoom: string) => {
+  const chip = await zoomChip.render({ percent: parseFloat(zoom), class: 'absolute right-space-3 bottom-space-3' });
+  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
-    ${canvasZoomChip(parseFloat(zoom))}
+    ${chip.body}
   </div>`;
+};
 
 type Props = { part: string; states: string[]; zoom: string };
 
@@ -141,7 +117,7 @@ const defaultFrames: Props = {
 };
 
 export default definePart({
-  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasZoomChip, canvasView, canvasFrameStyles) for pages that draw their own frames. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
+  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states: {
@@ -167,7 +143,7 @@ export default definePart({
       { cellWidth: '120px', place: 'center' },
     );
     return drawing({
-      body: canvasView([canvasFrame(part, grid)], zoom),
+      body: await canvasView([canvasFrame(part, grid)], zoom),
       styles: canvasFrameStyles,
     });
   },

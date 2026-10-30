@@ -4,8 +4,9 @@ import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
-import canvasFrames, { canvasZoomChip } from '@system/elements/canvas-frames';
+import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
+import zoomChip from '@system/components/zoom-chip';
 import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
@@ -40,6 +41,7 @@ const side = await partTree.render({
 });
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
 const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
+const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 const open = await systemPage();
 const hidden = await systemPage('hidden');
@@ -92,10 +94,10 @@ const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, fr
 };
 
 const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
-  const page = root.querySelector<HTMLElement>('.sk-page');
+  const page = root.querySelector<HTMLElement>('[data-sketches-page]');
   const viewport = root.querySelector<HTMLElement>('[data-sk-viewport]');
   const world = root.querySelector<HTMLElement>('[data-sk-world]');
-  const chip = root.querySelector('.sk-page > [data-canvas-zoom]');
+  const chip = root.querySelector('[data-sketches-page] > [data-canvas-zoom]');
   const label = chip?.querySelector('[data-camera-reset] button') ?? null;
   const showZoom = (zoom: number) => {
     if (label) label.textContent = `${Math.round(zoom * 100)} %`;
@@ -139,7 +141,7 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
 };
 
 export default definePart<Props>({
-  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. The canvas-frames zoom chip (− | 100 % | + | Fit) zooms out, resets to 100 %, zooms in and fits.',
+  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. The zoom chip (components/zoom-chip, − | 100 % | + | Fit) zooms out, resets to 100 %, zooms in and fits.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
   states: {
     'page-sketch': { camera: 'fit' },
@@ -147,7 +149,8 @@ export default definePart<Props>({
   },
   render: async ({ camera, selected }) => {
     const content = html`<div
-      class="sk-page relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
+      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
+      data-sketches-page
       ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
     >
       <header
@@ -173,7 +176,7 @@ export default definePart<Props>({
           ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
         </section>
       </div>
-      ${PAGE_VARIANTS.map(variantHead).join('')} ${canvasZoomChip(100, 'z-3')}
+      ${PAGE_VARIANTS.map(variantHead).join('')} ${chip.body}
     </div>`;
 
     const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
