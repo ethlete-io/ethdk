@@ -44,7 +44,7 @@
       }
     },
     "sdk": {
-      "tokens": ["foundations/tokens", "foundations/colors"],
+      "tokens": ["foundations/colors"],
       "presets": {
         "phone": {
           "width": 390,
@@ -69,7 +69,6 @@
         }
       ],
       "base": ".ethlete/design/sdk",
-      "hideBaseParts": ["foundations/tokens"],
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],
       "presets": {
         "desktop": {

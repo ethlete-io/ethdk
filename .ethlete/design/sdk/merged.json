@@ -2,6 +2,5 @@
   "components/button": "ef27bebcfef3d8c3",
   "components/form-field": "be6b5409e860cdad",
   "components/select": "164af4eccf857227",
-  "foundations/colors": "f4a7642306093b96",
-  "foundations/tokens": "67c964a1f59e8dc3"
+  "foundations/colors": "f4a7642306093b96"
 }
