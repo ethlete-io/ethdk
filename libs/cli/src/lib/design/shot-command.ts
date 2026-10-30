@@ -85,15 +85,19 @@ export const withDiffRows = (options: {
   const laidOut = sheet.flatMap((row, rowIndex) => {
     const grid = grids?.[rowIndex];
     const cells = plan[rowIndex] ?? [];
-    const groups = grid
-      ? gridRowsOf(cells, grid).map((group) => group.map((cell) => cells.indexOf(cell)))
+    const groups: (number | EmptyGridCell)[][] = grid
+      ? gridRowsOf(cells, grid).map((group) => group.map((cell) => ('empty' in cell ? cell : cells.indexOf(cell))))
       : [row.map((_, index) => index)];
 
     return groups.flatMap((group) => {
-      const drawn = group.flatMap((index) => (row[index] ? [row[index]] : []));
+      const drawn = group.flatMap((index): SheetCell[] =>
+        typeof index !== 'number' ? [{ label: index.empty, note: 'not drawn' }] : row[index] ? [row[index]] : [],
+      );
       const diffs =
         compares && rowIndex !== mergedIndex
           ? group.flatMap((index) => {
+              if (typeof index !== 'number') return [];
+
               const diff = diffOf(rowIndex, index);
 
               return diff ? [diff] : [];
@@ -147,21 +151,25 @@ export const planOf = (options: {
   });
 };
 
-/** One sheet row per row of the part's grid, after a row of the states the grid leaves out. */
-export const gridRowsOf = (row: Plan[], grid: ListedGrid): Plan[][] => {
+export type EmptyGridCell = { empty: string };
+
+/**
+ * One sheet row per row of the part's grid, after a row of the states the grid leaves out. A grid row keeps an
+ * `{ empty: '<row> <column>' }` cell for each column it draws no state in.
+ */
+export const gridRowsOf = (row: Plan[], grid: ListedGrid): (Plan | EmptyGridCell)[][] => {
   const byState = new Map(row.map((cell) => [cell.address.state, cell]));
   const gridded = new Set(grid.cells.map((cell) => cell.state));
   const rest = row.filter((cell) => !gridded.has(cell.address.state));
   const rows = grid.rows.map((name) =>
-    grid.columns.flatMap((column) => {
+    grid.columns.map((column) => {
       const state = grid.cells.find((cell) => cell.row === name && cell.column === column)?.state;
-      const cell = state === undefined ? undefined : byState.get(state);
 
-      return cell ? [cell] : [];
+      return (state === undefined ? undefined : byState.get(state)) ?? { empty: `${name} ${column}` };
     }),
   );
 
-  return [rest, ...rows].filter((cells) => cells.length > 0);
+  return [rest, ...rows].filter((cells) => cells.some((cell) => !('empty' in cell)));
 };
 
 export const rowsOf = (options: {

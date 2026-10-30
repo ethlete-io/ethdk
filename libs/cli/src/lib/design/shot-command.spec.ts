@@ -105,7 +105,7 @@ describe('gridRowsOf', () => {
     const [row = []] = planOf({
       base,
       rows: [{ label: '', sketch: null }],
-      statesOf: () => ['tree', 'leaf', 'hover', 'selected', 'selected-hover'],
+      statesOf: () => ['tree', 'leaf', 'hover', 'selected'],
       states: true,
       state: null,
     });
@@ -113,17 +113,16 @@ describe('gridRowsOf', () => {
       columns: ['rest', 'hover'],
       rows: ['leaf', 'selected'],
       cells: [
-        { row: 'selected', column: 'hover', state: 'selected-hover' },
         { row: 'leaf', column: 'hover', state: 'hover' },
         { row: 'leaf', column: 'rest', state: 'leaf' },
         { row: 'selected', column: 'rest', state: 'selected' },
       ],
     });
 
-    expect(rows.map((cells) => cells.map((cell) => cell.address.state))).toEqual([
+    expect(rows.map((cells) => cells.map((cell) => ('empty' in cell ? cell : cell.address.state)))).toEqual([
       ['tree'],
       ['leaf', 'hover'],
-      ['selected', 'selected-hover'],
+      ['selected', { empty: 'selected hover' }],
     ]);
   });
 });
@@ -412,26 +411,35 @@ describe('withDiffRows', () => {
 
   it('lays out each row by the grid of its own axis, a diff row after each grid row', () => {
     const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: true });
-    const plan = planOf({ base, rows, statesOf: () => ['tree', 'leaf', 'hover'], states: true, state: null });
+    const plan = planOf({
+      base,
+      rows,
+      statesOf: () => ['tree', 'leaf', 'hover', 'selected'],
+      states: true,
+      state: null,
+    });
     const png = Buffer.from('m');
     const sheet = plan.map((row) => row.map(({ label }) => ({ label, png })));
     const grid = {
       columns: ['rest', 'hover'],
-      rows: ['leaf'],
+      rows: ['leaf', 'selected'],
       cells: [
         { row: 'leaf', column: 'rest', state: 'leaf' },
         { row: 'leaf', column: 'hover', state: 'hover' },
+        { row: 'selected', column: 'rest', state: 'selected' },
       ],
     };
 
     expect(
       withDiffRows({ rows, plan, sheet, grids: [undefined, grid] }).map((row) => row.map((cell) => cell.label)),
     ).toEqual([
-      ['merged / tree', 'merged / leaf', 'merged / hover'],
+      ['merged / tree', 'merged / leaf', 'merged / hover', 'merged / selected'],
       ['a / tree'],
       ['a / tree vs merged'],
       ['a / leaf', 'a / hover'],
       ['a / leaf vs merged', 'a / hover vs merged'],
+      ['a / selected', 'selected hover'],
+      ['a / selected vs merged'],
     ]);
   });
 

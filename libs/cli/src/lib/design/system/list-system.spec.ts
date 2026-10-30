@@ -360,6 +360,15 @@ describe('gridReportOf', () => {
     });
   });
 
+  it('names each empty cell of a row that draws a state in another column', () => {
+    expect(
+      gridReportOf(
+        { columns: ['rest', 'active'], rows: { row: { rest: 'a', active: 'b' }, selected: { rest: 'c' }, none: {} } },
+        ['a', 'b', 'c', 'd'],
+      )?.line,
+    ).toBe('grid 3 rows x 2 columns, leaves out d; draws no selected active');
+  });
+
   it('warns of rows that fill some interaction columns but skip others, and leaves rest-only rows alone', () => {
     const states = ['face', 'face-hover', 'face-focus', 'count', 'count-hover', 'badge', 'mark'];
     const grid = (rows: Record<string, Record<string, string>>) => ({

@@ -206,9 +206,18 @@ export const gridReportOf = (
   );
   const left = states.filter((state) => !cellsOf.has(state));
   const size = `grid ${countOf(rows.length, 'row')} x ${countOf(columns.length, 'column')}`;
+  const empty = rows.flatMap(([row, cells]) =>
+    isRecord(cells) && columns.some((column) => typeof cells[column] === 'string')
+      ? columns.filter((column) => typeof cells[column] !== 'string').map((column) => `${row} ${column}`)
+      : [],
+  );
+  const gaps = [
+    ...(left.length > 0 ? [`leaves out ${left.join(', ')}`] : []),
+    ...(empty.length > 0 ? [`draws no ${empty.join(', ')}`] : []),
+  ];
 
   return {
-    line: left.length === 0 ? `${size} ok` : `${size}, leaves out ${left.join(', ')}`,
+    line: gaps.length === 0 ? `${size} ok` : `${size}, ${gaps.join('; ')}`,
     problems: [...twice, ...problems],
     warnings: coverageWarningsOf(columns, rows),
   };

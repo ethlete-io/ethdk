@@ -187,6 +187,10 @@ in the variant's `shared/`, then the sketch's, then the product's, then the base
 At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
 the rest moves into the target's folder as before - with several targets, into each target that imports it.
 
+A sketch changes its targets' layers and the layers below them. A variant may also hold a host of a target from a higher
+layer (a page that imports the component) when the edit only changes its imports and how it spells the imported names,
+such as `commentPinStyles` to `commentPin.styles`; the merge writes it with the targets.
+
 A sketch of a part the product takes from its base (`et design sketch new components/button --product studio`)
 merges into the base: the part folder in the base, and the base's `merged.json`. `sketch new … --override` opens it as a
 product override instead, and the merge writes a product copy. When the product overrides the part already, `sketch new`
@@ -267,7 +271,9 @@ export default definePart({
 
 `pointer` input needs `hover` and `active`, and `keyboard` input needs `focus-visible`. The part
 draws them with `interactionRows`: its `grid` needs a column for each of them, and every row
-needs a state in each of those columns, so the open row is drawn hovered too. Flat states such as
+needs a state in each of those columns, so the open row is drawn hovered too. In any grid, a row that draws a state in one
+column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
+on the grid line (`draws no selected active`). Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. A `disclosure` also needs a state that
