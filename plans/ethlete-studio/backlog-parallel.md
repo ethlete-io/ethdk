@@ -199,7 +199,16 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
 - **Contrast decision (Tom, 2026-10-30, Q50):** contrast below AA in the base themes gets its own small round
   after the overview; Tom picks the new values. Measured on the first token set: `danger` hover 3.76:1, `brand`
   ink on dark 3.47:1. Re-measure on the Storybook themes first.
-- **Open point (later, not asked):** Storybook has `brand-on-light` for light surfaces; the sdk set lacks it.
+- **Contrast scope decisions (Tom, 2026-10-30, Q51-Q53),** on the Storybook source (53 pairs, 23 fail):
+  - Q51: add `brand-on-light`, `danger-on-light` and `warning-on-light` (`apps/storybook/src/themes.ts`) to the
+    sdk set; ink on a light surface uses them. No value change. Closes the `brand-on-light` open point.
+  - Q52: one colour round, Tom picks the values, for all three remaining fails: on-primary on `danger` fill at
+    hover/focus (3.76:1), on-primary on `warning` fill at active (3.57:1), surface `subtle` text on bg (light
+    2.58:1, dark 3.78:1). Target 4.5:1; `subtle` stays visibly weaker than `muted`. Touches
+    `apps/storybook/src/themes.ts`, `surface-themes.ts`, their generated `apps/storybook/src/styles/*.css`, then
+    `yarn sdk:tokens`.
+  - Q53: the surface border stays decorative (light 1.26:1, dark 1.73:1). A control whose only boundary is a
+    border gets its own 3:1 boundary in its component design, not via the surface border.
 
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
