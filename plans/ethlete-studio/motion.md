@@ -95,8 +95,8 @@ the model. They are no reference for correct behaviour: some of them are broken.
    declaration and the static check rules (done); 1b the morph and `ctx` (done).
 2. Shots through the CLI and MCP. Done (2026-10-30): CLI `40087e0a9`, the `motion_shots` tool of `et design mcp` `90724234f`.
 3. The keyframe strip and the timeline in Studio.
-4. `spring()` and `interrupt`.
-5. Flow lines.
+4. `spring()` and `interrupt`. Done (2026-10-30), see "As built: slice 4".
+5. Flow lines. Waits for a decision, see "As built: slice 4".
 
 Each slice gets an "in progress" note here when it starts.
 
@@ -174,3 +174,26 @@ Each slice gets an "in progress" note here when it starts.
   `bounds` spec (fails without the empty-box filter), the key spec and `unionOfBoxes` (fails without the origin cut).
 - Not verified: an overshoot to the left or top of the page (cut at 0, so lost), WebKit, `nx build cli` (fails on the
   parallel `complete.ts` `clip` error, not on this change; spec typecheck and eslint pass).
+
+## As built: slice 4 (2026-10-30, `eebccd5f6`)
+
+- `spring({ damping, frequency })` (`libs/cli/design/spring.ts`, exported from `@design-system`): damping ratio and undamped
+  frequency in Hz, sampled into `linear(...)` (10-200 points) with `duration` the ms until it stays within 0.001 of 1 (10 s at
+  most). As a string it is `<duration>ms <easing>`, so a foundation writes `--motion-capsule: ${spring(...)}`.
+- `interrupt: <ms>`: `stepMotion` takes `reverse: { markup, motion? }`; at the interrupt it poses every animation at that time,
+  morphs back to the `from` markup and runs the part's reverse motion (`from: to, to: from`, found by the frame) with its `ctx.at`
+  counted from the interrupt and no View Transition. Forward `ctx.at` steps after it are dropped; an animation that is cancelled
+  (idle) gets `end` = that time and is no longer seeked. Every clock step now poses the animations at its time first. The frame
+  timeline names `interrupt`, `motionPicturesOf` adds it to the keyframes, the JSON has `interrupt`. `motionOf` is unchanged.
+- Bit: the jsdom `stepMotion` interrupt spec fails without the cut skip, with the reverse clock at offset 0, without dropping
+  forward steps, and without the interrupt; the real-browser `motionOf` spec (width 1000 ms, back at 400 ms -> reverse 200 ms,
+  end 600, keyframe 400) fails without the pose before the interrupt and with the frame passing no reverse; spring specs check the
+  settle time and the curve against the closed form.
+- Verified: specs, spec typecheck, eslint on changed files, `nx build cli`, a scratch checkout with the built CLI: a spring token
+  (`damping 0.4`) on a width transition interrupted at 300 ms (overshoot then the spring back, visible in the sheet).
+- Not verified: WebKit; a reverse motion with `play` in a real browser (jsdom only); `interrupt` on a `viewTransition` motion.
+- Open (slice 5 needs a decision): a flow line is JSON (`from`, `to`, `label`) between two page states, usually two parts. The plan
+  does not say which lines animate, how one is addressed, or how the frame switches parts. Recommendation: a line animates only
+  with `"transition": "view"`; the frame draws the `from` page, loads the `to` page's styles and morphs to its markup inside a
+  same-document View Transition, stepped like a motion; `et design motion flow <flow> <n>` addresses the line by index (label
+  shown in the output); the shots take the full preset viewport.
