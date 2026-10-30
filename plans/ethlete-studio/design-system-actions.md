@@ -561,6 +561,13 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   markup with a regex) and `.st-canvas-zoom*` (`pages/sketches` selects them). `pages/merge` moved the same way. Next:
   `components/disclosure`, `foundations/*` (except colors); `inbox`, `comment-pin`, `pages/sketches` after their
   open sketches merge.
+- **Progress (2026-10-30):** `32209b1ff` agent-logos (68 -> 0 CSS lines), `1dabc66e1` comment-pin (115 -> 0),
+  `dff51765f` shell-main `shared/picker.css` (21 -> 15: calc offsets, a box shadow whose arbitrary class changed
+  pixels, the SDK button override). comment-pin keeps `styles: ''` because inbox.ts and sketches.ts concatenate
+  `commentPin.styles`; drop that in their moves. Gotchas: a top-level comma in `bg-[...]` makes an invalid
+  background-image; `ready` needs a round note first. Next: `pages/inbox` (running), `pages/sketches`, then
+  register `UTILITY-CSS`. Tom (2026-10-30): respect the canonical-class lint (`w-[420px]` -> `w-2xl`); the
+  `CANONICAL-CLASS` rule is being built.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
