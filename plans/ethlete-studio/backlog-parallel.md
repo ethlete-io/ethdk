@@ -15,8 +15,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   chip as its own part `elements/zoom-chip`) is now a new sketch on the merged parts - in progress.
 - In progress (2026-10-30): fifagg backdrop close during enter (opus, `libs/cdk`).
 - B done: `et design mcp` (`90724234f`), `/__design/motion` (`dacf9bd64`). E done: 5.52, 5.55, 5.56. G slice 5 done
-  (`a0ba7dd81`). A: 5.60 done (`0652fc1df`).
-- `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
+  (`a0ba7dd81`). A: 5.60 (`0652fc1df`), 3.39 (`a9ad0200c`), 5.39 (`c3ad43bcf`) and the `STALE-REPLACE` fix (`1704a6dda`) done.
+- `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing) - as built (`1704a6dda`): a replace on markup a package draws is skipped. Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
 
 ## Rules for every stream
