@@ -35,7 +35,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
-  4. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
+  4. Q64: `fitOutOfFlow` skips full-inset fixed elements (a backdrop). Earlier only if sdk-33 is blocked by it.
+  5. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
 
 ## Rules for every stream
 
