@@ -97,6 +97,8 @@ const MARKS = {
   disabled: 'disabled or aria-disabled="true"',
 };
 
+const CONTROL_MARKS = { ...MARKS, disabled: `${MARKS.disabled} on it or a data-et-control-part in it` };
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -295,9 +297,9 @@ const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interactio
 
   if (forced.some((force) => force.differs)) return null;
   if (forced.length > 0)
-    return `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest`;
+    return `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest - if a descendant draws ${interaction}, mark it with data-et-control-part`;
 
-  return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction`;
+  return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too`;
 };
 
 const stillGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
@@ -315,12 +317,13 @@ const lookGapOf = (options: {
   seen: { look?: string; flag: boolean }[];
   flag: 'selected' | 'disabled';
   what: string;
+  marks?: Record<'selected' | 'disabled', string>;
 }) => {
-  const { seen, flag, what } = options;
+  const { seen, flag, what, marks = MARKS } = options;
   const on = seen.filter((one) => one.flag);
   const off = seen.filter((one) => !one.flag);
 
-  if (on.length === 0) return `no state draws ${what} ${flag} - mark it with ${MARKS[flag]} in a state`;
+  if (on.length === 0) return `no state draws ${what} ${flag} - mark it with ${marks[flag]} in a state`;
   if (off.length === 0) return `every state draws ${what} ${flag} - draw it without ${flag} too, to compare`;
   if (!on.some((one) => off.some((other) => one.look !== other.look)))
     return `${what} looks the same ${flag} as without - give the ${flag} look its own colours`;
@@ -476,6 +479,7 @@ const requirementGapsOf = (options: {
       seen: instances.map((seen) => ({ look: seen.look, flag: seen.disabled ?? false })),
       flag: 'disabled',
       what: 'it',
+      marks: CONTROL_MARKS,
     });
 
     if (disabled) gaps.push(['disabled', disabled]);
@@ -911,6 +915,12 @@ const findOverrides = `((ownCss) => {
   return overrides;
 })`;
 
+/** A control root and every `data-et-control-part` whose nearest `data-et-control` is that root, in the page. */
+const controlPartsOf = `((control) => [
+  control,
+  ...[...control.querySelectorAll('[data-et-control-part]')].filter((part) => part.parentElement.closest('[data-et-control]') === control),
+])`;
+
 const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; clip: boolean }) => `(() => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
@@ -1008,12 +1018,17 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
       look: lookOf(element),
     };
   };
-  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element) => ({
-    id: element.getAttribute('data-et-control'),
-    disabled: isDisabled(element),
-    frameBox: frameBoxOf(element),
-    ...tagged(element),
-  }));
+  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element) => {
+    const parts = ${controlPartsOf}(element);
+    const forced = new Set(parts.flatMap((part) => tokensOf(part, 'data-et-force')));
+    for (const part of parts) if (forced.size > 0) part.setAttribute('data-et-force', [...forced].join(' '));
+    return {
+      id: element.getAttribute('data-et-control'),
+      disabled: parts.some(isDisabled),
+      frameBox: frameBoxOf(element),
+      ...tagged(element),
+    };
+  });
   const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
@@ -1037,12 +1052,14 @@ const forceOn = ({
   interaction: string;
   on: boolean;
 }) => `((at, interaction, on) => {
-  const element = document.querySelector('[data-et-complete="' + at + '"]');
-  const tokens = new Set((element.getAttribute('data-et-force') ?? '').split(' ').filter(Boolean));
-  if (on) tokens.add(interaction);
-  else tokens.delete(interaction);
-  if (tokens.size > 0) element.setAttribute('data-et-force', [...tokens].join(' '));
-  else element.removeAttribute('data-et-force');
+  const found = document.querySelector('[data-et-complete="' + at + '"]');
+  for (const element of found.hasAttribute('data-et-control') ? ${controlPartsOf}(found) : [found]) {
+    const tokens = new Set((element.getAttribute('data-et-force') ?? '').split(' ').filter(Boolean));
+    if (on) tokens.add(interaction);
+    else tokens.delete(interaction);
+    if (tokens.size > 0) element.setAttribute('data-et-force', [...tokens].join(' '));
+    else element.removeAttribute('data-et-force');
+  }
 })(${JSON.stringify(at)}, ${JSON.stringify(interaction)}, ${JSON.stringify(on)})`;
 
 type Tagged = {

@@ -28,7 +28,23 @@ const STYLES = [
   '.aa-row:hover { background: silver; } .aa-row:focus-visible { outline: 2px solid black; }',
   '.aa-row[aria-current="true"]:hover { background: blue; }',
   '.aa-row.aa-active { background: teal; }',
+  '.aa-frame { display: block; background: white; transition: background-color var(--aa-fade); }',
+  '.aa-frame:hover { background: black; } .aa-frame:active { background: gray; }',
+  '.aa-trigger[aria-disabled="true"] { color: gray; }',
 ].join(' ');
+
+const field = (attributes: string, marker: string, trigger = '') =>
+  `<div data-et-control="field"${attributes}><span class="aa-frame"${marker}><button class="aa-trigger" type="button"${marker}${trigger}>Field</button></span></div>`;
+
+const fieldStates = (marker: string) => ({
+  rest: `<div>${field('', marker)}</div>`,
+  hovered: `<div>${field(' data-et-force="hover"', marker)}</div>`,
+  pressed: `<div>${field(' data-et-force="active"', marker)}</div>`,
+  off: `<div>${field('', marker, ' aria-disabled="true"')}</div>`,
+});
+
+const FIELD =
+  "controls: { field: { kind: 'button', input: ['pointer'], disabled: true } }, grid: { columns: ['rest', 'hover', 'active'], rows: { rest: { rest: 'rest', hover: 'hovered', active: 'pressed' } } },";
 
 const row = (attributes = '', name = 'aa-row') =>
   `<button class="${name}" type="button" data-et-control="row"${attributes}>Row</button>`;
@@ -71,6 +87,8 @@ type FixturePart = {
 };
 
 const PARTS: Record<string, FixturePart> = {
+  'components/field': { states: fieldStates(' data-et-control-part'), extra: FIELD },
+  'components/field-unmarked': { states: fieldStates(''), extra: FIELD },
   'pages/merge': {
     states: { open: `<main>${toggle()}</main>` },
     extra: DISCLOSURE,
@@ -443,9 +461,9 @@ describe('completenessGapsOf', () => {
 
     expect(gapsOf(DECLARED)).toEqual([
       "CONTROL-PART-MISSING pages/a.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
-      'REQUIREMENT-MISSING pages/a.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING pages/a.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING pages/a.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING pages/a.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
+      'REQUIREMENT-MISSING pages/a.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
+      'REQUIREMENT-MISSING pages/a.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
     ]);
     expect(gapsOf(used, { 'components/toggle': [] })).toEqual([]);
     expect(gapsOf(used, { 'components/toggle': [{ code: 'X', target: 'components/toggle', detail: '' }] })).toEqual([
@@ -475,10 +493,10 @@ describe('completenessGapsOf', () => {
         .map(completenessGapLineOf);
 
     expect(gapsOf({ go: { kind: 'button', input: ['keyboard'] } })).toEqual([
-      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
     ]);
     expect(gapsOf({ go: { kind: 'button', input: ['keyboard'], disabled: true } })).toEqual([
-      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
       'REQUIREMENT-MISSING components/a.go.disabled - it looks the same disabled as without - give the disabled look its own colours',
     ]);
     expect(
@@ -493,7 +511,7 @@ describe('completenessGapsOf', () => {
         frame('rest', { controls: [{ id: 'go', forced: [forced('active')], look: 'a' }] }),
       ]),
     ).toEqual([
-      'REQUIREMENT-MISSING components/a.go.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" in a state',
+      'REQUIREMENT-MISSING components/a.go.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" on it or a data-et-control-part in it in a state',
     ]);
   });
 
@@ -634,9 +652,9 @@ describe('completenessOf', () => {
 
     expect(merge.gaps.map(completenessGapLineOf)).toEqual([
       "CONTROL-PART-MISSING pages/merge.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
-      'REQUIREMENT-MISSING pages/merge.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING pages/merge.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING pages/merge.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
+      'REQUIREMENT-MISSING pages/merge.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
+      'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
       'REQUIREMENT-MISSING pages/merge.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
       'INVENTORY-UNAPPROVED pages/merge - its control inventory is not approved - check and approve it in Studio',
     ]);
@@ -647,8 +665,8 @@ describe('completenessOf', () => {
 
     expect('gaps' in flat && flat.gaps.map(completenessGapLineOf)).toEqual([
       'CONTROL-GRID-MISSING components/flat.more - the part has no grid - draw its states with interactionRows, which gives the grid a column per interaction (hover, active)',
-      'REQUIREMENT-MISSING components/flat.more.hover - state hovered forces hover on it, but its box draws no different pixel than at rest',
-      'REQUIREMENT-MISSING components/flat.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/flat.more.hover - state hovered forces hover on it, but its box draws no different pixel than at rest - if a descendant draws hover, mark it with data-et-control-part',
+      'REQUIREMENT-MISSING components/flat.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too',
       'REQUIREMENT-MISSING components/flat.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
     ]);
 
@@ -818,6 +836,23 @@ describe('completenessOf', () => {
     ]);
   }, 120_000);
 
+  it('forces the interactions of a control on its data-et-control-part descendants and reads their disabled marks', async (context) => {
+    const { target, config, product } = checkout();
+    const marked = await completenessOf({ target, config, product, part: 'components/field' });
+
+    if ('unavailable' in marked) return context.skip(marked.unavailable);
+
+    expect(marked).toEqual({ gaps: [] });
+
+    const unmarked = await completenessOf({ target, config, product, part: 'components/field-unmarked' });
+
+    expect('gaps' in unmarked && unmarked.gaps.map(completenessGapLineOf)).toEqual([
+      'REQUIREMENT-MISSING components/field-unmarked.field.hover - state hovered forces hover on it, but its box draws no different pixel than at rest - if a descendant draws hover, mark it with data-et-control-part',
+      'REQUIREMENT-MISSING components/field-unmarked.field.active - state pressed forces active on it, but its box draws no different pixel than at rest - if a descendant draws active, mark it with data-et-control-part',
+      'REQUIREMENT-MISSING components/field-unmarked.field.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" on it or a data-et-control-part in it in a state',
+    ]);
+  }, 60_000);
+
   it('passes a full-width toggle at the top-left corner of its frame, which the headless pointer must not hover', async (context) => {
     const { target, config, product } = checkout();
     const corner = await completenessOf({ target, config, product, part: 'components/corner' });
@@ -853,7 +888,7 @@ describe('completenessOf', () => {
     expect(
       'gaps' in requested && requested.gaps.find((gap) => gap.target === 'components/flat.more.active')?.detail,
     ).toBe(
-      'no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - its exception is pending - approve it in Studio ("pressing only opens it")',
+      'no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too - its exception is pending - approve it in Studio ("pressing only opens it")',
     );
     expect(approveException({ product, key: 'components/flat.more.hover', by: 'Tom' })).toEqual({
       status: 404,

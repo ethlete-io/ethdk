@@ -304,7 +304,10 @@ column and none in another leaves an empty cell: the shot sheet draws it as "not
 on the grid line (`draws no selected active`). Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
-the control's box than the same frame at rest. A `disclosure` also needs a state that
+the control's box than the same frame at rest. When a descendant of the control draws an interaction or carries
+its disabled mark, such as a frame its `:hover` rule styles or a trigger with `aria-disabled`, mark that descendant
+with `data-et-control-part`: the check forces each interaction on the control and on every control part in it, and
+counts `disabled` or `aria-disabled="true"` on any of them. A `disclosure` also needs a state that
 draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
 A forced interaction that changes the background, text, border or shadow colour of the control
 or an element in it must fade: a property with a computed `transition-duration` of 0 fails with
