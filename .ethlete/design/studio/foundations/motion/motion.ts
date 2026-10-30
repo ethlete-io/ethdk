@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import sheet, { tokenSheet, fillTokenValues } from '@system/foundations/sheet';
+import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
 import tokens from './motion.css?inline';
 
 const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
@@ -40,7 +40,7 @@ export default definePart({
     drawing({
       body: tokenSheet({ title: 'Motion', sample, names, sampleOf }),
       setup: (root) => fillTokenValues(root),
-      styles: `${sheet.styles}
+      styles: `${tokenSheetStyles}
         .mo-sample { display: flex; flex-direction: column; gap: var(--space-3); }
         .mo-strip { display: flex; align-items: flex-end; gap: var(--space-3); }
         .mo-label { width: 160px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }

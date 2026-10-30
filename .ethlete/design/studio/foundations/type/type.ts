@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import sheet, { fillTokenValues, tokenSheet } from '@system/foundations/sheet';
+import { fillTokenValues, tokenSheet, tokenSheetStyles } from '@shared/token-sheet';
 import tokens from './type.css?inline';
 
 const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
@@ -42,7 +42,7 @@ export default definePart({
         sampleOf,
       }),
       setup: (root) => fillTokenValues(root, true),
-      styles: `${sheet.styles}
+      styles: `${tokenSheetStyles}
         .ty-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .ty-step { display: grid; grid-template-columns: 120px 300px 1fr; align-items: center; gap: var(--space-3); }
         .ty-step-text { min-width: 0; }

@@ -1,6 +1,6 @@
-import { definePart, drawing, html } from '@design-system';
+import { html } from '@design-system';
 
-const sheetStyles = `
+export const tokenSheetStyles = `
   .ts-root { position: relative; display: flex; flex-direction: column; gap: var(--space-4); width: 960px; padding: var(--space-6); box-sizing: border-box; background: var(--surface-sunken); color: var(--text); font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-md-line); }
   .ts-title { margin: 0; font-size: var(--text-xl); line-height: var(--text-xl-line); font-weight: var(--weight-strong); }
   .ts-panel { margin: 0; padding: var(--space-4); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-control-lg); }
@@ -56,21 +56,3 @@ export const fillTokenValues = (root: HTMLElement, pixels = false) => {
     cell.textContent = value + suffix;
   }
 };
-
-export default definePart({
-  note: 'The shared layout for Studio foundation token sheets, with a sample panel and token rows.',
-  madeBy: ['gpt-6.1-terra'],
-  styles: sheetStyles,
-  states: { overview: {} },
-  render: () =>
-    drawing({
-      body: tokenSheet({
-        title: 'Token sheet',
-        sample: html`<span>Sample panel</span>`,
-        names: ['space-1', 'space-3', 'control-md'],
-        sampleOf: (name) =>
-          html`<span style="width: var(--${name}); height: var(--space-2); background: var(--accent)"></span>`,
-      }),
-      setup: (root) => fillTokenValues(root, true),
-    }),
-});

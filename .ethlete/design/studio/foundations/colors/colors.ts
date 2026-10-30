@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import sheet, { tokenSheet, fillTokenValues } from '@system/foundations/sheet';
+import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
 import tokens from './colors.css?inline';
 
 type Group = 'surfaces' | 'accent' | 'warning' | 'error';
@@ -120,7 +120,7 @@ export default definePart<{ group: Group }>({
         sampleOf,
       }),
       setup: (root) => fillTokenValues(root),
-      styles: `${sheet.styles}
+      styles: `${tokenSheetStyles}
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
         .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
         .co-cluster { display: flex; flex-wrap: wrap; gap: var(--space-3); }

@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import sheet, { tokenSheet, fillTokenValues } from '@system/foundations/sheet';
+import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
 import tokens from './spacing.css?inline';
 
 const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
@@ -29,7 +29,7 @@ export default definePart({
     drawing({
       body: tokenSheet({ title: 'Spacing, radius and heights', sample, names, sampleOf }),
       setup: (root) => fillTokenValues(root, true),
-      styles: `${sheet.styles}
+      styles: `${tokenSheetStyles}
         .sp-cluster { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-5); }
         .sp-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .sp-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }
