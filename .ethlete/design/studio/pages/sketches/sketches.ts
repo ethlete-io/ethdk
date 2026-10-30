@@ -4,7 +4,7 @@ import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
-import canvasFrames, { canvasZoomClass, canvasZoomValueClass } from '@system/elements/canvas-frames';
+import canvasFrames, { canvasZoomChip } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -17,6 +17,7 @@ type Props = { camera: 'fit' | Camera; selected?: PageVariant['key'] };
 const HEAD_INSET = 3;
 const HEAD_MIN_WIDTH = 180;
 const HEAD_GAP = 18;
+const ZOOM_STEP = 1.5;
 
 const systemPage = async (panel?: 'hidden') => {
   const tree = await partTree.render(partTree.states['components-open']);
@@ -39,8 +40,6 @@ const side = await partTree.render({
 });
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
 const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
-const fit = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
-const reset = await button.render({ label: '100%', variant: 'transparent', size: 'sm' });
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 const open = await systemPage();
 const hidden = await systemPage('hidden');
@@ -96,7 +95,11 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
   const page = root.querySelector<HTMLElement>('.sk-page');
   const viewport = root.querySelector<HTMLElement>('[data-sk-viewport]');
   const world = root.querySelector<HTMLElement>('[data-sk-world]');
-  const label = root.querySelector('[data-camera-reset] button');
+  const chip = root.querySelector('.sk-page > [data-canvas-zoom]');
+  const label = chip?.querySelector('[data-camera-reset] button') ?? null;
+  const showZoom = (zoom: number) => {
+    if (label) label.textContent = `${Math.round(zoom * 100)} %`;
+  };
 
   if (!page || !viewport || !world) return;
 
@@ -109,24 +112,34 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
     }));
 
     world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
-    if (label) label.textContent = `${Math.round(camera.zoom * 100)}%`;
+    showZoom(camera.zoom);
     placeHeads(page, viewport, camera, frames);
     return;
   }
 
-  mountCanvasViewport({
+  const canvas = mountCanvasViewport({
     viewport,
     world,
     frameSelector: '.sk-frame',
     padding: HEAD_INSET,
     outline: 1,
-    chip: { fit: root.querySelector('[data-camera-fit]'), reset: root.querySelector('[data-camera-reset]'), label },
-    onPaint: (next, frames) => placeHeads(page, viewport, next, frames),
+    chip: {
+      fit: chip?.querySelector('[data-camera-fit]') ?? null,
+      reset: chip?.querySelector('[data-camera-reset]') ?? null,
+      label: null,
+    },
+    onPaint: (next, frames) => {
+      showZoom(next.zoom);
+      placeHeads(page, viewport, next, frames);
+    },
   });
+  const zoomBy = (factor: number) => () => canvas.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
+  chip?.querySelector('[data-camera-out]')?.addEventListener('click', zoomBy(1 / ZOOM_STEP));
+  chip?.querySelector('[data-camera-in]')?.addEventListener('click', zoomBy(ZOOM_STEP));
 };
 
 export default definePart<Props>({
-  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available.',
+  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. The canvas-frames zoom chip (− | 100 % | + | Fit) zooms out, resets to 100 %, zooms in and fits.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
   states: {
     'page-sketch': { camera: 'fit' },
@@ -160,11 +173,7 @@ export default definePart<Props>({
           ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
         </section>
       </div>
-      ${PAGE_VARIANTS.map(variantHead).join('')}
-      <div class="${canvasZoomClass} z-3">
-        <span data-camera-fit>${fit.body}</span>
-        <span class="${canvasZoomValueClass}" data-camera-reset>${reset.body}</span>
-      </div>
+      ${PAGE_VARIANTS.map(variantHead).join('')} ${canvasZoomChip(100, 'z-3')}
     </div>`;
 
     const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
@@ -173,16 +182,7 @@ export default definePart<Props>({
       body: shell.body,
       setup: setupFor(camera),
       styles:
-        shell.styles +
-        side.styles +
-        open.styles +
-        discard.styles +
-        merge.styles +
-        fit.styles +
-        selectStyles +
-        kit +
-        styles +
-        below,
+        shell.styles + side.styles + open.styles + discard.styles + merge.styles + selectStyles + kit + styles + below,
     });
   },
 });

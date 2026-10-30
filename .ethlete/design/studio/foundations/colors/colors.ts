@@ -31,41 +31,59 @@ const pairs = [
   { text: ['--on-danger'], on: ['--danger', '--danger-hover', '--danger-active'] },
 ];
 
-const cell = 'px-(--space-2) py-(--space-1) text-left';
+const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-active`];
 
-const ratioTable = (group: Group) =>
-  html`<table class="border-collapse text-(length:--text-xs)">
-    <thead>
-      <tr>
-        <th class="${cell}">Text</th>
-        <th class="${cell}">On</th>
-        <th class="${cell}">Ratio</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${pairs
-        .flatMap(({ text, on }) => on.flatMap((surface) => text.map((ink) => ({ ink, surface }))))
-        .filter(({ ink }) => groups[group].owns(ink.slice(2)))
-        .map(
-          ({ ink, surface }) =>
-            html`<tr>
-              <td class="${cell}">${ink}</td>
-              <td class="${cell}">${surface}</td>
-              <td class="${cell}" data-co-ratio="${ink} ${surface}"></td>
-            </tr>`,
-        )
-        .join('')}
-    </tbody>
-  </table>`;
+const ratiosOf = (name: string): { on: string[]; needs: number | null; ink: boolean } | null => {
+  if (/^surface(-raised|-overlay|-pressed|-shadow)?$/.test(name) || /^(accent|warning|danger)-subtle$/.test(name))
+    return null;
+  const onDisabled = /^on-(accent|warning|danger)-disabled$/.exec(name);
+  if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: null, ink: true };
+  const onFill = /^on-(accent|warning|danger)$/.exec(name);
+  if (onFill) return { on: fillsOf(onFill[1] ?? ''), needs: 4.5, ink: true };
+  if (name === 'surface-border' || name.endsWith('-disabled')) return { on: surfaceTokens, needs: null, ink: false };
+  const ink = /^text(-|$)/.test(name) || name.endsWith('-text');
+  return { on: surfaceTokens, needs: ink ? 4.5 : 3, ink };
+};
+
+const ratioChips = (name: string) => {
+  const ratios = ratiosOf(name);
+  if (!ratios) return '';
+  const { on, needs, ink } = ratios;
+  return html`<span class="co-ratios"
+    ><span class="co-needs">${needs === null ? 'exempt' : `≥ ${needs}`}</span>${on
+      .map(
+        (surface) =>
+          html`<span
+            class="co-ratio"
+            style="background: var(${surface})${ink ? `; color: var(--${name})` : ''}"
+            title="--${name} on ${surface}"
+            data-co-ratio="--${name} ${surface}"
+            data-co-needs="${needs ?? ''}"
+            ${needs === null ? 'aria-disabled="true"' : ''}
+            >${ink ? '' : html`<span class="co-dot" style="background: var(--${name})"></span>`}<span
+              class="co-ratio-value"
+            ></span
+          ></span>`,
+      )
+      .join('')}</span
+  >`;
+};
 
 const fillRatios = (root: HTMLElement) => {
-  for (const ratio of root.querySelectorAll<HTMLElement>('[data-co-ratio]')) {
-    const [text = '', on = ''] = (ratio.dataset['coRatio'] ?? '').split(' ');
-    ratio.textContent = `${contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root }).toFixed(2)}:1`;
+  for (const chip of root.querySelectorAll<HTMLElement>('[data-co-ratio]')) {
+    const [text = '', on = ''] = (chip.dataset['coRatio'] ?? '').split(' ');
+    const ratio = contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root });
+    const needs = Number(chip.dataset['coNeeds']);
+    const value = chip.querySelector('.co-ratio-value');
+    if (value) value.textContent = ratio.toFixed(1);
+    if (needs && ratio < needs) {
+      chip.classList.add('co-ratio--low');
+      chip.insertAdjacentHTML('beforeend', `<span class="co-low">${marks.error}</span>`);
+    }
   }
 };
 
-const sampleOf = (name: string) => {
+const swatchOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="co-shadow"></span>`;
   if (name === 'focus-ring') return html`<span class="co-ring">Focus</span>`;
   const stateFill = /^on-(accent|warning|danger)-disabled$/.exec(name);
@@ -163,6 +181,8 @@ const errorCard = (surface: string) =>
     >
   </div>`;
 
+const sampleOf = (name: string) => `${swatchOf(name)}${ratioChips(name)}`;
+
 const cards: Record<Group, (surface: string) => string> = {
   surfaces: surfaceCard,
   accent: accentCard,
@@ -188,9 +208,15 @@ export default definePart<{ group: Group }>({
         sampleClass: 'co-grid',
         names: namesOf(group),
         sampleOf,
-      })}${ratioTable(group)}`,
+      })}`,
       setup: [fillTokenValues, fillRatios],
       styles: `${tokenSheetStyles}
+        .co-ratios { display: flex; align-items: center; gap: var(--space-1); width: 248px; margin-left: auto; }
+        .co-needs { width: 48px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
+        .co-ratio { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--space-1); width: 64px; height: var(--control-sm); padding: 0 var(--space-2); box-sizing: border-box; border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); font-family: var(--font-code); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+        .co-ratio--low { border-color: var(--danger); }
+        .co-dot { width: 8px; height: 8px; margin-right: auto; border-radius: 50%; }
+        .co-low { display: flex; color: var(--danger-text); }
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
         .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
         .co-cluster { display: flex; flex-wrap: wrap; gap: var(--space-3); }
