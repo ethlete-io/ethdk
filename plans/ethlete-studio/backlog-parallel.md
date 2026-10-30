@@ -78,7 +78,11 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-Empty. Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
+- `sdk` `foundations/tokens`, round "Token overview" (`9f92126a3`): how should the sdk overview draw the
+  token set - a matrix of chips per state (a), a specimen in use (b), or a token sheet with names and values
+  (c)? Builder pick: a. Token CSS is the same in all three, generated from `calls/components/themes.ts`.
+
+Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
 
 ## Waits for Tom in the real Studio
 
