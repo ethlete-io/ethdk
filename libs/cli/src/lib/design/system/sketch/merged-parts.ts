@@ -43,6 +43,27 @@ export const recordMerged = (options: { product: HashedProduct; parts: string[] 
   writeFileSync(mergedFileOf(productDir), `${JSON.stringify(sorted, null, 2)}\n`);
 };
 
+/** Drops the named parts from the product's `merged.json`. */
+export const forgetMerged = (options: { productDir: string; parts: string[] }) => {
+  const { productDir, parts } = options;
+  const merged = readMerged(productDir);
+
+  if (!parts.some((part) => part in merged)) return;
+
+  for (const part of parts) delete merged[part];
+
+  writeFileSync(mergedFileOf(productDir), `${JSON.stringify(merged, null, 2)}\n`);
+};
+
+/** The product folder that holds the part now: the product's own, else its base's. */
+export const holderOf = (options: { product: HashedProduct; part: string }): HashedProduct => {
+  const { product, part } = options;
+
+  return !existsSync(resolve(product.dir, part)) && product.base && existsSync(resolve(product.base.dir, part))
+    ? { dir: product.base.dir, base: null }
+    : product;
+};
+
 /** The recorded parts of the product, outside `except`, whose files still match their recorded hash, with that hash. */
 export const unchangedMergedOf = (options: { product: ResolvedProduct; except: string[] }) => {
   const { product, except } = options;
@@ -132,7 +153,8 @@ const logAcceptance = (productDir: string, entry: Acceptance) =>
 
 /** Logs a sketch merged by itself because no state showed a visible change, as an `auto` entry in `accepted.json`. */
 export const recordAutoMerge = (options: { product: HashedProduct; part: string; by: string }) => {
-  const { product, part, by } = options;
+  const { part, by } = options;
+  const product = holderOf(options);
 
   logAcceptance(product.dir, {
     part,
@@ -146,7 +168,8 @@ export const recordAutoMerge = (options: { product: HashedProduct; part: string;
 
 /** Logs a sketch merged without a pick in Studio because a plan entry allows it, in `accepted.json`. */
 export const recordAllowedMerge = (options: { product: HashedProduct; part: string; by: string; planRef: string }) => {
-  const { product, part, by, planRef } = options;
+  const { part, by, planRef } = options;
+  const product = holderOf(options);
 
   logAcceptance(product.dir, {
     part,

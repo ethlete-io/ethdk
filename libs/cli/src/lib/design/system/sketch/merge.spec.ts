@@ -21,6 +21,7 @@ import {
   rebaseSketch,
   reportSketch,
   Sketch,
+  SketchMerge,
   sketchReportPath,
   SketchTarget,
 } from './sketch';
@@ -36,9 +37,13 @@ const acme = () => {
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const readySketch = (target: string, sketch: SketchTarget = { layer: 'elements', name: 'hero' }) => {
+const readySketch = (
+  target: string,
+  sketch: SketchTarget = { layer: 'elements', name: 'hero' },
+  merge?: SketchMerge,
+) => {
   const product = resolveAcme(target);
-  const created = createSketch({ product, sketch, variants: ['a', 'b'] }) as Sketch;
+  const created = createSketch({ product, sketch, variants: ['a', 'b'], merge }) as Sketch;
 
   return { product, sketch: markSketchReady({ checkout: target, sketch: created }) as Sketch };
 };
@@ -137,7 +142,8 @@ describe('mergeSketch', () => {
     );
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toContain('--acme-accent');
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain("note: 'Variant b, because it is calmer.'");
-    expect(existsSync(join(target, DESIGN_DIR, 'acme/components/card/card.ts'))).toBe(true);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/components/card/card.ts'))).toBe(false);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.ts'))).toBe(true);
     expect(existsSync(found.sketch.dir)).toBe(false);
     expect(existsSync(sketchReportPath({ checkout: target, sketch: found.sketch }))).toBe(false);
   }, 120_000);
@@ -316,11 +322,11 @@ describe('mergeSketch', () => {
     expect(reasonOf(refused)).toContain('records no baseline of the product');
   });
 
-  it('copies a target the product takes from its base into the product to carry the note', () => {
+  it('copies a target the product takes from its base into the product to carry the note with --override', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const target = acme();
-    const ready = readySketch(target, { layer: 'components', name: 'card' });
+    const ready = readySketch(target, { layer: 'components', name: 'card' }, 'override');
     const found = { ...ready, sketch: picked(ready.sketch) };
     const variantDir = join(found.sketch.dir, 'b');
 
@@ -512,6 +518,47 @@ describe('mergeSketch with a shared folder', () => {
   });
 });
 
+describe('mergeSketch of a base part', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const base = (target: string, path: string) => join(target, DESIGN_DIR, 'acme-base', path);
+  const own = (target: string, path: string) => join(target, DESIGN_DIR, 'acme', path);
+
+  it('merges into the base by default and records it in the base merged.json', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target, { layer: 'components', name: 'card' });
+
+    expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['components/card']);
+    expect(readFileSync(base(target, 'components/card/card.ts'), 'utf8')).toContain(
+      "note: 'Variant b, because it is calmer.'",
+    );
+    expect(existsSync(own(target, 'components/card'))).toBe(false);
+    expect(Object.keys(readMerged(join(target, DESIGN_DIR, 'acme-base')))).toEqual(['components/card']);
+    expect(readMerged(join(target, DESIGN_DIR, 'acme'))['components/card']).toBeUndefined();
+  }, 120_000);
+
+  it('with --into-base starts from the product copy, merges it into the base and removes the copy', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const copy = readFileSync(own(target, 'components/button/button.css'), 'utf8');
+
+    recordMerged({ product: resolveAcme(target), parts: ['components/button'] });
+
+    const ready = readySketch(target, { layer: 'components', name: 'button' }, 'into-base');
+
+    expect(readFileSync(join(ready.sketch.dir, 'b/components/button/button.css'), 'utf8')).toBe(copy);
+    expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['components/button']);
+    expect(existsSync(own(target, 'components/button'))).toBe(false);
+    expect(readFileSync(base(target, 'components/button/button.css'), 'utf8')).toBe(copy);
+    expect(readMerged(join(target, DESIGN_DIR, 'acme'))['components/button']).toBeUndefined();
+    expect(readMerged(join(target, DESIGN_DIR, 'acme-base'))['components/button']).toBeDefined();
+    expect(resolveAcme(target).parts.find((part) => part.name === 'button')?.origin).toBe('base');
+  }, 120_000);
+});
+
 describe('mergeSketch with several targets', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -532,7 +579,7 @@ describe('mergeSketch with several targets', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const target = acme();
-    const card = join(target, DESIGN_DIR, 'acme/components/card/card.ts');
+    const card = join(target, DESIGN_DIR, 'acme-base/components/card/card.ts');
 
     expect(merge(target, readyOnTwo(target))).toEqual(['components/card', 'elements/hero']);
 
@@ -547,7 +594,7 @@ describe('mergeSketch with several targets', () => {
 
     const target = acme();
     const found = readyOnTwo(target);
-    const cardDir = join(target, DESIGN_DIR, 'acme/components/card');
+    const cardDir = join(target, DESIGN_DIR, 'acme-base/components/card');
 
     mkdirSync(join(found.sketch.dir, 'shared'));
     writeFileSync(join(found.sketch.dir, 'shared/more.ts'), 'export const more = 1;\n');

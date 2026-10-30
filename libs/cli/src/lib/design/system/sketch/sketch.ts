@@ -14,6 +14,7 @@ import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
+import { isBuiltInBase } from '../base';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
@@ -70,7 +71,16 @@ export type SketchFile = {
   /** Per variant, every rejection it had, oldest first. */
   rejections?: Record<string, SketchRejection[]>;
   rounds?: SketchRound[];
+  /**
+   * Where a target the product takes from its base merges: absent, into the base; `override`, into a product copy;
+   * `into-base`, into the base, removing the product copy the sketch started from.
+   */
+  merge?: SketchMerge;
 };
+
+export const SKETCH_MERGES = ['override', 'into-base'] as const;
+
+export type SketchMerge = (typeof SKETCH_MERGES)[number];
 
 /** A sketch as read: `rounds` holds at least one round, and `variantInfo` names the round of every variant. */
 export type Sketch = SketchFile & {
@@ -324,6 +334,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: rejections must be { <variant>: [{ by: designer | agent, decidedAt, reason?, reasonBy?, reopened?: { by, decidedAt, reason? } }] }, each but the last reopened`;
   if (parsed.rounds !== undefined && !isRounds(parsed.rounds))
     return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
+  if (parsed.merge !== undefined && !SKETCH_MERGES.includes(parsed.merge))
+    return `${file}: merge must be one of ${SKETCH_MERGES.join(', ')}`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -383,6 +395,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     rounds: sketch.rounds,
     ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
     ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
+    ...(sketch.merge ? { merge: sketch.merge } : {}),
   };
 
   writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
@@ -479,6 +492,24 @@ const copyPartAs = (options: { from: SketchSource; to: string; name: string }) =
   writeFileSync(file, withMadeBy(source, []) ?? source);
 };
 
+/** Why the sketch cannot open with `merge` on its targets, or `null`: a base part merges into the base unless `override`. */
+const mergeProblemOf = (options: { product: ResolvedProduct; targets: string[]; merge?: SketchMerge }) => {
+  const { product, targets, merge } = options;
+  const originOf = (key: string) => product.parts.find((part) => partKeyOf(part) === key)?.origin;
+  const overridden = targets.filter((key) => originOf(key) === 'overridden');
+  const fromBase = targets.filter((key) => originOf(key) === 'base' || originOf(key) === 'overridden');
+  const baseName = product.base?.name ?? 'base';
+
+  if (merge === 'into-base' && overridden.length === 0)
+    return `--into-base: ${product.name} has no override of ${targets.join(', ')}`;
+  if (merge === undefined && overridden.length > 0)
+    return `${product.name} overrides the ${baseName} base part ${overridden.join(', ')} - pass --override to sketch the product copy, or --into-base to start from it and merge into the base, which removes the copy`;
+  if (merge !== 'override' && fromBase.length > 0 && product.base && isBuiltInBase(product.config.base ?? ''))
+    return `${fromBase.join(', ')} comes from the built-in base ${product.config.base}, which a sketch cannot merge into - pass --override`;
+
+  return null;
+};
+
 const variantInfoOf = (options: { round: string; author?: string; note?: string }): SketchVariantInfo => ({
   ...(options.author ? { authors: [options.author] } : {}),
   round: options.round,
@@ -491,6 +522,7 @@ const variantInfoOf = (options: { round: string; author?: string; note?: string 
  * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
  * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
  * sketch at a time. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
+ * A target the product overrides in its base needs `merge`: `override` or `into-base`.
  */
 export const createSketch = (options: {
   product: ResolvedProduct;
@@ -502,8 +534,9 @@ export const createSketch = (options: {
   author?: string;
   like?: SketchSource;
   variantNotes?: Map<string, string>;
+  merge?: SketchMerge;
 }): Sketch | string => {
-  const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes } = options;
+  const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes, merge } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
   const all = [sketch, ...(options.others ?? [])];
@@ -519,6 +552,10 @@ export const createSketch = (options: {
   if (existsSync(dir) || taken)
     return `${partKeyOf(taken ?? sketch)} already has an open sketch - merge or discard it first`;
   if (variants.length === 0) return 'name at least one variant';
+
+  const mergeProblem = mergeProblemOf({ product, targets, merge });
+
+  if (mergeProblem) return mergeProblem;
 
   const invalid = variants.find((variant) => !isVariantName(variant));
 
@@ -577,6 +614,7 @@ export const createSketch = (options: {
     name: sketch.name,
     dir,
     variants: [...variants].sort(),
+    ...(merge ? { merge } : {}),
   };
 
   writeSketchFile(created);

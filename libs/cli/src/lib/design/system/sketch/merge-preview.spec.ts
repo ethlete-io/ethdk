@@ -23,6 +23,7 @@ describe('mergePreviewOf', () => {
     const target = acme();
     const product = resolveAcme(target);
     const sketch = createSketch({
+      merge: 'override',
       product,
       sketch: { layer: 'components', name: 'button' },
       variants: ['a'],
@@ -68,6 +69,7 @@ describe('mergePreviewOf', () => {
 
     const product = resolveAcme(target);
     const sketch = createSketch({
+      merge: 'override',
       product,
       sketch: { layer: 'components', name: 'button' },
       variants: ['a'],

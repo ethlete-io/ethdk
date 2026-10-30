@@ -13,7 +13,7 @@ import {
   variantWarningsOf,
 } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
-import { shotsShowNoChange } from './ready-shots';
+import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
 import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -42,7 +42,7 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--product <name>]',
+  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -63,6 +63,10 @@ const FLAG_HELP: Record<string, string> = {
     "the note of one variant, kept in sketch.json apart from the part's merged note; repeat it per variant: a=<text>",
   '--by': 'the exact model id the coordinator gave you, e.g. claude-opus-5-5',
   '--like': 'start each variant from another part, or from a variant of the open sketch on it',
+  '--override':
+    'on a base part: merge into a product copy that overrides the base, not into the base; on a product override: sketch that copy',
+  '--into-base':
+    'on a part the product overrides: start from the product copy, merge into the base and remove the copy',
   '--round': 'the title of a new round',
   '--round-note': 'what the new round shows',
   '--from': 'the variant to copy',
@@ -210,6 +214,11 @@ const created = (context: Context) => {
 
   if (typeof like === 'string') return fail(like);
 
+  const override = args.flags.has('--override');
+  const intoBase = args.flags.has('--into-base');
+
+  if (override && intoBase) return fail('pass --override or --into-base, not both');
+
   const sketch = createSketch({
     product,
     sketch: parsed,
@@ -220,6 +229,7 @@ const created = (context: Context) => {
     author: authorOf(args) ?? undefined,
     like,
     variantNotes: notes,
+    merge: override ? 'override' : intoBase ? 'into-base' : undefined,
   });
 
   if (typeof sketch === 'string') return fail(sketch);
@@ -498,11 +508,29 @@ const readied = (context: Context) => {
 
   if (typeof found === 'string') return fail(found);
 
-  const status = markedReady(context, found);
+  const refused = readyRefusalOf(context, found);
 
-  if (typeof status === 'number') return status;
+  if (refused !== null) return refused;
 
-  return autoMerged({ context, ...found, sketch: status.ready, again: found.sketch.status === 'ready' });
+  return loadedAndReady(context, found);
+};
+
+const loadedAndReady = async (context: Context, { product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
+  const unloaded = await variantsThatDoNotLoad({ target: context.target, config: context.config, product, sketch });
+
+  if (unloaded.length > 0)
+    return fail(
+      `${unloaded.map((line) => `${sketch.target} ${line}`).join('\n')}\n${sketch.target} does not load - fix it before ready`,
+    );
+
+  const ready =
+    sketch.status === 'ready'
+      ? sketch
+      : markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
+
+  if (typeof ready === 'string') return fail(ready);
+
+  return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready' });
 };
 
 const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch; again: boolean }) => {
@@ -550,10 +578,10 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
   return 0;
 };
 
-const markedReady = (
+const readyRefusalOf = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
-): number | { ready: Sketch } => {
+): number | null => {
   const lineOf = (variant: string, problem: Problem) =>
     `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
   const found = variantProblemsOf({ product, sketch });
@@ -583,13 +611,7 @@ const markedReady = (
       `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
     );
 
-  if (sketch.status === 'ready') return { ready: sketch };
-
-  const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
-
-  if (typeof ready === 'string') return fail(ready);
-
-  return { ready };
+  return null;
 };
 
 const rebased = (context: Context) =>

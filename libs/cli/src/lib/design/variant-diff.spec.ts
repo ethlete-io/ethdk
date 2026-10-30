@@ -15,6 +15,7 @@ const sketchOn = (name: string, others: string[] = []) => {
 
   const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
   const sketch = createSketch({
+    merge: 'override',
     product,
     sketch: { layer: 'components', name },
     others: others.map((other) => ({ layer: 'components', name: other })),

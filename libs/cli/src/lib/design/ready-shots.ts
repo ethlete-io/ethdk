@@ -3,9 +3,37 @@ import { createDesignServer } from './serve';
 import { createPartShooter } from './shot';
 import { DesignConfig } from './paths';
 import { ResolvedProduct } from './system/resolve-product';
-import { sketchShowsNoChange } from './system/sketch/no-visible-change';
+import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
+
+/** Loads each target of each live variant of the sketch on a render server of its own; why each one fails to load. */
+export const variantsThatDoNotLoad = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+}): Promise<string[]> => {
+  const { target, config, product, sketch } = options;
+  let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
+
+  try {
+    const live = await createDesignServer({ target, config, listen: false });
+
+    server = live;
+
+    return await variantLoadProblemsOf({
+      product,
+      sketch,
+      load: ({ file, product: name, sketch: drawn }) =>
+        live.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: drawn })),
+    });
+  } catch (error) {
+    return [`the variants failed to load: ${error instanceof Error ? error.message : String(error)}`];
+  } finally {
+    await server?.close();
+  }
+};
 
 /**
  * Shoots every state of every variant of the sketch and of the product's part on a render server of its own

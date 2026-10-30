@@ -23,7 +23,7 @@ const sketchOn = (layer: 'components', name: string) => {
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
   const product = acme(target);
-  const sketch = createSketch({ product, sketch: { layer, name }, variants: ['a'] }) as Sketch;
+  const sketch = createSketch({ merge: 'override', product, sketch: { layer, name }, variants: ['a'] }) as Sketch;
 
   return { product, sketch };
 };

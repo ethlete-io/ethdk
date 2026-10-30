@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { sketchShowsNoChange } from './no-visible-change';
+import { sketchShowsNoChange, variantLoadProblemsOf } from './no-visible-change';
 import { createSketch, Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader } from './unchanged-states';
 
@@ -159,6 +159,7 @@ describe('sketchShowsNoChange', () => {
   it('compares every target of a sketch with several targets and names the part that changes', async () => {
     const { product } = acme();
     const sketch = createSketch({
+      merge: 'override',
       product,
       sketch: { layer: 'components', name: 'button' },
       others: [{ layer: 'components', name: 'card' }],
@@ -182,5 +183,19 @@ describe('sketchShowsNoChange', () => {
     expect(
       await sketchShowsNoChange({ product, sketch, load: byFolder, pictureOf: pictureWith((sketched) => +sketched) }),
     ).toBe('variant a changes components/card default');
+  });
+});
+
+describe('variantLoadProblemsOf', () => {
+  it('names each live variant whose target throws on load, and nothing when all load', async () => {
+    const { product, sketch } = acme();
+    const throwing: SketchPartLoader = async () => {
+      throw new ReferenceError('exports is not defined');
+    };
+
+    expect(await variantLoadProblemsOf({ product, sketch, load })).toEqual([]);
+    expect(await variantLoadProblemsOf({ product, sketch, load: throwing })).toEqual([
+      'variant a elements/hero does not load: exports is not defined',
+    ]);
   });
 });

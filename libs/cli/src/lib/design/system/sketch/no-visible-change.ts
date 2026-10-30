@@ -125,3 +125,34 @@ export const sketchShowsNoChange = async (options: {
 
   return found.length === 0 ? true : found.join('; ');
 };
+
+/** Why each target of each live variant of the sketch fails to load, one line each; `[]` when all of them load. */
+export const variantLoadProblemsOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  load: SketchPartLoader;
+}): Promise<string[]> => {
+  const { product, sketch, load } = options;
+  const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
+  const problems: string[] = [];
+
+  for (const variant of live) {
+    const parts = overlaySketch({ product, sketch, variant }).parts;
+
+    for (const target of sketch.targets) {
+      const file = parts.find((entry) => partKeyOf(entry) === target)?.file;
+
+      if (!file) continue;
+
+      const read = await readPartModule({
+        part: { file },
+        product: product.name,
+        load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
+      });
+
+      if (read.problem) problems.push(`variant ${variant} ${target} does not load: ${read.problem}`);
+    }
+  }
+
+  return problems;
+};

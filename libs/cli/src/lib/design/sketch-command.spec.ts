@@ -3,12 +3,13 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
-import { shotsShowNoChange } from './ready-shots';
+import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
 vi.mock('./ready-shots', () => ({
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
+  variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
 
 const acme = () => {
@@ -48,6 +49,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a',
       '--round',
@@ -66,6 +68,41 @@ describe('designSketch', () => {
     ]);
   });
 
+  it('refuses ready while a variant does not load, and keeps the sketch in progress', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.mocked(variantsThatDoNotLoad).mockResolvedValueOnce([
+      'variant a components/button does not load: exports is not defined',
+    ]);
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'R',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.join('\n')).toContain('does not load: exports is not defined');
+    expect(lines.join('\n')).not.toContain('components/button is ready');
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'in progress' });
+  });
+
   it('opens one sketch on several targets and merges them all by itself when no state shows a change', async () => {
     const target = acme();
     const lines = output();
@@ -78,6 +115,7 @@ describe('designSketch', () => {
         target,
         'new',
         'components/button',
+        '--override',
         'elements/hero',
         '--variants',
         'a',
@@ -144,6 +182,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a',
       '--round',
@@ -172,6 +211,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a',
       '--round',
@@ -228,6 +268,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a,b',
       '--round',
@@ -264,7 +305,7 @@ describe('designSketch', () => {
     const lines = output();
 
     for (const argv of [
-      ['new', 'components/button', '--variants', 'a,b'],
+      ['new', 'components/button', '--override', '--variants', 'a,b'],
       ['variant', 'components/button', 'c', '--from', 'a'],
       ['report', 'components/button', '--variant', 'a', 'phone'],
       ['ready', 'components/button'],
@@ -293,7 +334,7 @@ describe('designSketch', () => {
         sketch: { layer: 'components', name: 'button' },
       }) as Sketch;
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
     expect(write(target, 'reject', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('usage: sketch reject <layer>/<name> --variant <key>');
@@ -358,7 +399,7 @@ describe('designSketch', () => {
     const lines = output();
     const dir = join(target, DESIGN_DIR, 'acme/sketches/components-button');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
     const file = JSON.parse(readFileSync(join(dir, 'sketch.json'), 'utf8')) as Record<string, unknown>;
 
@@ -381,7 +422,7 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
 
     expect(write(target, 'report', 'components/button', 'variant', 'b', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain(
@@ -404,7 +445,7 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
     write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme');
 
     const sketch = findSketch({
@@ -426,13 +467,24 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme')).toBe(
-      1,
-    );
+    expect(
+      write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--round',
+        'Pill',
+        '--product',
+        'acme',
+      ),
+    ).toBe(1);
     expect(lines.pop()).toBe(
       '--round needs --note "<what the round shows>" - sketch ready refuses a round without a note',
     );
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme')).toBe(0);
+    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
     expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
@@ -443,7 +495,7 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme')).toBe(0);
+    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
 
     const next = lines.slice(lines.indexOf('Next:'));
 
@@ -463,7 +515,7 @@ describe('designSketch', () => {
     output();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
 
     const folder = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button');
     const ts = join(folder, 'button.ts');
@@ -483,7 +535,7 @@ describe('designSketch', () => {
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     writeFileSync(button, readFileSync(button, 'utf8').replace(/, long: \{[^}]*\}/u, ''));
 
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -498,7 +550,7 @@ describe('designSketch', () => {
     const css = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.css');
 
     rmSync(join(target, '.prettierignore'));
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
     writeFileSync(css, `${readFileSync(css, 'utf8')}\n.acme-button   {   }\n`);
 
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -517,7 +569,7 @@ describe('designSketch', () => {
 
     rmSync(join(target, '.prettierignore'));
     writeFileSync(join(target, '.prettierrc'), '{ "printWidth": 40 }\n');
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
     write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
@@ -534,7 +586,18 @@ describe('designSketch', () => {
       join(target, DESIGN_DIR, `acme/sketches/components-button/${variant}/components/button/button.ts`);
 
     expect(
-      write(target, 'new', 'components/button', '--variants', 'a,b', '--variant-note', 'z=x', '--product', 'acme'),
+      write(
+        target,
+        'new',
+        'components/button',
+        '--override',
+        '--variants',
+        'a,b',
+        '--variant-note',
+        'z=x',
+        '--product',
+        'acme',
+      ),
     ).toBe(1);
     expect(lines.pop()).toContain('--variant-note needs <variant>=<text>');
     expect(
@@ -542,6 +605,7 @@ describe('designSketch', () => {
         target,
         'new',
         'components/button',
+        '--override',
         '--variants',
         'a,b',
         '--variant-note',
@@ -572,7 +636,7 @@ describe('designSketch', () => {
     const part = join(target, DESIGN_DIR, 'acme/components/button/shared');
     mkdirSync(part, { recursive: true });
     writeFileSync(join(part, 'data.ts'), 'export const rows = [];\n');
-    write(target, 'new', 'components/button', '--variants', 'a', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--product', 'acme');
 
     expect(lines.slice(lines.indexOf('Next:') - 2, lines.indexOf('Next:'))).toEqual([
       '  shared by every variant, imported as @shared/<path>; edit it here, not in a copy:',
@@ -584,7 +648,7 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--variants', 'a', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--product', 'acme');
 
     expect(write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
     expect(lines.pop()).toContain('acme/sketches/components-button/b/');
@@ -603,6 +667,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a,b',
       '--round',
@@ -637,6 +702,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a,b',
       '--note',
@@ -680,6 +746,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a,b',
       '--round',
@@ -703,6 +770,7 @@ describe('designSketch', () => {
       target,
       'new',
       'components/button',
+      '--override',
       '--variants',
       'a,b',
       '--round',
@@ -775,7 +843,7 @@ describe('designSketch', () => {
       return file;
     };
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
     mkdirSync(comments, { recursive: true });
 
     const { createdAt } = findSketch({
@@ -827,9 +895,11 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
 
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b')).toBe(1);
+    expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b')).toBe(1);
     expect(lines.pop()).toBe('more than one product - pass --product <name>; config.json declares acme-base, acme.');
-    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--note', 'n', '--product', 'acme')).toBe(0);
+    expect(
+      write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme'),
+    ).toBe(0);
     expect(lines.splice(lines.indexOf('Next:')).length).toBe(5);
     expect(lines.splice(-3)).toEqual([
       `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
@@ -919,6 +989,7 @@ export default definePart({
         target,
         'new',
         'components/button',
+        '--override',
         '--variants',
         variants,
         '--round',

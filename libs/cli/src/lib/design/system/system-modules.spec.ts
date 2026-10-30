@@ -57,7 +57,7 @@ describe('createSystemModules', () => {
 
     if (!product || typeof parsed === 'string') throw new Error('no acme');
 
-    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
 
     const design = join(target, DESIGN_DIR);
     const sketch = { target: 'components/button', variant: 'b' };
@@ -85,7 +85,7 @@ describe('createSystemModules', () => {
 
     if (!product || typeof parsed === 'string') throw new Error('no acme');
 
-    createSketch({ product, sketch: parsed, variants: ['a'] });
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
 
     const empty = mkdtempSync(join(tmpdir(), 'cli-design-root-'));
     const elsewhere = createSystemModules({ target, config: readConfig(target) ?? {}, sketchesRoot: empty });
@@ -208,7 +208,7 @@ describe('createSystemModules', () => {
 
     if (!product || typeof parsed === 'string') throw new Error('no acme');
 
-    createSketch({ product, sketch: parsed, variants: ['a'] });
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
 
     expect(
       system.resolveId(

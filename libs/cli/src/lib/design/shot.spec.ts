@@ -183,7 +183,7 @@ describe('createPartShooter', () => {
 
     if (!product || typeof parsed === 'string') throw new Error('no acme');
 
-    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a', 'b'] });
 
     const part = 'product=acme&part=elements/hero&state=default&preset=phone';
 
@@ -411,7 +411,7 @@ describe('createPartShooter', () => {
 
     if (!product || typeof parsed === 'string') throw new Error('no acme');
 
-    createSketch({ product, sketch: parsed, variants: ['a'] });
+    createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
 
     const merged = await ask(shots, 'product=acme&part=components/button&state=new');
     const variant = await ask(

@@ -84,6 +84,7 @@ describe('overlaySketch', () => {
     const target = acme();
     const product = resolveAcme(target);
     const sketch = createSketch({
+      merge: 'override',
       product,
       sketch: { layer: 'components', name: 'button' },
       others: [{ layer: 'elements', name: 'hero' }],

@@ -6,14 +6,15 @@ import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
-import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { isBuiltInBase } from '../base';
+import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
-import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
+import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, variantDirOf } from './sketch';
 
-const swap = (entries: { from: string; to: string }[]) => {
+const swap = (entries: { from: string | null; to: string }[]) => {
   const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
   const held = entries.map(({ to }, index) => {
     const copy = resolve(backup, String(index));
@@ -25,6 +26,9 @@ const swap = (entries: { from: string; to: string }[]) => {
 
   for (const { from, to } of entries) {
     rmSync(to, { recursive: true, force: true });
+
+    if (from === null) continue;
+
     mkdirSync(dirname(to), { recursive: true });
     cpSync(from, to, { recursive: true });
   }
@@ -67,12 +71,13 @@ const notedTargetOf = (options: {
   variant: string;
   parts: { layer: string; name: string; file: string }[];
   product: ResolvedProduct;
+  root: string;
   key: string;
   note?: string;
 }): NotedTarget | string => {
-  const { sketch, variant, parts, product, key, note } = options;
+  const { sketch, variant, parts, product, root, key, note } = options;
   const name = key.split('/')[1] ?? '';
-  const targetDir = resolve(product.dir, key);
+  const targetDir = resolve(root, key);
   const noteFile = resolve(targetDir, `${name}.ts`);
   const carried = parts.find((part) => partKeyOf(part) === key)?.file;
   const inherited =
@@ -91,6 +96,19 @@ const notedTargetOf = (options: {
   if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
 
   return { key, targetDir, noteFile, inherited, noted };
+};
+
+/** The parts of `keys` the merge writes into the product's base instead of the product. */
+const baseKeysOf = (options: { product: ResolvedProduct; sketch: Sketch; keys: string[] }) => {
+  const { product, sketch, keys } = options;
+
+  return keys.filter((key) => {
+    const origin = product.parts.find((part) => partKeyOf(part) === key)?.origin;
+
+    return sketch.merge === 'into-base'
+      ? origin === 'base' || origin === 'overridden'
+      : sketch.merge !== 'override' && origin === 'base';
+  });
 };
 
 /** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
@@ -142,10 +160,21 @@ const mergeOrReason = (options: {
       changed: conflicts,
     };
 
+  const mergedKeys = [...new Set([...sketch.targets, ...parts.map(partKeyOf)])];
+  const baseKeys = baseKeysOf({ product, sketch, keys: mergedKeys });
+  const base = product.base;
+
+  if (baseKeys.length > 0 && (!base || isBuiltInBase(product.config.base ?? '')))
+    return `${baseKeys.join(', ')} comes from the built-in base ${product.config.base} - only a sketch opened with --override merges it, as a product copy`;
+
+  const rootOf = (key: string) => (base && baseKeys.includes(key) ? base.dir : product.dir);
+  const removedKeys = baseKeys.filter(
+    (key) => product.parts.find((part) => partKeyOf(part) === key)?.origin === 'overridden',
+  );
   const notedTargets: NotedTarget[] = [];
 
   for (const key of sketch.targets) {
-    const noted = notedTargetOf({ sketch, variant, parts, product, key, note });
+    const noted = notedTargetOf({ sketch, variant, parts, product, root: rootOf(key), key, note });
 
     if (typeof noted === 'string') return noted;
 
@@ -153,19 +182,23 @@ const mergeOrReason = (options: {
   }
 
   const inheritedKeys = notedTargets.flatMap((entry) => (entry.inherited ? [entry.key] : []));
-  const mergedKeys = [...new Set([...sketch.targets, ...parts.map(partKeyOf)])];
   const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
   const sharedChanges = productSharedChangesOf({ sketch, variant, product });
   const untouched =
     assetFiles.length > 0 || sharedChanges.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
-  const known = ruleLinesOf(target, product);
+  const baseProduct =
+    base && baseKeys.length > 0 && base.configFile === product.configFile && config.products?.[base.name]
+      ? resolveProduct({ target, name: base.name, config: base.config })
+      : null;
+  const known = [...ruleLinesOf(target, product), ...(baseProduct ? ruleLinesOf(target, baseProduct) : [])];
 
   const swapped = swap([
     ...notedTargets.flatMap(({ inherited, targetDir }) =>
       inherited ? [{ from: dirname(inherited.file), to: targetDir }] : [],
     ),
-    ...parts.map((part) => ({ from: dirname(part.file), to: resolve(product.dir, part.layer, part.name) })),
+    ...parts.map((part) => ({ from: dirname(part.file), to: resolve(rootOf(partKeyOf(part)), part.layer, part.name) })),
+    ...removedKeys.map((key) => ({ from: null, to: resolve(product.dir, key) })),
     ...(fixtures ? [{ from: fixtures, to: resolve(product.dir, 'fixtures.ts') }] : []),
     ...assetFiles.map((file) => ({
       from: file,
@@ -176,16 +209,29 @@ const mergeOrReason = (options: {
 
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
-  for (const { targetDir, paths } of shared.carry) carryShared({ sketch, variant, targetDir, paths, product });
+  for (const { targetDir, paths } of shared.carry) {
+    const key = relative(product.dir, targetDir);
 
-  if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
+    carryShared({ sketch, variant, targetDir: resolve(rootOf(key), key), paths, product });
+  }
+
+  const checked = [product.name, ...(baseProduct ? [baseProduct.name] : [])];
+
+  if (checkSystem({ target, config, products: checked, known }) !== 0) {
     swapped.restore();
 
     return `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`;
   }
 
   swapped.drop();
-  recordMerged({ product, parts: mergedKeys });
+  const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
+
+  if (productKeys.length > 0) recordMerged({ product, parts: productKeys });
+
+  if (base && baseKeys.length > 0) {
+    recordMerged({ product: { dir: base.dir, base: null }, parts: baseKeys });
+    forgetMerged({ productDir: product.dir, parts: removedKeys });
+  }
 
   const alsoChanged = rerecordChangedMerged({ product, before: untouched });
 
@@ -205,8 +251,9 @@ const mergeOrReason = (options: {
 
 /**
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
- * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
- * records each merged part's hash in `merged.json` and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
+ * over the product's - a part the product takes from its base over the base's, unless the sketch was opened with
+ * `override`; `into-base` also removes the product copy and its `merged.json` entry - sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
+ * records each merged part's hash in `merged.json` and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. When the check fails, the
  * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase

@@ -20,6 +20,7 @@ import {
   rejectionOf,
   reportSketch,
   Sketch,
+  SketchMerge,
   sketchReportPath,
   sketchSourceOf,
 } from './sketch';
@@ -36,12 +37,12 @@ const acme = () => {
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const open = (target: string, sketch: string, variants = ['a', 'b']) => {
+const open = (target: string, sketch: string, variants = ['a', 'b'], merge?: SketchMerge) => {
   const parsed = parseTarget(sketch);
 
   if (typeof parsed === 'string') throw new Error(parsed);
 
-  const created = createSketch({ product: resolveAcme(target), sketch: parsed, variants });
+  const created = createSketch({ product: resolveAcme(target), sketch: parsed, variants, merge });
 
   if (typeof created === 'string') throw new Error(created);
 
@@ -141,6 +142,7 @@ describe('createSketch', () => {
 describe('a sketch with several targets', () => {
   const several = (target: string) =>
     createSketch({
+      merge: 'override',
       product: resolveAcme(target),
       sketch: { layer: 'components', name: 'button' },
       others: [
@@ -207,13 +209,48 @@ describe('a sketch with several targets', () => {
   });
 });
 
+describe('createSketch on a part the product overrides', () => {
+  it('refuses without --override or --into-base and names both', () => {
+    const target = acme();
+    const refused = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'components', name: 'button' },
+      variants: ['a'],
+    });
+
+    expect(refused).toContain('acme overrides the acme-base base part components/button');
+    expect(refused).toContain('--into-base');
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
+  });
+
+  it('records the merge mode in sketch.json', () => {
+    const target = acme();
+
+    expect(open(target, 'components/button', ['a'], 'into-base').merge).toBe('into-base');
+    expect(
+      JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json'), 'utf8')),
+    ).toMatchObject({ merge: 'into-base' });
+  });
+
+  it('refuses --into-base on a part the product does not override', () => {
+    expect(
+      createSketch({
+        product: resolveAcme(acme()),
+        sketch: { layer: 'components', name: 'card' },
+        variants: ['a'],
+        merge: 'into-base',
+      }),
+    ).toBe('--into-base: acme has no override of components/card');
+  });
+});
+
 describe('listSketches and findSketch', () => {
   it('reads every sketch folder and reports one without sketch.json', () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');
 
     open(target, 'elements/hero');
-    open(target, 'components/button', ['x']);
+    open(target, 'components/button', ['x'], 'override');
     rmSync(join(productDir, 'sketches/components-button/sketch.json'));
 
     const listed = listSketches({ productDir, product: 'acme' });
