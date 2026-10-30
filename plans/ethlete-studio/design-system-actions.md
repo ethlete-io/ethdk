@@ -738,7 +738,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   so the change must show. The builder undid the uncommitted merge.
 - **Two defects:** (1) a token value edit in a variant's `.css` does not reach the compared drawings (suspect:
   the drawing loads the merged product CSS); (2) auto-merge picks one of two variants, which is the designer's
-  choice. With more than one live variant, `ready` must never auto-merge.
+  choice.
+- **Decision (Tom, 2026-10-30):** `ready` auto-merges only when every live variant draws the same as the
+  merged part in every state; otherwise it stops at ready. Order: finish 4.61 slice 1, then fix both defects,
+  then redo step B. Before the redo, change both variants so every text on every surface reaches at least
+  4.5:1 (today a fails on raised and overlay, b on raised, overlay and `on-danger` on `danger-active`); Tom
+  then picks.
 - **Step B values and WCAG 2 contrast** (redo the sketch after the fix): subtle on surface / raised / overlay:
   a 5.25 / 4.46 / 3.88, b 4.46 / 3.79 / 3.30; `on-*` on `*-active` accent / warning / danger: a 5.75 / 7.42 /
   4.95, b 4.95 / 6.40 / 4.20.
