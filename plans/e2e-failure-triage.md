@@ -84,8 +84,12 @@ so the installed copy still works. Consumers have no source, so the package must
 - Move `tools/claude-mods/plugins/e2e-progress` into `libs/agent-rules/content/` and publish it with
   the package. Rename the marketplace from `tom-mods` to `ethlete`.
 - `ethlete-agents sync` writes `extraKnownMarketplaces` and `enabledPlugins` into the consumer's
-  `.claude/settings.json`, with a path into `node_modules/@ethlete/agent-rules/`. Spike first: does
-  Claude Code accept a directory marketplace with a `node_modules` path in project settings?
+  `.claude/settings.json`, with a path into `node_modules/@ethlete/agent-rules/`.
+- Spike done (2026-10-30, Claude Code 2.1.314): it works. Write the path relative, for example
+  `"path": "./node_modules/@ethlete/agent-rules/<dir>"` with `"source": "directory"`. The first
+  interactive start after the folder trust registers the marketplace with the path resolved against the
+  project root. The mod is then active with no prompt. `claude -p` does not register project
+  marketplaces. `claude plugin marketplace add --scope project` writes an absolute path, so do not use it.
 - Keep the mod version tied to the package version, because the mod reads the reporter's path line.
 - Docs: `apps/docs/agent-rules/`. Changeset: `@ethlete/agent-rules` minor.
 
