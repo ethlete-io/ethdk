@@ -537,6 +537,14 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   one number (two `li`s on `pages/merge`). Found on the way: `aae2914f3` imported the frame runtime into `src`, so
   `tsc` emitted CommonJS into `dist/libs/cli/design` and every render failed with `exports is not defined`; fixed in
   `203aa2c35` with a spec. Next: slice 2, the Studio view.
+- **Status:** inventory slice 2 built (`2a90d0cfd`): a page part has an "Inventory" toggle in Studio
+  (`system-view/inventory-view.component.ts`, `inventory.ts`, `host/design-inventory.ts`): each rest frame's shot with
+  numbered boxes (brand declared, danger undeclared, warning unclassified), the list (number, id, kind, inputs, surfaces,
+  states), the approval state, and "Approve inventory", off while a control is red or amber; it posts
+  `{ part, hash, by: 'designer' }` and names 409 and 422. Bites: tone by status, number order, disabled approve, the
+  `by`, the 409 text. Not verified: the view in the running app; a real 409 and write. Against an own server the GET
+  answered for `pages/merge` (shot 1440x900 matches the boxes), then every page draw failed while other streams
+  changed the design tsconfigs.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
