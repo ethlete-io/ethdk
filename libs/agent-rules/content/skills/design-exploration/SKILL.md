@@ -29,6 +29,11 @@ or loses only against the other variants of its question.
    user asks to pause or end the exploration, or when their feedback leaves no grounded next
    question.
 5. **Keep the answer short.** 120 words at most.
+6. **A reference informs, it is not a template.** Before you show a round led by a reference
+   (a Figma file, another product), state the problem the reference solves, the principle you take
+   from it, and how each variant differs in concept. Then review the variants beside the reference
+   for literal copies. Derive the composition from the product's own visual language; a new palette
+   or spacing on the reference's layout is not a different concept.
 
 Confirm the step size once, at the start. Do not ask again at every stop. A task is not
 finished while the user is still talking about it.
@@ -160,6 +165,10 @@ Start a new part from a close one with `--like`: `sketch new pages/inbox --like 
 copies the product's `pages/system` into each variant, renamed to the target and without its
 `madeBy`; `--like pages/system:b` copies variant b of the open sketch on it, with that sketch's
 `shared/` folder.
+
+Rendering for one variant lives in that variant's files. `shared/` holds only code every variant
+uses: do not give a shared helper a parameter, branch, import or style rule that only one variant, or
+a variant you dropped, needs. A merge takes `shared/` whole, so what stays there ships with the pick.
 
 Code the variants of one sketch have in common (sample data, a switch, a helper) goes in the
 sketch's `shared/` folder, next to the variant folders, never into copies per variant. A part in a
