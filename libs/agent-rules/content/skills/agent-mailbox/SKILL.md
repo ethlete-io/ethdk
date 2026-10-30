@@ -16,10 +16,11 @@ file sits in, and `<name>` is your own sender name.
 node <skill-dir>/agent-mailbox.mjs claim <name> <path...> [--ttl <hours>] [--force]
 node <skill-dir>/agent-mailbox.mjs release <name> [path...]
 node <skill-dir>/agent-mailbox.mjs claims
-node <skill-dir>/agent-mailbox.mjs send <name> '<message>'
+node <skill-dir>/agent-mailbox.mjs send <name> [--to <agent>] '<message>'
 node <skill-dir>/agent-mailbox.mjs inbox <name> [--wait <seconds>]
 node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
+node <skill-dir>/agent-mailbox.mjs dispatch
 ```
 
 Choose a `<name>` that no other agent uses, for example `agent-a` or
@@ -45,6 +46,17 @@ The file is `.ethlete/mailbox.jsonl` in the git root. The first write also creat
 
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the
 holder agreed. Silence is not approval. Acknowledge each handoff in words.
+
+## Wake an idle agent
+
+An idle agent cannot read the mailbox. The user starts one `dispatch` process outside every agent. It polls the mailbox for free. When a message carries `--to <agent>`, it types a wake-up line into the `tmux` session that has the same name as the agent. The agent then runs `inbox` and acts.
+
+1. Start each agent inside its own `tmux` session, and name the session like the sender name: `tmux new -s codex`, then start the agent.
+2. Start `node <skill-dir>/agent-mailbox.mjs dispatch` in a separate terminal.
+3. Send a message with `send <name> --to <agent> '<message>'`. A message without `--to` wakes nobody.
+
+If the agent is in the middle of a turn, the wake-up line waits as its next prompt. An agent that
+uses this does not need the `--wait` loop, which costs a turn at every timeout.
 
 ## Rules
 

@@ -31,11 +31,12 @@ const ttl = takeFlag(args, '--ttl', true);
 const all = takeFlag(args, '--all', false);
 const force = takeFlag(args, '--force', false);
 const waitSeconds = takeFlag(args, '--wait', true);
+const recipient = takeFlag(args, '--to', true);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
 
-Send:    node ${script} send <name> '<message>'      (no message: read it from stdin)
+Send:    node ${script} send <name> [--to <agent>] '<message>'   (no message: read it from stdin)
 Inbox:   node ${script} inbox <name> [--wait <seconds>]   (only the messages you have not seen yet;
                                                            --wait blocks until one arrives or the time ends)
 Read:    node ${script} read [--last <n>] [--all]     (default: the last ${DEFAULT_LAST} messages)
@@ -43,6 +44,7 @@ Watch:   node ${script} watch <name>
 Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
 Release: node ${script} release <name> [path...]      (no path: release every claim of <name>)
 Claims:  node ${script} claims
+Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
 Protocol: append one JSON object per line; never rewrite or truncate.
 Fields: timestamp (UTC), sender, message. A claim also has paths and expires.
@@ -135,9 +137,31 @@ if (command === 'send' && sender) {
     process.stderr.write('No message given.\n');
     process.exitCode = 1;
   } else {
-    append({ sender, message });
+    append({ sender, message, ...(recipient ? { to: recipient } : {}) });
     process.stdout.write(`Sent as ${sender}.\n`);
   }
+} else if (command === 'dispatch') {
+  prepare();
+  appendFileSync(mailbox, '');
+  let seen = entries().length;
+  const wake = (agent) => {
+    const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
+    try {
+      execFileSync('tmux', ['send-keys', '-t', agent, '-l', text], { stdio: 'ignore' });
+      execFileSync('tmux', ['send-keys', '-t', agent, 'Enter'], { stdio: 'ignore' });
+      process.stdout.write(`Woke ${agent}.\n`);
+    } catch {
+      process.stderr.write(`No tmux session named ${agent}.\n`);
+    }
+  };
+  const poll = () => {
+    const history = entries();
+    const fresh = history.slice(seen);
+    seen = history.length;
+    new Set(fresh.filter((entry) => entry.to && entry.to !== entry.sender).map((entry) => entry.to)).forEach(wake);
+  };
+  process.stdout.write(`Dispatching for ${resolve(mailbox)}\n`);
+  setInterval(poll, 1000);
 } else if (command === 'inbox' && sender) {
   showInbox(sender, Number(waitSeconds ?? 0));
 } else if (command === 'read') {

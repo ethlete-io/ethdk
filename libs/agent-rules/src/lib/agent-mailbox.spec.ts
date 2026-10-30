@@ -1,10 +1,12 @@
 import { spawn, spawnSync } from 'child_process';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const SCRIPT = join(__dirname, '../../content/skills/agent-mailbox/agent-mailbox.mjs');
+
+const hasTmux = spawnSync('tmux', ['-V']).status === 0;
 
 describe('agent-mailbox', () => {
   let dir: string;
@@ -122,5 +124,28 @@ describe('agent-mailbox', () => {
 
   it('gives up inbox --wait when no message arrives', () => {
     expect(run(['inbox', 'gemini', '--wait', '1']).stdout).toBe('No new messages.\n');
+  });
+
+  it.skipIf(!hasTmux)('wakes the tmux session of the recipient for a message sent --to it', async () => {
+    const session = `mailbox-spec-${process.pid}`;
+    const log = join(dir, 'pane.log');
+
+    spawnSync('tmux', ['new-session', '-d', '-s', session, `cat > ${log}`]);
+
+    const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+      cwd: dir,
+      env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      run(['send', 'codex', '--to', session, 'hello']);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      expect(readFileSync(log, 'utf8')).toContain(`inbox ${session}`);
+    } finally {
+      dispatch.kill();
+      spawnSync('tmux', ['kill-session', '-t', session]);
+    }
   });
 });
