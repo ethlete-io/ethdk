@@ -163,3 +163,8 @@ As built (2026-10-30): Tom merged the `foundations/colors` sketch. The four disa
 `aria-disabled="true"`, the part declares `contrast: { pairs }` (27 pairs, no `exceptions`), and a ratio table follows
 the token sheet. `design check --product studio` exits 0. Not verified: the table values as drawn, against the
 computed ones (lowest 5.68:1).
+
+## Colour step B redo (in progress, 2026-10-30)
+
+Order item 5: a `foundations/colors` sketch with variants a and b, every pair at 4.5:1 or more, the `CONTRAST`
+rule checks each variant, and the ratio table in the drawing gives the numbers. Stops at `ready` for Tom.
