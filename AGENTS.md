@@ -247,6 +247,11 @@ generated, or unsupported files to this command:
 npx prettier --write <files>
 ```
 
+## Agent mailbox
+
+If a prompt says `New mailbox message for <name>`, run the `inbox` command in that prompt and act on
+the messages. Before you edit a file that another agent may edit, read `.agents/skills/ethlete-agent-mailbox/SKILL.md`.
+
 ## Reactive state
 
 - **Synchronous state → signals.** Never model it with a `BehaviorSubject`/`Subject`.
