@@ -120,6 +120,8 @@ describe('renderIssuesOf', () => {
       'CLIPPED components/ring-frame fitted',
       'CLIPPED components/shadow-cut fitted',
       'CLIPPED components/underline-cut fitted',
+      'CONTRAST components/styled fitted',
+      'CONTRAST components/themed fitted',
       'GRID components/gridded -',
       'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',

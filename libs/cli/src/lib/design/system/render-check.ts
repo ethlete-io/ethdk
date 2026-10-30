@@ -1,6 +1,7 @@
 import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
+import { ContrastOptions, CONTRAST_STATEMENTS, contrastExceptionsOf, contrastPairsOf } from './contrast-check';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -38,9 +39,18 @@ type Frame = {
   fit: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
+  contrast: ContrastOptions;
 };
 
-type PartModule = { default?: { states?: unknown; widths?: unknown; grid?: unknown; checks?: { skip?: unknown } } };
+type PartModule = {
+  default?: {
+    states?: unknown;
+    widths?: unknown;
+    grid?: unknown;
+    checks?: { skip?: unknown };
+    contrast?: { pairs?: unknown; exceptions?: unknown };
+  };
+};
 
 /** The summary line of the `grid` of a drawn part. */
 export type RenderedGrid = Pick<RenderIssue, 'product' | 'part' | 'sketch'> & { line: string };
@@ -65,6 +75,7 @@ const inspectFrame = (options: {
   fit: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
+  contrast: ContrastOptions;
 }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
@@ -286,7 +297,7 @@ const inspectFrame = (options: {
       report('WRAP', block, '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" breaks onto ' + lines.length + ' lines');
     }
   }
-
+${CONTRAST_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE })})`;
 
@@ -346,6 +357,7 @@ const inspect = async (options: { browser: Browser; base: string; frames: Frame[
           fit: frame.fit,
           skips: frame.skips,
           namespaces: frame.namespaces,
+          contrast: frame.contrast,
         }),
       )) as Found[];
       const { product, part, state, sketch } = frame.address;
@@ -455,6 +467,13 @@ export const renderIssuesOf = async (options: {
           );
         }
 
+        const exceptions = contrastExceptionsOf(definition?.contrast?.exceptions);
+        const pairs = contrastPairsOf(definition?.contrast?.pairs);
+
+        exceptions.problems.forEach((detail) =>
+          issues.push({ rule: 'CONTRAST', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
+        );
+
         const widths = widthsOf(definition?.widths);
         const sizes: { preset: string | null; width: number | null }[] =
           part.layer === 'pages'
@@ -462,6 +481,8 @@ export const renderIssuesOf = async (options: {
             : widths.length > 0
               ? widths.map((width) => ({ preset: null, width }))
               : [{ preset: null, width: null }];
+
+        let measuresPairs = true;
 
         for (const state of states) {
           for (const { preset, width } of sizes) {
@@ -479,7 +500,9 @@ export const renderIssuesOf = async (options: {
               fit: frame.size === null,
               skips,
               namespaces,
+              contrast: { exceptions: exceptions.selectors, pairs: measuresPairs ? pairs : [] },
             });
+            measuresPairs = false;
           }
         }
       }

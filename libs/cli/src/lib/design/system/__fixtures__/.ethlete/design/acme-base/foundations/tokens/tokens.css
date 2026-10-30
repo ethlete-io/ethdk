@@ -1,7 +1,7 @@
 :root {
   --acme-surface: #ffffff;
   --acme-text: #1a1a1a;
-  --acme-accent: oklch(60% 0.2 250);
+  --acme-accent: oklch(50% 0.2 250);
 }
 
 .acme-token {

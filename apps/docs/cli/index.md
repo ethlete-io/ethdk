@@ -92,6 +92,12 @@ folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a h
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
 diagram, passes with a `data-et-drawing` attribute.
 
+`et design check` fails with `CONTRAST` when a text in a drawn state is below WCAG 2 AA against its
+drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for large text (24px, or
+18.66px bold). Text inside a disabled control is exempt. A part lists token pairs to compute in
+`contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
+`contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
+
 A product's `shared/` folder (`.ethlete/design/<product>/shared/`) holds helper modules that are
 no part, such as a layout several parts draw with. Any part imports them as `@shared/<path>`;
 they never appear in Studio's tree or `et design list`. Inside a sketch, `@shared/<path>` looks

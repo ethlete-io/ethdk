@@ -1,6 +1,7 @@
 import { Drawing } from './define-call';
 import { forceBody } from './mark-part';
 
+export { contrastRatioOf } from './contrast';
 export { css, drawing, html, ng } from './define-call';
 export type { Drawing } from './define-call';
 export { embedPage } from './embed-page';
@@ -29,6 +30,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
+ * `contrast` feeds the contrast check of `design check`, see `PartContrast`.
  */
 export type Part<TProps, TState extends string = string> = {
   note: string;
@@ -40,6 +42,7 @@ export type Part<TProps, TState extends string = string> = {
   grid?: StateGrid<TState>;
   controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
+  contrast?: PartContrast;
   motions?: Record<string, Motion<TState>>;
   rules?: PartRule<TState>[];
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
@@ -98,6 +101,17 @@ export type Control<TState extends string = string> = { kind: 'disclosure'; surf
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
+
+/**
+ * The contrast check measures every text of every state against its drawn background, to WCAG 2 AA: 4.5:1, or
+ * 3:1 for large text; disabled text is exempt. `pairs` names token pairs it also computes, each `text` token on
+ * each `on` token of an entry, for example `{ text: ['--text', '--text-muted'], on: ['--surface'] }`.
+ * `exceptions` exempts the text inside each `selector`, with the `reason` it may stay below the limit.
+ */
+export type PartContrast = {
+  pairs?: { text: string[]; on: string[] }[];
+  exceptions?: { selector: string; reason: string }[];
+};
 
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };
