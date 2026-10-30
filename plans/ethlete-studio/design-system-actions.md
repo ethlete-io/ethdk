@@ -1048,12 +1048,13 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
 - **Fix option:** reload only what the `parts` event names. Effort M.
 
-### 4.79 Four SSE streams to the same host - open
+### 4.79 Four SSE streams to the same host - in progress
 
 - **Measured:** `comment-events` opens 4 times (`host/design.ts:640`, `host/design-parts.ts:32`,
   `host/design-notes.ts:71`, `host/design-flows.ts:25`), which leaves 2 of 6 per-host connections. No effect in
   headless Chromium; WebKitGTK not measured.
 - **Fix option:** one shared `EventSource` with `share()`, split by event name. Effort S.
+- **In progress (2026-10-30):** a subagent builds the shared stream, in parallel with 4.77.
 
 ### 4.80 The lazy Studio chunk holds every view - open
 
