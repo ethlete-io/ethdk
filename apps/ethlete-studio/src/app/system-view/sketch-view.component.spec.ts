@@ -418,6 +418,76 @@ describe('SketchViewComponent merge without a note', () => {
     expect(completed).toEqual(['components/card']);
   });
 
+  it('shows a pick from the answer of the pick at once, before the sketch list reads it, and keeps it after', async () => {
+    const unpicked: ListedSketch = { ...SKETCH, variants: ['a', 'b', 'c'], decision: undefined };
+    const decision = { kind: 'pick', variant: 'c', decidedAt: '2026-10-30T13:26:27Z' } as const;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) return json({ ...unpicked, decision });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const decides: unknown[] = [];
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', unpicked);
+    fixture.componentInstance.decide.subscribe((value) => decides.push(value));
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+    const pickC = () =>
+      [...root.querySelectorAll<HTMLButtonElement>('[data-pick]')].find((button) =>
+        button.textContent?.trim().endsWith(' c'),
+      );
+
+    expect(root.querySelector<HTMLButtonElement>('[data-merge]')?.disabled).toBe(true);
+
+    pickC()?.click();
+    await settle(fixture);
+
+    expect(decides.length).toBe(1);
+    expect(pickC()?.textContent?.trim()).toBe('Picked c');
+    expect(root.querySelector<HTMLButtonElement>('[data-merge]')?.disabled).toBe(false);
+
+    fixture.componentRef.setInput('sketch', { ...unpicked, decision });
+    await settle(fixture);
+
+    expect(pickC()?.textContent?.trim()).toBe('Picked c');
+  });
+
+  it('shows the reason of a failed pick and leaves the variant unpicked', async () => {
+    const unpicked: ListedSketch = { ...SKETCH, variants: ['a', 'b', 'c'], decision: undefined };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision'))
+        return Promise.resolve(new Response(JSON.stringify({ error: 'the sketch is not ready' }), { status: 422 }));
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', unpicked);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+
+    [...root.querySelectorAll<HTMLButtonElement>('[data-pick]')].at(-1)?.click();
+    await settle(fixture);
+
+    expect(root.querySelector('[aria-label="Decision"]')?.textContent).toContain('the sketch is not ready');
+    expect(root.querySelector<HTMLButtonElement>('[data-merge]')?.disabled).toBe(true);
+  });
+
   it('shows a rejected variant dimmed with its reason and origin, without Pick, and reopens or rejects with the note', async () => {
     const bodies: unknown[] = [];
 

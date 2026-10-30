@@ -509,13 +509,21 @@ export type SketchDecisionWrite =
   | { kind: 'reject' | 'reopen'; variant: string; reason?: string }
   | { kind: 'reason'; variant: string; reason: string };
 
+export type SketchDecided = Pick<ListedSketch, 'decision' | 'rejections'>;
+
 /**
- * Writes the user's pick or discard, or the designer's verdict on one variant, into `sketch.json`. A pick needs a
- * sketch that is ready and a variant that is not rejected.
+ * Writes the user's pick or discard, or the designer's verdict on one variant, into `sketch.json`, and answers the
+ * decision and rejections as written. A pick needs a sketch that is ready and a variant that is not rejected.
  */
-export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWrite): Observable<void> =>
-  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-decision' }), postJson(decision)).pipe(
-    map(() => undefined),
+export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWrite): Observable<SketchDecided> =>
+  designAnswer$<Partial<ListedSketch> | null>(
+    sketchUrl({ ...address, path: 'sketch-decision' }),
+    postJson(decision),
+  ).pipe(
+    map((answer) => ({
+      ...(answer && 'decision' in answer && { decision: answer.decision }),
+      ...(answer?.rejections && { rejections: answer.rejections }),
+    })),
   );
 
 /**

@@ -36,6 +36,8 @@ import {
   MergeNeedsRebaseError,
   MergePreview,
   SketchAddress,
+  SketchDecided,
+  SketchDecisionWrite,
   SketchReport,
   decideSketch$,
   discardSketch$,
@@ -104,7 +106,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       <ethlete-comment-thread [commentId]="pin.id" />
     </ng-template>
 
-    @let shown = sketch();
+    @let shown = current();
     <header class="flex items-center gap-3 border-b border-surface-border px-4 py-3">
       <div class="min-w-0 flex-1">
         <span class="font-mono text-small text-[var(--et-surface-color-subtle-solid)]">
@@ -591,9 +593,13 @@ export class SketchViewComponent {
 
   protected confirmingDiscard = signal(false);
 
-  protected picked = computed(() => pickedVariantOf(this.sketch()));
+  private decided = linkedSignal<ListedSketch, SketchDecided>({ source: this.sketch, computation: () => ({}) });
+
+  protected current = computed<ListedSketch>(() => ({ ...this.sketch(), ...this.decided() }));
+
+  protected picked = computed(() => pickedVariantOf(this.current()));
   protected rejectedLabels = computed(() => {
-    const sketch = this.sketch();
+    const sketch = this.current();
 
     return Object.fromEntries(sketch.variants.map((variant) => [variant, rejectedLabelOf(sketch, variant)]));
   });
@@ -601,7 +607,7 @@ export class SketchViewComponent {
   private address = computed<SketchAddress>(() => ({
     port: this.port(),
     product: this.product().name,
-    sketch: this.sketch().target,
+    sketch: this.current().target,
   }));
 
   private remembered = linkedSignal<string | null, SketchViewPick>({
@@ -614,14 +620,14 @@ export class SketchViewComponent {
   public interaction = linkedSignal(() => this.remembered().interaction ?? null);
 
   private openRounds = linkedSignal(() =>
-    this.remembered().roundsFor === this.sketch().createdAt ? (this.remembered().rounds ?? {}) : {},
+    this.remembered().roundsFor === this.current().createdAt ? (this.remembered().rounds ?? {}) : {},
   );
 
   private openStates = linkedSignal(() => this.remembered().states ?? {});
 
   private shownMode = linkedSignal<Shown>(() => (this.remembered().merge ? 'merge' : 'matrix'));
 
-  private reportExpiry = computed(() => reportExpiryOf(this.sketch().report));
+  private reportExpiry = computed(() => reportExpiryOf(this.current().report));
 
   private reportNow = toSignal(
     toObservable(this.reportExpiry).pipe(
@@ -641,7 +647,7 @@ export class SketchViewComponent {
     port: this.port(),
     now: this.reportNow(),
     product: this.product(),
-    sketch: this.sketch(),
+    sketch: this.current(),
     size: this.size(),
     interaction: this.interaction(),
     openRounds: this.openRounds(),
@@ -668,7 +674,7 @@ export class SketchViewComponent {
     { initialValue: null },
   );
 
-  protected targetName = computed(() => partNameOf(this.sketch().target));
+  protected targetName = computed(() => partNameOf(this.current().target));
 
   protected showUnchanged = linkedSignal({ source: this.picked, computation: () => false });
 
@@ -745,7 +751,7 @@ export class SketchViewComponent {
       computed(
         () => ({
           address: this.address(),
-          variants: this.sketch().variants,
+          variants: this.current().variants,
           size: this.matrix().size,
           surface: this.surface(),
           color: this.color(),
@@ -796,19 +802,19 @@ export class SketchViewComponent {
   private sketchComments = computed(() =>
     this.commentStore
       .comments()
-      .filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
+      .filter((comment) => isInSketch(comment, { sketch: this.current(), contextPages: this.contextPages() })),
   );
 
   protected pins = computed(() => pinsOf(this.canvas().frames, this.sketchComments()));
 
-  private openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.sketch().target));
+  private openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.current().target));
 
   protected productCommentCount = computed(() => this.openComments().filter((comment) => !comment.sketch).length);
 
   protected interactionChoices = computed(() => [ALL, ...this.matrix().interactions]);
 
   private areaRounds = computed((): AreaRound[] => {
-    const open = sketchRoundsOf(this.sketch(), this.openRounds()).filter(
+    const open = sketchRoundsOf(this.current(), this.openRounds()).filter(
       (round) => round.open && round.variants.length > 0,
     );
     const newest = open.at(-1)?.key;
@@ -853,7 +859,7 @@ export class SketchViewComponent {
     { initialValue: {} as Record<string, ChangedArea | null> },
   );
 
-  private changedAreaSource = computed(() => ({ key: this.cameraKey(), createdAt: this.sketch().createdAt }), {
+  private changedAreaSource = computed(() => ({ key: this.cameraKey(), createdAt: this.current().createdAt }), {
     equal: (a, b) => a.key === b.key && a.createdAt === b.createdAt,
   });
 
@@ -880,7 +886,7 @@ export class SketchViewComponent {
 
   protected hasToolbar = computed(
     () =>
-      (this.sketch().status === 'in progress' && !!this.sketch().report) ||
+      (this.current().status === 'in progress' && !!this.current().report) ||
       this.matrix().sizes.length > 1 ||
       this.matrix().interactions.length > 1 ||
       this.unchangedHeads().length > 0 ||
@@ -923,7 +929,7 @@ export class SketchViewComponent {
     const changedAreas = { ...this.changedAreaChoices(), [round]: on };
 
     this.changedAreaChoices.set(changedAreas);
-    this.remember({ changedAreas, changedAreasFor: this.sketch().createdAt });
+    this.remember({ changedAreas, changedAreasFor: this.current().createdAt });
   }
 
   protected switchChangedAreaOfGroup(group: string) {
@@ -934,7 +940,7 @@ export class SketchViewComponent {
   }
 
   protected toggleRound(key: string) {
-    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
+    const shown = sketchRoundsOf(this.current(), this.openRounds());
     const round = shown.find((candidate) => roundColumnKeyOf(candidate.key) === key);
 
     if (!round) return;
@@ -942,11 +948,11 @@ export class SketchViewComponent {
     const rounds = { ...openRoundsOf(shown), [round.key]: !round.open };
 
     this.openRounds.set(rounds);
-    this.remember({ rounds, roundsFor: this.sketch().createdAt });
+    this.remember({ rounds, roundsFor: this.current().createdAt });
   }
 
   protected toggleState(key: string) {
-    if (sketchRoundsOf(this.sketch()).some((round) => roundColumnKeyOf(round.key) === key)) {
+    if (sketchRoundsOf(this.current()).some((round) => roundColumnKeyOf(round.key) === key)) {
       this.toggleRound(key);
 
       return;
@@ -1029,15 +1035,15 @@ export class SketchViewComponent {
   }
 
   protected pickable(variant: string) {
-    return canPick(this.sketch(), variant);
+    return canPick(this.current(), variant);
   }
 
   protected problemsOf(variant: string) {
-    return this.sketch().problems.find((entry) => entry.variant === variant)?.problems ?? [];
+    return this.current().problems.find((entry) => entry.variant === variant)?.problems ?? [];
   }
 
   protected pickTitle(variant: string) {
-    if (this.sketch().status !== 'ready') return 'The sketch is still in progress';
+    if (this.current().status !== 'ready') return 'The sketch is still in progress';
 
     return this.problemsOf(variant).length > 0 ? 'This variant breaks a rule' : '';
   }
@@ -1045,7 +1051,7 @@ export class SketchViewComponent {
   protected pick(variant: string) {
     const comment = this.note().trim();
 
-    this.run('pick', decideSketch$(this.address(), { kind: 'pick', variant, ...(comment ? { comment } : {}) }));
+    this.run('pick', this.decide$({ kind: 'pick', variant, ...(comment ? { comment } : {}) }));
   }
 
   protected judge(kind: 'reject' | 'reopen' | 'reason', variant: string) {
@@ -1055,10 +1061,7 @@ export class SketchViewComponent {
 
     this.run(
       'verdict',
-      decideSketch$(
-        this.address(),
-        kind === 'reason' ? { kind, variant, reason } : { kind, variant, ...(reason ? { reason } : {}) },
-      ),
+      this.decide$(kind === 'reason' ? { kind, variant, reason } : { kind, variant, ...(reason ? { reason } : {}) }),
     );
   }
 
@@ -1111,7 +1114,7 @@ export class SketchViewComponent {
       interaction !== this.matrix().interaction &&
       this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
-    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
+    const shown = sketchRoundsOf(this.current(), this.openRounds());
     const folded = shown.find((round) => !round.open && round.variants.includes(variant));
     const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
     const unfold = this.matrix().rowHeads.some((head) => !head.open && head.key === stateRowKeyOf(state));
@@ -1126,11 +1129,15 @@ export class SketchViewComponent {
       ...(resize && { size }),
       ...(reinteract && { interaction }),
       ...(leaveMerge && { merge: false }),
-      ...(rounds && { rounds, roundsFor: this.sketch().createdAt }),
+      ...(rounds && { rounds, roundsFor: this.current().createdAt }),
       ...(states && { states }),
     });
     if (resize || reinteract || leaveMerge || rounds || states) afterNextRender(focus, { injector: this.injector });
     else focus();
+  }
+
+  private decide$(decision: SketchDecisionWrite) {
+    return decideSketch$(this.address(), decision).pipe(tap((decided) => this.decided.set(decided)));
   }
 
   private remember(pick: SketchViewPick) {
