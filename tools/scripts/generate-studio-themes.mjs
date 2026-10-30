@@ -53,10 +53,10 @@ const colorTheme = (token, extra) => ({
       default: rgb(token),
       hover: rgb(`${token}-hover`),
       focus: rgb(token === 'accent' ? 'focus-ring' : `${token}-hover`),
-      active: rgb(token),
-      disabled: faded(token, 0.4),
+      active: rgb(`${token}-active`),
+      disabled: rgb(`${token}-disabled`),
     },
-    onColor: { default: rgb(`on-${token}`), disabled: faded(`on-${token}`, 0.6) },
+    onColor: { default: rgb(`on-${token}`), disabled: rgb(`on-${token}-disabled`) },
     inkColor: {
       default: rgb(`${token}-text`),
       hover: rgb(`${token}-text`),
@@ -76,7 +76,7 @@ const surfaceTheme = (name, elevation, background) => ({
   background: rgb(background),
   color: rgb('text'),
   colorMuted: rgb('text-muted'),
-  colorSubtle: rgb('text-muted'),
+  colorSubtle: rgb('text-subtle'),
   border: rgb('surface-border'),
 });
 
