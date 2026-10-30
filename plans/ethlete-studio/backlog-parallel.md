@@ -78,10 +78,7 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-- `components/zoom-chip` r2 "Chip controls with interactions" (`1534846c9`), with `elements/canvas-frames`,
-  `pages/sketches`, `pages/system`: variant b declares −, reset, + and Fit as button controls, each drawn at rest,
-  hover, active and focus-visible; `design complete` passes once merged (checked in a scratch copy). Question: merge
-  b, now that the buttons are controls?
+Empty. Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
 
 ## Waits for Tom in the real Studio
 
