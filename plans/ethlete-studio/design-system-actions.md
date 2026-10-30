@@ -725,6 +725,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   instead of 22; an untouched part's next shot stays cached (0.7 ms vs 0.22 s); `styles.css` and the `@import`ed
   `colors.css` still redraw all 22. Not measured: the sketch list (no open sketch in the copy).
 
+- **As built (slice 2, 2026-10-30):** `createDrawQueue` (`libs/cli/src/lib/design/thumb.ts`) runs up to
+  `DRAWS_AT_ONCE = 4` drawings; high lane first; `--disable-partial-raster` kept. Probe on `pages/merge` 1440x900:
+  2.7-2.8x faster. **Open:** 1 of 60 (`open`, `toggle`) and 1 of 120 parallel pictures differed from the rest
+  (the 4.66 fix had 0 of 90). A `ready` compare can again see a false change. Find the cause before relying on it;
+  fallback: draw compare pictures one at a time. Not verified: a real `ready` or the Studio merge view under load.
+
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
 - **Pain (2026-10-30):** the `foundations/colors` sketch that removed the copied generator output auto-merged

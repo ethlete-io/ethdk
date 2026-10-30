@@ -93,7 +93,7 @@ describe('createThumbnailer', () => {
     expect(launch).toHaveBeenCalledOnce();
   });
 
-  it('draws one variant at a time', async () => {
+  it('draws at most four variants at once', async () => {
     let drawing = 0;
     let most = 0;
     goto.mockImplementation(async () => {
@@ -103,9 +103,9 @@ describe('createThumbnailer', () => {
     });
     const { middleware } = thumbnailer();
 
-    await Promise.all(['a', 'b', 'c'].map((key) => ask(middleware, `/?call=app/one&variant=${key}`)));
+    await Promise.all(['a', 'b', 'c', 'd', 'e', 'f'].map((key) => ask(middleware, `/?call=app/one&variant=${key}`)));
 
-    expect(most).toBe(1);
+    expect(most).toBe(4);
     goto.mockImplementation(async () => undefined);
   });
 
@@ -153,28 +153,50 @@ describe('createThumbnailer', () => {
 });
 
 describe('createDrawQueue', () => {
-  it('draws a high job before the low jobs queued ahead of it, and each lane in order', async () => {
+  it('draws four jobs at once and holds a fifth until one of them ends', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: number[] = [];
+    const releases: (() => void)[] = [];
+    const drawn = [0, 1, 2, 3, 4].map((at) =>
+      queue.run(async () => {
+        started.push(at);
+        await new Promise<void>((done) => releases.push(done));
+      }),
+    );
+
+    await vi.waitFor(() => expect(started).toEqual([0, 1, 2, 3]));
+    await new Promise((done) => setTimeout(done, 5));
+    expect(started).toEqual([0, 1, 2, 3]);
+
+    releases[0]?.();
+    await vi.waitFor(() => expect(started).toEqual([0, 1, 2, 3, 4]));
+    releases.slice(1).forEach((release) => release());
+    await Promise.all(drawn);
+  });
+
+  it('starts a waiting high job before the low jobs queued ahead of it, and each lane in order', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const order: string[] = [];
     let release = () => undefined as void;
     const held = new Promise<void>((done) => (release = done));
     const job = (name: string) => async () => void order.push(name);
+    const busy = (name: string) => async () => {
+      order.push(name);
+      await held;
+    };
 
     const drawn = [
-      queue.run(async () => {
-        await held;
-        order.push('running');
-      }, 'low'),
+      ...['busy 1', 'busy 2', 'busy 3', 'busy 4'].map((name) => queue.run(busy(name), 'low')),
       ...['low 1', 'low 2', 'low 3'].map((name) => queue.run(job(name), 'low')),
       queue.run(job('high 1'), 'high'),
       queue.run(job('high 2')),
     ];
 
-    await vi.waitFor(() => expect(launch).toHaveBeenCalled());
+    await vi.waitFor(() => expect(order).toHaveLength(4));
     release();
     await Promise.all(drawn);
 
-    expect(order).toEqual(['running', 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
+    expect(order).toEqual(['busy 1', 'busy 2', 'busy 3', 'busy 4', 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
   });
 
   it('launches Chromium without partial raster, so the same page draws the same pixels each time', async () => {

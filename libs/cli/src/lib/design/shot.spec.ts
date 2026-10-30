@@ -257,10 +257,12 @@ describe('createPartShooter', () => {
     const held = new Promise<void>((done) => (release = done));
     const card = 'product=acme&part=components/card&state=long';
 
-    goto.mockImplementationOnce(() => held);
+    const busy = ['busy-1', 'busy-2', 'busy-3', 'busy-4'];
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
 
     const asked = [
-      ask(shots, `${card}&interaction=first&priority=low`),
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&priority=low`)),
       ask(shots, `${card}&interaction=low&priority=low`),
       ask(shots, `${card}&interaction=hurried&priority=low`),
       ask(shots, `${card}&interaction=hurried`),
@@ -277,12 +279,12 @@ describe('createPartShooter', () => {
       }),
     ];
 
-    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(4));
     release();
     await Promise.all(asked);
 
     expect(goto.mock.calls.map(([url]) => new URL(url).searchParams.get('interaction'))).toEqual([
-      'first',
+      ...busy,
       'hurried',
       'asked',
       'compared',

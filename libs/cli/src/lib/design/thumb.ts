@@ -71,9 +71,10 @@ export type DrawPriority = 'high' | 'low';
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
 const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
+const DRAWS_AT_ONCE = 4;
 
 /**
- * One shared headless Chromium, launched on the first ask, that runs one drawing at a time. A waiting
+ * One shared headless Chromium, launched on the first ask, that runs up to four drawings at once. A waiting
  * `high` drawing runs before every waiting `low` one, each lane in the order asked. A failed launch is
  * not kept, so the next ask tries again.
  */
@@ -83,7 +84,7 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
   let browser: Promise<Browser> | null = null;
   const waiting: Record<DrawPriority, (() => Promise<void>)[]> = { high: [], low: [] };
   const jobs = new WeakMap<Promise<unknown>, () => Promise<void>>();
-  let drawing = false;
+  let drawing = 0;
 
   const launch = () => {
     browser ??= resolveChromium(target).then((resolved) => {
@@ -106,15 +107,17 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
   };
 
   const next = () => {
-    const job = drawing ? undefined : (waiting.high.shift() ?? waiting.low.shift());
+    while (drawing < DRAWS_AT_ONCE) {
+      const job = waiting.high.shift() ?? waiting.low.shift();
 
-    if (!job) return;
+      if (!job) return;
 
-    drawing = true;
-    void job().finally(() => {
-      drawing = false;
-      next();
-    });
+      drawing++;
+      void job().finally(() => {
+        drawing--;
+        next();
+      });
+    }
   };
 
   return {
