@@ -83,6 +83,39 @@ export const croppedLayoutOf = (crop: FrameCrop) => {
   };
 };
 
+/** Where a page point sits in a cropped frame, or `null` when the crop does not show it. */
+export const cropPointOf = (crop: FrameCrop, point: { x: number; y: number }) => {
+  const { top, scale } = croppedLayoutOf(crop).view;
+
+  if (point.x < crop.x || point.y < crop.y || point.x > crop.x + crop.width || point.y > crop.y + crop.height) {
+    return null;
+  }
+
+  return { x: (point.x - crop.x) * scale, y: top + (point.y - crop.y) * scale };
+};
+
+/** The page point under a point of a cropped frame; the inverse of `cropPointOf`. */
+export const pagePointOfCrop = (crop: FrameCrop, point: { x: number; y: number }) => {
+  const { top, scale } = croppedLayoutOf(crop).view;
+
+  return { x: crop.x + point.x / scale, y: crop.y + (point.y - top) / scale };
+};
+
+/** Where a page rectangle sits in a cropped frame, cut to the crop, or `null` when the crop does not show it. */
+export const cropRectOf = (crop: FrameCrop, rect: { x: number; y: number; width: number; height: number }) => {
+  const left = Math.max(rect.x, crop.x);
+  const top = Math.max(rect.y, crop.y);
+  const right = Math.min(rect.x + rect.width, crop.x + crop.width);
+  const bottom = Math.min(rect.y + rect.height, crop.y + crop.height);
+
+  if (right <= left || bottom <= top) return null;
+
+  const start = cropPointOf(crop, { x: left, y: top });
+  const { scale } = croppedLayoutOf(crop).view;
+
+  return start && { ...start, width: (right - left) * scale, height: (bottom - top) * scale };
+};
+
 /** One fitted page in a frame's grid, at a row and a column of it. */
 export type FrameCell = {
   id: string;

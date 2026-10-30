@@ -5,6 +5,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { rememberedView } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
+import { FramePoint } from './canvas-pin';
 import { DesignCanvasComponent } from './design-canvas.component';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
@@ -637,5 +638,61 @@ describe('DesignCanvasComponent', () => {
     expect((view?.firstElementChild as HTMLElement | null)?.style.transform).toBe(
       'scale(20) translate(-100px, -200px)',
     );
+  });
+  describe('on a cropped frame', () => {
+    const crop = { x: 100, y: 200, width: 72, height: 54, frame: { width: 1440, height: 900 } };
+    const cropped: CanvasFrame = {
+      ...FITTED,
+      id: 'a',
+      width: 1440,
+      height: 1284,
+      crop,
+      place: { part: 'p', state: 'rest', size: 'fitted' },
+    };
+
+    it('places a pin and an outline through the crop and hides what lies outside it', async () => {
+      const fixture = await render([cropped]);
+
+      fixture.componentRef.setInput('pins', [
+        { id: 'in', frameId: 'a', label: '1', text: 'in', point: { x: 110, y: 210 } },
+        { id: 'out', frameId: 'a', label: '2', text: 'out', point: { x: 10, y: 10 } },
+      ]);
+      fixture.componentRef.setInput('outlines', [
+        { frameId: 'a', x: 110, y: 210, width: 10, height: 5 },
+        { frameId: 'a', x: 10, y: 10, width: 10, height: 5 },
+      ]);
+      await fixture.whenStable();
+
+      const host = fixture.nativeElement as HTMLElement;
+      const frame = frameElement(fixture).nativeElement as HTMLElement;
+      const pins = [...host.querySelectorAll<HTMLElement>('[data-comment-pin]')];
+      const outlines = [...host.querySelectorAll<HTMLElement>('[data-part-outline]')];
+      const offset = (element: HTMLElement | undefined) => [
+        parseFloat(element?.style.left ?? '') - parseFloat(frame.style.left),
+        parseFloat(element?.style.top ?? '') - parseFloat(frame.style.top),
+      ];
+
+      expect(pins).toHaveLength(1);
+      expect(outlines).toHaveLength(1);
+      expect(offset(pins[0]?.parentElement ?? undefined)).toEqual([200, 404]);
+      expect(offset(outlines[0])).toEqual([200, 404]);
+      expect([outlines[0]?.style.width, outlines[0]?.style.height]).toEqual(['200px', '100px']);
+    });
+
+    it('stores the full-page point of a click on the crop', async () => {
+      const fixture = await render([cropped]);
+      const picks: FramePoint[] = [];
+
+      fixture.componentInstance.pointPick.subscribe((pick) => picks.push(pick));
+      fixture.componentRef.setInput('pointing', true);
+      await fixture.whenStable();
+
+      const target = fixture.debugElement.query(By.css('[data-comment-target]'));
+
+      vi.spyOn(target.nativeElement, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1440, 1284));
+      target.nativeElement.dispatchEvent(new MouseEvent('click', { clientX: 200, clientY: 404 }));
+
+      expect(picks).toEqual([{ frameId: 'a', point: { x: 110, y: 210 } }]);
+    });
   });
 });

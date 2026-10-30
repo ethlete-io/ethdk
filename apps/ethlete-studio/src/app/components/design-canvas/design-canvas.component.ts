@@ -20,7 +20,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
-import { CanvasFrame, placeableFramesOf } from './canvas-frame';
+import { CanvasFrame, FrameCrop, cropPointOf, cropRectOf, pagePointOfCrop, placeableFramesOf } from './canvas-frame';
 import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
 import {
   CameraScene,
@@ -463,17 +463,12 @@ export class DesignCanvasComponent {
 
     return this.pins().flatMap((pin) => {
       const frame = byId.get(pin.frameId);
+      const crop = frame?.frame.crop;
+      const point = crop && pin.point ? cropPointOf(crop, pin.point) : (pin.point ?? null);
 
-      return frame
-        ? [
-            {
-              pin,
-              x: frame.x + (pin.point?.x ?? frame.width),
-              y: frame.y + (pin.point?.y ?? 0),
-              open: pin.id === openId,
-            },
-          ]
-        : [];
+      if (!frame || (pin.point && !point)) return [];
+
+      return [{ pin, x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0), open: pin.id === openId }];
     });
   });
 
@@ -482,8 +477,10 @@ export class DesignCanvasComponent {
 
     return this.outlines().flatMap((outline) => {
       const frame = byId.get(outline.frameId);
+      const crop = frame?.frame.crop;
+      const rect = crop ? cropRectOf(crop, outline) : outline;
 
-      return frame ? [{ ...outline, x: frame.x + outline.x, y: frame.y + outline.y }] : [];
+      return frame && rect ? [{ ...outline, ...rect, x: frame.x + rect.x, y: frame.y + rect.y }] : [];
     });
   });
 
@@ -514,8 +511,12 @@ export class DesignCanvasComponent {
     if (draft && 'at' in draft) return draft.at;
 
     const frame = draft && this.framesById().get(draft.frameId);
+    const crop = frame?.frame.crop;
+    const point = crop && draft?.point ? cropPointOf(crop, draft.point) : (draft?.point ?? null);
 
-    return frame && draft ? { x: frame.x + (draft.point?.x ?? frame.width), y: frame.y + (draft.point?.y ?? 0) } : null;
+    if (!frame || !draft || (draft.point && !point)) return null;
+
+    return { x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0) };
   });
 
   protected pointTargets = computed(() =>
@@ -655,7 +656,7 @@ export class DesignCanvasComponent {
     if (this.activeId() !== id) this.activeId.set(null);
   }
 
-  protected pickPoint(frame: { id: string; width: number }, event: Event) {
+  protected pickPoint(frame: { id: string; width: number; crop?: FrameCrop }, event: Event) {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     if (!(event instanceof MouseEvent)) {
@@ -667,10 +668,12 @@ export class DesignCanvasComponent {
     const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const scale = box.width / frame.width;
 
-    this.pointPick.emit({
-      frameId: frame.id,
-      point: { x: Math.max(0, (event.clientX - box.left) / scale), y: Math.max(0, (event.clientY - box.top) / scale) },
-    });
+    const point = {
+      x: Math.max(0, (event.clientX - box.left) / scale),
+      y: Math.max(0, (event.clientY - box.top) / scale),
+    };
+
+    this.pointPick.emit({ frameId: frame.id, point: frame.crop ? pagePointOfCrop(frame.crop, point) : point });
   }
 
   protected pickCaption(frame: CanvasFrame, event: Event) {
