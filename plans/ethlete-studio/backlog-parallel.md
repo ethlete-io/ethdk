@@ -295,6 +295,15 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   then `part remove foundations/tokens` and drop it from the sdk `tokens` list and studio `hideBaseParts`.
 - **Next:** `components/tree`, then `switch`, then the tooltip.
 
+- **As built (ethlete-sdk-33, 2026-10-31):** old `foundations/tokens` part removed (`7fb6b115b`). Tree mock
+  (`22ff6ee3a`) and sketch `components/tree` r1 a (`56ee3fa61`, on hold). Q70: the tree focus outline uses
+  `--et-theme-color-ink-solid` (`bad4fc3df`, changeset, docs); not shot yet, then release + ready the tree sketch.
+- **In progress (ethlete-sdk-33, 2026-10-31):** Q68 icons, one subagent: slice 1 ships
+  `libs/components/src/lib/icon/headless/*-icon.ts` to dist (ng-package assets, import-free `IconDefinition` type
+  file) and replaces the inline SVG copies in `libs/components/design/*.ts`; slice 2 draws sketch
+  `foundations/icons`. Cause: the design tool loads the mocks from `dist/libs/components`, which ships only
+  `design/**/*.ts` and CSS, so a mock cannot import an icon file today.
+
 ### Foundation sheet decisions (2026-10-30)
 
 Tom asked why `sdk/foundations/tokens` looks so different from the Studio foundations. Cause: Studio draws its
