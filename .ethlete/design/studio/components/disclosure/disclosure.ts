@@ -26,7 +26,7 @@ export const disclosure = ({ label, body, open, size = 'sm', interaction }: Prop
   </button>`;
   const line = interaction ? forceInteraction(toggle, interaction) : toggle;
 
-  return open ? line + html`<div data-et-surface="toggle.body">${body}</div>` : line;
+  return open ? line + html`<div class="st-disclosure-panel" data-et-surface="toggle.body">${body}</div>` : line;
 };
 
 const demo: Omit<Props, 'open'> = {

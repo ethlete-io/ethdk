@@ -220,5 +220,13 @@
     "hash": "4e2ed45f3ed5b737",
     "at": "2026-10-30T14:19:02.672Z",
     "auto": true
+  },
+  {
+    "part": "components/disclosure",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "6c6aca8e10a9eb75",
+    "at": "2026-10-30T14:25:34.350Z",
+    "auto": true
   }
 ]
