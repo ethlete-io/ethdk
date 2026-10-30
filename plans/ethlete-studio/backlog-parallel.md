@@ -147,3 +147,10 @@ use: `components/select` with the open panel and options (the 4.47 gap that bloc
 `form-field` with `input` and `textarea`, then `tree`, `switch` and the tooltip. Each part declares its controls
 for 4.47, goes to `ready` and waits on the merge queue for Tom. The session follows the
 `ethlete-design-exploration` skill: Tom picks every design.
+
+## Zoom chip tier (Tom, 2026-10-30, Q45)
+
+The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
+(`UPWARD-DEPENDENCY`). Before Tom merges r1 (3d00519df): its `−`, `+` and `Fit` buttons are declared controls with
+hover, active and focus, and `design complete components/zoom-chip` passes. The zoom values (100 %, 250 %, 25 %)
+are content states, not the interaction coverage Q43 asked for.
