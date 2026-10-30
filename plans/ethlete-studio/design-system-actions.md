@@ -1401,12 +1401,19 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   each surface (recommended; it reads computed styles already). 2. a `design contrast <fg> <bg>`
   command.
 
-### 5.52 One colour theme spans three hand-kept blocks - open
+### 5.52 One colour theme spans three hand-kept blocks - built (b59e5136b)
 
 - **Pain:** a theme lives in the `:root` aliases, the `.et-color--x` raw block and the Studio
   aliases in `tokens.css`, plus the group regex of the tokens drawing.
 - **Fix options:** 1. `design tokens theme add <name> --type <type> --oklch ...` writes all blocks
   (recommended). 2. the skill names the places.
+- **As built:** a generator already reads the tokens: `tools/scripts/generate-studio-themes.mjs` reads
+  `foundations/colors`, and the SDK generators write the `@theme`, `.et-color--x` and alias blocks. Its
+  hand-kept theme list is gone: every `--x` with `--x-hover/-active/-disabled/-text`, `--on-x` and
+  `--on-x-disabled` is a theme (`accent` = default `brand`; `danger`/`warning`/`success` typed). Spec:
+  `node --test tools/scripts/generate-studio-themes.spec.mjs` (not in CI yet). Still hand-kept, outside
+  stream E: the group regex in `foundations/colors/colors.ts` and `components.themes.color` in
+  `.ethlete/design/config.json`. The checked-in themes are already stale against the part (`--check`).
 
 ### 5.55 `embedPage` cannot mark or restyle inside the embedded page - open
 
