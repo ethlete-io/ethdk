@@ -1,0 +1,32 @@
+{
+  "target": "components/tree",
+  "status": "in progress",
+  "createdAt": "2026-10-30T23:16:05.909Z",
+  "baseline": {
+    "foundations/colors": "f4a7642306093b96",
+    "foundations/tokens": "67c964a1f59e8dc3",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "be6b5409e860cdad",
+    "components/select": "164af4eccf857227",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Tree controls",
+      "note": "Declares the tree's controls so design complete can check it: rows hovered, pressed and keyboard-focused, collapsed and expanded branches, a selected and a disabled row."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "The SDK tree as it ships, drawn by its mock."
+    }
+  },
+  "hold": {
+    "until": "Tree focus ring contrast: the focus-visible outline is --et-theme-color-primary-solid, 0 255 161 in brand-on-light, about 1.3:1 on the light surface, below the 3:1 Q42 keeps for focus. Recommend the ink token (4 120 87, about 5.5:1), per Q51.",
+    "by": "claude-opus-5-5",
+    "heldAt": "2026-10-30T23:18:05.577Z"
+  }
+}
