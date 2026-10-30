@@ -106,6 +106,48 @@ describe('overlay runtime scenarios', () => {
     expect(rootsInDocument()).toEqual([]);
   });
 
+  it.each([
+    ['before the enter frame', 0],
+    ['while the enter animation runs', 2],
+  ])('closes on an Escape pressed %s', (_, frames) => {
+    const s = scenario();
+    const ref = mountDialog(s, 'dialog');
+    const { closed } = track(ref);
+
+    s.frame(frames);
+    const escape = s.keydown('Escape');
+
+    expect(escape.defaultPrevented).toBe(true);
+
+    s.flush();
+
+    expect(ref.state()).toBe('closed');
+    expect(closed.map((event) => event.source)).toEqual(['escape']);
+    expect(rootsInDocument()).toEqual([]);
+  });
+
+  it('ignores an outside pointer press that lands before the enter animation starts', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'popover',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        modal: false,
+      }),
+    );
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+
+    expect(ref.state()).toBe('mounting');
+
+    s.flush();
+    expect(ref.state()).toBe('mounted');
+
+    ref.close();
+    s.flush();
+  });
+
   it('lets an Escape during the leave animation pass through untouched', () => {
     const s = scenario();
     const ref = open(s, 'dialog');

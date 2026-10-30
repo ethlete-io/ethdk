@@ -188,6 +188,32 @@ describe('headless overlay scenarios', () => {
     s.flush();
   });
 
+  it.each(['non-modal', 'modal'] as const)(
+    'stays open after the opening click and closes on an Escape during the enter animation (%s)',
+    (mode) => {
+      const s = scenario();
+      const { fixture, filters, host } = mount(s);
+
+      filters.mode.set(mode);
+      fixture.detectChanges();
+
+      const toggle = query('.toggle', host);
+      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+      toggle.click();
+      fixture.detectChanges();
+      s.frame(2);
+
+      expect(panes()).toBe(1);
+      expect(filters.open()).toBe(true);
+
+      s.keydown('Escape');
+      s.flush();
+
+      expect(filters.open()).toBe(false);
+      expect(panes()).toBe(0);
+    },
+  );
+
   it('ignores open requests while disabled and closes an open popover on disable', () => {
     const s = scenario();
     const { filters, host } = mount(s);

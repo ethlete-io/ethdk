@@ -413,12 +413,6 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          if (!interactiveCloseReady) {
-            animationDebugLog(`runtime ${config.id}`, 'escape ignored (enter transition has not started yet)');
-
-            return;
-          }
-
           event.preventDefault();
           overlayRef.close(undefined, 'escape');
         };
