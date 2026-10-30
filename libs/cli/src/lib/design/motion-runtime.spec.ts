@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Motion } from '../../../design/define-part';
-import { manualClock, realTimeClock, runRules, seededRandom, switchState } from '../../../design/motion-runtime';
+import {
+  manualClock,
+  realTimeClock,
+  runRules,
+  seededRandom,
+  stepMotion,
+  switchState,
+} from '../../../design/motion-runtime';
 
 const states: Record<string, string> = {
   closed: '<div class="card"><button class="open">open</button></div>',
@@ -137,6 +144,61 @@ describe('switchState', () => {
         motion: { from: 'closed', to: 'open', play: (ctx) => ctx.rect('.body') },
       }),
     ).toThrow('ctx.rect(".body")');
+  });
+});
+
+describe('stepMotion', () => {
+  const fakeAnimation = (keyframes: Keyframe[], duration: number) => {
+    const timing = { delay: 0, duration, iterations: 1, endTime: duration };
+
+    return {
+      currentTime: null as number | null,
+      pause: vi.fn(),
+      effect: {
+        target: document.querySelector('.card'),
+        pseudoElement: null,
+        getComputedTiming: () => timing,
+        getTiming: () => ({ easing: 'ease-out' }),
+        getKeyframes: () => keyframes,
+      },
+    };
+  };
+
+  it('pauses each animation and seeks it from the clock time it started at, also one a ctx.at step starts', async () => {
+    const root = mount();
+    const running: ReturnType<typeof fakeAnimation>[] = [];
+    const late = fakeAnimation([{ backgroundColor: 'red' }], 300);
+
+    Object.assign(document, { getAnimations: () => running });
+
+    const stepped = await stepMotion({
+      root,
+      markup: states['open'] ?? '',
+      motion: {
+        from: 'closed',
+        to: 'open',
+        play: (ctx) => {
+          running.push(fakeAnimation([{ transform: 'scale(1)' }], 400));
+          ctx.at(500, () => running.push(late));
+        },
+      },
+    });
+    const [first] = running;
+
+    expect(first?.pause).toHaveBeenCalledOnce();
+    stepped.seek(200);
+    expect(first?.currentTime).toBe(200);
+    expect(running).toHaveLength(1);
+    stepped.seek(650);
+    expect(late.pause).toHaveBeenCalledOnce();
+    expect([first?.currentTime, late.currentTime]).toEqual([650, 150]);
+    expect(stepped.end()).toBe(800);
+    expect(stepped.tracks().map(({ properties, start, easing }) => ({ properties, start, easing }))).toEqual([
+      { properties: ['transform'], start: 0, easing: 'ease-out' },
+      { properties: ['background-color'], start: 500, easing: 'ease-out' },
+    ]);
+    expect(() => stepped.seek(100)).toThrow('steps forward only');
+    Reflect.deleteProperty(document, 'getAnimations');
   });
 });
 

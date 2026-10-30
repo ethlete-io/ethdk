@@ -105,14 +105,23 @@ const measure = (root: Element) => {
   };
 };
 
-/** What a switch of `root` to `markup` does: `motion` names its `play` and `viewTransition`, `clock` the time `ctx.at` runs on. */
-export type StateSwitch = { root: Element; markup: string; motion?: Motion; clock?: MotionClock };
+/**
+ * What a switch of `root` to `markup` does: `motion` names its `play` and `viewTransition`, `clock` the time `ctx.at`
+ * runs on, and `transitioned` hears the View Transition when one starts.
+ */
+export type StateSwitch = {
+  root: Element;
+  markup: string;
+  motion?: Motion;
+  clock?: MotionClock;
+  transitioned?: (transition: ViewTransition) => void;
+};
 
 /**
  * Morphs `root` to `markup`, inside a View Transition when the motion asks for one and the browser has it, then runs
  * the motion's `play`. `ctx.rect` measures in the DOM before the morph. Resolves once `play` has run.
  */
-export const switchState = ({ root, markup, motion, clock }: StateSwitch): Promise<void> => {
+export const switchState = ({ root, markup, motion, clock, transitioned }: StateSwitch): Promise<void> => {
   const rect = motion?.play ? measure(root) : null;
   const apply = () => morph(root, markup);
   const play = () => {
@@ -125,13 +134,142 @@ export const switchState = ({ root, markup, motion, clock }: StateSwitch): Promi
   };
   const document = root.ownerDocument;
 
-  if (motion?.viewTransition && typeof document.startViewTransition === 'function')
-    return document.startViewTransition(apply).updateCallbackDone.then(play);
+  if (motion?.viewTransition && typeof document.startViewTransition === 'function') {
+    const transition = document.startViewTransition(apply);
+
+    transitioned?.(transition);
+
+    return transition.updateCallbackDone.then(play);
+  }
 
   apply();
   play();
 
   return Promise.resolve();
+};
+
+/** One animation of a motion, in ms from the start of the motion. `iterations` and `end` are `null` when it never ends. */
+export type MotionTrack = {
+  element: string;
+  kind: 'transition' | 'animation' | 'script';
+  name?: string;
+  properties: string[];
+  start: number;
+  delay: number;
+  duration: number;
+  iterations: number | null;
+  easing: string;
+  end: number | null;
+};
+
+/** A motion paused at its start: `seek` moves it forward to a time in ms, `tracks` lists what ran so far. */
+export type SteppedMotion = {
+  seek: (ms: number) => void;
+  tracks: () => MotionTrack[];
+  end: () => number;
+};
+
+const KEYFRAME_FIELDS = new Set(['offset', 'computedOffset', 'easing', 'composite']);
+
+const elementOf = (element: Element | null | undefined) =>
+  element
+    ? [
+        element.tagName.toLowerCase(),
+        element.id ? `#${element.id}` : '',
+        ...[...element.classList].map((name) => `.${name}`),
+      ].join('')
+    : '';
+
+const trackOf = (animation: Animation, start: number): MotionTrack => {
+  const effect = animation.effect as KeyframeEffect | null;
+  const timing = effect?.getComputedTiming();
+  const keyframes = effect && typeof effect.getKeyframes === 'function' ? effect.getKeyframes() : [];
+  const own = effect?.getTiming().easing ?? 'linear';
+  const keyed = keyframes.find((frame) => frame.easing && frame.easing !== 'linear')?.easing;
+  const iterations = timing?.iterations ?? 1;
+  const endTime = Number(timing?.endTime ?? 0);
+  const properties = [
+    ...new Set(
+      keyframes.flatMap((frame) =>
+        Object.keys(frame)
+          .filter((field) => !KEYFRAME_FIELDS.has(field))
+          .map((field) => field.replace(/[A-Z]/gu, (letter) => `-${letter.toLowerCase()}`)),
+      ),
+    ),
+  ];
+  const kind = 'transitionProperty' in animation ? 'transition' : 'animationName' in animation ? 'animation' : 'script';
+
+  return {
+    element: `${elementOf(effect?.target)}${effect?.pseudoElement ?? ''}`,
+    kind,
+    ...(kind === 'animation' ? { name: String((animation as CSSAnimation).animationName) } : {}),
+    properties: kind === 'transition' ? [String((animation as CSSTransition).transitionProperty)] : properties,
+    start,
+    delay: Number(timing?.delay ?? 0),
+    duration: Number(timing?.duration ?? 0),
+    iterations: Number.isFinite(iterations) ? iterations : null,
+    easing: own === 'linear' ? (keyed ?? own) : own,
+    end: Number.isFinite(endTime) ? start + endTime : null,
+  };
+};
+
+/**
+ * Switches `root` to `markup` with `motion` as `switchState` does, on a manual clock, and pauses every animation it
+ * starts, so a caller can step through the motion and draw it at any time from its start.
+ */
+export const stepMotion = (options: { root: Element; markup: string; motion: Motion }): Promise<SteppedMotion> => {
+  const { root, markup, motion } = options;
+  const document = root.ownerDocument;
+  const clock = manualClock();
+  const started = new Map<Animation, MotionTrack>();
+  let lastTask = 0;
+  let ready: Promise<unknown> = Promise.resolve();
+
+  const collect = (start: number) => {
+    for (const animation of document.getAnimations()) {
+      if (started.has(animation)) continue;
+
+      animation.pause();
+      started.set(animation, trackOf(animation, start));
+    }
+  };
+
+  const timed: MotionClock = {
+    ...clock,
+    at: (ms, fn) =>
+      clock.at(ms, () => {
+        lastTask = Math.max(lastTask, ms);
+        fn();
+        collect(ms);
+      }),
+  };
+
+  return switchState({
+    root,
+    markup,
+    motion,
+    clock: timed,
+    transitioned: (transition) => {
+      ready = transition.ready.catch(() => undefined);
+    },
+  })
+    .then(() => ready)
+    .then(() => {
+      collect(0);
+
+      return {
+        seek: (ms) => {
+          if (ms < clock.now())
+            throw new Error(`design-explore: a motion steps forward only, from ${clock.now()} ms to ${ms} ms`);
+
+          clock.advance(ms - clock.now());
+
+          for (const [animation, track] of started) animation.currentTime = ms - track.start;
+        },
+        tracks: () => [...started.values()],
+        end: () => Math.max(lastTask, ...[...started.values()].map((track) => track.end ?? 0)),
+      };
+    });
 };
 
 /**

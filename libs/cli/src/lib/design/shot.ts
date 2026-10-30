@@ -22,6 +22,7 @@ import {
   ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
+import { MotionMode, motionPicturesOf } from './motion-shot';
 import { createWarmPages } from './warm-pages';
 
 export const SHOT_PATH = '/__design/shot';
@@ -487,6 +488,45 @@ export const createPartShooter = (options: {
      */
     pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) =>
       partShotOf({ ...options, priority: 'high' }),
+    /**
+     * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;
+     * `mode` picks `prefers-reduced-motion`.
+     */
+    motionOf: (
+      options: PartAddress & { motion: string; at?: readonly number[]; mode: MotionMode; params: URLSearchParams },
+    ) => {
+      const frame = partFrameOf({ system, ...options });
+
+      if (frame instanceof ThumbMissingError) return Promise.reject(frame);
+
+      const theme = themeOf(options.params);
+      const scale = scaleOf(options.params);
+
+      for (const [name, value] of Object.entries(theme)) if (value) frame.search.set(name, value);
+      frame.search.set('motion', options.motion);
+
+      return drawQueue.run(
+        (browser) =>
+          warmPages.run(
+            {
+              browser,
+              context: {
+                viewport: viewportOf(frame.size),
+                reducedMotion: options.mode === 'reduced' ? 'reduce' : 'no-preference',
+                ...(scale > 1 ? { deviceScaleFactor: scale } : {}),
+              },
+            },
+            (page) =>
+              motionPicturesOf({
+                page,
+                url: `${baseOf()}/frame.html?${frame.search}`,
+                clip: frame.clip,
+                at: options.at,
+              }),
+          ),
+        'high',
+      );
+    },
     /** One box per cluster of the pixels `after` changes from `before`, kept per pair of pictures; drawn after every waiting shot. */
     changedBoxesOf: (before: Buffer, after: Buffer) => {
       const key = [before, after].map((png) => createHash('sha256').update(png).digest('hex')).join(' ');

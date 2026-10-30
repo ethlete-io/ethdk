@@ -1,7 +1,7 @@
 import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-call';
 import { Part } from '../define-part';
 import { fitEmbed } from '../embed-page';
-import { runRules } from '../motion-runtime';
+import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
 import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
@@ -17,6 +17,7 @@ const fit = product !== null && params.has('fit');
 const interaction = product ? params.get('interaction') : null;
 const propsSketch = product ? params.get('props') : null;
 const propsVariant = params.get('props-variant') ?? '';
+const motionName = product ? params.get('motion') : null;
 
 // Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
 let errored = false;
@@ -168,27 +169,67 @@ const report = () => {
   );
 };
 
-const runPartRules = ({ part, states }: NonNullable<typeof drawnPart>, styles: string) => {
+const stateMarkupOf = ({ part, states }: NonNullable<typeof drawnPart>, styles: string) => {
   const sheets = new Set([styles]);
 
+  return (state: string) =>
+    Promise.resolve(part.render(states[state])).then((drawn) =>
+      sheets.has(drawn.styles)
+        ? drawn.body
+        : forced(drawn.styles).then((css) => {
+            const style = document.createElement('style');
+
+            sheets.add(drawn.styles);
+            style.textContent = css;
+            document.head.append(style);
+
+            return drawn.body;
+          }),
+    );
+};
+
+const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: string; styles: string }) => {
+  const { drawn, name, styles } = options;
+  const motion = drawn.part.motions?.[name];
+
+  if (!motion) {
+    const known = Object.keys(drawn.part.motions ?? {});
+
+    showSetupError(`design-explore: part "${partKey}" has no motion "${name}" - it has: ${known.join(', ') || 'none'}`);
+
+    return;
+  }
+
+  const markupOf = stateMarkupOf(drawn, styles);
+  let stepped: SteppedMotion | null = null;
+  const steppedOf = () => {
+    if (!stepped) throw new Error('design-explore: start the motion first');
+
+    return stepped;
+  };
+
+  Object.assign(window, {
+    etMotion: {
+      start: () =>
+        markupOf(motion.to)
+          .then((markup) => stepMotion({ root, markup, motion }))
+          .then((started) => {
+            stepped = started;
+
+            return true;
+          }),
+      seek: (ms: number) => steppedOf().seek(ms),
+      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks() }),
+    },
+  });
+};
+
+const runPartRules = (drawn: NonNullable<typeof drawnPart>, styles: string) => {
   runRules(root, {
     state: key,
-    rules: part.rules ?? [],
-    motions: part.motions,
-    render: (state) =>
-      Promise.resolve(part.render(states[state])).then((drawn) =>
-        sheets.has(drawn.styles)
-          ? drawn.body
-          : forced(drawn.styles).then((css) => {
-              const style = document.createElement('style');
-
-              sheets.add(drawn.styles);
-              style.textContent = css;
-              document.head.append(style);
-
-              return drawn.body;
-            }),
-      ),
+    rules: drawn.part.rules ?? [],
+    motions: drawn.part.motions,
+    render: stateMarkupOf(drawn, styles),
     switched: () => {
       const partRoot = partRootOf(root);
 
@@ -225,7 +266,8 @@ const drawFrame = async () => {
     if (error)
       showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
 
-    if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
+    if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
+    else if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
   }
 
   const place = () => placeOverlays(root);

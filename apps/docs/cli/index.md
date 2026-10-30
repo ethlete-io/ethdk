@@ -109,7 +109,14 @@ the part, with `MOTION-NAME` when a rule names a motion the part does not declar
 In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,
 so CSS transitions and `@starting-style` run. The named motion then runs `play(ctx)`, inside a View Transition with
 `viewTransition: true`. `ctx.at(ms, fn)` runs on the tool's clock, `ctx.random()` is seeded and `ctx.rect(selector)` measures in
-the `from` state. Shots and a timeline come in a later release.
+the `from` state.
+
+`et design motion shots <layer>/<name> <motion>` draws a motion from its `from` state at 0, 25, 50, 75 and 100 % of its run and
+at its `at` times, in full and in reduced motion (`--mode full|reduced` picks one), into one contact sheet with a row per mode. It
+pauses every animation and steps the `ctx.at` clock, so each keyframe is the same in every run. Next to the sheet it writes a JSON
+file with the end of each mode, its keyframe times and one track per animation: element, kind, properties, start, delay,
+duration, iterations and easing. It takes `--variant <key>` of the part's open sketch, `--preset` or `--width`, `--scale`,
+`--surface`, `--color` and `--out`. The timeline in Studio comes in a later release.
 
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a

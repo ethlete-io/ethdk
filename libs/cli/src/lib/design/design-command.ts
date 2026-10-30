@@ -11,6 +11,7 @@ import { designProduct } from './product-command';
 import { serveDesign } from './serve';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
+import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
@@ -112,6 +113,11 @@ const helpOf = (invocation: string) =>
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
     '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
+    '',
+    `${invocation} ${MOTION_USAGE}`,
+    '  Draw a motion of a part from its from state at 0, 25, 50, 75 and 100 % of its run and at its at times, in full',
+    '  and reduced motion (--mode picks one), into a contact sheet PNG with a row per mode. Writes the tracks of each',
+    '  mode (element, properties, start, delay, duration, easing) as JSON next to it and prints both paths.',
     '',
     `${invocation} ${ASSET_SHOT_USAGE}`,
     '  Draw an image file (svg, png, webp, ...) of a path, or of a product assets/ folder with --product, into a PNG',
@@ -267,6 +273,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return rest.includes('--asset')
       ? designAssetShot({ target, argv: rest, invocation })
       : designShot({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'motion') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designMotion({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'token') {
