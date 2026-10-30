@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markBody, markPart } from '../../../design/mark-part';
+import { markBody, markPart, markSlot } from '../../../design/mark-part';
 
 describe('markBody', () => {
   it('marks the first element', () => {
@@ -31,6 +31,19 @@ describe('markBody', () => {
   });
 });
 
+describe('markSlot', () => {
+  it('marks every element, adds to an earlier slot, and skips comments and raw text', () => {
+    expect(
+      markSlot(
+        'Hi <b title="a > b">x</b><!-- <i> --><style>a<b {}</style><i data-et-slot="x/y">y</i>',
+        'elements/shell',
+      ),
+    ).toBe(
+      'Hi <b data-et-slot="elements/shell" title="a > b">x</b><!-- <i> --><style data-et-slot="elements/shell">a<b {}</style><i data-et-slot="x/y elements/shell">y</i>',
+    );
+  });
+});
+
 describe('markPart', () => {
   const part = {
     note: 'n',
@@ -46,6 +59,23 @@ describe('markPart', () => {
     expect(marked).toMatchObject({ note: 'n', states: { one: { label: 'a' } }, widths: [320] });
     expect(marked.render({ label: 'a' })).toEqual({ body: '<b data-et-part="components/label">a</b>', styles: 's' });
     expect(await later.render({ label: 'a' })).toEqual({ body: '<b data-et-part="x/y">a</b>', styles: 's' });
+  });
+
+  it("marks the markup its props pass in as slotted, without touching the caller's props", () => {
+    const props = { label: 'Plain', rows: [{ body: '<button>Go</button>' }] };
+    const shell = markPart(
+      {
+        note: 'n',
+        states: { one: props },
+        render: ({ label, rows }: typeof props) => ({ body: `<div>${label}${rows[0]?.body}</div>`, styles: '' }),
+      },
+      'elements/shell',
+    );
+
+    expect((shell.render(props) as { body: string }).body).toBe(
+      '<div data-et-part="elements/shell">Plain<button data-et-slot="elements/shell">Go</button></div>',
+    );
+    expect(props.rows[0]?.body).toBe('<button>Go</button>');
   });
 
   it('passes a default export without a render through', () => {

@@ -1,5 +1,6 @@
+import { readdirSync, readFileSync } from 'fs';
 import { AddressInfo } from 'net';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import { chromiumOf } from '../browser';
 import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../paths';
@@ -17,7 +18,8 @@ export type CompletenessGap = { code: string; target: string; detail: string };
 /**
  * An element of a drawn frame that looks interactive. `control` is a native control, an interactive role or a known
  * SDK control; `unclassified` has a pointer cursor or a matched `:hover` rule and sits in no control. `marked` is the
- * `data-et-control` that declares it, `within` every `data-et-control` around it, nearest first.
+ * `data-et-control` that declares it, `within` every `data-et-control` around it, nearest first. `owner` is the
+ * embedded part whose `data-et-part` root draws it, or `null` for the frame's own part.
  */
 export type FoundControl = {
   kind: 'control' | 'unclassified';
@@ -25,7 +27,11 @@ export type FoundControl = {
   path: string;
   marked: string | null;
   within: string[];
+  owner?: string | null;
 };
+
+/** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
+export type FoundOverride = { owner: string; selector: string; path: string; properties: string[] };
 
 /** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
 export type SeenFrame = {
@@ -34,6 +40,7 @@ export type SeenFrame = {
   controls: { id: string; forced: { interaction: string; differs: boolean; still?: string[] }[] }[];
   surfaces: { id: string; shown: boolean }[];
   found?: FoundControl[];
+  overrides?: FoundOverride[];
 };
 
 type DeclaredControl = { kind: string; input: string[]; part: string | null; surfaces: Record<string, string> };
@@ -116,6 +123,7 @@ const discoveryGapsOf = (options: {
     const counts = new Map<string, number>();
 
     for (const found of frame.found ?? []) {
+      if ((found.owner ?? null) !== null) continue;
       if (ownedByPart(found) || (found.kind === 'control' && found.marked !== null)) continue;
 
       const key = `${found.kind} ${found.what} ${found.path}`;
@@ -131,9 +139,7 @@ const discoveryGapsOf = (options: {
   return [...groups.values()]
     .sort((a, b) => a.found.path.localeCompare(b.found.path) || a.found.what.localeCompare(b.found.what))
     .map(({ found, states, count }) => {
-      const shown =
-        states.length > 4 ? `${states.slice(0, 3).join(', ')} and ${states.length - 3} more` : states.join(', ');
-      const where = `${found.what} at ${found.path} in ${shown}${count > 1 ? ` (${count} of them)` : ''}`;
+      const where = `${found.what} at ${found.path} in ${statesShownOf(states)}${count > 1 ? ` (${count} of them)` : ''}`;
 
       return found.kind === 'control'
         ? {
@@ -148,6 +154,78 @@ const discoveryGapsOf = (options: {
           };
     });
 };
+
+const statesShownOf = (states: string[]) =>
+  states.length > 4 ? `${states.slice(0, 3).join(', ')} and ${states.length - 3} more` : states.join(', ');
+
+const overrideGapsOf = (options: { part: string; frames: SeenFrame[] }): CompletenessGap[] => {
+  const groups = new Map<string, { override: FoundOverride; states: string[] }>();
+
+  for (const frame of options.frames.filter((seen) => seen.interaction === null))
+    for (const override of frame.overrides ?? []) {
+      const key = `${override.owner} ${override.selector} ${override.path}`;
+      const group = groups.get(key) ?? { override, states: [] };
+
+      if (!group.states.includes(frame.state)) group.states.push(frame.state);
+      groups.set(key, group);
+    }
+
+  return [...groups.values()]
+    .sort((a, b) => a.override.owner.localeCompare(b.override.owner) || a.override.path.localeCompare(b.override.path))
+    .map(({ override, states }) => ({
+      code: 'CONTROL-OVERRIDDEN',
+      target: options.part,
+      detail: `"${override.selector}" sets ${override.properties.join(', ')} on ${override.path}, drawn by ${override.owner}, in ${statesShownOf(states)} - change ${override.owner} instead, or mark the control with data-et-control and declare it in controls`,
+    }));
+};
+
+const ownerGapsOf = (options: {
+  part: string;
+  declared: Record<string, DeclaredControl>;
+  frames: SeenFrame[];
+  referenced: ReferencedParts;
+}): CompletenessGap[] => {
+  const { part, declared, frames, referenced } = options;
+  const named = new Set(Object.values(declared).map((control) => control.part));
+  const owned = new Map<string, Set<string>>();
+
+  for (const frame of frames.filter((seen) => seen.interaction === null))
+    for (const found of frame.found ?? []) {
+      const owner = found.owner ?? null;
+
+      if (owner === null || named.has(owner)) continue;
+
+      owned.set(owner, (owned.get(owner) ?? new Set()).add(`${found.what} ${found.path}`));
+    }
+
+  return [...owned.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .flatMap(([owner, controls]) => {
+      const used = referenced[owner];
+      const drawn = `${owner} draws ${controls.size} control(s) here`;
+
+      if (typeof used === 'string')
+        return [{ code: 'CONTROL-PART-INCOMPLETE', target: part, detail: `${drawn}: ${used}` }];
+      if (!used || used.length === 0) return [];
+
+      return [
+        {
+          code: 'CONTROL-PART-INCOMPLETE',
+          target: part,
+          detail: `${drawn} and is not design complete: ${used.length} gap(s) - run design complete ${owner}`,
+        },
+      ];
+    });
+};
+
+const ownersOf = (frames: SeenFrame[]) => [
+  ...new Set(
+    frames
+      .filter((seen) => seen.interaction === null)
+      .flatMap((seen) => (seen.found ?? []).map((found) => found.owner ?? null))
+      .filter((owner): owner is string => owner !== null),
+  ),
+];
 
 const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
   const { frames, id, interaction } = options;
@@ -307,7 +385,12 @@ export const completenessGapsOf = (options: {
     }
   }
 
-  return [...gaps, ...discoveryGapsOf({ part, declared, frames })];
+  return [
+    ...gaps,
+    ...discoveryGapsOf({ part, declared, frames }),
+    ...ownerGapsOf({ part, declared, frames, referenced }),
+    ...overrideGapsOf({ part, frames }),
+  ];
 };
 
 export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
@@ -467,32 +550,6 @@ const discoverControls = `((root) => {
   const likely = LIKELY.join(', ');
   const sdk = ${JSON.stringify(SDK_CONTROLS.join(', '))};
   const rendered = (element) => element.getClientRects().length > 0;
-  const nameOf = (element) => {
-    const cls = [...element.classList].find((name) => /^[a-z][\\w-]*$/i.test(name));
-    return element.tagName.toLowerCase() + (cls ? '.' + cls : '');
-  };
-  const pathOf = (element) => {
-    const names = [];
-    for (let at = element; at && at !== root; at = at.parentElement) names.unshift(nameOf(at));
-    return (names.length > 4 ? '... > ' : '') + names.slice(-4).join(' > ');
-  };
-  const splitTop = (selector) => {
-    const parts = [];
-    let depth = 0;
-    let from = 0;
-    for (let at = 0; at < selector.length; at++) {
-      const char = selector[at];
-      if (char === '\\\\') at++;
-      else if (char === '(' || char === '[') depth++;
-      else if (char === ')' || char === ']') depth--;
-      else if (char === ',' && depth === 0) {
-        parts.push(selector.slice(from, at).trim());
-        from = at + 1;
-      }
-    }
-    parts.push(selector.slice(from).trim());
-    return parts.filter(Boolean);
-  };
   const HOVER = /(?<!\\\\):hover(?![\\w-])/g;
   const FORCED_HOVER = /:is\\(:hover,\\s*\\[data-et-force~="?hover"?\\]\\)/g;
   const hoveredOf = (written) => {
@@ -518,7 +575,7 @@ const discoverControls = `((root) => {
     for (const rule of rules) {
       if (rule instanceof CSSStyleRule) {
         const own = splitTop(rule.selectorText).map((selector) =>
-          parent === null ? selector : selector.includes('&') ? selector.replaceAll('&', ':is(' + parent + ')') : ':is(' + parent + ') ' + selector,
+          nested(selector, parent),
         );
         for (const selector of own) {
           const target = hoveredOf(selector);
@@ -557,7 +614,7 @@ const discoverControls = `((root) => {
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
-      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element) });
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null });
       continue;
     }
     const cursor = getComputedStyle(element).cursor;
@@ -565,15 +622,121 @@ const discoverControls = `((root) => {
     if (!pointer && !hovered.has(element)) continue;
     if (element.closest('[data-et-control], ' + likely) !== null) continue;
     const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
-    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [] });
+    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null });
   }
   return found;
 })`;
 
-const seeFrame = (discover: boolean) => `(() => {
+const ROOT_LAYOUT = [
+  '^margin',
+  '^inset',
+  '^(top|right|bottom|left)$',
+  '^(min-|max-)?(width|height|inline-size|block-size)$',
+  '^position$',
+  '^z-index$',
+  '^flex(-grow|-shrink|-basis)?$',
+  '^grid-(area|row|column)',
+  '^(align|justify|place)-self$',
+  '^order$',
+  '^(transform|translate|rotate|scale)$',
+];
+
+const findOverrides = `((ownCss) => {
+  const LAYOUT = new RegExp(${JSON.stringify(ROOT_LAYOUT.join('|'))});
+  const USER_ACTION = /(?<!\\\\):(hover|focus-visible|focus-within|focus|active)(?![\\w-])/g;
+  const PSEUDO_ELEMENT = /::?(before|after|marker|placeholder|selection|backdrop|file-selector-button|first-line|first-letter)(?![\\w-])/g;
+  const declaredByHost = (element) => {
+    for (let at = element; at && at !== root.parentElement; at = at.parentElement)
+      if (at.hasAttribute('data-et-control') && ownerOf(at) === null) return true;
+    return false;
+  };
+  const overrides = [];
+  const seen = new Set();
+  const check = (selector, style) => {
+    const properties = [...new Set(style.cssText.split(';').map((declaration) => declaration.split(':')[0].trim()).filter(Boolean))];
+    if (properties.length === 0) return;
+    let matched = [];
+    try {
+      matched = [...root.querySelectorAll(selector.replace(PSEUDO_ELEMENT, '').replace(USER_ACTION, ':where(*)'))];
+    } catch {
+      return;
+    }
+    for (const element of matched) {
+      const owner = ownerOf(element);
+      if (owner === null || declaredByHost(element)) continue;
+      const look = owner.at === element ? properties.filter((property) => !LAYOUT.test(property)) : properties;
+      const key = selector + ' ' + pathOf(element);
+      if (look.length === 0 || seen.has(key)) continue;
+      seen.add(key);
+      overrides.push({ owner: owner.key, selector, path: pathOf(element), properties: look });
+    }
+  };
+  const walk = (rules, parent) => {
+    for (const rule of rules) {
+      if (rule instanceof CSSStyleRule) {
+        const own = splitTop(rule.selectorText).map((selector) => nested(selector, parent));
+        for (const selector of own) check(selector, rule.style);
+        if (rule.cssRules && rule.cssRules.length > 0) walk(rule.cssRules, own.join(', '));
+      } else if (parent !== null && rule.constructor.name === 'CSSNestedDeclarations') check(parent, rule.style);
+      else if (rule.cssRules) walk(rule.cssRules, parent);
+    }
+  };
+  for (const text of ownCss) {
+    const sheet = new CSSStyleSheet();
+    try {
+      sheet.replaceSync(text);
+    } catch {
+      continue;
+    }
+    walk(sheet.cssRules, null);
+  }
+  return overrides;
+})`;
+
+const seeFrame = (options: { discover: boolean; part: string; ownCss: string[] }) => `(() => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
   if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
+  const OWN = ${JSON.stringify(options.part)};
+  const tokensOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
+  const ownerOf = (element) => {
+    const slotted = tokensOf(element, 'data-et-slot');
+    for (let at = element; at; at = at.parentElement)
+      for (const key of tokensOf(at, 'data-et-part')) {
+        const index = slotted.indexOf(key);
+        if (index >= 0) slotted.splice(index, 1);
+        else return key === OWN ? null : { key, at };
+      }
+    return null;
+  };
+  const nameOf = (element) => {
+    const cls = [...element.classList].find((name) => /^[a-z][\\w-]*$/i.test(name));
+    return element.tagName.toLowerCase() + (cls ? '.' + cls : '');
+  };
+  const pathOf = (element) => {
+    const names = [];
+    for (let at = element; at && at !== root; at = at.parentElement) names.unshift(nameOf(at));
+    return (names.length > 4 ? '... > ' : '') + names.slice(-4).join(' > ');
+  };
+  const splitTop = (selector) => {
+    const parts = [];
+    let depth = 0;
+    let from = 0;
+    for (let at = 0; at < selector.length; at++) {
+      const char = selector[at];
+      if (char === '\\\\') at++;
+      else if (char === '(' || char === '[') depth++;
+      else if (char === ')' || char === ']') depth--;
+      else if (char === ',' && depth === 0) {
+        parts.push(selector.slice(from, at).trim());
+        from = at + 1;
+      }
+    }
+    parts.push(selector.slice(from).trim());
+    return parts.filter(Boolean);
+  };
+  const nested = (selector, parent) =>
+    parent === null ? selector : selector.includes('&') ? selector.replaceAll('&', ':is(' + parent + ')') : ':is(' + parent + ') ' + selector;
   const shown = (element) => {
     const box = element.getBoundingClientRect();
     let { left, top, right, bottom } = box;
@@ -590,7 +753,7 @@ const seeFrame = (discover: boolean) => `(() => {
     }
     return element.innerText.trim() !== '' || !!element.querySelector('img, svg, canvas, video, iframe, input, select, textarea');
   };
-  const controls = [...root.querySelectorAll('[data-et-control]')].map((element, at) => {
+  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element, at) => {
     element.setAttribute('data-et-complete', String(at));
     const box = element.getBoundingClientRect();
     const x = Math.max(0, box.x + scrollX - ${PAD});
@@ -602,11 +765,17 @@ const seeFrame = (discover: boolean) => `(() => {
       box: box.width > 0 && box.height > 0 ? { x, y, width: box.width + ${PAD * 2}, height: box.height + ${PAD * 2} } : null,
     };
   });
-  const surfaces = [...root.querySelectorAll('[data-et-surface]')].map((element) => ({
+  const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
   }));
-  return { controls, surfaces, found: ${discover} ? ${discoverControls}(root) : [] };
+  const discover = ${options.discover};
+  return {
+    controls,
+    surfaces,
+    found: discover ? ${discoverControls}(root) : [],
+    overrides: discover ? ${findOverrides}(${JSON.stringify(options.ownCss)}) : [],
+  };
 })()`;
 
 const forceOn = ({
@@ -637,6 +806,7 @@ type Seen =
       }[];
       surfaces: { id: string; shown: boolean }[];
       found: FoundControl[];
+      overrides: FoundOverride[];
     };
 
 type CompleteFrame = {
@@ -648,8 +818,14 @@ type CompleteFrame = {
 
 const FORCEABLE = new Set(['hover', 'focus-visible', 'active']);
 
-const seeFrames = async (options: { browser: Browser; base: string; frames: CompleteFrame[] }) => {
-  const { browser, base, frames } = options;
+const seeFrames = async (options: {
+  browser: Browser;
+  base: string;
+  frames: CompleteFrame[];
+  part: string;
+  ownCss: string[];
+}) => {
+  const { browser, base, frames, part, ownCss } = options;
   const context = await browser.newContext();
   const seen: SeenFrame[] = [];
   const refused: string[] = [];
@@ -663,7 +839,7 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
       await page.addStyleTag({ content: NO_MOTION });
       await page.evaluate(settled);
 
-      const found = (await page.evaluate(seeFrame(frame.interaction === null))) as Seen;
+      const found = (await page.evaluate(seeFrame({ discover: frame.interaction === null, part, ownCss }))) as Seen;
 
       if ('refused' in found) {
         refused.push(`${frame.state}: ${found.refused}`);
@@ -709,6 +885,7 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
         controls,
         surfaces: found.surfaces,
         found: found.found,
+        overrides: found.overrides,
       });
     }
   } finally {
@@ -724,8 +901,8 @@ type PartModule = {
 
 /**
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
- * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`
- * is checked the same way, and its gaps fail the control.
+ * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
+ * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it.
  */
 export const completenessOf = async (options: {
   target: string;
@@ -753,7 +930,19 @@ export const completenessOf = async (options: {
     const system = createSystemModules({ target, config });
     const presets = Object.keys(system.drawnOf(product.name, null)?.presets ?? {});
 
+    const checked = new Map<string, CompletenessGap[] | string>();
     const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
+      const known = checked.get(key);
+
+      if (known !== undefined && !chain.includes(key)) return known;
+
+      const gaps = await freshGapsOfPart(key, chain);
+
+      checked.set(key, gaps);
+
+      return gaps;
+    };
+    const freshGapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
       const resolved = product.parts.find((candidate) => partKeyOf(candidate) === key);
 
       if (!resolved) return `product "${product.name}" has no part "${key}"`;
@@ -795,15 +984,23 @@ export const completenessOf = async (options: {
             frames.push({ state, interaction, search: frame.search.toString(), size: frame.size ?? null });
         }
 
+      const dir = dirname(resolved.file);
+      const ownCss = readdirSync(dir)
+        .filter((file) => file.endsWith('.css'))
+        .sort()
+        .map((file) => readFileSync(join(dir, file), 'utf8'));
       const { seen, refused } = await queue.run((browser) =>
-        seeFrames({ browser, base: `http://localhost:${port}`, frames }),
+        seeFrames({ browser, base: `http://localhost:${port}`, frames, part: key, ownCss }),
       );
-      const reviewed = readMerged(product.dir)[key] === partHashOf({ product, dir: dirname(resolved.file) });
+      const reviewed = readMerged(product.dir)[key] === partHashOf({ product, dir });
       const referenced: ReferencedParts = {};
+      const used = [
+        ...Object.values(declaredControlsOf(definition?.controls) ?? {}).map((control) => control.part),
+        ...ownersOf(seen),
+      ];
 
-      for (const control of Object.values(declaredControlsOf(definition?.controls) ?? {}))
-        if (control.part !== null && !(control.part in referenced))
-          referenced[control.part] = await gapsOfPart(control.part, [...chain, key]);
+      for (const other of used)
+        if (other !== null && !(other in referenced)) referenced[other] = await gapsOfPart(other, [...chain, key]);
 
       return [
         ...refused.map((detail) => ({ code: 'RENDER', target: key, detail })),

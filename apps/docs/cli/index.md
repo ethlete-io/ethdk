@@ -240,7 +240,16 @@ control itself declares the controls inside it. An element with `cursor: pointer
 names a `part` belong to that part, and a page embedded with `embedPage` is not walked. A part
 without controls passes when it draws none.
 
+A part that another part renders owns its controls. Every rendered part root carries
+`data-et-part="<layer>/<name>"`, stamped automatically, and markup a host passes in through props
+carries `data-et-slot` and stays the host's. A control inside an embedded part is not declared on
+the host; the host fails once per owning part that is not design complete itself, as
+`CONTROL-PART-INCOMPLETE`. A rule in a CSS file of the host's folder that styles an element inside
+an owned part fails as `CONTROL-OVERRIDDEN`, unless the host marks it with `data-et-control` and
+declares it. On the owned root itself, outer layout (margin, size, position, inset, flex and grid
+placement, transform) is not an override.
+
 The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
-`CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
+`CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`, `CONTROL-OVERRIDDEN` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run
 it, so a partial round stays reviewable.

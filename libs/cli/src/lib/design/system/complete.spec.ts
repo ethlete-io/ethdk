@@ -38,7 +38,16 @@ const openRow = (attributes = '') => ({
   'open-focused': `<div>${toggle(`${attributes} data-et-force="focus-visible"`)}${body}</div>`,
 });
 
-const PARTS: Record<string, { states: Record<string, string>; extra?: string; embed?: string }> = {
+type FixturePart = {
+  states: Record<string, string>;
+  extra?: string;
+  embed?: string;
+  imports?: string;
+  render?: string;
+  css?: string;
+};
+
+const PARTS: Record<string, FixturePart> = {
   'pages/merge': {
     states: { open: `<main>${toggle()}</main>` },
     extra: DISCLOSURE,
@@ -123,6 +132,28 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string; em
     states: { rest: `<main>${toggle()}</main>`, open: `<main>${toggle()}${body}</main>` },
     extra: "controls: { more: { kind: 'disclosure', part: 'components/flat', surfaces: { body: 'open' } } },",
   },
+  'elements/slot': {
+    states: { rest: '' },
+    render:
+      '`<div class="aa-slot"><button type="button" class="aa-menu">Menu</button><section>${BODIES[state] ?? state}</section></div>`',
+  },
+  'pages/slotted': {
+    states: { rest: '' },
+    imports: "import slot from '@system/elements/slot';",
+    render: '(await slot.render({ state: \'<button type="button" class="aa-own">Own</button>\' })).body',
+  },
+  'pages/owns': {
+    states: { rest: '' },
+    imports: "import done from '@system/components/done';",
+    render: '`<main class="aa-page">${(await done.render({ state: \'rest\' })).body}</main>`',
+    css: '.aa-page > div { margin: 4px; width: 200px; position: relative; }',
+  },
+  'pages/recolours': {
+    states: { rest: '' },
+    imports: "import done from '@system/components/done';",
+    render: '`<main class="aa-page">${(await done.render({ state: \'rest\' })).body}</main>`',
+    css: '.aa-page { & .aa-toggle:hover { color: red; } } .aa-page > div { padding: 2px; }',
+  },
 };
 
 const checkout = () => {
@@ -135,14 +166,21 @@ const checkout = () => {
     JSON.stringify({ products: { 'app-a': { presets: { desktop: { width: 400, height: 300 } } } } }),
   );
 
-  for (const [key, { states, extra = '', embed }] of Object.entries(PARTS)) {
+  for (const [key, { states, extra = '', embed, imports = '', render, css }] of Object.entries(PARTS)) {
     const [layer = '', name = ''] = key.split('/');
     const dir = join(design, 'app-a', layer, name);
 
+    const body =
+      render ??
+      (embed ? `embedPage('${embed}', { state: 'rest', width: 400, height: 300 }).body` : "BODIES[state] ?? ''");
+
     mkdirSync(dir, { recursive: true });
+    if (css) writeFileSync(join(dir, `${name}.css`), css);
     writeFileSync(
       join(dir, `${name}.ts`),
       `import { definePart, drawing, embedPage } from '@design-system';
+${imports}
+${css ? `import css from './${name}.css?inline';` : 'const css = "";'}
 
 const BODIES: Record<string, string> = ${JSON.stringify(states)};
 
@@ -152,7 +190,7 @@ export default definePart({
     .map((state) => `'${state}': { state: '${state}' }`)
     .join(', ')} },
   ${extra}
-  render: ({ state }: { state: string }) => drawing({ body: ${embed ? `embedPage('${embed}', { state: 'rest', width: 400, height: 300 }).body` : "BODIES[state] ?? ''"}, styles: ${JSON.stringify(STYLES)} }),
+  render: async ({ state }: { state: string }) => drawing({ body: ${body}, styles: ${JSON.stringify(STYLES)} + css }),
 });
 `,
     );
@@ -440,6 +478,28 @@ describe('completenessOf', () => {
       'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with data-et-control and declare it in controls',
     ]);
     expect(await lines('pages/host')).toEqual([]);
+  }, 120_000);
+
+  it('gives a control inside an embedded part root to that part, and fails a page that restyles it', async (context) => {
+    const { target, config, product } = checkout();
+    const lines = async (part: string) => {
+      const result = await completenessOf({ target, config, product, part });
+
+      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
+    };
+    const owns = await lines('pages/owns');
+
+    if (!Array.isArray(owns)) return context.skip(JSON.stringify(owns));
+
+    expect(owns).toEqual([]);
+    expect(await lines('pages/slotted')).toEqual([
+      'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with data-et-control and declare it in controls',
+      'CONTROL-PART-INCOMPLETE pages/slotted - elements/slot draws 1 control(s) here and is not design complete: 1 gap(s) - run design complete elements/slot',
+    ]);
+    expect(await lines('pages/recolours')).toEqual([
+      'CONTROL-OVERRIDDEN pages/recolours - ".aa-page > div" sets padding on main.aa-page > div, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
+      'CONTROL-OVERRIDDEN pages/recolours - ":is(.aa-page) .aa-toggle:hover" sets color on main.aa-page > div > button.aa-toggle, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
+    ]);
   }, 120_000);
 
   it('passes a full-width toggle at the top-left corner of its frame, which the headless pointer must not hover', async (context) => {
