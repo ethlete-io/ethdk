@@ -504,6 +504,57 @@ export const resolveComment = (options: {
   return { ...found, resolved };
 };
 
+const resolvedByTool = (note: string): CommentResolution => ({
+  by: 'user',
+  resolvedAt: new Date().toISOString(),
+  note,
+});
+
+/** Resolves the addressed comments of a product that `matches` picks, with `note`, in the shape Studio writes. Answers with them. */
+export const resolveAddressedComments = (options: {
+  productDir: string;
+  product: string;
+  note: string;
+  matches: (comment: DesignComment) => boolean;
+}): DesignComment[] => {
+  const resolved = resolvedByTool(options.note);
+
+  return listComments({ productDir: options.productDir, product: options.product, all: true })
+    .comments.filter((comment) => comment.addressed && !comment.resolved && options.matches(comment))
+    .map((comment) => {
+      rewrite(comment.file, (stored) => ({ ...stored, resolved }));
+
+      return { ...comment, resolved };
+    });
+};
+
+const onSketch = (comment: Pick<CommentFile, 'sketch'>, sketch: Pick<Sketch, 'target' | 'createdAt'>) =>
+  comment.sketch?.target === sketch.target && comment.sketch.createdAt === sketch.createdAt;
+
+/** Resolves the addressed comments made on any variant of a sketch, and with `parts` those without a sketch on one of these parts. */
+export const resolveSketchEndComments = (options: {
+  sketch: Sketch;
+  note: string;
+  parts?: string[];
+}): DesignComment[] =>
+  resolveAddressedComments({
+    productDir: resolve(options.sketch.dir, '..', '..'),
+    product: options.sketch.product,
+    note: options.note,
+    matches: (comment) =>
+      onSketch(comment, options.sketch) ||
+      (!comment.sketch && options.parts !== undefined && options.parts.includes(comment.part)),
+  });
+
+/** Resolves every addressed comment whose sketch is merged, discarded or replaced. Answers with them. */
+export const resolveEndedSketchComments = (options: { product: ResolvedProduct }): DesignComment[] =>
+  resolveAddressedComments({
+    productDir: options.product.dir,
+    product: options.product.name,
+    note: 'sketch ended',
+    matches: (comment) => sketchGoneOf({ product: options.product, comment }),
+  });
+
 /** The open comments made on any variant of a sketch, matched by its target and its `createdAt`. */
 export const commentsOnSketch = (options: {
   productDir: string;

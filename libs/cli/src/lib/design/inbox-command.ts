@@ -1,5 +1,5 @@
 import { relative } from 'path';
-import { createComment, replyToComment } from './system/comments/comment';
+import { createComment, replyToComment, resolveEndedSketchComments } from './system/comments/comment';
 import { completeComment } from './system/comments/complete';
 import { inboxOf, inboxText } from './system/comments/inbox';
 import { productDirOf } from './system/product';
@@ -11,6 +11,7 @@ export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id
 export const COMMENT_USAGE = [
   'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--interaction <name>] [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
   'comment reply <id> --by <model id> <text> [--question] [--product <name>]',
+  'comment resolve-ended [--product <name>]',
 ];
 
 const fail = (message: string, code = 1) => {
@@ -149,6 +150,7 @@ const designCommentReply = (options: {
 
 /**
  * `et design comment …` writes a comment on a state of a part, as Studio does from the canvas.
+ * `et design comment resolve-ended` resolves the addressed comments of sketches that no longer exist.
  * `et design comment reply <id> <text>` answers a comment thread as the agent; `--question` marks a reply that waits for the user's answer.
  */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
@@ -166,6 +168,24 @@ export const designComment = (options: { target: string; argv: string[]; invocat
       question: args.flags.has('--question'),
       invocation,
     });
+
+  if (args.positional[0] === 'resolve-ended') {
+    if (args.positional.length > 1) return usage(invocation, COMMENT_USAGE);
+
+    const config = configOf(target);
+
+    if (typeof config === 'string') return fail(config);
+
+    const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+    if (typeof product === 'string') return fail(product);
+
+    const resolved = resolveEndedSketchComments({ product });
+
+    console.log(`resolved ${resolved.length} addressed comment(s) of ended sketches in ${product.name}`);
+
+    return 0;
+  }
 
   const [part, state, ...words] = args.positional;
   const size = sizeOf(args.values['--size']);

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -284,5 +284,37 @@ describe('designComment and designInbox', () => {
     expect(lines.pop()).toBe('part pages/nope no longer exists');
     expect(designInbox({ target, argv: ['done', 'nope', '--note', 'x', '--by', 'gpt-5.6-sol'], invocation })).toBe(1);
     expect(lines.pop()).toBe('no open comment "nope"');
+  });
+
+  it('resolves the addressed comments of ended sketches and keeps the rest', () => {
+    const target = acme();
+    const lines = output();
+    const dir = join(target, DESIGN_DIR, 'acme/comments');
+    const base = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Why?', createdAt: '2026-10-01T00:00:00Z' };
+    const addressed = { by: 'user', reason: 'merge', addressedAt: '2026-10-02T00:00:00Z' };
+    const gone = { target: 'pages/home', variant: 'a', createdAt: '2026-09-01T00:00:00Z' };
+    const files = {
+      'ended-addressed': { ...base, sketch: gone, addressed },
+      'ended-open': { ...base, sketch: gone },
+      'no-sketch-addressed': { ...base, addressed },
+    };
+
+    mkdirSync(dir, { recursive: true });
+    Object.entries(files).forEach(([name, file]) => writeFileSync(join(dir, `${name}.json`), JSON.stringify(file)));
+
+    expect(designComment({ target, argv: ['resolve-ended', '--product', 'acme'], invocation })).toBe(0);
+    expect(lines.pop()).toContain('resolved 1 addressed comment(s)');
+
+    const read = (name: string) =>
+      JSON.parse(readFileSync(join(dir, `${name}.json`), 'utf8')) as { resolved?: unknown };
+
+    expect(read('ended-addressed').resolved).toEqual({
+      by: 'user',
+      resolvedAt: expect.any(String),
+      note: 'sketch ended',
+    });
+    expect(read('ended-open').resolved).toBeUndefined();
+    expect(read('no-sketch-addressed').resolved).toBeUndefined();
+    expect(readdirSync(dir)).toHaveLength(3);
   });
 });

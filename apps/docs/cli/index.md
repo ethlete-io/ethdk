@@ -100,6 +100,11 @@ in the variant's `shared/`, then the sketch's, then the product's, then the base
 At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
 the rest moves into the target's folder as before.
 
+`et design sketch merge` and `sketch discard` resolve the addressed comments on the sketch's
+variants, and a merge also those addressed comments of the merged parts that have no sketch; open
+comments stay open. `et design comment resolve-ended [--product <product>]` resolves the addressed
+comments whose sketch no longer exists.
+
 Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS
 imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
 token definitions. Pixel comparisons for sketches use fresh rendering results on each request,

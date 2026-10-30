@@ -3,7 +3,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
-import { commentsOnSketch, CommentFile, createComment, DesignComment, replyToComment } from '../comments/comment';
+import {
+  addressComment,
+  commentsOnSketch,
+  CommentFile,
+  createComment,
+  DesignComment,
+  replyToComment,
+} from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
 import { changedOutsideSketchOf, readMerged, recordMerged } from './merged-parts';
@@ -55,6 +62,11 @@ const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>;
 
 const addressedOf = (comment: DesignComment) =>
   (JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile).addressed;
+
+const resolvedOf = (comment: DesignComment) => (JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile).resolved;
+
+const addressed = (product: ReturnType<typeof resolveAcme>, comment: DesignComment) =>
+  addressComment({ products: [{ name: product.name, dir: product.dir }], id: comment.id, author: 'gpt-5.6-sol' });
 
 const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: string; variant: string }) =>
   createComment({
@@ -343,6 +355,33 @@ describe('mergeSketch', () => {
     expect(addressedOf(onPart)).toBeUndefined();
     expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: found.sketch })).toEqual([]);
   }, 120_000);
+
+  it('resolves the addressed comments on the sketch and on the merged part, and leaves the open ones addressed only', () => {
+    const target = acme();
+    const found = readySketch(target);
+    const sketchTarget = { target: 'elements/hero', variant: 'a' };
+    const addressedOnSketch = commentOn(found.product, sketchTarget);
+    const openOnSketch = commentOn(found.product, sketchTarget);
+    const addressedOnPart = commentOn(found.product);
+    const addressedElsewhere = createComment({
+      product: found.product,
+      comment: { part: 'pages/home', state: 'empty', size: 'phone', text: 'Why empty?' },
+    }) as DesignComment;
+
+    addressed(found.product, addressedOnSketch);
+    addressed(found.product, addressedOnPart);
+    addressed(found.product, addressedElsewhere);
+
+    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
+    expect(resolvedOf(addressedOnSketch)).toMatchObject({
+      by: 'user',
+      note: 'resolved by the merge of elements/hero variant b',
+    });
+    expect(resolvedOf(addressedOnPart)).toMatchObject({ note: 'resolved by the merge of elements/hero variant b' });
+    expect(resolvedOf(openOnSketch)).toBeUndefined();
+    expect(addressedOf(openOnSketch)).toMatchObject({ reason: 'merge' });
+    expect(resolvedOf(addressedElsewhere)).toBeUndefined();
+  }, 120_000);
 });
 
 describe('mergeSketch with assets', () => {
@@ -493,5 +532,25 @@ describe('discardSketch', () => {
     expect(existsSync(sketch.dir)).toBe(false);
     expect(addressedOf(onSketch)).toMatchObject({ by: 'agent', author: 'gpt-5.6-sol', reason: 'discard' });
     expect(addressedOf(onPart)).toBeUndefined();
+  });
+
+  it('resolves the addressed comments on the sketch and leaves the open ones addressed only', () => {
+    const target = acme();
+    const { product, sketch } = readySketch(target);
+    const addressedOnSketch = commentOn(product, { target: 'elements/hero', variant: 'b' });
+    const openOnSketch = commentOn(product, { target: 'elements/hero', variant: 'a' });
+    const addressedOnPart = commentOn(product);
+
+    addressed(product, addressedOnSketch);
+    addressed(product, addressedOnPart);
+
+    expect(discardSketch({ target, sketch })).toBeNull();
+    expect(resolvedOf(addressedOnSketch)).toMatchObject({
+      by: 'user',
+      note: 'resolved by the discard of elements/hero',
+    });
+    expect(resolvedOf(openOnSketch)).toBeUndefined();
+    expect(addressedOf(openOnSketch)).toMatchObject({ reason: 'discard' });
+    expect(resolvedOf(addressedOnPart)).toBeUndefined();
   });
 });
