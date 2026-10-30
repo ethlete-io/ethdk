@@ -209,6 +209,10 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
     `yarn sdk:tokens`.
   - Q53: the surface border stays decorative (light 1.26:1, dark 1.73:1). A control whose only boundary is a
     border gets its own 3:1 boundary in its component design, not via the surface border.
+- **In progress (ethlete-sdk-33, 2026-10-30):** round 2 on the `foundations/tokens` sketch (Q51 on-light
+  themes, Q52 value candidates through a generator override; the source themes change only after Tom's pick),
+  and the `components/select` sketch (controls, option states, trigger `active` as variants). Storybook is no
+  workspace package, so it needs no changeset.
 
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
