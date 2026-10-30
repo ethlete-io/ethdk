@@ -1,0 +1,31 @@
+{
+  "target": "components/form-field",
+  "status": "in progress",
+  "createdAt": "2026-10-30T22:53:53.765Z",
+  "baseline": {
+    "foundations/tokens": "67c964a1f59e8dc3",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "126362df5518a865",
+    "components/select": "164af4eccf857227",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Form field controls",
+      "note": "Declares the form field's controls so design complete can check them: field hover, press and focus for a text input and a textarea. The pressed look follows the select (Q56 b)."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "The field border darkens one step while pressed, as on the select. A small CSS rule in the part; differs from focus."
+    }
+  },
+  "hold": {
+    "until": "a text-field control kind in design complete, a textarea mock in @ethlete/components/design/form-field, and a call on the error state's danger contrast",
+    "by": "claude-opus-5-5",
+    "heldAt": "2026-10-30T22:56:00.104Z"
+  }
+}
