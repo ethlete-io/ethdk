@@ -11,6 +11,7 @@ import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
+const drawnUrls = () => goto.mock.calls.flatMap(([url]) => (url === 'about:blank' ? [] : [url]));
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
 const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
@@ -45,6 +46,7 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
       boundingBox,
     }),
   }),
+  clearCookies: async () => undefined,
   close: async () => undefined,
 }));
 const chromium = { launch: async () => ({ newContext, close: async () => undefined }) } as never;
@@ -103,7 +105,7 @@ describe('createPartShooter', () => {
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 390, height: 844 } });
-    expect(goto.mock.calls[0]?.[0]).toBe(
+    expect(drawnUrls()[0]).toBe(
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&surface=dark',
     );
     expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
@@ -127,7 +129,7 @@ describe('createPartShooter', () => {
     await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&fill=surface');
 
     expect(screenshot).toHaveBeenCalledTimes(2);
-    expect(goto.mock.calls[1]?.[0]).toBe(
+    expect(drawnUrls()[1]).toBe(
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fill=surface',
     );
   });
@@ -166,10 +168,11 @@ describe('createPartShooter', () => {
       await ask(shots, `product=acme&part=${part}&state=default&preset=phone`);
     }
 
-    expect(goto.mock.calls.slice(-2).map(([url]) => new URL(url).searchParams.get('part'))).toEqual([
-      'pages/home',
-      'components/card',
-    ]);
+    expect(
+      drawnUrls()
+        .slice(-2)
+        .map((url) => new URL(url).searchParams.get('part')),
+    ).toEqual(['pages/home', 'components/card']);
     expect(screenshot).toHaveBeenCalledTimes(2);
   });
 
@@ -187,7 +190,7 @@ describe('createPartShooter', () => {
     expect(await ask(shots, `${part}&sketch=components/button&variant=b`)).toMatchObject({ status: 200 });
     expect(await ask(shots, `${part}&sketch=components/button&variant=a`)).toMatchObject({ status: 200 });
     expect(await ask(shots, part)).toMatchObject({ status: 200 });
-    expect(goto.mock.calls.map(([url]) => new URL(url).search)).toEqual([
+    expect(drawnUrls().map((url) => new URL(url).search)).toEqual([
       '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=b',
       '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=a',
       '?product=acme&part=elements%2Fhero&state=default',
@@ -201,7 +204,7 @@ describe('createPartShooter', () => {
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 } });
-    expect(new URL(goto.mock.calls[0]?.[0] ?? '').searchParams.has('fit')).toBe(false);
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.has('fit')).toBe(false);
     expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
     expect(screenshot).not.toHaveBeenCalled();
   });
@@ -211,7 +214,7 @@ describe('createPartShooter', () => {
     const shot = await ask(shots, 'product=acme&part=components/card&state=long');
 
     expect(shot).toMatchObject({ status: 200, body: Buffer.from('fitted') });
-    expect(new URL(goto.mock.calls[0]?.[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
+    expect(new URL(drawnUrls()[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
     expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
     expect(screenshot).not.toHaveBeenCalled();
   });
@@ -223,9 +226,9 @@ describe('createPartShooter', () => {
     await ask(shots, 'product=acme&part=components/card&state=long&interaction=hover');
     await ask(shots, 'product=acme&part=components/card&state=long');
 
-    expect(newContext).toHaveBeenCalledTimes(2);
-    expect(new URL(goto.mock.calls[0]?.[0] ?? '').searchParams.get('interaction')).toBe('hover');
-    expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('interaction')).toBe(false);
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.get('interaction')).toBe('hover');
+    expect(new URL(drawnUrls()[1] ?? '').searchParams.has('interaction')).toBe(false);
   });
 
   it('draws the merged part with the state props of a sketch variant as a picture of its own', async () => {
@@ -244,11 +247,11 @@ describe('createPartShooter', () => {
     await shots.pictureOf({ ...address, props: { target: 'components/card', variant: 'a' } });
     await shots.pictureOf(address);
 
-    expect(newContext).toHaveBeenCalledTimes(2);
-    expect(new URL(goto.mock.calls[0]?.[0] ?? '').search).toBe(
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').search).toBe(
       '?product=acme&part=components%2Fcard&state=long&fit=&props=components%2Fcard&props-variant=a',
     );
-    expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('props')).toBe(false);
+    expect(new URL(drawnUrls()[1] ?? '').searchParams.has('props')).toBe(false);
   });
 
   it('draws a state again when pictureOf asks for a fresh picture', async () => {
@@ -268,7 +271,7 @@ describe('createPartShooter', () => {
     await shots.pictureOf(address);
     await shots.pictureOf({ ...address, fresh: true });
 
-    expect(newContext).toHaveBeenCalledTimes(2);
+    expect(drawnUrls()).toHaveLength(2);
   });
 
   it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
@@ -303,7 +306,7 @@ describe('createPartShooter', () => {
     release();
     await Promise.all(asked);
 
-    expect(goto.mock.calls.map(([url]) => new URL(url).searchParams.get('interaction'))).toEqual([
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
       ...busy,
       'hurried',
       'asked',
@@ -349,7 +352,7 @@ describe('createPartShooter', () => {
       expect(String(answer.body)).toContain('scale');
     }
 
-    expect(newContext).toHaveBeenCalledTimes(2);
+    expect(drawnUrls()).toHaveLength(2);
   });
 
   it('keeps one picture per preset, width and fit', async () => {
@@ -361,7 +364,7 @@ describe('createPartShooter', () => {
     await ask(shots, 'product=acme&part=components/card&state=long&width=480');
     await ask(shots, 'product=acme&part=components/card&state=long&width=280');
 
-    expect(newContext).toHaveBeenCalledTimes(3);
+    expect(drawnUrls()).toHaveLength(3);
   });
 
   it('accepts a preset with the width the preset has, and names both values in the 400 when they differ', async () => {
@@ -516,7 +519,7 @@ describe('createPartShooter for a call', () => {
 
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 } });
-    expect(goto.mock.calls[0]?.[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
+    expect(drawnUrls()[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
     expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
   });
 

@@ -22,6 +22,7 @@ import {
   ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
+import { createWarmPages } from './warm-pages';
 
 export const SHOT_PATH = '/__design/shot';
 
@@ -207,83 +208,80 @@ export const createPartShooter = (options: {
   const { system, statesOf } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
+  const warmPages = createWarmPages();
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
 
-  const draw = async (browser: Browser, frame: Frame): Promise<Picture> => {
-    const context = await browser.newContext({
-      viewport: viewportOf(frame.size),
-      ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
-    });
+  const draw = (browser: Browser, frame: Frame): Promise<Picture> =>
+    warmPages.run(
+      {
+        browser,
+        context: { viewport: viewportOf(frame.size), ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}) },
+      },
+      async (page) => {
+        await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
+        await page.evaluate(settled);
+        await page.evaluate(finished);
 
-    try {
-      const page = await context.newPage();
+        const overlay = page.locator('vite-error-overlay');
 
-      await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
-      await page.evaluate(settled);
-      await page.evaluate(finished);
+        if ((await overlay.count()) > 0) {
+          const message = await overlay
+            .locator('.message-body')
+            .innerText()
+            .catch(() => 'the overlay text is unreadable');
 
-      const overlay = page.locator('vite-error-overlay');
+          throw new ShotUnprocessableError(`design-explore: the frame has a build error\n${message.trim()}`);
+        }
 
-      if ((await overlay.count()) > 0) {
-        const message = await overlay
-          .locator('.message-body')
-          .innerText()
-          .catch(() => 'the overlay text is unreadable');
+        const marks: unknown = await page.evaluate(marksIn(frame.clip));
+        const root = page.locator('#root');
 
-        throw new ShotUnprocessableError(`design-explore: the frame has a build error\n${message.trim()}`);
-      }
+        if (frame.clip) {
+          const box = await root.boundingBox();
 
-      const marks: unknown = await page.evaluate(marksIn(frame.clip));
-      const root = page.locator('#root');
+          if (!box || box.width === 0 || box.height === 0)
+            throw new ShotUnprocessableError(
+              'design-explore: part root has zero size - give an element that fills its container a min-height',
+            );
+        }
 
-      if (frame.clip) {
-        const box = await root.boundingBox();
+        const origin = frame.crop && frame.clip ? await root.boundingBox() : null;
+        const crop = frame.crop && {
+          ...frame.crop,
+          x: frame.crop.x + (origin?.x ?? 0),
+          y: frame.crop.y + (origin?.y ?? 0),
+        };
+        const png = await (
+          crop
+            ? page.screenshot({ type: 'png', fullPage: true, clip: crop, timeout: DRAW_TIMEOUT_MS })
+            : frame.clip
+              ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
+              : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
+        ).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
 
-        if (!box || box.width === 0 || box.height === 0)
-          throw new ShotUnprocessableError(
-            'design-explore: part root has zero size - give an element that fills its container a min-height',
-          );
-      }
+          if (error instanceof Error && error.name === 'TimeoutError')
+            throw new ShotTimeoutError(
+              `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
+            );
 
-      const origin = frame.crop && frame.clip ? await root.boundingBox() : null;
-      const crop = frame.crop && {
-        ...frame.crop,
-        x: frame.crop.x + (origin?.x ?? 0),
-        y: frame.crop.y + (origin?.y ?? 0),
-      };
-      const png = await (
-        crop
-          ? page.screenshot({ type: 'png', fullPage: true, clip: crop, timeout: DRAW_TIMEOUT_MS })
-          : frame.clip
-            ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
-            : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
-      ).catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : String(error);
+          throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
+        });
 
-        if (error instanceof Error && error.name === 'TimeoutError')
-          throw new ShotTimeoutError(
-            `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
-          );
+        const failure: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-error')");
 
-        throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
-      });
+        if (typeof failure === 'string') throw new ShotFailedError(failure, png);
 
-      const failure: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-error')");
+        const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
 
-      if (typeof failure === 'string') throw new ShotFailedError(failure, png);
-
-      const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
-
-      return {
-        png,
-        marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
-        ...(typeof markup === 'string' ? { markup } : {}),
-      };
-    } finally {
-      await context.close();
-    }
-  };
+        return {
+          png,
+          marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
+          ...(typeof markup === 'string' ? { markup } : {}),
+        };
+      },
+    );
 
   const themeOf = (params: URLSearchParams) => ({
     surface: params.get('surface') ?? '',
