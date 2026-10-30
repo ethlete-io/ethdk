@@ -17,8 +17,16 @@ spec format of that repo), and `webkit-host-libs.sh`.
 A Playwright reporter. For each failed test, it appends one JSONL line at the time of the failure.
 The output path comes from `E2E_FAILURES_FILE`.
 
-- Line shape: `{ title, file, line, project, retry, error }`. `error` holds the first lines of the
-  error message. Fix the shape here, because slices 3 and 4 read it.
+- Line shape: keep the fifagg fields and add two. Fix the shape here, because slices 3 and 4 read it.
+  - `test`: the `titlePath()` without its first 3 parts, joined with `" > "`.
+  - `location`: `"<file>:<line>"`, relative to the repo root.
+  - `status`, `seconds`.
+  - `error`: the first 6 lines, ANSI codes removed, 700 characters maximum.
+  - `context`: the path of the `error-context` attachment, or `null`. In fifagg it is almost always
+    `null`. Keep it only if the live run shows a value.
+  - New: `project` (`test.parent.project()?.name`) and `retry` (`result.retry`).
+- Risk: Playwright can clear `outputDir` after `onBegin`, and this deletes a file written there. The
+  default path must be outside `outputDir`. Add a spec that checks this.
 - Home: a `@ethlete/cli/playwright` entry point. The consumer config uses
   `reporter: [['list'], ['@ethlete/cli/playwright/failure-reporter']]`.
   `@playwright/test` is an optional peer dependency.
