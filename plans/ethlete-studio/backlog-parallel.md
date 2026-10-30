@@ -220,10 +220,17 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
     `yarn sdk:tokens`.
   - Q53: the surface border stays decorative (light 1.26:1, dark 1.73:1). A control whose only boundary is a
     border gets its own 3:1 boundary in its component design, not via the surface border.
-- **In progress (ethlete-sdk-33, 2026-10-30):** round 2 on the `foundations/tokens` sketch (Q51 on-light
-  themes, Q52 value candidates through a generator override; the source themes change only after Tom's pick),
-  and the `components/select` sketch (controls, option states, trigger `active` as variants). Storybook is no
-  workspace package, so it needs no changeset.
+- **As built (ethlete-sdk-33, 2026-10-30):** Tom's merge of the token sheet committed (`d40af99ed`);
+  `yarn sdk:tokens:check` runs in CI and pre-push (`9f391f97b`). Sketch `foundations/tokens` "Contrast values"
+  d/e/f ready (`a4ef82110`): `generate-sdk-tokens.mjs --overrides <json>` adds extra themes and patches values,
+  default output unchanged. Sketch `components/select` "Select controls" a/b/c ready (`276187bd7`); exception
+  request withdrawn after Q56 (`fa2bbed44`). Verified: `sketch check`, `sketch preview`, `design complete
+  --variant` b and c pass. Not verified by eye: the select states, the tokens states other than contrast.
+- **Next (builder):** after Tom merges `foundations/tokens` e, move the e values and the three `*-on-light`
+  themes into `apps/storybook/src/themes.ts`/`surface-themes.ts` and the generator default set, regenerate the
+  Storybook CSS, then `yarn sdk:tokens:check` must pass against the merged CSS. After `data-et-control-part`
+  lands (ethlete-sdk-57), replace the select sketch's second `data-et-control` and fake `aria-disabled`. After
+  the Q54 helper lands, `foundations/colors`. Storybook is no workspace package, so it needs no changeset.
 
 ### Foundation sheet decisions (2026-10-30)
 
