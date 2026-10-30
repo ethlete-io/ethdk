@@ -9,6 +9,7 @@ import { flowProblemsOf } from './rules/flow';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
+import { inlineSvgsOf } from './rules/inline-svg';
 import { hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
@@ -38,6 +39,7 @@ const RULES = [
   kitOutsidePagesOf,
   flowProblemsOf,
   badSvgAssetsOf,
+  inlineSvgsOf,
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>

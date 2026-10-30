@@ -80,6 +80,11 @@ instead of the globally loaded token CSS.
 outside `foundations/` holds a literal duration, delay or easing, for example `120ms` or `ease`.
 Take them from a foundations token instead: `transition: opacity var(--duration-appear) var(--ease-standard)`.
 
+`et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
+folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a
+foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
+diagram, passes with a `data-et-drawing` attribute.
+
 Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS
 imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
 token definitions. Pixel comparisons for sketches use fresh rendering results on each request,
