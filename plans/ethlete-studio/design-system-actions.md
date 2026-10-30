@@ -817,6 +817,29 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   it: `sketch ready` fails when the picked variant's dependency closure keeps unused imports,
   styles or parameters.
 
+### Colour foundations and agent logos decisions (2026-10-30)
+
+From the builder's check of `foundations/colors` against SDK theming (comments d367, 8e02) and
+the agent logos sketch (comment 7257). Each change runs as its own sketch, in this order:
+dead copy, then one source plus the warning theme, then the missing states.
+
+- **One source:** the `foundations/colors` part is the source. `themes.ts` and
+  `surface-themes.ts` in `apps/ethlete-studio` are generated from it; the overrides in
+  `sdk-token-map.css` go away.
+- **Dead copy:** remove the copied generator output (about lines 1-420 of `colors.css`, with the
+  light blocks and `.et-color--warning`). The part keeps only real Studio tokens.
+- **Warning:** register a `WARNING_THEME` of type `warning` with the part's values.
+- **`--surface-sunken`:** no token below the surface system. Elevation 0 is the app background, so
+  the page background maps to elevation 0 and `--surface-sunken` stops being a separate level.
+- **Missing states:** add `--text-subtle`, `*-active` and `*-disabled` as part tokens; the part
+  shows them as states for accent, warning and danger.
+- **Studio-only tokens:** keep `--surface-pressed`, `--surface-shadow` and the `*-subtle` tokens,
+  labelled as Studio-only in the part.
+- **Agent logos:** Grok has no Simple Icons entry; look up xAI's official brand or press kit
+  online and take the SVG from there. Never draw it from memory; leave Grok out only if no
+  official source exists. Kimi in white, as Codex. Meta uses the "Meta AI" ring, not the Meta
+  infinity mark. Tom picks the generic mark in Studio.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
