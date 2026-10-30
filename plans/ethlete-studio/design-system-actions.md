@@ -245,6 +245,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   each round is stored in the sketch view state for the sketch's `createdAt`. A click on the
   whole-page thumbnail drafts at that page point, and a pin outside the crop sits on the
   thumbnail. Specs only, not seen rendered.
+- **Decision (Tom, 2026-10-30, crop size):** since 4.60 each change cluster has its own crop, and enlarging each
+  to the column width blurred small crops up to 33x. Keep the cap from `cbba0051d`: a crop is enlarged at most 2x
+  (`CROP_MAX_SCALE`) and keeps its own width; narrow crops leave empty space at the right. This replaces
+  "enlarged to the column width" above.
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 
