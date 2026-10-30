@@ -32,6 +32,7 @@ const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
 const WAKE_GRACE_MS = 1500;
+const DRAFT_RETRY_MS = 2000;
 const RESTART_AFTER_SECONDS = 5;
 const RESTART_CLEAR_MS = 2500;
 const repoSlug = basename(root).replace(/[.:]/g, '-');
@@ -91,6 +92,34 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+
+/**
+ * Reads the last prompt line (`❯` for Claude Code, `›` for Codex) of the pane. Dim text is the empty
+ * prompt's placeholder, so it does not count. A menu cursor (`❯ 1. Yes`) also counts, which keeps a
+ * wake-up line from answering a permission dialog.
+ */
+const hasDraft = (session) => {
+  const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
+  const prompt = pane
+    .split('\n')
+    .reverse()
+    .find((line) => /^\s*[❯›]/.test(line.replace(/\x1b\[[0-9;]*m/g, '')));
+  if (!prompt) return false;
+  let dim = false;
+  const visible = prompt
+    .split(/(\x1b\[[0-9;]*m)/)
+    .map((part) => {
+      const codes = part.match(/^\x1b\[([0-9;]*)m$/)?.[1].split(';');
+      if (!codes) return dim ? '' : part;
+      codes.forEach((code) => {
+        if (code === '2') dim = true;
+        if (code === '' || code === '0' || code === '22') dim = false;
+      });
+      return '';
+    })
+    .join('');
+  return visible.replace(/^\s*[❯›]/, '').trim().length > 0;
+};
 const isAttached = (name) => tmux('list-clients', '-t', `=${name}`).stdout.trim() !== '';
 const freeSessionFor = (agent) => {
   for (let number = 1; ; number++) {
@@ -292,11 +321,19 @@ if (command === 'send' && sender) {
   appendFileSync(mailbox, '');
   let seen = entries().length;
   const due = {};
+  const waiting = new Set();
   const wake = (agent) => {
     if (!unreadFor(agent).unread.length) return;
     const text = `New mailbox message for ${agent}. Run: ${inboxCommand(agent)}`;
     const session = [sessionFor(agent), agent].find(sessionExists);
     if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);
+    if (hasDraft(session)) {
+      if (!waiting.has(agent)) process.stdout.write(`Waiting for the typed text in ${session}.\n`);
+      waiting.add(agent);
+      due[agent] = Date.now() + DRAFT_RETRY_MS;
+      return;
+    }
+    waiting.delete(agent);
     spawnSync('tmux', ['send-keys', '-t', `=${session}:`, '-l', text]);
     sleep(ENTER_DELAY_MS);
     spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
