@@ -91,7 +91,8 @@ the model. They are no reference for correct behaviour: some of them are broken.
 
 ## Slices
 
-1. `motions`, the morph, `ctx` and the check rules.
+1. `motions`, the morph, `ctx` and the check rules. In progress (builder, 2026-10-30): 1a the `motions`
+   declaration and the static check rules; 1b the morph and `ctx`.
 2. Shots through the CLI and MCP.
 3. The keyframe strip and the timeline in Studio.
 4. `spring()` and `interrupt`.

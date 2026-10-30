@@ -532,7 +532,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (42). Known gaps: a parent-state selector over an SDK element is flagged; inline `style="..."` is not checked.
   Next: the one-page-per-commit move through sketches, then register the rule.
 
-### 4.54 A design cannot say that a change between states animates - open
+### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
 - **Pain (Tom, 2026-10-30):** a design draws each state as a still frame. Nothing says that a
   change between two states moves. Examples in Studio: the active bar in the rail could move
