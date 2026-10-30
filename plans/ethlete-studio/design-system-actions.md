@@ -494,6 +494,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **As built (2026-10-30):** `14c419a43`: when every shown variant is pixel-free and no state head is open,
   Studio drops the folded state heads; "Show all states" opens them, "Fold unchanged states" hides them. A sketch
   where only some variants are pixel-free keeps the grid. Spec failed on the old source. Not checked visually.
+- **Decision (Tom, 2026-10-30, mixed sketch):** also when only some variants are pixel-free, the folded state heads
+  go away until "Show all states"; the grid shows only the states that change in some variant. Open until built.
 
 ### 4.52 A pick in Studio shows only after a long delay - done
 
