@@ -684,7 +684,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   network panel of a headless run on an own server): render queue wait, page render, pixel diff,
   changed box. Compare with a small part to see if the time grows with the part count or the state count.
 
-### 4.63 Auto-merge ignores the parts that use the changed part - in progress (builder, 2026-10-30)
+### 4.63 Auto-merge ignores the parts that use the changed part - done
 
 - **Pain (2026-10-30):** the `foundations/colors` sketch that removed the copied generator output auto-merged
   as "no visible change", but it removed `.et-color--accent`, which the inherited sdk part `components/select`
@@ -695,6 +695,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Not part of this fix:** the select part itself. Tom: the sdk part is not usable as it is; it waits for the
   open plan to adopt the needed SDK components cleanly. Until then the `UNKNOWN-THEME` finding on
   `components/select` stays.
+- **As built (`693cd80cc`):** `sketchShowsNoChange` in `libs/cli/src/lib/design/system/sketch/no-visible-change.ts`
+  runs `compareMerge` after the target's own states show no change. It draws every state of each `affected` part
+  from the merge preview, with and without the variant. A change, or a part that fails to draw, stops at `ready`
+  and prints e.g. `auto-merge skipped: variant a changes pages/home default`. Spec bites (fails with the old
+  `return null`). Verified: unit specs, spec typecheck, `nx build cli`, lint. Not verified: a live run against a
+  render server. Affected parts draw only at the first width, as `compareMerge` does.
 
 ### 4.64 Shared helper code had to be a part - done
 
