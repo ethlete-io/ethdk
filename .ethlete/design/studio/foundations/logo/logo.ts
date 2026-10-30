@@ -40,8 +40,8 @@ const sidebar = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface 
 </div>`;
 
 export default definePart<{ view: View }>({
-  note: 'best',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  note: 'Pilot — ein eigenständiger Agentencharakter aus einer schrägen Feder- und Cursor-Silhouette. Zwei ausgesparte Augen geben dem Gestaltungswerkzeug Persönlichkeit; bewusst spielerischer.',
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   states: { sizes: { view: 'sizes' }, sidebar: { view: 'sidebar' } },
   render: ({ view }) => drawing({ body: view === 'sizes' ? sizes : sidebar }),
 });
