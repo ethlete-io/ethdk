@@ -472,9 +472,36 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   1, `components/button` 2. Fixing `components/button` and `elements/shell-main` clears most page gaps.
 - **Next:** the per-page inventory contact sheet with approval in Studio, then the other kinds (`button`,
   `row`, `select`, ...), so `components/button` and the shell can declare their controls.
-- **In progress:** the other control kinds in `design complete`: `button` (`active`), `select` and `menu`
-  (open surface, option hover, focus, selected), `row` (selected, selected-hover), `tooltip` (visible
-  surface), `disabled` when declared, SDK reuse if the SDK parts allow it.
+- **Status:** control kinds built (`db90334c2`). `button` adds `active`; `select` and `menu` need
+  `surfaces.open` drawn visible, with an option in it (`role="option"`, `role="menuitem*"`, `data-et-option`)
+  forced hover and focus-visible and one selected with its own look; `row` needs a selected look and a forced
+  hover while selected; `tooltip` needs `surfaces.tooltip` visible next to the control; `disabled: true`
+  needs a disabled look (`disabled`/`aria-disabled`). Selected is `aria-selected|checked|pressed="true"` or
+  `aria-current`; a look is the computed colours, opacity, shadow and weight of the element and its
+  descendants, compared only on unforced instances. With `part`, interactions, looks and option states come
+  from the part, surfaces stay on the host, so a closed select never counts as open. Options in a surface
+  belong to its control in discovery. Fixed on the way: a base part (`components/button` in studio) read its
+  review from the product's `merged.json` and failed `PART-UNREVIEWED`; it now reads the base's.
+  Inherited coverage via `sdk: 'et-select'` is not built: the SDK base parts (`components/select`,
+  `components/button`, `components/form-field`) declare no `controls` and draw no option matrix, so the
+  existing `part: 'components/select'` is the reuse path today and fails until that part declares its options.
+  Bites: each kind fails its spec when its rule is removed (button `adds`, row `selects`, `disabled`, select
+  `options`, tooltip kind, `own` guard on options, unforced-look filter, option discovery, ARIA selected
+  detection, base review). Verified: design vitest 751/752 (one `changed-parts` load flake, passes alone),
+  tsc spec (only the motion agent's `motion-shot.spec.ts` errors), build, eslint, prettier.
+  Findings (`.ethlete/design/studio`, unchanged): `components/button` 2 -> 1 (`PART-UNREVIEWED` gone; its
+  `button` undeclared: needs `kind: 'button'`, pointer+keyboard, grid columns hover/active/focus-visible,
+  `disabled: true` since it draws disabled). `elements/shell-main` 4: project trigger as `menu` with
+  `surfaces.open: 'project-picker'` and the picker list marked `project.open` (clears the 3 `role="option"`
+  rows; then option hover, focus, selected), collapse button and picker action as `button` or
+  `part: 'components/button'`. `components/tree-row` 1: `div.st-trow[tabindex]` as `row` (it already draws
+  selected, selected-hover, active, focus-visible in its grid). `components/comment-pin` 1: its `button` as
+  `button` (initials hover/active states exist; needs focus-visible and grid). `pages/merge` 5: changed-list
+  `li` rows unclassified (need a row part and `part`), `components/button` and `elements/shell-main`
+  incomplete, two `.mg-shot` overrides.
+- **Next:** the per-page inventory contact sheet with approval in Studio; sketches for `components/button`
+  and `elements/shell-main` that declare their controls with these kinds; then `controls` on the SDK
+  base parts (select options) for inherited coverage, exceptions, and the `handoff` status with CI.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
