@@ -1415,13 +1415,16 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   stream E: the group regex in `foundations/colors/colors.ts` and `components.themes.color` in
   `.ethlete/design/config.json`. The checked-in themes are already stale against the part (`--check`).
 
-### 5.55 `embedPage` cannot mark or restyle inside the embedded page - open
+### 5.55 `embedPage` cannot mark or restyle inside the embedded page - built (144f3e6fc)
 
 - **Pain:** `pages/merge` variant a (round "No page import") embeds `pages/system`. The merge CSS
   cannot reach into the iframe, so the button loses its accent ring, and the "After merging" side
   cannot show the new look. Only the 200 % crop still shows the change.
 - **Fix option:** an `embedPage` option, for example `{ mark: '.et-button', css: '...' }`, that the
   embedded frame applies inside itself.
+- **As built:** `embedPage(page, { mark, css })` puts both on the iframe; the embedded frame reads them from
+  `frameElement` on each content change, gives every `mark` match `data-et-embed-marked` and an accent outline,
+  and adds `css` once as a stylesheet. Spec: `embed-page.spec.ts`. Not driven in a real frame yet.
 
 ### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - open
 
