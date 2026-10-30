@@ -391,13 +391,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   should require `active` as well as `hover`.
 - **Status:** `pointer` requires `hover` and `active` (`INPUT_INTERACTIONS` in
   `libs/cli/src/lib/design/system/complete.ts`). `components/disclosure` fails until step 2.
-- **In progress (next steps, in order):** 2. the sketch `components/disclosure` r1 (active: a
-  text tint, b 60 % opacity, c accent) is ready for Tom's pick. 3. after Tom merges: `pages/merge` uses
-  `components/disclosure` for the unchanged line, declares
-  `toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } }`,
-  drops `unchanged-hover` and `unchanged-focus` and the `.mg-unchanged*` rules (keep the
-  `.mg-c-panel` size override as a page rule on `.st-disclosure`), with no pixel change; Tom
-  accepts it. Next: discovery
+- **Status:** `components/disclosure` d merged (`31a6708e1`): full width, `active` tint, grid of
+  `rest` and `open` by hover, active and focus-visible.
+- **In progress (next steps, in order):** 3. sketch `pages/merge` r1 a is ready for Tom: the
+  unchanged line is `components/disclosure` at a new `size: 'xs'`, control `toggle` with `part`,
+  `unchanged-hover` and `unchanged-focus` dropped, `.mg-unchanged*` gone. After the merge, run
+  `design complete pages/merge`. Next: discovery
   (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
