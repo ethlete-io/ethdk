@@ -3,13 +3,22 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
+import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
 import { utilityCssOf } from './utility-css';
 
-const acme = () => {
+const plainAcme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
 
   cpSync(join(__dirname, '../__fixtures__'), target, { recursive: true });
+
+  return target;
+};
+
+const acme = () => {
+  const target = plainAcme();
+
+  withStyles(target, '');
 
   return target;
 };
@@ -120,6 +129,26 @@ describe('utilityCssOf', () => {
     );
 
     expect(messagesOf(target)).toEqual([]);
+  });
+
+  it('passes a product whose stylesheets import no Tailwind', () => {
+    const target = plainAcme();
+
+    write(target, 'acme/elements/hero/hero.css', '.acme-hero { display: flex; }');
+
+    expect(messagesOf(target)).toEqual([]);
+  });
+
+  it('runs as part of design check', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.css', '.acme-hero { display: flex; }');
+
+    expect(
+      ruleProblemsOf(
+        resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
+      ).filter((problem) => problem.rule === 'UTILITY-CSS').length,
+    ).toBe(1);
   });
 
   it('leaves rules alone whose selectors all end on an SDK element', () => {

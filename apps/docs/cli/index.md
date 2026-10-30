@@ -120,6 +120,11 @@ diagram, passes with a `data-et-drawing` attribute.
 its folder, has a canonical form under the product's stylesheets, as Tailwind IntelliSense reports it:
 with a 10px rem base, write `w-2xl` instead of `w-[420px]`.
 
+`et design check` fails with `UTILITY-CSS` when the CSS of a part outside `foundations/` holds a
+declaration that a Tailwind utility of the product draws: a layout keyword such as `display: flex`, or
+the value of a token that a `@theme` block registers. Put the utility in the markup. A rule whose
+selectors all end on an SDK `.et-*` element passes. A product whose stylesheets import no `tailwindcss` is not checked.
+
 `et design check` fails with `CONTRAST` when a text in a drawn state is below WCAG 2 AA against its
 drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for large text (24px, or
 18.66px bold). Text inside a disabled control, or in the label of one, is exempt: a `<label for>` or wrapping label, or an `aria-labelledby` target. A part lists token pairs to compute in

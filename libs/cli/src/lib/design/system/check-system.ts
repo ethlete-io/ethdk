@@ -19,6 +19,7 @@ import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
+import { utilityCssOf } from './rules/utility-css';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
@@ -43,6 +44,7 @@ const RULES = [
   badSvgAssetsOf,
   inlineSvgsOf,
   canonicalClassesOf,
+  utilityCssOf,
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>

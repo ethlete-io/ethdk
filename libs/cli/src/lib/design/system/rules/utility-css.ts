@@ -128,18 +128,20 @@ const NAMESPACES: [prefix: string, properties: string[]][] = [
   ['--shadow-', ['box-shadow']],
 ];
 
-type Utilities = { values: Map<string, Set<string>>; spacingScale: boolean };
+type Utilities = { values: Map<string, Set<string>>; spacingScale: boolean; tailwind: boolean };
 
 const stylesheetImportsOf = (file: string, css: string) => {
   const files: string[] = [];
+  let tailwind = false;
 
   postcss.parse(css).walkAtRules('import', (rule) => {
     const specifier = /^(?:url\(\s*)?['"]?([^'"\s)]+)/u.exec(rule.params.trim())?.[1];
 
     if (specifier?.startsWith('.')) files.push(resolve(dirname(file), specifier));
+    if (specifier === 'tailwindcss' || specifier?.startsWith('tailwindcss/')) tailwind = true;
   });
 
-  return files;
+  return { files, tailwind };
 };
 
 const themeDeclarationsOf = (sources: ProductSource[]) => {
@@ -147,6 +149,7 @@ const themeDeclarationsOf = (sources: ProductSource[]) => {
   const queue = sources.flatMap((source) => (source.config.styles ?? []).map((style) => resolve(root(source), style)));
   const seen = new Set<string>();
   const declarations: [name: string, value: string][] = [];
+  let tailwind = false;
 
   for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
     if (seen.has(file) || !existsSync(file)) continue;
@@ -155,7 +158,10 @@ const themeDeclarationsOf = (sources: ProductSource[]) => {
     const css = readFileSync(file, 'utf8');
 
     try {
-      queue.push(...stylesheetImportsOf(file, css));
+      const imports = stylesheetImportsOf(file, css);
+
+      queue.push(...imports.files);
+      tailwind ||= imports.tailwind;
       postcss.parse(css).walkAtRules('theme', (rule) =>
         rule.walkDecls((declaration) => {
           declarations.push([declaration.prop, declaration.value.trim()]);
@@ -166,18 +172,19 @@ const themeDeclarationsOf = (sources: ProductSource[]) => {
     }
   }
 
-  return declarations;
+  return { declarations, tailwind };
 };
 
 const utilitiesOf = (product: ResolvedProduct): Utilities => {
   const values = new Map<string, Set<string>>();
   let spacingScale = false;
+  const { declarations, tailwind } = themeDeclarationsOf([product, ...(product.base ? [product.base] : [])]);
 
   const add = (properties: string[], value: string) => {
     for (const property of properties) values.set(property, (values.get(property) ?? new Set()).add(value));
   };
 
-  for (const [name, value] of themeDeclarationsOf([product, ...(product.base ? [product.base] : [])])) {
+  for (const [name, value] of declarations) {
     if (name === '--spacing') spacingScale = true;
 
     const namespace = NAMESPACES.find(([prefix]) => name.startsWith(prefix));
@@ -190,7 +197,7 @@ const utilitiesOf = (product: ResolvedProduct): Utilities => {
     if (/^var\(--[\w-]+\)$/u.test(value)) add(namespace[1], value);
   }
 
-  return { values, spacingScale };
+  return { values, spacingScale, tailwind };
 };
 
 const topLevelPartsOf = (value: string) => {
@@ -282,10 +289,14 @@ const sourceFilesIn = (dir: string) =>
  * A declaration that a Tailwind utility of the product draws, in a CSS file below the folder of a part outside
  * foundations or in the CSS of a TS file there: a core layout keyword such as `display: flex`, or a value of a
  * spacing, colour, type, radius or shadow token that a `@theme` block of the product's stylesheets registers. A rule
- * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there.
+ * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there. A product
+ * whose stylesheets import no `tailwindcss` has no utilities, so nothing is flagged.
  */
 export const utilityCssOf = (product: ResolvedProduct): Problem[] => {
   const utilities = utilitiesOf(product);
+
+  if (!utilities.tailwind) return [];
+
   const files = new Set(
     product.parts.filter((part) => part.layer !== 'foundations').flatMap((part) => sourceFilesIn(dirname(part.file))),
   );

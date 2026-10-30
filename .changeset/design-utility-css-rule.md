@@ -1,5 +1,5 @@
 ---
-'@ethlete/cli': none
+'@ethlete/cli': minor
 ---
 
-Add the UTILITY-CSS design rule, not yet registered, that flags a part declaration a Tailwind utility of the product draws.
+`et design check` now fails with `UTILITY-CSS` when a design part's CSS holds a declaration that a Tailwind utility of the product draws, for example `display: flex`.
