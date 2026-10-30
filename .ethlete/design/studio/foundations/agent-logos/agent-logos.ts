@@ -11,7 +11,6 @@ import kimi from '@assets/agent-kimi.svg?raw';
 import meta from '@assets/agent-meta.svg?raw';
 import mistral from '@assets/agent-mistral.svg?raw';
 import qwen from '@assets/agent-qwen.svg?raw';
-import styles from './agent-logos.css?inline';
 
 export type Agent =
   | 'claude'
@@ -63,18 +62,26 @@ export const agentLogo = (agent: Agent, cls = '') =>
 
 type View = 'hosts' | 'detail';
 
-const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
+const surfaces = [
+  { name: 'surface', cls: 'bg-surface' },
+  { name: 'surface-raised', cls: 'bg-surface-raised' },
+  { name: 'surface-overlay', cls: 'bg-surface-overlay' },
+];
 
-const hosts = html`<div class="al-root">
-  <h2 class="al-title">Agent logos at 1.2rem, as the inbox, the sketches page and the comment pin draw them</h2>
-  <div class="al-grid">
+const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+  <h2 class="m-0 text-ui-xl font-ui-strong">
+    Agent logos at 1.2rem, as the inbox, the sketches page and the comment pin draw them
+  </h2>
+  <div class="grid grid-cols-[repeat(2,max-content)] gap-space-3">
     ${surfaces
       .map(
         (surface) =>
-          html`<div class="al-surface" style="background: var(--${surface})">
-            <span class="al-label">--${surface}</span>
-            <div class="al-row">
-              ${agents.map((agent) => html`<span class="al-chip">${agentLogo(agent, 'al-logo')}${agent}</span>`).join('')}
+          html`<div
+            class="flex flex-col gap-space-2 px-space-4 py-space-3 border border-surface-border rounded-control-md ${surface.cls}"
+          >
+            <span class="font-code text-ui-xs text-text-muted">--${surface.name}</span>
+            <div class="flex items-center gap-space-4">
+              ${agents.map((agent) => html`<span class="inline-flex items-center gap-space-1 text-ui-sm">${agentLogo(agent, 'shrink-0 size-3')}${agent}</span>`).join('')}
             </div>
           </div>`,
       )
@@ -82,14 +89,14 @@ const hosts = html`<div class="al-root">
   </div>
 </div>`;
 
-const detail = html`<div class="al-root">
-  <h2 class="al-title">Agent logos at 3.2rem</h2>
-  <div class="al-row al-row--wide">
+const detail = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+  <h2 class="m-0 text-ui-xl font-ui-strong">Agent logos at 3.2rem</h2>
+  <div class="flex items-center gap-space-7">
     ${agents
       .map(
         (agent) =>
-          html`<div class="al-size">
-            ${agentLogo(agent, 'al-logo al-logo--large')}<span class="al-label">${agent}</span>
+          html`<div class="flex flex-col items-center gap-space-2">
+            ${agentLogo(agent, 'shrink-0 size-8')}<span class="font-code text-ui-xs text-text-muted">${agent}</span>
           </div>`,
       )
       .join('')}
@@ -100,5 +107,5 @@ export default definePart<{ view: View }>({
   note: 'The agent logos as SVG assets with one named export; generic stands for a provider without its own mark',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { hosts: { view: 'hosts' }, detail: { view: 'detail' } },
-  render: ({ view }) => drawing({ body: view === 'hosts' ? hosts : detail, styles }),
+  render: ({ view }) => drawing({ body: view === 'hosts' ? hosts : detail }),
 });
