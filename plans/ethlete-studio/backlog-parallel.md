@@ -13,7 +13,7 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
 - Tom merged `foundations/colors` r2 and `elements/canvas-frames` + `pages/sketches` r1 (`b47bae5e9`). Q43 (zoom
   chip as its own part `elements/zoom-chip`) is now a new sketch on the merged parts - in progress.
-- In progress (2026-10-30): 4.85 frame import retry (opus), fifagg backdrop close during enter (opus, `libs/cdk`).
+- In progress (2026-10-30): fifagg backdrop close during enter (opus, `libs/cdk`).
 - B done: `et design mcp` (`90724234f`), `/__design/motion` (`dacf9bd64`). E done: 5.52, 5.55, 5.56. G slice 5 done
   (`a0ba7dd81`). A: 5.60 done (`0652fc1df`).
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
@@ -121,6 +121,10 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
   exports of `elements/canvas-frames` (layout pieces without states). Redo r1 (b907cf29d) before Tom merges.
 
 ## New finding 4.85 (Tom, 2026-10-30): a failed module import stays in the frame
+
+- **Built (`91b224b61`):** `frame.ts` retries a failed part import after 300 ms and 1.5 s and shows the error only
+  when all three tries fail. Chromium 156 fetches a failed module URL again (checked). Two specs in
+  `frame-bootstrap.spec.ts` bite; its fixture got the missing `applyEmbed`. Not reproduced live in Studio.
 
 - **Pain (screenshot):** on `components/tree-row` most state frames show `design-explore: state "<state>" of
 "components/tree-row" failed / Failed to fetch dynamically imported module:
