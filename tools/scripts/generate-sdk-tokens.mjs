@@ -12,14 +12,49 @@ const optionOf = (name) => {
 };
 const file = resolve(root, optionOf('--out') ?? '.ethlete/design/sdk/foundations/tokens/tokens.css');
 const check = process.argv.includes('--check');
+const overridesFile = optionOf('--overrides');
+const overrides = overridesFile ? JSON.parse(readFileSync(resolve(root, overridesFile), 'utf8')) : {};
 
 const jiti = createJiti(import.meta.url, { interopDefault: true });
 const { themeCss } = await jiti.import(join(root, 'libs/core/design/theme-css.ts'));
-const { BRAND_THEME, DANGER_THEME, WARNING_THEME } = await jiti.import(join(root, 'apps/storybook/src/themes.ts'));
+const { BRAND_THEME, DANGER_THEME, WARNING_THEME, THEMES } = await jiti.import(
+  join(root, 'apps/storybook/src/themes.ts'),
+);
 const { LIGHT_SURFACE, DARK_SURFACE } = await jiti.import(join(root, 'apps/storybook/src/surface-themes.ts'));
 
-const surfaceThemes = [LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...theme, isDefault: true }));
-const colorThemes = [BRAND_THEME, DANGER_THEME, WARNING_THEME];
+const themeNamed = (name) => {
+  const theme = THEMES.find((candidate) => candidate.name === name);
+
+  if (!theme) throw new Error(`Unknown colour theme in ${overridesFile}: ${name}`);
+
+  return theme;
+};
+
+const withValues = (theme) => {
+  const values = structuredClone(theme);
+
+  for (const [path, value] of Object.entries(overrides.values?.[theme.name] ?? {})) {
+    const keys = path.split('.');
+    const parent = keys.slice(0, -1).reduce((node, key) => (node[key] ??= {}), values);
+
+    parent[keys.at(-1)] = value;
+  }
+
+  return values;
+};
+
+const surfaceThemes = [LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: true }));
+const colorThemes = [
+  BRAND_THEME,
+  DANGER_THEME,
+  WARNING_THEME,
+  ...(overrides.extraColorThemes ?? []).map(themeNamed),
+].map(withValues);
+const unknownTargets = Object.keys(overrides.values ?? {}).filter(
+  (name) => ![...surfaceThemes, ...colorThemes].some((theme) => theme.name === name),
+);
+
+if (unknownTargets.length) throw new Error(`Overrides name themes outside the set: ${unknownTargets.join(', ')}`);
 
 const SHADOW_COLOR = { light: '23 23 23', dark: '0 0 0' };
 

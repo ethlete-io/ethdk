@@ -1,0 +1,11 @@
+{
+  "extraColorThemes": ["brand-on-light", "danger-on-light", "warning-on-light"],
+  "values": {
+    "danger": { "primary.color.hover": "220 54 54", "primary.color.focus": "220 54 54" },
+    "danger-on-light": { "primary.color.hover": "220 54 54", "primary.color.focus": "220 54 54" },
+    "warning": { "primary.color.active": "197 103 10" },
+    "warning-on-light": { "primary.color.active": "197 103 10" },
+    "light": { "colorSubtle": "118 118 118" },
+    "dark": { "colorSubtle": "128 128 128" }
+  }
+}

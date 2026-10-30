@@ -1,0 +1,36 @@
+{
+  "target": "foundations/tokens",
+  "status": "ready",
+  "createdAt": "2026-10-30T22:32:10.134Z",
+  "baseline": {
+    "foundations/tokens": "67c964a1f59e8dc3",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "126362df5518a865",
+    "components/select": "164af4eccf857227",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Contrast values",
+      "note": "Q51 adds the on-light themes for ink on a light surface; Q52 draws three value strategies for the three AA fails, ratios measured per pair"
+    }
+  ],
+  "variantInfo": {
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Minimal: just reach 4.5:1. danger hover/focus fill 220 54 54 (4.54:1), warning active fill 197 103 10 (4.54:1), subtle light 118 118 118 (4.54:1), dark 128 128 128 (4.54:1). Cost: danger hover barely differs from rest."
+    },
+    "e": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Clearer step: danger hover/focus 185 28 28 (6.47:1) and active 153 27 27 (8.31:1), so hover darkens; warning active 251 191 36 (10.74:1), press lightens; subtle light 112 112 112 (4.95:1), dark 135 135 135 (4.99:1). Cost: dark subtle closer to muted (6.94:1)."
+    },
+    "f": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Change the ink, not the fill: danger hover/focus on-primary 23 23 23 (4.76:1), warning active on-primary 255 255 255 (5.02:1); subtle light 118 (4.54:1), dark 128 (4.54:1) with muted raised to 64 64 64 (10.37:1) and 200 200 200 (10.72:1) to keep the step. Cost: label colour flips on interaction."
+    }
+  }
+}
