@@ -583,6 +583,23 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `:hover` in drawn frames, so only `data-et-force` draws an interaction. Add a spec with a
   full-width control that bites.
 
+### 4.58 Controls change state without a transition - open
+
+- **Pain (Tom, 2026-10-30):** "einfache transitions fehlen. zb beim disclosure". The hover and
+  active fill of `components/disclosure` and `components/tree-row` switch in one frame.
+- **Cause:** Studio has no motion tokens. The only transition in a merged part is the disclosure
+  chevron (`transition: rotate 120ms`). `design complete` checks forced frames as stills, and its
+  frames turn off all motion (`NO_MOTION`), so nothing asks for a transition.
+- **Not 4.54:** 4.54 is about a layout change between two states (FLIP, a sidebar that opens).
+  This finding is about the fade of an interaction state on the same control.
+- **Fix options:** 1. a `foundations/motion` part with duration and easing tokens (a plain fade,
+  no scale or slide), and `design complete` fails a control whose interaction states change its
+  colour while its computed `transition-duration` is 0 (recommended). 2. only the tokens and a
+  rule in the design-exploration skill. A rule can be skipped, as in 4.56.
+- **Open for Tom:** the duration (proposal: `120ms ease` on background, color, border-color and
+  box-shadow, as `libs/components/src/lib/button/button.component.css`) and whether the disclosure
+  body fades in when it opens (proposal: no, a body fade is a 4.54 transition).
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
