@@ -102,19 +102,28 @@ one in its markup with `data-et-control="<id>"`, and each surface with
 `data-et-surface="<id>.<surface>"`:
 
 ```ts
+const { states, grid } = interactionRows(
+  { rest: { open: false }, open: { open: true } },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
+
 export default definePart({
   note: 'Describe this part.',
-  states: { rest: {}, hovered: {}, pressed: {}, focused: {}, open: {} },
+  states,
+  grid,
   controls: {
     unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } },
   },
-  render: () => drawing({ body: html`…` }),
+  render: ({ open, interaction }) => drawing({ body: html`…` }),
 });
 ```
 
-`pointer` input needs a state that forces `hover` and one that forces `active` on the control, and
-`keyboard` input one that forces `focus-visible`, for example with `forceInteraction`. Each forced
-frame must draw different pixels in the control's box than the same frame at rest. A `disclosure` also needs a state that
+`pointer` input needs `hover` and `active`, and `keyboard` input needs `focus-visible`. The part
+draws them with `interactionRows`: its `grid` needs a column for each of them, and every row
+needs a state in each of those columns, so the open row is drawn hovered too. Flat states such as
+`hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
+interaction on the control, for example with `forceInteraction`, and draw different pixels in
+the control's box than the same frame at rest. A `disclosure` also needs a state that
 draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
 A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
 hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.
@@ -130,7 +139,7 @@ controls: {
 ```
 
 Only the `disclosure` kind is checked so far. A part that declares no `controls` fails with
-`CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-UNDRAWN`,
+`CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
 `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run
 it, so a partial round stays reviewable.

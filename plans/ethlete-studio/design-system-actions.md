@@ -401,7 +401,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `rest` and `open` by hover, active and focus-visible.
 - **Status:** `pages/merge` merged (`7441190de`): the unchanged line is `components/disclosure`
   at `size: 'xs'`, control `toggle` with `part`. Both parts pass `design complete`.
-- **Next:** 4.56 (a control needs an interaction grid), then discovery (`CONTROL-UNDECLARED`,
+- **Next:** discovery (`CONTROL-UNDECLARED`,
   `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
@@ -550,7 +550,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decision (Tom, 2026-10-30):** this fix. No design question left.
 - **Status:** fixed - `completeComment` checks the merged part only for a comment outside a sketch variant.
 
-### 4.56 An interactive component draws its interactions as flat states, not as a grid - open
+### 4.56 An interactive component draws its interactions as flat states, not as a grid - fixed
+
+- **Status:** fixed - `design complete` fails a control that draws its own interactions with
+  `CONTROL-GRID-MISSING` when its part has no grid column per required interaction, or a grid row
+  without a state in one; the docs example uses `interactionRows`.
 
 - **Pain (Tom, 2026-10-30):** "wieso nutzt du nicht den grid view wie wir ihn schon bei comment
   pin etc nutzen? das darf nicht vorkommen". `components/disclosure` drew `rest`, `hover`,
@@ -581,12 +585,13 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 ## 5. Drawing parts and pages
 
-### 5.21 A sketch cannot draw another part at a sketch variant - open
+### 5.21 A sketch cannot draw another part at a sketch variant - parked
 
 - **Pain:** the merge page needs `components/button` "after merging b". The agent faked the after
   frames with a CSS override of the radius.
 - **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
   Studio itself need it.
+- **Decision (Tom, 2026-10-30):** parked. Do not build it until a second case needs it.
 
 ### 5.23 The SDK hover token draws light on Studio's dark frames - open
 
@@ -638,12 +643,6 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `shared/`.
 - **Fix option:** a sketch on `elements/canvas-frames` that exports frame head, frame box and zoom
   chip as named parts.
-
-### 5.34 `StateGrid` has no row groups - open
-
-- **Pain:** variant c of "Many states" groups rows ("States by interaction", "Rest only") by
-  inference; a grouping by kind and end mark cannot be declared.
-- **Fix option:** optional `groups` on `StateGrid`, only if Tom picks a grouped look.
 
 Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.30 (shot path).
 
@@ -894,6 +893,7 @@ section without a page.
 - **Stopped at Tom's request:** "no more new sketches for you" / "wrap it up". Corrective C
   exists with an author check but remains unmerged and not ready. No further sketch work,
   publication or automatic continuation is authorized. The committed L design stays as is.
+  Lifted (Tom, 2026-10-30): the stop held only for that evening.
 
 ## 7. Open checks
 

@@ -22,12 +22,32 @@ const body = '<div data-et-surface="more.body">The rest</div>';
 const DISCLOSURE =
   "controls: { more: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } } },";
 
+const GRID =
+  "grid: { columns: ['rest', 'hover', 'active', 'focus-visible'], rows: { rest: { rest: 'rest', hover: 'hovered', active: 'pressed', 'focus-visible': 'focused' }, open: { rest: 'open', hover: 'open-hovered', active: 'open-pressed', 'focus-visible': 'open-focused' } } },";
+
+const openRow = (attributes = '') => ({
+  'open-hovered': `<div>${toggle(`${attributes} data-et-force="hover"`)}${body}</div>`,
+  'open-pressed': `<div>${toggle(`${attributes} data-et-force="active"`)}${body}</div>`,
+  'open-focused': `<div>${toggle(`${attributes} data-et-force="focus-visible"`)}${body}</div>`,
+});
+
 const PARTS: Record<string, { states: Record<string, string>; extra?: string }> = {
   'pages/merge': {
     states: { open: `<main>${toggle()}</main>` },
     extra: DISCLOSURE,
   },
   'components/done': {
+    states: {
+      rest: `<div>${toggle()}</div>`,
+      hovered: `<div>${toggle(' data-et-force="hover"')}</div>`,
+      focused: `<div>${toggle(' data-et-force="focus-visible"')}</div>`,
+      pressed: `<div>${toggle(' data-et-force="active"')}</div>`,
+      open: `<div>${toggle()}${body}</div>`,
+      ...openRow(),
+    },
+    extra: `${DISCLOSURE} ${GRID}`,
+  },
+  'components/flat-done': {
     states: {
       rest: `<div>${toggle()}</div>`,
       hovered: `<div>${toggle(' data-et-force="hover"')}</div>`,
@@ -63,8 +83,9 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
       focused: `<div>${toggle(`${CORNER} data-et-force="focus-visible"`)}</div>`,
       pressed: `<div>${toggle(`${CORNER} data-et-force="active"`)}</div>`,
       open: `<div>${toggle(CORNER)}${body}</div>`,
+      ...openRow(CORNER),
     },
-    extra: DISCLOSURE,
+    extra: `${DISCLOSURE} ${GRID}`,
   },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
   'pages/uses': {
@@ -135,6 +156,15 @@ const frame = (state: string, seen: Partial<SeenFrame> = {}): SeenFrame => ({
 
 const DECLARED = { more: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } } };
 
+const STATES = ['rest', 'hovered', 'pressed', 'focused', 'open', 'open-hovered', 'open-pressed', 'open-focused'];
+
+const ROWS = {
+  rest: { rest: 'rest', hover: 'hovered', active: 'pressed', 'focus-visible': 'focused' },
+  open: { rest: 'open', hover: 'open-hovered', active: 'open-pressed', 'focus-visible': 'open-focused' },
+};
+
+const COLUMNS = ['rest', 'hover', 'active', 'focus-visible'];
+
 describe('completenessGapsOf', () => {
   it('fails a part that declares no controls', () => {
     expect(
@@ -161,20 +191,51 @@ describe('completenessGapsOf', () => {
       completenessGapsOf({
         part: 'components/a',
         controls: DECLARED,
-        states: ['rest', 'open'],
+        states: STATES,
         frames,
         reviewed: true,
+        grid: { columns: COLUMNS, rows: ROWS },
       }),
     ).toEqual([]);
     expect(
       completenessGapsOf({
         part: 'components/a',
         controls: DECLARED,
-        states: ['rest', 'open'],
+        states: STATES,
         frames,
         reviewed: false,
+        grid: { columns: COLUMNS, rows: ROWS },
       }).map((gap) => gap.code),
     ).toEqual(['PART-UNREVIEWED']);
+  });
+
+  it('fails a control whose interactions are flat states, a grid without their columns, or a row without them', () => {
+    const frames = [
+      frame('rest'),
+      frame('hovered', { controls: [{ id: 'more', forced: [{ interaction: 'hover', differs: true }] }] }),
+      frame('pressed', { controls: [{ id: 'more', forced: [{ interaction: 'active', differs: true }] }] }),
+      frame('focused', { controls: [{ id: 'more', forced: [{ interaction: 'focus-visible', differs: true }] }] }),
+      frame('open', { surfaces: [{ id: 'more.body', shown: true }] }),
+    ];
+    const gapsOf = (grid: unknown) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: DECLARED,
+        states: STATES,
+        frames,
+        reviewed: true,
+        grid,
+      }).map(completenessGapLineOf);
+
+    expect(gapsOf(undefined)).toEqual([
+      'CONTROL-GRID-MISSING components/a.more - the part has no grid - draw its states with interactionRows, which gives the grid a column per interaction (hover, active, focus-visible)',
+    ]);
+    expect(gapsOf({ columns: ['rest', 'hover'], rows: ROWS })).toEqual([
+      'CONTROL-GRID-MISSING components/a.more - its grid has no column active, focus-visible - draw its states with interactionRows, which gives the grid a column per interaction (hover, active, focus-visible)',
+    ]);
+    expect(gapsOf({ columns: COLUMNS, rows: { rest: ROWS.rest, open: { rest: 'open', hover: 'gone' } } })).toEqual([
+      'CONTROL-GRID-MISSING components/a.more - its grid draws no state in open hover, open active, open focus-visible - draw its states with interactionRows, which gives the grid a column per interaction (hover, active, focus-visible)',
+    ]);
   });
 
   it('fails a stale declaration, an undrawn control and an unknown marker', () => {
@@ -204,6 +265,7 @@ describe('completenessGapsOf', () => {
     expect(gaps.map((gap) => `${gap.code} ${gap.target}`)).toEqual([
       'CONTROL-UNKNOWN components/a.stray',
       'CONTROL-UNKNOWN components/a.more',
+      'CONTROL-GRID-MISSING components/a.more',
       'REQUIREMENT-MISSING components/a.more.hover',
       'REQUIREMENT-MISSING components/a.more.active',
       'REQUIREMENT-MISSING components/a.more.focus-visible',
@@ -268,9 +330,16 @@ describe('completenessOf', () => {
     const flat = await completenessOf({ target, config, product, part: 'components/flat' });
 
     expect('gaps' in flat && flat.gaps.map(completenessGapLineOf)).toEqual([
+      'CONTROL-GRID-MISSING components/flat.more - the part has no grid - draw its states with interactionRows, which gives the grid a column per interaction (hover, active)',
       'REQUIREMENT-MISSING components/flat.more.hover - state hovered forces hover on it, but its box draws no different pixel than at rest',
       'REQUIREMENT-MISSING components/flat.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING components/flat.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
+    ]);
+
+    const flatDone = await completenessOf({ target, config, product, part: 'components/flat-done' });
+
+    expect('gaps' in flatDone && flatDone.gaps.map(completenessGapLineOf)).toEqual([
+      'CONTROL-GRID-MISSING components/flat-done.more - the part has no grid - draw its states with interactionRows, which gives the grid a column per interaction (hover, active, focus-visible)',
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/clipped' })).toEqual({ gaps: [] });
@@ -286,7 +355,7 @@ describe('completenessOf', () => {
     const usesFlat = await completenessOf({ target, config, product, part: 'pages/uses-flat' });
 
     expect('gaps' in usesFlat && usesFlat.gaps.map(completenessGapLineOf)).toEqual([
-      'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 3 gap(s) - run design complete components/flat',
+      'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 4 gap(s) - run design complete components/flat',
     ]);
 
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });

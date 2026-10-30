@@ -34,6 +34,34 @@ const INPUT_INTERACTIONS: Record<string, string[]> = { pointer: ['hover', 'activ
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
+const requiredInteractionsOf = (control: DeclaredControl) =>
+  control.input.flatMap((input) => INPUT_INTERACTIONS[input] ?? []);
+
+const gridGapOf = (options: { grid: unknown; states: string[]; interactions: string[] }) => {
+  const { grid, states, interactions } = options;
+  const fix = `draw its states with interactionRows, which gives the grid a column per interaction (${interactions.join(', ')})`;
+
+  if (!isRecord(grid) || !Array.isArray(grid['columns']) || !isRecord(grid['rows']))
+    return `the part has no grid - ${fix}`;
+
+  const columns = grid['columns'];
+  const missing = interactions.filter((interaction) => !columns.includes(interaction));
+
+  if (missing.length > 0) return `its grid has no column ${missing.join(', ')} - ${fix}`;
+
+  const holes = Object.entries(grid['rows']).flatMap(([row, cells]) =>
+    interactions
+      .filter((interaction) => {
+        const state = isRecord(cells) ? cells[interaction] : undefined;
+
+        return typeof state !== 'string' || !states.includes(state);
+      })
+      .map((interaction) => `${row} ${interaction}`),
+  );
+
+  return holes.length > 0 ? `its grid draws no state in ${holes.join(', ')} - ${fix}` : null;
+};
+
 const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | null =>
   isRecord(value)
     ? Object.fromEntries(
@@ -91,12 +119,10 @@ const disclosureGapsOf = (options: {
   const drawsControl = (frame: SeenFrame) => frame.controls.some((seen) => seen.id === id);
   const gaps: [string, string][] = [];
 
-  for (const input of control.part === null ? control.input : []) {
-    for (const interaction of INPUT_INTERACTIONS[input] ?? []) {
-      const gap = interactionGapOf({ frames, id, interaction });
+  for (const interaction of control.part === null ? requiredInteractionsOf(control) : []) {
+    const gap = interactionGapOf({ frames, id, interaction });
 
-      if (gap) gaps.push([interaction, gap]);
-    }
+    if (gap) gaps.push([interaction, gap]);
   }
 
   if (!rest.some((frame) => drawsControl(frame) && !showsBody(frame)))
@@ -124,9 +150,10 @@ export const completenessGapsOf = (options: {
   states: string[];
   frames: SeenFrame[];
   reviewed: boolean;
+  grid?: unknown;
   referenced?: ReferencedParts;
 }): CompletenessGap[] => {
-  const { part, states, frames, reviewed, referenced = {} } = options;
+  const { part, states, frames, reviewed, grid, referenced = {} } = options;
   const declared = declaredControlsOf(options.controls);
 
   if (declared === null)
@@ -199,6 +226,11 @@ export const completenessGapsOf = (options: {
         target: `${part}.${id}`,
         detail: `${control.part} is not design complete: ${used.length} gap(s) - run design complete ${control.part}`,
       });
+
+    const interactions = control.part === null && !part.startsWith('pages/') ? requiredInteractionsOf(control) : [];
+    const gridGap = interactions.length > 0 ? gridGapOf({ grid, states, interactions }) : null;
+
+    if (gridGap) gaps.push({ code: 'CONTROL-GRID-MISSING', target: `${part}.${id}`, detail: gridGap });
 
     if (!seenIds.has(id)) {
       gaps.push({ code: 'CONTROL-UNDRAWN', target: `${part}.${id}`, detail: `no state draws data-et-control="${id}"` });
@@ -353,7 +385,9 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
   return { seen, refused };
 };
 
-type PartModule = { default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown } };
+type PartModule = {
+  default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown; grid?: unknown };
+};
 
 /**
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
@@ -446,6 +480,7 @@ export const completenessOf = async (options: {
           states,
           frames: seen,
           reviewed,
+          grid: definition?.grid,
           referenced,
         }),
       ];
