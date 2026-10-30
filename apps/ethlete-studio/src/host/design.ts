@@ -459,8 +459,11 @@ export type SketchReport = { message: string; updatedAt: string; variant: string
 
 export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
 
-/** The parts a merge of one variant changes, and the elements and pages that show them, each as `<layer>/<name>`. */
-export type MergePreview = { changed: string[]; affected: string[] };
+/**
+ * The parts a merge of one variant changes, the other parts a `shared/` file it edits reaches (also in `changed`), and
+ * the elements and pages that show them, each as `<layer>/<name>`. `shared` is missing from an older `@ethlete/cli`.
+ */
+export type MergePreview = { changed: string[]; shared?: string[]; affected: string[] };
 
 export type SketchAddress = { port: number; product: string; sketch: string };
 

@@ -325,14 +325,16 @@ export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sk
 });
 
 /**
- * `?product=&sketch=&variant=&size=`: per state of the sketched part, the box of the pixels the variant changes
- * against the product now, at rest, in the theme of `surface` and `color`.
+ * `?product=&sketch=&variant=&size=` with optional `part=` (a target part, the first by default): per state of that
+ * part, the box of the pixels the variant changes against the product now, at rest, in the theme of `surface` and `color`.
  */
 export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
   const variant = asked.url.searchParams.get('variant') ?? '';
+  const part = asked.url.searchParams.get('part') ?? sketch.target;
   const { load, pictureOf, boxOf } = asked;
 
   if (!sketch.variants.includes(variant)) return failure(404, `${sketch.target} has no variant "${variant}"`);
+  if (!sketch.targets.includes(part)) return failure(404, `${sketch.target} has no target part "${part}"`);
   if (!load || !pictureOf || !boxOf) return failure(503, 'this server draws no pictures');
 
   return {
@@ -341,6 +343,7 @@ export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketc
       product,
       sketch,
       variant,
+      part,
       size: asked.url.searchParams.get('size'),
       params: asked.url.searchParams,
       pictureOf,

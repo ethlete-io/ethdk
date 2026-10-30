@@ -8,13 +8,18 @@ import { resolveProduct } from './system/resolve-product';
 import { createSketch, Sketch } from './system/sketch/sketch';
 import { BoxOf, changedAreaOf, diffVariant, VariantDiff } from './variant-diff';
 
-const sketchOn = (name: string) => {
+const sketchOn = (name: string, others: string[] = []) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-variant-diff-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
   const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
-  const sketch = createSketch({ product, sketch: { layer: 'components', name }, variants: ['a'] }) as Sketch;
+  const sketch = createSketch({
+    product,
+    sketch: { layer: 'components', name },
+    others: others.map((other) => ({ layer: 'components', name: other })),
+    variants: ['a'],
+  }) as Sketch;
 
   return { product, sketch };
 };
@@ -106,6 +111,33 @@ describe('diffVariant', () => {
     });
 
     expect(diff.width).toBe(320);
+  });
+
+  it('draws a later target part of the sketch when asked for it', async () => {
+    const { product, sketch } = sketchOn('card', ['button']);
+    const diff = await diffVariant({
+      product,
+      sketch,
+      variant: 'a',
+      part: 'components/button',
+      size: null,
+      params: new URLSearchParams(),
+      pictureOf,
+      boxOf,
+      load: loadOf({ now: ['default'], variant: ['default'] }),
+    });
+
+    expect(diff.target).toBe('components/button');
+    expect(diff.states).toEqual([
+      expect.objectContaining({ state: 'default', box: { x: 4, y: 2, width: 8, height: 4 } }),
+    ]);
+    expect(pictureOf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        part: 'components/button',
+        state: 'default',
+        sketch: { target: 'components/card', variant: 'a' },
+      }),
+    );
   });
 });
 

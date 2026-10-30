@@ -280,6 +280,30 @@ export const usingPagesOf = (product: ListedProduct, part: ListedPart | null): L
     use.product === product.name ? product.parts.filter((page) => partKeyOf(page) === use.part) : [],
   );
 
+/**
+ * The pages of its own product that use any target part of a sketch, each once and none that is a target itself;
+ * `part` is the first target as the product has it now.
+ */
+export const sketchUsingPagesOf = ({
+  product,
+  sketch,
+  part,
+}: {
+  product: ListedProduct;
+  sketch: Pick<ListedSketch, 'target' | 'targetParts'>;
+  part: ListedPart | null;
+}): ListedPart[] => {
+  const targets = sketch.targetParts ?? [sketch.target];
+  const pages = targets.flatMap((key) =>
+    usingPagesOf(
+      product,
+      key === sketch.target ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null),
+    ),
+  );
+
+  return [...new Set(pages)].filter((page) => !targets.includes(partKeyOf(page)));
+};
+
 const USED_IN = 'used in';
 
 const UNCHANGED_ROW = 'unchanged';
@@ -1031,7 +1055,7 @@ export const sketchMatrixOf = ({
   };
 
   const heads = [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf);
-  const pages = usingPagesOf(product, part);
+  const pages = sketchUsingPagesOf({ product, sketch, part });
   const contextFrames = pages.flatMap((page) =>
     columns.flatMap((column): CanvasFrame[] => {
       const frame = column.drawing

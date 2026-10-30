@@ -62,7 +62,7 @@ import {
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { pixelFreeLinesOf } from './pixel-free';
-import { DiffLine, diffLinesOf, diffOutlineOf, diffSummaryOf, variantDiff$ } from './variant-diff';
+import { DiffLine, diffOutlineOf, diffSummaryOf, sketchDiffLinesOf, variantDiff$ } from './variant-diff';
 import { AreaRound, ChangedArea, changedArea$, changedAreaViewOf } from './changed-area';
 import {
   SketchCompare,
@@ -89,7 +89,7 @@ import {
   stateRowKeyOf,
   sketchRoundsOf,
   partKeyOf,
-  usingPagesOf,
+  sketchUsingPagesOf,
 } from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard' | 'verdict';
@@ -286,6 +286,11 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               <dt class="text-[var(--et-surface-color-subtle-solid)]">Shown in</dt>
               <dd class="font-mono">{{ preview.affected.join(', ') || 'no element or page' }}</dd>
             </dl>
+            @if (preview.shared?.length) {
+              <p class="text-[var(--et-surface-color-subtle-solid)]" data-merge-shared>
+                A shared/ edit reaches: <span class="font-mono">{{ preview.shared?.join(', ') }}</span>
+              </p>
+            }
           }
         }
       }
@@ -827,6 +832,7 @@ export class SketchViewComponent {
         () => ({
           address: this.address(),
           variants: this.current().variants,
+          parts: this.current().targetParts ?? [this.current().target],
           size: this.matrix().size,
           surface: this.surface(),
           color: this.color(),
@@ -835,15 +841,26 @@ export class SketchViewComponent {
         { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
       ),
     ).pipe(
-      switchMap(({ address, variants, size, surface, color }) =>
+      switchMap(({ address, variants, parts, size, surface, color }) =>
         variants.length === 0
           ? of<Record<string, DiffLine[]>>({})
           : combineLatest(
               variants.map((variant) =>
-                variantDiff$({ ...address, variant, size, surface, color }).pipe(
-                  map(diffLinesOf),
-                  catchError(() => of<DiffLine[]>([])),
-                ),
+                combineLatest(
+                  parts.map((part) =>
+                    variantDiff$({
+                      ...address,
+                      variant,
+                      ...(part === address.sketch ? {} : { part }),
+                      size,
+                      surface,
+                      color,
+                    }).pipe(
+                      map((diff) => [{ part, diff }]),
+                      catchError(() => of([])),
+                    ),
+                  ),
+                ).pipe(map((diffs) => sketchDiffLinesOf({ sketch: { target: address.sketch }, diffs: diffs.flat() }))),
               ),
             ).pipe(map((lines) => Object.fromEntries(variants.map((variant, index) => [variant, lines[index] ?? []])))),
       ),
@@ -872,7 +889,12 @@ export class SketchViewComponent {
 
   public canvas = computed(() => (this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix()));
 
-  private contextPages = computed(() => new Set(usingPagesOf(this.product(), this.part()).map(partKeyOf)));
+  private contextPages = computed(
+    () =>
+      new Set(
+        sketchUsingPagesOf({ product: this.product(), sketch: this.current(), part: this.part() }).map(partKeyOf),
+      ),
+  );
 
   private sketchComments = computed(() =>
     this.commentStore

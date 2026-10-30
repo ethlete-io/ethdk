@@ -1,5 +1,5 @@
 import { firstValueFrom } from 'rxjs';
-import { diffLinesOf, diffOutlineOf, diffSummaryOf, variantDiff$ } from './variant-diff';
+import { diffLinesOf, diffOutlineOf, diffSummaryOf, sketchDiffLinesOf, variantDiff$ } from './variant-diff';
 
 describe('variantDiff$', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -37,6 +37,35 @@ describe('diffLinesOf', () => {
       { state: 'b', text: 'b · no pixel change', box: null, unchanged: true },
       { state: 'c', text: 'c · new', box: null },
       { state: 'd', text: 'd · not drawn', box: null, title: 'boom' },
+    ]);
+  });
+});
+
+describe('sketchDiffLinesOf', () => {
+  const box = { x: 0, y: 0, width: 2, height: 2 };
+
+  it('keys a later target part by its part and drops a diff of another part than asked', () => {
+    const lines = sketchDiffLinesOf({
+      sketch: { target: 'components/card' },
+      diffs: [
+        {
+          part: 'components/card',
+          diff: { target: 'components/card', variant: 'a', states: [{ state: 'default', box }] },
+        },
+        {
+          part: 'components/button',
+          diff: { target: 'components/button', variant: 'a', states: [{ state: 'hover', box }] },
+        },
+        {
+          part: 'components/chip',
+          diff: { target: 'components/card', variant: 'a', states: [{ state: 'default', box }] },
+        },
+      ],
+    });
+
+    expect(lines.map(({ state, text }) => [state, text])).toEqual([
+      ['default', 'default · 2 × 2 px'],
+      ['components/button hover', 'components/button · hover · 2 × 2 px'],
     ]);
   });
 });

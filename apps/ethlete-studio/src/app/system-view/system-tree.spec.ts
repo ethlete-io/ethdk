@@ -515,6 +515,37 @@ describe('pages that use a part', () => {
     expect(used).toMatchObject([{ rowLabel: 'used in all 2 pages', empty: expect.any(String) }]);
   });
 
+  it('adds the pages that use any target part of a sketch to its in context band, each page once', () => {
+    const start = part({ layer: 'pages', name: 'start', states: ['open'] });
+    const button = part({ usedIn: [{ product: 'acme', part: 'pages/start' }] });
+    const card = part({
+      name: 'card',
+      usedIn: [
+        { product: 'acme', part: 'pages/system' },
+        { product: 'acme', part: 'pages/start' },
+      ],
+    });
+    const several = sketch({
+      variants: ['a'],
+      targetParts: ['components/button', 'components/card'],
+      targets: [
+        { part: 'components/button', variant: 'a', states: ['default'] },
+        { part: 'components/card', variant: 'a', states: ['default'] },
+      ],
+    });
+    const matrix = sketchMatrixOf({
+      port: 4400,
+      product: product([button, card, system, start]),
+      part: button,
+      sketch: several,
+    });
+    const rows = [
+      ...new Set(matrix.frames.flatMap((frame) => (frame.row?.startsWith('in context') ? [frame.row] : []))),
+    ];
+
+    expect(rows).toEqual(['in context pages/start', 'in context pages/system']);
+  });
+
   it('adds an in context band to an element sketch: each page with each variant swapped in, commentable', () => {
     const matrix = sketchMatrixOf({
       port: 4400,

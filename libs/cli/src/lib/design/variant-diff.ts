@@ -35,7 +35,7 @@ export type VariantDiff = { target: string; variant: string; preset?: string; wi
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
- * Draws every state of the sketched part as `variant` draws it and as the product draws it now, at rest, and
+ * Draws every state of the sketched part, or of its target `part`, as `variant` draws it and as the product draws it now, at rest, and
  * returns the boxes of the changed pixels per state. A page is drawn at the preset `size` names, or its first; a part
  * with `widths` at the width `size` names, or its first; any other part fitted to its content.
  */
@@ -43,6 +43,7 @@ export const diffVariant = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
+  part?: string;
   size: string | null;
   params: URLSearchParams;
   pictureOf: PictureOf;
@@ -50,8 +51,8 @@ export const diffVariant = async (options: {
   load: VariantPartLoad;
 }): Promise<VariantDiff> => {
   const { product, sketch, variant, size, params, pictureOf, boxOf, load } = options;
-  const target = sketch.target;
-  const drawn: SketchVariant = { target, variant };
+  const target = options.part ?? sketch.target;
+  const drawn: SketchVariant = { target: sketch.target, variant };
   const file = overlaySketch({ product, sketch, variant }).parts.find((part) => partKeyOf(part) === target)?.file;
   const current = product.parts.find((part) => partKeyOf(part) === target);
 

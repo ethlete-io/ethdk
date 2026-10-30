@@ -148,6 +148,97 @@ describe('SketchViewComponent merge preview', () => {
     expect(outline?.style.height).toBe('4px');
   });
 
+  it('lists and marks the changed pixels of a later target part', async () => {
+    const zoomed = vi.spyOn(DesignCanvasComponent.prototype, 'zoomToFrame');
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(url);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-diff')) {
+        const part = new URL(url).searchParams.get('part');
+
+        return json({
+          target: part ?? 'components/card',
+          variant: new URL(url).searchParams.get('variant'),
+          states: [{ state: 'default', box: part ? { x: 1, y: 1, width: 6, height: 3 } : null }],
+        });
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      variants: ['a'],
+      targetParts: ['components/card', 'components/button'],
+      targets: ['components/card', 'components/button'].map((part) => ({
+        part,
+        variant: 'a',
+        states: ['default'],
+        interactions: [],
+      })),
+    });
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('[data-variant-diff-summary]')?.textContent?.trim()).toBe(
+      '1 of 2 states differs in pixels',
+    );
+    expect(asked.filter((url) => url.includes('/__design/sketch-diff')).map((url) => new URL(url).search)).toEqual([
+      '?product=web&sketch=components%2Fcard&variant=a',
+      '?product=web&sketch=components%2Fcard&variant=a&part=components%2Fbutton',
+    ]);
+
+    root.querySelector<HTMLButtonElement>('[data-variant-diff-summary]')?.click();
+    await settle(fixture);
+
+    expect([...root.querySelectorAll('[data-variant-diff]')].map((line) => line.textContent?.trim())).toEqual([
+      'components/button · default · 6 × 3 px',
+    ]);
+
+    root.querySelector<HTMLButtonElement>('button[data-variant-diff]')?.click();
+    await settle(fixture);
+
+    expect(zoomed).toHaveBeenCalledWith('a components/button default');
+    expect(root.querySelector<HTMLElement>('[data-part-outline]')?.style.width).toBe('6px');
+    zoomed.mockRestore();
+  });
+
+  it('names the parts a shared/ edit of the picked variant reaches', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-preview'))
+        return json({
+          changed: ['components/card', 'foundations/colors'],
+          shared: ['foundations/colors'],
+          affected: ['pages/home'],
+        });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', SKETCH);
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    expect(fixture.nativeElement.querySelector('[data-merge-shared]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'A shared/ edit reaches: foundations/colors',
+    );
+  });
+
   it('leaves an interaction for rest and zooms to the frame of a marked changed box', async () => {
     const zoomed = vi.spyOn(DesignCanvasComponent.prototype, 'zoomToFrame');
 
