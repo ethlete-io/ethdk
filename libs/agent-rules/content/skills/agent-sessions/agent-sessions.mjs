@@ -16,6 +16,14 @@ const root = (() => {
 })();
 const mailbox = process.env.AGENT_MAILBOX ?? join(root, '.ethlete/mailbox.jsonl');
 const script = fileURLToPath(import.meta.url);
+const inboxCommand = (agent) => {
+  if (existsSync(join(root, 'node_modules/.bin/ethlete-agents'))) return `npx ethlete-agents sessions inbox ${agent}`;
+  try {
+    const { scripts } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    if (scripts?.['agents:sessions']) return `yarn agents:sessions inbox ${agent}`;
+  } catch {}
+  return `node ${script} inbox ${agent}`;
+};
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
@@ -275,7 +283,7 @@ if (command === 'send' && sender) {
   const due = {};
   const wake = (agent) => {
     if (!unreadFor(agent).unread.length) return;
-    const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
+    const text = `New mailbox message for ${agent}. Run: ${inboxCommand(agent)}`;
     const session = [sessionFor(agent), agent].find(sessionExists);
     if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);
     spawnSync('tmux', ['send-keys', '-t', `=${session}:`, '-l', text]);
