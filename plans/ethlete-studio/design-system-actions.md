@@ -1133,7 +1133,7 @@ belong to 4.78, which replaces the `tick` with design server events.
 
 - **Decision (Tom, 2026-10-30):** build 4.82, 4.83 and 4.84 right after 4.78, then 4.47 discovery.
 
-### 4.82 `design_server_state` spawns `node` on every 3 s poll - in progress
+### 4.82 `design_server_state` spawns `node` on every 3 s poll - built
 
 - **From the code:** while a foreign server listens, Studio polls `design_server_state` every 3 s
   (`studio-view.component.ts:421`). Each call runs the `stale` check (`design_server.rs:172-236`): a walk of up to
@@ -1142,8 +1142,14 @@ belong to 4.78, which replaces the `tick` with design server events.
   it over IPC each time (`design_server.rs:311-327,387-419`).
 - **Fix option:** compute `stale` once per start or restart and cache the stamp per checkout and port; send the log
   only on change. Effort S-M.
+- **As built (6ae2d14e6):** `DesignServers` caches the stale verdict per checkout and port; it is dropped when the
+  port stops answering and on Studio's start or restart, and the walk runs in `spawn_blocking`. Every log change
+  bumps a global `logRevision`; `design_server_state` takes the caller's revision and sends `log: null` when it
+  matches, and `designServerState$` keeps the known log. Rust tests for the cache and the log revision, a host spec
+  for the merge; each bites (mutations fail them). cargo test/clippy/fmt, Studio vitest, tsc and eslint pass. Not
+  run in the app: Tom must rebuild Studio.
 
-### 4.83 Sync Tauri commands block the window - in progress
+### 4.83 Sync Tauri commands block the window - built
 
 - **From the code:** non-async Tauri v2 commands run on the main thread. `design_project` (`design.rs:299-330`)
   rescans every call and parses each `call.ts` without a cache, after each watcher burst. `workspace_root`,
@@ -1154,13 +1160,22 @@ belong to 4.78, which replaces the `tick` with design server events.
 - **Cost:** small in this repo (ms to tens of ms), but a slow `git status` or a large project freezes the UI.
 - **Fix option:** `#[tauri::command(async)]` or `spawn_blocking`; cache the repository root in a `OnceLock`; skip
   `node_modules`; a timeout for `check_call`; optional mtime cache for parsed calls. Effort S (M with the cache).
+- **As built (f543a6ba2):** `design_project`, `design_scan` and the four `workspace_*` commands are async and run in
+  `spawn_blocking`; the repository root sits in a `OnceLock`; the scan skips `node_modules`. `check_call` runs in
+  the MCP tool process, not the main thread; it now kills `design check` after 120 s. No mtime cache. Tests for
+  the `node_modules` skip and the timeout bite (mutations fail them). cargo test/clippy/fmt pass; no frontend
+  signature changed. Not run in the app: Tom must rebuild Studio.
 
-### 4.84 Small Rust hygiene - in progress
+### 4.84 Small Rust hygiene - built
 
 - `agent.rs`: the stderr buffer `complaints` grows without a cap until the end of the run. Cap it.
 - `design_server.rs:74-78`: `listening()` blocks a tokio worker with `connect_timeout` inside async loops. Use a
   tokio `TcpStream`. Loopback usually answers at once, so the cost is low.
 - Effort S each.
+- **As built (2895e32ff):** `complaints` keeps the first 4096 bytes (the summary is clipped from the start);
+  `listening()` is async on a tokio `TcpStream` (tokio `net` feature), so `state()` is async and probes before it
+  locks the table. The cap test bites (a mutation fails it). cargo test/clippy/fmt pass. Not run in the app: Tom
+  must rebuild Studio.
 
 ## 5. Drawing parts and pages
 
