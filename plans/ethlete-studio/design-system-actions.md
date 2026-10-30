@@ -371,14 +371,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   draws every row x column combination of a grid in a scratch pass and flags cells that look like
   another row.
 
-### 5.45 Agent logos exist in three copies - open
-
-- **Pain:** a component cannot import from a page, so the `components/comment-pin` sketch holds a
-  third copy of the agent logos (after `pages/inbox` and `pages/sketches`), with brand hex colours
-  in TS.
-- **Fix option:** the agent logos become a foundation asset: an icon set in `assets/` with a named
-  export in a foundations part, then the pages and the pin import it (recommended, follows 5.13).
-
 ### 5.50 Studio's danger colour fails contrast on its dark surfaces - open
 
 - **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on
