@@ -3,6 +3,12 @@
 Goal (Tom): finish the open items of `design-system-actions.md` and `motion.md` as fast as possible, without
 Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes onto the merge queue below.
 
+## Builder status (2026-10-30)
+
+- A1 done (`0c4b8a887`). A2 and F1 run in one subagent with the Q32 merge-target change; A3-A5 start after it.
+- B, C1, D, F2-F4 and G run. E waits for Tom. Found on the way: `aae2914f3` broke every render of the built CLI
+  (`exports is not defined`); fixed in `203aa2c35`.
+
 ## Rules for every stream
 
 - One subagent per stream, run the streams at the same time. Inside a stream, work serially: its items touch
@@ -61,6 +67,8 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 ## Merge queue (waits for Tom)
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
+
+- `components/button` controls into the SDK base (Q32): runs, may auto-merge.
 
 ## Waits for Tom in the real Studio
 
