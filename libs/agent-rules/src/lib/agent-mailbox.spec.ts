@@ -74,4 +74,32 @@ describe('agent-mailbox', () => {
 
     expect(run(['claims']).stdout).toBe('No active claims.\n');
   });
+
+  it('shows each message in the inbox once and skips the own messages', () => {
+    run(['send', 'codex', 'first']);
+    run(['send', 'gemini', 'mine']);
+
+    expect(run(['inbox', 'gemini']).stdout).toMatch(/codex: first\n$/);
+    expect(run(['inbox', 'gemini']).stdout).toBe('No new messages.\n');
+
+    run(['send', 'codex', 'second']);
+
+    const next = run(['inbox', 'gemini']).stdout;
+
+    expect(next).toContain('second');
+    expect(next).not.toContain('first');
+  });
+
+  it('keeps a separate cursor for each sender', () => {
+    run(['send', 'codex', 'hello']);
+    run(['inbox', 'gemini']);
+
+    expect(run(['inbox', 'claude']).stdout).toContain('codex: hello');
+  });
+
+  it('prints the unread messages when a claim is made', () => {
+    run(['send', 'codex', 'please wait']);
+
+    expect(run(['claim', 'gemini', 'src/a']).stdout).toContain('codex: please wait');
+  });
 });

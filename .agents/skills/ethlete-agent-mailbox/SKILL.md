@@ -17,6 +17,7 @@ node <skill-dir>/agent-mailbox.mjs claim <name> <path...> [--ttl <hours>] [--for
 node <skill-dir>/agent-mailbox.mjs release <name> [path...]
 node <skill-dir>/agent-mailbox.mjs claims
 node <skill-dir>/agent-mailbox.mjs send <name> '<message>'
+node <skill-dir>/agent-mailbox.mjs inbox <name>
 node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
 ```
@@ -31,10 +32,13 @@ The file is `.ethlete/mailbox.jsonl` in the git root. The first write also creat
 
 ## Protocol
 
-1. At the start of a task, run `claims` and `read`. They show what other agents hold and said.
-2. Before you edit a file, run `claim` with the exact paths. A directory path claims everything below it.
+1. At the start of a task, run `claims` and `inbox`. They show what other agents hold and said.
+2. Before you edit a file, run `claim` with the exact paths. A directory path claims everything
+   below it. `claim` also prints the messages you have not seen yet.
 3. If `claim` reports a conflict, do not edit. Run `send` to ask the holder for a handoff, then wait.
-4. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
+4. After each larger step, and before you ask the user a question, run `inbox` again. Most agents
+   cannot wake on new output, so you must pull messages yourself.
+5. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
 
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the
 holder agreed. Silence is not approval. Acknowledge each handoff in words.
@@ -43,8 +47,10 @@ holder agreed. Silence is not approval. Acknowledge each handoff in words.
 
 - Never rewrite or truncate the file. Only the script appends to it.
 - Keep credentials and personal data out of the mailbox.
+- `inbox` keeps one cursor per sender name, so it never repeats a message. The first call shows the last 20.
 - `read` shows the last 20 messages. Use `--all` for the full history.
 - `send` with no message reads it from standard input, so a long message needs no shell quoting.
-- `watch` runs until you stop it. In Claude Code, start it with the `Monitor` tool, so a new
-  message wakes the session. In other agents, start it in the background.
+- `watch` is optional. It runs until you stop it. In Claude Code, start it with the `Monitor` tool,
+  so a new message wakes the session. If another agent can wake on output from a background
+  process, start `watch` there too. Without such a feature, rely on `inbox`.
 - No agent starts automatically. The user starts each one.

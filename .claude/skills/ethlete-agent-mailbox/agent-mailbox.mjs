@@ -35,6 +35,7 @@ const [command, sender, ...words] = args;
 const help = `Shared agent mailbox: ${mailbox}
 
 Send:    node ${script} send <name> '<message>'      (no message: read it from stdin)
+Inbox:   node ${script} inbox <name>                  (only the messages you have not seen yet)
 Read:    node ${script} read [--last <n>] [--all]     (default: the last ${DEFAULT_LAST} messages)
 Watch:   node ${script} watch <name>
 Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
@@ -50,10 +51,16 @@ Watch prints existing messages and then new messages from other senders every se
 Keep credentials and personal data out of the mailbox. No agent is started automatically.
 `;
 
+const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*'];
+
 const prepare = () => {
   mkdirSync(dirname(mailbox), { recursive: true });
+  if (process.env.AGENT_MAILBOX) return;
   const ignore = join(dirname(mailbox), '.gitignore');
-  if (!process.env.AGENT_MAILBOX && !existsSync(ignore)) writeFileSync(ignore, 'mailbox.jsonl\n');
+  const present = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
+  const missing = IGNORED.filter((line) => !present.split('\n').includes(line));
+  if (missing.length)
+    writeFileSync(ignore, `${present && !present.endsWith('\n') ? `${present}\n` : present}${missing.join('\n')}\n`);
 };
 
 const append = (entry) => {
@@ -74,6 +81,17 @@ const parse = (line) => {
 const entries = () => (existsSync(mailbox) ? readFileSync(mailbox, 'utf8').split('\n').map(parse).filter(Boolean) : []);
 
 const show = (entry) => process.stdout.write(`[${entry.timestamp}] ${entry.sender}: ${entry.message}\n`);
+
+const showInbox = (reader) => {
+  const cursor = join(dirname(mailbox), `mailbox.cursor.${reader}`);
+  const history = entries();
+  const seen = existsSync(cursor) ? Number(readFileSync(cursor, 'utf8')) : history.length - DEFAULT_LAST;
+  const unread = history.slice(Math.max(0, seen)).filter((entry) => entry.sender !== reader);
+  if (!unread.length) process.stdout.write('No new messages.\n');
+  unread.forEach(show);
+  prepare();
+  writeFileSync(cursor, String(history.length));
+};
 
 const toRepoPath = (path) => relative(root, resolve(path)).split('\\').join('/');
 
@@ -105,6 +123,8 @@ if (command === 'send' && sender) {
     append({ sender, message });
     process.stdout.write(`Sent as ${sender}.\n`);
   }
+} else if (command === 'inbox' && sender) {
+  showInbox(sender);
 } else if (command === 'read') {
   const history = entries();
   (all ? history : history.slice(-Number(last ?? DEFAULT_LAST))).forEach(show);
@@ -113,6 +133,7 @@ if (command === 'send' && sender) {
   if (!claims.length) process.stdout.write('No active claims.\n');
   claims.forEach((claim) => process.stdout.write(`${claim.path}  ${claim.sender}  until ${claim.expires}\n`));
 } else if (command === 'claim' && sender && words.length) {
+  showInbox(sender);
   const paths = words.map(toRepoPath);
   const conflicts = activeClaims().filter(
     (claim) => claim.sender !== sender && paths.some((path) => overlaps(path, claim.path)),
