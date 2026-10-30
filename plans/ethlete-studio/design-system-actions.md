@@ -607,7 +607,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Evidence:** 7 merged parts hold an inline `<svg>` (`components/disclosure`,
   `components/tree-row`, `elements/shell-main`, `pages/inbox`, `pages/merge`, `pages/flows`,
   `foundations/colors`). The check mark path `m3.5 8.5 3 3 6-7` is copied 4 times, the warning
-  triangle 2 times. Stroke width and viewBox differ between parts (16 and 24).
+  triangle 2 times. The viewBox is 16, 24 or 32 and the stroke width 1.5, 1.75 or 2.
 - **Existing mechanism:** `svgAsset` and a product `assets/` folder. `foundations/logo` and
   `foundations/agent-logos` already draw their SVGs this way and export a helper.
 - **Fix options:** 1. a `foundations/icons` part: one `.svg` per icon in `assets/icons/`, its
