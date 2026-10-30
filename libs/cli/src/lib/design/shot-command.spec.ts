@@ -3,7 +3,16 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from './paths';
-import { designShot, gridRowsOf, planOf, rowsOf, shotProductOf, shotReportOf, withDiffRows } from './shot-command';
+import {
+  designShot,
+  gridRowsOf,
+  NEW_STATE_NOTE,
+  planOf,
+  rowsOf,
+  shotProductOf,
+  shotReportOf,
+  withDiffRows,
+} from './shot-command';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules } from './system/system-modules';
 
@@ -241,6 +250,30 @@ describe('rowsOf', () => {
 
   it('draws only the variants when the part is not merged yet', () => {
     expect(rowsOf({ part: 'pages/a', variants: ['one'], merged: false }).map((row) => row.label)).toEqual(['one']);
+  });
+});
+
+describe('a state only the variants have', () => {
+  const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: true });
+  const statesOf = (axis: { sketch: unknown }) => (axis.sketch ? ['rest', 'draft'] : ['rest']);
+
+  it('marks the merged cell absent instead of drawing it', () => {
+    const plan = planOf({ base, rows, statesOf, states: false, state: 'draft' });
+
+    expect(plan[0]?.[0]).toMatchObject({ label: 'merged / draft', absent: true });
+    expect(plan[1]?.[0]?.absent).toBeUndefined();
+  });
+
+  it('does not mark a state no version has, nor a state the merged part has', () => {
+    expect(planOf({ base, rows, statesOf, states: false, state: 'typo' })[0]?.[0]?.absent).toBeUndefined();
+    expect(planOf({ base, rows, statesOf, states: false, state: 'rest' })[0]?.[0]?.absent).toBeUndefined();
+  });
+
+  it('reports the variant as a new state, not as a comparison with the absent cell', () => {
+    const plan = planOf({ base, rows, statesOf, states: false, state: 'draft' });
+    const sheet = [[{ label: 'merged / draft', note: NEW_STATE_NOTE }], [{ label: 'a', png: Buffer.from('a') }]];
+
+    expect(withDiffRows({ rows, plan, sheet })[2]).toEqual([{ label: 'a vs merged', note: 'new state' }]);
   });
 });
 

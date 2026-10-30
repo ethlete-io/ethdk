@@ -19,7 +19,9 @@ export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commi
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
-type Plan = { label: string; address: PartAddress };
+type Plan = { label: string; address: PartAddress; absent?: true };
+
+export const NEW_STATE_NOTE = 'New state - no merged version';
 
 /**
  * The sheet with a row after each variant row that marks, per state, the pixels the variant changes from the merged
@@ -37,7 +39,9 @@ export const withDiffRows = (options: {
   const { rows, plan, sheet, props, grids } = options;
   const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
   const compares = mergedIndex !== -1 && rows.length > 1;
-  const mergedStates = new Set((plan[mergedIndex] ?? []).map((entry) => entry.address.state));
+  const mergedStates = new Set(
+    (plan[mergedIndex] ?? []).flatMap((entry) => (entry.absent ? [] : [entry.address.state])),
+  );
   const merged = new Map(
     (plan[mergedIndex] ?? []).flatMap((entry, index) => {
       const cell = sheet[mergedIndex]?.[index];
@@ -129,10 +133,13 @@ export const planOf = (options: {
 
       if (states && !own.includes(name)) return [];
 
+      const absent = !states && state !== null && axis.sketch === null && !own.includes(name) && all.includes(name);
+
       return [
         {
           label: [axis.label, states || axis.sketch === null ? name : ''].filter(Boolean).join(' / '),
           address: { ...base, width, state: name, sketch: axis.sketch },
+          ...(absent ? { absent: true as const } : {}),
         },
       ];
     });
@@ -386,23 +393,27 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
 
     try {
-      const shoot = (label: string, address: PartAddress): Promise<SheetCell> =>
-        shooter.pictureOf({ ...address, params }).then(
-          ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
-          (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
-        );
+      const shoot = ({ label, address, absent }: Plan): Promise<SheetCell> =>
+        absent
+          ? Promise.resolve({ label, note: NEW_STATE_NOTE })
+          : shooter.pictureOf({ ...address, params }).then(
+              ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
+              (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
+            );
       const sheet: SheetCell[][] = [];
 
       for (const row of plan) {
         const cells: SheetCell[] = [];
 
-        for (const { label, address } of row) cells.push(await shoot(label, address));
+        for (const entry of row) cells.push(await shoot(entry));
 
         sheet.push(cells);
       }
 
       const mergedStates = new Set(
-        plan[rows.findIndex((axis) => axis.sketch === null)]?.map((cell) => cell.address.state),
+        plan[rows.findIndex((axis) => axis.sketch === null)]?.flatMap((cell) =>
+          cell.absent ? [] : [cell.address.state],
+        ),
       );
       const props: SheetCell[][] = [];
 
@@ -412,7 +423,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         for (const { label, address } of row) {
           cells.push(
             address.sketch && mergedStates.has(address.state)
-              ? await shoot(label, { ...address, sketch: null, props: address.sketch })
+              ? await shoot({ label, address: { ...address, sketch: null, props: address.sketch } })
               : { label, note: '' },
           );
         }
