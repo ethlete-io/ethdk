@@ -104,7 +104,7 @@ one in its markup with `data-et-control="<id>"`, and each surface with
 ```ts
 export default definePart({
   note: 'Describe this part.',
-  states: { rest: {}, hovered: {}, focused: {}, open: {} },
+  states: { rest: {}, hovered: {}, pressed: {}, focused: {}, open: {} },
   controls: {
     unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'open' } },
   },
@@ -112,9 +112,9 @@ export default definePart({
 });
 ```
 
-`pointer` input needs a state that forces `hover` on the control, and `keyboard` input one that
-forces `focus-visible`, for example with `forceInteraction`. The forced frame must draw different
-pixels in the control's box than the same frame at rest. A `disclosure` also needs a state that
+`pointer` input needs a state that forces `hover` and one that forces `active` on the control, and
+`keyboard` input one that forces `focus-visible`, for example with `forceInteraction`. Each forced
+frame must draw different pixels in the control's box than the same frame at rest. A `disclosure` also needs a state that
 draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
 A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
 hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.

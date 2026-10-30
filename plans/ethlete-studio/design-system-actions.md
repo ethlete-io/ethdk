@@ -389,9 +389,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   design complete (`826738337`).
 - **Feedback (Tom, 2026-10-30):** the disclosure toggle lacks an `active` state. Pointer input
   should require `active` as well as `hover`.
-- **In progress (next steps, in order):** 1. `design complete`: `pointer` requires `hover` and
-  `active` (`INPUT_INTERACTIONS` in `libs/cli/src/lib/design/system/complete.ts`, specs and
-  `apps/docs/cli/index.md`, changeset). 2. a sketch on `components/disclosure` that draws the
+- **Status:** `pointer` requires `hover` and `active` (`INPUT_INTERACTIONS` in
+  `libs/cli/src/lib/design/system/complete.ts`). `components/disclosure` fails until step 2.
+- **In progress (next steps, in order):** 2. a sketch on `components/disclosure` that draws the
   `active` state, variants for Tom. 3. after Tom merges: `pages/merge` uses
   `components/disclosure` for the unchanged line, declares
   `toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } }`,

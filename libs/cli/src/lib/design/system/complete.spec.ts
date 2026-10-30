@@ -10,7 +10,7 @@ import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 
 const STYLES =
-  '.aa-toggle { display: block; border: 0; background: white; } .aa-toggle:hover { background: black; color: white; } .aa-toggle:focus-visible { outline: 2px solid black; }';
+  '.aa-toggle { display: block; border: 0; background: white; } .aa-toggle:hover { background: black; color: white; } .aa-toggle:focus-visible { outline: 2px solid black; } .aa-toggle:active { background: gray; }';
 
 const toggle = (attributes = '') =>
   `<button class="aa-toggle" type="button" data-et-control="more"${attributes}>More</button>`;
@@ -30,6 +30,7 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
       rest: `<div>${toggle()}</div>`,
       hovered: `<div>${toggle(' data-et-force="hover"')}</div>`,
       focused: `<div>${toggle(' data-et-force="focus-visible"')}</div>`,
+      pressed: `<div>${toggle(' data-et-force="active"')}</div>`,
       open: `<div>${toggle()}${body}</div>`,
     },
     extra: DISCLOSURE,
@@ -135,10 +136,11 @@ describe('completenessGapsOf', () => {
     ).toEqual(['CONTROLS-MISSING']);
   });
 
-  it('passes a disclosure drawn hovered, focused, collapsed and open in a reviewed part', () => {
+  it('passes a disclosure drawn hovered, pressed, focused, collapsed and open in a reviewed part', () => {
     const frames = [
       frame('rest'),
       frame('hovered', { controls: [{ id: 'more', forced: [{ interaction: 'hover', differs: true }] }] }),
+      frame('pressed', { controls: [{ id: 'more', forced: [{ interaction: 'active', differs: true }] }] }),
       frame('focused', { controls: [{ id: 'more', forced: [{ interaction: 'focus-visible', differs: true }] }] }),
       frame('open', { surfaces: [{ id: 'more.body', shown: true }] }),
     ];
@@ -191,6 +193,7 @@ describe('completenessGapsOf', () => {
       'CONTROL-UNKNOWN components/a.stray',
       'CONTROL-UNKNOWN components/a.more',
       'REQUIREMENT-MISSING components/a.more.hover',
+      'REQUIREMENT-MISSING components/a.more.active',
       'REQUIREMENT-MISSING components/a.more.focus-visible',
       'REQUIREMENT-MISSING components/a.more.body',
       'CONTROL-UNDRAWN components/a.gone',
@@ -214,6 +217,7 @@ describe('completenessGapsOf', () => {
     expect(gapsOf(DECLARED)).toEqual([
       "CONTROL-PART-MISSING pages/a.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
       'REQUIREMENT-MISSING pages/a.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING pages/a.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/a.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
     ]);
     expect(gapsOf(used, { 'components/toggle': [] })).toEqual([]);
@@ -242,6 +246,7 @@ describe('completenessOf', () => {
     expect(merge.gaps.map(completenessGapLineOf)).toEqual([
       "CONTROL-PART-MISSING pages/merge.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
       'REQUIREMENT-MISSING pages/merge.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING pages/merge.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
     ]);
@@ -252,6 +257,7 @@ describe('completenessOf', () => {
 
     expect('gaps' in flat && flat.gaps.map(completenessGapLineOf)).toEqual([
       'REQUIREMENT-MISSING components/flat.more.hover - state hovered forces hover on it, but its box draws no different pixel than at rest',
+      'REQUIREMENT-MISSING components/flat.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING components/flat.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
     ]);
 
@@ -268,7 +274,7 @@ describe('completenessOf', () => {
     const usesFlat = await completenessOf({ target, config, product, part: 'pages/uses-flat' });
 
     expect('gaps' in usesFlat && usesFlat.gaps.map(completenessGapLineOf)).toEqual([
-      'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 2 gap(s) - run design complete components/flat',
+      'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 3 gap(s) - run design complete components/flat',
     ]);
 
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });
@@ -293,7 +299,7 @@ describe('completenessOf', () => {
     expect(await designComplete({ target, argv: ['pages/merge', '--product', 'app-a'], invocation: 'et design' })).toBe(
       1,
     );
-    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 4 gap(s)');
+    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 5 gap(s)');
     expect(
       await designComplete({ target, argv: ['components/done', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(0);

@@ -29,7 +29,7 @@ export type ReferencedParts = Record<string, CompletenessGap[] | string>;
 
 const CHECKED_KINDS = ['disclosure'];
 
-const INPUT_INTERACTIONS: Record<string, string> = { pointer: 'hover', keyboard: 'focus-visible' };
+const INPUT_INTERACTIONS: Record<string, string[]> = { pointer: ['hover', 'active'], keyboard: ['focus-visible'] };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
@@ -92,10 +92,11 @@ const disclosureGapsOf = (options: {
   const gaps: [string, string][] = [];
 
   for (const input of control.part === null ? control.input : []) {
-    const interaction = INPUT_INTERACTIONS[input];
-    const gap = interaction ? interactionGapOf({ frames, id, interaction }) : null;
+    for (const interaction of INPUT_INTERACTIONS[input] ?? []) {
+      const gap = interactionGapOf({ frames, id, interaction });
 
-    if (gap && interaction) gaps.push([interaction, gap]);
+      if (gap) gaps.push([interaction, gap]);
+    }
   }
 
   if (!rest.some((frame) => drawsControl(frame) && !showsBody(frame)))
