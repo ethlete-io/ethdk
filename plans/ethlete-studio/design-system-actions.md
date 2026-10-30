@@ -645,6 +645,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   passes, so the computed edges of `pages/flows` stay inline. Next: after the merge, one sketch per part, then
   register the rule with a minor changeset and `apps/docs/cli/index.md`. The `elements/shell-main` mark is a logo
   and moves to `foundations/logo`.
+- **Decision (Tom, 2026-10-30), replaces the `viewBox` exemption:** a missing `viewBox` does not
+  exempt an `<svg>`, because an icon without one would slip past. A computed drawing, such as the
+  `pages/flows` edges, carries an explicit marker attribute (for example `data-et-drawing`);
+  every other inline `<svg>` outside `foundations/` fails `INLINE-SVG`. The rail mark of
+  `elements/shell-main` moving to `foundations/logo` is confirmed.
 
 ## 5. Drawing parts and pages
 
