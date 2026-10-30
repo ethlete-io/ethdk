@@ -1,0 +1,8 @@
+@layer components {
+  .sk-frame {
+    box-shadow: 0 0 0 1px var(--surface-border);
+  }
+  .sk-frame[data-selected] {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
