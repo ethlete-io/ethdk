@@ -282,6 +282,8 @@ export const usingPagesOf = (product: ListedProduct, part: ListedPart | null): L
 
 const USED_IN = 'used in';
 
+const UNCHANGED_ROW = 'unchanged';
+
 /** The first state of a page at the product's first preset, or fitted when the product has none, to show a part inside it. */
 const pageFrameOf = (options: {
   port: number;
@@ -598,7 +600,22 @@ export const openRoundsOf = (rounds: ShownRound[]): Record<string, boolean> =>
   Object.fromEntries(rounds.map((round) => [round.key, round.open]));
 
 /** The canvas row head key of a state no shown variant changes. */
-export const stateRowKeyOf = (state: string) => `unchanged ${state}`;
+export const stateRowKeyOf = (state: string) => `${UNCHANGED_ROW} ${state}`;
+
+/** The state a `stateRowKeyOf` row key folds, or `null` for another row key. */
+export const stateOfRowKey = (key: string) =>
+  key.startsWith(`${UNCHANGED_ROW} `) ? key.slice(UNCHANGED_ROW.length + 1) : null;
+
+/** The key a state of one target part of a sketch is opened and folded by: the bare state for the first target. */
+export const sketchStateKeyOf = ({
+  sketch,
+  part,
+  state,
+}: {
+  sketch: Pick<ListedSketch, 'target'>;
+  part: string;
+  state: string;
+}) => (part === sketch.target ? state : `${part} ${state}`);
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
@@ -679,6 +696,7 @@ const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: Li
 
 type MatrixRow = {
   state: string | undefined;
+  stateKey?: string;
   interaction: string;
   key: string | undefined;
   label?: string;
@@ -731,9 +749,11 @@ export const sketchMatrixOf = ({
   const expiry = reportExpiryOf(sketch.report);
   const silent = reported !== null && now !== undefined && expiry !== null && now >= expiry;
   const drawing = silent ? null : reported;
-  const idOf = (column: string, { state, interaction: shown }: MatrixRow) =>
-    [column, state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
-  const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
+  const idOf = (column: string, { stateKey, state, interaction: shown }: MatrixRow) =>
+    [column, stateKey ?? state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
+  const targetOf = (variant: string, key = sketch.target) =>
+    sketch.targets?.find((target) => target.variant === variant && (target.part ?? sketch.target) === key);
+  const several = (sketch.targetParts?.length ?? 1) > 1;
   const roundsGrouped = rounds.length > 1 || rounds.some((round) => round.title !== '');
   const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
   const firstOpen = newestFirst.find((round) => round.open);
@@ -818,30 +838,6 @@ export const sketchMatrixOf = ({
       : []),
     ...roundColumns.map((column) => variantColumnOf(column.key)),
   ];
-  const states = [...new Set(columns.flatMap((column) => column.states))];
-  const variantColumns = columns.filter((column) => column.key !== CURRENT);
-  const unchanged = (state: string) =>
-    variantColumns.length > 0 &&
-    variantColumns.every((column) => targetOf(column.key)?.unchanged?.includes(state) ?? false);
-  const kept = (part?.states ?? []).filter(unchanged);
-  const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
-  const rowStates = ordered.filter((state) => !kept.includes(state) || openStates[state] === true);
-  const rows: MatrixRow[] =
-    states.length === 0
-      ? [{ state: undefined, interaction: shownInteractions[0] ?? REST, key: undefined }]
-      : rowStates.flatMap((state) =>
-          shownInteractions.map((shown, index): MatrixRow =>
-            grouped
-              ? {
-                  state,
-                  interaction: shown,
-                  key: `${state} · ${shown}`,
-                  group: state,
-                  ...(index === 0 ? {} : { label: shown }),
-                }
-              : { state, interaction: shown, key: state },
-          ),
-        );
   const rowOf = (row: MatrixRow, column: string) => {
     const section = sectionOf(column);
     const label = section === undefined || row.key === undefined ? row.label : (row.label ?? row.key);
@@ -852,84 +848,173 @@ export const sketchMatrixOf = ({
       ...(row.group === undefined ? {} : { rowGroup: row.group }),
     };
   };
+  const variantColumns = columns.filter((column) => column.key !== CURRENT);
+  const blockOf = (key: string) => {
+    const primary = key === sketch.target;
+    const listed = primary ? part : (product.parts.find((candidate) => partKeyOf(candidate) === key) ?? null);
+    const stateKeyOf = (state: string) => sketchStateKeyOf({ sketch, part: key, state });
+    const factsOf = (column: (typeof columns)[number]) => {
+      if (primary) return column;
+      if (column.key === CURRENT)
+        return {
+          ...column,
+          states: listed?.states ?? [],
+          interactions: listed ? interactionsOf(listed) : [REST],
+          error: listed ? loadErrorOf(listed.problems) : undefined,
+        };
 
-  const frameOf = (column: (typeof columns)[number], row: MatrixRow): CanvasFrame => {
-    const { state, interaction: shown } = row;
-    const address: PartAddress = {
-      port,
-      product: product.name,
-      part: sketch.target,
-      state: state ?? '',
-      epoch,
-      revision,
-      surface,
-      color,
-      ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
-      ...(size === null ? { fit: true } : {}),
-      ...(shown === REST ? {} : { interaction: shown }),
+      const target = targetOf(column.key, key);
+      const problems = sketch.problems.find((entry) => entry.variant === column.key)?.problems ?? [];
+
+      return {
+        ...column,
+        states: target?.states ?? listed?.states ?? [],
+        interactions: [REST, ...(target?.interactions ?? listed?.interactions ?? [])],
+        error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
+      };
     };
-
-    return {
-      id: idOf(column.key, row),
-      src: partFrameUrl(address),
-      ...(cell.width ? { width: cell.width } : {}),
-      ...(cell.height ? { height: cell.height } : {}),
-      label: cell.label,
-      ...rowOf(row, column.key),
-      column: column.key,
-      ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
-      ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
-      screenshot: partShotUrl({
-        ...address,
-        preset: cell.preset,
-        width: cell.preset ? undefined : cell.width,
-        revision,
-      }),
-      error: column.states.length > 0 ? undefined : column.error,
-      ...(state === undefined
-        ? {}
-        : {
-            place: {
-              part: sketch.target,
-              state,
-              size: cell.preset ?? cell.width ?? FITTED,
-              ...(shown === REST ? {} : { interaction: shown }),
-              ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+    const partColumns = columns.map(factsOf);
+    const states = [...new Set(partColumns.flatMap((column) => column.states))];
+    const unchanged = (state: string) =>
+      variantColumns.length > 0 &&
+      variantColumns.every((column) => targetOf(column.key, key)?.unchanged?.includes(state) ?? false);
+    const kept = (listed?.states ?? []).filter(unchanged);
+    const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
+    const rowStates = ordered.filter((state) => !kept.includes(state) || openStates[stateKeyOf(state)] === true);
+    const named = (label: string) => (several ? `${key} · ${label}` : label);
+    const rows: MatrixRow[] =
+      states.length === 0
+        ? [
+            {
+              state: undefined,
+              interaction: shownInteractions[0] ?? REST,
+              key: primary ? undefined : key,
+              ...(primary ? {} : { stateKey: key, label: key, group: key }),
             },
-          }),
+          ]
+        : rowStates.flatMap((state) =>
+            shownInteractions.map((shown, index): MatrixRow => {
+              const stateKey = stateKeyOf(state);
+
+              return grouped
+                ? {
+                    state,
+                    stateKey,
+                    interaction: shown,
+                    key: `${stateKey} · ${shown}`,
+                    group: stateKey,
+                    ...(index === 0 ? (several ? { label: named(`${state} · ${shown}`) } : {}) : { label: shown }),
+                  }
+                : {
+                    state,
+                    stateKey,
+                    interaction: shown,
+                    key: stateKey,
+                    ...(several ? { label: named(state), group: key } : {}),
+                  };
+            }),
+          );
+
+    const frameOf = (column: (typeof partColumns)[number], row: MatrixRow): CanvasFrame => {
+      const { state, interaction: shown } = row;
+      const address: PartAddress = {
+        port,
+        product: product.name,
+        part: key,
+        state: state ?? '',
+        epoch,
+        revision,
+        surface,
+        color,
+        ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
+        ...(size === null ? { fit: true } : {}),
+        ...(shown === REST ? {} : { interaction: shown }),
+      };
+
+      return {
+        id: idOf(column.key, row),
+        src: partFrameUrl(address),
+        ...(cell.width ? { width: cell.width } : {}),
+        ...(cell.height ? { height: cell.height } : {}),
+        label: cell.label,
+        ...rowOf(row, column.key),
+        column: column.key,
+        ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
+        ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
+        screenshot: partShotUrl({
+          ...address,
+          preset: cell.preset,
+          width: cell.preset ? undefined : cell.width,
+          revision,
+        }),
+        error: column.states.length > 0 ? undefined : column.error,
+        ...(state === undefined
+          ? {}
+          : {
+              place: {
+                part: key,
+                state,
+                size: cell.preset ?? cell.width ?? FITTED,
+                ...(shown === REST ? {} : { interaction: shown }),
+                ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+              },
+            }),
+      };
     };
-  };
 
-  const frames = columns.flatMap((column) => {
-    if (column.drawing) return [];
+    const frames = partColumns.flatMap((column) => {
+      if (column.drawing) return [];
 
-    if (column.states.length === 0) return rows[0] ? [frameOf(column, rows[0])] : [];
+      const absent = column.key === CURRENT && listed === null;
 
-    return rows.flatMap((row): CanvasFrame[] => {
-      if (row.state === undefined) return [];
+      if (column.states.length === 0 && !absent) return rows[0] ? [frameOf(column, rows[0])] : [];
 
-      const missing = !column.states.includes(row.state)
-        ? `${column.key} has no ${row.state} state`
-        : !column.interactions.includes(row.interaction)
-          ? `${column.key} has no ${row.interaction} interaction`
-          : null;
+      return rows.flatMap((row): CanvasFrame[] => {
+        if (row.state === undefined && !absent) return [];
 
-      if (missing === null) return [frameOf(column, row)];
+        const missing =
+          row.state === undefined || !column.states.includes(row.state)
+            ? `${column.key} has no ${row.state} state`
+            : !column.interactions.includes(row.interaction)
+              ? `${column.key} has no ${row.interaction} interaction`
+              : null;
 
-      return [
-        {
-          id: idOf(column.key, row),
-          src: '',
-          ...(cell.width ? { width: cell.width } : {}),
-          ...(cell.height ? { height: cell.height } : {}),
-          label: cell.label,
-          ...rowOf(row, column.key),
-          column: column.key,
-          empty: column.key === CURRENT ? 'new in this sketch' : missing,
-        },
-      ];
+        if (missing === null) return [frameOf(column, row)];
+
+        return [
+          {
+            id: idOf(column.key, row),
+            src: '',
+            ...(cell.width ? { width: cell.width } : {}),
+            ...(cell.height ? { height: cell.height } : {}),
+            label: cell.label,
+            ...rowOf(row, column.key),
+            column: column.key,
+            empty: column.key === CURRENT ? 'new in this sketch' : missing,
+          },
+        ];
+      });
     });
-  });
+
+    const rowHeads = kept.map((state): CanvasRowHead => {
+      const stateKey = stateKeyOf(state);
+      const open = openStates[stateKey] === true;
+
+      return {
+        key: stateRowKeyOf(stateKey),
+        label: named(`${state} · unchanged in ${variantColumns.map((column) => column.key).join(' ')}`),
+        title: `${open ? 'Fold' : 'Open'} ${named(state)}: every shown variant draws it as current does`,
+        open,
+        before: rowKeyIn(currentSection, grouped ? `${stateKey} · ${shownInteractions[0] ?? REST}` : stateKey),
+        ...(currentSection === undefined ? {} : { section: currentSection }),
+      };
+    });
+
+    return { frames, rowHeads };
+  };
+  const blocks = (sketch.targetParts ?? [sketch.target]).map(blockOf);
+  const frames = blocks.flatMap((block) => block.frames);
+  const rowHeads = blocks.flatMap((block) => block.rowHeads);
 
   const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => {
     const section = sectionOf(key);
@@ -944,19 +1029,6 @@ export const sketchMatrixOf = ({
       ...(section === undefined ? {} : { section }),
     };
   };
-
-  const rowHeads = kept.map((state): CanvasRowHead => {
-    const open = openStates[state] === true;
-
-    return {
-      key: stateRowKeyOf(state),
-      label: `${state} · unchanged in ${variantColumns.map((column) => column.key).join(' ')}`,
-      title: `${open ? 'Fold' : 'Open'} ${state}: every shown variant draws it as current does`,
-      open,
-      before: rowKeyIn(currentSection, grouped ? `${state} · ${shownInteractions[0] ?? REST}` : state),
-      ...(currentSection === undefined ? {} : { section: currentSection }),
-    };
-  });
 
   const heads = [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf);
   const pages = usingPagesOf(product, part);

@@ -408,8 +408,10 @@ export type ListedSketch = {
   name: string;
   dir: string;
   variants: string[];
+  /** Every part the sketch targets, `target` first. Missing from an `@ethlete/cli` older than sketches with several targets. */
+  targetParts?: string[];
   problems: { variant: string; problems: SystemProblem[] }[];
-  /** The target as each variant draws it. Missing from an `@ethlete/cli` older than the sketch matrix. */
+  /** Each target part as each variant draws it, the first target's entries first. Missing from an `@ethlete/cli` older than the sketch matrix. */
   targets?: SketchTarget[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
@@ -432,6 +434,8 @@ export const rejectionOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: s
 export type SketchRound = { key: string; title: string; note: string; lost?: string };
 
 export type SketchTarget = {
+  /** Missing from an `@ethlete/cli` older than sketches with several targets. */
+  part?: string;
   variant: string;
   states: string[];
   widths?: number[];

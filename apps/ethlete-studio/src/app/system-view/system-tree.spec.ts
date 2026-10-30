@@ -811,6 +811,62 @@ describe('sketchMatrixOf', () => {
     });
   });
 
+  describe('several targets', () => {
+    const button = part({ states: ['default'] });
+    const card = part({ name: 'card', states: ['plain', 'raised'] });
+    const twoTargets = sketch({
+      variants: ['a'],
+      targetParts: ['components/button', 'components/card'],
+      targets: [
+        { part: 'components/button', variant: 'a', states: ['default'] },
+        { part: 'components/card', variant: 'a', states: ['plain', 'raised', 'flat'], unchanged: ['plain'] },
+      ],
+    });
+    const matrixOf = (openStates: Record<string, boolean> = {}) =>
+      sketchMatrixOf({ ...source, product: product([button, card]), part: button, sketch: twoTargets, openStates });
+
+    it('shows the states of every target part, each part its own row group named by the part, and a one-target sketch as before', () => {
+      const matrix = matrixOf();
+      const rows = [...new Map(matrix.frames.map((frame) => [frame.row, frame])).values()];
+
+      expect(rows.map((frame) => [frame.row, frame.rowLabel, frame.rowGroup])).toEqual([
+        ['default', 'components/button · default', 'components/button'],
+        ['components/card raised', 'components/card · raised', 'components/card'],
+        ['components/card flat', 'components/card · flat', 'components/card'],
+      ]);
+      expect(
+        matrix.frames.filter((frame) => frame.row === 'components/card raised').map((frame) => frame.place?.part),
+      ).toEqual(['components/card', 'components/card']);
+      expect(
+        matrix.frames.find((frame) => frame.row === 'components/card flat' && frame.column === 'current')?.empty,
+      ).toBe('new in this sketch');
+
+      const single = sketchMatrixOf({
+        ...source,
+        part: button,
+        sketch: sketch({
+          variants: ['a'],
+          targetParts: ['components/button'],
+          targets: [{ variant: 'a', states: ['default'] }],
+        }),
+      });
+
+      expect(single.frames.map((frame) => [frame.row, frame.rowLabel, frame.rowGroup])).toEqual([
+        ['default', undefined, undefined],
+        ['default', undefined, undefined],
+      ]);
+    });
+
+    it('folds and opens an unchanged state of a later target by its part and state', () => {
+      expect(matrixOf().rowHeads.map((head) => [head.key, head.label])).toEqual([
+        [stateRowKeyOf('components/card plain'), 'components/card · plain · unchanged in a'],
+      ]);
+      expect(matrixOf({ 'components/card plain': true }).frames.map((frame) => frame.row)).toContain(
+        'components/card plain',
+      );
+    });
+  });
+
   describe('rounds', () => {
     const rounded = sketch({
       status: 'ready',

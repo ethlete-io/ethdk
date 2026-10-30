@@ -84,6 +84,8 @@ import {
   roundColumnKeyOf,
   sketchMatrixOf,
   openRoundsOf,
+  sketchStateKeyOf,
+  stateOfRowKey,
   stateRowKeyOf,
   sketchRoundsOf,
   partKeyOf,
@@ -1015,9 +1017,9 @@ export class SketchViewComponent {
     }
 
     const head = this.matrix().rowHeads.find((candidate) => candidate.key === key);
-    const state = this.part()?.states.find((name) => stateRowKeyOf(name) === key);
+    const state = stateOfRowKey(key);
 
-    if (!head || state === undefined) return;
+    if (!head || state === null) return;
 
     const states = { ...this.openStates(), [state]: !head.open };
 
@@ -1028,9 +1030,11 @@ export class SketchViewComponent {
   protected toggleAllStates() {
     const open = !this.allStatesShown();
     const keys = new Set(this.unchangedHeads().map((head) => head.key));
-    const flags = (this.part()?.states ?? [])
-      .filter((state) => keys.has(stateRowKeyOf(state)))
-      .map((state) => [state, open] as const);
+    const flags = [...keys].flatMap((key) => {
+      const state = stateOfRowKey(key);
+
+      return state === null ? [] : [[state, open] as const];
+    });
     const states = { ...this.openStates(), ...Object.fromEntries(flags) };
 
     this.openStates.set(states);
@@ -1050,7 +1054,7 @@ export class SketchViewComponent {
         size: String(comment.size),
         interaction: comment.interaction ?? REST,
         variant: comment.sketch?.variant ?? '',
-        state: comment.state,
+        state: sketchStateKeyOf({ sketch: this.current(), part: comment.part, state: comment.state }),
       },
       () => this.focusComment(comment),
     );
