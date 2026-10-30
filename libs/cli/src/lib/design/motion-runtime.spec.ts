@@ -261,6 +261,67 @@ describe('stepMotion', () => {
     expect(stepped.bounds()).toEqual({ left: 5, top: -20, right: 130, bottom: 50 });
     Reflect.deleteProperty(document, 'getAnimations');
   });
+
+  it('switches back at interrupt with the reverse motion, ends what it cancels and drops later forward steps', async () => {
+    const root = mount();
+    const running: (ReturnType<typeof fakeAnimation> & { playState?: string })[] = [];
+    const forward = fakeAnimation([{ width: '300px' }], 1000);
+    const back = fakeAnimation([{ width: '100px' }], 400);
+    const settleBack = fakeAnimation([{ opacity: 1 }], 100);
+    const dropped = fakeAnimation([{ color: 'red' }], 100);
+
+    Object.assign(document, { getAnimations: () => running });
+
+    const stepped = await stepMotion({
+      root,
+      markup: states['open'] ?? '',
+      motion: {
+        from: 'closed',
+        to: 'open',
+        interrupt: 200,
+        play: (ctx) => {
+          running.push(forward);
+          ctx.at(300, () => running.push(dropped));
+        },
+      },
+      reverse: {
+        markup: states['closed'] ?? '',
+        motion: {
+          from: 'open',
+          to: 'closed',
+          play: (ctx) => {
+            running.splice(0, running.length, back);
+            Object.assign(forward, { playState: 'idle' });
+            ctx.at(100, () => running.push(settleBack));
+          },
+        },
+      },
+    });
+
+    stepped.seek(150);
+    expect(root.querySelector('.card')?.className).toBe('card card--open');
+    stepped.seek(500);
+    expect(root.querySelector('.card')?.className).toBe('card');
+    expect([forward.currentTime, back.currentTime, settleBack.currentTime]).toEqual([200, 300, 200]);
+    expect(running).not.toContain(dropped);
+    expect(stepped.tracks().map(({ properties, start, end }) => ({ properties, start, end }))).toEqual([
+      { properties: ['width'], start: 0, end: 200 },
+      { properties: ['width'], start: 200, end: 600 },
+      { properties: ['opacity'], start: 300, end: 400 },
+    ]);
+    expect(stepped.end()).toBe(600);
+    Reflect.deleteProperty(document, 'getAnimations');
+  });
+
+  it('needs the from markup for a motion with interrupt', () => {
+    expect(() =>
+      stepMotion({
+        root: mount(),
+        markup: states['open'] ?? '',
+        motion: { from: 'closed', to: 'open', interrupt: 100 },
+      }),
+    ).toThrow('interrupt needs the markup');
+  });
 });
 
 describe('clocks and random', () => {

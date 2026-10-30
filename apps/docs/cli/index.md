@@ -123,8 +123,19 @@ file with the end of each mode, its keyframe times and one track per animation: 
 duration, iterations and easing. It takes `--variant <key>` of the part's open sketch, `--preset` or `--width`, `--scale`,
 `--surface`, `--color` and `--out`. A track's element is `[data-et-key="..."]` where the element sets one, otherwise its selector. Each
 shot is cut to the union of the part and the animated elements over all keyframes, so an overshoot is not clipped and the frames line
-up. Limits: an animation or step that starts after 30 s is not drawn, an infinite animation does not count towards `end`, and
-`interrupt` is not supported yet. The timeline in Studio comes in a later release.
+up. Limits: an animation or step that starts after 30 s is not drawn, and an infinite animation does not count towards `end`. The
+timeline in Studio comes in a later release.
+
+`interrupt: <ms>` switches the part back to its `from` state at that time, so the shots and tracks show the whole run, also how a
+spring hands over. The reverse runs the part's motion from `to` to `from` when it declares one (its `ctx.at` counts from the
+interrupt, and it never uses a View Transition); without one, only the CSS transitions run back. A forward `ctx.at` step after the
+interrupt is dropped, an animation the switch cancels ends there, and the interrupt time is one of the keyframes. The JSON names
+`interrupt`.
+
+`spring({ damping, frequency })` from `@design-system` samples a spring into an easing token for `foundations`: `damping` is the
+damping ratio (below 1 it overshoots), `frequency` the undamped frequency in Hz. It returns `easing`, a `linear(...)` function,
+and `duration`, the ms until it settles (10 s at most); as a string it reads `<duration>ms <easing>`, so
+`` `--motion-capsule: ${spring({ damping: 0.6, frequency: 2 })};` `` gives a token for `transition: width var(--motion-capsule)`.
 
 `et design mcp` serves the design tools to an MCP client over stdio, in the working directory of the session: `parts`,
 `check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `inbox` and

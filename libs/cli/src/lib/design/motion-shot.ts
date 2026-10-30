@@ -68,9 +68,10 @@ export const motionPicturesOf = async (options: {
 
   const timeline = (await page.evaluate(
     `(() => { window.etMotion.seek(${MOTION_LIMIT_MS}); return window.etMotion.timeline(); })()`,
-  )) as { end: number; tracks: unknown[] };
+  )) as { end: number; tracks: unknown[]; interrupt?: number | null };
+  const { interrupt, ...drawn } = timeline;
 
-  const times = keyframeTimesOf(timeline.end, at);
+  const times = keyframeTimesOf(drawn.end, typeof interrupt === 'number' ? [...(at ?? []), interrupt] : at);
   let region: ReturnType<typeof unionOfBoxes> | null = null;
 
   if (clip) {
@@ -102,5 +103,5 @@ export const motionPicturesOf = async (options: {
 
   await failureOf(page);
 
-  return { ...timeline, keyframes };
+  return { ...drawn, keyframes };
 };

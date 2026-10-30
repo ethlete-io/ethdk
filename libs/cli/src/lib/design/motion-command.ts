@@ -13,7 +13,7 @@ import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
 export const MOTION_USAGE = `motion shots <layer>/<name> <motion> [--variant <key>] [--mode <${MOTION_MODES.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
-type DeclaredMotion = { from: string; to: string; at?: number[] };
+type DeclaredMotion = { from: string; to: string; at?: number[]; interrupt?: number };
 
 const motionsOf = (part: unknown): Record<string, DeclaredMotion> => {
   const motions = (part as { motions?: unknown } | undefined)?.motions;
@@ -36,6 +36,7 @@ export const motionReportOf = (options: {
   motion: options.motion,
   from: options.declared.from,
   to: options.declared.to,
+  interrupt: options.declared.interrupt ?? null,
   preset: options.preset,
   width: options.width,
   modes: Object.fromEntries(

@@ -221,17 +221,39 @@ const trackOf = (animation: Animation, start: number): MotionTrack => {
 
 /**
  * Switches `root` to `markup` with `motion` as `switchState` does, on a manual clock, and pauses every animation it
- * starts, so a caller can step through the motion and draw it at any time from its start.
+ * starts, so a caller can step through the motion and draw it at any time from its start. A motion with `interrupt`
+ * switches back to `reverse.markup` at that time, with `reverse.motion` (its `ctx.at` counts from the interrupt and a
+ * View Transition is not used); a forward `ctx.at` step after it is dropped and a cancelled animation ends there.
  */
-export const stepMotion = (options: { root: Element; markup: string; motion: Motion }): Promise<SteppedMotion> => {
-  const { root, markup, motion } = options;
+export const stepMotion = (options: {
+  root: Element;
+  markup: string;
+  motion: Motion;
+  reverse?: { markup: string; motion?: Motion };
+}): Promise<SteppedMotion> => {
+  const { root, markup, motion, reverse } = options;
   const document = root.ownerDocument;
   const clock = manualClock();
   const started = new Map<Animation, MotionTrack>();
+  const cut = new Set<Animation>();
+  const interrupt = motion.interrupt;
+  let interrupted = false;
   let lastTask = 0;
   let ready: Promise<unknown> = Promise.resolve();
 
+  if (interrupt !== undefined && !reverse)
+    throw new Error('design-explore: a motion with interrupt needs the markup of its from state to switch back to');
+
   const collect = (start: number) => {
+    for (const animation of started.keys()) {
+      const track = started.get(animation);
+
+      if (cut.has(animation) || animation.playState !== 'idle' || !track) continue;
+
+      cut.add(animation);
+      track.end = Math.min(track.end ?? start, start);
+    }
+
     for (const animation of document.getAnimations()) {
       if (started.has(animation)) continue;
 
@@ -240,15 +262,24 @@ export const stepMotion = (options: { root: Element; markup: string; motion: Mot
     }
   };
 
-  const timed: MotionClock = {
+  const pose = (ms: number) => {
+    for (const [animation, track] of started)
+      if (!cut.has(animation)) animation.currentTime = Math.max(0, ms - track.start);
+  };
+
+  const timedFrom = (offset: number, live: () => boolean): MotionClock => ({
     ...clock,
     at: (ms, fn) =>
-      clock.at(ms, () => {
-        lastTask = Math.max(lastTask, ms);
+      clock.at(offset + ms, () => {
+        if (!live()) return;
+
+        lastTask = Math.max(lastTask, offset + ms);
+        pose(offset + ms);
         fn();
-        collect(ms);
+        collect(offset + ms);
       }),
-  };
+  });
+  const timed = timedFrom(0, () => !interrupted);
 
   return switchState({
     root,
@@ -263,6 +294,21 @@ export const stepMotion = (options: { root: Element; markup: string; motion: Mot
     .then(() => {
       collect(0);
 
+      if (interrupt !== undefined && reverse) {
+        clock.at(interrupt, () => {
+          interrupted = true;
+          lastTask = Math.max(lastTask, interrupt);
+          pose(interrupt);
+          void switchState({
+            root,
+            markup: reverse.markup,
+            motion: reverse.motion ? { ...reverse.motion, viewTransition: false } : undefined,
+            clock: timedFrom(interrupt, () => true),
+          });
+          collect(interrupt);
+        });
+      }
+
       return {
         seek: (ms) => {
           if (ms < clock.now())
@@ -270,7 +316,7 @@ export const stepMotion = (options: { root: Element; markup: string; motion: Mot
 
           clock.advance(ms - clock.now());
 
-          for (const [animation, track] of started) animation.currentTime = ms - track.start;
+          pose(ms);
         },
         tracks: () => [...started.values()],
         end: () => Math.max(lastTask, ...[...started.values()].map((track) => track.end ?? 0)),

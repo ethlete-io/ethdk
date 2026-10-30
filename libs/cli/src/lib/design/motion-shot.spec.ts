@@ -52,6 +52,22 @@ export default definePart({
 });
 `;
 
+const SWING_STYLES = [
+  '.swing { width: 40px; height: 20px; background: rgb(0, 0, 0); transition: width 500ms linear; }',
+  '.swing--open { width: 240px; transition: width 1000ms linear; }',
+].join('\n');
+
+const SWING = `import { definePart, drawing } from '@design-system';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { closed: { open: false }, open: { open: true } },
+  motions: { swing: { from: 'closed', to: 'open', interrupt: 400 } },
+  render: (state) =>
+    drawing({ body: '<div class="swing' + (state.open ? ' swing--open' : '') + '"></div>', styles: ${JSON.stringify(SWING_STYLES)} }),
+});
+`;
+
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-motion-shot-'));
   const design = join(target, DESIGN_DIR);
@@ -62,6 +78,8 @@ const checkout = () => {
   writeFileSync(join(dir, 'bar.ts'), PART);
   mkdirSync(join(design, 'app-a', 'components', 'dot'), { recursive: true });
   writeFileSync(join(design, 'app-a', 'components', 'dot', 'dot.ts'), POP);
+  mkdirSync(join(design, 'app-a', 'components', 'swing'), { recursive: true });
+  writeFileSync(join(design, 'app-a', 'components', 'swing', 'swing.ts'), SWING);
 
   return { target, config: readConfig(target) ?? {} };
 };
@@ -133,6 +151,22 @@ describe('createPartShooter motionOf', () => {
       expect(new Set(sizes.map(({ width }) => width)).size).toBe(1);
       expect(sizes[0]?.width).toBeGreaterThanOrEqual(136);
       expect((pop.tracks as { element: string }[]).map((track) => track.element)).toEqual(['[data-et-key="dot"]']);
+
+      const swing = await motionOf('full', 'components/swing', 'swing');
+
+      expect(swing.end).toBe(600);
+      expect(swing.keyframes.map((keyframe) => keyframe.ms)).toEqual([0, 150, 300, 400, 450, 600]);
+      expect(
+        (swing.tracks as (Track & { end: number })[]).map(({ properties, start, duration, end }) => ({
+          properties,
+          start,
+          duration,
+          end,
+        })),
+      ).toEqual([
+        { properties: ['width'], start: 0, duration: 1000, end: 400 },
+        { properties: ['width'], start: 400, duration: 200, end: 600 },
+      ]);
     } finally {
       await shooter.close();
       await server.close();

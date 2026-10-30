@@ -211,8 +211,24 @@ const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: str
   Object.assign(window, {
     etMotion: {
       start: () =>
-        markupOf(motion.to)
-          .then((markup) => stepMotion({ root, markup, motion }))
+        Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)])
+          .then(([markup, back]) =>
+            stepMotion({
+              root,
+              markup,
+              motion,
+              ...(back === null
+                ? {}
+                : {
+                    reverse: {
+                      markup: back,
+                      motion: Object.values(drawn.part.motions ?? {}).find(
+                        (other) => other.from === motion.to && other.to === motion.from,
+                      ),
+                    },
+                  }),
+            }),
+          )
           .then((started) => {
             stepped = started;
 
@@ -220,7 +236,7 @@ const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: str
           }),
       seek: (ms: number) => steppedOf().seek(ms),
       bounds: () => steppedOf().bounds(),
-      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks() }),
+      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks(), interrupt: motion.interrupt ?? null }),
     },
   });
 };

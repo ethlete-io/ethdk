@@ -8,6 +8,8 @@ export { embedPage } from './embed-page';
 export type { EmbedPageOptions } from './embed-page';
 export { interactionRows } from './interaction-rows';
 export type { InteractionRowsOptions } from './interaction-rows';
+export { spring } from './spring';
+export type { Spring } from './spring';
 export { svgAsset } from './svg-asset';
 export type { SvgAssetOptions } from './svg-asset';
 
