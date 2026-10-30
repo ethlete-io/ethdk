@@ -405,9 +405,34 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `rest` and `open` by hover, active and focus-visible.
 - **Status:** `pages/merge` merged (`7441190de`): the unchanged line is `components/disclosure`
   at `size: 'xs'`, control `toggle` with `part`. Both parts pass `design complete`.
-- **Next:** discovery (`CONTROL-UNDECLARED`,
+- **Next (done below):** discovery (`CONTROL-UNDECLARED`,
   `CONTROL-UNCLASSIFIED`), then the other kinds.
-- **In progress (2026-10-30):** a subagent builds discovery.
+- **Status:** discovery built (`3c0a2c59b`). Each rest frame's DOM is walked: native controls,
+  interactive roles and known SDK controls (`et-select`, `et-form-field`, `[et-button]`, ...)
+  without a marker fail as `CONTROL-UNDECLARED`; an element with a pointer cursor (where it
+  starts, not inherited) or a matched `:hover` rule (forced `:is(:hover, ...)` included),
+  outside every control and marker, fails as `CONTROL-UNCLASSIFIED`. One line per DOM path,
+  with its states and count. `CONTROLS-MISSING` is gone: a part without controls passes when
+  it draws none. Decided scope rules: a marker on the control itself declares it; a marker on
+  a wrapper that is no control declares the controls inside it; a control nested in another
+  control is its own control, except inside an SDK control (`et-textarea` owns its `textarea`).
+  Everything inside a marker whose control names a `part` belongs to that part. `embedPage`
+  iframes are not walked. Bites: the new specs fail on the old `complete.ts` (undeclared
+  button, part without controls); walking iframe documents fails the embed spec. Verified:
+  design vitest 740/740, tsc, build, eslint, prettier.
+  Findings on the real parts (`.ethlete/design/studio`, unchanged): `components/disclosure`
+  and `foundations/icons` pass. `pages/merge` fails with 6: Back and Merge buttons, the two
+  buttons in the shot, the shell's project and collapse buttons undeclared, and the changed
+  list `li` rows unclassified (cursor pointer). `components/tree-row`, `elements/part-tree`:
+  the `div.st-trow[tabindex]` undeclared. `components/comment-pin`: its `button`.
+  `elements/shell-main`: project/collapse buttons, picker `role="option"` rows and action.
+  `elements/canvas-frames`: 18 grid buttons. `pages/inbox` 8, `pages/system` 7,
+  `pages/sketches` 13 (zoom buttons, preset `et-form-field`, tree rows, grid buttons, shell),
+  `pages/flows` 5, `pages/start` 2. The shell buttons repeat on every page.
+- **Next:** controls of an included element or component (the shell, tree rows, grid cells)
+  repeat on every page; let a page attribute them to the part that draws them (a marker with
+  `part`, as for the disclosure) instead of declaring each again. Then the per-page inventory
+  contact sheet with Studio approval, then the other kinds (`button`, `row`, `select`, ...).
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
