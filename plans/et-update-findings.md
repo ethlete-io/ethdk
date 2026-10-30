@@ -38,7 +38,7 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   The peer is `>=23.0.0` in core, query, components, contentful and cdk. The libs use only devkit APIs that exist
   in Nx 23 (by reading, not installed).
 
-## 4. The cdk `to-v5` codemod renames `theme` on app components - open
+## 4. The cdk `to-v5` codemod renames `theme` on app components - done
 
 - **Pain:** reported 2026-10-30 by `fifagg-frontend-a5`, `@ethlete/cdk` 5.0.0-next.44. The codemod `to-v5` renamed
   `[theme]` to `[color]` and `theme=` to `color=` on about 219 template sites. It matched only the attribute name,
@@ -46,3 +46,8 @@ Reported on 2026-10-30 by the session `fifagg-frontend-a5`, with `@ethlete/cli` 
   directives). About 150 bindings now go nowhere, and ngc does not flag most of them.
 - **Expected:** rename only on elements that the SDK button and component selectors match.
 - **Evidence:** commit `f920736122` in fifagg-frontend, branch `chore/ethlete-next`.
+- **As built (2026-10-30):** cause: `TEMPLATE_REPLACEMENTS` in `libs/cdk/generators/migrate-to-v5/color-themes.ts`
+  ran `[theme]=` and `[altTheme]=` as plain `replaceAll` over every template. Now `renameSdkColorInputs` renames
+  `theme`, `[theme]`, `altTheme`, `[altTheme]` only in start tags with `et-button`, `et-fab`, `et-icon-button` or
+  `et-text-button` (the only SDK hosts that had `theme`), in `.html` and inline templates. The other renames are
+  SDK-only names. Verified: specs that fail without the fix. Not verified: a run on fifagg-frontend.

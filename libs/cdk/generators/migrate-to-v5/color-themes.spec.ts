@@ -512,7 +512,8 @@ export const appConfig = {
     it('should replace directive bindings in HTML files', async () => {
       tree.write(
         'component.html',
-        `<div [etProvideTheme]="theme" [theme]="myTheme" [altTheme]="altMyTheme">
+        `<div [etProvideTheme]="theme">
+  <button et-button [theme]="myTheme" [altTheme]="altMyTheme">go</button>
   <span etColorThemed etSurfaceThemed>content</span>
 </div>`,
       );
@@ -530,6 +531,58 @@ export const appConfig = {
       expect(result).not.toContain('[altTheme]=');
       expect(result).not.toContain('etColorThemed');
       expect(result).not.toContain('etSurfaceThemed');
+    });
+
+    it('should rename theme inputs only on SDK button hosts', async () => {
+      tree.write(
+        'component.html',
+        `<et-sb-row>
+  <a
+    class="link"
+    et-text-button
+    theme="primary"
+  >link</a>
+  <button type="button" et-icon-button [theme]="iconTheme" altTheme="dark"></button>
+  <gg-card [theme]="x"></gg-card>
+  <fifa-gg-button theme="y"></fifa-gg-button>
+  <button ggButton [theme]="z" etButton></button>
+  <div et-button-like theme="w"></div>
+</et-sb-row>`,
+      );
+
+      await migrateColorThemes(tree);
+
+      expect(tree.read('component.html', 'utf-8')).toBe(`<et-sb-row>
+  <a
+    class="link"
+    et-text-button
+    color="primary"
+  >link</a>
+  <button type="button" et-icon-button [color]="iconTheme" altColor="dark"></button>
+  <gg-card [theme]="x"></gg-card>
+  <fifa-gg-button theme="y"></fifa-gg-button>
+  <button ggButton [theme]="z" etButton></button>
+  <div et-button-like theme="w"></div>
+</et-sb-row>`);
+    });
+
+    it('should rename theme inputs on SDK button hosts in inline templates only', async () => {
+      tree.write(
+        'component.ts',
+        `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'gg-thing',
+  template: \`<button et-fab [theme]="t"></button><gg-card [theme]="t"></gg-card>\`,
+})
+export class ThingComponent {}`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('component.ts', 'utf-8');
+      expect(result).toContain('<button et-fab [color]="t"></button>');
+      expect(result).toContain('<gg-card [theme]="t"></gg-card>');
     });
 
     it('should replace inline template class names in TypeScript files', async () => {

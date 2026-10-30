@@ -9,11 +9,39 @@ const TEMPLATE_REPLACEMENTS: [string, string][] = [
   ['etColorThemed', 'etColored'],
   ['[etSurfaceThemed]', '[etSurfaced]'],
   ['etSurfaceThemed', 'etSurfaced'],
-  ['[theme]=', '[color]='],
-  ['[altTheme]=', '[altColor]='],
   ['et-theme-alt--', 'et-color-alt--'],
   ['et-theme--', 'et-color--'],
 ];
+
+const SDK_COLOR_INPUT_HOST_ATTRIBUTES = new Set(['et-button', 'et-fab', 'et-icon-button', 'et-text-button']);
+
+const SDK_COLOR_INPUT_RENAMES = new Map([
+  ['theme', 'color'],
+  ['[theme]', '[color]'],
+  ['altTheme', 'altColor'],
+  ['[altTheme]', '[altColor]'],
+]);
+
+const START_TAG_PATTERN =
+  /<([a-zA-Z][\w.:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)(\s*\/?>)/g;
+const ATTRIBUTE_PATTERN = /(\s+)([^\s"'>/=]+)((?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)/g;
+
+const renameSdkColorInputs = (text: string) =>
+  text.replace(START_TAG_PATTERN, (tag, name: string, attributes: string, end: string) => {
+    const names = [...attributes.matchAll(ATTRIBUTE_PATTERN)].map((match) => match[2] ?? '');
+
+    if (!names.some((attribute) => SDK_COLOR_INPUT_HOST_ATTRIBUTES.has(attribute))) {
+      return tag;
+    }
+
+    const renamed = attributes.replace(
+      ATTRIBUTE_PATTERN,
+      (_match, space: string, attribute: string, value: string) =>
+        `${space}${SDK_COLOR_INPUT_RENAMES.get(attribute) ?? attribute}${value}`,
+    );
+
+    return `<${name}${renamed}${end}`;
+  });
 
 const CSS_REPLACEMENTS: [string, string][] = [
   ['.et-color-themed', '.et-colored'],
@@ -65,6 +93,8 @@ export default async function migrateColorThemes(tree: Tree) {
       modified = modified.replaceAll(oldStr, newStr);
     }
 
+    modified = renameSdkColorInputs(modified);
+
     if (modified !== content) {
       tree.write(filePath, modified);
       filesModified++;
@@ -114,8 +144,9 @@ export default async function migrateColorThemes(tree: Tree) {
 
     const needsTemplateMigration = TEMPLATE_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
     const needsCssMigration = CSS_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
+    const needsSdkColorInputMigration = renameSdkColorInputs(content) !== content;
 
-    if (!needsImportMigration && !needsTemplateMigration && !needsCssMigration) {
+    if (!needsImportMigration && !needsTemplateMigration && !needsCssMigration && !needsSdkColorInputMigration) {
       return;
     }
 
@@ -127,6 +158,13 @@ export default async function migrateColorThemes(tree: Tree) {
       for (const [oldStr, newStr] of TEMPLATE_REPLACEMENTS) {
         modified = modified.replaceAll(oldStr, newStr);
       }
+      fileChanges++;
+    }
+
+    const withSdkColorInputs = renameSdkColorInputs(modified);
+
+    if (withSdkColorInputs !== modified) {
+      modified = withSdkColorInputs;
       fileChanges++;
     }
 
