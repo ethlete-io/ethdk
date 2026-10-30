@@ -76,9 +76,23 @@ a log with only failures never counted as finished. `/reload-plugins` dropped th
 of the mod, and a reinstall with `/plugin` was necessary. This slice is outside the SDK. Do it in the
 `tom-mods` source repository.
 
+## Slice 5: ship the mod in `@ethlete/agent-rules`
+
+The mod is in `tools/claude-mods/` now (`d0ee7819b`). `/home/tom/dev/mods/e2e-mkt` is a symlink to it,
+so the installed copy still works. Consumers have no source, so the package must carry it:
+
+- Move `tools/claude-mods/plugins/e2e-progress` into `libs/agent-rules/content/` and publish it with
+  the package. Rename the marketplace from `tom-mods` to `ethlete`.
+- `ethlete-agents sync` writes `extraKnownMarketplaces` and `enabledPlugins` into the consumer's
+  `.claude/settings.json`, with a path into `node_modules/@ethlete/agent-rules/`. Spike first: does
+  Claude Code accept a directory marketplace with a `node_modules` path in project settings?
+- Keep the mod version tied to the package version, because the mod reads the reporter's path line.
+- Docs: `apps/docs/agent-rules/`. Changeset: `@ethlete/agent-rules` minor.
+
 ## Decisions
 
 Tom agreed on 2026-10-30:
 
 - Slice 1 home: `@ethlete/cli/playwright`, not a new package.
+- Slice 5 (2026-10-30): ship the mod in `@ethlete/agent-rules`, not as a GitHub marketplace.
 - Slice 3: skill prose first. Add `et e2e triage` only if agents group badly by hand.

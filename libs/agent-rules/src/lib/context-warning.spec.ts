@@ -1,7 +1,7 @@
 import { execFileSync } from 'child_process';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +9,7 @@ type RunHookOptions = {
   model: string;
   prompt?: string;
   sessionId?: string;
+  setup?: (root: string) => Record<string, string>;
   threadId?: string;
   threadSource?: 'subagent' | 'user';
   tokens: number;
@@ -55,6 +56,7 @@ const runHook = (options: RunHookOptions) => {
 
 type RunClaudeHookOptions = {
   agentId?: string;
+  env?: Record<string, string>;
   event?: string;
   model?: string;
   permissionMode?: string;
@@ -68,17 +70,20 @@ type RunClaudeHookOptions = {
 const runClaudeHook = (options: RunClaudeHookOptions) => {
   const {
     agentId,
+    env = {},
     event,
     model = 'claude-opus-5',
     permissionMode = 'auto',
     prompt,
     sessionId = randomUUID(),
+    setup,
     tokens,
     turn = [],
     withTranscript = true,
   } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-context-warning-'));
   const transcriptPath = join(root, 'transcript.jsonl');
+  const setupEnv = setup?.(root) ?? {};
 
   if (withTranscript) {
     writeFileSync(
@@ -92,6 +97,7 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
 
   const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
     encoding: 'utf8',
+    env: { ...process.env, TMUX: '', ...env, ...setupEnv },
     input: JSON.stringify({
       cwd: root,
       ...(agentId ? { agent_id: agentId } : {}),
@@ -186,6 +192,31 @@ describe('context-warning handoff mode', () => {
 
     expect(context).toContain('Choose one of two');
     expect(context).toContain('recommend the user run /');
+  });
+
+  it('tells the agent to restart itself in an agent-sessions tmux session', () => {
+    const run = (session: string) =>
+      runClaudeHook({
+        env: { TMUX: '/tmp/tmux-test,1,0' },
+        permissionMode: 'default',
+        setup: (root) => {
+          const bin = join(root, 'bin');
+          mkdirSync(join(root, '.agents/skills/ethlete-agent-sessions'), { recursive: true });
+          writeFileSync(join(root, '.agents/skills/ethlete-agent-sessions/agent-sessions.mjs'), '');
+          mkdirSync(bin);
+          writeFileSync(join(bin, 'tmux'), `#!/bin/sh\necho '${session.replace('<repo>', basename(root))}'\n`, {
+            mode: 0o755,
+          });
+          return { PATH: `${bin}:${process.env['PATH']}` };
+        },
+        tokens: 175_000,
+      })?.hookSpecificOutput.additionalContext ?? '';
+
+    const inSession = run('claude@<repo>');
+    expect(inSession).toContain('restart this session yourself with the agent-sessions `restart` command');
+    expect(inSession).not.toContain('recommend the user run /');
+
+    expect(run('some-other-session')).toContain('recommend the user run /');
   });
 
   it('takes the choice away at the final tier', () => {

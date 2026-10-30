@@ -93,6 +93,7 @@ a tool batch or the end of a turn.
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -255,11 +256,39 @@ def handoff_skill(root):
     return "ethlete-handoff"
 
 
-def resolve_profile(profile, skill):
+SELF_RESTART = (
+    "you run in an agent-sessions tmux session, so do not hand this step to the user: apply the {handoff} skill's save "
+    "test, save if it calls for a file, then follow its 'Clear and resume on your own' section "
+    "and restart this session yourself with the agent-sessions `restart` command - with no file, "
+    "restart with a prompt that names the next step"
+)
+USER_DIRECTED_KEYS = ("recommend", "suggest", "save_now", "save_at_stop")
+
+
+def can_self_restart(root):
+    """True only in a tmux session the agent-sessions `restart` command can find and drive."""
+    if not os.environ.get("TMUX") or not root:
+        return False
+    if not any(
+        os.path.isfile(os.path.join(root, ".agents/skills", name, "agent-sessions.mjs"))
+        for name in ("ethlete-agent-sessions", "agent-sessions")
+    ):
+        return False
+    try:
+        session = subprocess.run(
+            ["tmux", "display-message", "-p", "#S"], capture_output=True, text=True, timeout=2
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return session.endswith("@" + re.sub(r"[.:]", "-", os.path.basename(os.path.normpath(root))))
+
+
+def resolve_profile(profile, skill, self_restart=False):
     """Fills the installed handoff skill's name into a profile's message fragments."""
+    resolved = {**profile, **{key: SELF_RESTART for key in USER_DIRECTED_KEYS}} if self_restart else profile
     return {
         key: value.replace("{handoff}", skill) if isinstance(value, str) else value
-        for key, value in profile.items()
+        for key, value in resolved.items()
     }
 
 
@@ -821,7 +850,7 @@ def main():
     if disabled_locally(local_config):
         return
 
-    profile = resolve_profile(profile, handoff_skill(root))
+    profile = resolve_profile(profile, handoff_skill(root), self_restart=can_self_restart(root))
 
     claude_subagent = agent == "claude" and bool(data.get("agent_id"))
     if claude_subagent:
