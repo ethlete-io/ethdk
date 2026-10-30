@@ -7,7 +7,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
 
 - A1 done (`0c4b8a887`). A2 and F1 run in one subagent with the Q32 merge-target change; A3-A5 start after it.
 - D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
-  `UTILITY-CSS` in `RULES`). B, C1, E, F 5.51 and G run. Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
+  `UTILITY-CSS` in `RULES`). B, C1, E, F 5.51 and F 5.32 run. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
+  animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
 
