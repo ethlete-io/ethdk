@@ -32,6 +32,10 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
      fixed descendants after `placeOverlays`. Real sdk select open shot at 320 px checked; live Studio canvas not seen.
      Open for Tom: a frame with a declared width does not grow sideways; content above the root is not added; a
      `fixed; inset: 0` backdrop stretches the frame to the 800 px viewport.
+  - In progress (2026-10-31, two opus subagents, uncommitted work may sit in the tree): Q66 live canvas frame
+    height (sdk select `open-option-hover` at 320 px cut off in the live canvas, shots fine; `frame.ts`,
+    `canvas-frame.component.ts`); Q69 static grid shots render light in a dark Studio (`shot.ts`, `serve.ts`, the
+    Studio grid cell). If a subagent did not commit, check `git status` and redo the slice from the grill's Q66/Q69.
   3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
