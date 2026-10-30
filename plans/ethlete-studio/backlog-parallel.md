@@ -197,7 +197,8 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   for an option that never takes DOM focus: in a shown surface, the option whose id the control's
   `aria-activedescendant` names counts when its look differs from an unforced, unselected option. Generic ARIA,
   no SDK names in `libs/cli`. No fake `:focus-visible` rule in drawings. Applies to `components/select` and later
-  `tree`.
+  `tree`. **Built** in `6b6467a95`: the named option must differ in computed look from a plain sibling (not
+  selected, named or forced); the gap says which evidence is missing.
 - **Token overview decision (Tom, 2026-10-30, Q49, superseded by the merge):** Tom answered a (matrix of chips),
   then merged variant c (token sheet with name and value) in Studio, d40af99ed. The merge stands: the sdk token
   overview is the token sheet. Drift check: `yarn sdk:tokens:check` in CI and pre-push (9f391f97b).
