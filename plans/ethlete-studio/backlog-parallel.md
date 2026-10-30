@@ -148,6 +148,14 @@ use: `components/select` with the open panel and options (the 4.47 gap that bloc
 for 4.47, goes to `ready` and waits on the merge queue for Tom. The session follows the
 `ethlete-design-exploration` skill: Tom picks every design.
 
+- **Order change (Tom, 2026-10-30):** the sdk foundations come first, then one component at a time.
+- **In progress (ethlete-sdk-33, 2026-10-30):** sketch `foundations/tokens` in `sdk`. The part is a hand copy
+  of old Storybook CSS: themes `accent`/`danger` where the mocks and `calls/components/themes.ts` use `brand`,
+  `danger`, `warning`; no `--et-shadow-color-rgb` or `--et-font-family`; a dead Tailwind `--color-et-*` layer.
+  Q47 (token source: hand fix or generated from the real themes) is with the grill session.
+- **CLI gap (sent to stream A):** `design complete` checks only merged parts, so a sketch variant cannot prove
+  its 4.47 coverage before the merge. Request: `design complete --variant`.
+
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
 The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
