@@ -489,6 +489,18 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** `design check` fails on a new utility-expressible declaration, and the
   existing pages draw the same pictures with their CSS cut to what utilities cannot do.
 
+### 4.54 A design cannot say that a change between states animates - open
+
+- **Pain (Tom, 2026-10-30):** a design draws each state as a still frame. Nothing says that a
+  change between two states moves. Examples in Studio: the active bar in the rail could move
+  between items with a FLIP animation, and the Inbox sidebar opens and closes.
+- **Idea:** next to the `controls` of 4.47, a part declares a transition between two states,
+  for example `transitions: { 'rail.active': { from: 'pages', to: 'inbox', kind: 'flip' } }`,
+  and the drawing marks the moving element. `design complete` then requires the declaration
+  for a control kind that changes layout, for example a disclosure or a selection indicator.
+- **Open:** whether a still pair of states is enough evidence, or whether Studio must play the
+  transition; and which kinds need one. Not decided, no proposal yet.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
