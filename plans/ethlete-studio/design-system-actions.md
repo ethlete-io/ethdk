@@ -656,6 +656,17 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   every other inline `<svg>` outside `foundations/` fails `INLINE-SVG`. The rail mark of
   `elements/shell-main` moving to `foundations/logo` is confirmed.
 
+### 4.60 The changed area is one box around all changes - open
+
+- **Pain (Tom, 2026-10-30):** in the `components/tree-row` icon sketch, the changed area of the `tree` state
+  covers almost the whole row column, though only four small icons change.
+- **Cause:** `changedBoxOf` in `libs/cli/src/lib/design/contact-sheet.ts` returns one box around every
+  changed pixel of a state. Changes far apart, as the warning at the top and the check at the bottom, give
+  one tall box that is mostly unchanged.
+- **Fix options:** 1. one box per cluster of changed pixels: boxes closer than a margin merge, and Studio
+  shows each box as its own crop, before and after side by side (recommended). 2. keep one box, but outline
+  each cluster inside it. 3. no change.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
