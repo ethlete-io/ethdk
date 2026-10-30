@@ -528,7 +528,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   design gets one pass: declare its interactive controls, draw the missing states and
   surfaces, and cut CSS to what utilities cannot express. One page per commit.
 
-### 4.53 Studio designs use plain CSS where Tailwind utilities would do - open
+### 4.53 Studio designs use plain CSS where Tailwind utilities would do - done
 
 - **Pain (Tom, 2026-10-30):** many Studio designs style with plain CSS, though the rule is
   Tailwind utilities in the markup and CSS only where utilities cannot express it.
@@ -582,9 +582,14 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   on a merged part changes its hash, so `design check` says "changed outside a sketch"; format in the sketch.
   CANONICAL-CLASS findings to fix via sketch: `w-[420px]` in pages/start and pages/system, `min-h-[900px]` in
   pages/start. Left: pages/sketches (after the frame bug), then register `UTILITY-CSS`.
-- **Progress (2026-10-30):** `CANONICAL-CLASS` is in `RULES`; spec through `ruleProblemsOf`, docs in
-  `apps/docs/cli/index.md`. Studio findings in pages/start and pages/system wait for a sketch. `pages/sketches` move
-  running.
+- **As built (2026-10-30):** `02ed9a85d` `CANONICAL-CLASS` and `a2bf53b0f` `UTILITY-CSS` run in `design check`
+  (specs through `ruleProblemsOf`, docs, changesets). `6518f3712`: a rule whose selectors all end on an SDK `.et-*`
+  element passes; a product whose stylesheets import no `tailwindcss` is not checked. Moves: `8c6154d63`
+  pages/sketches (227 -> 45 CSS lines), `34f73f3e2` the last 35 findings in disclosure, tree-row, canvas-frames and
+  merge (shared markup now takes exported class strings). Both auto-merged with no visible change. `design check
+--product studio` now reports only the six `CONTRAST` findings in `foundations/colors`. CLI design specs: 728
+  pass. Not verified: real-pointer hover and press, the running Studio app. Tool note: `sketch check` does not run
+  `CANONICAL-CLASS`; only `ready` caught a non-canonical class.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
