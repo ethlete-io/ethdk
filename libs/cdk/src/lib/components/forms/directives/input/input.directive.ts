@@ -1,9 +1,31 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { AutofillMonitor } from '@angular/cdk/text-field';
-import { Directive, ElementRef, InjectionToken, Injector, OnDestroy, OnInit, inject, input } from '@angular/core';
-import { FormControl, NgControl, Validators } from '@angular/forms';
+import {
+  Directive,
+  DoCheck,
+  ElementRef,
+  InjectionToken,
+  Injector,
+  OnDestroy,
+  OnInit,
+  inject,
+  input,
+} from '@angular/core';
+import { AbstractControl, FormControl, NgControl, Validators } from '@angular/forms';
 import { createDestroy, equal } from '@ethlete/core';
-import { Observable, combineLatest, debounceTime, filter, map, pairwise, startWith, takeUntil, tap } from 'rxjs';
+import {
+  Observable,
+  ReplaySubject,
+  combineLatest,
+  debounceTime,
+  filter,
+  map,
+  pairwise,
+  startWith,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs';
 import { FormFieldStateService, InputStateService } from '../../services';
 import { EXPOSE_INPUT_VARS_TOKEN } from '../expose-input-vars';
 import { NativeInputRefDirective } from '../native-input-ref';
@@ -28,7 +50,7 @@ let nextUniqueId = 0;
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],
 })
-export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> implements OnInit, OnDestroy {
+export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> implements OnInit, DoCheck, OnDestroy {
   private readonly _injector = inject(Injector);
   private readonly _inputStateService = inject<InputStateService<T, J>>(InputStateService);
   private readonly _formFieldStateService = inject(FormFieldStateService);
@@ -41,6 +63,9 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
   protected _neverEmptyInputs = ['date', 'datetime', 'datetime-local', 'month', 'time', 'week'];
 
   private _implicitControl?: FormControl<unknown>;
+
+  private _watchedControl?: AbstractControl;
+  private readonly _control$ = new ReplaySubject<AbstractControl>(1);
 
   private get control() {
     if (!this._ngControl) {
@@ -125,8 +150,8 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
   }
 
   get invalid$() {
-    return this.control.statusChanges.pipe(
-      startWith(this.control.status),
+    return this._control$.pipe(
+      switchMap((control) => control.statusChanges.pipe(startWith(control.status))),
       map((s) => s === 'INVALID'),
     );
   }
@@ -226,11 +251,29 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
     });
   }
 
+  ngDoCheck(): void {
+    this._syncControl();
+  }
+
+  private _syncControl() {
+    const control = this.control;
+
+    if (control !== this._watchedControl) {
+      this._watchedControl = control;
+      this._control$.next(control);
+    }
+  }
+
   ngOnInit(): void {
-    const controlStateChanges$ = combineLatest([
-      this.control.statusChanges.pipe(startWith(this.control.status)),
-      this.control.valueChanges.pipe(startWith(this.control.value)),
-    ]).pipe(
+    this._syncControl();
+
+    const controlStateChanges$ = this._control$.pipe(
+      switchMap((control) =>
+        combineLatest([
+          control.statusChanges.pipe(startWith(control.status)),
+          control.valueChanges.pipe(startWith(control.value)),
+        ]),
+      ),
       debounceTime(0),
       map(([status, value]) => ({ status, value })),
     );
@@ -252,8 +295,9 @@ export class InputDirective<T = unknown, J extends HTMLElement = HTMLElement> im
       )
       .subscribe();
 
-    this.control.valueChanges
-      ?.pipe(
+    this._control$
+      .pipe(
+        switchMap((control) => control.valueChanges),
         takeUntil(this._destroy$),
         tap((value) => {
           if (this._inputStateService.lastUpdateType() === 'internal') {
