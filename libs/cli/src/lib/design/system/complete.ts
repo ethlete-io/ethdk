@@ -10,7 +10,7 @@ import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } f
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
-import { createSystemModules, productModuleIdOf, SystemModules } from './system-modules';
+import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
 import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 
@@ -1157,10 +1157,11 @@ export const seePart = async (options: {
   load: (id: string) => Promise<unknown>;
   draw: <T>(job: (browser: Browser) => Promise<T>) => Promise<T>;
   restOnly?: boolean;
+  sketch?: SketchVariant | null;
 }) => {
-  const { product, part, system, base, load, draw, restOnly = false } = options;
+  const { product, part, system, base, load, draw, restOnly = false, sketch = null } = options;
   const key = partKeyOf(part);
-  const loaded = await load(productModuleIdOf({ file: part.file, product: product.name, sketch: null }))
+  const loaded = await load(productModuleIdOf({ file: part.file, product: product.name, sketch }))
     .then((module) => ({ module: module as PartModule }))
     .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
 
@@ -1188,7 +1189,7 @@ export const seePart = async (options: {
         state,
         preset,
         width,
-        sketch: null,
+        sketch,
         interaction,
       });
 
@@ -1234,22 +1235,30 @@ export const inventoryIdsOf = (frames: SeenFrame[]) =>
  * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
  * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it.
  * A page fails until the user approves its control inventory in Studio. An exception the user approved in Studio
- * drops the gap it names until the part changes; a pending one still fails.
+ * drops the gap it names until the part changes; a pending one still fails. With `sketch`, every part is drawn as
+ * that variant draws it, and a part the variant changes is not merged yet, so it never fails as unreviewed.
  */
 export const completenessOf = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   part: string;
+  sketch?: SketchVariant | null;
   chromiumOf?: typeof chromiumOf;
 }): Promise<
   { gaps: CompletenessGap[]; exceptions?: ListedException[] } | { unavailable: string } | { problem: string }
 > => {
-  const { target, config, product, part } = options;
+  const { target, config, product, part, sketch = null } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
+  const system = createSystemModules({ target, config });
+  const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
 
-  if (!product.parts.some((candidate) => partKeyOf(candidate) === part))
-    return { problem: `product "${product.name}" has no part "${part}"` };
+  if (!parts.some((candidate) => partKeyOf(candidate) === part))
+    return {
+      problem: sketch
+        ? `variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product.name}" has no part "${part}"`
+        : `product "${product.name}" has no part "${part}"`,
+    };
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -1261,7 +1270,6 @@ export const completenessOf = async (options: {
     await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
-    const system = createSystemModules({ target, config });
 
     const checked = new Map<string, CompletenessGap[] | string>();
     const exceptions: ListedException[] = [];
@@ -1277,7 +1285,7 @@ export const completenessOf = async (options: {
       return gaps;
     };
     const freshGapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
-      const resolved = product.parts.find((candidate) => partKeyOf(candidate) === key);
+      const resolved = parts.find((candidate) => partKeyOf(candidate) === key);
 
       if (!resolved) return `product "${product.name}" has no part "${key}"`;
       if (chain.includes(key)) return `its controls name each other in a cycle: ${[...chain, key].join(' > ')}`;
@@ -1289,12 +1297,14 @@ export const completenessOf = async (options: {
         base: `http://localhost:${port}`,
         load: (id) => server.ssrLoadModule(id),
         draw: (job) => queue.run(job),
+        sketch,
       });
 
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
       const { definition, states, seen, refused, owner, hash } = sight;
-      const reviewed = readMerged(owner.dir)[key] === hash;
+      const sketched = product.parts.find((candidate) => partKeyOf(candidate) === key)?.file !== resolved.file;
+      const reviewed = sketched || readMerged(owner.dir)[key] === hash;
       const referenced: ReferencedParts = {};
       const used = [
         ...Object.values(declaredControlsOf(definition?.controls) ?? {}).map((control) => control.part),

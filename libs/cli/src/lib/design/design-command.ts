@@ -104,6 +104,7 @@ const helpOf = (invocation: string) =>
     '  inside an embedded part (its data-et-part root) belongs to that part, which must be complete itself; a rule',
     "  of the part's own CSS that restyles it fails as CONTROL-OVERRIDDEN. Separate from check and sketch ready:",
     '  a round can be ready for comparison and still not complete for implementation.',
+    "  --variant checks a variant of the part's open sketch instead, without PART-UNREVIEWED for the parts it changes.",
     '  --request writes a pending exception to one requirement with a reason; it still fails until the user approves',
     '  it in Studio, and a later change of the part reopens it.',
     '',

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,8 @@ import { approveException } from './exceptions';
 import { writeInventoryApproval } from './inventory-approval';
 import { ResolvedProduct, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
+import { createSketch } from './sketch/sketch';
+import { createSystemModules } from './system-modules';
 import { recordMerged } from './sketch/merged-parts';
 
 const STYLES = [
@@ -832,6 +834,42 @@ describe('completenessOf', () => {
 
     expect('gaps' in reopened && reopened.gaps).toContain('components/flat.more.active');
     expect('exceptions' in reopened && reopened.exceptions?.map(({ state }) => state)).toEqual(['reopened']);
+  }, 120_000);
+
+  it('checks the open sketch variant of a part with --variant, as unmerged but not unreviewed', async (context) => {
+    const { target, config, product } = checkout();
+    const logs: string[] = [];
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation((line: string) => logs.push(line));
+    vi.spyOn(console, 'error').mockImplementation((line: string) => errors.push(line));
+    createSketch({ product, sketch: { layer: 'components', name: 'flat' }, variants: ['a'] });
+
+    const sketch = { target: 'components/flat', variant: 'a' };
+    const file = createSystemModules({ target, config }).partOf({
+      product: 'app-a',
+      part: 'components/flat',
+      sketch,
+    })?.file;
+
+    writeFileSync(file ?? '', readFileSync(join(product.dir, 'components', 'done', 'done.ts'), 'utf8'));
+
+    const variant = await completenessOf({ target, config, product, part: 'components/flat', sketch });
+
+    if ('unavailable' in variant) return context.skip(variant.unavailable);
+
+    expect(variant).toEqual({ gaps: [] });
+    expect(await designComplete({ target, argv: ['components/flat', '--variant', 'a'], invocation: 'et design' })).toBe(
+      0,
+    );
+    expect(logs.at(-1)).toBe('variant a of components/flat in app-a is design complete');
+    expect(await designComplete({ target, argv: ['components/flat', '--variant', 'z'], invocation: 'et design' })).toBe(
+      1,
+    );
+    expect(errors.at(-1)).toBe(
+      'variant "z" of the sketch on components/flat in product "app-a" has no part "components/flat"',
+    );
+    expect(await designComplete({ target, argv: ['components/flat'], invocation: 'et design' })).toBe(1);
   }, 120_000);
 
   it('exits 1 with one line per gap from the command', async (context) => {

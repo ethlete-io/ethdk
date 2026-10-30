@@ -6,7 +6,7 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 
 export const COMPLETE_USAGE =
-  'complete <layer>/<name> [--product <name>] | complete --request <layer>/<name>.<control>.<requirement> --reason <text> [--product <name>]';
+  'complete <layer>/<name> [--variant <key>] [--product <name>] | complete --request <layer>/<name>.<control>.<requirement> --reason <text> [--product <name>]';
 
 /** `et design complete <layer>/<name>` exits 1 while a control the part declares lacks a drawn, reviewed state or surface. */
 export const designComplete = async (options: {
@@ -16,14 +16,15 @@ export const designComplete = async (options: {
   chromiumOf?: typeof chromiumOf;
 }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--request', '--reason']);
+  const args = argsOf(argv, ['--product', '--request', '--reason', '--variant']);
   const usage = `usage: ${invocation} ${COMPLETE_USAGE}`;
   const request = typeof args === 'string' ? undefined : args.values['--request'];
 
   if (
     typeof args === 'string' ||
     args.positional.length !== (request === undefined ? 1 : 0) ||
-    (request === undefined) !== (args.values['--reason'] === undefined)
+    (request === undefined) !== (args.values['--reason'] === undefined) ||
+    (request !== undefined && args.values['--variant'] !== undefined)
   ) {
     if (typeof args === 'string') console.error(args);
 
@@ -77,7 +78,10 @@ export const designComplete = async (options: {
   }
 
   const part = partKeyOf(parsed);
-  const result = await completenessOf({ target, config, product, part, chromiumOf: options.chromiumOf });
+  const variant = args.values['--variant'];
+  const sketch = variant === undefined ? null : { target: part, variant };
+  const result = await completenessOf({ target, config, product, part, sketch, chromiumOf: options.chromiumOf });
+  const what = sketch ? `variant ${variant} of ${part}` : part;
 
   if ('problem' in result) {
     console.error(result.problem);
@@ -95,12 +99,12 @@ export const designComplete = async (options: {
   for (const gap of result.gaps) console.error(completenessGapLineOf(gap));
 
   if (result.gaps.length > 0) {
-    console.error(`${part} in ${product.name} is not design complete: ${result.gaps.length} gap(s)`);
+    console.error(`${what} in ${product.name} is not design complete: ${result.gaps.length} gap(s)`);
 
     return 1;
   }
 
-  console.log(`${part} in ${product.name} is design complete`);
+  console.log(`${what} in ${product.name} is design complete`);
 
   return 0;
 };

@@ -361,6 +361,12 @@ cannot be approved, and no CLI command approves one. The design server answers
 `GET /__design/inventory?product=&part=` and `POST /__design/inventory-approve?product=` with
 `{ part, hash, by }`.
 
+`et design complete <layer>/<name> --variant <key>` runs the same check on a variant of the part's
+open sketch, so a sketch can show it closes its gaps before it is merged. Every part is drawn as the
+variant draws it; a part the variant changes is not merged yet, so it never fails as
+`PART-UNREVIEWED`. An exception or inventory approval holds the merged part's hash, so it reads as
+reopened on a variant that changes that part.
+
 `et design complete --request <layer>/<name>.<control>.<requirement> --reason <text>` asks for an
 exception to one requirement, for example `components/zoom-chip.fit.active`. It writes a pending
 entry to `.ethlete/design/<product>/exceptions.json`, and a pending entry still fails. Only the
