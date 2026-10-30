@@ -15,7 +15,7 @@ import {
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { shotsShowNoChange } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { recordAutoMerge } from './system/sketch/merged-parts';
+import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
 import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
@@ -51,7 +51,7 @@ export const SKETCH_USAGE = [
   'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> [--note <reason>] --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason>] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -68,7 +68,9 @@ const FLAG_HELP: Record<string, string> = {
   '--from': 'the variant to copy',
   '--title': 'the new title of the round',
   '--drops': 'the states the round drops on purpose, a comma list',
-  '--variant': 'the variant the command is about',
+  '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
+  '--allowed-by':
+    'the plan entry that lets the merge go without a pick in Studio; logged in accepted.json, needs --variant',
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
   '--done': 'end the live report of the variant',
@@ -715,25 +717,52 @@ const previewed = (context: Context) =>
     return 0;
   });
 
+const allowedMergeOf = (options: { sketch: Sketch; variant: string }) => {
+  const { sketch, variant } = options;
+  const live = sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate));
+
+  if (live.length !== 1 || live[0] !== variant)
+    return `${sketch.target} has ${live.length} live variants (${live.join(', ') || 'none'}), not only "${variant}" - the user picks in Studio`;
+
+  return decideSketch({ sketch, decision: { kind: 'pick', variant } });
+};
+
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const note = context.args.values['--note'];
+    const { '--note': note, '--variant': flagVariant, '--allowed-by': planRef } = context.args.values;
 
     if (context.args.positional.length > 1)
       return fail(`usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked`);
+    if ((flagVariant === undefined) !== (planRef === undefined))
+      return fail(
+        '--variant and --allowed-by go together: name the only live variant and the plan that allows the merge',
+      );
+
+    const allowed = flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick';
+    const decidedSketch = allowed ? allowedMergeOf({ sketch, variant: flagVariant }) : sketch;
+
+    if (typeof decidedSketch === 'string') return fail(decidedSketch);
 
     const result = mergeSketch({
       target: context.target,
       config: context.config,
       product,
-      sketch,
+      sketch: decidedSketch,
       note,
       author: authorOf(context.args) ?? undefined,
     });
 
     if (!Array.isArray(result)) return fail(result.reason);
 
-    const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
+    if (allowed)
+      recordAllowedMerge({
+        product,
+        part: sketch.target,
+        by: authorOf(context.args) ?? 'user',
+        planRef: planRef.trim(),
+      });
+
+    const variant = decidedSketch.decision?.kind === 'pick' ? decidedSketch.decision.variant : '';
 
     console.log(`merged ${sketch.target} variant ${variant} into ${product.name}: ${result.join(', ')}`);
 
@@ -832,6 +861,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--drops',
     '--variant-note',
     '--reason',
+    '--allowed-by',
   ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 

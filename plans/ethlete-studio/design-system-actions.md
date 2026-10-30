@@ -809,7 +809,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix option:** skip rejected variants in the "every variant draws the same" check.
 - **As built (2026-10-30):** `sketchShowsNoChange` checks only live variants; with none it answers "the sketch has no live variant". The auto-merge already picks the first live variant. Verified: a spec that fails without the filter; design specs and spec typecheck pass. Not verified: a real `sketch ready` with a rejected variant.
 
-### 4.71 A merge Tom allows in the plan has no CLI path - open
+### 4.71 A merge Tom allows in the plan has no CLI path - done
 
 - **Pain (2026-10-30):** Tom allowed the builder to merge the `foundations/agent-logos` and `foundations/colors`
   sketches itself. The CLI merges only after a pick in Studio ("has no pick - the user picks a variant in
@@ -819,6 +819,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   variant still needs Tom's pick.
 - **Condition (Tom):** if a sketch works around an issue of the theming system that belongs in the system (SDK
   theming, the generator, the render), do not merge it this way. Fix the system instead, and tell Tom.
+- **As built (2026-10-30):** `sketch merge <part> --variant <key> --allowed-by <plan ref> --by <model>`; refuses
+  unless `<key>` is the only live variant; both flags go together; a sketch Tom picked merges as before.
+  `accepted.json` logs "merged without a pick: allowed by <ref>"; the part note stays. Verified: 4 specs.
 
 ### 4.64 Shared helper code had to be a part - done
 

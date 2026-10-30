@@ -144,6 +144,19 @@ export const recordAutoMerge = (options: { product: HashedProduct; part: string;
   });
 };
 
+/** Logs a sketch merged without a pick in Studio because a plan entry allows it, in `accepted.json`. */
+export const recordAllowedMerge = (options: { product: HashedProduct; part: string; by: string; planRef: string }) => {
+  const { product, part, by, planRef } = options;
+
+  logAcceptance(product.dir, {
+    part,
+    by,
+    note: `merged without a pick: allowed by ${planRef}`,
+    hash: partHashOf({ product, dir: resolve(product.dir, part) }),
+    at: new Date().toISOString(),
+  });
+};
+
 /**
  * Records a direct edit of a merged part the user approved: writes the part's current hash to `merged.json` and
  * logs who accepted it and why in `accepted.json`. Answers with why nothing was accepted, or `null`.

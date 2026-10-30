@@ -837,4 +837,76 @@ export default definePart({
     expect(lines).toContain('elements/hero a: elements/hero default at fitted ok');
     expect(lines).toContain('elements/hero b: elements/hero default at fitted WRAP');
   }, 120_000);
+
+  describe('merge --variant --allowed-by', () => {
+    const PLAN = 'plans/ethlete-studio/contrast.md Findings decisions';
+
+    const readied = async (variants: string) => {
+      const target = acme();
+      const lines = output();
+
+      write(
+        target,
+        'new',
+        'components/button',
+        '--variants',
+        variants,
+        '--round',
+        'R',
+        '--note',
+        'n',
+        '--product',
+        'acme',
+      );
+      expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+
+      return { target, lines };
+    };
+
+    const sketchDir = (target: string) => join(target, DESIGN_DIR, 'acme/sketches/components-button');
+
+    it('merges the only live variant without a pick and logs the plan in accepted.json', async () => {
+      const { target, lines } = await readied('a');
+
+      expect(
+        write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
+      ).toBe(0);
+      expect(lines.pop()).toContain('merged components/button variant a into acme');
+      expect(existsSync(sketchDir(target))).toBe(false);
+      expect(readFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), 'utf8')).not.toContain(PLAN);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/accepted.json'), 'utf8'))).toMatchObject([
+        { part: 'components/button', note: `merged without a pick: allowed by ${PLAN}` },
+      ]);
+    });
+
+    it('refuses a sketch with two live variants', async () => {
+      const { target, lines } = await readied('a,b');
+
+      expect(
+        write(target, 'merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'),
+      ).toBe(1);
+      expect(lines.pop()).toContain('the user picks in Studio');
+      expect(existsSync(sketchDir(target))).toBe(true);
+    });
+
+    it('refuses a key that is not the live variant', async () => {
+      const { target, lines } = await readied('a');
+
+      expect(
+        write(target, 'merge', 'components/button', '--variant', 'b', '--allowed-by', PLAN, '--product', 'acme'),
+      ).toBe(1);
+      expect(lines.pop()).toContain('not only "b"');
+      expect(existsSync(sketchDir(target))).toBe(true);
+    });
+
+    it('refuses one flag without the other', async () => {
+      const { target, lines } = await readied('a');
+
+      expect(write(target, 'merge', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
+      expect(lines.pop()).toContain('go together');
+      expect(write(target, 'merge', 'components/button', '--allowed-by', PLAN, '--product', 'acme')).toBe(1);
+      expect(lines.pop()).toContain('go together');
+      expect(existsSync(sketchDir(target))).toBe(true);
+    });
+  });
 });

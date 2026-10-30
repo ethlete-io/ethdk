@@ -106,6 +106,10 @@ in the variant's `shared/`, then the sketch's, then the product's, then the base
 At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
 the rest moves into the target's folder as before.
 
+`et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
+sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
+go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.
+
 `et design sketch merge` and `sketch discard` resolve the addressed comments on the sketch's
 variants, and a merge also those addressed comments of the merged parts that have no sketch; open
 comments stay open. `et design comment resolve-ended [--product <product>]` resolves the addressed
