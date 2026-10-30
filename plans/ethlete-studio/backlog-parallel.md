@@ -430,6 +430,15 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   `prefers-color-scheme: light`. Under the light scheme `:root` takes the brand-on-light ink (`4 120 87` and its
   states), per "ink on light". The button part does not move onto `et-color--brand-on-light`; that would hide the
   defect from consumers.
+- Q78: a regenerated token part (`generate-sdk-tokens.mjs` rewrites `colors.css`; CI's `sdk:tokens:check` forces the
+  base change in the same commit) cannot go through a sketch. Tom accepts the "changed outside a sketch" warning for
+  the Q75 commit. After the reset, `ethlete-sdk-57` adds a way to record a regenerated token part as merged.
+- Q79: every kind of foundation gets one shared sheet helper in `@design-system` (`libs/cli/design`), like
+  `tokenSheet`. A product passes only its data and builds no foundation layout of its own: icons, colors, type,
+  spacing, motion, logo. First `iconSheet` with the views `catalogue` and `construction` (taken from
+  `studio/foundations/icons`: pixel grid, centre lines, padding box), with the grid size as an input; the SDK icons
+  use three grids (24 px: 25 icons, 16 px: 15, Font Awesome 512 units: 10). Studio and sdk `foundations/icons` both
+  use it; sdk `foundations/icons` stays on hold until it lands. Built by `ethlete-sdk-57` after the reset.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
