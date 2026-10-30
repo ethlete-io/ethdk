@@ -165,10 +165,17 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
 `ethlete-design-exploration` skill: Tom picks every design.
 
 - **Order change (Tom, 2026-10-30):** the sdk foundations come first, then one component at a time.
-- **In progress (ethlete-sdk-33, 2026-10-30):** sketch `foundations/tokens` in `sdk`. The part is a hand copy
-  of old Storybook CSS: themes `accent`/`danger` where the mocks and `calls/components/themes.ts` use `brand`,
-  `danger`, `warning`; no `--et-shadow-color-rgb` or `--et-font-family`; a dead Tailwind `--color-et-*` layer.
-  Q47 (token source: hand fix or generated from the real themes) is with the grill session.
+- **As built (ethlete-sdk-33, 2026-10-30):** sketch `foundations/tokens` in `sdk`, round "Token overview",
+  variants a (chip matrix), b (specimen), c (token sheet), at `ready` (`9f92126a3`, regenerated `5c610fb70`). Tom
+  picked a (Q49); the merge is his click in Studio. `tools/scripts/generate-sdk-tokens.mjs` (`yarn sdk:tokens`,
+  `--out`, `--check`) writes the token CSS from the Storybook themes with `libs/core/design/theme-css.ts` through
+  `jiti`; it forces `isDefault` on both surfaces and strips the Tailwind-only output. Verified: `sketch check` ok,
+  the three variant files are byte-identical to the script output. Not done: `--check` in CI, because the merged
+  part only matches after the merge; the product `generated` hook is not used, because its source is a part file.
+- **Next:** after Tom's merge, wire `yarn sdk:tokens --check` next to the `studio:themes` check. Q50: a small
+  contrast round on the below-AA theme values (numbers go to the grill first). Then `components/select`: declare
+  controls, option hover with `data-active`, option focus through `aria-activedescendant` (Q48, builder builds the
+  CLI side), trigger `active` has no SDK look yet (a design question). `brand-on-light` is a later open point.
 - **Token source decision (Tom, 2026-10-30, Q47, source corrected by Tom):** generate `foundations/tokens` from
   `apps/storybook/src/themes.ts` (the existing SDK brand theme, green `0 255 161`, plus `danger` and `warning`)
   and `apps/storybook/src/surface-themes.ts` (`light`, `dark`), not from `calls/components/themes.ts`. Use the
