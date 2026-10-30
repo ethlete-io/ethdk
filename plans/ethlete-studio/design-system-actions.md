@@ -1448,6 +1448,7 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   candidate lives in that variant's files, shared files hold only common code. Option 2 enforces
   it: `sketch ready` fails when the picked variant's dependency closure keeps unused imports,
   styles or parameters.
+- **As built (`493d1f6f9`):** the authoring rule is in the `ethlete-design-exploration` skill (variant files hold variant code; `shared/` only common code). The `sketch ready` check is another stream.
 
 ### Colour foundations and agent logos decisions (2026-10-30)
 
@@ -1640,6 +1641,8 @@ These pains came from how the agent worked, not from the tool. Each one has a ru
 | After the zoom work the agent proposed more detail on `pages/sketches` (open points 5 to 8); that drifts from the base plan         | Before you propose the next step, read the agreed order: all pages first, then extract components (`design-system.md:905`).                         | 2026-10-29 |
 | The agent wrote new plain CSS files (`header.css`, `heads.css`) for a sketch, though sketches may use the Studio Tailwind utilities | Use utilities in sketch markup (`f27c66d0e`). Plain CSS only for what utilities cannot express.                                                     | 2026-10-29 |
 | `components/tree-row` was extracted with one host (`part-tree`); its sketch missed the host's cases and cost an extra round         | A part becomes a component only when two hosts draw the same case. Until then it stays in its host. `tree-row` has two: `part-tree`, `pages/flows`. | 2026-10-29 |
+
+- **As built (`493d1f6f9`):** rule 6 of `ethlete-design-exploration`; it did not exist before.
 
 ### Parked: open points on `pages/sketches` (2026-10-29)
 
