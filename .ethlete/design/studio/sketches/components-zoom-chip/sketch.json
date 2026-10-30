@@ -32,7 +32,13 @@
     {
       "key": "r1",
       "title": "Zoom chip as its own part",
-      "note": "Q43: the zoom chip moves out of elements/canvas-frames into its own part with its own states and data-et-part; frame head and frame box stay in canvas-frames. It is components/zoom-chip, not elements/: an element may not import another element, and canvas-frames draws the chip."
+      "note": "Q43: the zoom chip moves out of elements/canvas-frames into its own part with its own states and data-et-part; frame head and frame box stay in canvas-frames. It is components/zoom-chip, not elements/: an element may not import another element, and canvas-frames draws the chip.",
+      "lost": "r1 moved the chip into its own part, but its three states are zoom values only: no state draws a button hovered, pressed or focused, and the buttons are not controls of the part."
+    },
+    {
+      "key": "r2",
+      "title": "Chip controls with interactions",
+      "note": "Tom's condition for the merge: the buttons are controls, not just zoom values. b declares out (−), reset (the percent), in (+) and fit as button controls with data-et-control, drawn from the SDK button mock instead of the button part, so the chip owns their looks. The states are four interaction rows (out at 25 %, reset at 100 %, in at 250 %, fit at 100 %), each at rest, hover, active and focus-visible, so the three zoom values stay drawn. pages/sketches hooks its setup on data-sketches-page instead of the undefined sk-page class. Costs: 16 states instead of 3; the chip follows the button mock, not the button part."
     }
   ],
   "variantInfo": {
@@ -40,6 +46,10 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "components/zoom-chip draws the chip at 100 %, zoomed in and zoomed out; canvas-frames, pages/sketches and pages/system render it, so each drawing marks it. canvasView turns async. Costs one more part to keep."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2"
     }
   }
 }

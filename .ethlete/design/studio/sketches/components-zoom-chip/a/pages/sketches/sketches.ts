@@ -94,10 +94,10 @@ const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, fr
 };
 
 const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
-  const page = root.querySelector<HTMLElement>('.sk-page');
+  const page = root.querySelector<HTMLElement>('[data-sketches-page]');
   const viewport = root.querySelector<HTMLElement>('[data-sk-viewport]');
   const world = root.querySelector<HTMLElement>('[data-sk-world]');
-  const chip = root.querySelector('.sk-page > [data-canvas-zoom]');
+  const chip = root.querySelector('[data-sketches-page] > [data-canvas-zoom]');
   const label = chip?.querySelector('[data-camera-reset] button') ?? null;
   const showZoom = (zoom: number) => {
     if (label) label.textContent = `${Math.round(zoom * 100)} %`;
@@ -149,7 +149,8 @@ export default definePart<Props>({
   },
   render: async ({ camera, selected }) => {
     const content = html`<div
-      class="sk-page relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
+      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
+      data-sketches-page
       ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
     >
       <header
