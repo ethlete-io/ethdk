@@ -10,7 +10,7 @@ const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline',
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-surface-border bg-surface"></span>';
 
 const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
-  <div class="w-[420px] flex flex-col items-center gap-space-4 text-center text-ui-sm">
+  <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
     <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
     <p class="m-0 text-text font-ui-strong text-ui-md">Noch keine Teile</p>
     <p class="m-0 text-text-muted">

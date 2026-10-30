@@ -53,7 +53,7 @@ const rowMarkup = (r: Row) => {
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
         ${r.warning ? `<span class="st-trow-warning flex flex-none" title="${r.warning}">${warningIcon}</span>` : ''}
         ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
-        ${r.comments ? `<span class="flex flex-none items-center gap-[2px] ${accent} text-[length:var(--text-xs)]" title="${r.comments} open comments">${bubble}</span>` : ''}
+        ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)" title="${r.comments} open comments">${bubble}</span>` : ''}
       </div>`;
 };
 

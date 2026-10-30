@@ -35,7 +35,7 @@ const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-surfac
 const ghostLine = '<span class="block w-10 h-px bg-surface-border"></span>';
 
 export const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
-  <div class="w-[420px] flex flex-col items-center gap-space-4 text-center text-ui-sm">
+  <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
     <div class="flex items-center gap-space-2" aria-hidden="true">
       ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
     </div>

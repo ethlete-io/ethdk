@@ -24,7 +24,7 @@ const ghostProduct = '<span class="block w-10 h-10 rounded-full outline outline-
 
 const card = (inner: string) =>
   html`<div class="flex-1 flex items-center justify-center">
-    <div class="w-[420px] flex flex-col items-center gap-space-4 text-center text-ui-sm">${inner}</div>
+    <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">${inner}</div>
   </div>`;
 
 const noRepo = card(
@@ -61,7 +61,7 @@ export default definePart<Props>({
   states: { 'no-repo': {}, 'no-products': { repo: 'ethlete-sdk' } },
   render: ({ repo }) =>
     drawing({
-      body: html`<div class="h-full min-h-[900px] flex flex-col bg-surface">
+      body: html`<div class="h-full min-h-225 flex flex-col bg-surface">
         ${header(repo)} ${repo ? noProducts(repo) : noRepo}
       </div>`,
       styles: open.styles + copy.styles + other.styles,

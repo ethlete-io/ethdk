@@ -33,7 +33,7 @@ const faceClass = ({ agent, selected }: Props) => {
 
   return agent
     ? `${faceBase} bg-surface-overlay ring-accent ${rings} group-hover/pin:bg-surface-raised ${pressed}`
-    : `${faceBase} bg-accent ring-surface ${rings} group-hover/pin:bg-accent-hover group-active/pin:bg-[var(--accent-active)]`;
+    : `${faceBase} bg-accent ring-surface ${rings} group-hover/pin:bg-accent-hover group-active/pin:bg-(--accent-active)`;
 };
 
 const face = (p: Props, inner = '') =>
