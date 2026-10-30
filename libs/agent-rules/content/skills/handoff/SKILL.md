@@ -174,15 +174,17 @@ node <sessions-skill-dir>/agent-sessions.mjs restart <name> '/handoff resume <sl
 
 `<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
 types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
-end your turn after you run it and do not start another tool call. Tell the user in one line that
-you restarted and why.
+end your turn after you run it and do not start another tool call. The `/clear` wipes the pane, so
+the user never sees text you write after the command. Before you run it, put the reason as the
+first line of the handoff file: `Restarted because: <one line>`. End the turn with no text.
 
 ## Resume mode
 
 1. List `{%handoffDir%}/`. Pick the file matching the given name, or the most
    recently modified one if no name was given. If the directory is empty, say so
    and stop.
-2. Read the file fully.
+2. Read the file fully. If its first line starts with `Restarted because:`, show that line to the
+   user first, then delete it from the file.
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
    changed and adapt - the repo is the truth, the handoff is the guide.
