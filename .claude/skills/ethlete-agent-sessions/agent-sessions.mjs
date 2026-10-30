@@ -91,6 +91,13 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+const isAttached = (name) => tmux('list-clients', '-t', `=${name}`).stdout.trim() !== '';
+const freeSessionFor = (agent) => {
+  for (let number = 1; ; number++) {
+    const session = sessionFor(number === 1 ? agent : `${agent}-${number}`);
+    if (!sessionExists(session) || !isAttached(session)) return session;
+  }
+};
 const startSession = (name, shellCommand, quiet = false) => {
   if (sessionExists(name)) return quiet ? undefined : process.stdout.write(`Session ${name} already runs.\n`);
   const result = tmux('new-session', '-d', '-s', name, '-c', root, ...(shellCommand ? [shellCommand] : []));
@@ -194,7 +201,7 @@ if (command === 'send' && sender) {
   const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
   if (!sessionExists(DISPATCH_SESSION))
     startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
-  const session = sessionFor(sender);
+  const session = freeSessionFor(sender);
   const shellCommand = words.map(quote).join(' ');
   if (process.env.TMUX) {
     if (!sessionExists(session)) tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
