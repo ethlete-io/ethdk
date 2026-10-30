@@ -759,6 +759,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   1: `ready` already needs every variant equal. Verified: specs that bite, a scratch `sketch ready` stops with
   "variant a changes accent". Not verified: Studio frames by eye; rejected variants still block an auto-merge.
 
+### 4.66 `sketch ready` gives a different answer on a re-run - open
+
+- **Pain (2026-10-30):** in the colour cleanup (`2a4b435da`), `sketch ready` on a CSS-only sketch sometimes
+  printed "auto-merge skipped: ... changes pages/merge ...", and a plain re-run then auto-merged. The same
+  input must give the same answer.
+- **Suspect:** a draw of an affected part (4.63 compare) is not deterministic, for example a font, an image or an
+  animation that is not settled when the picture is taken.
+- **Next:** draw `pages/merge` several times on an own server and compare the pictures; find the unstable state.
+
 ### 4.64 Shared helper code had to be a part - done
 
 - **Pain (Tom, 2026-10-30):** `foundations/sheet` is no design. It only exports the token-sheet layout that

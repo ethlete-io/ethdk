@@ -1,0 +1,43 @@
+{
+  "target": "pages/sketches",
+  "status": "ready",
+  "createdAt": "2026-10-30T16:27:55.477Z",
+  "baseline": {
+    "foundations/agent-logos": "b526b807ee82880c",
+    "foundations/colors": "4a807303af9c82df",
+    "foundations/icons": "de6febf097c3a350",
+    "foundations/logo": "49fb600dd36d0a5c",
+    "foundations/motion": "0c9229cc1ee8debd",
+    "foundations/spacing": "dc02c295ea27c2bc",
+    "foundations/type": "46ee454a96e820e0",
+    "components/button": "b9bb3d3ff96bc85a",
+    "components/comment-pin": "b904e52075f69932",
+    "components/disclosure": "661c00168f26b319",
+    "components/form-field": "126362df5518a865",
+    "components/select": "377e000333dd8649",
+    "components/tree-row": "0c3a81b191ad9669",
+    "elements/canvas-frames": "7dbe073b5c3c48af",
+    "elements/part-tree": "bc6764638ee1f7c5",
+    "elements/shell-main": "6a5d748339f02a53",
+    "pages/flows": "8164a5ab04d889d7",
+    "pages/inbox": "4f46d2dc8284c3c1",
+    "pages/merge": "88abdda08774454e",
+    "pages/sketches": "0620c8f1a9279986",
+    "pages/start": "edb5ce2bbf44011c",
+    "pages/system": "2c2356af2649fc97",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "",
+      "note": "Use --surface instead of the --surface-sunken alias"
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-sonnet-5-5"],
+      "round": "r1"
+    }
+  }
+}
