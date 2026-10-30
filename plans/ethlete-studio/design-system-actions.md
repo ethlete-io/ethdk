@@ -472,6 +472,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   1, `components/button` 2. Fixing `components/button` and `elements/shell-main` clears most page gaps.
 - **Next:** the per-page inventory contact sheet with approval in Studio, then the other kinds (`button`,
   `row`, `select`, ...), so `components/button` and the shell can declare their controls.
+- **In progress:** the other control kinds in `design complete`: `button` (`active`), `select` and `menu`
+  (open surface, option hover, focus, selected), `row` (selected, selected-hover), `tooltip` (visible
+  surface), `disabled` when declared, SDK reuse if the SDK parts allow it.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
