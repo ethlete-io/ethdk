@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.77
+
+### Patch Changes
+
+- The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+
 ## 1.0.0-next.76
 
 ### Minor Changes

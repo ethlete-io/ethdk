@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.61
+
+### Patch Changes
+
+- The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+
 ## 6.0.0-next.60
 
 ### Patch Changes

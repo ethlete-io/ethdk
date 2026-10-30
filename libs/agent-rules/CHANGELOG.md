@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.29
+
+### Patch Changes
+
+- `agent-sessions restart` now waits until the session ended its turn and its prompt is empty, so it no longer types into a running turn or into your draft.
+- A multi-target sketch merge gives each target only the `shared/` files it imports, directly or transitively; an unimported file returns to the target that held it. `sketch new` refuses targets whose `shared/` files clash.
+- `et design sketch new` takes several parts: one sketch, one variant folder holding them all, one `ready`, one merge; `ready` and `preview` name every part a `shared/` edit reaches; Studio shows every target part.
+
 ## 0.1.0-next.28
 
 ### Minor Changes

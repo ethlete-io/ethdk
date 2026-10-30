@@ -1,5 +1,32 @@
 # ethlete-studio
 
+## 0.2.0-next.12
+
+### Minor Changes
+
+- A sketch's changed area gives one box per cluster of changed pixels; `et design shot --crop changed` writes one sheet per cluster, and Studio shows one enlarged crop per cluster.
+- The design server lists per sketch variant the states it adds and drops and its changed part note. Studio says on the canvas when a variant changes no pixel, and a click shows the old and new note.
+- A sketch with several targets shows the diff marks and the pages that use any target part. Studio names the parts a `shared/` edit reaches. The sketch-diff endpoint takes `part=`.
+- `et design sketch new` takes several parts: one sketch, one variant folder holding them all, one `ready`, one merge; `ready` and `preview` name every part a `shared/` edit reaches; Studio shows every target part.
+- A sketch where only some variants change no pixel now also hides the folded state rows until Show all states.
+- A sketch variant that changes no pixel now shows only the pixel-free line instead of the folded state rows; Show all states brings the rows back.
+
+### Patch Changes
+
+- The heads of folded sketch rows no longer overlap at a low canvas zoom: their labels stop growing at twice their size.
+- The design canvas makes at most six frames live, nearest the centre, once the camera rests for 250 ms, and keeps a loaded frame for five seconds after it leaves; the others show their drawn shot.
+- Enlarge each crop of the changed-area view at most twice instead of to the frame width, so small changed areas no longer turn into blurry, page-high tiles.
+- Studio defers the new-product form, note and comment forms, comment thread and comment panel, so the first view loads about 120 KB less script.
+- The host reads projects, git state and folder scans off the main thread, a scan skips `node_modules`, and a call check gives up after two minutes.
+- Studio loads the motion tokens from `foundations/motion`.
+- Studio opens one `comment-events` stream to the design server instead of four, which leaves more of the browser's per-host connections free.
+- A pick or verdict on a sketch variant shows at once from the answer of the request, instead of after the next sketch list read.
+- A file change reloads only the list it names (calls, sketches or the system lists) from the design server's events, instead of every list through the host's file watcher, which is gone.
+- The host keeps only the start of an agent's stderr and probes the design server port without blocking a runtime worker.
+- Polling a design server Studio did not start judges it stale once per server start instead of on every poll, and sends its log only when it changed.
+- A cold sketch shows its first frame sooner: Studio lists the sketches without the slow unchanged-state comparison first (`?unchanged=no`), asks for shots and diffs at once, then lists them in full.
+- Generate the SDK colour and surface themes from the colours part, add a warning theme, and make the page background surface elevation 0.
+
 ## 0.2.0-next.11
 
 ### Minor Changes
