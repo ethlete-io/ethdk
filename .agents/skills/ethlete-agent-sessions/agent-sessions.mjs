@@ -16,12 +16,16 @@ const root = (() => {
 })();
 const mailbox = process.env.AGENT_MAILBOX ?? join(root, '.ethlete/mailbox.jsonl');
 const script = fileURLToPath(import.meta.url);
+const hasRootScript = (name) => {
+  try {
+    return Boolean(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts?.[name]);
+  } catch {
+    return false;
+  }
+};
 const inboxCommand = (agent) => {
   if (existsSync(join(root, 'node_modules/.bin/ethlete-agents'))) return `npx ethlete-agents sessions inbox ${agent}`;
-  try {
-    const { scripts } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-    if (scripts?.['agents:sessions']) return `yarn agents:sessions inbox ${agent}`;
-  } catch {}
+  if (hasRootScript('agents:sessions')) return `yarn agents:sessions inbox ${agent}`;
   return `node ${script} inbox ${agent}`;
 };
 const DEFAULT_TTL_HOURS = 4;
