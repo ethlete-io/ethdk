@@ -112,6 +112,11 @@ jobs:
       # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
       - run: yarn nx run treeshake:bundle-goldens
 
+      # Fails when a part with the `handoff` status in .ethlete/design/studio/handoff.json is no longer
+      # design complete. It renders against the dist libs built above.
+      - run: yarn playwright install --with-deps chromium
+      - run: node dist/libs/cli/src/index.js design complete --handoff --product studio
+
       - if: inputs.docs_target != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -375,6 +375,12 @@ approve button in Studio (`POST /__design/exception-approve?product=` with `{ ke
 `GET /__design/exceptions?product=` lists every exception with its state, and `design complete`
 prints one `EXCEPTION` line for each exception of the checked parts.
 
+`et design complete <layer>/<name> --handoff` gives a part the `handoff` status when it passes, and
+writes it to `.ethlete/design/<product>/handoff.json`; a failing part gets nothing. App work builds
+only `handoff` parts. `et design complete --handoff [--product <product>]` re-checks every `handoff`
+part, prints `HANDOFF <part> complete` or `HANDOFF <part> regressed` with its gaps, and exits 1 when
+one regressed. CI runs it for the `studio` product in the Build job.
+
 The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
 `CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`, `CONTROL-OVERRIDDEN` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run

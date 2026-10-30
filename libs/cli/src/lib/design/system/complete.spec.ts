@@ -7,6 +7,7 @@ import { checkSystem } from './check-system';
 import { completenessGapLineOf, completenessGapsOf, completenessOf, FoundControl, SeenFrame } from './complete';
 import { designComplete } from './complete-command';
 import { approveException } from './exceptions';
+import { readHandoff, recordHandoff } from './handoff';
 import { writeInventoryApproval } from './inventory-approval';
 import { ResolvedProduct, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
@@ -894,5 +895,38 @@ describe('completenessOf', () => {
       await designComplete({ target, argv: ['components/done', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(0);
     expect(await designComplete({ target, argv: [], invocation: 'et design' })).toBe(2);
+  }, 120_000);
+
+  it('gives only a complete part the handoff status, and fails the handoff re-check when one regresses', async (context) => {
+    const { target, product } = checkout();
+    const logs: string[] = [];
+    const errors: string[] = [];
+    const complete = (...argv: string[]) => designComplete({ target, argv, invocation: 'et design' });
+
+    vi.spyOn(console, 'log').mockImplementation((line: string) => logs.push(line));
+    vi.spyOn(console, 'error').mockImplementation((line: string) => errors.push(line));
+
+    const done = await complete('components/done', '--handoff');
+
+    if (errors.some((line) => line.startsWith('design complete needs a browser'))) return context.skip(errors[0]);
+
+    expect(done).toBe(0);
+    expect(logs.at(-1)).toBe('components/done in app-a is design complete and has the handoff status');
+    expect(await complete('pages/merge', '--handoff')).toBe(1);
+    expect(Object.keys(readHandoff(product.dir))).toEqual(['components/done']);
+    expect(await complete('--handoff')).toBe(0);
+    expect(logs.slice(-2)).toEqual([
+      'HANDOFF components/done complete',
+      '1 handoff part(s) in app-a are design complete',
+    ]);
+
+    recordHandoff({ productDir: product.dir, part: 'pages/merge' });
+
+    expect(await complete('--handoff')).toBe(1);
+    expect(errors.slice(-2)).toEqual([
+      'HANDOFF pages/merge regressed - 6 gap(s)',
+      '1 of 2 handoff part(s) in app-a are no longer design complete',
+    ]);
+    expect(await complete('components/done', '--handoff', '--variant', 'a')).toBe(2);
   }, 120_000);
 });

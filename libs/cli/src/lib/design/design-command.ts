@@ -107,6 +107,8 @@ const helpOf = (invocation: string) =>
     "  --variant checks a variant of the part's open sketch instead, without PART-UNREVIEWED for the parts it changes.",
     '  --request writes a pending exception to one requirement with a reason; it still fails until the user approves',
     '  it in Studio, and a later change of the part reopens it.',
+    '  --handoff with a part gives it the handoff status (handoff.json) when it passes; app work builds only those.',
+    '  --handoff without a part re-checks every handoff part and exits 1 when one regresses - CI runs it.',
     '',
     `${invocation} ${PART_USAGE}`,
     "  Delete a part's folder and its merged.json entry, rewrite the product tsconfig paths, and resolve its comments.",
