@@ -33,30 +33,65 @@ export type FoundControl = {
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
 export type FoundOverride = { owner: string; selector: string; path: string; properties: string[] };
 
+/** A forced interaction on a drawn element: whether its box differs from rest, and which colours change in one frame. */
+export type SeenForce = { interaction: string; differs: boolean; still?: string[] };
+
+/**
+ * An option or menu item inside a drawn surface. `selected` is its ARIA selected, checked, pressed or current
+ * state, `look` its computed colours, so two options can be told apart without their text.
+ */
+export type SeenOption = { selected: boolean; look: string; forced: SeenForce[] };
+
 /** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
 export type SeenFrame = {
   state: string;
   interaction: string | null;
-  controls: { id: string; forced: { interaction: string; differs: boolean; still?: string[] }[] }[];
-  surfaces: { id: string; shown: boolean }[];
+  controls: { id: string; forced: SeenForce[]; selected?: boolean; disabled?: boolean; look?: string }[];
+  surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
   found?: FoundControl[];
   overrides?: FoundOverride[];
 };
 
-type DeclaredControl = { kind: string; input: string[]; part: string | null; surfaces: Record<string, string> };
+type DeclaredControl = {
+  kind: string;
+  input: string[];
+  part: string | null;
+  surfaces: Record<string, string>;
+  disabled: boolean;
+};
 
 /** The gaps of each part a control names in `part`, or why it could not be checked. */
 export type ReferencedParts = Record<string, CompletenessGap[] | string>;
 
-const CHECKED_KINDS = ['disclosure'];
+type ControlKind = { surface?: string; closed?: string; adds?: string[]; selects?: boolean; options?: boolean };
+
+const KINDS: Record<string, ControlKind> = {
+  disclosure: { surface: 'body', closed: 'collapsed' },
+  button: { adds: ['active'] },
+  select: { surface: 'open', options: true },
+  menu: { surface: 'open', options: true },
+  row: { selects: true },
+  tooltip: { surface: 'tooltip' },
+};
+
+const CHECKED_KINDS = Object.keys(KINDS);
 
 const INPUT_INTERACTIONS: Record<string, string[]> = { pointer: ['hover', 'active'], keyboard: ['focus-visible'] };
+
+const MARKS = {
+  selected: 'aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current',
+  disabled: 'disabled or aria-disabled="true"',
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
-const requiredInteractionsOf = (control: DeclaredControl) =>
-  control.input.flatMap((input) => INPUT_INTERACTIONS[input] ?? []);
+const requiredInteractionsOf = (control: DeclaredControl) => [
+  ...new Set([
+    ...control.input.flatMap((input) => INPUT_INTERACTIONS[input] ?? []),
+    ...(KINDS[control.kind]?.adds ?? []),
+  ]),
+];
 
 const gridGapOf = (options: { grid: unknown; states: string[]; interactions: string[] }) => {
   const { grid, states, interactions } = options;
@@ -104,6 +139,7 @@ const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | n
                     ),
                   )
                 : {},
+              disabled: declared['disabled'] === true,
             },
           ];
         }),
@@ -254,37 +290,149 @@ const stillGapOf = (options: { frames: SeenFrame[]; id: string; interaction: str
   return null;
 };
 
-const disclosureGapsOf = (options: {
+const lookGapOf = (options: {
+  seen: { look?: string; flag: boolean }[];
+  flag: 'selected' | 'disabled';
+  what: string;
+}) => {
+  const { seen, flag, what } = options;
+  const on = seen.filter((one) => one.flag);
+  const off = seen.filter((one) => !one.flag);
+
+  if (on.length === 0) return `no state draws ${what} ${flag} - mark it with ${MARKS[flag]} in a state`;
+  if (off.length === 0) return `every state draws ${what} ${flag} - draw it without ${flag} too, to compare`;
+  if (!on.some((one) => off.some((other) => one.look !== other.look)))
+    return `${what} looks the same ${flag} as without - give the ${flag} look its own colours`;
+
+  return null;
+};
+
+const forcedGapOf = (options: { forced: { state: string; differs: boolean }[]; what: string; interaction: string }) => {
+  const { forced, what, interaction } = options;
+
+  if (forced.some((force) => force.differs)) return null;
+  if (forced.length > 0)
+    return `state ${forced[0]?.state} forces ${interaction} on ${what}, but its box draws no different pixel than at rest`;
+
+  return `no state draws ${what} ${interaction} - force ${interaction} on it, e.g. with forceInteraction`;
+};
+
+const surfaceGapsOf = (options: {
+  frames: SeenFrame[];
+  id: string;
+  control: DeclaredControl;
+  states: string[];
+  surface: string;
+  closed?: string;
+}): [string, string][] => {
+  const { frames, id, control, states, surface, closed } = options;
+  const rest = frames.filter((frame) => frame.interaction === null);
+  const state = control.surfaces[surface];
+  const surfaceId = `${id}.${surface}`;
+  const shows = (frame: SeenFrame) => frame.surfaces.some((seen) => seen.id === surfaceId && seen.shown);
+  const drawsControl = (frame: SeenFrame) => frame.controls.some((seen) => seen.id === id);
+  const gaps: [string, string][] = [];
+
+  if (closed && !rest.some((frame) => drawsControl(frame) && !shows(frame)))
+    gaps.push([closed, `every state that draws it also shows its ${surface} - draw a state with ${surfaceId} closed`]);
+
+  if (state === undefined) gaps.push([surface, `declares no surfaces.${surface} - name the state that draws it open`]);
+  else if (!states.includes(state))
+    gaps.push([surface, `surfaces.${surface} names state ${state}, which the part does not declare`]);
+  else if (!rest.some((frame) => frame.state === state && drawsControl(frame) && shows(frame)))
+    gaps.push([
+      surface,
+      `state ${state} draws no visible, non-empty data-et-surface="${surfaceId}" next to data-et-control="${id}"`,
+    ]);
+
+  return gaps;
+};
+
+const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [string, string][] => {
+  const { frames, surfaceId } = options;
+  const shownIn = (frame: SeenFrame) =>
+    frame.surfaces.filter((seen) => seen.id === surfaceId && seen.shown).flatMap((seen) => seen.options ?? []);
+  const what = `an option in ${surfaceId}`;
+  const gaps: [string, string][] = [];
+
+  for (const interaction of ['hover', 'focus-visible']) {
+    const forced = frames.flatMap((frame) =>
+      shownIn(frame).flatMap((option) =>
+        option.forced
+          .filter((force) => force.interaction === interaction)
+          .map((force) => ({ state: frame.state, differs: force.differs })),
+      ),
+    );
+    const gap = forcedGapOf({ forced, what, interaction });
+
+    if (gap) gaps.push([`option-${interaction}`, gap]);
+  }
+
+  const seen = frames
+    .filter((frame) => frame.interaction === null)
+    .flatMap((frame) =>
+      shownIn(frame)
+        .filter((option) => option.forced.length === 0)
+        .map((option) => ({ look: option.look, flag: option.selected })),
+    );
+  const selected = lookGapOf({ seen, flag: 'selected', what });
+
+  if (selected) gaps.push(['option-selected', selected]);
+
+  return gaps;
+};
+
+const requirementGapsOf = (options: {
   frames: SeenFrame[];
   id: string;
   control: DeclaredControl;
   states: string[];
 }): [string, string][] => {
-  const { frames, id, control, states } = options;
-  const rest = frames.filter((frame) => frame.interaction === null);
-  const body = control.surfaces['body'];
-  const bodyId = `${id}.body`;
-  const showsBody = (frame: SeenFrame) => frame.surfaces.some((surface) => surface.id === bodyId && surface.shown);
-  const drawsControl = (frame: SeenFrame) => frame.controls.some((seen) => seen.id === id);
+  const { frames, id, control } = options;
+  const kind = KINDS[control.kind] ?? {};
+  const own = control.part === null;
+  const instances = frames
+    .filter((frame) => frame.interaction === null)
+    .flatMap((frame) => frame.controls.filter((seen) => seen.id === id && seen.forced.length === 0));
   const gaps: [string, string][] = [];
 
-  for (const interaction of control.part === null ? requiredInteractionsOf(control) : []) {
+  for (const interaction of own ? requiredInteractionsOf(control) : []) {
     const gap = interactionGapOf({ frames, id, interaction });
 
     if (gap) gaps.push([interaction, gap]);
   }
 
-  if (!rest.some((frame) => drawsControl(frame) && !showsBody(frame)))
-    gaps.push(['collapsed', `every state that draws it also shows its body - draw a state with ${bodyId} closed`]);
+  if (own && kind.selects) {
+    const selected = lookGapOf({
+      seen: instances.map((seen) => ({ look: seen.look, flag: seen.selected ?? false })),
+      flag: 'selected',
+      what: 'it',
+    });
+    const forced = frames.flatMap((frame) =>
+      frame.controls
+        .filter((seen) => seen.id === id && seen.selected)
+        .flatMap((seen) => seen.forced.filter((force) => force.interaction === 'hover'))
+        .map((force) => ({ state: frame.state, differs: force.differs })),
+    );
+    const hovered = forcedGapOf({ forced, what: 'it selected', interaction: 'hover' });
 
-  if (body === undefined) gaps.push(['body', 'declares no surfaces.body - name the state that draws it open']);
-  else if (!states.includes(body))
-    gaps.push(['body', `surfaces.body names state ${body}, which the part does not declare`]);
-  else if (!rest.some((frame) => frame.state === body && drawsControl(frame) && showsBody(frame)))
-    gaps.push([
-      'body',
-      `state ${body} draws no visible, non-empty data-et-surface="${bodyId}" next to data-et-control="${id}"`,
-    ]);
+    if (selected) gaps.push(['selected', selected]);
+    if (hovered) gaps.push(['selected-hover', hovered]);
+  }
+
+  if (own && control.disabled) {
+    const disabled = lookGapOf({
+      seen: instances.map((seen) => ({ look: seen.look, flag: seen.disabled ?? false })),
+      flag: 'disabled',
+      what: 'it',
+    });
+
+    if (disabled) gaps.push(['disabled', disabled]);
+  }
+
+  if (kind.surface) gaps.push(...surfaceGapsOf({ ...options, surface: kind.surface, closed: kind.closed }));
+
+  if (own && kind.options && kind.surface) gaps.push(...optionGapsOf({ frames, surfaceId: `${id}.${kind.surface}` }));
 
   return gaps;
 };
@@ -375,7 +523,7 @@ export const completenessGapsOf = (options: {
       continue;
     }
 
-    for (const [requirement, detail] of disclosureGapsOf({ frames, id, control, states }))
+    for (const [requirement, detail] of requirementGapsOf({ frames, id, control, states }))
       gaps.push({ code: 'REQUIREMENT-MISSING', target: `${part}.${id}.${requirement}`, detail });
 
     for (const interaction of interactions) {
@@ -545,6 +693,10 @@ const LIKELY_CONTROLS = [
   ...INTERACTIVE_ROLES.map((role) => `[role="${role}"]`),
 ];
 
+const LOOK_PROPERTIES = [...COLOUR_PROPERTIES, 'opacity', 'box-shadow', 'font-weight', 'text-decoration-line'];
+
+const OPTION_SELECTOR = '[role="option"], [role^="menuitem"], [data-et-option]';
+
 const discoverControls = `((root) => {
   const LIKELY = ${JSON.stringify(LIKELY_CONTROLS)};
   const likely = LIKELY.join(', ');
@@ -593,17 +745,22 @@ const discoverControls = `((root) => {
       walk(sheet.cssRules, null);
     } catch {}
   }
+  const markerOf = (at, element) =>
+    at.getAttribute('data-et-control') ?? (element.matches(${JSON.stringify(OPTION_SELECTOR)}) ? at.getAttribute('data-et-surface')?.split('.')[0] : null) ?? null;
   const withinOf = (element) => {
     const ids = [];
-    for (let at = element; at && at !== root; at = at.parentElement)
-      if (at.hasAttribute('data-et-control')) ids.push(at.getAttribute('data-et-control'));
+    for (let at = element; at && at !== root; at = at.parentElement) {
+      const id = markerOf(at, element);
+      if (id !== null) ids.push(id);
+    }
     return ids;
   };
   const markedOf = (element) => {
     if (element.hasAttribute('data-et-control')) return element.getAttribute('data-et-control');
     for (let at = element.parentElement; at && at !== root; at = at.parentElement) {
       if (at.matches(likely)) return null;
-      if (at.hasAttribute('data-et-control')) return at.getAttribute('data-et-control');
+      const id = markerOf(at, element);
+      if (id !== null) return id;
     }
     return null;
   };
@@ -753,21 +910,44 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[] }
     }
     return element.innerText.trim() !== '' || !!element.querySelector('img, svg, canvas, video, iframe, input, select, textarea');
   };
-  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element, at) => {
+  const LOOK = ${JSON.stringify(LOOK_PROPERTIES)};
+  const lookOf = (element) => {
+    const own = LOOK.map((name) => getComputedStyle(element).getPropertyValue(name));
+    const inside = [...element.querySelectorAll('*')].map((child) => {
+      const style = getComputedStyle(child);
+      return LOOK.map((name) => style.getPropertyValue(name)).join(' ');
+    });
+    return JSON.stringify([own, [...new Set(inside)].sort()]);
+  };
+  const isSelected = (element) =>
+    ['aria-selected', 'aria-checked', 'aria-pressed'].some((name) => element.getAttribute(name) === 'true') ||
+    (element.hasAttribute('aria-current') && element.getAttribute('aria-current') !== 'false');
+  const isDisabled = (element) =>
+    element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true' || tokensOf(element, 'data-et-force').includes('disabled');
+  let next = 0;
+  const tagged = (element) => {
+    const at = next++;
     element.setAttribute('data-et-complete', String(at));
     const box = element.getBoundingClientRect();
     const x = Math.max(0, box.x + scrollX - ${PAD});
     const y = Math.max(0, box.y + scrollY - ${PAD});
     return {
-      id: element.getAttribute('data-et-control'),
       at,
-      forced: (element.getAttribute('data-et-force') ?? '').split(' ').filter(Boolean),
+      forced: tokensOf(element, 'data-et-force'),
       box: box.width > 0 && box.height > 0 ? { x, y, width: box.width + ${PAD * 2}, height: box.height + ${PAD * 2} } : null,
+      selected: isSelected(element),
+      look: lookOf(element),
     };
-  });
+  };
+  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element) => ({
+    id: element.getAttribute('data-et-control'),
+    disabled: isDisabled(element),
+    ...tagged(element),
+  }));
   const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
+    options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map(tagged),
   }));
   const discover = ${options.discover};
   return {
@@ -795,16 +975,19 @@ const forceOn = ({
   else element.removeAttribute('data-et-force');
 })(${JSON.stringify(at)}, ${JSON.stringify(interaction)}, ${JSON.stringify(on)})`;
 
+type Tagged = {
+  at: number;
+  forced: string[];
+  box: { x: number; y: number; width: number; height: number } | null;
+  selected: boolean;
+  look: string;
+};
+
 type Seen =
   | { refused: string }
   | {
-      controls: {
-        id: string;
-        at: number;
-        forced: string[];
-        box: { x: number; y: number; width: number; height: number } | null;
-      }[];
-      surfaces: { id: string; shown: boolean }[];
+      controls: (Tagged & { id: string; disabled: boolean })[];
+      surfaces: { id: string; shown: boolean; options: Tagged[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
     };
@@ -846,29 +1029,27 @@ const seeFrames = async (options: {
         continue;
       }
 
-      const controls: SeenFrame['controls'] = [];
+      const forcedOf = async (element: Tagged) => {
+        const forced: SeenForce[] = [];
 
-      for (const control of found.controls) {
-        const forced: SeenFrame['controls'][number]['forced'] = [];
-
-        for (const interaction of control.forced.filter((name) => FORCEABLE.has(name))) {
-          if (!control.box) {
+        for (const interaction of element.forced.filter((name) => FORCEABLE.has(name))) {
+          if (!element.box) {
             forced.push({ interaction, differs: false });
             continue;
           }
 
           const shot = () =>
-            page.screenshot({ type: 'png', fullPage: true, clip: control.box ?? undefined, animations: 'disabled' });
+            page.screenshot({ type: 'png', fullPage: true, clip: element.box ?? undefined, animations: 'disabled' });
           const drawn = await shot();
-          const drawnColours = (await page.evaluate(colourSnapshot(control.at))) as ColourSnapshot;
+          const drawnColours = (await page.evaluate(colourSnapshot(element.at))) as ColourSnapshot;
 
-          await page.evaluate(forceOn({ at: control.at, interaction, on: false }));
+          await page.evaluate(forceOn({ at: element.at, interaction, on: false }));
           await page.evaluate(settled);
 
           const rest = await shot();
-          const restColours = (await page.evaluate(colourSnapshot(control.at))) as ColourSnapshot;
+          const restColours = (await page.evaluate(colourSnapshot(element.at))) as ColourSnapshot;
 
-          await page.evaluate(forceOn({ at: control.at, interaction, on: true }));
+          await page.evaluate(forceOn({ at: element.at, interaction, on: true }));
           forced.push({
             interaction,
             differs: !drawn.equals(rest),
@@ -876,14 +1057,34 @@ const seeFrames = async (options: {
           });
         }
 
-        controls.push({ id: control.id, forced });
+        return forced;
+      };
+      const controls: SeenFrame['controls'] = [];
+      const surfaces: SeenFrame['surfaces'] = [];
+
+      for (const control of found.controls)
+        controls.push({
+          id: control.id,
+          forced: await forcedOf(control),
+          selected: control.selected,
+          disabled: control.disabled,
+          look: control.look,
+        });
+
+      for (const surface of found.surfaces) {
+        const options: SeenOption[] = [];
+
+        for (const option of surface.options)
+          options.push({ selected: option.selected, look: option.look, forced: await forcedOf(option) });
+
+        surfaces.push({ id: surface.id, shown: surface.shown, options });
       }
 
       seen.push({
         state: frame.state,
         interaction: frame.interaction,
         controls,
-        surfaces: found.surfaces,
+        surfaces,
         found: found.found,
         overrides: found.overrides,
       });
@@ -992,7 +1193,8 @@ export const completenessOf = async (options: {
       const { seen, refused } = await queue.run((browser) =>
         seeFrames({ browser, base: `http://localhost:${port}`, frames, part: key, ownCss }),
       );
-      const reviewed = readMerged(product.dir)[key] === partHashOf({ product, dir });
+      const owner = resolved.origin === 'base' && product.base ? { dir: product.base.dir, base: null } : product;
+      const reviewed = readMerged(owner.dir)[key] === partHashOf({ product: owner, dir });
       const referenced: ReferencedParts = {};
       const used = [
         ...Object.values(declaredControlsOf(definition?.controls) ?? {}).map((control) => control.part),

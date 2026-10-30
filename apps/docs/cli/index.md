@@ -236,7 +236,34 @@ controls: {
 },
 ```
 
-Only the `disclosure` kind is checked so far.
+Each `kind` adds its own requirements:
+
+| Kind             | Needs besides the interactions of its `input`                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `disclosure`     | a state that draws it collapsed, and the visible body `surfaces.body` names                                                                                         |
+| `button`         | `active`                                                                                                                                                            |
+| `select`, `menu` | the visible surface `surfaces.open` names, with an option in it (`role="option"`, `role="menuitem"` or `data-et-option`) drawn hovered, focus-visible, and selected |
+| `row`            | a state that draws it selected, and one that forces hover on it while selected                                                                                      |
+| `tooltip`        | the visible tooltip `surfaces.tooltip` names, drawn next to the control in this part                                                                                |
+
+Selected means `aria-selected`, `aria-checked` or `aria-pressed` set to `true`, or an
+`aria-current`. A selected row or option must look different from an unselected one: its
+computed colours, opacity, shadow or font weight, or those of an element in it, must differ.
+`disabled: true` on a control also needs a state that draws it `disabled` or
+`aria-disabled="true"` with a look of its own; without it, no disabled state is required.
+
+With `part`, the interactions, the selected and disabled looks and the option states come from
+that part; the surfaces stay with the host. A page that uses a select draws its open surface once
+in its own placement, and a closed select never counts as open:
+
+```ts
+controls: {
+  preset: { kind: 'select', part: 'components/select', surfaces: { open: 'preset-open' } },
+},
+```
+
+Options inside a surface belong to the surface's control, so they need no marker of their own.
+A part inherited from the product's base is checked against the `merged.json` of the base.
 
 The check also discovers controls in each state's rendered DOM, so leaving out a declaration does
 not pass. A native control (`button`, `a[href]`, `input`, `select`, `textarea`, `summary`,

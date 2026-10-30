@@ -74,7 +74,22 @@ describe('definePart', () => {
       controls: { more: { kind: 'disclosure', part: 'components/toggle', surfaces: { body: 'filled' } } },
     });
 
-    expect(controlled.controls?.['more']?.surfaces.body).toBe('filled');
+    definePart({
+      ...source,
+      controls: {
+        go: { kind: 'button', input: ['pointer'], disabled: true },
+        row: { kind: 'row', part: 'components/row' },
+        tip: { kind: 'tooltip', part: 'components/tip', surfaces: { tooltip: 'filled' } },
+        menu: { kind: 'menu', input: ['keyboard'], surfaces: { open: 'filled' } },
+      },
+    });
+    definePart({
+      ...source,
+      // @ts-expect-error a select names the state that draws it open
+      controls: { pick: { kind: 'select', input: ['pointer'], surfaces: { body: 'filled' } } },
+    });
+
+    expect(controlled.controls?.['more']?.surfaces).toEqual({ body: 'filled' });
   });
 
   it('forces an interaction on the root of the drawing, as a frame does', async () => {

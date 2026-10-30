@@ -83,21 +83,34 @@ export type StateGrid<TState extends string = string, TColumn extends string = s
   rows: Record<string, Partial<Record<TColumn, TState>>>;
 };
 
-/** How a control is operated: `pointer` requires a drawn hover, `keyboard` a drawn focus-visible. */
+/** How a control is operated: `pointer` requires a drawn hover and active, `keyboard` a drawn focus-visible. */
 export type ControlInput = 'pointer' | 'keyboard';
 
 /** A component or element part that draws a control and its interactions. */
 export type ControlPart = `components/${string}` | `elements/${string}`;
 
 /**
- * A control `design complete` checks. A `disclosure` needs a state that draws it collapsed and the state its
- * `surfaces.body` names, which draws the element marked `data-et-surface="<id>.body"` visible and filled.
- * With `part`, the interactions come from that part, which must be design complete itself; a page control needs it.
- * With `input`, a state of this part draws each required interaction, e.g. with `forceInteraction`.
+ * What a control of each `kind` needs besides the interactions of its `input`. A surface is the element marked
+ * `data-et-surface="<id>.<surface>"`, drawn visible and filled in the state its `surfaces` entry names.
+ * - `disclosure`: a state that draws it collapsed, and `surfaces.body`.
+ * - `button`: `active`.
+ * - `select`, `menu`: `surfaces.open`, and options in it (`role="option"`, `role="menuitem"` or `data-et-option`)
+ *   drawn hovered, focus-visible, and selected with a look of their own.
+ * - `row`: drawn selected (`aria-selected`, `aria-checked`, `aria-pressed` or `aria-current`) with a look of its own,
+ *   and hovered while selected.
+ * - `tooltip`: `surfaces.tooltip`, the visible tooltip next to the control in this part.
+ *
+ * `disabled: true` also requires a state that draws it disabled with a look of its own. With `part`, the
+ * interactions, selected and disabled looks and option states come from that part, which must be design complete
+ * itself; the surfaces stay with this part. A page control needs `part`. With `input`, a state of this part draws
+ * each requirement, e.g. with `forceInteraction`.
  */
-export type Control<TState extends string = string> = { kind: 'disclosure'; surfaces: { body: TState } } & (
-  { part: ControlPart; input?: never } | { input: ControlInput[]; part?: never }
-);
+export type Control<TState extends string = string> = (
+  | { kind: 'disclosure'; surfaces: { body: TState } }
+  | { kind: 'button' | 'row'; surfaces?: never }
+  | { kind: 'select' | 'menu'; surfaces: { open: TState } }
+  | { kind: 'tooltip'; surfaces: { tooltip: TState } }
+) & { disabled?: boolean } & ({ part: ControlPart; input?: never } | { input: ControlInput[]; part?: never });
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';

@@ -17,7 +17,20 @@ const STYLES = [
   '.aa-toggle:focus-visible, .aa-still:focus-visible { outline: 2px solid black; }',
   '.aa-toggle:active, .aa-still:active { background: gray; }',
   '.aa-card { padding: 4px; } .aa-card:hover { background: black; }',
+  '.aa-row { display: block; background: white; color: black; }',
+  '.aa-row[aria-current="true"], .aa-row[aria-selected="true"] { background: navy; color: white; }',
+  '.aa-row:hover { background: silver; } .aa-row:focus-visible { outline: 2px solid black; }',
+  '.aa-row[aria-current="true"]:hover { background: blue; }',
 ].join(' ');
+
+const row = (attributes = '', name = 'aa-row') =>
+  `<button class="${name}" type="button" data-et-control="row"${attributes}>Row</button>`;
+
+const pick = '<button class="aa-toggle" type="button" data-et-control="pick">Pick</button>';
+
+const option = (attributes = '', name = 'aa-row') => `<li class="${name}" role="option"${attributes}>Option</li>`;
+
+const OPTIONS = `<ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option()}${option(' data-et-force="hover"')}${option(' data-et-force="focus-visible" tabindex="0"')}</ul>`;
 
 const toggle = (attributes = '', name = 'aa-toggle') =>
   `<button class="${name}" type="button" data-et-control="more"${attributes}><span>More</span></button>`;
@@ -117,6 +130,31 @@ const PARTS: Record<string, FixturePart> = {
     extra: `${DISCLOSURE} ${GRID}`,
   },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
+  'components/rows': {
+    states: {
+      rest: `<div>${row(' aria-current="true"')}${row()}</div>`,
+      'selected-hovered': `<div>${row(' aria-current="true" data-et-force="hover"')}</div>`,
+    },
+    extra: "controls: { row: { kind: 'row', input: [] } },",
+  },
+  'components/rows-flat': {
+    states: {
+      rest: `<div>${row(' aria-current="true"', 'aa-toggle')}${row('', 'aa-toggle')}</div>`,
+      'selected-hovered': `<div>${row(' aria-current="true" data-et-force="hover"', 'aa-plain')}</div>`,
+    },
+    extra: "controls: { row: { kind: 'row', input: [] } },",
+  },
+  'components/picker': {
+    states: { rest: `<div>${pick}</div>`, open: `<div>${pick}${OPTIONS}</div>` },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
+  'components/picker-closed': {
+    states: {
+      rest: `<div>${pick}</div>`,
+      open: `<div>${pick}<ul data-et-surface="pick.open" hidden>${option()}</ul></div>`,
+    },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
   'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
   'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
   'components/pointer': {
@@ -329,7 +367,7 @@ describe('completenessGapsOf', () => {
       controls: {
         ...DECLARED,
         gone: { kind: 'disclosure', input: [], surfaces: { body: 'open' } },
-        tip: { kind: 'tooltip' },
+        tip: { kind: 'slider' },
       },
       states: ['rest'],
       frames: [
@@ -385,6 +423,147 @@ describe('completenessGapsOf', () => {
     ]);
     expect(gapsOf(used, { 'components/toggle': 'product "app-a" has no part "components/toggle"' })).toEqual([
       'CONTROL-PART-INCOMPLETE pages/a.more - components/toggle: product "app-a" has no part "components/toggle"',
+    ]);
+  });
+
+  it('requires active of a button, and a disabled look only when the control declares disabled', () => {
+    const forced = (interaction: string, differs = true) => ({ interaction, differs });
+    const frames = [
+      frame('rest', { controls: [{ id: 'go', forced: [], look: 'a' }] }),
+      frame('focused', { controls: [{ id: 'go', forced: [forced('focus-visible')], look: 'b' }] }),
+      frame('off', { controls: [{ id: 'go', forced: [], disabled: true, look: 'a' }] }),
+    ];
+    const gapsOf = (controls: unknown, seen = frames) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls,
+        states: ['rest', 'focused', 'off'],
+        frames: seen,
+        reviewed: true,
+      })
+        .filter((gap) => gap.code === 'REQUIREMENT-MISSING')
+        .map(completenessGapLineOf);
+
+    expect(gapsOf({ go: { kind: 'button', input: ['keyboard'] } })).toEqual([
+      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
+    ]);
+    expect(gapsOf({ go: { kind: 'button', input: ['keyboard'], disabled: true } })).toEqual([
+      'REQUIREMENT-MISSING components/a.go.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.go.disabled - it looks the same disabled as without - give the disabled look its own colours',
+    ]);
+    expect(
+      gapsOf({ go: { kind: 'button', input: [], disabled: true } }, [
+        frame('rest', { controls: [{ id: 'go', forced: [forced('active')], look: 'a' }] }),
+        frame('on', { controls: [{ id: 'go', forced: [], look: 'a' }] }),
+        frame('off', { controls: [{ id: 'go', forced: [], disabled: true, look: 'c' }] }),
+      ]),
+    ).toEqual([]);
+    expect(
+      gapsOf({ go: { kind: 'button', input: [], disabled: true } }, [
+        frame('rest', { controls: [{ id: 'go', forced: [forced('active')], look: 'a' }] }),
+      ]),
+    ).toEqual([
+      'REQUIREMENT-MISSING components/a.go.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" in a state',
+    ]);
+  });
+
+  it('requires a selected look and a selected hover of a row', () => {
+    const gapsOf = (frames: SeenFrame[]) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: { more: { kind: 'row', input: [] } },
+        states: ['rest', 'picked'],
+        frames,
+        reviewed: true,
+      }).map(completenessGapLineOf);
+
+    expect(
+      gapsOf([
+        frame('rest', {
+          controls: [
+            { id: 'more', forced: [], selected: true, look: 'navy' },
+            { id: 'more', forced: [], look: 'white' },
+          ],
+        }),
+        frame('picked', {
+          controls: [{ id: 'more', forced: [{ interaction: 'hover', differs: true }], selected: true, look: 'x' }],
+        }),
+      ]),
+    ).toEqual([]);
+    expect(gapsOf([frame('rest')])).toEqual([
+      'REQUIREMENT-MISSING components/a.more.selected - no state draws it selected - mark it with aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current in a state',
+      'REQUIREMENT-MISSING components/a.more.selected-hover - no state draws it selected hover - force hover on it, e.g. with forceInteraction',
+    ]);
+    expect(gapsOf([frame('rest', { controls: [{ id: 'more', forced: [], selected: true, look: 'navy' }] })])).toEqual([
+      'REQUIREMENT-MISSING components/a.more.selected - every state draws it selected - draw it without selected too, to compare',
+      'REQUIREMENT-MISSING components/a.more.selected-hover - no state draws it selected hover - force hover on it, e.g. with forceInteraction',
+    ]);
+  });
+
+  it('requires the open surface of a select or menu with its option states, and takes the options from its part', () => {
+    const shown = (options: SeenFrame['surfaces'][number]['options']) => [{ id: 'more.open', shown: true, options }];
+    const full = [
+      frame('rest'),
+      frame('open', {
+        surfaces: shown([
+          { selected: true, look: 'navy', forced: [] },
+          { selected: false, look: 'white', forced: [] },
+          { selected: false, look: 'x', forced: [{ interaction: 'hover', differs: true }] },
+          { selected: false, look: 'y', forced: [{ interaction: 'focus-visible', differs: true }] },
+        ]),
+      }),
+    ];
+    const gapsOf = (control: unknown, frames: SeenFrame[], part = 'components/a') =>
+      completenessGapsOf({
+        part,
+        controls: { more: control },
+        states: ['rest', 'open'],
+        frames,
+        reviewed: true,
+        referenced: { 'components/select': [] },
+      }).map(completenessGapLineOf);
+    const select = { kind: 'select', input: [], surfaces: { open: 'open' } };
+
+    expect(gapsOf(select, full)).toEqual([]);
+    expect(gapsOf({ ...select, kind: 'menu' }, full)).toEqual([]);
+    expect(
+      gapsOf(select, [frame('rest'), frame('open', { surfaces: shown([{ selected: false, look: 'a', forced: [] }]) })]),
+    ).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-hover - no state draws an option in more.open hover - force hover on it, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - no state draws an option in more.open focus-visible - force focus-visible on it, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.more.option-selected - no state draws an option in more.open selected - mark it with aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current in a state',
+    ]);
+
+    const closed = [frame('rest'), frame('open', { surfaces: [{ id: 'more.open', shown: false, options: [] }] })];
+
+    expect(
+      gapsOf({ kind: 'select', part: 'components/select', surfaces: { open: 'open' } }, closed, 'pages/a'),
+    ).toEqual([
+      'REQUIREMENT-MISSING pages/a.more.open - state open draws no visible, non-empty data-et-surface="more.open" next to data-et-control="more"',
+    ]);
+    expect(
+      gapsOf(
+        { kind: 'select', part: 'components/select', surfaces: { open: 'open' } },
+        [frame('rest'), frame('open', { surfaces: shown([]) })],
+        'pages/a',
+      ),
+    ).toEqual([]);
+  });
+
+  it('requires the visible tooltip of a tooltip control in its host', () => {
+    const gapsOf = (frames: SeenFrame[]) =>
+      completenessGapsOf({
+        part: 'pages/a',
+        controls: { more: { kind: 'tooltip', part: 'components/tip', surfaces: { tooltip: 'tip' } } },
+        states: ['rest', 'tip'],
+        frames,
+        reviewed: true,
+        referenced: { 'components/tip': [] },
+      }).map(completenessGapLineOf);
+
+    expect(gapsOf([frame('rest'), frame('tip', { surfaces: [{ id: 'more.tooltip', shown: true }] })])).toEqual([]);
+    expect(gapsOf([frame('rest'), frame('tip')])).toEqual([
+      'REQUIREMENT-MISSING pages/a.more.tooltip - state tip draws no visible, non-empty data-et-surface="more.tooltip" next to data-et-control="more"',
     ]);
   });
 });
@@ -450,10 +629,50 @@ describe('completenessOf', () => {
       'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 4 gap(s) - run design complete components/flat',
     ]);
 
+    expect(await completenessOf({ target, config, product, part: 'components/rows' })).toEqual({ gaps: [] });
+
+    const rowsFlat = await completenessOf({ target, config, product, part: 'components/rows-flat' });
+
+    expect('gaps' in rowsFlat && rowsFlat.gaps.map(completenessGapLineOf)).toEqual([
+      'REQUIREMENT-MISSING components/rows-flat.row.selected - it looks the same selected as without - give the selected look its own colours',
+      'REQUIREMENT-MISSING components/rows-flat.row.selected-hover - state selected-hovered forces hover on it selected, but its box draws no different pixel than at rest',
+    ]);
+
+    expect(await completenessOf({ target, config, product, part: 'components/picker' })).toEqual({ gaps: [] });
+
+    const closed = await completenessOf({ target, config, product, part: 'components/picker-closed' });
+
+    expect('gaps' in closed && closed.gaps.map((gap) => `${gap.code} ${gap.target}`)).toEqual([
+      'REQUIREMENT-MISSING components/picker-closed.pick.open',
+      'REQUIREMENT-MISSING components/picker-closed.pick.option-hover',
+      'REQUIREMENT-MISSING components/picker-closed.pick.option-focus-visible',
+      'REQUIREMENT-MISSING components/picker-closed.pick.option-selected',
+    ]);
+
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });
 
     expect('gaps' in bare && bare.gaps.map((gap) => gap.code)).toEqual(['CONTROL-UNKNOWN']);
   }, 120_000);
+
+  it('reads the review of a base part from the merged.json of its base', async (context) => {
+    const { target } = checkout();
+    const design = join(target, DESIGN_DIR);
+    const products = {
+      'app-a': { presets: { desktop: { width: 400, height: 300 } } },
+      'app-b': { base: `${DESIGN_DIR}/app-a` },
+    };
+
+    mkdirSync(join(design, 'app-b'), { recursive: true });
+    writeFileSync(join(design, 'config.json'), JSON.stringify({ products }));
+
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'app-b', config: config.products?.['app-b'] ?? {} });
+    const done = await completenessOf({ target, config, product, part: 'components/done' });
+
+    if ('unavailable' in done) return context.skip(done.unavailable);
+
+    expect(done).toEqual({ gaps: [] });
+  }, 60_000);
 
   it('discovers undeclared and unclassified controls, but not the controls of an embedded page', async (context) => {
     const { target, config, product } = checkout();
