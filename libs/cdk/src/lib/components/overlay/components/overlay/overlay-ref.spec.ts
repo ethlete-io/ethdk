@@ -27,12 +27,12 @@ const pressEscape = () => {
   document.body.dispatchEvent(event);
 };
 
-const clickBackdrop = () => {
+const clickBackdrop = (detail = 1) => {
   const backdrop = document.querySelector('.cdk-overlay-backdrop');
 
   if (!backdrop) throw new Error('no backdrop');
 
-  backdrop.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  backdrop.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }));
 };
 
 const settle = async () => {
@@ -105,5 +105,15 @@ describe('OverlayRef close handlers', () => {
     await settle();
 
     expect(isClosed()).toBe(true);
+  });
+
+  it('ignores the second click of a double-click while entering', async () => {
+    const { ref, isClosed } = open();
+
+    clickBackdrop(2);
+    await settle();
+
+    expect(isClosed()).toBe(false);
+    expect(ref._containerInstance.animatedLifecycle.state()).not.toBe('init');
   });
 });

@@ -250,7 +250,7 @@ export class OverlayRef<T = any, R = any> {
         : of(event);
 
     merge(
-      this.backdropClick(),
+      this.backdropClick().pipe(filter((event) => !this.isDoubleClickWhileEntering(event))),
       this.keydownEvents().pipe(
         filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
       ),
@@ -272,6 +272,12 @@ export class OverlayRef<T = any, R = any> {
           this._closeOverlayVia(isEscapeKey ? 'keyboard' : 'mouse', undefined, true);
         }
       });
+  }
+
+  private isDoubleClickWhileEntering(event: MouseEvent) {
+    const state = this._containerInstance.animatedLifecycle.state();
+
+    return event.detail > 1 && (state === 'init' || state === 'entering');
   }
 
   private finishOverlayClose() {

@@ -2,4 +2,4 @@
 '@ethlete/cdk': patch
 ---
 
-Overlay: a backdrop click during the enter animation now closes the overlay once it starts entering, like Escape, instead of being dropped.
+Overlay: while the overlay enters, a backdrop click closes it; the second click of a double-click does not, so a double-click on the trigger no longer opens and closes it at once.
