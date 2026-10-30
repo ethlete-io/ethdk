@@ -539,6 +539,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decision (Tom, 2026-10-30):** a still pair of states plus a `transitions` declaration is
   enough evidence for now; Studio plays the transition in a later slice. The declaration is
   optional: `design complete` requires it for no control kind until a concrete kind needs it.
+- **Amended (Tom, 2026-10-30):** the motion model of `plans/ethlete-studio/motion.md`
+  (2026-10-27) applies. The declaration is its `motions` field, not a new `transitions` field.
+  This finding is that plan's slice 1 (`motions`, the morph, `ctx` and the check rules); shots
+  and the Studio timeline follow as its later slices.
 
 ### 4.55 A comment on a new part in a sketch cannot be marked done - fixed
 
@@ -599,6 +603,17 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Open for Tom:** the duration (proposal: `120ms ease` on background, color, border-color and
   box-shadow, as `libs/components/src/lib/button/button.component.css`) and whether the disclosure
   body fades in when it opens (proposal: no, a body fade is a 4.54 transition).
+- **Decision (Tom, 2026-10-30):**
+  - Option 1: a `foundations/motion` part with duration and easing tokens, and the
+    `design complete` check on a colour change with a computed `transition-duration` of 0.
+  - Colour changes use `120ms ease` on background, color, border-color and box-shadow. They stay
+    in reduced motion (`motion.md` allows `color` as an exception).
+  - The disclosure body fades in by opacity in 120 ms when it opens. Its height still jumps; no
+    height or slide animation.
+  - Prepare for the motion model: every simple transition uses only the `foundations/motion`
+    tokens, never a literal duration or easing, and an appearing element (the disclosure body)
+    uses `@starting-style`, as `motion.md` prescribes. The later motion system then recognizes
+    these transitions and its timeline names them by token.
 
 ### 4.59 Icons are inline SVG in each part, not a catalogue - open
 
@@ -616,6 +631,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (recommended). 2. the part only, without the check. An agent then draws inline again.
 - **Open for Tom:** one stroke width and one grid for all icons (proposal: 16 px viewBox,
   1.5 stroke), and whether the Studio app later takes the same files through the SDK icon system.
+- **Decision (Tom, 2026-10-30):** option 1 with the `design check` rule. All icons use a 16 px
+  viewBox and a 1.5 stroke. The Studio app later takes the same files through the SDK icon
+  system, in a later slice.
 
 ## 5. Drawing parts and pages
 
