@@ -484,7 +484,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   part note and drops one state, and can read the new note text without the agent.
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
 
-### 4.52 A pick in Studio shows only after a long delay - open
+### 4.52 A pick in Studio shows only after a long delay - done
 
 - **Pain (Tom, 2026-10-30):** in the ready `pages/inbox` sketch, Tom clicked "Pick c". All
   buttons were disabled for a moment, then enabled again, and nothing showed as picked.
@@ -501,6 +501,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** a click on "Pick c" shows c as picked at once and enables Merge, also for a variant
   that changes no pixel; a failed pick shows an error instead of a silent reset.
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
+- **Done (2026-10-30, 5c44e2edb):** `decideSketch$` returned the answer's decision to nobody; the view
+  waited for the list read. It now lays the answer over the listed sketch at once.
 
 - **Migration (Tom, 2026-10-30):** once the 4.47 and 4.53 rules stand, every existing Studio
   design gets one pass: declare its interactive controls, draw the missing states and
@@ -675,7 +677,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 - **Pain (Tom, 2026-10-30):** "das rendering im merge editor etc ist mittlerweile ziemlich langsam
   geworden." It got slower over time, also in other views.
-- **Evidence:** not measured yet.
+- **Evidence:** not measured yet. One hint from 4.52: the sketch list read (`/__design/sketches`)
+  renders the targets and took 7 s on its first call.
 - **Next:** measure before a fix. Time each shot request of the merge view (server log or the
   network panel of a headless run on an own server): render queue wait, page render, pixel diff,
   changed box. Compare with a small part to see if the time grows with the part count or the state count.
