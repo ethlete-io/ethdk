@@ -1,6 +1,0 @@
-{
-  "components/select.select.active": {
-    "reason": "Variant a: the select trigger has no pressed look by design; a press shows hover and then focus.",
-    "requested": "2026-10-30T22:33:46.514Z"
-  }
-}
