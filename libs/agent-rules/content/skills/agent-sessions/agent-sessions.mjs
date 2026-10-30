@@ -35,6 +35,8 @@ const WAKE_GRACE_MS = 1500;
 const DRAFT_RETRY_MS = 2000;
 const RESTART_AFTER_SECONDS = 5;
 const RESTART_CLEAR_MS = 2500;
+const RESTART_POLL_MS = 2000;
+const RESTART_WAIT_MS = 30 * 60 * 1000;
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -102,6 +104,20 @@ const runsInSession = (agentArgs) =>
  * wake-up line from answering a permission dialog.
  */
 const SGR = `${String.fromCharCode(27)}\\[([0-9;]*)m`;
+const isBusy = (session) => /esc to inte/i.test(tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '');
+
+/** Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit. */
+const waitForQuiet = (session) => {
+  const end = Date.now() + RESTART_WAIT_MS;
+  let quiet = 0;
+  while (Date.now() < end) {
+    quiet = isBusy(session) || hasDraft(session) ? 0 : quiet + 1;
+    if (quiet === 2) return true;
+    sleep(RESTART_POLL_MS);
+  }
+  return false;
+};
+
 const hasDraft = (session) => {
   const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
   const prompt = pane
@@ -311,20 +327,28 @@ if (command === 'send' && sender) {
   } else if (now) {
     const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
     sleep(Number(afterSeconds ?? RESTART_AFTER_SECONDS) * 1000);
-    type('-l', sender.startsWith('codex') ? '/new' : '/clear');
-    sleep(ENTER_DELAY_MS);
-    type('Enter');
-    sleep(RESTART_CLEAR_MS);
-    type('-l', words.join(' '));
-    sleep(ENTER_DELAY_MS);
-    type('Enter');
+    if (!waitForQuiet(session)) {
+      process.exitCode = 1;
+    } else {
+      type('-l', sender.startsWith('codex') ? '/new' : '/clear');
+      sleep(ENTER_DELAY_MS);
+      type('Enter');
+      sleep(RESTART_CLEAR_MS);
+      if (waitForQuiet(session)) {
+        type('-l', words.join(' '));
+        sleep(ENTER_DELAY_MS);
+        type('Enter');
+      }
+    }
   } else {
     const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
     spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...words], {
       detached: true,
       stdio: 'ignore',
     }).unref();
-    process.stdout.write(`Restarting ${session} in ${delay} seconds. End your turn now.\n`);
+    process.stdout.write(
+      `Restarting ${session} once its turn ended and its prompt is empty, ${delay} seconds at the earliest. End your turn now.\n`,
+    );
   }
 } else if (command === 'down') {
   [DISPATCH_SESSION, ...[sender, ...words].filter(Boolean).map(sessionFor)].forEach((name) => {
