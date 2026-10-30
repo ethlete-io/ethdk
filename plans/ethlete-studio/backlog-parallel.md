@@ -29,6 +29,11 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   eslint on changed files, and say so in the report.
 - Every lib change: a spec that bites, a changeset, docs (`apps/docs/cli/index.md`), no new lint warnings.
 - Record each item as built in its plan section, with the commit.
+- **`ready` means final (Tom, 2026-10-30).** A sketch goes to `ready` only when no change to it waits on
+  anything: no open decision, no landing helper, no "once X is decided I adapt the sketch". While such a change
+  is pending, the sketch stays in work and is not in the merge queue. Put the open question to Tom first, change
+  the sketch, then mark it `ready`. A sketch that is `ready` and then gets such a pending change leaves the queue
+  until the change is in.
 
 ## Stream A - `libs/cli` sketch and complete checks
 
