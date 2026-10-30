@@ -125,40 +125,50 @@ const COMMENTS: Comment[] = [
 const SELECTED = 'c1';
 const ACTIVE_PART = 'button';
 
-const replyIcon = icon('reply', { size: 14, cls: 'ib-icon' });
-const checkIcon = icon('check', { size: 14, cls: 'ib-icon' });
+const replyIcon = icon('reply', { size: 14, cls: 'flex-none' });
+const checkIcon = icon('check', { size: 14, cls: 'flex-none' });
 
-const row = (c: Comment) =>
-  html`<div class="ib-row" ${c.id === SELECTED ? ' data-selected' : ''}${c.resolved ? ' data-resolved' : ''}>
-    <span class="ib-avatar" ${c.agent ? ' data-agent' : ''}
-      >${c.agent ? agentLogo(c.agent, 'ib-logo') : c.initials}</span
+const countClass = 'flex items-center gap-0.5 text-text-muted';
+
+const row = (c: Comment) => {
+  const selected = c.id === SELECTED;
+  const strong = c.resolved ? 'text-text-muted' : 'text-text';
+
+  return html`<div class="flex gap-space-2 p-space-2 rounded-control-md${selected ? ' bg-accent-subtle' : ''}">
+    <span
+      class="ib-avatar flex flex-none items-center justify-center size-5 bg-surface-overlay text-text text-(length:--text-xs) font-ui-strong"
+      >${c.agent ? agentLogo(c.agent, 'size-3') : c.initials}</span
     >
-    <div class="ib-row-body">
-      <div class="ib-row-meta">
-        <span class="ib-author">${c.author}</span>
-        <span class="ib-when">${c.when}</span>
-        ${c.unread ? '<span class="ib-unread" title="Ungelesen"></span>' : ''}
+    <div class="flex flex-1 flex-col gap-0.5 min-w-0">
+      <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
+        <span class="${strong} font-ui-medium">${c.author}</span>
+        <span class="flex-1 text-text-muted">${c.when}</span>
+        ${c.unread ? '<span class="ib-unread size-1.5 bg-accent" title="Ungelesen"></span>' : ''}
       </div>
-      <p class="ib-text">${c.text}</p>
-      <div class="ib-row-foot">
-        <span class="ib-where">${c.part} › ${c.state}</span>
-        ${c.resolved ? `<span class="ib-count">${checkIcon}</span>` : c.replies > 0 ? `<span class="ib-count">${replyIcon}${c.replies}</span>` : ''}
+      <p class="m-0 line-clamp-2 ${strong} text-ui-sm">${c.text}</p>
+      <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
+        <span
+          class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-accent-text' : 'text-text-muted'} font-code"
+          >${c.part} › ${c.state}</span
+        >
+        ${c.resolved ? `<span class="${countClass}">${checkIcon}</span>` : c.replies > 0 ? `<span class="${countClass}">${replyIcon}${c.replies}</span>` : ''}
       </div>
     </div>
   </div>`;
+};
 
 const groupHead = (title: string, count: number) =>
-  `<div class="ib-group"><span class="ib-group-title">${title}</span><span>${count}</span></div>`;
+  `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-surface-border text-text-muted text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
 
 const group = (title: string, comments: Comment[]) =>
   comments.length === 0 ? '' : groupHead(title, comments.length) + comments.map(row).join('');
 
 const activeGroup = (comments: Comment[]) =>
   comments.length === 0
-    ? `${groupHead(ACTIVE_PART, 0)}<p class="ib-group-empty">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
+    ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-text-muted text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments);
 
-const empty = `<div class="ib-empty">${icon('check', { size: 14, cls: 'ib-empty-icon' })}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
+const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-accent-text' })}<p class="m-0 text-text text-(length:--text-sm)">Keine offenen Kommentare</p><p class="m-0 text-text-muted text-(length:--text-xs)">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
@@ -166,7 +176,7 @@ const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) 
     index += 1;
     const c = comments.find((comment) => comment.cell === index);
     if (!c) return match;
-    return `<div class="st-sgrid-cell ib-pinned"><span class="ib-pin-at">${pin(c)}</span>`;
+    return `<div class="st-sgrid-cell relative"><span class="absolute -top-3.5 right-1.5 z-11 flex">${pin(c)}</span>`;
   });
 };
 
@@ -191,14 +201,14 @@ export const inbox = () =>
     },
     render: async ({ showResolved, openOn, draft, entry }) => {
       const controls = await ng(
-        `<div class="ib-controls" data-placement="l">
-        <span class="ib-control ib-control-compact"><et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" /></span>
+        `<div class="contents">
+        <span class="ib-control inline-flex"><et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" /></span>
         ${
           draft || entry
-            ? `<div class="ib-draft ib-studio-compose z-10 text-ui-sm" data-compose="l">
+            ? `<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
                 ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
-                <div class="ib-studio-paper rounded-md border border-surface-border shadow-lg bg-surface">
-                  <div class="ib-studio-writing"><et-textarea aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button type="button" variant="transparent" color="surface" size="xs" ${draft ? '' : 'disabled class="text-text-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
+                <div class="mt-1.25 rounded-md border border-surface-border shadow-lg bg-surface">
+                  <div class="flex flex-col items-stretch p-3"><et-textarea class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-text-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
                 </div>
               </div>`
             : ''
@@ -228,12 +238,14 @@ export const inbox = () =>
           }),
         ]),
       );
-      const side = html`<div class="ib">
-        <div class="ib-bar">
-          <span class="ib-bar-title">${unresolved} offen</span>
-          <div class="ib-toggle">Erledigte zeigen ${controls}</div>
+      const side = html`<div class="ib flex flex-col -m-space-2">
+        <div
+          class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-surface-border text-ui-sm"
+        >
+          <span class="text-text-muted">${unresolved} offen</span>
+          <div class="flex items-center gap-space-2 text-text">Erledigte zeigen ${controls}</div>
         </div>
-        <div class="ib-list">
+        <div class="flex flex-col gap-px min-h-0 overflow-hidden p-space-2">
           ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
             'Andere',
             visible.filter((c) => c.part !== ACTIVE_PART),
