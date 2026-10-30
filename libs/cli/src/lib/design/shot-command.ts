@@ -9,13 +9,13 @@ import { INTERACTIONS } from './force-interactions';
 import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
-import { findSketch, parseTarget } from './system/sketch/sketch';
+import { findSketch, parseTarget, Sketch } from './system/sketch/sketch';
 import { createPartShooter, cropOf, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -174,6 +174,33 @@ export const rowsOf = (options: { part: string; variants: string[] | null; merge
   ];
 };
 
+/**
+ * The variants of a sketch that a shot draws: all of them, or only those in the named rounds and among the named
+ * variants. A string names a round or a variant the sketch does not have, or says that none is left.
+ */
+export const shownVariantsOf = (options: {
+  sketch: Pick<Sketch, 'variants' | 'rounds' | 'variantInfo'>;
+  rounds: string[];
+  variants: string[];
+}): string[] | string => {
+  const { sketch, rounds, variants } = options;
+  const known = sketch.rounds.map((round) => round.key);
+  const unknownRounds = rounds.filter((key) => !known.includes(key));
+  const unknownVariants = variants.filter((name) => !sketch.variants.includes(name));
+
+  if (unknownRounds.length > 0) return `no round ${unknownRounds.join(', ')} (rounds: ${known.join(', ')})`;
+  if (unknownVariants.length > 0)
+    return `no variant ${unknownVariants.join(', ')} (variants: ${sketch.variants.join(', ')})`;
+
+  const shown = sketch.variants.filter(
+    (name) =>
+      (rounds.length === 0 || rounds.includes(sketch.variantInfo[name]?.round ?? '')) &&
+      (variants.length === 0 || variants.includes(name)),
+  );
+
+  return shown.length > 0 ? shown : `no variant is in round ${rounds.join(', ')} and named ${variants.join(', ')}`;
+};
+
 /** The diff lines of the sheet, a line per new state, and the PNG path last. */
 export const shotReportOf = (options: { out: string; diffs: string[]; sheet: SheetCell[][] }) => [
   ...options.diffs,
@@ -220,6 +247,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const args = argsOf(argv, [
     '--product',
     '--at',
+    '--round',
+    '--variant',
     '--state',
     '--interaction',
     '--preset',
@@ -243,6 +272,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
   const diffProps = args.flags.has('--diff-props');
+  const onlyRounds = args.values['--round']?.split(',').filter(Boolean) ?? [];
+  const onlyVariants = args.values['--variant']?.split(',').filter(Boolean) ?? [];
   const width = args.values['--width'] === undefined ? null : Number(args.values['--width']);
   const preset = args.values['--preset'] ?? null;
   const scale = Number(args.values['--scale'] ?? 1);
@@ -252,7 +283,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     !part ||
     extra.length > 0 ||
     (!states && !variants) ||
-    ((args.values['--at'] !== undefined || diffProps) && !variants) ||
+    ((args.values['--at'] !== undefined || diffProps || onlyRounds.length > 0 || onlyVariants.length > 0) &&
+      !variants) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
     !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
@@ -313,17 +345,23 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
   const system = createSystemModules({ target, config, sketchesRoot });
   const sketch = system.sketchesOf(product).find((found) => found.target === part);
-  const rows = rowsOf({
-    part,
-    variants: variants ? (sketch?.variants ?? []) : null,
-    merged: Boolean(system.partOf({ product, part })),
-  });
 
   if (variants && !sketch?.variants.length) {
     console.error(`design-explore: ${part} has no open sketch in product "${product}"`);
 
     return 1;
   }
+
+  const shownVariants =
+    variants && sketch ? shownVariantsOf({ sketch, rounds: onlyRounds, variants: onlyVariants }) : null;
+
+  if (typeof shownVariants === 'string') {
+    console.error(`design-explore: ${part} has ${shownVariants}`);
+
+    return 1;
+  }
+
+  const rows = rowsOf({ part, variants: shownVariants, merged: Boolean(system.partOf({ product, part })) });
 
   if (!system.partOf({ product, part }) && !sketch) {
     console.error(`design-explore: product "${product}" has no part "${part}"`);

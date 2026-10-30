@@ -11,6 +11,7 @@ import {
   rowsOf,
   shotProductOf,
   shotReportOf,
+  shownVariantsOf,
   withDiffRows,
 } from './shot-command';
 import { createSketch, parseTarget } from './system/sketch/sketch';
@@ -179,6 +180,14 @@ describe('designShot', () => {
     expect((await run(['components/button', '--variants', '--diff-props'])).text).toContain('no config at');
   });
 
+  it('takes --round and --variant only with --variants', async () => {
+    expect((await run(['components/button', '--states', '--round', 'r2'])).code).toBe(2);
+    expect((await run(['components/button', '--states', '--variant', 'i'])).code).toBe(2);
+    expect((await run(['components/button', '--variants', '--round', 'r2', '--variant', 'i'])).text).toContain(
+      'no config at',
+    );
+  });
+
   it('takes a crop of four whole numbers', async () => {
     expect((await run(['components/button', '--states', '--crop', '1,2,3'])).code).toBe(2);
     expect((await run(['components/button', '--states', '--crop', '0,0,40,20'])).text).toContain('no config at');
@@ -237,6 +246,36 @@ describe('shotReportOf', () => {
     expect(
       shotReportOf({ out: '/tmp/sheet.png', diffs: ['a vs merged: 3 px', 'b vs merged: 0 px'], sheet: [] }),
     ).toEqual(['a vs merged: 3 px', 'b vs merged: 0 px', '/tmp/sheet.png']);
+  });
+});
+
+describe('shownVariantsOf', () => {
+  const sketch = {
+    variants: ['a', 'b', 'i', 'j'],
+    rounds: [
+      { key: 'r1', title: 'First', note: '' },
+      { key: 'r2', title: 'Second', note: '' },
+    ],
+    variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, i: { round: 'r2' }, j: { round: 'r2' } },
+  };
+
+  it('keeps every variant without a filter', () => {
+    expect(shownVariantsOf({ sketch, rounds: [], variants: [] })).toEqual(['a', 'b', 'i', 'j']);
+  });
+
+  it('keeps the variants of the named rounds', () => {
+    expect(shownVariantsOf({ sketch, rounds: ['r2'], variants: [] })).toEqual(['i', 'j']);
+  });
+
+  it('keeps the named variants, in sketch order, also inside a round', () => {
+    expect(shownVariantsOf({ sketch, rounds: [], variants: ['j', 'a'] })).toEqual(['a', 'j']);
+    expect(shownVariantsOf({ sketch, rounds: ['r2'], variants: ['j'] })).toEqual(['j']);
+  });
+
+  it('names an unknown round or variant, and an empty result', () => {
+    expect(shownVariantsOf({ sketch, rounds: ['r4'], variants: [] })).toBe('no round r4 (rounds: r1, r2)');
+    expect(shownVariantsOf({ sketch, rounds: [], variants: ['z'] })).toBe('no variant z (variants: a, b, i, j)');
+    expect(shownVariantsOf({ sketch, rounds: ['r1'], variants: ['i'] })).toContain('no variant is in round r1');
   });
 });
 
