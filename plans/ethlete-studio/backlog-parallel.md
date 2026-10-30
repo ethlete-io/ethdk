@@ -89,3 +89,16 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
 ## Nothing to build
 
 3.41 (did not reproduce), 4.7 (known limit), 5.21 (parked), 5.23 (SDK issue), 5.24 (done), 6.5 (covered by 4.47).
+
+## Decisions (Tom, 2026-10-30)
+
+- 5.39: the state grid shows an empty cell for each undrawn state combo; `sketch check` lists them. Stream A.
+- 5.51: the tokens drawing prints the contrast of each token on each surface. Stream F (sketch).
+- 5.52: if a generator already reads the tokens, generate all three theme blocks from that one source; else add
+  `design tokens theme add <name> --type --oklch`. Check which first. Stream E.
+- 5.55: `embedPage({ mark, css })`, both applied inside the iframe. Stream E.
+- 5.56: `design check` warns when both `embedPage({ scale })` and the host's own scale are set. Stream A or E.
+- 5.32: `elements/canvas-frames` exports the frame head, the frame box and the zoom chip as named parts. Stream F,
+  after 2.2 on the same part.
+- 6.6: a skill rule: before `ready`, critique hierarchy, spacing, form nesting and host context; no render gate.
+  Stream D.
