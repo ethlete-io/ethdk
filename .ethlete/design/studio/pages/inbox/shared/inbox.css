@@ -119,8 +119,8 @@
     background: var(--accent-subtle);
   }
 
-  .ib-row[data-resolved] {
-    opacity: 0.55;
+  .ib-row[data-resolved] :is(.ib-author, .ib-text) {
+    color: var(--text-muted);
   }
 
   .ib-avatar {

@@ -63,7 +63,7 @@ export const agentLogo = (agent: Agent, cls = '') =>
 
 type View = 'hosts' | 'detail';
 
-const surfaces = ['surface-sunken', 'surface', 'surface-raised', 'surface-overlay'];
+const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
 
 const hosts = html`<div class="al-root">
   <h2 class="al-title">Agent logos at 1.2rem, as the inbox, the sketches page and the comment pin draw them</h2>
