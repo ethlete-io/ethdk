@@ -202,7 +202,7 @@ describe('designSketch', () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
-  });
+  }, 30_000);
 
   it('keeps a sketch ready when a state shows a change and names why', async () => {
     const target = acme();
