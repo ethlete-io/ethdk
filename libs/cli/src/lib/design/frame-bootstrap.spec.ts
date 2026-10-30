@@ -9,9 +9,10 @@ type Result = {
   pageFill: string;
   styles: string[];
   messages: { type: string; errored?: boolean }[];
+  imports: number;
 };
 
-const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = ''): Result => {
+const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = '', failedImports = 0): Result => {
   const result = spawnSync(
     process.execPath,
     [
@@ -21,7 +22,11 @@ const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = '')
       outcome,
       ...(tokens ? [tokens] : []),
     ],
-    { encoding: 'utf8', timeout: 10000, env: { ...process.env, FRAME_QUERY: query } },
+    {
+      encoding: 'utf8',
+      timeout: 10000,
+      env: { ...process.env, FRAME_QUERY: query, FRAME_FAILED_IMPORTS: String(failedImports) },
+    },
   );
 
   expect(result.status, result.stderr).toBe(0);
@@ -61,5 +66,19 @@ describe('design frame bootstrap', () => {
 
   it('leaves the page fill to the product without `fill`', () => {
     expect(bootstrap('resolve').pageFill).toBe('');
+  });
+
+  it('draws the part when its import fails once while the part file changes', () => {
+    const result = bootstrap('resolve', undefined, '', 2);
+
+    expect(result.body).toBe('<b>Ready</b>');
+    expect(result.error).toBeNull();
+  });
+
+  it('shows the import error once the retries fail too', () => {
+    const result = bootstrap('resolve', undefined, '', 99);
+
+    expect(result.error).toContain('Failed to fetch dynamically imported module');
+    expect(result.imports).toBe(6);
   });
 });

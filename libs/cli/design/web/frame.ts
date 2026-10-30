@@ -81,6 +81,17 @@ const showSetupError = (message: string) => {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+const RETRY_DELAYS = [300, 1500];
+
+// A part file that changes while frames load can fail its import once; Chromium fetches a failed module again.
+const retried = <T>(load: () => Promise<T>, attempt = 0): Promise<T> =>
+  load().catch((error: unknown) => {
+    const delay = RETRY_DELAYS[attempt];
+    if (delay === undefined) throw error;
+
+    return new Promise<void>((resolve) => setTimeout(resolve, delay)).then(() => retried(load, attempt + 1));
+  });
+
 let drawnPart: { part: Part<unknown>; states: Record<string, unknown> } | null = null;
 
 const drawCall = async (): Promise<Drawing | null> => {
@@ -112,7 +123,7 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
     );
 
   try {
-    const [{ default: part }, { default: holder }] = await Promise.all([load(), loadProps()]);
+    const [{ default: part }, { default: holder }] = await Promise.all([retried(load), retried(loadProps)]);
 
     if (!(key in holder.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
 
@@ -263,7 +274,7 @@ const exposeFlowLine = (options: { product: string; to: string; styles: string }
   exposeStepped({
     interrupt: null,
     start: () =>
-      load().then(({ default: part }) => {
+      retried(load).then(({ default: part }) => {
         const states = (part as Part<unknown>).states;
 
         if (!(toState in states)) throw new Error(`design-explore: part "${toPart}" has no state "${toState}"`);

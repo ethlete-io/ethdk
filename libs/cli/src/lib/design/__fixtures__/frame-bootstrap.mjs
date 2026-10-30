@@ -13,6 +13,8 @@ const ready = new Promise((resolve, fail) => {
   release = resolve;
   reject = fail;
 });
+const failedImports = Number(process.env.FRAME_FAILED_IMPORTS ?? 0);
+let imports = 0;
 const context = createContext({
   document: dom.window.document,
   location: {
@@ -20,6 +22,7 @@ const context = createContext({
     href: 'http://localhost/frame.html',
   },
   URLSearchParams,
+  setTimeout: (callback) => setImmediate(callback),
   innerWidth: 800,
   innerHeight: 600,
   frameElement: null,
@@ -44,16 +47,21 @@ const modules = {
     },
     placeOverlays: () => undefined,
   },
-  '../embed-page': { fitEmbed: () => undefined },
+  '../embed-page': { applyEmbed: () => undefined, fitEmbed: () => undefined },
   '../motion-runtime': { runRules: () => undefined, stepMotion: () => undefined },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },
   'virtual:design-explore/system': {
     parts: {
       probe: {
-        'components/slow': async () => ({
-          default: { states: { default: {} }, render: () => ({ body: '<b>Ready</b>', styles: '.part{}' }) },
-        }),
+        'components/slow': async () => {
+          imports += 1;
+          if (imports <= failedImports) throw new Error('Failed to fetch dynamically imported module: slow.ts');
+
+          return {
+            default: { states: { default: {} }, render: () => ({ body: '<b>Ready</b>', styles: '.part{}' }) },
+          };
+        },
       },
     },
     sketchParts: {},
@@ -83,8 +91,7 @@ await new Promise(setImmediate);
 const initial = { evaluated, body: dom.window.document.getElementById('root').innerHTML, messages: [...messages] };
 if (process.argv[3] === 'reject') reject(new Error('Environment failed'));
 else release();
-await new Promise(setImmediate);
-await new Promise(setImmediate);
+for (let tick = 0; tick < 20; tick++) await new Promise(setImmediate);
 process.stdout.write(
   JSON.stringify({
     initial,
@@ -93,6 +100,7 @@ process.stdout.write(
     pageFill: dom.window.document.body.style.background,
     styles: [...dom.window.document.head.querySelectorAll('style')].map((style) => style.textContent),
     messages,
+    imports,
   }),
 );
 dom.window.close();
