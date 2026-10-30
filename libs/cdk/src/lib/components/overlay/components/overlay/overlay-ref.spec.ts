@@ -80,13 +80,26 @@ describe('OverlayRef close handlers', () => {
     expect(isClosed()).toBe(true);
   });
 
-  it('ignores a backdrop click that lands before the enter animation starts', async () => {
+  it('closes on a backdrop click right after open', async () => {
     const { isClosed } = open();
 
     clickBackdrop();
     await settle();
 
-    expect(isClosed()).toBe(false);
+    expect(isClosed()).toBe(true);
+  });
+
+  it('closes on a backdrop click while the enter animation runs', async () => {
+    const { ref, isClosed } = open();
+
+    const lifecycle = ref._containerInstance.animatedLifecycle;
+
+    for (let i = 0; i < 10 && lifecycle.state() === 'init'; i++) {
+      await vi.advanceTimersByTimeAsync(16);
+      TestBed.tick();
+    }
+
+    expect(lifecycle.state()).toBe('entering');
 
     clickBackdrop();
     await settle();
