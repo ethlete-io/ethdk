@@ -1,6 +1,6 @@
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { dirname, join, resolve } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
 import { readConfig } from '../../paths';
@@ -154,5 +154,33 @@ describe('sketchShowsNoChange', () => {
     expect(await sketchShowsNoChange({ product, sketch: rejected, load, pictureOf })).toBe(
       'the sketch has no live variant',
     );
+  });
+
+  it('compares every target of a sketch with several targets and names the part that changes', async () => {
+    const { product } = acme();
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'components', name: 'button' },
+      others: [{ layer: 'components', name: 'card' }],
+      variants: ['a'],
+    }) as Sketch;
+    const card = resolve(variantDirOf(sketch, 'a'), 'components/card/card.css');
+    const byFolder: SketchPartLoader = async ({ file }) => ({
+      default: {
+        states: { default: {} },
+        render: () => ({
+          body: '<p></p>',
+          styles: readFileSync(resolve(dirname(file), `${basename(dirname(file))}.css`), 'utf8'),
+        }),
+      },
+    });
+
+    expect(await sketchShowsNoChange({ product, sketch, load: byFolder, pictureOf: pictureWith(() => 0) })).toBe(true);
+
+    writeFileSync(card, `${readFileSync(card, 'utf8')}\n/* one pixel */\n`);
+
+    expect(
+      await sketchShowsNoChange({ product, sketch, load: byFolder, pictureOf: pictureWith((sketched) => +sketched) }),
+    ).toBe('variant a changes components/card default');
   });
 });

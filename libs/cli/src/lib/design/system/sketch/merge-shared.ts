@@ -69,6 +69,17 @@ export const productSharedChangesOf = (options: { sketch: Sketch; variant: strin
     .map(([path, file]) => ({ from: file, to: resolve(product.dir, SHARED_FOLDER, path) }));
 };
 
+/** The paths of the product's or its base's `shared/` files that the sketch's or the variant's `shared/` changes. */
+export const editedSharedPathsOf = (options: { sketch: Sketch; variant: string; product: SharedProduct }) => {
+  const { sketch, variant, product } = options;
+
+  return [...sketchSharedFilesOf(sketch, variant)].flatMap(([path, file]) => {
+    const own = sharedFileOf({ dirs: productSharedDirsOf(product), path });
+
+    return own && readFileSync(own, 'utf8') !== readFileSync(file, 'utf8') ? [path.split(sep).join('/')] : [];
+  });
+};
+
 const relativeSpecifierOf = (options: { from: string; to: string }) => {
   const path = relative(dirname(options.from), options.to).split(sep).join('/');
 

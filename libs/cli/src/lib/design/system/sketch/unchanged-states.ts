@@ -90,12 +90,13 @@ const framesOf = (part: LoadedPart, presets: string[] | null) => {
 const drawsTheSame = async (options: {
   pictureOf: PictureOf;
   product: string;
+  key: string;
   part: LoadedPart;
   presets: string[] | null;
   state: string;
   sketch: SketchVariant;
 }) => {
-  const { pictureOf, product, part, presets, state, sketch } = options;
+  const { pictureOf, product, key, part, presets, state, sketch } = options;
 
   try {
     const same = await Promise.all(
@@ -103,7 +104,7 @@ const drawsTheSame = async (options: {
         const draw = (drawn: SketchVariant | null, fresh: boolean) =>
           pictureOf({
             product,
-            part: sketch.target,
+            part: key,
             state,
             ...frame,
             sketch: drawn,
@@ -122,7 +123,7 @@ const drawsTheSame = async (options: {
 };
 
 /**
- * The states of the sketch's target that `variant` renders to the same markup and styles as the product
+ * The states of the sketch's target, or of the part `part` names, that `variant` renders to the same markup and styles as the product
  * does now, with the same widths and interactions, so every frame of them matches, unless the variant changes a
  * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
@@ -135,19 +136,20 @@ export const unchangedStatesOf = async (options: {
   variant: string;
   load: SketchPartLoader;
   pictureOf?: PictureOf;
+  part?: string;
 }): Promise<string[]> => {
-  const { product, sketch, variant, load, pictureOf } = options;
-  const current = product.parts.find((part) => partKeyOf(part) === sketch.target);
+  const { product, sketch, variant, load, pictureOf, part: compared = sketch.target } = options;
+  const current = product.parts.find((part) => partKeyOf(part) === compared);
   const merged = current?.file;
   const overlaid = overlaySketch({ product, sketch, variant });
-  const drawn = overlaid.parts.find((part) => partKeyOf(part) === sketch.target)?.file;
+  const drawn = overlaid.parts.find((part) => partKeyOf(part) === compared)?.file;
 
   if (!merged || !drawn) return [];
 
   const key = hashOf(
     JSON.stringify([
       sketch.dir,
-      sketch.target,
+      compared,
       variant,
       baselineOf(product),
       baselineOf(overlaid),
@@ -187,6 +189,7 @@ export const unchangedStatesOf = async (options: {
         ? drawsTheSame({
             pictureOf,
             product: product.name,
+            key: compared,
             part: after.part,
             presets,
             state,

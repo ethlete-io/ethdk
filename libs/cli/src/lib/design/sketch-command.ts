@@ -510,6 +510,12 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   if (!again) console.log(`${sketch.target} is ready`);
 
+  for (const variant of sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate))) {
+    const { shared } = mergePreviewOf({ product, sketch, variant });
+
+    if (shared.length > 0) console.log(`variant ${variant}: a shared/ edit reaches ${shared.join(', ')}`);
+  }
+
   if (!sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))) {
     console.log('auto-merge skipped: new part, the user merges');
 
@@ -717,6 +723,9 @@ const previewed = (context: Context) =>
       console.log(JSON.stringify(preview, null, 2));
     } else {
       console.log(`changes: ${preview.changed.join(', ')}`);
+
+      if (preview.shared.length > 0) console.log(`a shared/ edit reaches: ${preview.shared.join(', ')}`);
+
       console.log(`shows: ${preview.affected.join(', ') || 'no other element or page'}`);
     }
 

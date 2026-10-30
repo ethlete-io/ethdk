@@ -101,6 +101,40 @@ describe('designSketch', () => {
     ]);
   });
 
+  it('names in preview and ready each part a shared/ edit reaches', async () => {
+    const target = acme();
+    const lines = output();
+    const product = join(target, DESIGN_DIR, 'acme');
+    const hero = join(product, 'elements/hero/hero.ts');
+
+    mkdirSync(join(product, 'shared'));
+    writeFileSync(join(product, 'shared/tone.ts'), 'export const tone = 1;\n');
+    writeFileSync(
+      hero,
+      `import { tone } from '@shared/tone';\n${readFileSync(hero, 'utf8')}\nexport const t = tone;\n`,
+    );
+    write(
+      target,
+      'new',
+      'foundations/palette',
+      '--variants',
+      'a',
+      '--round',
+      'Tone',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    mkdirSync(join(product, 'sketches/foundations-palette/shared'));
+    writeFileSync(join(product, 'sketches/foundations-palette/shared/tone.ts'), 'export const tone = 2;\n');
+
+    expect(run(target, 'preview', 'foundations/palette', 'a', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('a shared/ edit reaches: elements/hero');
+    expect(await write(target, 'ready', 'foundations/palette', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('variant a: a shared/ edit reaches elements/hero');
+  });
+
   it('runs the check and the auto merge again on a sketch that is already ready', async () => {
     const target = acme();
     const lines = output();
@@ -808,6 +842,7 @@ describe('designSketch', () => {
     expect(run(target, 'preview', 'components/button', 'a', '--product', 'acme', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')).toEqual({
       changed: ['components/button'],
+      shared: [],
       affected: ['elements/hero', 'pages/home'],
     });
     expect(write(target, 'merge', 'components/button', 'a', '--product', 'acme', '--note', 'x')).toBe(1);

@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -30,6 +30,7 @@ describe('mergePreviewOf', () => {
 
     expect(mergePreviewOf({ product, sketch, variant: 'a' })).toEqual({
       changed: ['components/button'],
+      shared: [],
       affected: ['elements/hero', 'pages/home'],
     });
   });
@@ -39,7 +40,11 @@ describe('mergePreviewOf', () => {
     const product = resolveAcme(target);
     const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'banner' }, variants: ['a'] }) as Sketch;
 
-    expect(mergePreviewOf({ product, sketch, variant: 'a' })).toEqual({ changed: ['elements/banner'], affected: [] });
+    expect(mergePreviewOf({ product, sketch, variant: 'a' })).toEqual({
+      changed: ['elements/banner'],
+      shared: [],
+      affected: [],
+    });
   });
 
   it('leaves out the components between a change and a page', () => {
@@ -69,5 +74,36 @@ describe('mergePreviewOf', () => {
     }) as Sketch;
 
     expect(mergePreviewOf({ product, sketch, variant: 'a' }).affected).toContain('pages/promo');
+  });
+
+  it('names each part that imports a shared/ file the variant edits, and the pages that show it', () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    mkdirSync(join(target, DESIGN_DIR, 'acme/shared'));
+    writeFileSync(join(target, DESIGN_DIR, 'acme/shared/tone.ts'), 'export const tone = 1;\n');
+    writeFileSync(
+      hero,
+      `import { tone } from '@shared/tone';\n${readFileSync(hero, 'utf8')}\nexport const t = tone;\n`,
+    );
+
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'foundations', name: 'palette' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    mkdirSync(join(sketch.dir, 'a/shared'));
+    writeFileSync(join(sketch.dir, 'a/shared/tone.ts'), 'export const tone = 2;\n');
+    mkdirSync(join(sketch.dir, 'b/shared'));
+    writeFileSync(join(sketch.dir, 'b/shared/tone.ts'), 'export const tone = 1;\n');
+
+    expect(mergePreviewOf({ product, sketch, variant: 'a' })).toEqual({
+      changed: ['elements/hero', 'foundations/palette'],
+      shared: ['elements/hero'],
+      affected: ['pages/home'],
+    });
+    expect(mergePreviewOf({ product, sketch, variant: 'b' }).shared).toEqual([]);
   });
 });
