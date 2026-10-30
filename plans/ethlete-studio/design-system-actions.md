@@ -1098,6 +1098,42 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Fix option:** lazy-load the agent view and the dialogs. Effort S-M.
 - **As built (2026-10-30, e5d007cdf):** the agent view was already its own route. `@defer` now wraps the new-product form, note form, comment draft, comment thread and comment panel in `system-view`. Before: main 289 KB + one chunk 540 KB (146 KB gzip). After: main 301 KB (93 KB gzip) + view chunk 417 KB (118 KB gzip) + a 102 KB deferred chunk (24 KB gzip) loaded on demand. First view loads about 122 KB raw / 28 KB gzip less. Select stays in the first view (product picker, checkouts footer). Verified: 321 specs, tsc, headless Chromium on the static build starts without errors and the agent view renders. Not verified: the deferred panels in a browser (need the design server). No spec: the chunk measurement is the evidence.
 
+### Rust side of Studio - findings (2026-10-30)
+
+The 4.74 check was headless and never read `src-tauri`. A read-only review of `src-tauri/src` (nothing run, no
+measurement) found the Rust side lean: no polling in Rust, no unbounded channels, agent children do not leak. The
+watcher findings (recursive over all of `.ethlete/design`, no debounce, a full `design_project` rescan per burst)
+belong to 4.78, which replaces the `tick` with design server events.
+
+### 4.82 `design_server_state` spawns `node` on every 3 s poll - open
+
+- **From the code:** while a foreign server listens, Studio polls `design_server_state` every 3 s
+  (`studio-view.component.ts:421`). Each call runs the `stale` check (`design_server.rs:172-236`): a walk of up to
+  5000 entries of `libs/cli` with a stat each (on a tokio worker, not `spawn_blocking`), an HTTP GET for the served
+  stamp, and a `node <cli> design stamp` spawn (about 50-150 ms CPU). It also clones the whole server log and sends
+  it over IPC each time (`design_server.rs:311-327,387-419`).
+- **Fix option:** compute `stale` once per start or restart and cache the stamp per checkout and port; send the log
+  only on change. Effort S-M.
+
+### 4.83 Sync Tauri commands block the window - open
+
+- **From the code:** non-async Tauri v2 commands run on the main thread. `design_project` (`design.rs:299-330`)
+  rescans every call and parses each `call.ts` without a cache, after each watcher burst. `workspace_root`,
+  `workspace_status`, `workspace_diff`, `workspace_check` (`lib.rs:55-85`) each spawn `git rev-parse` plus
+  `git status` or `git diff`. `design_roots_search` and `design_scan` (`design_roots.rs:158-181`) walk two levels
+  and do not skip `node_modules`. `check_call` (`tools.rs:231-260`) runs a full `design check --lint` with a
+  blocking `output()`; its thread is not confirmed.
+- **Cost:** small in this repo (ms to tens of ms), but a slow `git status` or a large project freezes the UI.
+- **Fix option:** `#[tauri::command(async)]` or `spawn_blocking`; cache the repository root in a `OnceLock`; skip
+  `node_modules`; a timeout for `check_call`; optional mtime cache for parsed calls. Effort S (M with the cache).
+
+### 4.84 Small Rust hygiene - open
+
+- `agent.rs`: the stderr buffer `complaints` grows without a cap until the end of the run. Cap it.
+- `design_server.rs:74-78`: `listening()` blocks a tokio worker with `connect_timeout` inside async loops. Use a
+  tokio `TcpStream`. Loopback usually answers at once, so the cost is low.
+- Effort S each.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
