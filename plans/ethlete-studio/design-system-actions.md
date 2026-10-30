@@ -383,6 +383,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   control inside it to that part. A page declares only its own controls, and the owning part must pass
   `design complete` itself. A page that restyles an owned control with its own CSS fails as
   `CONTROL-OVERRIDDEN` and must declare that control. Merged parts change only through sketches after this.
+- **Decided (Tom, 2026-10-30), inventory approval view:** Studio shows the page's rest frame with a numbered
+  box over each control (green declared, red undeclared, amber unclassified) and a list beside it: number, id,
+  kind, inputs, surfaces, state count. One "approve inventory" button below. The approval stores the control
+  ids and the part hash in `.ethlete/design/<product>/inventory.json`; a new or removed control or a part edit
+  reopens it. A page with a red or amber box cannot be approved. No keychain signature.
 - **Status:** slice 1 built: `definePart({ controls })`, the `data-et-control` and
   `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's

@@ -158,3 +158,6 @@ Each slice gets an "in progress" note here when it starts.
     `data-et-key` where the part sets one; keep the selector otherwise.
   - Limits: an animation or step after 30 s is not drawn; an infinite animation does not count towards `end`.
     `interrupt` waits for slice 4.
+- **Decision (Tom, 2026-10-30):** every open point as recommended. Build `et design mcp`, then `motion_shots`; token
+  names, the `/__design/motion` endpoint in slice 3; clip to the union of the root and the animated boxes over all
+  keyframes; `data-et-key` before the selector for `element`; keep the three limits and document them.
