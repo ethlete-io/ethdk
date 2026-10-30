@@ -531,7 +531,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   enough evidence for now; Studio plays the transition in a later slice. The declaration is
   optional: `design complete` requires it for no control kind until a concrete kind needs it.
 
-### 4.55 A comment on a new part in a sketch cannot be marked done - open
+### 4.55 A comment on a new part in a sketch cannot be marked done - fixed
 
 - **Pain (2026-10-30):** `inbox done 20261030T135029Z-35c6 --note "…"` on a comment on the
   sketch `components/disclosure` variant a answers "components/disclosure is no part of studio -
@@ -539,6 +539,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix option:** for a comment on a sketch variant, write the note into the variant even when
   the merged product does not have the part yet.
 - **Decision (Tom, 2026-10-30):** this fix. No design question left.
+- **Status:** fixed - `completeComment` checks the merged part only for a comment outside a sketch variant.
 
 ### 4.56 An interactive component draws its interactions as flat states, not as a grid - open
 

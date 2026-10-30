@@ -30,7 +30,7 @@ export const completeComment = (options: {
   const product = products.find(({ name }) => name === found.product);
   const part = product?.parts.find((candidate) => partKeyOf(candidate) === found.part);
 
-  if (!product || !part) return `${found.part} is no part of ${found.product} - the note has nowhere to go`;
+  if (!product) return `${found.product} is no product here`;
 
   if (found.sketch) {
     const target = parseTarget(found.sketch.target);
@@ -61,6 +61,8 @@ export const completeComment = (options: {
 
     return addressComment({ products: [{ name: product.name, dir: product.dir }], id, author, note });
   }
+
+  if (!part) return `${found.part} is no part of ${found.product} - the note has nowhere to go`;
 
   const source = readFileSync(part.file, 'utf8');
   const withNoted = withNote(source, note);

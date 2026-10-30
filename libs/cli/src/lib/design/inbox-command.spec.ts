@@ -216,6 +216,47 @@ describe('designComment and designInbox', () => {
     expect(readFileSync(variantFile, 'utf8')).toContain("note: 'Variant a.'");
   });
 
+  it('writes the note of inbox done into a sketch variant whose part is new to the product', () => {
+    const target = acme();
+    const lines = output();
+    const config = readConfig(target) ?? {};
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/fresh');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    expect(typeof createSketch({ product, sketch: parsed, variants: ['a'] })).toBe('object');
+
+    const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-fresh/a/components/fresh/fresh.ts');
+
+    expect(
+      designComment({
+        target,
+        argv: [
+          'components/fresh',
+          'default',
+          '--size',
+          'phone',
+          '--sketch',
+          'components/fresh',
+          '--variant',
+          'a',
+          '--product',
+          'acme',
+          'Why?',
+        ],
+        invocation,
+      }),
+    ).toBe(0);
+
+    const id = /^comment (\S+):/u.exec(lines.pop() ?? '')?.[1] ?? '';
+
+    expect(designInbox({ target, argv: ['done', id, '--note', 'Fresh a.', '--by', 'gpt-5.6-sol'], invocation })).toBe(
+      0,
+    );
+    expect(readFileSync(variantFile, 'utf8')).toContain("note: 'Fresh a.'");
+  });
+
   it('refuses a comment without a size, a bad point or a stale part', () => {
     const target = acme();
     const lines = output();
