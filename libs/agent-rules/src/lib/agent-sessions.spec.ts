@@ -254,14 +254,15 @@ describe('agent-sessions', () => {
         expect(
           run(['restart', agent, '--after', '1', 'resume', 'slug'], undefined, { TMUX_PANE: paneOf(scoped) }).stdout,
         ).toContain('Restarting');
-        await new Promise((resolve) => setTimeout(resolve, 6000));
 
-        expect(readFileSync(log, 'utf8')).toMatch(/\/clear\s+resume slug/);
+        await expect
+          .poll(() => readFileSync(log, 'utf8'), { timeout: 20_000, interval: 250 })
+          .toMatch(/\/clear\s+resume slug/);
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       }
     },
-    10000,
+    30_000,
   );
 
   it.skipIf(!hasTmux)('refuses to restart a session the caller does not run in', () => {

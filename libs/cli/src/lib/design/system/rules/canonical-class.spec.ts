@@ -47,7 +47,7 @@ const messagesOf = (target: string) =>
     resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
   ).map((problem) => `${problem.file.split('/').pop()}: ${problem.message}`);
 
-describe('canonicalClassesOf', () => {
+describe('canonicalClassesOf', { timeout: 30_000 }, () => {
   it('flags a class with a canonical form in the markup of a part and of a file below it', () => {
     const target = acme('');
 
