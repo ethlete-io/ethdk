@@ -1042,14 +1042,29 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   0.150 s; after an edit to `components/button/button.ts`: 2.56, 0.125, 0.118 s. Not verified: on :4221, or in
   the Studio app.
 
-### 4.77 Each server shot opens a new browser context and loads all modules - in progress
+### 4.77 Each server shot opens a new browser context and loads all modules - built
 
 - **Measured:** one warm shot 70-190 ms (cold up to 944 ms), 4 at once (`thumb.ts:84`); 13 library shots cost
   about 870 ms CPU.
 - **Cause:** `shot.ts:213-222` makes a `newContext`, a `newPage` and opens `frame.html` for every draw.
 - **Fix option (not measured):** one warm page per worker and viewport that switches the part in place. Also makes
   4.76 cheaper. Effort M-L.
-- **In progress (2026-10-30):** a subagent builds the warm page per worker and viewport; measure before and after.
+- **As built (2026-10-30, `53802ecdf`):** `warm-pages.ts` lends the part shooter one page per browser context and
+  set of context options (viewport, scale) and keeps it open: after a draw it clears local and session storage and
+  cookies and parks on `about:blank`, which also stops its Vite client and timers. A thrown or timed-out draw closes
+  the page; at most 8 idle pages, oldest closed first; they close with the browser. No switch in place: `frame.ts`
+  reads its query and injects env, tokens and part styles at module top level, so each draw still navigates, but on a
+  warm context (the 19 of 21 module requests come back 304). Specs bite (two breaks each fail a spec).
+  Measured on a scratch copy, own server, `studio-lab`, `pictureOf` with `fresh`, 4 at once, before / after (two
+  runs each): library batch (32 shots incl. 16 interaction shots) cold 1,523-1,621 / 1,347-1,357 ms, warm
+  1,214-1,235 / 1,017-1,050 ms; sketch `components/card` (8 shots) warm 280-300 / 266-283 ms; one shot after
+  another 133 / 117 ms; CPU of the whole run (Node and Chromium) 14.4-15.1 / 11.4-11.5 s. All 80 PNGs (first and
+  fifth round) are byte-identical to before.
+  - Found: of a warm draw on a reused page (about 115 ms), the element screenshot (`root.screenshot`) takes 67 ms,
+    `settled` 23 ms and the navigation 22 ms; a page screenshot with the same clip takes 31 ms but differed in
+    bytes. That is the next lever, not the context.
+  - Not verified: the thumbnailer (`thumb.ts`, call thumbnails) and `changedBoxesOf` still open a context per
+    draw; Tom's server under real load; the Studio app.
 
 ### 4.78 A file change reloads several lists at once - open
 
