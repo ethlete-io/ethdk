@@ -1,11 +1,11 @@
-import { definePart, drawing, html, ng } from '@design-system';
+import { definePart, drawing, html, ng, svgAsset } from '@design-system';
 import commentPin, { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import styles from './inbox.css?inline';
 
-type Props = { showResolved: boolean; openOn: 'all' | 'active' | 'others' | 'none' };
+type Props = { showResolved: boolean; openOn: 'all' | 'active' | 'others' | 'none'; draft?: boolean; entry?: boolean };
 
 type Comment = {
   id: string;
@@ -173,7 +173,11 @@ const activeOnly: Props = { showResolved: false, openOn: 'active' };
 const activeClear: Props = { showResolved: false, openOn: 'others' };
 const allClear: Props = { showResolved: false, openOn: 'none' };
 
-export const inbox = (compact: boolean) =>
+export const inbox = (
+  compact: boolean,
+  placement: 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l',
+  sendIcon = '',
+) =>
   definePart<Props>({
     note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, and no open comments at all.',
     madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
@@ -183,11 +187,49 @@ export const inbox = (compact: boolean) =>
       'active-only': activeOnly,
       'active-clear': activeClear,
       'all-clear': allClear,
+      'comment-draft': { ...open, draft: true },
+      ...(['i', 'j', 'k', 'l'].includes(placement) ? { 'comment-entry': { ...open, entry: true } } : {}),
     },
-    render: async ({ showResolved, openOn }) => {
-      const switchDrawing = await ng(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" />`, {
-        imports: ['SWITCH_IMPORTS'],
-      });
+    render: async ({ showResolved, openOn, draft, entry }) => {
+      const controls = await ng(
+        `<div class="ib-controls" data-placement="${placement}">
+        <span class="ib-control${compact ? ' ib-control-compact' : ''}"><et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" /></span>
+        ${
+          (draft || entry) && (placement === 'k' || placement === 'l')
+            ? `<div class="ib-draft ib-studio-compose z-10 text-ui-sm" data-compose="${placement}">
+                ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
+                <div class="ib-studio-paper ${placement === 'l' ? 'rounded-md border border-surface-border shadow-lg' : ''} bg-surface">
+                  <div class="ib-studio-writing"><et-textarea aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button type="button" variant="transparent" color="surface" size="xs" ${draft ? '' : 'disabled class="text-text-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
+                </div>
+              </div>`
+            : (draft || entry) && (placement === 'i' || placement === 'j')
+              ? `<div class="ib-draft ib-entry z-10 flex items-start ${placement === 'i' ? 'gap-2' : 'gap-0'} text-ui-sm">
+                ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
+                <div class="flex min-w-0 flex-1 items-end gap-2 rounded-md border border-surface-border bg-surface px-3 py-2 shadow-lg">
+                  <et-textarea aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} />
+                  <button et-icon-button type="button" variant="filled" ${draft ? '' : 'color="surface" disabled class="bg-text-muted text-surface [--et-button-opacity-disabled:1]"'} size="xs" aria-label="Senden">${svgAsset(sendIcon, { size: 16, attrs: { etIcon: '', 'aria-hidden': 'true' } })}</button>
+                </div>
+              </div>`
+              : draft
+                ? placement === 'g' || placement === 'h'
+                  ? `<div class="ib-draft ib-composition z-10 text-ui-sm" data-composition="${placement}">
+                ${placement === 'g' ? `<div class="ib-composition-avatar">${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}</div>` : ''}
+                <div class="min-w-0 flex-1 rounded-md border border-surface-border bg-surface p-3 shadow-lg">
+                  ${placement === 'h' ? `<div class="mb-2 flex items-center gap-2 font-ui-medium">${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}<span>Tom Bornholdt</span></div>` : ''}
+                  <et-form-field appearance="box"><et-textarea aria-label="Kommentar" rows="3" value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist." /></et-form-field>
+                  <div class="mt-2 flex items-center justify-end gap-1"><button et-button type="button" variant="transparent" color="surface" size="xs">Abbrechen</button><button et-button type="button" variant="filled" size="xs">Senden</button></div>
+                </div>
+              </div>`
+                  : `<div class="ib-draft z-10 rounded-md border border-surface-border bg-surface p-3 ${placement === 'e' ? 'pt-8' : ''} text-ui-sm shadow-lg"><div class="mb-2 flex justify-between gap-2 font-ui-medium">Neuer Kommentar <span class="font-code text-ui-xs font-normal text-text-muted">button › tonal · rest</span></div>
+          <et-form-field appearance="box"><et-textarea aria-label="Kommentar" rows="3" value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist." /></et-form-field>
+          <div class="mt-2 flex flex-wrap items-center justify-end gap-1"><span class="min-w-0 flex-1 text-ui-xs text-text-muted">Enter sendet · Shift + Enter für Zeilenumbruch</span><button et-button type="button" variant="transparent" color="surface" size="xs">Abbrechen</button><button et-button type="button" variant="filled" size="xs">Senden</button></div>
+        </div>`
+                : ''
+        }</div>`,
+        {
+          imports: ['SWITCH_IMPORTS', 'FORM_FIELD_IMPORTS', 'TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'],
+        },
+      );
       const comments = COMMENTS.filter(
         (c) =>
           c.resolved ||
@@ -212,23 +254,44 @@ export const inbox = (compact: boolean) =>
       const side = html`<div class="ib">
         <div class="ib-bar">
           <span class="ib-bar-title">${unresolved} offen</span>
-          <label class="ib-toggle"
-            >Erledigte zeigen
-            <span class="ib-control${compact ? ' ib-control-compact' : ''}">${switchDrawing}</span></label
-          >
+          <div class="ib-toggle">Erledigte zeigen ${controls}</div>
         </div>
-        <div class="ib-list">
+        <div class="ib-list${draft && placement === 'b' ? ' ib-list-draft' : ''}">
           ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
             'Andere',
             visible.filter((c) => c.part !== ACTIVE_PART),
           )}
         </div>
+        ${draft && placement === 'b' ? '<div class="ib-draft-space"></div>' : ''}
       </div>`;
       const shell = await shellMain.render({
         section: 'Inbox',
         product: 'studio',
         side,
-        content: pinned(frames.body, visible, (c) => pins.get(c.id) ?? ''),
+        content: pinned(
+          frames.body,
+          draft || entry
+            ? visible
+                .filter((c) => c.cell !== 12)
+                .concat({
+                  id: 'draft',
+                  author: 'Tom Bornholdt',
+                  initials: 'TB',
+                  when: '',
+                  part: 'button',
+                  state: 'tonal · rest',
+                  text: '',
+                  replies: 0,
+                  cell: 12,
+                })
+            : visible,
+          (c) =>
+            c.id === 'draft'
+              ? ['g', 'h', 'i', 'j', 'k', 'l'].includes(placement)
+                ? ''
+                : commentPinMark({ author: c.author, initials: c.initials, selected: true })
+              : (pins.get(c.id) ?? ''),
+        ),
       });
 
       return drawing({

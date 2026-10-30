@@ -1,0 +1,24 @@
+{
+  "part": "pages/inbox",
+  "state": "comment-draft",
+  "size": "desktop",
+  "text": "geht in die richtige richtung aber sollte mehr attached zu einem avatar sein",
+  "point": {
+    "x": 644,
+    "y": 244
+  },
+  "sketch": {
+    "target": "pages/inbox",
+    "variant": "a",
+    "createdAt": "2026-10-30T10:34:49.947Z"
+  },
+  "createdAt": "2026-10-30T10:43:10.875Z",
+  "addressed": {
+    "by": "agent",
+    "author": "gpt-6.1-terra",
+    "reason": "round",
+    "addressedAt": "2026-10-30T10:44:21.100Z",
+    "note": "Round 1 A points in the right direction; B and C are not pursued. The editor needs a clearer attachment to the avatar.",
+    "round": "r2"
+  }
+}
