@@ -116,7 +116,10 @@ at its `at` times, in full and in reduced motion (`--mode full|reduced` picks on
 pauses every animation and steps the `ctx.at` clock, so each keyframe is the same in every run. Next to the sheet it writes a JSON
 file with the end of each mode, its keyframe times and one track per animation: element, kind, properties, start, delay,
 duration, iterations and easing. It takes `--variant <key>` of the part's open sketch, `--preset` or `--width`, `--scale`,
-`--surface`, `--color` and `--out`. The timeline in Studio comes in a later release.
+`--surface`, `--color` and `--out`. A track's element is `[data-et-key="..."]` where the element sets one, otherwise its selector. Each
+shot is cut to the union of the part and the animated elements over all keyframes, so an overshoot is not clipped and the frames line
+up. Limits: an animation or step that starts after 30 s is not drawn, an infinite animation does not count towards `end`, and
+`interrupt` is not supported yet. The timeline in Studio comes in a later release.
 
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a

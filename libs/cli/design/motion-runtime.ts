@@ -167,18 +167,24 @@ export type SteppedMotion = {
   seek: (ms: number) => void;
   tracks: () => MotionTrack[];
   end: () => number;
+  bounds: () => MotionBox;
 };
+
+/** A rectangle in page coordinates. */
+export type MotionBox = { left: number; top: number; right: number; bottom: number };
 
 const KEYFRAME_FIELDS = new Set(['offset', 'computedOffset', 'easing', 'composite']);
 
 const elementOf = (element: Element | null | undefined) =>
-  element
-    ? [
-        element.tagName.toLowerCase(),
-        element.id ? `#${element.id}` : '',
-        ...[...element.classList].map((name) => `.${name}`),
-      ].join('')
-    : '';
+  element?.hasAttribute('data-et-key')
+    ? `[data-et-key="${element.getAttribute('data-et-key')}"]`
+    : element
+      ? [
+          element.tagName.toLowerCase(),
+          element.id ? `#${element.id}` : '',
+          ...[...element.classList].map((name) => `.${name}`),
+        ].join('')
+      : '';
 
 const trackOf = (animation: Animation, start: number): MotionTrack => {
   const effect = animation.effect as KeyframeEffect | null;
@@ -268,6 +274,23 @@ export const stepMotion = (options: { root: Element; markup: string; motion: Mot
         },
         tracks: () => [...started.values()],
         end: () => Math.max(lastTask, ...[...started.values()].map((track) => track.end ?? 0)),
+        bounds: () => {
+          const view = document.defaultView;
+          const boxes = [
+            root,
+            ...[...started.keys()].map((animation) => (animation.effect as KeyframeEffect | null)?.target),
+          ]
+            .filter((element): element is Element => !!element)
+            .map((element) => element.getBoundingClientRect())
+            .filter((rect, index) => index === 0 || rect.width > 0 || rect.height > 0);
+
+          return {
+            left: Math.min(...boxes.map((rect) => rect.left)) + (view?.scrollX ?? 0),
+            top: Math.min(...boxes.map((rect) => rect.top)) + (view?.scrollY ?? 0),
+            right: Math.max(...boxes.map((rect) => rect.right)) + (view?.scrollX ?? 0),
+            bottom: Math.max(...boxes.map((rect) => rect.bottom)) + (view?.scrollY ?? 0),
+          };
+        },
       };
     });
 };

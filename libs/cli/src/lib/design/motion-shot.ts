@@ -1,3 +1,4 @@
+import { MotionBox } from '../../../design/motion-runtime';
 import { Browser, DRAW_TIMEOUT_MS, finished, openFrame, settled, ShotUnprocessableError } from './thumb';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
@@ -21,6 +22,19 @@ export const keyframeTimesOf = (end: number, at: readonly number[] = []) =>
   ].sort((a, b) => a - b);
 
 /** The tracks are the `MotionTrack`s of `design/motion-runtime.ts`, as the frame sends them. */
+/** The smallest box around all of `boxes`, cut at the page origin, which a screenshot cannot reach past. */
+export const unionOfBoxes = (boxes: readonly MotionBox[]) => {
+  const left = Math.max(0, Math.min(...boxes.map((box) => box.left)));
+  const top = Math.max(0, Math.min(...boxes.map((box) => box.top)));
+
+  return {
+    x: left,
+    y: top,
+    width: Math.max(...boxes.map((box) => box.right)) - left,
+    height: Math.max(...boxes.map((box) => box.bottom)) - top,
+  };
+};
+
 export type MotionPictures = { end: number; tracks: unknown[]; keyframes: { ms: number; png: Buffer }[] };
 
 const failureOf = async (page: Page) => {
@@ -55,15 +69,31 @@ export const motionPicturesOf = async (options: {
     `(() => { window.etMotion.seek(${MOTION_LIMIT_MS}); return window.etMotion.timeline(); })()`,
   )) as { end: number; tracks: unknown[] };
 
+  const times = keyframeTimesOf(timeline.end, at);
+  let region: ReturnType<typeof unionOfBoxes> | null = null;
+
+  if (clip) {
+    await start();
+
+    const boxes: MotionBox[] = [];
+
+    for (const ms of times) {
+      await page.evaluate(`window.etMotion.seek(${ms})`);
+      boxes.push((await page.evaluate('window.etMotion.bounds()')) as MotionBox);
+    }
+
+    region = unionOfBoxes(boxes);
+  }
+
   await start();
 
   const keyframes: MotionPictures['keyframes'] = [];
 
-  for (const ms of keyframeTimesOf(timeline.end, at)) {
+  for (const ms of times) {
     await page.evaluate(`window.etMotion.seek(${ms})`);
 
-    const png = await (clip
-      ? page.locator('#root').screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
+    const png = await (region
+      ? page.screenshot({ type: 'png', fullPage: true, clip: region, timeout: DRAW_TIMEOUT_MS })
       : page.screenshot({ type: 'png', fullPage: true, timeout: DRAW_TIMEOUT_MS }));
 
     keyframes.push({ ms, png });

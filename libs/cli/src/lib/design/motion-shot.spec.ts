@@ -5,7 +5,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { pngSizeOf } from './contact-sheet';
 import { designMotion } from './motion-command';
-import { keyframeTimesOf } from './motion-shot';
+import { keyframeTimesOf, unionOfBoxes } from './motion-shot';
 import { DESIGN_DIR, readConfig } from './paths';
 import { createDesignServer } from './serve';
 import { createPartShooter } from './shot';
@@ -36,6 +36,22 @@ export default definePart({
 });
 `;
 
+const POP_STYLES = [
+  '.dot { width: 40px; height: 20px; transform-origin: left top; transition: transform 1000ms linear; }',
+  '.dot--open { transform: scale(3); }',
+].join('\n');
+
+const POP = `import { definePart, drawing } from '@design-system';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { closed: { open: false }, open: { open: true } },
+  motions: { pop: { from: 'closed', to: 'open' } },
+  render: (state) =>
+    drawing({ body: '<div data-et-key="dot" class="dot' + (state.open ? ' dot--open' : '') + '"></div>', styles: ${JSON.stringify(POP_STYLES)} }),
+});
+`;
+
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-motion-shot-'));
   const design = join(target, DESIGN_DIR);
@@ -44,6 +60,8 @@ const checkout = () => {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
   writeFileSync(join(dir, 'bar.ts'), PART);
+  mkdirSync(join(design, 'app-a', 'components', 'dot'), { recursive: true });
+  writeFileSync(join(design, 'app-a', 'components', 'dot', 'dot.ts'), POP);
 
   return { target, config: readConfig(target) ?? {} };
 };
@@ -73,16 +91,16 @@ describe('createPartShooter motionOf', () => {
     });
 
     try {
-      const motionOf = (mode: 'full' | 'reduced') =>
+      const motionOf = (mode: 'full' | 'reduced', part = 'components/bar', motion = 'grow') =>
         shooter.motionOf({
           product: 'app-a',
-          part: 'components/bar',
+          part,
           state: 'closed',
           preset: null,
           width: null,
           sketch: null,
           interaction: null,
-          motion: 'grow',
+          motion,
           at: [300],
           mode,
           params: new URLSearchParams(),
@@ -97,7 +115,7 @@ describe('createPartShooter motionOf', () => {
 
       expect(full.end).toBe(2500);
       expect(full.keyframes.map((keyframe) => keyframe.ms)).toEqual([0, 300, 625, 1250, 1875, 2500]);
-      expect(full.keyframes.map((keyframe) => pngSizeOf(keyframe.png).width)).toEqual([72, 96, 122, 172, 222, 232]);
+      expect(full.keyframes.map((keyframe) => pngSizeOf(keyframe.png).width)).toEqual([232, 232, 232, 232, 232, 232]);
       expect(tracks.map(({ kind, properties, start, duration }) => ({ kind, properties, start, duration }))).toEqual(
         expect.arrayContaining([
           { kind: 'transition', properties: ['width'], start: 0, duration: 2000 },
@@ -108,6 +126,13 @@ describe('createPartShooter motionOf', () => {
       expect(reduced.keyframes.map((keyframe) => pngSizeOf(keyframe.png).width)).toEqual([
         232, 232, 232, 232, 232, 232,
       ]);
+
+      const pop = await motionOf('full', 'components/dot', 'pop');
+      const sizes = pop.keyframes.map((keyframe) => pngSizeOf(keyframe.png));
+
+      expect(new Set(sizes.map(({ width }) => width)).size).toBe(1);
+      expect(sizes[0]?.width).toBeGreaterThanOrEqual(136);
+      expect((pop.tracks as { element: string }[]).map((track) => track.element)).toEqual(['[data-et-key="dot"]']);
     } finally {
       await shooter.close();
       await server.close();
@@ -163,4 +188,15 @@ describe('designMotion', () => {
       console.log = log;
     }
   }, 120_000);
+});
+
+describe('unionOfBoxes', () => {
+  it('surrounds every box and stops at the page origin', () => {
+    expect(
+      unionOfBoxes([
+        { left: 0, top: 0, right: 72, bottom: 52 },
+        { left: -24, top: 10, right: 136, bottom: 90 },
+      ]),
+    ).toEqual({ x: 0, y: 0, width: 136, height: 90 });
+  });
 });

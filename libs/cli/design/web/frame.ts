@@ -219,6 +219,7 @@ const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: str
             return true;
           }),
       seek: (ms: number) => steppedOf().seek(ms),
+      bounds: () => steppedOf().bounds(),
       timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks() }),
     },
   });

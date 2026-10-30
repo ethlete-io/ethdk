@@ -200,6 +200,67 @@ describe('stepMotion', () => {
     expect(() => stepped.seek(100)).toThrow('steps forward only');
     Reflect.deleteProperty(document, 'getAnimations');
   });
+
+  it('names an element by its data-et-key, otherwise by its selector', async () => {
+    const root = mount();
+    const running: ReturnType<typeof fakeAnimation>[] = [];
+
+    Object.assign(document, { getAnimations: () => running });
+
+    const stepped = await stepMotion({
+      root,
+      markup: states['open'] ?? '',
+      motion: {
+        from: 'closed',
+        to: 'open',
+        play: () => {
+          const card = document.querySelector('.card');
+          const body = document.querySelector('.body');
+
+          card?.setAttribute('data-et-key', 'card');
+          running.push(fakeAnimation([{ opacity: 0 }], 100));
+          running.push({
+            ...fakeAnimation([{ opacity: 0 }], 100),
+            effect: { ...fakeAnimation([], 1).effect, target: body },
+          });
+        },
+      },
+    });
+
+    expect(stepped.tracks().map((track) => track.element)).toEqual(['[data-et-key="card"]', 'p.body']);
+    Reflect.deleteProperty(document, 'getAnimations');
+  });
+
+  it('bounds the root and every animated element, ignoring one without a box', async () => {
+    const root = mount();
+    const running: ReturnType<typeof fakeAnimation>[] = [];
+    const box = (left: number, top: number, right: number, bottom: number) =>
+      ({ left, top, right, bottom, width: right - left, height: bottom - top }) as DOMRect;
+
+    Object.assign(document, { getAnimations: () => running });
+
+    const stepped = await stepMotion({
+      root,
+      markup: states['open'] ?? '',
+      motion: {
+        from: 'closed',
+        to: 'open',
+        play: () => {
+          const boxless = fakeAnimation([], 100);
+
+          running.push(fakeAnimation([{ transform: 'scale(2)' }], 100), boxless);
+          boxless.effect.target = document.querySelector('.body');
+        },
+      },
+    });
+
+    vi.spyOn(root, 'getBoundingClientRect').mockReturnValue(box(5, 0, 70, 50));
+    vi.spyOn(document.querySelector('.card') as Element, 'getBoundingClientRect').mockReturnValue(
+      box(10, -20, 130, 40),
+    );
+    expect(stepped.bounds()).toEqual({ left: 5, top: -20, right: 130, bottom: 50 });
+    Reflect.deleteProperty(document, 'getAnimations');
+  });
 });
 
 describe('clocks and random', () => {
