@@ -707,6 +707,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Gain: a sketch edit redraws one variant (tree-row `b`: ~20 draws, ~3 s) instead of 124-154 (~17 s + merge view).
 - **Alternative:** let the draw queue run 4 pages at once. Measured with a patched dist: list 17.5 s -> 5.7 s
   (same answer), compare 3.8 s -> 1.7 s, diff `a` 5.6 s -> 0.9 s. About 3x on every cold path, no cache change.
+- **Decision (Tom, 2026-10-30):** build both, as two slices. First the targeted redraw, then the draw queue with
+  4 pages at once. Each slice gets a spec that fails without the fix, a changeset for `@ethlete/cli` and a docs
+  line.
 
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
