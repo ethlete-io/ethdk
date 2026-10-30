@@ -869,6 +869,17 @@ dead copy, then one source plus the warning theme, then the missing states.
   official source exists. Kimi in white, as Codex. Meta uses the "Meta AI" ring, not the Meta
   infinity mark. Tom picks the generic mark in Studio.
 
+### State token values decisions (2026-10-30)
+
+For the missing states (`*-active`, `*-disabled`, `--text-subtle`) in `foundations/colors`:
+
+- **Step A, no visible change:** add the part tokens with today's generator values: active = the
+  base colour, disabled = base at 0.4 opacity, on-colour disabled = 0.6, `--text-subtle` =
+  `--text-muted` (oklch(0.72 0 0)). `generate-studio-themes.mjs` reads them from the part.
+- **Step B, its own sketch:** tune the values, for example active darker than base (accent
+  oklch(0.62 0.11 190)) and `--text-subtle` one step below muted (oklch(0.6 0 0)), with contrast
+  numbers in the drawing. Tom picks in Studio.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
