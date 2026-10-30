@@ -33,6 +33,8 @@ The first match wins:
 
 A relative path resolves against the directory of the config file. The reporter empties the file at the start of each run.
 
+At the start of a run, the reporter prints `[failure-reporter] Writing failures to <absolute path>` once. A tool that reads the run log, for example a progress view, finds the file through that line.
+
 Keep the file outside the `outputDir` of every project (`test-results` by default). Playwright deletes that folder at the start of a run. If the path is inside it, the reporter prints a warning.
 
 ## One line per failed attempt

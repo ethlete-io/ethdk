@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_FAILURES_FILE_NAME, FailureRecord } from './failure-reporter';
+import { DEFAULT_FAILURES_FILE_NAME, FAILURES_FILE_LINE_PREFIX, FailureRecord } from './failure-reporter';
 
 const PLAYWRIGHT_CLI = require.resolve('@playwright/test/cli');
 const PLAYWRIGHT_TEST = require.resolve('@playwright/test');
@@ -58,8 +58,9 @@ describe('FailureReporter', () => {
   it('writes one line per failed attempt, next to the config by default', () => {
     const dir = makeSuite();
 
-    runSuite(dir);
+    const result = runSuite(dir);
 
+    expect(result.stdout).toContain(`${FAILURES_FILE_LINE_PREFIX}${join(dir, DEFAULT_FAILURES_FILE_NAME)}\n`);
     const records = readRecords(join(dir, DEFAULT_FAILURES_FILE_NAME));
     expect(records.map((record) => [record.test, record.retry])).toEqual([
       ['sample > fails', 0],

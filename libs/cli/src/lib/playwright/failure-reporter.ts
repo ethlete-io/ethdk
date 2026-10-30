@@ -5,6 +5,9 @@ import { FullConfig, Reporter, TestCase, TestResult } from 'playwright/types/tes
 export const FAILURES_FILE_ENV = 'E2E_FAILURES_FILE';
 export const DEFAULT_FAILURES_FILE_NAME = 'e2e-failures.jsonl';
 
+/** The reporter prints this prefix and the absolute path of the file once per run, so a tool that reads the run log can find the file. */
+export const FAILURES_FILE_LINE_PREFIX = '[failure-reporter] Writing failures to ';
+
 const ERROR_LINES = 6;
 const ERROR_CHARS = 700;
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
@@ -68,6 +71,7 @@ export default class FailureReporter implements Reporter {
 
     mkdirSync(dirname(this.file), { recursive: true });
     writeFileSync(this.file, '');
+    console.log(`${FAILURES_FILE_LINE_PREFIX}${this.file}`);
   }
 
   onTestEnd(test: TestCase, result: TestResult) {
