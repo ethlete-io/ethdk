@@ -103,6 +103,14 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
   pending. `POST /__design/exception-approve?product=` `{ key, by }` records `by`, `at` and the part hash; then the gap
   drops. A later part edit reopens it. `GET /__design/exceptions?product=` lists them; `design complete` prints an
   `EXCEPTION` line each. Studio has no approve button yet (stream C). Remaining: the `handoff` status with CI.
+- **Built (`c7c9a0be9`): `design complete <layer>/<name> --variant <key>`** (SDK base session request). Chose the flag
+  over a `sketch check` section: it reuses `completenessOf` whole, only threading the variant into `seePart`. Every
+  part is drawn as the variant draws it; a part the variant changes skips `PART-UNREVIEWED`. Approved exceptions and
+  inventories hold the merged hash, so they read as reopened on a variant that changes the part.
+- **Open (option focus):** the check forces only `data-et-force` (CSS `:hover`/`:focus-visible`/`:active` are
+  rewritten to it) and needs a pixel diff with the force on vs off. `[data-active]:hover` counts only when the forced
+  option also carries `data-active`; `data-active-source="keyboard"` is static, so option focus-visible fails until
+  the drawing has a `:focus-visible` rule or the CLI maps the force to that attribute.
 
 ## Nothing to build
 
