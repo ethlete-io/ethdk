@@ -365,9 +365,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
        the first control with unreachable combinations.
   - **Rollout:** `controls` + `design complete` for `disclosure` on `pages/merge`, then
     discovery, the other kinds, exceptions, SDK reuse, and the `handoff` status with CI.
-- **Status:** requirement and options recorded; no flag, coverage schema, CLI command or
-  enforcement has been implemented. Resolve discovery limits, reusable component evidence,
-  review authority and the handoff gate in a dedicated tooling design before implementation.
+- **Decided (Tom, 2026-10-30):** the proposal as written, with the recommendation for open
+  points 1, 2 and 4 to 6. Exceptions differ from point 3: no keychain signature. Only the
+  approve button in Studio writes an approval, and git shows every change to it.
+- **Status:** decided, not built. The next step is the first rollout slice: `controls` and
+  `design complete` for the `disclosure` kind on `pages/merge`.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
