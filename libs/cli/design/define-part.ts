@@ -87,7 +87,7 @@ export type StateGrid<TState extends string = string, TColumn extends string = s
   rows: Record<string, Partial<Record<TColumn, TState>>>;
 };
 
-/** How a control is operated: `pointer` requires a drawn hover and active, `keyboard` a drawn focus-visible. */
+/** How a control is operated: `pointer` requires a drawn hover and active (a `field` needs no active), `keyboard` a drawn focus-visible. */
 export type ControlInput = 'pointer' | 'keyboard';
 
 /** A component or element part that draws a control and its interactions. */
@@ -98,6 +98,7 @@ export type ControlPart = `components/${string}` | `elements/${string}`;
  * `data-et-surface="<id>.<surface>"`, drawn visible and filled in the state its `surfaces` entry names.
  * - `disclosure`: a state that draws it collapsed, and `surfaces.body`.
  * - `button`: `active`.
+ * - `field`: a text field (`<input>` or `<textarea>`); nothing beyond its inputs.
  * - `select`, `menu`: `surfaces.open`, and options in it (`role="option"`, `role="menuitem"` or `data-et-option`)
  *   drawn hovered, focus-visible, and selected with a look of their own.
  * - `row`: drawn selected (`aria-selected`, `aria-checked`, `aria-pressed` or `aria-current`) with a look of its own,
@@ -111,7 +112,7 @@ export type ControlPart = `components/${string}` | `elements/${string}`;
  */
 export type Control<TState extends string = string> = (
   | { kind: 'disclosure'; surfaces: { body: TState } }
-  | { kind: 'button' | 'row'; surfaces?: never }
+  | { kind: 'button' | 'row' | 'field'; surfaces?: never }
   | { kind: 'select' | 'menu'; surfaces: { open: TState } }
   | { kind: 'tooltip'; surfaces: { tooltip: TState } }
 ) & { disabled?: boolean } & ({ part: ControlPart; input?: never } | { input: ControlInput[]; part?: never });

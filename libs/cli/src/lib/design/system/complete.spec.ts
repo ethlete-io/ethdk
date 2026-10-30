@@ -515,6 +515,27 @@ describe('completenessGapsOf', () => {
     ]);
   });
 
+  it('checks a field with hover and focus-visible but no active', () => {
+    const forced = (interaction: string) => ({ interaction, differs: true });
+    const gapsOf = (controls: unknown, seen: SeenFrame[]) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls,
+        states: ['rest', 'hovered', 'focused'],
+        frames: seen,
+        reviewed: true,
+      })
+        .filter((gap) => gap.code === 'REQUIREMENT-MISSING' || gap.code === 'CONTROL-KIND')
+        .map(completenessGapLineOf);
+    const rest = frame('rest', { controls: [{ id: 'f', forced: [], look: 'a' }] });
+    const hovered = frame('hovered', { controls: [{ id: 'f', forced: [forced('hover')], look: 'b' }] });
+    const focused = frame('focused', { controls: [{ id: 'f', forced: [forced('focus-visible')], look: 'c' }] });
+    const field = { f: { kind: 'field', input: ['pointer', 'keyboard'] } };
+
+    expect(gapsOf(field, [rest, hovered, focused])).toEqual([]);
+    expect(gapsOf(field, [rest, focused]).join()).toContain('components/a.f.hover');
+  });
+
   it('requires a selected look and a selected hover of a row', () => {
     const gapsOf = (frames: SeenFrame[]) =>
       completenessGapsOf({

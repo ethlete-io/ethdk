@@ -77,7 +77,14 @@ export type DeclaredControl = {
 /** The gaps of each part a control names in `part`, or why it could not be checked. */
 export type ReferencedParts = Record<string, CompletenessGap[] | string>;
 
-type ControlKind = { surface?: string; closed?: string; adds?: string[]; selects?: boolean; options?: boolean };
+type ControlKind = {
+  surface?: string;
+  closed?: string;
+  adds?: string[];
+  noActive?: boolean;
+  selects?: boolean;
+  options?: boolean;
+};
 
 const KINDS: Record<string, ControlKind> = {
   disclosure: { surface: 'body', closed: 'collapsed' },
@@ -85,6 +92,7 @@ const KINDS: Record<string, ControlKind> = {
   select: { surface: 'open', options: true },
   menu: { surface: 'open', options: true },
   row: { selects: true },
+  field: { noActive: true },
   tooltip: { surface: 'tooltip' },
 };
 
@@ -104,7 +112,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const requiredInteractionsOf = (control: DeclaredControl) => [
   ...new Set([
-    ...control.input.flatMap((input) => INPUT_INTERACTIONS[input] ?? []),
+    ...control.input
+      .flatMap((input) => INPUT_INTERACTIONS[input] ?? [])
+      .filter((interaction) => !(KINDS[control.kind]?.noActive && interaction === 'active')),
     ...(KINDS[control.kind]?.adds ?? []),
   ]),
 ];

@@ -339,6 +339,7 @@ Each `kind` adds its own requirements:
 | `disclosure`     | a state that draws it collapsed, and the visible body `surfaces.body` names                                                                                         |
 | `button`         | `active`                                                                                                                                                            |
 | `select`, `menu` | the visible surface `surfaces.open` names, with an option in it (`role="option"`, `role="menuitem"` or `data-et-option`) drawn hovered, focus-visible, and selected |
+| `field`          | nothing; with `input: ['pointer']` it needs hover but no `active`                                                                                                   |
 | `row`            | a state that draws it selected, and one that forces hover on it while selected                                                                                      |
 | `tooltip`        | the visible tooltip `surfaces.tooltip` names, drawn next to the control in this part                                                                                |
 
