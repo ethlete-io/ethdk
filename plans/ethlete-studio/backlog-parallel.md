@@ -245,6 +245,9 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   lands (ethlete-sdk-57), replace the select sketch's second `data-et-control` and fake `aria-disabled`. After
   the Q54 helper lands, `foundations/colors`. Storybook is no workspace package, so it needs no changeset.
 
+- **In progress (ethlete-sdk-33, 2026-10-30):** sketch `components/form-field` (input, textarea): declare the
+  controls like select (`data-et-control` root, frame as `data-et-control-part`), pressed look as Q56 b.
+
 ### Foundation sheet decisions (2026-10-30)
 
 Tom asked why `sdk/foundations/tokens` looks so different from the Studio foundations. Cause: Studio draws its
