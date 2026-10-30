@@ -688,7 +688,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
 - **Done (2026-10-30):** one box per cluster (16 px gap, max 8), one crop per box in Studio and `--crop changed`.
 
-### 4.61 The merge editor renders slowly - in progress (builder, 2026-10-30)
+### 4.61 The merge editor renders slowly - done
 
 - **Pain (Tom, 2026-10-30):** "das rendering im merge editor etc ist mittlerweile ziemlich langsam
   geworden." It got slower over time, also in other views.
