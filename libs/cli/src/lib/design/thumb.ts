@@ -62,6 +62,10 @@ export const openFrame = async (page: Page, url: string) => {
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
+export const finished = `document.getAnimations()
+  .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+  .forEach((animation) => animation.finish())`;
+
 export type DrawPriority = 'high' | 'low';
 
 /**

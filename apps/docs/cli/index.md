@@ -80,6 +80,9 @@ Token validation follows relative, `@shared/` and `@system/` imports through hel
 imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
 token definitions. Pixel comparisons for sketches use fresh rendering results on each request,
 so an earlier failed or matching screenshot does not determine a later comparison.
+A screenshot of a state shows the end of every finite CSS animation and transition, so an
+element that fades in with `@starting-style` is drawn fully visible. An infinite animation keeps
+running.
 
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.

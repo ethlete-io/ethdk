@@ -14,6 +14,7 @@ import {
   openFrame,
   send,
   sendShot,
+  finished,
   settled,
   ShotFailedError,
   ShotTimeoutError,
@@ -186,6 +187,7 @@ export const createPartShooter = (options: {
 
       await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
       await page.evaluate(settled);
+      await page.evaluate(finished);
 
       const overlay = page.locator('vite-error-overlay');
 
