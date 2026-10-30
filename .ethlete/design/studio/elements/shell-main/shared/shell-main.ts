@@ -2,6 +2,7 @@ import pickerStyles from './picker.css?inline';
 import { drawing, html } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { icon, type IconName } from '@system/foundations/icons';
+import { studioMarkLine } from '@system/foundations/logo';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -25,15 +26,12 @@ const ICONS: Record<Section, IconName> = {
   Inbox: 'inbox',
 };
 
-const mark = (size: number) =>
-  `<svg width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio"><path d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>`;
-
 const slot = (inner: string, label: string, active: boolean, kind: string) =>
   `<div class="st-shell-slot" data-kind="${kind}"${active ? ' data-active' : ''}><span class="st-shell-bubble" title="${label}">${inner}</span></div>`;
 
 const rail = (section: Section, product: string) =>
   html`<nav class="st-shell-rail">
-    <div class="st-shell-slot" data-kind="logo"><span class="st-shell-logo">${mark(24)}</span></div>
+    <div class="st-shell-slot" data-kind="logo"><span class="st-shell-logo">${studioMarkLine(24)}</span></div>
     <div class="st-shell-sep"></div>
     ${SECTIONS.map((s) => slot(icon(ICONS[s], { size: 20 }), s, s === section, 'section')).join('')}
     <div class="st-shell-rail-gap"></div>
