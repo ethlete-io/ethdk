@@ -347,6 +347,9 @@ Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's 
 - Q63: content above the root (a `top` placement) is not counted; add it only when a part needs it.
 - Q64: elements that fill the whole viewport (`position: fixed; inset: 0`, for example a backdrop) are skipped
   in the measure. To build after the usage limit reset.
+- Q66 (2026-10-31): the live Studio canvas does not fit the frame yet. After a Studio restart, select
+  `open-option-hover` at 320 px is only a little taller than the closed field, and the open panel scrolls inside the
+  frame. Shots are fine. `ethlete-sdk-57` fixes it now, despite the usage limit, because it blocks the select merge.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
