@@ -5,7 +5,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
 
 ## Builder status (2026-10-30)
 
-- A1 done (`0c4b8a887`). A2 and F1 run in one subagent with the Q32 merge-target change; A3-A5 start after it.
+- A1 done (`0c4b8a887`). A2 + Q32 done (`0c307a0c3`); F1 done, auto-merged (`e6fcf97c5`). A3-A5, the `STALE-REPLACE`
+  false positive, then exceptions and `handoff` run in one subagent.
 - D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
   `UTILITY-CSS` in `RULES`). B, C1, E and G slice 5 run; F 5.51 gets an r2 for Q42; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
@@ -76,7 +77,6 @@ Sketches at `ready`, with the round name and the one-line question for Tom. The 
 - `foundations/colors` r1 "Contrast next to each token" (`fdb770514`, 5.51): merge the contrast chips (each token on
   surface, raised and overlay, with its bar)? Also Q42: `--surface-border` is 1.2-1.6:1; hold it to 3:1 or mark it
   exempt as decorative?
-- `components/button` controls into the SDK base (Q32): runs, may auto-merge.
 
 ## Waits for Tom in the real Studio
 
