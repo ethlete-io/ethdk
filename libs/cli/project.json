@@ -22,6 +22,7 @@
         "tsConfig": "libs/cli/tsconfig.lib.json",
         "assets": [
           "libs/cli/*.md",
+          { "input": "libs/cli/playwright", "glob": "**/*", "output": "playwright" },
           { "input": "libs/cli/design", "glob": "**/*", "output": "design", "ignore": ["tsconfig.json"] }
         ]
       }

@@ -67,6 +67,7 @@ export default defineConfig({
             { text: 'Git host tokens', link: '/cli/auth' },
             { text: 'Updating the SDK', link: '/cli/update' },
             { text: 'Local config', link: '/cli/config' },
+            { text: 'E2E failure reporter', link: '/cli/e2e' },
           ],
         },
       ],
