@@ -1,6 +1,3 @@
-import { Observable, filter, map } from 'rxjs';
-import { designEvents$ } from './design-events';
-
 /** One part as a frame draws it: in a product, or in one variant of one of the product's sketches. */
 export type DrawnPart = { product: string; part: string; sketch: { target: string; variant: string } | null };
 
@@ -12,7 +9,8 @@ export type PartsRedraw = { all: true } | { all: false; parts: DrawnPart[]; erro
 
 export type PartsChange = { revision: number } & PartsRedraw;
 
-const partsChangeOf = (data: unknown): PartsChange | null => {
+/** Reads the payload of a `parts` event; null for one this Studio cannot read. */
+export const partsChangeOf = (data: unknown): PartsChange | null => {
   if (typeof data !== 'string') return null;
 
   try {
@@ -26,10 +24,3 @@ const partsChangeOf = (data: unknown): PartsChange | null => {
     return null;
   }
 };
-
-/** Emits each `parts` event of the design server: which drawn parts a file change redraws. */
-export const partsChanges$ = (port: number): Observable<PartsChange> =>
-  designEvents$(port, 'parts').pipe(
-    map((event) => partsChangeOf(event.data)),
-    filter((change): change is PartsChange => change !== null),
-  );

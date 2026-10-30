@@ -101,25 +101,6 @@ export type Themes = {
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
 
-/**
- * Reports every change under the checkout's design folder except one to comment files only. A call or a
- * part that an agent or an editor wrote outside this window reaches the view through it.
- */
-export const designChanges$ = (checkout: string): Observable<void> =>
-  new Observable<void>((subscriber) => {
-    if (!hasHostShell()) {
-      subscriber.error(new HostShellMissingError());
-
-      return;
-    }
-
-    const changes = new Channel<void>();
-
-    changes.onmessage = () => subscriber.next();
-
-    invoke('design_watch', { checkout, changes }).catch((error: unknown) => subscriber.error(error));
-  });
-
 /** Reports every change to a recorded call state or sketch report, such as a new line from the agent drawing a sketch. */
 export const designStatusChanges$ = (): Observable<void> =>
   new Observable<void>((subscriber) => {

@@ -4,15 +4,14 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   EMPTY,
-  Subject,
   Subscription,
   buffer,
   catchError,
   debounceTime,
+  filter,
   finalize,
   first,
   interval,
-  merge,
   of,
   share,
   switchMap,
@@ -21,20 +20,21 @@ import {
 import {
   Project,
   ServerState,
-  designChanges$,
   designProject$,
   designServerRestart$,
   designServerStart$,
   designServerState$,
   designServerStop$,
 } from '../../host/design';
-import { partsChanges$ } from '../../host/design-parts';
+import { DesignChange, designChanges$ } from '../../host/design-changes';
+import { PartsRedraw } from '../../host/design-parts';
 import { injectFrameRenderQueue } from '../components/design-canvas/frame-render-queue';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
+import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
 import { rememberView, rememberedView } from './remembered';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
@@ -76,7 +76,7 @@ const STATUS_ITEM =
         [epoch]="epoch()"
         [checkout]="checkout()"
         [projectThemes]="design()?.themes ?? {}"
-        [tick]="tick()"
+        [lists]="lists()"
         [frameRevisions]="frameRevisions()"
       />
     }
@@ -178,12 +178,9 @@ export class StudioViewComponent {
   protected serverBusy = signal(false);
   protected trouble = signal('');
   protected epoch = signal(0);
-  protected tick = signal(0);
+  protected lists = signal(NO_LIST_REVISIONS);
   public frameRevisions = signal(NO_FRAME_REVISIONS);
 
-  private drawnChange$ = new Subject<void>();
-
-  private watch: Subscription | null = null;
   private foreignWatch: Subscription | null = null;
 
   private listeningPort = computed(() => {
@@ -235,17 +232,26 @@ export class StudioViewComponent {
         switchMap((port) => {
           if (port === null) return EMPTY;
 
-          const changes$ = partsChanges$(port).pipe(
+          const changes$ = designChanges$(port).pipe(
             catchError(() => EMPTY),
             share(),
           );
 
           return changes$.pipe(buffer(changes$.pipe(debounceTime(SETTLE_MS))));
         }),
-        tap((changes) => {
-          this.frameRevisions.update((revisions) => changes.reduce(frameRevisionsWith, revisions));
-          this.drawnChange$.next();
+        tap((changes) => this.absorbChanges(changes)),
+        filter((changes) => changes.some((change) => change.kind === 'all')),
+        switchMap(() => {
+          const checkout = this.checkout();
+
+          return checkout
+            ? designProject$(checkout).pipe(
+                filter(() => checkout === this.checkout()),
+                catchError(() => EMPTY),
+              )
+            : EMPTY;
         }),
+        tap((project) => this.absorb(project)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -266,7 +272,6 @@ export class StudioViewComponent {
     rememberView({ checkout: path });
     this.read();
     this.readServer();
-    this.watchChanges();
   }
 
   protected startServer() {
@@ -333,9 +338,17 @@ export class StudioViewComponent {
   }
 
   protected reload() {
-    this.tick.update((value) => value + 1);
-    this.frameRevisions.update((revisions) => frameRevisionsWith(revisions, { all: true }));
+    this.absorbChanges([{ kind: 'all' }]);
     this.read();
+  }
+
+  private absorbChanges(changes: DesignChange[]) {
+    const redraws = changes.flatMap((change): PartsRedraw[] =>
+      change.kind === 'parts' ? [change.change] : change.kind === 'all' ? [{ all: true }] : [],
+    );
+
+    this.frameRevisions.update((revisions) => redraws.reduce(frameRevisionsWith, revisions));
+    this.lists.update((revisions) => listRevisionsWith(revisions, changes));
   }
 
   private read() {
@@ -355,26 +368,6 @@ export class StudioViewComponent {
 
           return of(null);
         }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  private watchChanges() {
-    const checkout = this.checkout();
-
-    this.watch?.unsubscribe();
-    this.watch = null;
-
-    if (!checkout) return;
-
-    this.watch = merge(designChanges$(checkout), this.drawnChange$)
-      .pipe(
-        debounceTime(SETTLE_MS),
-        tap(() => this.tick.update((value) => value + 1)),
-        switchMap(() => designProject$(checkout).pipe(catchError(() => EMPTY))),
-        tap((project) => this.absorb(project)),
-        catchError(() => EMPTY),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

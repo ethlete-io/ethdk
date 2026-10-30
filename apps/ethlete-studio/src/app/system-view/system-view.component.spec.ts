@@ -6,6 +6,7 @@ import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
@@ -205,6 +206,69 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(element.querySelector('main h2')).toBeNull();
     expect(view['pickerValue']()).toBe('web');
+  });
+});
+
+describe('SystemViewComponent on a named list change', () => {
+  const requests: string[] = [];
+  const listings = (path: string) =>
+    requests.filter((url) => url.includes(`/__design/${path}?`) || url.endsWith(`/__design/${path}`)).length;
+  const counts = () => ({
+    system: listings('system'),
+    calls: listings('calls'),
+    sketches: listings('sketches'),
+    flows: listings('flows'),
+    comments: listings('comments'),
+    notes: listings('notes'),
+  });
+
+  beforeEach(() => {
+    localStorage.clear();
+    requests.length = 0;
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('fetch', (url: string) => {
+      requests.push(url);
+
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/sketches')) return json({ sketches: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/notes')) return json({ notes: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('reads only the calls on a calls change, only the sketches on a sketches change, and every list on all', async () => {
+    const fixture = await mount({});
+    const before = counts();
+
+    expect(before.calls).toBeGreaterThan(0);
+    expect(before.sketches).toBeGreaterThan(0);
+
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, calls: 1 });
+    await settle(fixture);
+
+    expect(counts()).toEqual({ ...before, calls: before.calls + 1 });
+
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, calls: 1, sketches: 1 });
+    await settle(fixture);
+
+    expect(counts()).toEqual({ ...before, calls: before.calls + 1, sketches: before.sketches + 1 });
+
+    fixture.componentRef.setInput('lists', { all: 1, products: 1, calls: 2, sketches: 2, flows: 1 });
+    await settle(fixture);
+
+    const after = counts();
+
+    expect(Object.entries(after).every(([list, count]) => count > before[list as keyof typeof before])).toBe(true);
   });
 });
 

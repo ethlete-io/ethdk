@@ -81,6 +81,7 @@ import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
+import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
 
@@ -522,12 +523,22 @@ export class SystemViewComponent {
 
   public projectThemes = input<Record<string, Themes>>({});
 
-  public tick = input(0);
+  public lists = input(NO_LIST_REVISIONS);
 
   public frameRevisions = input(NO_FRAME_REVISIONS);
+
   private partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
+
   private sketchView = viewChild<SketchViewComponent>('sketchView');
+
   private flowView = viewChild<FlowViewComponent>('flowView');
+
+  private productsRevision = computed(() => this.lists().products);
+
+  private callsRevision = computed(() => this.lists().calls);
+  private sketchesRevision = computed(() => this.lists().sketches);
+  private flowsRevision = computed(() => this.lists().flows);
+  private allRevision = computed(() => this.lists().all);
   protected readonly BADGE = BADGE;
   protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
 
@@ -547,7 +558,12 @@ export class SystemViewComponent {
 
   protected reading = toSignal(
     toObservable(
-      computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick(), reloads: this.productReloads() })),
+      computed(() => ({
+        port: this.port(),
+        epoch: this.epoch(),
+        revision: this.productsRevision(),
+        reloads: this.productReloads(),
+      })),
     ).pipe(
       switchMap(({ port }) =>
         port
@@ -569,7 +585,12 @@ export class SystemViewComponent {
 
   private callList = toSignal(
     toObservable(
-      computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick(), reloads: this.callReloads() })),
+      computed(() => ({
+        port: this.port(),
+        epoch: this.epoch(),
+        revision: this.callsRevision(),
+        reloads: this.callReloads(),
+      })),
     ).pipe(switchMap(({ port }) => (port ? listedCalls$(port).pipe(catchError(() => of<ListedCall[]>([]))) : of([])))),
     { initialValue: null },
   );
@@ -615,7 +636,7 @@ export class SystemViewComponent {
         port: this.port(),
         product: this.product()?.name,
         epoch: this.epoch(),
-        tick: this.tick(),
+        revision: this.sketchesRevision(),
         reloads: this.sketchReloads(),
         statusChanges: this.statusChanges(),
       })),
@@ -668,7 +689,7 @@ export class SystemViewComponent {
         port: this.port(),
         product: this.product()?.name,
         epoch: this.epoch(),
-        tick: this.tick(),
+        revision: this.flowsRevision(),
         notes: this.noteStore.writes(),
         flows: this.flowChanges(),
       })),
@@ -826,7 +847,7 @@ export class SystemViewComponent {
       port,
       call,
       epoch: this.epoch(),
-      revision: this.tick(),
+      revision: this.callsRevision(),
       surface: this.surface(),
       color: this.color(),
     });
@@ -1007,7 +1028,7 @@ export class SystemViewComponent {
       const port = this.port();
       const product = this.product()?.name;
 
-      return { address: port && product ? { port, product } : null, revision: this.tick() };
+      return { address: port && product ? { port, product } : null, revision: this.allRevision() };
     });
 
     this.commentStore.connect(source);

@@ -14,7 +14,6 @@ fn main() {
             "design_roots_forget",
             "design_roots_search",
             "design_scan",
-            "design_watch",
             "design_status_watch",
             "design_server_start",
             "design_server_restart",

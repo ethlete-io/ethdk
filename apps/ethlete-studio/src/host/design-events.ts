@@ -4,7 +4,7 @@ export type DesignStreamEvent = { name: string; data: unknown };
 
 type DesignStream = { events$: Observable<DesignStreamEvent>; isOpen: () => boolean };
 
-const STREAM_EVENTS = ['open', 'error', 'comments', 'parts', 'notes', 'flows'];
+const STREAM_EVENTS = ['open', 'error', 'comments', 'parts', 'notes', 'flows', 'calls', 'sketches'];
 
 const streams = new Map<number, DesignStream>();
 

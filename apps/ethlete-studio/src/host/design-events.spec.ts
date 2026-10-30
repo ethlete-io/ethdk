@@ -1,8 +1,8 @@
 import { commentChanges$ } from './design';
+import { DesignChange, designChanges$ } from './design-changes';
 import { designEvents$, resetDesignStreams } from './design-events';
 import { flowChanges$ } from './design-flows';
 import { noteChanges$ } from './design-notes';
-import { partsChanges$ } from './design-parts';
 
 class FakeEventSource {
   static instances: FakeEventSource[] = [];
@@ -45,7 +45,7 @@ describe('the shared design event stream', () => {
   it('opens one EventSource for every host function and closes it with the last unsubscribe', () => {
     const subscriptions = [
       commentChanges$(1).subscribe({ error: () => undefined }),
-      partsChanges$(1).subscribe(),
+      designChanges$(1).subscribe(),
       noteChanges$(1).subscribe(),
       flowChanges$(1).subscribe(),
     ];
@@ -87,7 +87,7 @@ describe('the shared design event stream', () => {
     const late = vi.fn();
     const lateError = vi.fn();
 
-    partsChanges$(1).subscribe();
+    designChanges$(1).subscribe();
     first().emit('open');
 
     commentChanges$(1).subscribe({ next: late, error: lateError });
@@ -97,5 +97,27 @@ describe('the shared design event stream', () => {
     first().emit('error');
 
     expect(lateError).toHaveBeenCalledTimes(1);
+  });
+
+  it('names a call, sketch or parts change, and reads all again after a reconnect or an unreadable parts event', () => {
+    const changes: DesignChange[] = [];
+
+    designChanges$(1).subscribe((change) => changes.push(change));
+    first().emit('open');
+    first().emit('calls', '{}');
+    first().emit('sketches', '{}');
+    first().emit('parts', '{"revision":2,"all":false,"parts":[]}');
+    first().emit('comments', '{}');
+    first().emit('parts', 'not json');
+    first().emit('error');
+    first().emit('open');
+
+    expect(changes).toEqual([
+      { kind: 'calls' },
+      { kind: 'sketches' },
+      { kind: 'parts', change: { revision: 2, all: false, parts: [] } },
+      { kind: 'all' },
+      { kind: 'all' },
+    ]);
   });
 });

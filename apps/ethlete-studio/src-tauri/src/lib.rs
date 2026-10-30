@@ -7,7 +7,6 @@ mod child_env;
 mod design;
 mod design_roots;
 mod design_server;
-mod design_watch;
 mod error;
 mod tools;
 mod update;
@@ -169,7 +168,6 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
-        .manage(design_watch::DesignWatch::default())
         .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
         .invoke_handler(tauri::generate_handler![
@@ -183,7 +181,6 @@ pub fn run() {
             design_roots::design_roots_forget,
             design_roots::design_roots_search,
             design_roots::design_scan,
-            design_watch::design_watch,
             design_server::design_server_start,
             design_server::design_server_state,
             design_server::design_server_stop,

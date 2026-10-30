@@ -4,8 +4,10 @@ import { By } from '@angular/platform-browser';
 import { SelectDirective } from '@ethlete/components';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { Project, Themes } from '../../host/design';
+import { resetDesignStreams } from '../../host/design-events';
 import { THEMES } from '../../themes';
 import { SystemViewComponent } from '../system-view/system-view.component';
+import { NO_LIST_REVISIONS } from './list-revisions';
 import { StudioViewComponent } from './studio-view.component';
 
 @Component({ selector: 'ethlete-system-view', template: '' })
@@ -14,7 +16,33 @@ class SystemViewStubComponent {
   public epoch = input(0);
   public checkout = input('');
   public projectThemes = input<Record<string, Themes>>({});
-  public tick = input(0);
+  public lists = input(NO_LIST_REVISIONS);
+}
+
+class FakeEventSource {
+  static instances: FakeEventSource[] = [];
+
+  private listeners = new Map<string, Set<(event: Event) => void>>();
+
+  constructor() {
+    FakeEventSource.instances.push(this);
+  }
+
+  addEventListener(name: string, listener: (event: Event) => void) {
+    this.listeners.set(name, (this.listeners.get(name) ?? new Set()).add(listener));
+  }
+
+  removeEventListener(name: string, listener: (event: Event) => void) {
+    this.listeners.get(name)?.delete(listener);
+  }
+
+  close() {
+    return undefined;
+  }
+
+  emit(name: string, data = '{}') {
+    this.listeners.get(name)?.forEach((listener) => listener(Object.assign(new Event(name), { data })));
+  }
 }
 
 const CHECKOUT = '/checkout';
@@ -96,6 +124,9 @@ describe('StudioViewComponent', () => {
   beforeEach(() => {
     sent.length = 0;
     localStorage.clear();
+    FakeEventSource.instances = [];
+    resetDesignStreams();
+    vi.stubGlobal('EventSource', FakeEventSource);
     stubHost();
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
@@ -108,6 +139,7 @@ describe('StudioViewComponent', () => {
 
   afterEach(() => {
     Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
+    vi.unstubAllGlobals();
   });
 
   it('hands the system view the port and themes of the checkout', async () => {
@@ -153,14 +185,43 @@ describe('StudioViewComponent', () => {
     expect(system(again)?.checkout()).toBe('/other');
   });
 
-  it('bumps the tick on a reload', async () => {
+  it('reads every list again on a reload', async () => {
     const fixture = await mount();
-    const before = system(fixture)?.tick() ?? 0;
 
     button(element(fixture), 'Reload')?.click();
     await settle(fixture);
 
-    expect(system(fixture)?.tick()).toBe(before + 1);
+    expect(system(fixture)?.lists()).toEqual({ all: 1, products: 1, calls: 1, sketches: 1, flows: 1 });
+  });
+
+  it('reads only the list a design server event names, once per burst, and every list after a reconnect', async () => {
+    const fixture = await mount();
+    const stream = FakeEventSource.instances[0];
+    const projectReads = () => sent.filter((call) => call.command === 'design_project').length;
+    const settled = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await settle(fixture);
+    };
+
+    stream?.emit('calls');
+    stream?.emit('calls');
+    await settled();
+
+    expect(system(fixture)?.lists()).toEqual({ ...NO_LIST_REVISIONS, calls: 1 });
+
+    const reads = projectReads();
+
+    stream?.emit('sketches');
+    await settled();
+
+    expect(system(fixture)?.lists()).toEqual({ ...NO_LIST_REVISIONS, calls: 1, sketches: 1 });
+
+    stream?.emit('error');
+    stream?.emit('open');
+    await settled();
+
+    expect(system(fixture)?.lists()).toEqual({ all: 1, products: 1, calls: 2, sketches: 2, flows: 1 });
+    expect(projectReads()).toBe(reads + 1);
   });
 
   it('offers Restart for a server Studio did not start and that runs an old cli', async () => {
