@@ -260,5 +260,13 @@
     "hash": "5bd8a818f32e46ac",
     "at": "2026-10-30T14:45:26.350Z",
     "auto": true
+  },
+  {
+    "part": "foundations/colors",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "432e5e84f9ad76b0",
+    "at": "2026-10-30T14:59:19.717Z",
+    "auto": true
   }
 ]
