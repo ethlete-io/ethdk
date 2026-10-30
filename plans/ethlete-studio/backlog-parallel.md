@@ -52,6 +52,10 @@ Serial, all in `system/sketch`, `system/complete.ts`, `inventory*.ts`:
    lands; build the UI against the CLI output.
 2. Motion slice 3: keyframe strip and timeline. Starts when stream B step 2 lands.
 3. 1.2 re-run the 100-cycle frame-reload test and record the result.
+4. 4.47 exception approval: built (`4a15e30a9`). An Exceptions button on a part lists its pending and reopened
+   exceptions (key, reason) with an approve button (`by: designer`). Specs and build only, not seen live.
+5. 5.39 empty grid cells: built (`2ec039ddc`). A grid row that draws a state marks each empty column "not drawn".
+   Specs and build only, not seen live.
 
 ## Stream D - agent skill text (`.agents/skills/ethlete-design-exploration`, `libs/agent-rules/content`)
 
