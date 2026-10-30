@@ -203,6 +203,20 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Now:** manual canvas zoom or the agent's `design shot --crop`. Neither makes the initial comparison self-explanatory for the designer.
 - **Fix options:** 1. derive a shared crop from the union of changed pixel bounds and show an enlarged Current/A/B comparison alongside the full-page context (recommended). Keep identical crop coordinates and scale for all variants. 2. a declared focus rectangle on a sketch, with a visible "Zoom to change" action. 3. zoom only the changed frame; this still makes side-by-side detail comparison difficult.
 - **Acceptance:** for the Inbox switch round, Tom can distinguish both off and on appearances at the initial comparison view without hunting for the changed control. Full-page context remains available.
+- **CLI done (2026-10-30, `claude-sdk58`):** `design shot <part> --states --variants --crop changed`
+  draws every cell (merged, each variant, each state) with one shared rectangle: the union of the
+  changed-pixel boxes against the merged cell, padded by 16 px. It prints
+  `crop x,y,width,height (changed bounds)`. With no change it says so and keeps the full frame.
+  The pure part is `changedCropOf` in `libs/cli/src/lib/design/contact-sheet.ts`, for the design
+  server later. Also fixed: under `tsx`, the in-page diff threw `__name is not defined` as soon
+  as two shots differed. Not verified on a real small change, because no open sketch has one.
+- **Studio proposal (for Tom - not built):** the round header gets a "Changed area" toggle, on
+  by default when the crop is less than half of the frame. With it on, each column shows the
+  shared crop, enlarged to the column width, at the same scale for Current and every variant.
+  A thin outline on a small full-page thumbnail above each column shows where the crop sits.
+  Toggle off gives today's full-page columns. Variant notes move under their column, so the
+  header holds only the round title and the toggle. Open point: the trigger threshold.
+  Recommended: half of the frame area, because a larger crop gains little.
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 

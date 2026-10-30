@@ -4,6 +4,7 @@ import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from './paths';
 import {
+  changedCropIn,
   designShot,
   gridRowsOf,
   NEW_STATE_NOTE,
@@ -191,6 +192,14 @@ describe('designShot', () => {
   it('takes a crop of four whole numbers', async () => {
     expect((await run(['components/button', '--states', '--crop', '1,2,3'])).code).toBe(2);
     expect((await run(['components/button', '--states', '--crop', '0,0,40,20'])).text).toContain('no config at');
+  });
+
+  it('takes --crop changed only with --variants', async () => {
+    const { code, text } = await run(['components/button', '--states', '--crop', 'changed']);
+
+    expect(code).toBe(2);
+    expect(text).toContain('--crop changed');
+    expect((await run(['components/button', '--variants', '--crop', 'changed'])).text).toContain('no config at');
   });
 
   it('says so when the checkout has no design config', async () => {
@@ -428,5 +437,63 @@ describe('withDiffRows', () => {
       [{ label: 'merged', note: 'new part, nothing to compare with' }],
       ...sheet,
     ]);
+  });
+});
+
+describe('changedCropIn', () => {
+  const png = (width: number, height: number, tag: string) => {
+    const header = Buffer.alloc(25);
+
+    header.writeUInt32BE(width, 16);
+    header.writeUInt32BE(height, 20);
+    header.write(tag, 24);
+
+    return header;
+  };
+  const address = (state: string, variant: string | null) => ({
+    ...base,
+    state,
+    sketch: variant ? { target: 'components/button', variant } : null,
+  });
+
+  it('unions the boxes of every variant cell against the merged cell of its state', async () => {
+    const merged = [png(200, 100, 'a'), png(200, 100, 'b')];
+    const variant = [png(200, 100, 'c'), png(200, 100, 'd')];
+    const plan = [
+      [
+        { label: 'rest', address: address('rest', null) },
+        { label: 'busy', address: address('busy', null) },
+      ],
+      [
+        { label: 'i rest', address: address('rest', 'i') },
+        { label: 'i busy', address: address('busy', 'i') },
+      ],
+    ];
+    const sheet = plan.map((row, rowIndex) =>
+      row.map((cell, index) => ({ label: cell.label, png: (rowIndex === 0 ? merged : variant)[index] as Buffer })),
+    );
+    const boxOf = vi.fn(async (before: Buffer, after: Buffer) =>
+      before === merged[0] && after === variant[0]
+        ? { x: 40, y: 20, width: 10, height: 10 }
+        : before === merged[1] && after === variant[1]
+          ? { x: 60, y: 30, width: 10, height: 10 }
+          : null,
+    );
+
+    expect(await changedCropIn({ plan, sheet, mergedIndex: 0, boxOf, scale: 1 })).toEqual({
+      x: 24,
+      y: 4,
+      width: 62,
+      height: 52,
+    });
+    expect(boxOf).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives no crop when no variant changes a pixel', async () => {
+    const one = png(10, 10, 'a');
+    const plan = [[{ label: 'rest', address: address('rest', null) }], [{ label: 'i', address: address('rest', 'i') }]];
+    const sheet = plan.map((row) => row.map((cell) => ({ label: cell.label, png: one })));
+
+    expect(await changedCropIn({ plan, sheet, mergedIndex: 0, boxOf: async () => null, scale: 1 })).toBeNull();
   });
 });

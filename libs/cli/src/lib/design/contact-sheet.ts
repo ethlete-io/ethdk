@@ -71,6 +71,42 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
   return { width, height, data, changed, box };
 }
 
+// tsx (esbuild keepNames) wraps named inner functions in `__name(...)`, which a browser page does not define.
+const diffSourceOf = () => `((__name) => ${diffPixelsOf.toString()})((fn) => fn)`;
+
+/** The width and height a PNG declares in its header. */
+export const pngSizeOf = (png: Buffer) => ({ width: png.readUInt32BE(16), height: png.readUInt32BE(20) });
+
+/**
+ * One crop in CSS pixels around every changed box (in picture pixels, `scale` per CSS pixel), widened by `margin`
+ * CSS pixels on each side and kept inside the `frame` picture; `null` when no box has a change.
+ */
+export const changedCropOf = (options: {
+  boxes: (ChangedBox | null)[];
+  frame: { width: number; height: number };
+  scale?: number;
+  margin?: number;
+}): ChangedBox | null => {
+  const { frame, scale = 1, margin = 16 } = options;
+  const boxes = options.boxes.filter((box): box is ChangedBox => box !== null);
+
+  if (boxes.length === 0) return null;
+
+  const left = Math.floor(Math.min(...boxes.map((box) => box.x)) / scale);
+  const top = Math.floor(Math.min(...boxes.map((box) => box.y)) / scale);
+  const right = Math.ceil(Math.max(...boxes.map((box) => box.x + box.width)) / scale);
+  const bottom = Math.ceil(Math.max(...boxes.map((box) => box.y + box.height)) / scale);
+  const x = Math.max(0, left - margin);
+  const y = Math.max(0, top - margin);
+
+  return {
+    x,
+    y,
+    width: Math.max(1, Math.min(Math.ceil(frame.width / scale), right + margin) - x),
+    height: Math.max(1, Math.min(Math.ceil(frame.height / scale), bottom + margin) - y),
+  };
+};
+
 const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
   const pixelsOf = async (src) => {
     const image = new Image();
@@ -136,7 +172,7 @@ export const changedBoxOf = async (options: { browser: Browser; before: Buffer; 
     const page = await context.newPage();
     const urls = [before, after].map((png) => `data:image/png;base64,${png.toString('base64')}`);
 
-    return (await page.evaluate(changedBoxIn(diffPixelsOf.toString(), urls))) as ChangedBox | null;
+    return (await page.evaluate(changedBoxIn(diffSourceOf(), urls))) as ChangedBox | null;
   } finally {
     await context.close();
   }
@@ -182,7 +218,7 @@ export const contactSheetOf = async (options: { browser: Browser; rows: SheetCel
     await page.evaluate(`Promise.all([...document.images].map((image) => image.decode()))`);
 
     const diffs = options.rows.some((row) => row.some((cell) => 'before' in cell))
-      ? ((await page.evaluate(drawDiffs(diffPixelsOf.toString()))) as string[])
+      ? ((await page.evaluate(drawDiffs(diffSourceOf()))) as string[])
       : [];
 
     const width = (await page.evaluate('document.body.scrollWidth')) as number;

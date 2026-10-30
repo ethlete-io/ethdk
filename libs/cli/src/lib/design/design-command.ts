@@ -97,6 +97,8 @@ const helpOf = (invocation: string) =>
     '  With --variants --at <commit>, the sketch is read from that commit instead, so a merged sketch (its folder',
     '  is deleted at merge) draws again against the part as it is now; pick the last commit that still held it.',
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
+    '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
+    '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
     '',
     `${invocation} ${ASSET_SHOT_USAGE}`,
     '  Draw an image file (svg, png, webp, ...) of a path, or of a product assets/ folder with --product, into a PNG',

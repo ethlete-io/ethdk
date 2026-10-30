@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
-import { contactSheetOf, SheetCell } from './contact-sheet';
+import { changedCropOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { DesignConfig, workRootOf } from './paths';
@@ -14,8 +14,9 @@ import { createPartShooter, cropOf, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
+import { BoxOf } from './variant-diff';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -236,6 +237,53 @@ export const shotProductOf = (options: {
   return oneProductOf({ target, config, asked: holders.length === 1 ? holders[0] : undefined });
 };
 
+const CROP_CHANGED = 'changed';
+
+/**
+ * The crop around every pixel a variant cell changes from the merged cell of its state, in CSS pixels inside the
+ * largest picture, or `null` when no variant changes a pixel.
+ */
+export const changedCropIn = async (options: {
+  plan: Plan[][];
+  sheet: SheetCell[][];
+  mergedIndex: number;
+  boxOf: BoxOf;
+  scale: number;
+}) => {
+  const { plan, sheet, mergedIndex, boxOf, scale } = options;
+  const pngs = sheet.flatMap((row) => row.flatMap((cell) => ('png' in cell ? [cell.png] : [])));
+  const merged = new Map(
+    (plan[mergedIndex] ?? []).flatMap((entry, index) => {
+      const cell = sheet[mergedIndex]?.[index];
+
+      return cell && 'png' in cell ? [[entry.address.state, cell.png] as const] : [];
+    }),
+  );
+  const pairs = sheet.flatMap((row, rowIndex) =>
+    rowIndex === mergedIndex
+      ? []
+      : row.flatMap((cell, index) => {
+          const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '');
+
+          return before && 'png' in cell ? [[before, cell.png] as const] : [];
+        }),
+  );
+
+  if (pngs.length === 0) return null;
+
+  const sizes = pngs.map(pngSizeOf);
+  const boxes = await Promise.all(pairs.map(([before, after]) => boxOf(before, after)));
+
+  return changedCropOf({
+    boxes,
+    frame: {
+      width: Math.max(...sizes.map((size) => size.width)),
+      height: Math.max(...sizes.map((size) => size.height)),
+    },
+    scale,
+  });
+};
+
 const stringsOf = (states: unknown) => (states && typeof states === 'object' ? Object.keys(states) : []);
 
 /**
@@ -278,6 +326,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const preset = args.values['--preset'] ?? null;
   const scale = Number(args.values['--scale'] ?? 1);
   const interaction = args.values['--interaction'] ?? null;
+  const cropChanged = args.values['--crop'] === CROP_CHANGED;
 
   if (
     !part ||
@@ -288,7 +337,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
     !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
-    cropOf(args.values['--crop']) === undefined ||
+    (cropChanged ? !variants : cropOf(args.values['--crop']) === undefined) ||
     (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction))
   ) {
     console.error(usage);
@@ -369,6 +418,14 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 1;
   }
 
+  if (cropChanged && !system.partOf({ product, part })) {
+    console.error(
+      `design-explore: --crop changed compares the variants with the merged part, and ${part} is new in product "${product}"`,
+    );
+
+    return 2;
+  }
+
   const queue = createDrawQueue({ target });
   const server = await createDesignServer({ target, config, listen: true, port: 0, sketchesRoot });
 
@@ -417,7 +474,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       if (value) params.set(name, value);
     }
 
-    if (args.values['--crop']) params.set('clip', args.values['--crop']);
+    if (args.values['--crop'] && !cropChanged) params.set('clip', args.values['--crop']);
 
     const plan = planOf({
       base: { product, part, preset: chosenPreset, width, interaction },
@@ -438,21 +495,35 @@ export const designShot = async (options: { target: string; argv: string[]; invo
               ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
               (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
             );
-      const sheet: SheetCell[][] = [];
+      const shootAll = async () => {
+        const drawn: SheetCell[][] = [];
 
-      for (const row of plan) {
-        const cells: SheetCell[] = [];
+        for (const row of plan) {
+          const cells: SheetCell[] = [];
 
-        for (const entry of row) cells.push(await shoot(entry));
+          for (const entry of row) cells.push(await shoot(entry));
 
-        sheet.push(cells);
+          drawn.push(cells);
+        }
+
+        return drawn;
+      };
+      let sheet = await shootAll();
+      const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
+
+      if (cropChanged) {
+        const crop = await changedCropIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxOf, scale });
+
+        if (crop) {
+          params.set('clip', `${crop.x},${crop.y},${crop.width},${crop.height}`);
+          console.log(`crop ${crop.x},${crop.y},${crop.width},${crop.height} (changed bounds)`);
+          sheet = await shootAll();
+        } else {
+          console.log('crop changed: no variant changes a pixel of the merged part, so the full frame is drawn');
+        }
       }
 
-      const mergedStates = new Set(
-        plan[rows.findIndex((axis) => axis.sketch === null)]?.flatMap((cell) =>
-          cell.absent ? [] : [cell.address.state],
-        ),
-      );
+      const mergedStates = new Set(plan[mergedIndex]?.flatMap((cell) => (cell.absent ? [] : [cell.address.state])));
       const props: SheetCell[][] = [];
 
       for (const row of diffProps ? plan : []) {

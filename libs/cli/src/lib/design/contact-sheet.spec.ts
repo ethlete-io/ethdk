@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { changedBoxOf, contactSheetHtml, contactSheetOf, diffPixelsOf } from './contact-sheet';
+import {
+  changedBoxOf,
+  changedCropOf,
+  contactSheetHtml,
+  contactSheetOf,
+  diffPixelsOf,
+  pngSizeOf,
+} from './contact-sheet';
 import { Browser } from './thumb';
 
 describe('contactSheetHtml', () => {
@@ -87,6 +94,64 @@ describe('diffPixelsOf', () => {
     const fromSource = new Function(`return ${diffPixelsOf.toString()}`)() as typeof diffPixelsOf;
 
     expect(fromSource(pixels(1, 1, [1, 2, 3, 4]), pixels(1, 1, [1, 2, 3, 4])).changed).toBe(0);
+  });
+});
+
+describe('changedCropOf', () => {
+  const frame = { width: 1440, height: 900 };
+  const blank = (width: number, height: number) => ({ width, height, data: new Uint8ClampedArray(width * height * 4) });
+  const painted = (width: number, height: number, x: number, y: number) => {
+    const pixels = blank(width, height);
+
+    pixels.data.set([255, 0, 0, 255], (y * width + x) * 4);
+
+    return pixels;
+  };
+
+  it('unions the changed bounds of every pair and pads them by the margin', () => {
+    const boxes = [
+      diffPixelsOf(blank(8, 8), painted(8, 8, 2, 3)).box,
+      diffPixelsOf(blank(8, 8), painted(8, 8, 5, 1)).box,
+      diffPixelsOf(blank(8, 8), blank(8, 8)).box,
+    ];
+
+    expect(changedCropOf({ boxes, frame: { width: 8, height: 8 }, margin: 1 })).toEqual({
+      x: 1,
+      y: 0,
+      width: 6,
+      height: 5,
+    });
+  });
+
+  it('clamps the padded box to the frame', () => {
+    expect(changedCropOf({ boxes: [{ x: 1430, y: 4, width: 6, height: 6 }], frame })).toEqual({
+      x: 1414,
+      y: 0,
+      width: 26,
+      height: 26,
+    });
+  });
+
+  it('converts picture pixels to CSS pixels at the scale, widening to whole pixels', () => {
+    expect(
+      changedCropOf({ boxes: [{ x: 101, y: 40, width: 3, height: 1 }], frame: { width: 400, height: 200 }, scale: 2 }),
+    ).toEqual({ x: 34, y: 4, width: 34, height: 33 });
+  });
+
+  it('gives no crop when no pair changes a pixel', () => {
+    expect(changedCropOf({ boxes: [null, null], frame })).toBeNull();
+    expect(changedCropOf({ boxes: [], frame })).toBeNull();
+  });
+});
+
+describe('pngSizeOf', () => {
+  it('reads the size from the header', () => {
+    const header = Buffer.alloc(24);
+
+    header.writeUInt32BE(1440, 16);
+    header.writeUInt32BE(900, 20);
+
+    expect(pngSizeOf(header)).toEqual({ width: 1440, height: 900 });
   });
 });
 
