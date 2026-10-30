@@ -93,7 +93,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 
 1. `motions`, the morph, `ctx` and the check rules. In progress (builder, 2026-10-30): 1a the `motions`
    declaration and the static check rules (done); 1b the morph and `ctx` (done).
-2. Shots through the CLI and MCP. In progress (builder, 2026-10-30).
+2. Shots through the CLI and MCP. CLI done (2026-10-30); the MCP tool waits for the MCP server, see "As built: slice 2".
 3. The keyframe strip and the timeline in Studio.
 4. `spring()` and `interrupt`.
 5. Flow lines.
@@ -126,3 +126,35 @@ Each slice gets an "in progress" note here when it starts.
 - Open points: a new state's `setup()` does not run again after a morph (a second run would stack listeners on
   kept nodes); a toggle needs two rules, since a rule does not see the current state; no switch from outside the
   frame (Studio, postMessage) yet; kept `<input>`/`<select>` values get no special handling.
+
+## As built: slice 2 (2026-10-30, `40087e0a9`)
+
+- `et design motion shots <layer>/<name> <motion> [--variant <key>] [--mode full|reduced] [--preset | --width] [--scale]
+  [--surface] [--color] [--out]` (`libs/cli/src/lib/design/motion-command.ts`). A contact sheet with a row per mode, and a JSON
+  file next to it: per mode `end`, the keyframe times and one track per animation (`element`, `kind`
+  transition/animation/script, `name`, `properties`, `start`, `delay`, `duration`, `iterations`, `easing`, `end`).
+- The frame takes `motion=<name>` at the `from` state and exposes `window.etMotion` (`start`, `seek`, `timeline`).
+  `stepMotion` (`design/motion-runtime.ts`) morphs on the stepped `manualClock`, pauses every animation of
+  `document.getAnimations()` and records the clock time it started at, also for one a `ctx.at` step starts; `seek` only
+  moves forward. A View Transition is collected after `ready`. `motionPicturesOf` (`motion-shot.ts`) runs the motion once
+  to its end (30 s at most) for `end` and the tracks, then once more for the shots at 0/25/50/75/100 % plus `at`.
+  `createPartShooter().motionOf` runs it on the warm pages with `reducedMotion` set per mode.
+- Bite results: `motionOf` spec fails with the old `frame.ts`, without `collect` after a `ctx.at` step, and with reduced
+  motion not emulated; the `stepMotion` jsdom spec fails with `currentTime = ms` and without `collect` after a step.
+- Verified: design specs (only the `complete.spec` failure of the parallel complete work), spec and design typecheck,
+  eslint on changed files, `nx build cli`, a scratch checkout with the built CLI: a CSS transition plus a `ctx.at` step,
+  `element.animate` plus a seeded step, and a `viewTransition: true` motion (old/new cross-fade visible in the sheet).
+  Not verified: WebKit, a real product part, `--variant`.
+- Open points (recommendation after each):
+  - The MCP tool: no MCP server exists yet (`design-system.md` slice 8 is not built). Build `et design mcp` first and add a
+    `motion_shots` tool over `designMotion`'s core that returns the sheet image and the JSON.
+  - Token names in tracks ("token name where there is one"): not done. Match each track's duration and easing against the
+    foundations motion tokens computed on `:root` in the frame and add `durationToken`/`easingToken`; build it with the
+    timeline in slice 3.
+  - Studio needs single keyframe images: add a `/__design/motion` endpoint over `motionOf` with the shot cache in slice 3.
+  - A fitted part is cut at `#root`, so an overshoot such as `scale(1.5)` is clipped. Clip to the union of the root box and
+    the animated elements' boxes over all keyframes.
+  - `element` is the selector after the morph (`div.bar.bar--open`), so it changes with state classes. Prefer
+    `data-et-key` where the part sets one; keep the selector otherwise.
+  - Limits: an animation or step after 30 s is not drawn; an infinite animation does not count towards `end`.
+    `interrupt` waits for slice 4.
