@@ -24,8 +24,8 @@
     }
   },
   "hold": {
-    "until": "Q62-ish (grill): error rows show no hover and no focus-visible change; the SDK error border hides both",
+    "until": "Q66 (grill): Tom confirms the error looks built for Q65 in c5309a6b2",
     "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:07:36.573Z"
+    "heldAt": "2026-10-30T23:12:57.527Z"
   }
 }
