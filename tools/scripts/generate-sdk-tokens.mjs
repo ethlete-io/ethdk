@@ -82,6 +82,37 @@ const withShadowColor = (css) =>
     (match, indent, type) => `${match}\n${indent}--et-shadow-color-rgb: ${SHADOW_COLOR[type]};`,
   );
 
+const inkOf = (css, theme) => {
+  const body = css.match(new RegExp(`\\.et-color--${theme}[ ,][\\s\\S]*?\\{\\n([\\s\\S]*?)\\n\\s*\\}`))?.[1];
+  const ink = body?.match(/^\s*--et-color-primary-ink[^;]*;$/gm)?.map((line) => line.trim());
+
+  if (!ink?.length) throw new Error(`No --et-color-primary-ink values in .et-color--${theme}`);
+
+  return ink.join('\n');
+};
+
+const withLightSchemeInk = (css) => {
+  const light = inkOf(css, 'brand-on-light');
+
+  return `${css}
+@layer base {
+  @media (prefers-color-scheme: light) {
+    :root {
+${light}
+    }
+  }
+
+  :root.et-scheme--light {
+${light}
+  }
+
+  :root.et-scheme--dark {
+${inkOf(css, 'brand')}
+  }
+}
+`;
+};
+
 const BASE = `:root {
   --et-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --et-font-family-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -99,7 +130,7 @@ body {
 
 const header =
   '/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */';
-const source = `${header}\n${withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))}\n${BASE}`;
+const source = `${header}\n${withLightSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes }))))}\n${BASE}`;
 const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
 
 if (check) {
