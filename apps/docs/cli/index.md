@@ -229,8 +229,18 @@ controls: {
 },
 ```
 
-Only the `disclosure` kind is checked so far. A part that declares no `controls` fails with
-`CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
+Only the `disclosure` kind is checked so far.
+
+The check also discovers controls in each state's rendered DOM, so leaving out a declaration does
+not pass. A native control (`button`, `a[href]`, `input`, `select`, `textarea`, `summary`,
+`[tabindex]`), an interactive ARIA role or a known SDK control (`et-select`, `[et-button]`, ...)
+without a `data-et-control` fails as `CONTROL-UNDECLARED`. A marker on a wrapper that is not a
+control itself declares the controls inside it. An element with `cursor: pointer` or a matching
+`:hover` rule outside any control fails as `CONTROL-UNCLASSIFIED`. Controls inside a control that
+names a `part` belong to that part, and a page embedded with `embedPage` is not walked. A part
+without controls passes when it draws none.
+
+The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
 `CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run
 it, so a partial round stays reviewable.

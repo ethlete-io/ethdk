@@ -4,7 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
-import { completenessGapLineOf, completenessGapsOf, completenessOf, SeenFrame } from './complete';
+import { completenessGapLineOf, completenessGapsOf, completenessOf, FoundControl, SeenFrame } from './complete';
 import { designComplete } from './complete-command';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
@@ -16,6 +16,7 @@ const STYLES = [
   '.aa-toggle:hover, .aa-still:hover { background: black; color: white; }',
   '.aa-toggle:focus-visible, .aa-still:focus-visible { outline: 2px solid black; }',
   '.aa-toggle:active, .aa-still:active { background: gray; }',
+  '.aa-card { padding: 4px; } .aa-card:hover { background: black; }',
 ].join(' ');
 
 const toggle = (attributes = '', name = 'aa-toggle') =>
@@ -37,7 +38,7 @@ const openRow = (attributes = '') => ({
   'open-focused': `<div>${toggle(`${attributes} data-et-force="focus-visible"`)}${body}</div>`,
 });
 
-const PARTS: Record<string, { states: Record<string, string>; extra?: string }> = {
+const PARTS: Record<string, { states: Record<string, string>; extra?: string; embed?: string }> = {
   'pages/merge': {
     states: { open: `<main>${toggle()}</main>` },
     extra: DISCLOSURE,
@@ -107,6 +108,13 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
     extra: `${DISCLOSURE} ${GRID}`,
   },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
+  'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
+  'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
+  'components/pointer': {
+    states: { rest: '<div><div style="cursor: pointer"><span>Go</span></div><div class="aa-card">Card</div></div>' },
+  },
+  'pages/inner': { states: { rest: '<main><button type="button">Inner</button></main>' } },
+  'pages/host': { states: { rest: '' }, embed: 'pages/inner' },
   'pages/uses': {
     states: { rest: `<main>${toggle()}</main>`, open: `<main>${toggle()}${body}</main>` },
     extra: "controls: { more: { kind: 'disclosure', part: 'components/done', surfaces: { body: 'open' } } },",
@@ -127,14 +135,14 @@ const checkout = () => {
     JSON.stringify({ products: { 'app-a': { presets: { desktop: { width: 400, height: 300 } } } } }),
   );
 
-  for (const [key, { states, extra = '' }] of Object.entries(PARTS)) {
+  for (const [key, { states, extra = '', embed }] of Object.entries(PARTS)) {
     const [layer = '', name = ''] = key.split('/');
     const dir = join(design, 'app-a', layer, name);
 
     mkdirSync(dir, { recursive: true });
     writeFileSync(
       join(dir, `${name}.ts`),
-      `import { definePart, drawing } from '@design-system';
+      `import { definePart, drawing, embedPage } from '@design-system';
 
 const BODIES: Record<string, string> = ${JSON.stringify(states)};
 
@@ -144,7 +152,7 @@ export default definePart({
     .map((state) => `'${state}': { state: '${state}' }`)
     .join(', ')} },
   ${extra}
-  render: ({ state }: { state: string }) => drawing({ body: BODIES[state] ?? '', styles: ${JSON.stringify(STYLES)} }),
+  render: ({ state }: { state: string }) => drawing({ body: ${embed ? `embedPage('${embed}', { state: 'rest', width: 400, height: 300 }).body` : "BODIES[state] ?? ''"}, styles: ${JSON.stringify(STYLES)} }),
 });
 `,
     );
@@ -185,16 +193,36 @@ const ROWS = {
 const COLUMNS = ['rest', 'hover', 'active', 'focus-visible'];
 
 describe('completenessGapsOf', () => {
-  it('fails a part that declares no controls', () => {
-    expect(
+  it('passes a part without controls that draws none, and fails each undeclared control it draws once', () => {
+    const button: FoundControl = { kind: 'control', what: 'button', path: 'div > button', marked: null, within: [] };
+    const gapsOf = (found: FoundControl[], controls?: unknown) =>
       completenessGapsOf({
         part: 'components/a',
-        controls: undefined,
-        states: ['rest'],
-        frames: [],
+        controls,
+        states: ['rest', 'open'],
+        frames: [
+          frame('rest', { controls: [], found }),
+          frame('open', { controls: [], found }),
+          frame('rest', { interaction: 'hover', controls: [], found: [{ ...button, path: 'hover > only' }] }),
+        ],
         reviewed: true,
-      }).map((gap) => gap.code),
-    ).toEqual(['CONTROLS-MISSING']);
+      }).map(completenessGapLineOf);
+
+    expect(gapsOf([])).toEqual([]);
+    expect(gapsOf([button, button])).toEqual([
+      'CONTROL-UNDECLARED components/a - button at div > button in rest, open (2 of them) - mark it with data-et-control and declare it in controls',
+    ]);
+    expect(gapsOf([{ ...button, marked: 'more' }], {})).toEqual([]);
+    expect(
+      gapsOf([{ ...button, within: ['more'] }], {
+        more: { kind: 'disclosure', part: 'components/b', surfaces: {} },
+      }).filter((line) => line.startsWith('CONTROL-UNDECLARED')),
+    ).toEqual([]);
+    expect(
+      gapsOf([{ kind: 'unclassified', what: 'div with cursor: pointer', path: 'div > div', marked: null, within: [] }]),
+    ).toEqual([
+      'CONTROL-UNCLASSIFIED components/a - div with cursor: pointer at div > div in rest, open - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
+    ]);
   });
 
   it('passes a disclosure drawn hovered, pressed, focused, collapsed and open in a reviewed part', () => {
@@ -386,7 +414,32 @@ describe('completenessOf', () => {
 
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });
 
-    expect('gaps' in bare && bare.gaps.map((gap) => gap.code)).toEqual(['CONTROLS-MISSING']);
+    expect('gaps' in bare && bare.gaps.map((gap) => gap.code)).toEqual(['CONTROL-UNKNOWN']);
+  }, 120_000);
+
+  it('discovers undeclared and unclassified controls, but not the controls of an embedded page', async (context) => {
+    const { target, config, product } = checkout();
+    const lines = async (part: string) => {
+      const result = await completenessOf({ target, config, product, part });
+
+      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
+    };
+    const plain = await completenessOf({ target, config, product, part: 'components/plain' });
+
+    if ('unavailable' in plain) return context.skip(plain.unavailable);
+
+    expect(plain).toEqual({ gaps: [] });
+    expect(await lines('components/undeclared')).toEqual([
+      'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with data-et-control and declare it in controls',
+    ]);
+    expect(await lines('components/pointer')).toEqual([
+      'CONTROL-UNCLASSIFIED components/pointer - div with cursor: pointer at div > div in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
+      'CONTROL-UNCLASSIFIED components/pointer - div.aa-card with :hover rule at div > div.aa-card in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
+    ]);
+    expect(await lines('pages/inner')).toEqual([
+      'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with data-et-control and declare it in controls',
+    ]);
+    expect(await lines('pages/host')).toEqual([]);
   }, 120_000);
 
   it('passes a full-width toggle at the top-left corner of its frame, which the headless pointer must not hover', async (context) => {

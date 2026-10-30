@@ -14,12 +14,26 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
 export type CompletenessGap = { code: string; target: string; detail: string };
 
+/**
+ * An element of a drawn frame that looks interactive. `control` is a native control, an interactive role or a known
+ * SDK control; `unclassified` has a pointer cursor or a matched `:hover` rule and sits in no control. `marked` is the
+ * `data-et-control` that declares it, `within` every `data-et-control` around it, nearest first.
+ */
+export type FoundControl = {
+  kind: 'control' | 'unclassified';
+  what: string;
+  path: string;
+  marked: string | null;
+  within: string[];
+};
+
 /** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
 export type SeenFrame = {
   state: string;
   interaction: string | null;
   controls: { id: string; forced: { interaction: string; differs: boolean; still?: string[] }[] }[];
   surfaces: { id: string; shown: boolean }[];
+  found?: FoundControl[];
 };
 
 type DeclaredControl = { kind: string; input: string[]; part: string | null; surfaces: Record<string, string> };
@@ -88,6 +102,52 @@ const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | n
         }),
       )
     : null;
+
+const discoveryGapsOf = (options: {
+  part: string;
+  declared: Record<string, DeclaredControl>;
+  frames: SeenFrame[];
+}): CompletenessGap[] => {
+  const { part, declared, frames } = options;
+  const ownedByPart = (found: FoundControl) => found.within.some((id) => (declared[id]?.part ?? null) !== null);
+  const groups = new Map<string, { found: FoundControl; states: string[]; count: number }>();
+
+  for (const frame of frames.filter((seen) => seen.interaction === null)) {
+    const counts = new Map<string, number>();
+
+    for (const found of frame.found ?? []) {
+      if (ownedByPart(found) || (found.kind === 'control' && found.marked !== null)) continue;
+
+      const key = `${found.kind} ${found.what} ${found.path}`;
+      const group = groups.get(key) ?? { found, states: [], count: 0 };
+
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+      if (!group.states.includes(frame.state)) group.states.push(frame.state);
+      group.count = Math.max(group.count, counts.get(key) ?? 0);
+      groups.set(key, group);
+    }
+  }
+
+  return [...groups.values()]
+    .sort((a, b) => a.found.path.localeCompare(b.found.path) || a.found.what.localeCompare(b.found.what))
+    .map(({ found, states, count }) => {
+      const shown =
+        states.length > 4 ? `${states.slice(0, 3).join(', ')} and ${states.length - 3} more` : states.join(', ');
+      const where = `${found.what} at ${found.path} in ${shown}${count > 1 ? ` (${count} of them)` : ''}`;
+
+      return found.kind === 'control'
+        ? {
+            code: 'CONTROL-UNDECLARED',
+            target: part,
+            detail: `${where} - mark it with data-et-control and declare it in controls`,
+          }
+        : {
+            code: 'CONTROL-UNCLASSIFIED',
+            target: part,
+            detail: `${where} - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style`,
+          };
+    });
+};
 
 const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
   const { frames, id, interaction } = options;
@@ -165,18 +225,7 @@ export const completenessGapsOf = (options: {
   referenced?: ReferencedParts;
 }): CompletenessGap[] => {
   const { part, states, frames, reviewed, grid, referenced = {} } = options;
-  const declared = declaredControlsOf(options.controls);
-
-  if (declared === null)
-    return [
-      {
-        code: 'CONTROLS-MISSING',
-        target: part,
-        detail:
-          'declares no controls - list each control its drawing marks with data-et-control in definePart({ controls })',
-      },
-    ];
-
+  const declared = declaredControlsOf(options.controls) ?? {};
   const gaps: CompletenessGap[] = [];
 
   if (!reviewed)
@@ -258,7 +307,7 @@ export const completenessGapsOf = (options: {
     }
   }
 
-  return gaps;
+  return [...gaps, ...discoveryGapsOf({ part, declared, frames })];
 };
 
 export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
@@ -340,7 +389,188 @@ const stillChangesOf = (rest: ColourSnapshot, forced: ColourSnapshot) =>
     return still.length > 0 ? [`${still.join(', ')} of ${name}`] : [];
   });
 
-const seeFrame = `(() => {
+const INTERACTIVE_ROLES = [
+  'button',
+  'checkbox',
+  'combobox',
+  'link',
+  'menuitem',
+  'menuitemcheckbox',
+  'menuitemradio',
+  'option',
+  'radio',
+  'scrollbar',
+  'searchbox',
+  'slider',
+  'spinbutton',
+  'switch',
+  'tab',
+  'textbox',
+  'treeitem',
+];
+
+const SDK_CONTROLS = [
+  '[et-button]',
+  '[et-icon-button]',
+  '[et-text-button]',
+  '[et-fab]',
+  '[et-window-control-button]',
+  '[et-overlay-close]',
+  'et-accordion',
+  'et-cascader',
+  'et-checkbox',
+  'et-chip',
+  'et-color-input',
+  'et-counter',
+  'et-date-input',
+  'et-date-range-input',
+  'et-date-time-input',
+  'et-duration-input',
+  'et-form-field',
+  'et-input',
+  'et-menu-checkbox-item',
+  'et-menu-radio-item',
+  'et-number-input',
+  'et-otp-input',
+  'et-password-input',
+  'et-phone-input',
+  'et-radio',
+  'et-range-slider',
+  'et-rating',
+  'et-segmented-button',
+  'et-select',
+  'et-select-option',
+  'et-slider',
+  'et-split-button',
+  'et-switch',
+  'et-tab',
+  'et-tag-input',
+  'et-textarea',
+  'et-time-input',
+  'et-toggletip',
+];
+
+const LIKELY_CONTROLS = [
+  ...SDK_CONTROLS,
+  'button',
+  'a[href]',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  'summary',
+  '[tabindex]',
+  ...INTERACTIVE_ROLES.map((role) => `[role="${role}"]`),
+];
+
+const discoverControls = `((root) => {
+  const LIKELY = ${JSON.stringify(LIKELY_CONTROLS)};
+  const likely = LIKELY.join(', ');
+  const sdk = ${JSON.stringify(SDK_CONTROLS.join(', '))};
+  const rendered = (element) => element.getClientRects().length > 0;
+  const nameOf = (element) => {
+    const cls = [...element.classList].find((name) => /^[a-z][\\w-]*$/i.test(name));
+    return element.tagName.toLowerCase() + (cls ? '.' + cls : '');
+  };
+  const pathOf = (element) => {
+    const names = [];
+    for (let at = element; at && at !== root; at = at.parentElement) names.unshift(nameOf(at));
+    return (names.length > 4 ? '... > ' : '') + names.slice(-4).join(' > ');
+  };
+  const splitTop = (selector) => {
+    const parts = [];
+    let depth = 0;
+    let from = 0;
+    for (let at = 0; at < selector.length; at++) {
+      const char = selector[at];
+      if (char === '\\\\') at++;
+      else if (char === '(' || char === '[') depth++;
+      else if (char === ')' || char === ']') depth--;
+      else if (char === ',' && depth === 0) {
+        parts.push(selector.slice(from, at).trim());
+        from = at + 1;
+      }
+    }
+    parts.push(selector.slice(from).trim());
+    return parts.filter(Boolean);
+  };
+  const HOVER = /(?<!\\\\):hover(?![\\w-])/g;
+  const FORCED_HOVER = /:is\\(:hover,\\s*\\[data-et-force~="?hover"?\\]\\)/g;
+  const hoveredOf = (written) => {
+    const selector = written.replace(FORCED_HOVER, ':hover');
+    const match = new RegExp(HOVER.source).exec(selector);
+    if (!match) return null;
+    let depth = 0;
+    let end = selector.length;
+    for (let at = 0; at < selector.length; at++) {
+      const char = selector[at];
+      if (char === '\\\\') at++;
+      else if (char === '(' || char === '[') depth++;
+      else if (char === ')' || char === ']') depth--;
+      else if (at > match.index && depth === 0 && /[\\s>+~]/.test(char)) {
+        end = at;
+        break;
+      }
+    }
+    return selector.slice(0, end).replace(HOVER, '').trim() || null;
+  };
+  const hovered = new Set();
+  const walk = (rules, parent) => {
+    for (const rule of rules) {
+      if (rule instanceof CSSStyleRule) {
+        const own = splitTop(rule.selectorText).map((selector) =>
+          parent === null ? selector : selector.includes('&') ? selector.replaceAll('&', ':is(' + parent + ')') : ':is(' + parent + ') ' + selector,
+        );
+        for (const selector of own) {
+          const target = hoveredOf(selector);
+          if (target === null) continue;
+          try {
+            for (const element of root.querySelectorAll(target)) hovered.add(element);
+          } catch {}
+        }
+        if (rule.cssRules && rule.cssRules.length > 0) walk(rule.cssRules, own.join(', '));
+      } else if (rule.cssRules) walk(rule.cssRules, parent);
+    }
+  };
+  for (const sheet of document.styleSheets) {
+    try {
+      walk(sheet.cssRules, null);
+    } catch {}
+  }
+  const withinOf = (element) => {
+    const ids = [];
+    for (let at = element; at && at !== root; at = at.parentElement)
+      if (at.hasAttribute('data-et-control')) ids.push(at.getAttribute('data-et-control'));
+    return ids;
+  };
+  const markedOf = (element) => {
+    if (element.hasAttribute('data-et-control')) return element.getAttribute('data-et-control');
+    for (let at = element.parentElement; at && at !== root; at = at.parentElement) {
+      if (at.matches(likely)) return null;
+      if (at.hasAttribute('data-et-control')) return at.getAttribute('data-et-control');
+    }
+    return null;
+  };
+  const found = [];
+  for (const element of root.querySelectorAll('*')) {
+    if (!rendered(element)) continue;
+    const what = LIKELY.find((selector) => element.matches(selector));
+    if (what) {
+      const inSdk = element.parentElement.closest(sdk);
+      if (inSdk !== null && root.contains(inSdk)) continue;
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element) });
+      continue;
+    }
+    const cursor = getComputedStyle(element).cursor;
+    const pointer = cursor === 'pointer' && getComputedStyle(element.parentElement).cursor !== 'pointer';
+    if (!pointer && !hovered.has(element)) continue;
+    if (element.closest('[data-et-control], ' + likely) !== null) continue;
+    const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
+    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [] });
+  }
+  return found;
+})`;
+
+const seeFrame = (discover: boolean) => `(() => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
   if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
@@ -376,7 +606,7 @@ const seeFrame = `(() => {
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
   }));
-  return { controls, surfaces };
+  return { controls, surfaces, found: ${discover} ? ${discoverControls}(root) : [] };
 })()`;
 
 const forceOn = ({
@@ -406,6 +636,7 @@ type Seen =
         box: { x: number; y: number; width: number; height: number } | null;
       }[];
       surfaces: { id: string; shown: boolean }[];
+      found: FoundControl[];
     };
 
 type CompleteFrame = {
@@ -432,7 +663,7 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
       await page.addStyleTag({ content: NO_MOTION });
       await page.evaluate(settled);
 
-      const found = (await page.evaluate(seeFrame)) as Seen;
+      const found = (await page.evaluate(seeFrame(frame.interaction === null))) as Seen;
 
       if ('refused' in found) {
         refused.push(`${frame.state}: ${found.refused}`);
@@ -472,7 +703,13 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
         controls.push({ id: control.id, forced });
       }
 
-      seen.push({ state: frame.state, interaction: frame.interaction, controls, surfaces: found.surfaces });
+      seen.push({
+        state: frame.state,
+        interaction: frame.interaction,
+        controls,
+        surfaces: found.surfaces,
+        found: found.found,
+      });
     }
   } finally {
     await context.close();
