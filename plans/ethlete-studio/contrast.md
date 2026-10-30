@@ -48,11 +48,13 @@ The builder's queue (Tom, 2026-10-30), with `design-system-actions.md` numbers:
 
 1. 4.61 slice 1, the targeted redraw.
 2. 4.65, the two auto-merge defects.
-3. In parallel: slice 1 of this plan (CLI code), and the CSS work (part sketches). The CSS work is the
+3. The comment cleanup ("Comment cleanup decisions" in `design-system-actions.md`), with the one-time
+   cleanup run on the new code.
+4. In parallel: slice 1 of this plan (CLI code), and the CSS work (part sketches). The CSS work is the
    colour cleanup (`--surface-sunken` references, the `sketch-data.css` overrides) and the 4.53
    Tailwind move page by page, then `UTILITY-CSS` in `RULES`.
-4. The redo of colour step B: the rule checks its variants and gives the numbers in its drawing.
-5. 4.61 slice 2, the draw queue with 4 pages at once.
-6. Motion slice 1b.
+5. The redo of colour step B: the rule checks its variants and gives the numbers in its drawing.
+6. 4.61 slice 2, the draw queue with 4 pages at once.
+7. Motion slice 1b.
 
 Slices 2 and 3 of this plan are not in the queue yet.
