@@ -563,15 +563,6 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Rule (Tom, 2026-10-29):** a part becomes a component only when two hosts draw the same case.
   Option 1 is in the `design-exploration` skill under "The order of a design".
 
-### 5.25 Studio has no warning colour theme - open
-
-- **Pain:** tree-row's warning mark needs a semantic warning colour. Studio's tokens have only the
-  accent theme and `danger`; the SDK `--et-theme-color-*` aliases resolve to SDK blue. The merged
-  `tree-row` draws the mark in `--color-et-danger` (`tree-row.css:61`).
-- **Fix option:** a sketch on Studio's foundations that adds a theme of type `warning`.
-- **Sketch (2026-10-29):** `foundations/tokens` "Warning colour", a amber, b muted ochre, c orange,
-  is `ready` (agent recommends a). After the merge, a one-variant `tree-row` sketch uses `--warning`.
-
 ### 5.31 Studio has no pressed surface token - open
 
 - **Pain:** `tree-row`'s `:active` fill is a `color-mix` of `--surface-raised` and
@@ -604,16 +595,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   `sketch check` lists empty cells (recommended; the grid made the gap visible). 2. `sketch check`
   draws every row x column combination of a grid in a scratch pass and flags cells that look like
   another row.
-
-### 5.50 Studio's danger colour fails contrast on its dark surfaces - open
-
-- **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on
-  `--surface-overlay`. Below AA for text everywhere and below 3:1 for a mark on overlay.
-- **Fix options:** 1. a `foundations/tokens` sketch that gives `danger` a Studio tone, about
-  oklch(0.68 0.19 25) (recommended). 2. only a `--danger-text` alias.
-- **Sketch (2026-10-29):** "Error colour", a signal red, b rose, c soft coral, is `ready` (agent
-  recommends a). A white `--on-danger` cannot pass AA with a mark >= 3 on overlay; all variants use
-  a dark ink on the fill.
 
 ### 5.51 No contrast numbers next to colour tokens - open
 

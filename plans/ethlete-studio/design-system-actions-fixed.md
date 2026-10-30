@@ -1,3 +1,21 @@
+### 5.50 Studio's danger colour fails contrast on its dark surfaces - fixed
+
+- **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on
+  `--surface-overlay`. Below AA for text everywhere and below 3:1 for a mark on overlay.
+- **Fix options:** 1. a `foundations/tokens` sketch that gives `danger` a Studio tone, about
+  oklch(0.68 0.19 25) (recommended). 2. only a `--danger-text` alias.
+- **Fixed earlier (`96eff57ce`), verified 2026-10-30 by the grill session:** the signal red
+  variant a is merged; `foundations/colors/colors.css` sets `--color-et-danger` to
+  rgb(247 93 89). The entry was stale.
+
+### 5.25 Studio has no warning colour theme - fixed
+
+- **Pain:** tree-row's warning mark needs a semantic warning colour. Studio's tokens had only the
+  accent theme and `danger`, so the merged `tree-row` drew the mark in `--color-et-danger`.
+- **Fixed earlier (`9594be0c0`), verified 2026-10-30 by the grill session:** the warning colour is
+  merged, and `components/tree-row/tree-row.css` draws the mark in `var(--warning)`. The entry was
+  stale.
+
 ### 5.45 Agent logos exist in three copies - fixed
 
 - **Pain:** a component cannot import from a page, so the `components/comment-pin` sketch holds a
