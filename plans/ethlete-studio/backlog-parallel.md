@@ -246,6 +246,9 @@ generated CSS file.
   (`@design-system/kit`, on hold). Studio's parts switch to it; `studio/shared/token-sheet.ts` goes away.
 - Q55: the sdk follows the Studio split: `foundations/colors` now, `type`, `spacing` and `motion` once the SDK
   has real values for them. Labels come from the generated CSS through the helper, never hand-typed values.
+- Q54 built: `tokenSheet` is public in `@design-system` (`1ac18dd31`); Studio's four foundation parts use it, the
+  sketch merged automatically with no visible change, and `studio/shared/token-sheet.ts` is gone (`acf0a439f`). The sdk
+  split (Q55) is open.
 
 ### Select and contrast value decisions (2026-10-30)
 
