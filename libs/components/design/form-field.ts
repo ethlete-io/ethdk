@@ -5,6 +5,8 @@ import suffixOverlap from '../src/lib/forms/form-field/form-field-suffix-overlap
 import label from '../src/lib/forms/form-field/headless/label.directive.css?inline';
 import hint from '../src/lib/forms/form-field/hint.component.css?inline';
 import inputBase from '../src/lib/forms/input/input.component.css?inline';
+import textareaBase from '../src/lib/forms/textarea/textarea.component.css?inline';
+import textareaAutosize from '../src/lib/forms/textarea/textarea-autosize-styles.component.css?inline';
 import iconStyles from '../src/lib/icon/headless/icon-styles.component.css?inline';
 
 /** The field state a control draws itself from. */
@@ -75,7 +77,16 @@ export type InputMockOptions = {
   textAlign?: 'start' | 'center' | 'end';
 };
 
-/** The stylesheets `formField()` and `input()` draw with: the real `et-form-field` CSS. */
+export type TextareaMockOptions = {
+  value?: string;
+  placeholder?: string;
+  rows?: number;
+  /** Grows with its content, from `minRows` (default `rows`). On by default, like the real textarea. */
+  autosize?: boolean;
+  minRows?: number;
+};
+
+/** The stylesheets `formField()`, `input()` and `textarea()` draw with: the real `et-form-field` CSS. */
 export const formFieldStyles = /* @__PURE__ */ [
   interactiveStyles,
   iconStyles,
@@ -85,6 +96,8 @@ export const formFieldStyles = /* @__PURE__ */ [
   label,
   hint,
   inputBase,
+  textareaBase,
+  textareaAutosize,
   `.et-design-panel-anchor { position: relative; }
 .et-design-panel { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 0.3rem); z-index: 1; }`,
 ].join('\n');
@@ -111,6 +124,32 @@ export const input = (options: InputMockOptions = {}): FormFieldControlMock => (
     ]);
 
     return `<et-input class="et-color-interactive et-input"><input ${attributes}></et-input>`;
+  },
+});
+
+/** Draws `<et-textarea>` as a control for `formField()`. */
+export const textarea = (options: TextareaMockOptions = {}): FormFieldControlMock => ({
+  controlType: 'textarea',
+  hasValue: !!options.value,
+  html: (state) => {
+    const rows = options.rows ?? 3;
+    const autosize = options.autosize ?? true;
+    const attributes = attributesOf([
+      'class="et-textarea-native"',
+      `rows="${rows}"`,
+      state.disabled && 'disabled',
+      state.readonly && 'readonly',
+      state.required && 'required',
+      options.placeholder && `placeholder="${options.placeholder}"`,
+      state.invalid && 'aria-invalid="true"',
+      state.describedBy && `aria-describedby="${state.describedBy}"`,
+      state.labelId && `aria-labelledby="${state.labelId}"`,
+      `data-resize="${autosize ? 'none' : 'vertical'}"`,
+      autosize && 'data-et-textarea-autosize=""',
+      autosize && `style="--et-textarea-min-rows: ${options.minRows ?? rows}"`,
+    ]);
+
+    return `<et-textarea class="et-color-interactive et-textarea"><textarea ${attributes}>${options.value ?? ''}</textarea></et-textarea>`;
   },
 });
 
