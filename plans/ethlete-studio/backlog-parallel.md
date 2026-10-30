@@ -172,6 +172,11 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   `warning` as demo themes of this fixture: the SDK ships no theme names, the app registers them.
 - **CLI gap (sent to stream A):** `design complete` checks only merged parts, so a sketch variant cannot prove
   its 4.47 coverage before the merge. Request: `design complete --variant`.
+- **Active-descendant focus decision (Tom, 2026-10-30, Q48):** `design complete` accepts focus-visible evidence
+  for an option that never takes DOM focus: in a shown surface, the option whose id the control's
+  `aria-activedescendant` names counts when its look differs from an unforced, unselected option. Generic ARIA,
+  no SDK names in `libs/cli`. No fake `:focus-visible` rule in drawings. Applies to `components/select` and later
+  `tree`.
 
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
