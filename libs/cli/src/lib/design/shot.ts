@@ -37,6 +37,12 @@ const MAX_SCALE = 4;
 
 const scaleOf = (params: URLSearchParams) => Number(params.get('scale') ?? 1);
 
+const schemeOf = (params: URLSearchParams) => {
+  const scheme = params.get('scheme');
+
+  return scheme === 'dark' || scheme === 'light' ? scheme : null;
+};
+
 const isScale = (scale: number) => Number.isInteger(scale) && scale >= 1 && scale <= MAX_SCALE;
 
 /** The `x,y,width,height` crop of a picture in CSS pixels, `null` without one, `undefined` for a malformed one. */
@@ -66,7 +72,14 @@ type Drawn = { part: DrawnPart } | { slug: string };
 
 type Size = Pick<DesignPreset, 'width' | 'height'>;
 
-type Frame = { search: string; size: Size | null; clip: boolean; scale: number; crop: Crop | null };
+type Frame = {
+  search: string;
+  size: Size | null;
+  clip: boolean;
+  scale: number;
+  crop: Crop | null;
+  scheme: 'dark' | 'light' | null;
+};
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
 
@@ -218,7 +231,11 @@ export const createPartShooter = (options: {
     warmPages.run(
       {
         browser,
-        context: { viewport: viewportOf(frame.size), ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}) },
+        context: {
+          viewport: viewportOf(frame.size),
+          ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
+          ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
+        },
       },
       async (page) => {
         await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
@@ -304,7 +321,8 @@ export const createPartShooter = (options: {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
     const crop = cropOf(options.params.get('clip')) ?? null;
-    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop]);
+    const scheme = schemeOf(options.params);
+    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop, scheme]);
     const kept = options.fresh ? undefined : cache.get(key);
 
     if (kept) {
@@ -319,7 +337,7 @@ export const createPartShooter = (options: {
 
     const search = options.search.toString();
     const shot = drawQueue.run(
-      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop }),
+      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme }),
       options.priority,
     );
 
@@ -509,6 +527,7 @@ export const createPartShooter = (options: {
 
       const theme = themeOf(options.params);
       const scale = scaleOf(options.params);
+      const scheme = schemeOf(options.params);
       const key = JSON.stringify([
         ...frame.key,
         options.motion,
@@ -519,6 +538,7 @@ export const createPartShooter = (options: {
         theme.color,
         theme.fill,
         scale,
+        scheme,
       ]);
       const kept = motions.get(key);
 
@@ -537,6 +557,7 @@ export const createPartShooter = (options: {
                 viewport: viewportOf(frame.size),
                 reducedMotion: options.mode === 'reduced' ? 'reduce' : 'no-preference',
                 ...(scale > 1 ? { deviceScaleFactor: scale } : {}),
+                ...(scheme ? { colorScheme: scheme } : {}),
               },
             },
             (page) =>

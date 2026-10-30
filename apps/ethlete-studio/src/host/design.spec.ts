@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { followScheme } from './color-scheme';
 import {
   OLDER_SERVER_MESSAGE,
   ServerState,
@@ -8,6 +10,7 @@ import {
   designServerState$,
   frameUrl,
   listedSystem$,
+  partShotUrl,
 } from './design';
 
 describe('frameUrl', () => {
@@ -109,5 +112,25 @@ describe('designServerState$', () => {
     expect((await firstValueFrom(designServerState$('/c', known))).log).toEqual(['kept']);
     expect((await firstValueFrom(designServerState$('/c', known))).log).toEqual(['new']);
     expect(sent[0]).toEqual({ checkout: '/c', logRevision: 7 });
+  });
+});
+
+describe('shot urls under a preferred colour scheme', () => {
+  it('ask for the scheme the window prefers and follow it when it changes', () => {
+    const dark = signal(true);
+    const part = { port: 1, product: 'p', part: 'components/button', state: 'rest', revision: 2 };
+
+    followScheme(dark);
+
+    expect(partShotUrl(part)).toBe(
+      'http://localhost:1/__design/shot?product=p&part=components%2Fbutton&state=rest&revision=2&scheme=dark&priority=low',
+    );
+    expect(callShotUrl({ port: 1, slug: 's', variant: 'v', width: 390 })).toBe(
+      'http://localhost:1/__design/shot?call=s&variant=v&width=390&scheme=dark&priority=low',
+    );
+
+    dark.set(false);
+
+    expect(partShotUrl(part)).toContain('&scheme=light&');
   });
 });

@@ -1,6 +1,7 @@
 import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
+import { providePreferredScheme } from '../host/color-scheme';
 import { SURFACE_THEMES } from '../surface-themes';
 import { THEMES } from '../themes';
 import { APP_ROUTES } from './app.routes';
@@ -13,5 +14,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(APP_ROUTES, withHashLocation()),
     ...provideColorThemesWithTailwind4(THEMES),
     ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
+    providePreferredScheme(),
   ],
 };

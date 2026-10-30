@@ -355,6 +355,22 @@ describe('createPartShooter', () => {
     expect(drawnUrls()).toHaveLength(2);
   });
 
+  it('draws a state in the asked colour scheme as a picture of its own', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    expect(await ask(shots, `${part}&scheme=dark`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'dark' });
+    expect(await ask(shots, `${part}&scheme=light`)).toMatchObject({ status: 200 });
+    expect(newContext).toHaveBeenLastCalledWith({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' });
+    await ask(shots, `${part}&scheme=dark`);
+
+    expect(drawnUrls()).toEqual([
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fit=',
+    ]);
+  });
+
   it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 
