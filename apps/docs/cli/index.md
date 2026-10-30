@@ -92,6 +92,11 @@ A frame of a sketch variant that changes the part runs the command from the chec
 `<folder>/<its checkout path>` where the product stylesheet imports it. The command writes nothing
 else. A merged frame loads the checked-in files.
 
+The Studio's `generate-studio-themes.mjs` makes a colour theme of every token `--x` in the colours part
+that has `--x-hover`, `--x-active`, `--x-disabled`, `--x-text`, `--on-x` and `--on-x-disabled`. To add
+a theme, add that block to the part; `accent` becomes the default theme `brand`, and `danger`, `warning`
+and `success` get their semantic type.
+
 `et design check` warns with `TOKEN-SELECTOR` when a listed token stylesheet contains a selector
 outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
 instead of the globally loaded token CSS.
