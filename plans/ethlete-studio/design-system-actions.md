@@ -952,6 +952,12 @@ live sketch (reasons `round`, `merge`, `done`).
 - **Addressed without a sketch** (reason `done`): the next merge of its part resolves it. Until then
   it stays in the panel, with no extra group.
 
+**As built (2026-10-30):** `sketch merge` and `sketch discard` call `resolveSketchEndComments` before they
+address the open comments, so only comments addressed earlier are resolved (note "resolved by the merge of
+<target> variant <key>" or "...the discard of <target>"); a merge also resolves the sketch-less addressed
+comments of its merged parts. `et design comment resolve-ended [--product]` resolved 45 comments of
+`studio` (27 addressed, 18 legacy `resolved` files that read as addressed); open comments were untouched.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
