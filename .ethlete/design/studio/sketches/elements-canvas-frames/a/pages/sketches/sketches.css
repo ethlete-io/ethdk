@@ -1,0 +1,15 @@
+@layer components {
+  .sk-page > .st-canvas-zoom .et-button {
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+  }
+  .sk-frame {
+    box-shadow: 0 0 0 1px var(--surface-border);
+  }
+  .sk-frame[data-selected] {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}

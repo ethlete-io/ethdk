@@ -1,0 +1,45 @@
+{
+  "target": "elements/canvas-frames",
+  "targets": ["elements/canvas-frames", "pages/sketches"],
+  "status": "ready",
+  "createdAt": "2026-10-30T21:58:30.577Z",
+  "baseline": {
+    "foundations/agent-logos": "9d16069b875f1e82",
+    "foundations/colors": "5c6f3c3f97320488",
+    "foundations/icons": "4c64c092516accf9",
+    "foundations/logo": "ea4d144717cbadfc",
+    "foundations/motion": "00a4dc7f778b5d38",
+    "foundations/spacing": "fafb6399e642b416",
+    "foundations/type": "0d78e0b9b28ef1dc",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/comment-pin": "758700ef5e2d5dac",
+    "components/disclosure": "443b083753ec221e",
+    "components/form-field": "126362df5518a865",
+    "components/select": "164af4eccf857227",
+    "components/tree-row": "26f501621b293428",
+    "elements/canvas-frames": "660a80c2918296b9",
+    "elements/part-tree": "bc6764638ee1f7c5",
+    "elements/shell-main": "eeafdea25c3b72ed",
+    "pages/flows": "d5426cf399e75a03",
+    "pages/inbox": "5af40e496401e7dd",
+    "pages/merge": "8dd4fa36943b69d1",
+    "pages/sketches": "c874a2454241b87f",
+    "pages/start": "5be284500a37da1a",
+    "pages/system": "7f898322145e4f51",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Named frame parts",
+      "note": "Critique: hierarchy unchanged (frame head above box, chip quiet in the corner). Spacing: the chip sits space-3 from the canvas edge as in the app, inside the page's space-5 gutter. Nesting: page frames embed canvas-frames chips too, so pages/sketches finds its own chip via .sk-page > [data-canvas-zoom]. Host context: canvas-frames draws pixel-identical; pages/sketches swaps Fit | 60% for − | 60 % | + | Fit."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "canvasFrameHead, canvasFrameBox and canvasZoomChip are named exports; canvasFrame and canvasView compose them. pages/sketches draws the app chip − | 100 % | + | Fit, with − and + wired to the camera. Cost: the old canvasZoomClass/canvasZoomValueClass exports go."
+    }
+  }
+}
