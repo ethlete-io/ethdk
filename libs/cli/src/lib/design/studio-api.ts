@@ -194,12 +194,14 @@ const partTargetsOf = async ({
   part,
   load,
   pictureOf,
+  skipUnchanged,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
   part: string;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  skipUnchanged?: boolean;
 }) => {
   const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
   const current =
@@ -236,9 +238,10 @@ const partTargetsOf = async ({
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
-        unchanged: problem
-          ? []
-          : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
+        unchanged:
+          problem || skipUnchanged
+            ? []
+            : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
         ...(problem || !current || current.problem
           ? {}
           : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
@@ -253,6 +256,7 @@ const targetsOf = async (options: {
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
+  skipUnchanged?: boolean;
 }) => (await Promise.all(options.sketch.targets.map((part) => partTargetsOf({ ...options, part })))).flat();
 
 /**
@@ -261,7 +265,8 @@ const targetsOf = async (options: {
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs).
+ * of the agent (`report`, `null` when none runs). `?unchanged=no` leaves `unchanged` empty and skips the pixel comparison, which
+ * is the slow part of a cold call.
  */
 export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
   const { target } = asked;
@@ -282,7 +287,13 @@ export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
               variant: entry.variant,
               problems: entry.problems.map((p) => problemOf({ target, problem: p })),
             })),
-          targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
+          targets: await targetsOf({
+            product,
+            sketch,
+            load: asked.load,
+            pictureOf: asked.pictureOf,
+            skipUnchanged: asked.url.searchParams.get('unchanged') === 'no',
+          }),
           report: readSketchReport({ checkout: target, sketch }),
         })),
       ),

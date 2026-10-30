@@ -698,6 +698,31 @@ describe('the design server for sketches and comments', () => {
     ]);
   });
 
+  it('skips the unchanged-state comparison on request and still lists the states', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const loaded: string[] = [];
+    const { ask } = await serveAcme(target, (id) => {
+      loaded.push(id);
+
+      return { default: { states: { one: {} } } };
+    });
+    type Listed = { sketches: { targets: { states: string[] }[] }[] };
+    const quick = (await ask('/__design/sketches', '?product=acme&unchanged=no')).body as Listed;
+    const quickLoads = loaded.length;
+
+    loaded.length = 0;
+
+    const full = (await ask('/__design/sketches', '?product=acme')).body as Listed;
+
+    expect(quickLoads).toBeLessThan(loaded.length);
+    expect(quick.sketches[0]?.targets.map(({ states }) => states)).toEqual(
+      full.sketches[0]?.targets.map(({ states }) => states),
+    );
+  });
+
   it('registers the parts of each sketch variant, resolved through that variant', async () => {
     const target = acme();
 
