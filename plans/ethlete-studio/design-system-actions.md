@@ -927,6 +927,20 @@ For the missing states (`*-active`, `*-disabled`, `--text-subtle`) in `foundatio
   oklch(0.62 0.11 190)) and `--text-subtle` one step below muted (oklch(0.6 0 0)), with contrast
   numbers in the drawing. Tom picks in Studio.
 
+### Comment cleanup decisions (2026-10-30)
+
+Pain: the Studio comment panel fills with addressed threads nobody closes. On 2026-10-30, 27
+comments had `addressed` and no `resolved`, and `sketches/` was empty, so none of them belonged to a
+live sketch (reasons `round`, `merge`, `done`).
+
+- **Sketch end:** `sketch merge` and `sketch discard` resolve every addressed comment whose `sketch`
+  is that sketch, with a note that names the end, for example "resolved by the merge of
+  pages/sketches variant f". Open comments stay open.
+- **One-time cleanup:** resolve every addressed comment whose sketch no longer exists, note "sketch
+  ended". Open comments are not touched.
+- **Addressed without a sketch** (reason `done`): the next merge of its part resolves it. Until then
+  it stays in the panel, with no extra group.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
