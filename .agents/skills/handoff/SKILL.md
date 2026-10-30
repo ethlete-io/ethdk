@@ -12,6 +12,10 @@ continue in a fresh session. This skill has two modes:
 - **save** (`handoff`, optionally followed by a short slug) - write a handoff file.
 - **resume** (`handoff resume [name]`) - read a handoff file and continue the work.
 
+Text after the slug or the name is an instruction from the user, in both modes. In save mode it is
+for the session that resumes, so it must reach that session word for word. In resume mode it wins
+over the Next steps of the file where the two conflict.
+
 Name one invocation form to the user - your own - and never both. Under Claude
 Code that is `/handoff` and `/handoff resume [name]`. Codex has no slash
 commands, so there both are plain prompts: drop the leading `/` from every
@@ -170,8 +174,12 @@ If one line is false, finish or collect that first. If you cannot, hand the prom
 before. Then run, with the slug of the file you saved:
 
 ```bash
-node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/handoff resume <slug>'
+node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/handoff resume <slug> [<text after the slug>]'
 ```
+
+If the user wrote text after the slug of the save command, append it to the prompt word for word.
+Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has
+no other way to see it.
 
 `<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
 types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so

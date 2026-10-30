@@ -15,6 +15,10 @@ continue in a fresh session. Two modes:
 - **save** ("handoff", "wrap up") - write a handoff file.
 - **resume** ("continue from the handoff") - read one and continue the work.
 
+Text after the slug or the name is an instruction from the user, in both modes. In save mode it is
+for the session that resumes, so it must reach that session word for word. In resume mode it wins
+over the Next steps of the file where the two conflict.
+
 Name one invocation form to the user - your own - and never both. The skill is
 installed as `ethlete-handoff`, so under Claude Code the commands are
 `/ethlete-handoff` and `/ethlete-handoff resume [name]`; there is no `/handoff`.
@@ -169,8 +173,12 @@ If one line is false, finish or collect that first. If you cannot, hand the prom
 before. Then run, with the slug of the file you saved:
 
 ```bash
-node <sessions-skill-dir>/agent-sessions.mjs restart <name> '<resume command> <slug>'
+node <sessions-skill-dir>/agent-sessions.mjs restart <name> '<resume command> <slug> [<text after the slug>]'
 ```
+
+If the user wrote text after the slug of the save command, append it to the prompt word for word.
+Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has
+no other way to see it.
 
 `<resume command>` is your own resume form from the top of this guide, with the name this repo
 installed the skill under: `/ethlete-handoff resume` under Claude Code, `ethlete-handoff resume`
