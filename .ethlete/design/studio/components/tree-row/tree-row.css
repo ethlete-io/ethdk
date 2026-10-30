@@ -19,6 +19,7 @@
     white-space: nowrap;
     outline: none;
     cursor: default;
+    transition: var(--transition-state);
   }
 
   .st-trow:where([data-kind='group']) {
