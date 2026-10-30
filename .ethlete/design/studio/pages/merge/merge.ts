@@ -1,11 +1,21 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import shellMain from '@system/elements/shell-main';
-import { CHANGED, TARGET, type Row, picked, rowCaption, rowStyles, shot, unchangedLine } from './merge-data';
+import {
+  CHANGED,
+  TARGET,
+  type Row,
+  type UnchangedState,
+  picked,
+  rowCaption,
+  rowStyles,
+  shot,
+  unchangedLine,
+} from './merge-data';
 import kit from './merge-kit.css?inline';
 import styles from './merge.css?inline';
 
-type Props = Record<string, never>;
+type Props = { unchanged: UnchangedState };
 
 const SCALE = 0.37;
 const CROP_SCALE = 2;
@@ -30,27 +40,36 @@ const crop: Row = {
 const listRow = (row: Row) =>
   html`<li class="mg-c-item" ${row === selected ? ' data-selected' : ''}>${rowCaption(row)}</li>`;
 
-const panel = html`<div class="mg-c-panel">
-  <div class="mg-d-back">${back.body}</div>
-  <div class="mg-c-target">
-    <span class="mg-c-target-part">${TARGET.part}</span>
-    <span class="mg-c-target-variant">${picked(TARGET.variant)}<span>${TARGET.note}</span></span>
-  </div>
-  <span class="mg-c-label">Changed</span>
-  <ul class="mg-c-list">
-    ${CHANGED.map(listRow).join('')}
-  </ul>
-  <div data-et-skip="WRAP">${unchangedLine()}</div>
-  <span class="mg-c-gap"></span>
-  <div class="mg-c-merge mg-d-merge">${merge.body}</div>
-</div>`;
+const panelOf = (unchanged: UnchangedState) =>
+  html`<div class="mg-c-panel">
+    <div class="mg-d-back">${back.body}</div>
+    <div class="mg-c-target">
+      <span class="mg-c-target-part">${TARGET.part}</span>
+      <span class="mg-c-target-variant">${picked(TARGET.variant)}<span>${TARGET.note}</span></span>
+    </div>
+    <span class="mg-c-label">Changed</span>
+    <ul class="mg-c-list">
+      ${CHANGED.map(listRow).join('')}
+    </ul>
+    <div data-et-skip="WRAP">${unchangedLine(unchanged)}</div>
+    <span class="mg-c-gap"></span>
+    <div class="mg-c-merge mg-d-merge">${merge.body}</div>
+  </div>`;
 
 export default definePart<Props>({
-  note: 'Merge compare as a review, without a merge note. The way out is a "Back to sketch" link at the top of the panel, above the target part, the picked variant and its own note, which is the note the part keeps. Then the changed rows with instance counts and the unchanged line. At the bottom a full-width Merge, enabled. The canvas shows the selected row as a now/after pair and each instance of the button cropped at 200 %.',
+  note: 'focus-visible nimmt --text wie hover',
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
-  states: { open: {} },
-  render: async () => {
+  states: {
+    open: { unchanged: 'rest' },
+    'unchanged-hover': { unchanged: 'hover' },
+    'unchanged-focus': { unchanged: 'focus-visible' },
+    'unchanged-open': { unchanged: 'open' },
+  },
+  controls: {
+    unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'unchanged-open' } },
+  },
+  render: async ({ unchanged }) => {
     const row = selected ?? CHANGED[0];
     const content = row
       ? html`<div class="mg-c-page">
@@ -75,7 +94,7 @@ export default definePart<Props>({
         </div>`
       : '';
 
-    const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: panel, content });
+    const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: panelOf(unchanged), content });
 
     return drawing({
       body: shell.body,

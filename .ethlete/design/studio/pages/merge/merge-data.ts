@@ -1,4 +1,4 @@
-import { embedPage, html } from '@design-system';
+import { embedPage, forceInteraction, html } from '@design-system';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 
@@ -49,5 +49,23 @@ export const picked = (variant: string) => html`<span class="mg-picked">Picked <
 const CHEVRON =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 
-export const unchangedLine = () =>
-  html`<button class="mg-unchanged" type="button">${CHEVRON}<span>${unchangedLabel}</span></button>`;
+export type UnchangedState = 'rest' | 'hover' | 'focus-visible' | 'open';
+
+export const unchangedLine = (state: UnchangedState = 'rest') => {
+  const toggle = html`<button
+    class="mg-unchanged"
+    type="button"
+    data-et-control="unchanged"
+    aria-expanded="${state === 'open'}"
+  >
+    ${CHEVRON}<span>${unchangedLabel}</span>
+  </button>`;
+  const line = state === 'hover' || state === 'focus-visible' ? forceInteraction(toggle, state) : toggle;
+
+  return state === 'open'
+    ? line +
+        html`<ul class="mg-unchanged-body" data-et-surface="unchanged.body">
+          ${UNCHANGED.states.map((state) => html`<li><span class="mg-row-part">${UNCHANGED.part}</span><span class="mg-row-state">${state}</span></li>`).join('')}
+        </ul>`
+    : line;
+};
