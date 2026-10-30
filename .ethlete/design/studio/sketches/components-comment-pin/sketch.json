@@ -1,15 +1,15 @@
 {
-  "target": "pages/sketches",
+  "target": "components/comment-pin",
   "status": "ready",
-  "createdAt": "2026-10-30T16:27:55.477Z",
+  "createdAt": "2026-10-30T16:56:22.037Z",
   "baseline": {
     "foundations/agent-logos": "b526b807ee82880c",
-    "foundations/colors": "4a807303af9c82df",
+    "foundations/colors": "140e27ac2757f74b",
     "foundations/icons": "de6febf097c3a350",
     "foundations/logo": "49fb600dd36d0a5c",
-    "foundations/motion": "0c9229cc1ee8debd",
-    "foundations/spacing": "dc02c295ea27c2bc",
-    "foundations/type": "46ee454a96e820e0",
+    "foundations/motion": "00a4dc7f778b5d38",
+    "foundations/spacing": "fafb6399e642b416",
+    "foundations/type": "0d78e0b9b28ef1dc",
     "components/button": "b9bb3d3ff96bc85a",
     "components/comment-pin": "b904e52075f69932",
     "components/disclosure": "661c00168f26b319",
@@ -31,12 +31,12 @@
     {
       "key": "r1",
       "title": "",
-      "note": "Use --surface instead of the --surface-sunken alias"
+      "note": "Initials in the selected and active states use --on-accent"
     }
   ],
   "variantInfo": {
     "a": {
-      "authors": ["claude-sonnet-5-5"],
+      "authors": ["claude-opus-5-5"],
       "round": "r1"
     }
   }
