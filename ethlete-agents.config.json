@@ -31,5 +31,6 @@
   },
   "exclude": ["angular-patterns", "git-commit", "git-flow", "handoff", "rxjs-signals"],
   "claudeMdImportsAgentsMd": true,
-  "hooks": ["context-warning", "subagent-model-policy"]
+  "hooks": ["context-warning", "subagent-model-policy"],
+  "mods": ["e2e-progress"]
 }

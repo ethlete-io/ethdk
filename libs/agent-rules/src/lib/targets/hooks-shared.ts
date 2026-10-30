@@ -155,13 +155,15 @@ export const emitHookSettings = (options: {
   hooksDir: string;
   commandFor: (file: string) => string;
   createWhenEmpty: boolean;
+  mergeExtra?: (merged: string) => string;
 }): EmittedFile[] => {
-  const { agent, path, existing, hooks, hooksDir, commandFor, createWhenEmpty } = options;
+  const { agent, path, existing, hooks, hooksDir, commandFor, createWhenEmpty, mergeExtra } = options;
 
   if (existing.trim().length === 0 && hooks.length === 0 && !createWhenEmpty) return [];
 
   try {
-    const merged = mergeHookSettings({ agent, existing, hooks, hooksDir, commandFor });
+    const hookMerged = mergeHookSettings({ agent, existing, hooks, hooksDir, commandFor });
+    const merged = mergeExtra ? mergeExtra(hookMerged) : hookMerged;
 
     if (JSON.stringify(JSON.parse(existing.trim() || '{}')) === JSON.stringify(JSON.parse(merged))) return [];
 

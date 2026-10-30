@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -9,8 +9,9 @@ import {
   LOCAL_CONFIG_FILE_NAME,
   TOPOLOGY_CONFIG_FILE_NAME,
 } from './config';
-import { ContentItem } from './load-content';
+import { ContentItem, resolveContentRoot } from './load-content';
 import { assertResolvedContentReferences, buildPlan, claudeMdImportsAgentsMd } from './plan';
+import { KNOWN_MODS, MOD_MARKETPLACE } from './targets/claude-mods';
 
 const planWithLocalConfig = (contents: unknown) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
@@ -198,6 +199,70 @@ describe('hook config checks', () => {
     expect(buildPlan({ config: loadConfig({ root }) }).warnings).toEqual([
       expect.stringContaining('.claude/settings.json is not valid JSON'),
     ]);
+  });
+});
+
+describe('mods', () => {
+  const settingsAfterPlan = (options: { config: unknown; settings?: unknown }) => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    mkdirSync(join(root, '.claude'));
+    if (options.settings) {
+      writeFileSync(join(root, '.claude', 'settings.json'), JSON.stringify(options.settings), 'utf8');
+    }
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify(options.config), 'utf8');
+
+    const file = buildPlan({ config: loadConfig({ root }) }).files.find((f) => f.path === '.claude/settings.json');
+
+    return file ? JSON.parse(file.contents) : undefined;
+  };
+
+  it('rejects an unknown mod', () => {
+    expect(() => planWithConfig({ mods: ['nope'] })).toThrow('Unknown mod(s): nope');
+  });
+
+  it('registers the shipped marketplace through node_modules for a consumer', () => {
+    const settings = settingsAfterPlan({
+      config: { targets: ['claude'], mods: ['e2e-progress'] },
+      settings: {
+        extraKnownMarketplaces: { team: { source: { source: 'github', repo: 'a/b' } } },
+        enabledPlugins: { 'lint@team': true },
+      },
+    });
+
+    expect(settings.extraKnownMarketplaces).toEqual({
+      team: { source: { source: 'github', repo: 'a/b' } },
+      ethlete: { source: { source: 'directory', path: './node_modules/@ethlete/agent-rules/content/mods' } },
+    });
+    expect(settings.enabledPlugins).toEqual({ 'lint@team': true, 'e2e-progress@ethlete': true });
+  });
+
+  it('points the sdk profile at the source folder', () => {
+    const settings = settingsAfterPlan({ config: { targets: ['claude'], profile: 'sdk', mods: ['e2e-progress'] } });
+
+    expect(settings.extraKnownMarketplaces.ethlete.source.path).toBe('./libs/agent-rules/content/mods');
+  });
+
+  it('drops its own entries and keeps the rest when no mod is configured', () => {
+    const settings = settingsAfterPlan({
+      config: { targets: ['claude'] },
+      settings: {
+        extraKnownMarketplaces: { ethlete: { source: { source: 'directory', path: './x' } } },
+        enabledPlugins: { 'e2e-progress@ethlete': true, 'lint@team': true },
+      },
+    });
+
+    expect(settings.extraKnownMarketplaces).toBeUndefined();
+    expect(settings.enabledPlugins).toEqual({ 'lint@team': true });
+  });
+
+  it('ships every known mod in the marketplace', () => {
+    const marketplace = JSON.parse(
+      readFileSync(join(resolveContentRoot(), 'mods', '.claude-plugin', 'marketplace.json'), 'utf8'),
+    );
+
+    expect(marketplace.name).toBe(MOD_MARKETPLACE);
+    expect(marketplace.plugins.map((plugin: { name: string }) => plugin.name)).toEqual(KNOWN_MODS);
   });
 });
 

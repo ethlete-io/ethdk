@@ -133,6 +133,7 @@ The command is idempotent - every step detects the migrated state and skips itse
 | `jira`                    | `{}`         | `typeByIssueType` maps a Jira issue type to a branch type for `git-flow start`; anything unlisted becomes `feat`.                                                                                                                                                                                                                                                                                                                                                                |
 | `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `mods`                    | `[]`         | Opt-in Claude Code mods that the package ships, see below.                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 If your repo runs Prettier over everything, exclude the generated paths - otherwise
 Prettier rewrites them and `check` reports drift on every run:
@@ -240,6 +241,30 @@ the rest of the hook. `pre-push` checks the current branch before a push;
 Removing a name takes only the generated block back out. Without a `.husky/` directory,
 `sync` warns and writes nothing. Set `ETHLETE_GIT_FLOW_SKIP=1` to silence both hooks on
 one machine.
+
+## Claude Code mods
+
+The package ships a Claude Code plugin marketplace, `ethlete`, in `content/mods/`. A mod runs code
+in every Claude Code session of the repo, so it is opt-in:
+
+```json
+{
+  "mods": ["e2e-progress"]
+}
+```
+
+`sync` writes the marketplace into `extraKnownMarketplaces` of `.claude/settings.json`, with the
+path `./node_modules/@ethlete/agent-rules/content/mods`, and turns each mod on in `enabledPlugins`.
+Claude Code registers the marketplace at the first interactive start after a developer trusts the
+folder. No `/plugin` step is necessary. Removing a name takes its entry back out. The path needs a
+real `node_modules` folder, so Yarn Plug'n'Play does not work.
+
+The version of each mod is the package version. An update of the package therefore also updates
+the mod.
+
+| Mod            | What it does                                                                                                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e2e-progress` | Shows the progress of a Playwright run log under `.claude/handoffs` or `.agents/handoffs` in the status line, and in a pane with `/e2e`. If the log names a failures file of the [`@ethlete/cli` failure reporter](../cli/e2e), the mod reads the failures from it. |
 
 ## Per-machine local config
 

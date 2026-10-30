@@ -4,6 +4,9 @@ import baseConfig from '../../eslint.config.mjs';
 export default [
   ...baseConfig,
 
+  // A Claude Code mod follows the mod API of Claude Code, and `.claude-plugin/types` is generated.
+  { ignores: ['content/mods/**'] },
+
   {
     files: ['**/*.json'],
     rules: {

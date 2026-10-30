@@ -85,5 +85,16 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "ethlete": {
+      "source": {
+        "source": "directory",
+        "path": "./libs/agent-rules/content/mods"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "e2e-progress@ethlete": true
   }
 }

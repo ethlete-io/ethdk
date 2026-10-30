@@ -4,7 +4,7 @@ Source: the fifagg session `fifagg-frontend-d4`, `/home/tom/dev/fifagg/fifagg-fr
 `chore/post-angular-22-cleanup`, commit `4114f85b9e`. The files there are `apps/e2e/tools/failure-reporter.ts`
 and `apps/e2e/tools/run-slices.mjs`.
 
-Status on 2026-10-30: slices 1 (`9b7617fc5`), 3 (`1ad54cb6c`) and 4 are done. Slice 4: the mod (0.1.2, not a git repo) reads the file named in the `[failure-reporter] Writing failures to` log line, and falls back to the log parser. It needs a `/plugin` reinstall. The slice runner
+Status on 2026-10-30: slices 1 (`9b7617fc5`), 3 (`1ad54cb6c`), 4 and 5 are done. Slice 4: the mod (0.1.2, not a git repo) reads the file named in the `[failure-reporter] Writing failures to` log line, and falls back to the log parser. It needs a `/plugin` reinstall. The slice runner
 did not finish a live run. Slice 2 waits for a confirmation from `fifagg-frontend-d4`.
 
 Done already: the Angular 22 `?.` note in the `sdk-update` skill (`9f86816bf`).
@@ -87,6 +87,12 @@ of the mod, and a reinstall with `/plugin` was necessary. This slice is outside 
 `tom-mods` source repository.
 
 ## Slice 5: ship the mod in `@ethlete/agent-rules`
+
+Done on 2026-10-30. The mod is in `libs/agent-rules/content/mods/`, marketplace `ethlete`. The config
+key `mods` turns it on. `yarn versions:sync` writes the package version into `plugin.json`. This repo
+has `"mods": ["e2e-progress"]`. The old `tom-mods` install still works through the symlink
+`/home/tom/dev/mods/e2e-mkt`, which now points at `content/mods`. Remove that install with `/plugin`
+to avoid two copies of the mod.
 
 The mod is in `tools/claude-mods/` now (`d0ee7819b`). `/home/tom/dev/mods/e2e-mkt` is a symlink to it,
 so the installed copy still works. Consumers have no source, so the package must carry it:

@@ -14,6 +14,7 @@ import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
 import { emitAgentsSkills } from './targets/agents-skills';
 import { CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
+import { assertKnownMods } from './targets/claude-mods';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
 import { CODEX_HOOKS_FILE, emitCodexHooks } from './targets/codex-hooks';
@@ -277,6 +278,7 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
 
   assertKnownHooks(config.hooks);
   assertKnownGitHooks(config.gitHooks);
+  assertKnownMods(config.mods);
 
   const items = loadContent();
   const { kept, skipped } = filterContent(items, config);
@@ -316,6 +318,8 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
       context,
       claudeTarget: config.targets.includes('claude'),
       existingSettings: readExisting(config.root, CLAUDE_SETTINGS_FILE),
+      mods: config.mods,
+      sdkProfile: config.scopes.includes('sdk'),
     }),
     ...emitCodexHooks({
       context,

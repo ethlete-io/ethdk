@@ -1,6 +1,6 @@
 {
-  "name": "tom-mods",
-  "owner": { "name": "Tom" },
+  "name": "ethlete",
+  "owner": { "name": "ethlete" },
   "plugins": [
     {
       "name": "e2e-progress",

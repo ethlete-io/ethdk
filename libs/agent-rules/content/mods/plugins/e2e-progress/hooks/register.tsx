@@ -4,7 +4,7 @@ import type { EngineInterface, Register, Timer } from 'claude-code';
 import type { Progress } from '../types';
 
 const PANE = 'e2e-progress';
-const HANDOFFS = '.claude/handoffs';
+const HANDOFFS = ['.claude/handoffs', '.agents/handoffs'];
 const WORKTREES = '.claude/worktrees';
 const TICK_MS = 5000;
 const STALE_MS = 15_000;
@@ -69,7 +69,7 @@ async function sourceOf($: EngineInterface, path: string) {
 }
 
 async function rootsFor($: EngineInterface, logPath: string) {
-  const at = logPath.indexOf(HANDOFFS);
+  const at = Math.max(...HANDOFFS.map((dir) => logPath.indexOf(dir)));
   const own = at > 0 ? logPath.slice(0, at) : '';
   const worktrees = await $.fs.list(WORKTREES).catch(() => []);
   const all = [own, '', ...worktrees.filter((d) => d.kind === 'dir').map((d) => `${WORKTREES}/${d.name}/`)];
@@ -226,10 +226,8 @@ async function handoffDirs($: EngineInterface) {
   const perBase = await Promise.all(
     (await baseDirs($)).map(async (base) => {
       const worktrees = await $.fs.list(`${base}/${WORKTREES}`).catch(() => []);
-      return [
-        `${base}/${HANDOFFS}`,
-        ...worktrees.filter((d) => d.kind === 'dir').map((d) => `${base}/${WORKTREES}/${d.name}/${HANDOFFS}`),
-      ];
+      const roots = [base, ...worktrees.filter((d) => d.kind === 'dir').map((d) => `${base}/${WORKTREES}/${d.name}`)];
+      return roots.flatMap((root) => HANDOFFS.map((dir) => `${root}/${dir}`));
     }),
   );
   return perBase.flat();
@@ -385,7 +383,7 @@ export const register: Register = (on) => {
       await update($, pinnedPath, () => null);
       start($);
       await run($);
-      return { text: `Pin removed. Watching the newest logs under ${HANDOFFS}.` };
+      return { text: `Pin removed. Watching the newest logs under ${HANDOFFS.join(' and ')}.` };
     }
     if (arg !== '') await update($, pinnedPath, () => arg);
     start($);
@@ -399,7 +397,7 @@ export const register: Register = (on) => {
     if (shown.length === 0)
       return (
         <Text dimColor>
-          No active run log under {HANDOFFS} or {WORKTREES}/*/{HANDOFFS}.
+          No active run log under {HANDOFFS.join(' or ')}, also in {WORKTREES}/*.
         </Text>
       );
 

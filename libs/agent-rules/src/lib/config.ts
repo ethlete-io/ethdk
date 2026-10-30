@@ -40,6 +40,8 @@ export type SyncConfig = {
   hooks: string[];
   /** Opt-in git hooks, appended to the repo's own husky hooks. Same reason they never default. */
   gitHooks: string[];
+  /** Opt-in Claude Code mods from the `ethlete` marketplace the package ships. */
+  mods: string[];
   /** The branch grammar, resolved against its defaults — see `@ethlete/agent-rules/git-flow`. */
   gitFlow: GitFlowConfig;
   jira: JiraSettings;
@@ -54,6 +56,7 @@ type RawConfig = {
   claudeMdImportsAgentsMd?: boolean;
   hooks?: string[];
   gitHooks?: string[];
+  mods?: string[];
   gitFlow?: RawGitFlowConfig;
   jira?: JiraSettings;
 };
@@ -81,6 +84,7 @@ const RAW_CONFIG_KEYS: (keyof RawConfig)[] = [
   'claudeMdImportsAgentsMd',
   'hooks',
   'gitHooks',
+  'mods',
   'gitFlow',
   'jira',
 ];
@@ -94,7 +98,7 @@ const parseJson = (text: string): { value: unknown } | { error: string } => {
 };
 
 const assertConfigShapes = (value: Record<string, unknown>) => {
-  const arrays = ['exclude', 'hooks', 'gitHooks'];
+  const arrays = ['exclude', 'hooks', 'gitHooks', 'mods'];
   const objects = ['vars', 'gitFlow', 'jira'];
 
   for (const key of arrays) {
@@ -288,6 +292,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
     hooks: raw.hooks ?? [],
     gitHooks: raw.gitHooks ?? [],
+    mods: raw.mods ?? [],
     gitFlow,
     jira: raw.jira ?? {},
     configWarnings: unknownConfigKeyWarnings(raw),
