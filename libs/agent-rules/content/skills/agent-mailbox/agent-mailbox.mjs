@@ -30,12 +30,14 @@ const last = takeFlag(args, '--last', true);
 const ttl = takeFlag(args, '--ttl', true);
 const all = takeFlag(args, '--all', false);
 const force = takeFlag(args, '--force', false);
+const waitSeconds = takeFlag(args, '--wait', true);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
 
 Send:    node ${script} send <name> '<message>'      (no message: read it from stdin)
-Inbox:   node ${script} inbox <name>                  (only the messages you have not seen yet)
+Inbox:   node ${script} inbox <name> [--wait <seconds>]   (only the messages you have not seen yet;
+                                                           --wait blocks until one arrives or the time ends)
 Read:    node ${script} read [--last <n>] [--all]     (default: the last ${DEFAULT_LAST} messages)
 Watch:   node ${script} watch <name>
 Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
@@ -82,15 +84,28 @@ const entries = () => (existsSync(mailbox) ? readFileSync(mailbox, 'utf8').split
 
 const show = (entry) => process.stdout.write(`[${entry.timestamp}] ${entry.sender}: ${entry.message}\n`);
 
-const showInbox = (reader) => {
-  const cursor = join(dirname(mailbox), `mailbox.cursor.${reader}`);
+const inboxCursor = (reader) => join(dirname(mailbox), `mailbox.cursor.${reader}`);
+
+const unreadFor = (reader) => {
+  const cursor = inboxCursor(reader);
   const history = entries();
   const seen = existsSync(cursor) ? Number(readFileSync(cursor, 'utf8')) : history.length - DEFAULT_LAST;
-  const unread = history.slice(Math.max(0, seen)).filter((entry) => entry.sender !== reader);
+  return { count: history.length, unread: history.slice(Math.max(0, seen)).filter((entry) => entry.sender !== reader) };
+};
+
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+const showInbox = (reader, waitFor = 0) => {
+  const deadline = Date.now() + waitFor * 1000;
+  let { count, unread } = unreadFor(reader);
+  while (!unread.length && Date.now() < deadline) {
+    sleep(1000);
+    ({ count, unread } = unreadFor(reader));
+  }
   if (!unread.length) process.stdout.write('No new messages.\n');
   unread.forEach(show);
   prepare();
-  writeFileSync(cursor, String(history.length));
+  writeFileSync(inboxCursor(reader), String(count));
 };
 
 const toRepoPath = (path) => relative(root, resolve(path)).split('\\').join('/');
@@ -124,7 +139,7 @@ if (command === 'send' && sender) {
     process.stdout.write(`Sent as ${sender}.\n`);
   }
 } else if (command === 'inbox' && sender) {
-  showInbox(sender);
+  showInbox(sender, Number(waitSeconds ?? 0));
 } else if (command === 'read') {
   const history = entries();
   (all ? history : history.slice(-Number(last ?? DEFAULT_LAST))).forEach(show);

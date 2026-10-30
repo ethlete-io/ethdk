@@ -17,7 +17,7 @@ node <skill-dir>/agent-mailbox.mjs claim <name> <path...> [--ttl <hours>] [--for
 node <skill-dir>/agent-mailbox.mjs release <name> [path...]
 node <skill-dir>/agent-mailbox.mjs claims
 node <skill-dir>/agent-mailbox.mjs send <name> '<message>'
-node <skill-dir>/agent-mailbox.mjs inbox <name>
+node <skill-dir>/agent-mailbox.mjs inbox <name> [--wait <seconds>]
 node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
 ```
@@ -36,9 +36,12 @@ The file is `.ethlete/mailbox.jsonl` in the git root. The first write also creat
 2. Before you edit a file, run `claim` with the exact paths. A directory path claims everything
    below it. `claim` also prints the messages you have not seen yet.
 3. If `claim` reports a conflict, do not edit. Run `send` to ask the holder for a handoff, then wait.
-4. After each larger step, and before you ask the user a question, run `inbox` again. Most agents
-   cannot wake on new output, so you must pull messages yourself.
-5. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
+4. After each larger step, run `inbox` again. Most agents cannot wake on new output, so you must
+   pull messages yourself.
+5. If you wait for an answer from another agent, do not stop. Run `inbox <name> --wait 120`: it
+   blocks until a message arrives or 120 seconds pass. If it prints "No new messages.", run it
+   again. Stop the loop only when the task is done or the user tells you to.
+6. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
 
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the
 holder agreed. Silence is not approval. Acknowledge each handoff in words.

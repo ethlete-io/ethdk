@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -101,5 +101,26 @@ describe('agent-mailbox', () => {
     run(['send', 'codex', 'please wait']);
 
     expect(run(['claim', 'gemini', 'src/a']).stdout).toContain('codex: please wait');
+  });
+
+  it('returns from inbox --wait when a message arrives', async () => {
+    const waiting = new Promise<string>((resolve) => {
+      const child = spawn('node', [SCRIPT, 'inbox', 'gemini', '--wait', '20'], {
+        cwd: dir,
+        env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      });
+      let out = '';
+      child.stdout.on('data', (chunk) => (out += chunk));
+      child.on('close', () => resolve(out));
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    run(['send', 'codex', 'ping']);
+
+    expect(await waiting).toContain('codex: ping');
+  });
+
+  it('gives up inbox --wait when no message arrives', () => {
+    expect(run(['inbox', 'gemini', '--wait', '1']).stdout).toBe('No new messages.\n');
   });
 });
