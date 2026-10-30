@@ -993,7 +993,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   Effort M. The measure did not prove that this alone explains the 300 ms steps; measure the steps on a real
   sketch before and after.
 
-### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - open
+### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - built
 
 - **Measured:** 2.05-2.1 s per call (5.1 s first), about 2.5 s server CPU each (0.9 s Node, 1.6 s Chromium). The
   system view is usable at 283 ms but the sketch list and tree badges arrive at 2.2 s. It reloads on every `tick`
@@ -1003,6 +1003,12 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   the shot cache (`shot.ts:308`).
 - **Fix option:** cache the unchanged-states result under the hash key it already computes; clear it on the
   `parts` event. Later: serve `unchanged` from a separate lazy request. Effort S-M.
+- **As built (4bb09890e):** `unchangedStatesOf` takes `keepPictures`; the studio API sets it, the merge check
+  (`no-visible-change.ts`) does not. A result whose draw failed is never kept. `serve.ts` `redraw` calls
+  `forgetUnchangedStates()` on every parts change. Specs bite (two breaks each fail a spec).
+- **Verified:** scratch copy of `studio-lab` (3 open sketches), own server: five calls 5.08, 0.135, 0.127, 0.129,
+  0.150 s; after an edit to `components/button/button.ts`: 2.56, 0.125, 0.118 s. Not verified: on :4221, or in
+  the Studio app.
 
 ### 4.77 Each server shot opens a new browser context and loads all modules - open
 
