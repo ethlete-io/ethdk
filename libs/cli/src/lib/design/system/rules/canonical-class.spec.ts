@@ -61,6 +61,30 @@ describe('canonicalClassesOf', () => {
     ]);
   });
 
+  it("flags a class in a file of the product's or the sketch's shared folder that a part imports", () => {
+    const target = acme('');
+    const sketchShared = join(target, DESIGN_DIR, 'acme/sketches/pages-home/shared');
+
+    write(
+      target,
+      'acme/pages/home/home.ts',
+      `import { row } from '@shared/row';\nimport { cell } from '@shared/cell';\n${part('<div></div>')}`,
+    );
+    write(target, 'acme/shared/row.ts', `export const row = 'w-[420px]';\n`);
+    write(target, 'acme/shared/loose.ts', `export const loose = 'w-[420px]';\n`);
+    write(target, 'acme/sketches/pages-home/shared/cell.ts', `export const cell = 'mt-[16px]';\n`);
+
+    expect(
+      canonicalClassesOf({
+        ...resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
+        sharedDir: sketchShared,
+      }).map((problem) => `${problem.file.split('/').pop()}: ${problem.message}`),
+    ).toEqual([
+      'row.ts: The class `w-[420px]` can be written as `w-105`',
+      'cell.ts: The class `mt-[16px]` can be written as `mt-4`',
+    ]);
+  });
+
   it('runs as part of design check', () => {
     const target = acme('');
 

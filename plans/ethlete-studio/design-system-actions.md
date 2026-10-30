@@ -590,6 +590,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 --product studio` now reports only the six `CONTRAST` findings in `foundations/colors`. CLI design specs: 728
   pass. Not verified: real-pointer hover and press, the running Studio app. Tool note: `sketch check` does not run
   `CANONICAL-CLASS`; only `ready` caught a non-canonical class.
+- **Tool note checked (2026-10-30):** `sketch check` and `ready` run the same rules. Repro in a scratch copy: a
+  class in the sketch's `shared/` folder passed both, and `design check` caught it only after the merge. Fix
+  (`cli` commit after this note): both rules now read the files of the product's, the sketch's and the variant's
+  `shared/` folders that a checked part imports. `sketch check` on the repro then failed with `CANONICAL-CLASS`.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 

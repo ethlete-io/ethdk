@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import postcss from 'postcss';
 import { ProductSource } from '../base';
+import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { Problem } from '../problem';
 import { ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { textsOf } from '../ts-source';
@@ -61,20 +62,18 @@ const remOf = (stylesheets: string[]) => {
 
 const candidatesIn = (texts: string[]) => texts.flatMap((text) => text.split(/[\s"'`<>]+/u).filter(Boolean));
 
-const sourcesOf = (part: ResolvedPart) => {
-  const dir = dirname(part.file);
-  const others = existsSync(dir)
+const tsSourcesIn = (dir: string) =>
+  existsSync(dir)
     ? (readdirSync(dir, { recursive: true }) as string[])
         .filter((path) => path.endsWith('.ts') && !path.endsWith('.d.ts') && !path.endsWith('.spec.ts'))
         .map((path) => resolve(dir, path))
-        .filter((file) => file !== part.file)
+        .map((file) => ({ file, source: readFileSync(file, 'utf8') }))
     : [];
 
-  return [
-    { file: part.file, source: part.source },
-    ...others.map((file) => ({ file, source: readFileSync(file, 'utf8') })),
-  ];
-};
+const sourcesOf = (part: ResolvedPart) => [
+  { file: part.file, source: part.source },
+  ...tsSourcesIn(dirname(part.file)).filter(({ file }) => file !== part.file),
+];
 
 const canonicalCache = new Map<string, Map<string, string>>();
 
@@ -106,20 +105,22 @@ const canonicalFormsOf = (options: { target: string; css: string; rem: number; c
  * Tailwind IntelliSense reports it: `w-[420px]` that can be written as `w-2xl`. The root font size the
  * stylesheets set on `html` is the rem base.
  */
-export const canonicalClassesOf = (product: ResolvedProduct): Problem[] => {
+export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const stylesheets = stylesheetsOf(product);
 
   if (stylesheets.length === 0) return [];
 
   const target = resolve(dirname(product.configFile), '../..');
-  const files = [
-    ...new Map(
-      product.parts
-        .filter((part) => part.origin !== 'base')
-        .flatMap(sourcesOf)
-        .map((entry) => [entry.file, entry]),
-    ).values(),
-  ].sort((a, b) => a.file.localeCompare(b.file));
+  const below = product.parts.filter((part) => part.origin !== 'base').flatMap(sourcesOf);
+  const shared = ownSharedFilesOf(
+    product,
+    below.map(({ file }) => file),
+  )
+    .filter((file) => file.endsWith('.ts'))
+    .map((file) => ({ file, source: readFileSync(file, 'utf8') }));
+  const files = [...new Map([...below, ...shared].map((entry) => [entry.file, entry])).values()].sort((a, b) =>
+    a.file.localeCompare(b.file),
+  );
   const candidatesOf = new Map(files.map(({ file, source }) => [file, [...new Set(candidatesIn(textsOf(source)))]]));
   const css = stylesheets.map((file) => `@import ${JSON.stringify(file)};`).join('\n');
   let forms: Map<string, string>;

@@ -80,6 +80,27 @@ describe('utilityCssOf', () => {
     ]);
   });
 
+  it("flags declarations in a file of the product's or the sketch's shared folder that a part outside foundations imports", () => {
+    const target = acme();
+
+    write(target, 'acme/pages/home/home.ts', part("import '@shared/row.css';\nimport { styles } from '@shared/cell';"));
+    write(target, 'acme/foundations/palette/palette.ts', part("import { sheet } from '@shared/sheet';"));
+    write(target, 'acme/shared/row.css', '.acme-row { display: flex; }');
+    write(target, 'acme/shared/sheet.ts', "export const sheet = '.acme-sheet { display: flex; }';");
+    write(
+      target,
+      'acme/sketches/elements-hero/shared/cell.ts',
+      "export const styles = '.acme-cell { display: grid; }';",
+    );
+
+    expect(
+      utilityCssOf({
+        ...resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
+        sharedDir: join(target, DESIGN_DIR, 'acme/sketches/elements-hero/shared'),
+      }).map((problem) => `${problem.file.split('/').pop()}: ${problem.message.replace(/ outside .*/u, '')}`),
+    ).toEqual(['row.css: display: flex', 'cell.ts: display: grid']);
+  });
+
   it('flags a value of a token that a @theme block of the product stylesheets registers', () => {
     const target = acme();
 

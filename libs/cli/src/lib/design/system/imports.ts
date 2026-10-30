@@ -117,6 +117,49 @@ export const sharedDirsOf = (product: SharedDirs & SharedSource) => [
   ...productSharedDirsOf(product),
 ];
 
+const isBelow = (dir: string, file: string) => {
+  const path = relative(dir, file);
+
+  return path !== '' && !path.startsWith('..') && !isAbsolute(path);
+};
+
+/**
+ * The files in the product's own `shared/` folders, the variant's and the sketch's included but not its base's, that
+ * `files` import through `@shared/...` or a relative import, also through each other.
+ */
+export const ownSharedFilesOf = (product: SharedDirs & SharedSource, files: string[]) => {
+  const dirs = sharedDirsOf(product);
+  const own = [product.variantSharedDir, product.sharedDir, resolve(product.dir, SHARED_FOLDER)].filter(
+    (dir): dir is string => dir !== undefined,
+  );
+  const found = new Set<string>();
+  const queue = [...files];
+
+  for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
+    if (!file.endsWith('.ts') || !existsSync(file)) continue;
+
+    for (const specifier of importsOf(readFileSync(file, 'utf8'))) {
+      const imported = classifyImport(specifier);
+      const path = specifier.split('?')[0] ?? specifier;
+      const shared =
+        imported.kind === 'shared'
+          ? sharedFileOf({ dirs, path: imported.path })
+          : imported.kind === 'relative'
+            ? STYLESHEET.test(path)
+              ? resolve(dirname(file), path)
+              : sourceFileOf(resolve(dirname(file), path))
+            : null;
+
+      if (!shared || found.has(shared) || !existsSync(shared) || !own.some((dir) => isBelow(dir, shared))) continue;
+
+      found.add(shared);
+      queue.push(shared);
+    }
+  }
+
+  return [...found].sort();
+};
+
 /** The file `@shared/<path>` resolves to, the variant's own copy first; `null` when no folder holds it. */
 export const sharedFileOf = (options: { dirs: string[]; path: string }) => {
   const path = options.path.split('?')[0] ?? options.path;

@@ -3,6 +3,7 @@ import { dirname, resolve } from 'path';
 import postcss from 'postcss';
 import { ProductSource } from '../base';
 import { cssBlocksOf, declarationValueOf } from '../css-source';
+import { ownSharedFilesOf, SharedDirs } from '../imports';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { textsOf } from '../ts-source';
@@ -292,14 +293,15 @@ const sourceFilesIn = (dir: string) =>
  * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there. A product
  * whose stylesheets import no `tailwindcss` has no utilities, so nothing is flagged.
  */
-export const utilityCssOf = (product: ResolvedProduct): Problem[] => {
+export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const utilities = utilitiesOf(product);
 
   if (!utilities.tailwind) return [];
 
-  const files = new Set(
-    product.parts.filter((part) => part.layer !== 'foundations').flatMap((part) => sourceFilesIn(dirname(part.file))),
-  );
+  const below = product.parts
+    .filter((part) => part.layer !== 'foundations')
+    .flatMap((part) => sourceFilesIn(dirname(part.file)));
+  const files = new Set([...below, ...ownSharedFilesOf(product, below)]);
 
   return [...files].sort().flatMap((file) => {
     const source = readFileSync(file, 'utf8');
