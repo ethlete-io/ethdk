@@ -502,6 +502,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Next:** the per-page inventory contact sheet with approval in Studio; sketches for `components/button`
   and `elements/shell-main` that declare their controls with these kinds; then `controls` on the SDK
   base parts (select options) for inherited coverage, exceptions, and the `handoff` status with CI.
+- **In progress (2026-10-30):** a sketch of `components/button` that declares its `button` control (subagent; stops
+  at ready for Tom). The inventory contact sheet UI went to the grill session as Q25.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
