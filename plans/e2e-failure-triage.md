@@ -49,6 +49,16 @@ At the end, it prints a summary table: slice, passed, failed, time.
 - A slice must be small, or the runner passes `--max-failures`. The fifagg `shared` folder holds 992
   tests, which is too big for one slice. Add a `--max-failures <n>` default per slice.
 - Exit code: 1 if one slice failed.
+- From the fifagg retry run (2026-10-30): the Contentful mock, a Playwright `webServer`, stopped in a
+  25-minute run. 10 of 14 failures were `ERR_CONNECTION_REFUSED` on the mock port. Consider a health
+  check of each `webServer` URL between slices, and stop or restart if it fails.
+- The same run: a health-fixture failure has the first error line "Console errors or 5xx responses
+  during the test", with no URL. Triage cannot group it. The reporter or the `e2e-triage` skill must
+  get the first console error or URL line. The first 6 lines are the message, the `toEqual` header and
+  the `- Expected` and `+ Received` counts. The URL comes in the `+ ` lines after them. Follow-up for
+  the slice 1 reporter: add a `detail` field with the first error line past line 6 that holds `http`
+  or starts with `+ `. Do not match on fixture messages. Slice 3 must also mark "connection refused on a mock" as
+  an infrastructure group, not as a test verdict.
 - Changeset: the same `@ethlete/cli` minor.
 
 ## Slice 3: `e2e-triage` skill
