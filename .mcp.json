@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ethlete-design": {
+      "command": "npx",
+      "args": [
+        "et",
+        "design",
+        "mcp"
+      ]
+    }
+  }
+}

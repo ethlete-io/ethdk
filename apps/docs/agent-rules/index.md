@@ -56,6 +56,11 @@ them survives. Every generated file carries a `DO NOT EDIT` banner, and files th
 disappear from the package are pruned on the next `sync`; nothing outside an `ethlete`
 directory or `ethlete-` prefix is ever touched.
 
+When the repo has `@ethlete/cli` installed, `sync` also registers its design MCP server
+(`npx et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
+`.codex/config.toml` for Codex. Only that entry is written; other servers and tables
+stay as they are.
+
 Content that declares `requires` is only emitted when those packages are installed, so
 a repo without `@ethlete/query` never sees the query guide.
 

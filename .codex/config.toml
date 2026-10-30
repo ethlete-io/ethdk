@@ -1,0 +1,3 @@
+[mcp_servers.ethlete-design]
+command = "npx"
+args = ["et", "design", "mcp"]

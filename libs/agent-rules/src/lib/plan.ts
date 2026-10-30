@@ -9,7 +9,7 @@ import {
   TOPOLOGY_CONFIG_FILE_NAME,
 } from './config';
 import { packageRunnerVar } from './render';
-import { filterContent, SkippedItem } from './filter';
+import { filterContent, isPackageInstalled, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
 import { emitAgentsSkills } from './targets/agents-skills';
@@ -22,6 +22,7 @@ import { assertKnownGitHooks, emitGitHooks, HUSKY_DIR, huskyHookPath, KNOWN_GIT_
 import { assertKnownHooks, KNOWN_HOOKS } from './targets/hooks-shared';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
 import { emitCursor } from './targets/cursor';
+import { CLAUDE_MCP_FILE, CODEX_CONFIG_FILE, emitClaudeMcp, emitCodexMcp } from './targets/mcp';
 import { EmitContext, EmittedFile } from './targets/shared';
 
 export type SyncPlan = {
@@ -311,6 +312,16 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
 
   if (config.targets.includes('copilot')) {
     files.push(...emitCopilot({ context, existing: readExisting(config.root, COPILOT_FILE) }));
+  }
+
+  if (isPackageInstalled(config.root, '@ethlete/cli')) {
+    if (config.targets.includes('claude')) {
+      files.push(emitClaudeMcp({ existing: readExisting(config.root, CLAUDE_MCP_FILE) }));
+    }
+
+    if (config.targets.includes('codex')) {
+      files.push(emitCodexMcp({ existing: readExisting(config.root, CODEX_CONFIG_FILE) }));
+    }
   }
 
   files.push(

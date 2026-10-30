@@ -49,6 +49,11 @@ Marker-block files (`AGENTS.md`, `.github/copilot-instructions.md`) are only rew
 between `<!-- ethlete:agent-rules:start -->` and `:end` - everything you wrote around
 them survives.
 
+When the repo has `@ethlete/cli` installed, `sync` also registers its design MCP server
+(`npx et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
+`.codex/config.toml` for Codex. Only that entry is written; other servers and tables
+stay as they are.
+
 ## Migrating a repo to the AGENTS.md layout
 
 `AGENTS.md` is the cross-tool standard, and Claude Code officially supports reading it
