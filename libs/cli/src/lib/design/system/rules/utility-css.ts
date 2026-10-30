@@ -232,8 +232,28 @@ const hasUtility = (utilities: Utilities, { property, value }: Declaration) => {
 
 const withoutKeyframes = (css: string) => css.replace(/@keyframes[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/gu, '');
 
+const lastCompoundOf = (selector: string) =>
+  selector
+    .trim()
+    .split(/[\s>+~]+/u)
+    .pop() ?? '';
+
+const withoutSdkElementRules = (css: string) => {
+  try {
+    const root = postcss.parse(css);
+
+    root.walkRules((rule) => {
+      if (rule.selectors.every((selector) => /\.et-[\w-]/u.test(lastCompoundOf(selector)))) rule.remove();
+    });
+
+    return root.toString();
+  } catch {
+    return css;
+  }
+};
+
 const expressibleDeclarationsOf = (utilities: Utilities, css: string) =>
-  cssBlocksOf(withoutKeyframes(css)).declarations.flatMap((declaration) => {
+  cssBlocksOf(withoutSdkElementRules(withoutKeyframes(css))).declarations.flatMap((declaration) => {
     const property = declaration.slice(0, declaration.indexOf(':')).trim().toLowerCase();
     const value = (declarationValueOf(declaration) ?? '')
       .replace(/!important/u, '')
@@ -261,7 +281,8 @@ const sourceFilesIn = (dir: string) =>
 /**
  * A declaration that a Tailwind utility of the product draws, in a CSS file below the folder of a part outside
  * foundations or in the CSS of a TS file there: a core layout keyword such as `display: flex`, or a value of a
- * spacing, colour, type, radius or shadow token that a `@theme` block of the product's stylesheets registers.
+ * spacing, colour, type, radius or shadow token that a `@theme` block of the product's stylesheets registers. A rule
+ * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there.
  */
 export const utilityCssOf = (product: ResolvedProduct): Problem[] => {
   const utilities = utilitiesOf(product);

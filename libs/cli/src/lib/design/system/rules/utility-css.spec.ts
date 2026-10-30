@@ -121,4 +121,16 @@ describe('utilityCssOf', () => {
 
     expect(messagesOf(target)).toEqual([]);
   });
+
+  it('leaves rules alone whose selectors all end on an SDK element', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.css',
+      '.acme-hero .et-button, .acme-hero:hover > .et-select-arrow { display: flex; }\n.acme-hero .et-button, .acme-hero span { position: relative; }\n.et-button .acme-label { display: grid; }',
+    );
+
+    expect(messagesOf(target)).toEqual(['hero.css: position: relative', 'hero.css: display: grid']);
+  });
 });
