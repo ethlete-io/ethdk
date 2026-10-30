@@ -795,6 +795,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Open for Tom:** remove the override through a sketch (the strict check shows the rounding change); fix
   `select` with a Studio `components/select` that uses `brand` or no `panelColor`, or drop the theme name from
   the SDK base part.
+- **Decision (Tom, 2026-10-30):** a sketch removes the `sketch-data.css` override; Tom accepts the rounding
+  change. Drop `panelColor` from the SDK base part `.ethlete/design/sdk/components/select` now, so the panel
+  uses the default theme in every product; the rest of that part still waits for the SDK components plan.
+  Merges: Tom wrote "merges gehen klar wenns visuell kleinvieh ist" - allowed when the visible change is minor.
 
 ### 4.72 A `foundations/colors` variant does not reach the SDK components in its frame - done
 
