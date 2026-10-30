@@ -191,7 +191,7 @@ installed the skill under: `/ethlete-handoff resume` under Claude Code, `ethlete
 under Codex. A repo that ships its own copy can name it `handoff`, so check the skill directory
 name. A wrong name runs no skill, and the fresh session starts without the file.
 
-`<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
+`<name>` is the sender name of your own session. Read it first with `tmux display-message -p -t "$TMUX_PANE" '#{session_name}'` and drop the `@<repo>` part: `claude-2@ethlete-sdk` gives `claude-2`. Never take the name from an example: a second Claude session is `claude-2`, not `claude`. The command refuses a session you do not run in. It returns at once. It
 types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
 end your turn after you run it and do not start another tool call. The `/clear` wipes the pane, so
 the user never sees text you write after the command. Before you run it, put the reason as the

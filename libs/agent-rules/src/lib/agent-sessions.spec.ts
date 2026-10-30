@@ -11,13 +11,16 @@ const hasTmux = spawnSync('tmux', ['-V']).status === 0;
 describe('agent-sessions', () => {
   let dir: string;
 
-  const run = (args: string[], input?: string) =>
+  const run = (args: string[], input?: string, env: NodeJS.ProcessEnv = {}) =>
     spawnSync('node', [SCRIPT, ...args], {
       cwd: dir,
       input,
       encoding: 'utf8',
-      env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+      env: { ...process.env, TMUX_PANE: '', AGENT_MAILBOX: join(dir, 'mailbox.jsonl'), ...env },
     });
+
+  const paneOf = (session: string) =>
+    spawnSync('tmux', ['list-panes', '-t', `=${session}:`, '-F', '#{pane_id}'], { encoding: 'utf8' }).stdout.trim();
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'agent-mailbox-'));
@@ -248,7 +251,9 @@ describe('agent-sessions', () => {
       spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
 
       try {
-        expect(run(['restart', agent, '--after', '1', 'resume', 'slug']).stdout).toContain('Restarting');
+        expect(
+          run(['restart', agent, '--after', '1', 'resume', 'slug'], undefined, { TMUX_PANE: paneOf(scoped) }).stdout,
+        ).toContain('Restarting');
         await new Promise((resolve) => setTimeout(resolve, 6000));
 
         expect(readFileSync(log, 'utf8')).toMatch(/\/clear\s+resume slug/);
@@ -258,6 +263,26 @@ describe('agent-sessions', () => {
     },
     10000,
   );
+
+  it.skipIf(!hasTmux)('refuses to restart a session the caller does not run in', () => {
+    const target = `claude-target-${process.pid}`;
+    const caller = `claude-caller-${process.pid}`;
+    const scopedTarget = `${target}@${basename(dir)}`;
+    const scopedCaller = `${caller}@${basename(dir)}`;
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedTarget, 'cat']);
+    spawnSync('tmux', ['new-session', '-d', '-s', scopedCaller, 'cat']);
+
+    try {
+      const result = run(['restart', target, '--after', '1', 'resume'], undefined, { TMUX_PANE: paneOf(scopedCaller) });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`You run in ${scopedCaller}, so pass ${caller}`);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedTarget}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scopedCaller}`]);
+    }
+  });
 
   it('fails restart when no tmux session exists for the agent', () => {
     const result = run(['restart', `nobody-${process.pid}`, 'resume']);

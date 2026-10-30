@@ -297,8 +297,16 @@ if (command === 'send' && sender) {
   }
 } else if (command === 'restart' && sender && words.length) {
   const session = [sessionFor(sender), sender].find(sessionExists);
+  const own = process.env.TMUX_PANE
+    ? tmux('display-message', '-p', '-t', process.env.TMUX_PANE, '#{session_name}').stdout.trim()
+    : null;
   if (!session) {
     process.stderr.write(`No tmux session for ${sender}.\n`);
+    process.exitCode = 1;
+  } else if (own && own !== session) {
+    process.stderr.write(
+      `Refused: ${session} is not your session. You run in ${own}, so pass ${own.replace(`@${repoSlug}`, '')}.\n`,
+    );
     process.exitCode = 1;
   } else if (now) {
     const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);

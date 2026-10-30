@@ -187,7 +187,7 @@ If the user wrote text after the slug of the save command, append it to the prom
 Escape each `'` in it as `'\''`. The restart drops anything you leave out, and the fresh session has
 no other way to see it.
 
-`<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
+`<name>` is the sender name of your own session. Read it first with `tmux display-message -p -t "$TMUX_PANE" '#{session_name}'` and drop the `@<repo>` part: `claude-2@ethlete-sdk` gives `claude-2`. Never take the name from an example: a second Claude session is `claude-2`, not `claude`. The command refuses a session you do not run in. It returns at once. It
 types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
 end your turn after you run it and do not start another tool call. The `/clear` wipes the pane, so
 the user never sees text you write after the command. Before you run it, put the reason as the
