@@ -102,6 +102,8 @@ Decisions (Tom, 2026-10-30):
 - **`foundations/colors` disabled samples:** mark them `aria-disabled="true"`, so the rule exempts them. No
   part exception. The same sketch adds the `pairs` list and the ratio table below.
 - **`components/form-field` label:** the rule also exempts the label of a disabled control.
+  As built (2026-10-30): a `label[for]`, a wrapping `<label>` or an `aria-labelledby` target of a `:disabled` or
+  `aria-disabled="true"` control is exempt. Verified: a spec that fails without it; the finding is gone from `design check`.
 - **`pages/inbox` resolved rows:** `.ib-when` and `.ib-where` use `--text-muted` with no reduced opacity; the
   resolved row looks paler through colour, not transparency.
 - **`components/comment-pin` initials:** use `--on-accent`.

@@ -94,7 +94,7 @@ diagram, passes with a `data-et-drawing` attribute.
 
 `et design check` fails with `CONTRAST` when a text in a drawn state is below WCAG 2 AA against its
 drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for large text (24px, or
-18.66px bold). Text inside a disabled control is exempt. A part lists token pairs to compute in
+18.66px bold). Text inside a disabled control, or in the label of one, is exempt: a `<label for>` or wrapping label, or an `aria-labelledby` target. A part lists token pairs to compute in
 `contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
 `contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
 

@@ -105,11 +105,24 @@ export const CONTRAST_STATEMENTS = `
       } catch {
         found.push({ rule: 'CONTRAST', path: '-', detail: 'contrast exception selector "' + selector + '" is not a valid selector' });
       }
+    const offControl = (control) => control !== null && (control.matches(':disabled') || control.closest('[aria-disabled="true"]') !== null);
+    const offLabels = new Set();
+    for (const label of document.querySelectorAll('label[for]'))
+      if (offControl(document.getElementById(label.htmlFor))) offLabels.add(label);
+    for (const label of document.querySelectorAll('label'))
+      if ([...label.querySelectorAll('*')].some(offControl)) offLabels.add(label);
+    for (const control of document.querySelectorAll('[aria-labelledby]'))
+      if (offControl(control))
+        for (const id of control.getAttribute('aria-labelledby').split(/\\s+/)) {
+          const label = document.getElementById(id);
+          if (label) offLabels.add(label);
+        }
+    const inOffLabel = (element) => [...offLabels].some((label) => label.contains(element));
     const texts = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let node = texts.nextNode(); node; node = texts.nextNode()) {
       const element = node.parentElement;
       if (!element || !node.textContent.trim() || element.closest('svg, style, script, template')) continue;
-      if (element.closest(':disabled, [aria-disabled="true"], [inert]') || exempt(element)) continue;
+      if (element.closest(':disabled, [aria-disabled="true"], [inert]') || inOffLabel(element) || exempt(element)) continue;
       const style = getComputedStyle(element);
       if (style.visibility !== 'visible') continue;
       const range = document.createRange();

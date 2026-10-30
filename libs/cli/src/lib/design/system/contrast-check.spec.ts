@@ -18,6 +18,12 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   disabled: {
     body: '<div><button disabled style="color: #ccc">Off</button><span aria-disabled="true" style="color: #ccc">Gone</span></div>',
   },
+  'disabled-labels': {
+    body: '<div><label for="a" style="color: #ccc">By for</label><input id="a" disabled><label style="color: #ccc">Wrapping <input disabled></label><span id="l" style="color: #ccc">By aria</span><input aria-labelledby="l" aria-disabled="true"></div>',
+  },
+  'enabled-label': {
+    body: '<div><label for="b" style="color: #ccc">Active</label><input id="b"></div>',
+  },
   excepted: {
     body: '<div><span class="mark" style="color: #ccc">Mark</span></div>',
     extra: "contrast: { exceptions: [{ selector: '.mark', reason: 'decorative' }] },",
@@ -85,6 +91,8 @@ describe('contrast check', () => {
     expect(found).toEqual([
       'components/composited default div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/composited other div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
+      'components/enabled-label default div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',
+      'components/enabled-label other div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',
       'components/helper default p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
       'components/helper other p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
       'components/large-low default p[data-et-part=components/large-low] - "Pale" 2.32:1, needs 3.00:1 (large text)',
