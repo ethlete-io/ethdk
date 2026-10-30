@@ -33,7 +33,24 @@ export type PictureOf = (options: {
   sketch: SketchVariant | null;
   interaction: string | null;
   params: URLSearchParams;
+  fresh?: boolean;
 }) => Promise<Picture>;
+
+/**
+ * Draws a state without and with `merged`. A pair that differs is drawn once more, bypassing any kept picture,
+ * and only that second pair counts, so one odd picture under load is not taken for a change.
+ */
+export const drawnPair = async (
+  draw: (sketch: SketchVariant | null, fresh: boolean) => Promise<Picture>,
+  merged: SketchVariant,
+) => {
+  const both = (fresh: boolean) => Promise.all([draw(null, fresh), draw(merged, fresh)]);
+  let [now, after] = await both(false);
+
+  if (!now.png.equals(after.png)) [now, after] = await both(true);
+
+  return { now, after, same: now.png.equals(after.png) };
+};
 
 export type PartModuleLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
@@ -82,7 +99,7 @@ export const compareMerge = async (options: {
 
     return Promise.all(
       read.states.map(async (state) => {
-        const draw = (drawn: SketchVariant | null) =>
+        const draw = (drawn: SketchVariant | null, fresh: boolean) =>
           pictureOf({
             product: product.name,
             part: key,
@@ -92,10 +109,11 @@ export const compareMerge = async (options: {
             sketch: drawn,
             interaction: null,
             params,
+            fresh,
           });
 
         try {
-          const [now, after] = await Promise.all([draw(null), draw(merged)]);
+          const { now, after, same } = await drawnPair(draw, merged);
 
           return {
             row: {
@@ -104,7 +122,7 @@ export const compareMerge = async (options: {
               ...at,
               outlines: { now: outlinesOf(now, target), merged: outlinesOf(after, target) },
             },
-            changed: !now.png.equals(after.png),
+            changed: !same,
           };
         } catch (error) {
           return {

@@ -154,7 +154,7 @@ Remove or update those imports first.
 
 `sketch ready` merges a sketch on its own only when no state of the target changes a pixel and
 no state of a part that `sketch preview` lists under `shows` changes either. Otherwise the sketch
-stays ready, and the output names each changed part and state.
+stays ready, and the output names each changed part and state. A state that looks changed is drawn once more on both sides first, so one odd picture under load does not stop the merge. A frame that never draws fails the drawing with its URL instead of giving a blank picture.
 Every variant must draw the same; one changed variant is enough to stop it. A variant draws its
 own part stylesheets, also where the product stylesheet `@import`s the merged file.
 

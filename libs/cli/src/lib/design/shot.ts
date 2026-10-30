@@ -299,12 +299,13 @@ export const createPartShooter = (options: {
     size: Size | null;
     clip?: boolean;
     priority: DrawPriority;
+    fresh?: boolean;
   }) => {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
     const crop = cropOf(options.params.get('clip')) ?? null;
     const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill, scale, crop]);
-    const kept = cache.get(key);
+    const kept = options.fresh ? undefined : cache.get(key);
 
     if (kept) {
       if (options.priority === 'high') drawQueue.hurry(kept.shot);
@@ -328,12 +329,12 @@ export const createPartShooter = (options: {
     return shot;
   };
 
-  const partShotOf = (options: PartAddress & { params: URLSearchParams; priority: DrawPriority }) => {
+  const partShotOf = (options: PartAddress & { params: URLSearchParams; priority: DrawPriority; fresh?: boolean }) => {
     const frame = partFrameOf({ system, ...options });
 
     if (frame instanceof ThumbMissingError) return Promise.reject(frame);
 
-    const draw = () => cached({ ...frame, params: options.params, priority: options.priority });
+    const draw = () => cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh });
 
     if (!statesOf) return draw();
 
@@ -486,7 +487,8 @@ export const createPartShooter = (options: {
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds,
      * ahead of every shot asked with `priority=low`.
      */
-    pictureOf: (options: PartAddress & { params: URLSearchParams }) => partShotOf({ ...options, priority: 'high' }),
+    pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) =>
+      partShotOf({ ...options, priority: 'high' }),
     /** One box per cluster of the pixels `after` changes from `before`, kept per pair of pictures; drawn after every waiting shot. */
     changedBoxesOf: (before: Buffer, after: Buffer) => {
       const key = [before, after].map((png) => createHash('sha256').update(png).digest('hex')).join(' ');

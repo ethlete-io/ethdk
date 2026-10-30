@@ -251,6 +251,26 @@ describe('createPartShooter', () => {
     expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('props')).toBe(false);
   });
 
+  it('draws a state again when pictureOf asks for a fresh picture', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, fresh: true });
+
+    expect(newContext).toHaveBeenCalledTimes(2);
+  });
+
   it('draws the shots of pictureOf and of an ask without priority=low before the shots asked with it', async () => {
     const { shots } = acme();
     let release = () => undefined as void;

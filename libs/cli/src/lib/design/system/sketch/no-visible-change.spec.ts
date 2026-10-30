@@ -53,6 +53,36 @@ describe('sketchShowsNoChange', () => {
     );
   });
 
+  it('accepts a difference that one more drawing of both sides does not repeat', async () => {
+    const { product, sketch, css } = acme();
+
+    writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* odd picture */\n`);
+
+    let drawn = 0;
+    const pictureOf: PictureOf = async ({ sketch: drawing, fresh }) => ({
+      png: Buffer.from([1, 2, drawn++ === 1 && !fresh && drawing !== null ? 1 : 0]),
+      marks: [],
+    });
+
+    expect(await sketchShowsNoChange({ product, sketch, load, pictureOf })).toBe(true);
+  });
+
+  it('still names a difference that one more drawing of both sides repeats', async () => {
+    const { product, sketch, css } = acme();
+
+    writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* real change */\n`);
+
+    const fresh: boolean[] = [];
+    const pictureOf: PictureOf = async ({ sketch: drawing, fresh: again }) => {
+      fresh.push(!!again);
+
+      return { png: Buffer.from([1, 2, +(drawing !== null)]), marks: [] };
+    };
+
+    expect(await sketchShowsNoChange({ product, sketch, load, pictureOf })).toBe('variant a changes default');
+    expect(fresh).toContain(true);
+  });
+
   it('names the state of a part that shows the target when only that part changes', async () => {
     const { product, sketch, css } = acme();
 

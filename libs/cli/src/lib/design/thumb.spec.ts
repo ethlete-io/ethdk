@@ -132,6 +132,38 @@ describe('createThumbnailer', () => {
     expect(withBrowser).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['its content never attaches', '#root > :not(style)'],
+    ['an embedded frame never draws', 'iframe[data-et-embed]'],
+  ])('answers 504 naming the frame when %s', async (_, never) => {
+    newContext.mockImplementationOnce(
+      async () =>
+        ({
+          newPage: async () => ({
+            goto,
+            mouse: { move: async () => undefined },
+            evaluate,
+            locator: (selector: string) => ({
+              count: async () => 0,
+              first: () => ({
+                waitFor: async () => {
+                  if (selector.startsWith(never)) throw new Error('Timeout');
+                },
+              }),
+            }),
+          }),
+          newCDPSession: async () => ({ send }),
+          close: closeContext,
+        }) as never,
+    );
+    const { middleware } = thumbnailer();
+
+    const answer = await ask(middleware, '/?call=app%2Fone&variant=a');
+
+    expect(answer.status).toBe(504);
+    expect(String(answer.body)).toContain('http://localhost:4999/frame.html?call=app%2Fone&variant=a');
+  });
+
   it('does not keep a failed drawing', async () => {
     goto.mockRejectedValueOnce(new Error('net::ERR_CONNECTION_REFUSED'));
     const { middleware } = thumbnailer();

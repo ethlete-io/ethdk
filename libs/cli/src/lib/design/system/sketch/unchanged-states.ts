@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { resolve } from 'path';
-import { PictureOf } from '../../merge-compare';
+import { drawnPair, PictureOf } from '../../merge-compare';
 import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -100,11 +100,18 @@ const drawsTheSame = async (options: {
   try {
     const same = await Promise.all(
       framesOf(part, presets).map(async (frame) => {
-        const draw = (drawn: SketchVariant | null) =>
-          pictureOf({ product, part: sketch.target, state, ...frame, sketch: drawn, params: new URLSearchParams() });
-        const [now, after] = await Promise.all([draw(null), draw(sketch)]);
+        const draw = (drawn: SketchVariant | null, fresh: boolean) =>
+          pictureOf({
+            product,
+            part: sketch.target,
+            state,
+            ...frame,
+            sketch: drawn,
+            params: new URLSearchParams(),
+            fresh,
+          });
 
-        return now.png.equals(after.png);
+        return (await drawnPair(draw, sketch)).same;
       }),
     );
 
