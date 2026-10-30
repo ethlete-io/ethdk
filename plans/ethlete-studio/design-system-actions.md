@@ -515,6 +515,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   found: `design complete` cannot take a sketch (checked by a temporary copy over the base part); the base part lives
   under `.ethlete/design/sdk/` while the sketch is under `studio/sketches`, so check the merge target. Q25 (inventory
   sheet UI) is with Tom.
+- **In progress (2026-10-30):** inventory slice 1 (CLI: inventory data, `inventory.json`, reopen rules,
+  `design complete` gap, server endpoints; subagent). Slice 2, the Studio view, follows.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
