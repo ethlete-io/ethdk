@@ -169,8 +169,13 @@ If one line is false, finish or collect that first. If you cannot, hand the prom
 before. Then run, with the slug of the file you saved:
 
 ```bash
-node <sessions-skill-dir>/agent-sessions.mjs restart <name> '/handoff resume <slug>'
+node <sessions-skill-dir>/agent-sessions.mjs restart <name> '<resume command> <slug>'
 ```
+
+`<resume command>` is your own resume form from the top of this guide, with the name this repo
+installed the skill under: `/ethlete-handoff resume` under Claude Code, `ethlete-handoff resume`
+under Codex. A repo that ships its own copy can name it `handoff`, so check the skill directory
+name. A wrong name runs no skill, and the fresh session starts without the file.
 
 `<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
 types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
