@@ -42,6 +42,17 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
     },
     extra: "controls: { more: { kind: 'disclosure', input: ['pointer'], surfaces: { body: 'open' } } },",
   },
+  'components/clipped': {
+    states: {
+      rest: `<div>${toggle()}<div style="height: 0; overflow: hidden">${body}</div></div>`,
+      open: `<div>${toggle()}${body}</div>`,
+    },
+    extra: "controls: { more: { kind: 'disclosure', input: [], surfaces: { body: 'open' } } },",
+  },
+  'components/always-open': {
+    states: { rest: `<div>${toggle()}${body}</div>`, open: `<div>${toggle()}${body}</div>` },
+    extra: "controls: { more: { kind: 'disclosure', input: [], surfaces: { body: 'open' } } },",
+  },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
 };
 
@@ -196,6 +207,14 @@ describe('completenessOf', () => {
     expect('gaps' in flat && flat.gaps.map(completenessGapLineOf)).toEqual([
       'REQUIREMENT-MISSING components/flat.more.hover - state hovered forces hover on it, but its box draws no different pixel than at rest',
       'REQUIREMENT-MISSING components/flat.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
+    ]);
+
+    expect(await completenessOf({ target, config, product, part: 'components/clipped' })).toEqual({ gaps: [] });
+
+    const alwaysOpen = await completenessOf({ target, config, product, part: 'components/always-open' });
+
+    expect('gaps' in alwaysOpen && alwaysOpen.gaps.map(completenessGapLineOf)).toEqual([
+      'REQUIREMENT-MISSING components/always-open.more.collapsed - every state that draws it also shows its body - draw a state with more.body closed',
     ]);
 
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });

@@ -199,9 +199,18 @@ const seeFrame = `(() => {
   if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
   const shown = (element) => {
     const box = element.getBoundingClientRect();
+    let { left, top, right, bottom } = box;
     if (box.width <= 0 || box.height <= 0) return false;
     if (['hidden', 'collapse'].includes(getComputedStyle(element).visibility)) return false;
-    for (let at = element; at; at = at.parentElement) if (Number(getComputedStyle(at).opacity) === 0) return false;
+    for (let at = element; at; at = at.parentElement) {
+      const style = getComputedStyle(at);
+      if (Number(style.opacity) === 0) return false;
+      if (at === element) continue;
+      const clip = at.getBoundingClientRect();
+      if (style.overflowX !== 'visible') [left, right] = [Math.max(left, clip.left), Math.min(right, clip.right)];
+      if (style.overflowY !== 'visible') [top, bottom] = [Math.max(top, clip.top), Math.min(bottom, clip.bottom)];
+      if (right <= left || bottom <= top) return false;
+    }
     return element.innerText.trim() !== '' || !!element.querySelector('img, svg, canvas, video, iframe, input, select, textarea');
   };
   const controls = [...root.querySelectorAll('[data-et-control]')].map((element, at) => {
