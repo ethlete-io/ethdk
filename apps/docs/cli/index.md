@@ -227,6 +227,11 @@ into the base and removes the copy with its `merged.json` entry. A part of a bui
 
 `sketch ready` refuses while a target of a live variant does not load.
 
+A sketch goes to `ready` only when no change to it waits on anything. `et design sketch hold components/button --until
+"the radius token lands" --by <model id>` records the wait in `sketch.json`: a `ready` sketch goes back to in progress
+and leaves the merge queue, and `sketch ready` refuses with the `--until` text. Make the change, then
+`et design sketch release components/button --by <model id>` removes the hold. `sketch list` and `sketch check` show it.
+
 `sketch ready` also refuses (rule `UNUSED`) while the files of a live variant, with the `shared/` files they import, keep
 an import nothing uses, a parameter a named function never reads, a parameter of a `shared/` function no call passes, or a
 class no drawing uses (`et-` classes of the SDK are not checked): code of another candidate must not reach a merge. Keep

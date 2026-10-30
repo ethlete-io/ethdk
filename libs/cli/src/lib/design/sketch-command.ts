@@ -26,12 +26,15 @@ import {
   editRound,
   findSketch,
   finishSketchReport,
+  heldProblemOf,
+  holdSketch,
   isVariantName,
   listSketches,
   markSketchReady,
   parseTarget,
   rebaseSketch,
   rejectionOf,
+  releaseSketch,
   reportSketch,
   runningRoundOf,
   sharedDirOf,
@@ -49,6 +52,8 @@ export const SKETCH_USAGE = [
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
+  'sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]',
+  'sketch release <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
@@ -78,6 +83,7 @@ const FLAG_HELP: Record<string, string> = {
     'the plan entry that lets the merge go without a pick in Studio; logged in accepted.json, needs --variant',
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
+  '--until': 'what the pending change waits on: an open decision, a helper still to land',
   '--done': 'end the live report of the variant',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
@@ -110,7 +116,19 @@ export const sketchFlagHelpOf = (usage: string) => {
 
 const VERDICTS = new Set(['reject', 'reopen']);
 
-const WRITES = new Set(['new', 'variant', 'round', 'report', 'ready', 'rebase', 'merge', 'discard', ...VERDICTS]);
+const WRITES = new Set([
+  'new',
+  'variant',
+  'round',
+  'report',
+  'ready',
+  'hold',
+  'release',
+  'rebase',
+  'merge',
+  'discard',
+  ...VERDICTS,
+]);
 
 type Context = { target: string; config: DesignConfig; args: Args; noSketchHint?: string };
 
@@ -426,7 +444,7 @@ const listed = (context: Context) => {
       const rejected = sketch.variants.filter((variant) => rejectionOf(sketch, variant));
 
       console.log(
-        `${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}`,
+        `${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}${sketch.hold ? `, held until: ${sketch.hold.until}` : ''}`,
       );
 
       for (const round of sketch.rounds) {
@@ -508,6 +526,10 @@ const readied = (context: Context) => {
   const found = productAndSketchOf(context);
 
   if (typeof found === 'string') return fail(found);
+
+  const hold = heldProblemOf(found.sketch);
+
+  if (hold !== null) return fail(hold);
 
   const refused = readyRefusalOf(context, found);
 
@@ -625,6 +647,38 @@ const rebased = (context: Context) =>
     return 0;
   });
 
+const held = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const until = context.args.values['--until'];
+
+    if (context.args.positional.length !== 1 || until === undefined)
+      return fail(
+        `usage: sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]`,
+      );
+
+    const wasReady = sketch.status === 'ready';
+    const holding = holdSketch({ sketch, until, by: authorOf(context.args) ?? '' });
+
+    if (typeof holding === 'string') return fail(holding);
+
+    console.log(
+      `${holding.target} is held until: ${holding.hold?.until ?? ''}${wasReady ? ' - back in progress, out of the merge queue' : ''}`,
+    );
+
+    return 0;
+  });
+
+const released = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const freed = releaseSketch({ sketch });
+
+    if (typeof freed === 'string') return fail(freed);
+
+    console.log(`${freed.target} is no longer held - mark it ready once the change is in`);
+
+    return 0;
+  });
+
 const checked = async (context: Context) => {
   const { target, config, args } = context;
   const product = sketchProductOf(context);
@@ -648,6 +702,10 @@ const checked = async (context: Context) => {
     unreadable.forEach((problem) =>
       console.error(`${problem.rule} ${relative(target, problem.file)}: ${problem.message}`),
     );
+
+  new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) => {
+    if (sketch.hold) console.warn(`HELD ${sketch.target}: until ${sketch.hold.until}`);
+  });
 
   for (const { sketch, variant, problems, before } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
@@ -866,6 +924,8 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   list: listed,
   report: reported,
   ready: readied,
+  hold: held,
+  release: released,
   check: checked,
   preview: previewed,
   rebase: rebased,
@@ -898,6 +958,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--variant-note',
     '--reason',
     '--allowed-by',
+    '--until',
   ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 

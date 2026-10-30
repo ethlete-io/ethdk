@@ -58,6 +58,9 @@ export type SketchRejection = {
 /** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
 export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
 
+/** A change to the sketch that waits on something; while it holds, the sketch stays in progress and cannot be ready. */
+export type SketchHold = { until: string; by: string; heldAt: string };
+
 export type SketchFile = {
   target: string;
   /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
@@ -76,6 +79,7 @@ export type SketchFile = {
    * `into-base`, into the base, removing the product copy the sketch started from.
    */
   merge?: SketchMerge;
+  hold?: SketchHold;
 };
 
 export const SKETCH_MERGES = ['override', 'into-base'] as const;
@@ -267,6 +271,19 @@ const isRounds = (value: unknown): value is SketchRound[] =>
   ) &&
   new Set(value.map((round: SketchRound) => round.key)).size === value.length;
 
+const isHold = (value: unknown): value is SketchHold => {
+  const hold = value as Partial<Record<keyof SketchHold, unknown>> | null;
+
+  return (
+    typeof hold === 'object' &&
+    hold !== null &&
+    typeof hold.until === 'string' &&
+    hold.until.trim() !== '' &&
+    typeof hold.by === 'string' &&
+    typeof hold.heldAt === 'string'
+  );
+};
+
 const FIRST_ROUND = 'r1';
 
 const firstRoundOf = (title = '', note = ''): SketchRound => ({ key: FIRST_ROUND, title, note: note.trim() });
@@ -336,6 +353,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
     return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
   if (parsed.merge !== undefined && !SKETCH_MERGES.includes(parsed.merge))
     return `${file}: merge must be one of ${SKETCH_MERGES.join(', ')}`;
+  if (parsed.hold !== undefined && !isHold(parsed.hold)) return `${file}: hold must be { until, by, heldAt }`;
+  if (parsed.hold !== undefined && parsed.status !== 'in progress') return `${file}: a held sketch must be in progress`;
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
@@ -396,6 +415,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
     ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
     ...(sketch.merge ? { merge: sketch.merge } : {}),
+    ...(sketch.hold ? { hold: sketch.hold } : {}),
   };
 
   writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
@@ -733,6 +753,10 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
   const { checkout, sketch, author } = options;
 
   if (sketch.status !== 'in progress') return `${sketch.target} is ${sketch.status}, not in progress`;
+
+  const held = heldProblemOf(sketch);
+
+  if (held !== null) return held;
   if (sketch.variants.length === 0) return `${sketch.target} holds no variant`;
 
   const authored = author
@@ -746,6 +770,41 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
   clearSketchReport({ checkout, sketch });
 
   return ready;
+};
+
+/** Why a held sketch cannot be ready, or `null` when it holds nothing. */
+export const heldProblemOf = (sketch: Pick<Sketch, 'target' | 'hold'>) =>
+  sketch.hold ? `${sketch.target} is held until: ${sketch.hold.until} - make the change, then sketch release it` : null;
+
+/**
+ * Holds a sketch until a change that waits on something is made: it goes back to in progress, which drops a pick
+ * and takes it out of the merge queue, and `sketch ready` refuses until the hold is released.
+ */
+export const holdSketch = (options: { sketch: Sketch; until: string; by: string; now?: Date }): Sketch | string => {
+  const { sketch, by, now = new Date() } = options;
+  const until = options.until.trim();
+
+  if (until === '') return 'a hold needs --until <what the change waits on>';
+
+  const { decision: _decision, ...undecided } = sketch;
+  const held: Sketch = { ...undecided, status: 'in progress', hold: { until, by, heldAt: now.toISOString() } };
+
+  writeSketchFile(held);
+
+  return held;
+};
+
+/** Removes the hold on a sketch, so it can be marked ready again. */
+export const releaseSketch = (options: { sketch: Sketch }): Sketch | string => {
+  const { sketch } = options;
+
+  if (!sketch.hold) return `${sketch.target} is not held`;
+
+  const { hold: _hold, ...released } = sketch;
+
+  writeSketchFile(released);
+
+  return released;
 };
 
 /** A verdict on one variant: reject it, set the reason of its rejection, or reopen it. */

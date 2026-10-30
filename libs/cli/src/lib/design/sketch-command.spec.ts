@@ -533,6 +533,40 @@ describe('designSketch', () => {
     );
   });
 
+  it('takes a held sketch out of ready, refuses ready with the until text, and readies it after release', async () => {
+    const target = acme();
+    const lines = output();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const sketch = { layer: 'components', name: 'button' } as const;
+    const statusOf = () => (findSketch({ productDir, product: 'acme', sketch }) as Sketch).status;
+
+    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(statusOf()).toBe('ready');
+
+    expect(write(target, 'hold', 'components/button', '--until', 'the radius token lands', '--product', 'acme')).toBe(
+      0,
+    );
+    expect(lines.pop()).toBe(
+      'components/button is held until: the radius token lands - back in progress, out of the merge queue',
+    );
+    expect(statusOf()).toBe('in progress');
+
+    expect(run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('acme  components/button  in progress  a, held until: the radius token lands');
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      'components/button is held until: the radius token lands - make the change, then sketch release it',
+    );
+    expect(statusOf()).toBe('in progress');
+
+    expect(write(target, 'release', 'components/button', '--product', 'acme')).toBe(0);
+    expect(findSketch({ productDir, product: 'acme', sketch })).not.toHaveProperty('hold');
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(statusOf()).toBe('ready');
+  });
+
   it('refuses ready while a variant drops a state of the part', () => {
     const target = acme();
     const lines = output();
