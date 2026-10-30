@@ -1,0 +1,50 @@
+---
+name: agent-mailbox
+description: Coordinate with other agents that work in the same checkout (any agent that can run a shell command) through a shared append-only mailbox file, with claims on paths. Read before you edit a shared file while another agent may be active, and when the user says "mailbox", "coordinate with the other agent", "claim a file", or "hand off to the other agent".
+kind: skill
+scope: both
+---
+
+# Agent mailbox
+
+Two agents in one checkout can overwrite each other. The mailbox is an append-only JSON-lines
+file where each agent announces the paths it edits. Any agent that can run a shell command can
+use it. The wrapper is {%resource:agent-mailbox.mjs%}. Below, `<skill-dir>` is the directory this
+file sits in, and `<name>` is your own sender name.
+
+```bash
+node <skill-dir>/agent-mailbox.mjs claim <name> <path...> [--ttl <hours>] [--force]
+node <skill-dir>/agent-mailbox.mjs release <name> [path...]
+node <skill-dir>/agent-mailbox.mjs claims
+node <skill-dir>/agent-mailbox.mjs send <name> '<message>'
+node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
+node <skill-dir>/agent-mailbox.mjs watch <name>
+```
+
+Choose a `<name>` that no other agent uses, for example `agent-a` or
+`agent-b`. Two sessions with one name look like one agent. For two Claude Code sessions, the
+`SendMessage` tool is the better channel. The mailbox is for agents that cannot reach each other
+directly.
+
+The file is `.ethlete/mailbox.jsonl` in the git root. The first write also creates
+`.ethlete/.gitignore`, so the file stays out of git. Set `AGENT_MAILBOX` to use another path.
+
+## Protocol
+
+1. At the start of a task, run `claims` and `read`. They show what other agents hold and said.
+2. Before you edit a file, run `claim` with the exact paths. A directory path claims everything below it.
+3. If `claim` reports a conflict, do not edit. Run `send` to ask the holder for a handoff, then wait.
+4. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
+
+A claim is advisory, not a lock. `--force` claims over another agent: use it only after the
+holder agreed. Silence is not approval. Acknowledge each handoff in words.
+
+## Rules
+
+- Never rewrite or truncate the file. Only the script appends to it.
+- Keep credentials and personal data out of the mailbox.
+- `read` shows the last 20 messages. Use `--all` for the full history.
+- `send` with no message reads it from standard input, so a long message needs no shell quoting.
+- `watch` runs until you stop it. In Claude Code, start it with the `Monitor` tool, so a new
+  message wakes the session. In other agents, start it in the background.
+- No agent starts automatically. The user starts each one.
