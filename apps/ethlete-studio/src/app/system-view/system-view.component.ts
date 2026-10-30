@@ -78,6 +78,7 @@ import { NoteBodyComponent } from './note-body.component';
 import { NoteFormComponent } from './note-form.component';
 import { partNotesOf } from './note-places';
 import { InventoryViewComponent } from './inventory-view.component';
+import { ExceptionListComponent } from './exception-list.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
@@ -436,6 +437,14 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 made by {{ AUTHORS_LABEL_OF(madeBy) }}
               </span>
             }
+            @if (port(); as port) {
+              <ethlete-exception-list
+                [port]="port"
+                [product]="product()?.name ?? ''"
+                [part]="partShown.key"
+                [revision]="productsRevision()"
+              />
+            }
             @if (partShown.listed.layer === 'pages') {
               <button
                 [pressed]="inventoryShown()"
@@ -534,6 +543,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     NoteFormComponent,
     StudioMarkComponent,
     InventoryViewComponent,
+    ExceptionListComponent,
   ],
   providers: [provideCommentStore(), provideNoteStore()],
   host: {
@@ -563,7 +573,7 @@ export class SystemViewComponent {
 
   private flowView = viewChild<FlowViewComponent>('flowView');
 
-  private productsRevision = computed(() => this.lists().products);
+  protected productsRevision = computed(() => this.lists().products);
 
   private callsRevision = computed(() => this.lists().calls);
   private sketchesRevision = computed(() => this.lists().sketches);
