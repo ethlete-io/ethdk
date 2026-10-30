@@ -50,7 +50,7 @@ between `<!-- ethlete:agent-rules:start -->` and `:end` - everything you wrote a
 them survives.
 
 When the repo has `@ethlete/cli` installed, `sync` also registers its design MCP server
-(`npx et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
+(`et design mcp` through the `packageRunner`, for example `yarn et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
 `.codex/config.toml` for Codex. Only that entry is written; other servers and tables
 stay as they are.
 

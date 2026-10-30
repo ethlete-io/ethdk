@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONFIG_FILE_NAME } from './config';
 import { sync } from './sync';
 
-const repo = (options: { cli: boolean; targets?: string[] }) => {
+const repo = (options: { cli: boolean; targets?: string[]; packageManager?: string }) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-mcp-'));
 
   writeFileSync(
@@ -15,7 +15,10 @@ const repo = (options: { cli: boolean; targets?: string[] }) => {
   );
   writeFileSync(
     join(root, 'package.json'),
-    JSON.stringify({ dependencies: options.cli ? { '@ethlete/cli': '1.0.0' } : {} }),
+    JSON.stringify({
+      packageManager: options.packageManager,
+      dependencies: options.cli ? { '@ethlete/cli': '1.0.0' } : {},
+    }),
     'utf8',
   );
 
@@ -49,6 +52,20 @@ describe('et design mcp registration', () => {
     });
     expect(readFileSync(join(root, '.codex/config.toml'), 'utf8')).toBe(
       '[mcp_servers.ethlete-design]\ncommand = "npx"\nargs = ["et", "design", "mcp"]\n',
+    );
+  });
+
+  it('starts the server with the package runner of the repo', () => {
+    const root = repo({ cli: true, packageManager: 'pnpm@9.0.0' });
+
+    run(root);
+
+    expect(JSON.parse(readFileSync(join(root, '.mcp.json'), 'utf8')).mcpServers['ethlete-design']).toEqual({
+      command: 'pnpm',
+      args: ['exec', 'et', 'design', 'mcp'],
+    });
+    expect(readFileSync(join(root, '.codex/config.toml'), 'utf8')).toContain(
+      'command = "pnpm"\nargs = ["exec", "et", "design", "mcp"]',
     );
   });
 

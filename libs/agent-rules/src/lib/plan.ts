@@ -316,11 +316,15 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
 
   if (isPackageInstalled(config.root, '@ethlete/cli')) {
     if (config.targets.includes('claude')) {
-      files.push(emitClaudeMcp({ existing: readExisting(config.root, CLAUDE_MCP_FILE) }));
+      files.push(
+        emitClaudeMcp({ existing: readExisting(config.root, CLAUDE_MCP_FILE), runner: packageRunnerVar(config.vars) }),
+      );
     }
 
     if (config.targets.includes('codex')) {
-      files.push(emitCodexMcp({ existing: readExisting(config.root, CODEX_CONFIG_FILE) }));
+      files.push(
+        emitCodexMcp({ existing: readExisting(config.root, CODEX_CONFIG_FILE), runner: packageRunnerVar(config.vars) }),
+      );
     }
   }
 
