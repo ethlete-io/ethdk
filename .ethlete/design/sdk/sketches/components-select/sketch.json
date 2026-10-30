@@ -1,0 +1,36 @@
+{
+  "target": "components/select",
+  "status": "ready",
+  "createdAt": "2026-10-30T22:32:10.456Z",
+  "baseline": {
+    "foundations/tokens": "67c964a1f59e8dc3",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "126362df5518a865",
+    "components/select": "164af4eccf857227",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Select controls",
+      "note": "Declares the select's controls so design complete can check it: field hover, press and focus, the open panel, option hover, selected and keyboard-active options. The variants differ only in the trigger's pressed look, which the SDK does not have yet."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "No pressed look: pressing the field looks like hover. Costs nothing, needs an approved design complete exception for active."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "The field border darkens one step while pressed. A small CSS rule in the text shell; reads like a button press."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "The focus colour shows on the field border at once on press, before focus lands. A small CSS rule; previews the focus look the press leads to."
+    }
+  }
+}
