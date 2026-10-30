@@ -405,6 +405,11 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   option. The select part is then form-field + select-panel; its `open` states stay only as an example of the two
   together. Same pattern as form-field: `et-select-option` is also used by page-size-select and phone-input. Built by
   `ethlete-sdk-33` after the limit reset and after the icons foundation. The select r2 d merge does not wait for it.
+- Q72: the sdk form-field part shows its variants one axis at a time. Each axis gets a group of rows (appearance
+  box/underline, fill transparent/filled, labelMode static/inline/floating-inside/floating-outside, size sm/md/lg);
+  each row is one value with the other axes at default, with the interaction states in the columns. Not all 48
+  combinations; a hard combination (for example underline + floating-inside) can come later as a single row. Select
+  shows only the default variant, because its variants come from form-field. After the limit reset.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
