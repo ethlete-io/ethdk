@@ -17,6 +17,7 @@ const mailbox = process.env.AGENT_MAILBOX ?? join(root, '.ethlete/mailbox.jsonl'
 const script = fileURLToPath(import.meta.url);
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
+const ENTER_DELAY_MS = 400;
 
 const takeFlag = (args, name, hasValue) => {
   const index = args.indexOf(name);
@@ -148,6 +149,7 @@ if (command === 'send' && sender) {
     const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
     try {
       execFileSync('tmux', ['send-keys', '-t', agent, '-l', text], { stdio: 'ignore' });
+      sleep(ENTER_DELAY_MS);
       execFileSync('tmux', ['send-keys', '-t', agent, 'Enter'], { stdio: 'ignore' });
       process.stdout.write(`Woke ${agent}.\n`);
     } catch {
