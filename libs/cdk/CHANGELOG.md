@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.44
+
+### Patch Changes
+
+- `etInput` now follows a `[formControl]` that switches to a new FormControl, so errors and the invalid state reflect the current control.
+- Fix `etSort` ignoring a replaced `sortControl`, `sortByControl` or `sortDirectionControl`: it now watches the new control instead of the old one.
+
 ## 5.0.0-next.43
 
 ### Patch Changes

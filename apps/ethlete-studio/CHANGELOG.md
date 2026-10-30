@@ -1,5 +1,22 @@
 # ethlete-studio
 
+## 0.2.0-next.11
+
+### Minor Changes
+
+- Reject and reopen single sketch variants with `et design sketch reject|reopen` or in Studio; a rejected variant keeps its reason, origin and history and can no longer be picked or merged.
+- Studio's sketch view gets a "Changed area" switch per round that shows every column cropped to the one area the round's variants change, enlarged, under a small whole-page thumbnail, and the design server answers that area on `/__design/sketch-crop`.
+
+### Patch Changes
+
+- The comment sidebar shows a failed or interrupted comment load with a Retry button and keeps the last list, instead of an empty inbox.
+- The comment sidebar now notices a dropped live update stream, shows it, reconnects after 5 seconds and loads the list again.
+- A sketch state whose markup differs or only renders in a browser now counts as unchanged when its pictures match the product. Studio folds such states and shows a count with a "Show all states" button.
+- Studio's "Changed area" view keeps variant notes at every zoom, remembers its switch over a reload, and takes comments on the small whole page.
+- Comment pins, the marked-box outline and new comments now follow the crop of Studio's "Changed area" view instead of using full-page positions.
+- Studio also writes each panic with its backtrace to `ethlete-studio-panics.log` in the temp directory.
+- A product switch in the System view no longer shows the sketches and flows of the old product while the new ones load.
+
 ## 0.2.0-next.10
 
 ### Minor Changes

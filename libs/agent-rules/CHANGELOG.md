@@ -1,5 +1,28 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.28
+
+### Minor Changes
+
+- New `mods` config key: `sync` turns on Claude Code mods that the package ships, starting with `e2e-progress`, a live Playwright run progress in the status line.
+- Add the consumer skill `e2e-triage`: read the failures file of the `@ethlete/cli` failure reporter, group the failures by error, fix the largest group first, and re-run only the failed spec files.
+- Add the `agent-sessions` skill and `ethlete-agents sessions`: agents in one checkout run in `tmux`, message each other, claim paths, and restart a session with a prompt. The `handoff` skill uses it to clear and resume.
+
+### Patch Changes
+
+- `agent-sessions restart` refuses a session the caller does not run in, and the handoff skill says how to read the own session name.
+- The `claude` and `codex` shell functions no longer switch your tmux client when a script or a one-shot flag such as `--version` calls them.
+- `agent-sessions run` starts `<name>-2`, `<name>-3` and so on when the session already has a terminal attached, so a second `claude` terminal gets its own agent.
+- The e2e-triage skill treats connection-refused groups on a local mock as infrastructure, and the e2e-progress mod shows the failure `detail`.
+- The handoff skill counts an open item as the next task, so an agent in tmux restarts itself with it instead of handing the prompt to the user.
+- A handoff self-restart now resumes with the installed skill name and keeps both the restart reason and the text after the slug.
+- In an agent-sessions tmux session, the context-warning hook tells the agent to save and restart itself, not to ask the user for `/clear`.
+- The `sdk-update` skill warns that after Angular 22, `a?.b` gives `undefined`, not `null`, which breaks pipes that treat the two differently.
+- Shorten the mailbox wake-up prompt: it runs `npx ethlete-agents sessions inbox <name>` or the `agents:sessions` script when one exists, and the full script path otherwise.
+- `et design shot --variants` takes `--round <key>` and `--variant <name>` to draw only the current round next to the merged row.
+- Reject and reopen single sketch variants with `et design sketch reject|reopen` or in Studio; a rejected variant keeps its reason, origin and history and can no longer be picked or merged.
+- The `agent-sessions` dispatcher waits when the prompt of an agent holds typed text or an open menu, and sends the wake-up line after the text is sent or cleared.
+
 ## 0.1.0-next.27
 
 ### Minor Changes
