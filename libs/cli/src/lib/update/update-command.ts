@@ -4,7 +4,7 @@ import { AgentRun, AgentRunState, assistedTasks, runAgentTasks } from './ai';
 import { setUpAgentCommand } from './agent-setup';
 import { AGENT_RULES_PACKAGE, planAgentRulesSync, runAgentRulesSync } from './agent-rules-sync';
 import { parseUpdateArgs } from './args';
-import { CommitState, StepCommitter, createStepCommitter, startCommits } from './commits';
+import { CommitState, StepCommitter, createStepCommitter, resumeCommits, startCommits } from './commits';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
 import { collectAvailableMigrations } from './available-migrations';
 import { readPackageMigrations } from './migration-manifest';
@@ -41,7 +41,14 @@ import {
   writePendingUpdate,
 } from './pending';
 import { fetchRegistryPackage, registryAuthorization, registryAuthorizationSource, registryUrl } from './registry';
-import { MigrationOutcome, hasNx, runInstall, runPendingMigrations } from './run-migrations';
+import {
+  MigrationOutcome,
+  hasNx,
+  installRequirements,
+  missingRequirements,
+  runInstall,
+  runPendingMigrations,
+} from './run-migrations';
 import { SyncFailure, UPDATE_DIR, UpdateTask, refreshUpdateTasks, writeUpdateTasks } from './tasks';
 
 export type UpdateCommandOptions = {
@@ -260,6 +267,44 @@ export const commitMigration = (committer: StepCommitter | undefined, outcome: M
   else if (outcome.state === 'failed') committer?.skip();
 };
 
+/** Adds what the pending generators need before they run, in a commit of its own. */
+export const addGeneratorRequirements = (options: {
+  root: string;
+  manager: PackageManager;
+  pending: readonly PendingMigration[];
+  dryRun: boolean;
+  committer: StepCommitter | undefined;
+}) => {
+  const { root, manager, pending, dryRun, committer } = options;
+
+  if (!hasNx(root)) return;
+
+  const specs = missingRequirements({ root, pending });
+
+  if (specs.length === 0) return;
+
+  const names = specs.join(', ');
+
+  if (dryRun) {
+    console.log(`\n  The codemods need ${names}: a real run adds it as a dev dependency first.`);
+
+    return;
+  }
+
+  console.log(`\n  The codemods need ${names}, so it is added as a dev dependency.\n`);
+
+  const result = installRequirements({ root, manager, specs });
+
+  if (!result.ok) {
+    console.error(`  Adding ${names} failed: ${result.reason}. Add it as a dev dependency yourself.`);
+    committer?.skip();
+
+    return;
+  }
+
+  committer?.commit({ message: `chore(deps): Add ${names} for the ethlete codemods` });
+};
+
 type SyncResult = { synced: boolean; failure?: SyncFailure };
 
 const syncAgentRules = (options: {
@@ -408,6 +453,8 @@ const runMigrationPhase = async (options: {
     }
   }
 
+  addGeneratorRequirements({ root, manager, pending: collected.pending, dryRun, committer });
+
   const outcomes = runPendingMigrations({
     root,
     manager,
@@ -545,7 +592,10 @@ const resume = async (options: {
 
   printUpdates(updates);
 
-  const committer = argv.commit && !argv.dryRun ? committerFor(root, pending.commits) : undefined;
+  const committer =
+    argv.commit && !argv.dryRun
+      ? committerFor(root, pending.commits && resumeCommits({ root, state: pending.commits }))
+      : undefined;
 
   commitBump({ committer, updates });
 

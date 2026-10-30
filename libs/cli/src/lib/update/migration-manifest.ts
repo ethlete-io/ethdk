@@ -27,6 +27,12 @@ export type Migration = {
   /** `auto` only: flags handed to the generator, for example `{ skipFormat: true }`. */
   options?: Record<string, string | number | boolean>;
   /**
+   * `auto` only: packages the generator imports that the consuming repo may lack, such as an optional peer
+   * dependency. `et update` adds a missing one as a dev dependency, at the range the package's
+   * `peerDependencies` names, before it runs the generator.
+   */
+  requires?: string[];
+  /**
    * An Nx generator that finds the files the migration would touch and changes none. `et migrations` runs it
    * with `--dry-run`, the migration's `options` and the env var `ETHLETE_SCAN_FILE` set to a path, and the
    * generator writes a JSON array of the affected workspace-relative paths to that file.
@@ -73,6 +79,14 @@ const readOptions = (value: unknown) => {
   }
 
   return options;
+};
+
+const readStrings = (value: unknown) => {
+  if (!Array.isArray(value)) return undefined;
+
+  const strings = value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
+
+  return strings.length > 0 ? strings : undefined;
 };
 
 const parseEntry = (options: { value: unknown; origin: string; index: number }) => {
@@ -127,6 +141,7 @@ const parseEntry = (options: { value: unknown; origin: string; index: number }) 
       description,
       generator,
       options: readOptions(value['options']),
+      requires: readStrings(value['requires']),
       scan: readString(value, 'scan'),
       instructions,
       docs: readString(value, 'docs'),

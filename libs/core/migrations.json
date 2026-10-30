@@ -33,6 +33,7 @@
       "level": "required",
       "description": "Rewrite surface theme interactionColor maps into the { color, onColor, inkColor } swatch shape.",
       "generator": "@ethlete/core:migrate-surface-interaction-swatch",
+      "requires": ["ts-morph"],
       "docs": "/core/theming"
     },
     {

@@ -150,6 +150,26 @@ export const commitStep = (options: {
   return settle({ state: 'committed', hash: git(top, ['rev-parse', '--short', 'HEAD']).stdout.trim(), paths });
 };
 
+/**
+ * The commit state a `--continue` picks up. Once the bump is committed, whatever changed since the earlier run
+ * stopped is the user's work, such as an install they ran to fix a failed codemod, so it joins the baseline.
+ * Before the bump, the install of a `--no-install` run belongs to the bump commit and stays in.
+ */
+export const resumeCommits = (options: { root: string; state: CommitState }): CommitState => {
+  const { root, state } = options;
+  const now = dirtySnapshot(root);
+
+  if (now === undefined || !state.bumped) return state;
+
+  const between = changedSince({ before: state.snapshot, now });
+
+  return {
+    ...state,
+    baseline: { ...state.baseline, ...Object.fromEntries(between.map((path) => [path, now[path] ?? 'missing'])) },
+    snapshot: now,
+  };
+};
+
 /** Moves the snapshot past a step that is not committed, so the next step does not pick up what it left. */
 export const skipStep = (options: { root: string; state: CommitState }): CommitState => ({
   ...options.state,

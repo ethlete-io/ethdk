@@ -11,7 +11,13 @@ import { runPendingMigrations } from './run-migrations';
 import { ScanResult, runScan } from './scan';
 import { compareVersions } from './semver';
 import { docsBaseUrl, writeUpdateTasks } from './tasks';
-import { NOT_A_CHECKOUT, commitMigration, ignoreTaskList, printOutcomes } from './update-command';
+import {
+  NOT_A_CHECKOUT,
+  addGeneratorRequirements,
+  commitMigration,
+  ignoreTaskList,
+  printOutcomes,
+} from './update-command';
 
 export type MigrationsCommandOptions = {
   /** Arguments after `migrations`, for example `['run', 'query:to-query-v3']`. */
@@ -241,6 +247,8 @@ const runOne = (options: {
   ignoreTaskList(root);
 
   console.log(`\nRunning ${migrationKey({ packageName: entry.packageName, name: entry.migration.name })}:\n`);
+
+  addGeneratorRequirements({ root, manager, pending: [entry], dryRun: false, committer });
 
   const outcomes = runPendingMigrations({
     root,

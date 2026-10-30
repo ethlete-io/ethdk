@@ -1,6 +1,6 @@
 import { execFileSync } from 'child_process';
 import { EventEmitter } from 'events';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -604,6 +604,106 @@ describe('the commits of et update', { timeout: 20_000 }, () => {
     expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
     expect(subjects(root)).toEqual(['chore(deps): Update the ethlete SDK', 'initial']);
     expect(committedFiles(root)).not.toContain('src/mine.ts');
+  });
+
+  it('does not commit what the user changed between a failed run and its --continue', async () => {
+    const root = makeGitRepo();
+    let firstFails = true;
+
+    stubRegistry('5.2.0');
+    spawnSync.mockImplementation((binary, args) => {
+      if (binary === 'yarn' && args[0] === 'install') writeFileSync(join(root, 'yarn.lock'), 'lock', 'utf8');
+
+      if (!args.includes('@ethlete/core:first')) return { status: 0 };
+
+      if (firstFails) return { status: 1 };
+
+      writeFileSync(join(root, 'src', 'first.ts'), 'first', 'utf8');
+
+      return { status: 0 };
+    });
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(1);
+
+    firstFails = false;
+    writeFileSync(join(root, 'package.json'), '{ "devDependencies": { "ts-morph": "28.0.0" } }', 'utf8');
+    writeFileSync(join(root, 'yarn.lock'), 'lock with ts-morph', 'utf8');
+
+    expect(await updateCommand({ argv: ['--continue'], root })).toBe(0);
+    expect(subjects(root)[0]).toBe('chore(deps): Apply the @ethlete/core first migration');
+    expect(gitIn(root, 'show', '--name-only', '--format=', 'HEAD').trim()).toBe('src/first.ts');
+    expect(gitIn(root, 'status', '--porcelain')).toBe(' M package.json\n M src/mine.ts\n M yarn.lock\n');
+  });
+
+  const requireTsMorph = (root: string) => {
+    const core = join(root, 'node_modules', '@ethlete', 'core');
+
+    writeJson(join(core, 'package.json'), {
+      name: '@ethlete/core',
+      version: '5.1.0',
+      ethlete: { migrations: './migrations.json' },
+      peerDependencies: { 'ts-morph': '^28.0.0' },
+    });
+    writeJson(join(core, 'migrations.json'), {
+      migrations: [
+        {
+          name: 'first',
+          version: '5.2.0',
+          kind: 'auto',
+          description: 'Rewrite first',
+          generator: '@ethlete/core:first',
+          requires: ['ts-morph'],
+        },
+      ],
+    });
+  };
+
+  it('adds a package a codemod requires as a dev dependency, in a commit of its own, before the codemod', async () => {
+    const root = makeGitRepo();
+
+    requireTsMorph(root);
+    stubRegistry('5.2.0');
+    spawnSync.mockImplementation((binary, args) => {
+      if (binary === 'yarn' && args[0] === 'install') writeFileSync(join(root, 'yarn.lock'), 'lock', 'utf8');
+
+      if (binary === 'yarn' && args[0] === 'add') {
+        writeJson(join(root, 'node_modules', 'ts-morph', 'package.json'), { name: 'ts-morph' });
+        writeJson(join(root, 'package.json'), { name: 'app', devDependencies: { 'ts-morph': '^28.0.0' } });
+        writeFileSync(join(root, 'yarn.lock'), 'lock with ts-morph', 'utf8');
+      }
+
+      if (args.includes('@ethlete/core:first')) {
+        if (!existsSync(join(root, 'node_modules', 'ts-morph', 'package.json'))) return { status: 1 };
+
+        writeFileSync(join(root, 'src', 'first.ts'), 'first', 'utf8');
+      }
+
+      return { status: 0 };
+    });
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(0);
+    expect(spawnSync).toHaveBeenCalledWith('yarn', ['add', '--dev', 'ts-morph@^28.0.0'], expect.anything());
+    expect(subjects(root)).toEqual([
+      'chore(deps): Apply the @ethlete/core first migration',
+      'chore(deps): Add ts-morph@^28.0.0 for the ethlete codemods',
+      'chore(deps): Update the ethlete SDK',
+      'initial',
+    ]);
+    expect(gitIn(root, 'show', '--name-only', '--format=', 'HEAD~1').trim()).toBe('package.json\nyarn.lock');
+  });
+
+  it('fails a codemod whose required package could not be added, without running it', async () => {
+    const root = makeGitRepo();
+
+    requireTsMorph(root);
+    stubRegistry('5.2.0');
+    spawnSync.mockImplementation((binary, args) => ({ status: binary === 'yarn' && args[0] === 'add' ? 1 : 0 }));
+
+    expect(await updateCommand({ argv: ['--force'], root })).toBe(1);
+    expect(generatorsRun()).toEqual([]);
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('the generator needs ts-morph: add it as a dev dependency'),
+    );
   });
 
   it('commits an agent task that ends done, and not one that stays open', async () => {

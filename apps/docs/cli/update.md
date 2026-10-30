@@ -101,13 +101,14 @@ Each step of a run is committed by itself, so the history shows which change cam
 | Step                                  | Commit message                                                                   |
 | ------------------------------------- | -------------------------------------------------------------------------------- |
 | The version bump, lockfile included   | `chore(deps): Update the ethlete SDK`, with one `@ethlete/x from → to` body line |
+| A package the codemods require        | `chore(deps): Add <package>@<range> for the ethlete codemods`                    |
 | Each codemod that changed files       | `chore(deps): Apply the <package> <migration name> migration`                    |
 | The agent rules sync                  | `chore(deps): Sync the ethlete agent rules`                                      |
 | Each `--ai` agent task that ends done | `chore(deps): Apply the <package> <migration name> migration`                    |
 
 A commit takes only the paths its step changed. The files that were dirty before the run - with `--force` - are never committed: a step that touched one of them is left uncommitted, and the run names the files that blocked it. An agent task that stays open or fails is not committed either, and the prompt tells the agent not to commit.
 
-Commits go through your hooks. When one fails, the run prints git's reason, leaves the changes in the working tree, and goes on. `--dry-run`, `--no-commit` and a repo that is not a git checkout commit nothing; `--continue` keeps the choice of the run it continues.
+Commits go through your hooks. When one fails, the run prints git's reason, leaves the changes in the working tree, and goes on. `--dry-run`, `--no-commit` and a repo that is not a git checkout commit nothing; `--continue` keeps the choice of the run it continues. What you change between a stopped run and its `--continue`, such as a package you installed to fix a failed codemod, counts as your own work too and stays out of the update's commits.
 
 ## When something fails
 
@@ -180,6 +181,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 - Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then the user's `~/.npmrc`, then `npm_config_registry`, then the public registry. A `//host/path/:_authToken` or `:_auth` entry for that registry in either `.npmrc`, with `${VAR}` expanded, is sent with the lookup. A `401` or `403` names the `.npmrc` the refused token came from, or says that neither holds one.
   The install reads the same files: yarn 1 exports its default registry to `yarn et update` as `npm_config_registry`, and `et update` drops that variable before it installs.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
+- Some codemods import an optional peer dependency, such as `ts-morph`. Before it runs one, `et update` adds a missing one as a dev dependency with the repo's package manager, at the range the migrating package's `peerDependencies` names. When that add fails, the codemod fails with the package to add by hand.
 
 ## Authoring a migration
 
@@ -223,6 +225,7 @@ A package declares its migrations in `migrations.json` at its own root, and poin
 | `description`  | One line. It is the summary a developer reads first.                                                     |
 | `generator`    | `auto` only: the Nx generator that rewrites the code.                                                    |
 | `options`      | `auto` only: flags handed to the generator, for example `{ "skipFormat": true }`.                        |
+| `requires`     | `auto` only: packages the generator imports that a consumer may lack, for example `["ts-morph"]`.        |
 | `scan`         | An Nx generator that finds the affected files and changes none. See [scan](#scan).                       |
 | `instructions` | A markdown file next to the manifest: the recommendation for `manual`, the prompt for `assisted`.        |
 | `docs`         | A path on this site, for example `/components/button`.                                                   |

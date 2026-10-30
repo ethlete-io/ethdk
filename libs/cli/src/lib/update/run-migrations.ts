@@ -1,7 +1,7 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { Migration } from './migration-manifest';
-import { PackageManager, installEnv, nxCommand, spawnPackageManager } from './package-manager';
+import { PackageManager, PackageManagerName, installEnv, nxCommand, spawnPackageManager } from './package-manager';
 import { PendingMigration } from './plan';
 
 export type MigrationState = 'applied' | 'failed' | 'unsupported' | 'task' | 'planned';
@@ -68,6 +68,70 @@ export const runInstall = (options: { root: string; manager: PackageManager; env
   return { ok: true };
 };
 
+const ADD_DEV_COMMANDS: Record<PackageManagerName, string[]> = {
+  yarn: ['yarn', 'add', '--dev'],
+  pnpm: ['pnpm', 'add', '--save-dev'],
+  bun: ['bun', 'add', '--dev'],
+  npm: ['npm', 'install', '--save-dev'],
+};
+
+const isInstalled = (options: { root: string; name: string }) =>
+  existsSync(join(options.root, 'node_modules', options.name, 'package.json'));
+
+const peerRange = (options: { root: string; packageName: string; name: string }) => {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(join(options.root, 'node_modules', options.packageName, 'package.json'), 'utf8'),
+    ) as { peerDependencies?: Record<string, string> };
+
+    return manifest.peerDependencies?.[options.name];
+  } catch {
+    return undefined;
+  }
+};
+
+const missingRequirement = (options: { root: string; migration: Migration }) =>
+  options.migration.requires?.find((name) => !isInstalled({ root: options.root, name }));
+
+/**
+ * The packages the pending generators import that this repo lacks, as `add` specs at the range the migrating
+ * package's `peerDependencies` names, for example `ts-morph@^28.0.0`.
+ */
+export const missingRequirements = (options: { root: string; pending: readonly PendingMigration[] }) => {
+  const specs = new Map<string, string>();
+
+  for (const { packageName, migration } of options.pending) {
+    if (migration.kind !== 'auto') continue;
+
+    for (const name of migration.requires ?? []) {
+      if (specs.has(name) || isInstalled({ root: options.root, name })) continue;
+
+      const range = peerRange({ root: options.root, packageName, name });
+
+      specs.set(name, range ? `${name}@${range}` : name);
+    }
+  }
+
+  return [...specs.values()];
+};
+
+/** Adds the packages the pending generators need as dev dependencies, with the repo's own package manager. */
+export const installRequirements = (options: { root: string; manager: PackageManager; specs: readonly string[] }) => {
+  const { root, manager, specs } = options;
+  const [binary, ...args] = [...ADD_DEV_COMMANDS[manager.name], ...specs];
+  const command = [binary, ...args].join(' ');
+
+  if (binary === undefined) return { ok: false, command, reason: 'no command to add packages with' };
+
+  const result = spawnPackageManager({ binary, args, spawn: { cwd: root, stdio: 'inherit', env: installEnv() } });
+
+  if (result.error) return { ok: false, command, reason: result.error.message };
+
+  if (result.status !== 0) return { ok: false, command, reason: `${command} exited with ${result.status}` };
+
+  return { ok: true, command };
+};
+
 /** The command a developer runs by hand when this repo has no Nx to run the generator with. */
 export const manualGeneratorCommand = (options: { manager: PackageManager; migration: Migration }) =>
   nxCommand({ manager: options.manager, args: generatorArgs({ migration: options.migration, dryRun: false }) }).join(
@@ -91,6 +155,14 @@ const runOne = (options: {
       state: 'unsupported',
       reason: 'this repo has no Nx, so the generator has to be run by hand',
     };
+  }
+
+  const missing = missingRequirement({ root, migration: entry.migration });
+
+  if (missing !== undefined && dryRun) return { pending: entry, state: 'planned' };
+
+  if (missing !== undefined) {
+    return { pending: entry, state: 'failed', reason: `the generator needs ${missing}: add it as a dev dependency` };
   }
 
   return runAutoMigration({ root, manager, pending: entry, dryRun });
