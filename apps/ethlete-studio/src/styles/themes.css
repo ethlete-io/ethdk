@@ -9,42 +9,61 @@
 
 @theme {
   /* brand theme */
-  --color-et-brand: rgb(142 210 187);
-  --color-et-brand-hover: rgb(166 224 203);
-  --color-et-brand-focus: rgb(166 224 203);
-  --color-et-brand-active: rgb(118 190 166);
-  --color-et-brand-disabled: rgb(62 92 82);
+  --color-et-brand: rgb(37 174 167);
+  --color-et-brand-hover: rgb(65 193 186);
+  --color-et-brand-focus: rgb(73 199 192);
+  --color-et-brand-active: rgb(37 174 167);
+  --color-et-brand-disabled: rgb(34 72 70);
 
-  --color-et-on-brand: rgb(18 33 27);
-  --color-et-on-brand-hover: rgb(18 33 27);
-  --color-et-on-brand-focus: rgb(18 33 27);
-  --color-et-on-brand-active: rgb(18 33 27);
-  --color-et-on-brand-disabled: rgb(40 62 54);
+  --color-et-on-brand: rgb(5 18 17);
+  --color-et-on-brand-hover: rgb(5 18 17);
+  --color-et-on-brand-focus: rgb(5 18 17);
+  --color-et-on-brand-active: rgb(5 18 17);
+  --color-et-on-brand-disabled: rgb(9 17 17);
 
-  --color-et-brand-ink: rgb(166 224 203);
-  --color-et-brand-ink-hover: rgb(192 236 220);
-  --color-et-brand-ink-focus: rgb(192 236 220);
-  --color-et-brand-ink-active: rgb(142 210 187);
-  --color-et-brand-ink-disabled: rgb(78 110 98);
+  --color-et-brand-ink: rgb(103 210 204);
+  --color-et-brand-ink-hover: rgb(103 210 204);
+  --color-et-brand-ink-focus: rgb(103 210 204);
+  --color-et-brand-ink-active: rgb(103 210 204);
+  --color-et-brand-ink-disabled: rgb(51 85 82);
 
   /* danger theme */
-  --color-et-danger: rgb(220 38 38);
-  --color-et-danger-hover: rgb(239 68 68);
-  --color-et-danger-focus: rgb(239 68 68);
-  --color-et-danger-active: rgb(185 28 28);
-  --color-et-danger-disabled: rgb(120 52 52);
+  --color-et-danger: rgb(247 93 89);
+  --color-et-danger-hover: rgb(252 122 115);
+  --color-et-danger-focus: rgb(252 122 115);
+  --color-et-danger-active: rgb(247 93 89);
+  --color-et-danger-disabled: rgb(99 47 44);
 
-  --color-et-on-danger: rgb(255 255 255);
-  --color-et-on-danger-hover: rgb(255 255 255);
-  --color-et-on-danger-focus: rgb(255 255 255);
-  --color-et-on-danger-active: rgb(255 255 255);
-  --color-et-on-danger-disabled: rgb(190 170 170);
+  --color-et-on-danger: rgb(32 10 8);
+  --color-et-on-danger-hover: rgb(32 10 8);
+  --color-et-on-danger-focus: rgb(32 10 8);
+  --color-et-on-danger-active: rgb(32 10 8);
+  --color-et-on-danger-disabled: rgb(26 12 11);
 
-  --color-et-danger-ink: rgb(248 113 113);
-  --color-et-danger-ink-hover: rgb(252 165 165);
-  --color-et-danger-ink-focus: rgb(252 165 165);
-  --color-et-danger-ink-active: rgb(239 68 68);
-  --color-et-danger-ink-disabled: rgb(130 80 80);
+  --color-et-danger-ink: rgb(249 158 155);
+  --color-et-danger-ink-hover: rgb(249 158 155);
+  --color-et-danger-ink-focus: rgb(249 158 155);
+  --color-et-danger-ink-active: rgb(249 158 155);
+  --color-et-danger-ink-disabled: rgb(99 67 66);
+
+  /* warning theme */
+  --color-et-warning: rgb(239 168 49);
+  --color-et-warning-hover: rgb(255 184 70);
+  --color-et-warning-focus: rgb(255 184 70);
+  --color-et-warning-active: rgb(239 168 49);
+  --color-et-warning-disabled: rgb(95 71 36);
+
+  --color-et-on-warning: rgb(32 19 1);
+  --color-et-on-warning-hover: rgb(32 19 1);
+  --color-et-on-warning-focus: rgb(32 19 1);
+  --color-et-on-warning-active: rgb(32 19 1);
+  --color-et-on-warning-disabled: rgb(26 18 7);
+
+  --color-et-warning-ink: rgb(245 198 109);
+  --color-et-warning-ink-hover: rgb(245 198 109);
+  --color-et-warning-ink-focus: rgb(245 198 109);
+  --color-et-warning-ink-active: rgb(245 198 109);
+  --color-et-warning-ink-disabled: rgb(96 81 52);
 
   /* Dynamic theme colors (references runtime CSS variables) */
   --color-et-theme: rgb(var(--et-color-primary));
@@ -70,43 +89,63 @@
   :root,
   .et-color--default,
   .et-color--brand {
-    --et-color-primary: 142 210 187;
-    --et-color-primary-hover: 166 224 203;
-    --et-color-primary-focus: 166 224 203;
-    --et-color-primary-active: 118 190 166;
-    --et-color-primary-disabled: 62 92 82;
+    --et-color-primary: 37 174 167;
+    --et-color-primary-hover: 65 193 186;
+    --et-color-primary-focus: 73 199 192;
+    --et-color-primary-active: 37 174 167;
+    --et-color-primary-disabled: 34 72 70;
 
-    --et-color-on-primary: 18 33 27;
-    --et-color-on-primary-hover: 18 33 27;
-    --et-color-on-primary-focus: 18 33 27;
-    --et-color-on-primary-active: 18 33 27;
-    --et-color-on-primary-disabled: 40 62 54;
+    --et-color-on-primary: 5 18 17;
+    --et-color-on-primary-hover: 5 18 17;
+    --et-color-on-primary-focus: 5 18 17;
+    --et-color-on-primary-active: 5 18 17;
+    --et-color-on-primary-disabled: 9 17 17;
 
-    --et-color-primary-ink: 166 224 203;
-    --et-color-primary-ink-hover: 192 236 220;
-    --et-color-primary-ink-focus: 192 236 220;
-    --et-color-primary-ink-active: 142 210 187;
-    --et-color-primary-ink-disabled: 78 110 98;
+    --et-color-primary-ink: 103 210 204;
+    --et-color-primary-ink-hover: 103 210 204;
+    --et-color-primary-ink-focus: 103 210 204;
+    --et-color-primary-ink-active: 103 210 204;
+    --et-color-primary-ink-disabled: 51 85 82;
   }
 
   .et-color--danger {
-    --et-color-primary: 220 38 38;
-    --et-color-primary-hover: 239 68 68;
-    --et-color-primary-focus: 239 68 68;
-    --et-color-primary-active: 185 28 28;
-    --et-color-primary-disabled: 120 52 52;
+    --et-color-primary: 247 93 89;
+    --et-color-primary-hover: 252 122 115;
+    --et-color-primary-focus: 252 122 115;
+    --et-color-primary-active: 247 93 89;
+    --et-color-primary-disabled: 99 47 44;
 
-    --et-color-on-primary: 255 255 255;
-    --et-color-on-primary-hover: 255 255 255;
-    --et-color-on-primary-focus: 255 255 255;
-    --et-color-on-primary-active: 255 255 255;
-    --et-color-on-primary-disabled: 190 170 170;
+    --et-color-on-primary: 32 10 8;
+    --et-color-on-primary-hover: 32 10 8;
+    --et-color-on-primary-focus: 32 10 8;
+    --et-color-on-primary-active: 32 10 8;
+    --et-color-on-primary-disabled: 26 12 11;
 
-    --et-color-primary-ink: 248 113 113;
-    --et-color-primary-ink-hover: 252 165 165;
-    --et-color-primary-ink-focus: 252 165 165;
-    --et-color-primary-ink-active: 239 68 68;
-    --et-color-primary-ink-disabled: 130 80 80;
+    --et-color-primary-ink: 249 158 155;
+    --et-color-primary-ink-hover: 249 158 155;
+    --et-color-primary-ink-focus: 249 158 155;
+    --et-color-primary-ink-active: 249 158 155;
+    --et-color-primary-ink-disabled: 99 67 66;
+  }
+
+  .et-color--warning {
+    --et-color-primary: 239 168 49;
+    --et-color-primary-hover: 255 184 70;
+    --et-color-primary-focus: 255 184 70;
+    --et-color-primary-active: 239 168 49;
+    --et-color-primary-disabled: 95 71 36;
+
+    --et-color-on-primary: 32 19 1;
+    --et-color-on-primary-hover: 32 19 1;
+    --et-color-on-primary-focus: 32 19 1;
+    --et-color-on-primary-active: 32 19 1;
+    --et-color-on-primary-disabled: 26 18 7;
+
+    --et-color-primary-ink: 245 198 109;
+    --et-color-primary-ink-hover: 245 198 109;
+    --et-color-primary-ink-focus: 245 198 109;
+    --et-color-primary-ink-active: 245 198 109;
+    --et-color-primary-ink-disabled: 96 81 52;
   }
 }
 

@@ -9,40 +9,40 @@
 
 @theme {
   /* dark surface */
-  --color-et-surface-dark-bg: rgb(23 23 23);
+  --color-et-surface-dark-bg: rgb(15 15 15);
   --color-et-surface-dark: rgb(235 235 235);
-  --color-et-surface-dark-muted: rgb(150 150 150);
-  --color-et-surface-dark-subtle: rgb(115 115 115);
-  --color-et-surface-dark-border: rgb(48 48 48);
-  --color-et-surface-dark-interaction: rgb(161 161 161);
-  --color-et-surface-dark-interaction-hover: rgb(220 220 220);
-  --color-et-surface-dark-interaction-focus: rgb(220 220 220);
-  --color-et-surface-dark-interaction-active: rgb(250 250 250);
-  --color-et-surface-dark-interaction-disabled: rgb(100 100 100);
+  --color-et-surface-dark-muted: rgb(164 164 164);
+  --color-et-surface-dark-subtle: rgb(164 164 164);
+  --color-et-surface-dark-border: rgb(56 56 56);
+  --color-et-surface-dark-interaction: rgb(164 164 164);
+  --color-et-surface-dark-interaction-hover: rgb(235 235 235);
+  --color-et-surface-dark-interaction-focus: rgb(235 235 235);
+  --color-et-surface-dark-interaction-active: rgb(235 235 235);
+  --color-et-surface-dark-interaction-disabled: rgb(56 56 56);
 
   /* dark-elevated surface */
   --color-et-surface-dark-elevated-bg: rgb(32 32 32);
   --color-et-surface-dark-elevated: rgb(235 235 235);
-  --color-et-surface-dark-elevated-muted: rgb(150 150 150);
-  --color-et-surface-dark-elevated-subtle: rgb(115 115 115);
-  --color-et-surface-dark-elevated-border: rgb(58 58 58);
-  --color-et-surface-dark-elevated-interaction: rgb(161 161 161);
-  --color-et-surface-dark-elevated-interaction-hover: rgb(220 220 220);
-  --color-et-surface-dark-elevated-interaction-focus: rgb(220 220 220);
-  --color-et-surface-dark-elevated-interaction-active: rgb(250 250 250);
-  --color-et-surface-dark-elevated-interaction-disabled: rgb(100 100 100);
+  --color-et-surface-dark-elevated-muted: rgb(164 164 164);
+  --color-et-surface-dark-elevated-subtle: rgb(164 164 164);
+  --color-et-surface-dark-elevated-border: rgb(56 56 56);
+  --color-et-surface-dark-elevated-interaction: rgb(164 164 164);
+  --color-et-surface-dark-elevated-interaction-hover: rgb(235 235 235);
+  --color-et-surface-dark-elevated-interaction-focus: rgb(235 235 235);
+  --color-et-surface-dark-elevated-interaction-active: rgb(235 235 235);
+  --color-et-surface-dark-elevated-interaction-disabled: rgb(56 56 56);
 
   /* dark-elevated-2 surface */
-  --color-et-surface-dark-elevated-2-bg: rgb(42 42 42);
+  --color-et-surface-dark-elevated-2-bg: rgb(43 43 43);
   --color-et-surface-dark-elevated-2: rgb(235 235 235);
-  --color-et-surface-dark-elevated-2-muted: rgb(150 150 150);
-  --color-et-surface-dark-elevated-2-subtle: rgb(115 115 115);
-  --color-et-surface-dark-elevated-2-border: rgb(70 70 70);
-  --color-et-surface-dark-elevated-2-interaction: rgb(161 161 161);
-  --color-et-surface-dark-elevated-2-interaction-hover: rgb(220 220 220);
-  --color-et-surface-dark-elevated-2-interaction-focus: rgb(220 220 220);
-  --color-et-surface-dark-elevated-2-interaction-active: rgb(250 250 250);
-  --color-et-surface-dark-elevated-2-interaction-disabled: rgb(100 100 100);
+  --color-et-surface-dark-elevated-2-muted: rgb(164 164 164);
+  --color-et-surface-dark-elevated-2-subtle: rgb(164 164 164);
+  --color-et-surface-dark-elevated-2-border: rgb(56 56 56);
+  --color-et-surface-dark-elevated-2-interaction: rgb(164 164 164);
+  --color-et-surface-dark-elevated-2-interaction-hover: rgb(235 235 235);
+  --color-et-surface-dark-elevated-2-interaction-focus: rgb(235 235 235);
+  --color-et-surface-dark-elevated-2-interaction-active: rgb(235 235 235);
+  --color-et-surface-dark-elevated-2-interaction-disabled: rgb(56 56 56);
 
   /* Dynamic surface colors (references runtime CSS variables) */
   --color-et-surface-bg: rgb(var(--et-surface-background));
@@ -72,63 +72,63 @@
 @layer base {
   .et-surface--default-dark,
   .et-surface--dark {
-    --et-surface-background: 23 23 23;
+    --et-surface-background: 15 15 15;
     --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 150 150 150;
-    --et-surface-color-subtle: 115 115 115;
-    --et-surface-border: 48 48 48;
+    --et-surface-color-muted: 164 164 164;
+    --et-surface-color-subtle: 164 164 164;
+    --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 0;
-    --et-surface-interaction: 161 161 161;
-    --et-surface-interaction-hover: 220 220 220;
-    --et-surface-interaction-focus: 220 220 220;
-    --et-surface-interaction-active: 250 250 250;
-    --et-surface-interaction-disabled: 100 100 100;
+    --et-surface-interaction: 164 164 164;
+    --et-surface-interaction-hover: 235 235 235;
+    --et-surface-interaction-focus: 235 235 235;
+    --et-surface-interaction-active: 235 235 235;
+    --et-surface-interaction-disabled: 56 56 56;
   }
 
   .et-surface--dark-elevated {
     --et-surface-background: 32 32 32;
     --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 150 150 150;
-    --et-surface-color-subtle: 115 115 115;
-    --et-surface-border: 58 58 58;
+    --et-surface-color-muted: 164 164 164;
+    --et-surface-color-subtle: 164 164 164;
+    --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 1;
-    --et-surface-interaction: 161 161 161;
-    --et-surface-interaction-hover: 220 220 220;
-    --et-surface-interaction-focus: 220 220 220;
-    --et-surface-interaction-active: 250 250 250;
-    --et-surface-interaction-disabled: 100 100 100;
+    --et-surface-interaction: 164 164 164;
+    --et-surface-interaction-hover: 235 235 235;
+    --et-surface-interaction-focus: 235 235 235;
+    --et-surface-interaction-active: 235 235 235;
+    --et-surface-interaction-disabled: 56 56 56;
   }
 
   .et-surface--dark-elevated-2 {
-    --et-surface-background: 42 42 42;
+    --et-surface-background: 43 43 43;
     --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 150 150 150;
-    --et-surface-color-subtle: 115 115 115;
-    --et-surface-border: 70 70 70;
+    --et-surface-color-muted: 164 164 164;
+    --et-surface-color-subtle: 164 164 164;
+    --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 2;
-    --et-surface-interaction: 161 161 161;
-    --et-surface-interaction-hover: 220 220 220;
-    --et-surface-interaction-focus: 220 220 220;
-    --et-surface-interaction-active: 250 250 250;
-    --et-surface-interaction-disabled: 100 100 100;
+    --et-surface-interaction: 164 164 164;
+    --et-surface-interaction-hover: 235 235 235;
+    --et-surface-interaction-focus: 235 235 235;
+    --et-surface-interaction-active: 235 235 235;
+    --et-surface-interaction-disabled: 56 56 56;
   }
 
   :root {
-    --et-surface-background: 23 23 23;
+    --et-surface-background: 15 15 15;
     --et-surface-color: 235 235 235;
-    --et-surface-color-muted: 150 150 150;
-    --et-surface-color-subtle: 115 115 115;
-    --et-surface-border: 48 48 48;
+    --et-surface-color-muted: 164 164 164;
+    --et-surface-color-subtle: 164 164 164;
+    --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 0;
-    --et-surface-interaction: 161 161 161;
-    --et-surface-interaction-hover: 220 220 220;
-    --et-surface-interaction-focus: 220 220 220;
-    --et-surface-interaction-active: 250 250 250;
-    --et-surface-interaction-disabled: 100 100 100;
+    --et-surface-interaction: 164 164 164;
+    --et-surface-interaction-hover: 235 235 235;
+    --et-surface-interaction-focus: 235 235 235;
+    --et-surface-interaction-active: 235 235 235;
+    --et-surface-interaction-disabled: 56 56 56;
     color-scheme: dark;
   }
 }

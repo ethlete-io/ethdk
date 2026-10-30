@@ -28,7 +28,7 @@ describe('styles.css', () => {
 
     expect(css).toMatch(/@layer studio-tokens, theme, base,/);
     expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--accent: oklch\(0\.68 0\.11 190\)/);
-    expect(css).toContain('--surface-sunken: oklch(0.17 0 0)');
+    expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--surface-raised: oklch\(/);
   });
 
   it('exposes the renamed font and radius tokens without shadowing Tailwind defaults', () => {
@@ -40,12 +40,20 @@ describe('styles.css', () => {
     expect(css).not.toMatch(/--font-ui: var\(--font-ui\)/);
   });
 
-  it('resolves the SDK surface and colour tokens from the Studio tokens, above the generated themes', () => {
+  it('keeps the SDK themes generated from the colours part', () => {
     const css = compileStyles();
 
     expect(css).toMatch(/@layer studio-tokens, theme, base, components, studio-sdk, utilities;/);
-    expect(css).toMatch(/@layer studio-sdk\s*{[\s\S]*--et-surface-background: from var\(--surface\) r g b/);
-    expect(css).toMatch(/@layer studio-sdk\s*{[\s\S]*--et-color-primary: from var\(--accent\) r g b/);
+    expect(css).not.toMatch(/--et-surface-background: from var\(/);
     expect(css).toMatch(/@layer studio-sdk\s*{[\s\S]*--et-form-field-control-min-height: var\(--control-md\)/);
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        [fileURLToPath(new URL('../../../tools/scripts/generate-studio-themes.mjs', import.meta.url)), '--check'],
+        {
+          encoding: 'utf8',
+        },
+      ),
+    ).not.toThrow();
   });
 });
