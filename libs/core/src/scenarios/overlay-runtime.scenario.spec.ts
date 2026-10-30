@@ -126,6 +126,30 @@ describe('overlay runtime scenarios', () => {
     expect(rootsInDocument()).toEqual([]);
   });
 
+  it.each([
+    ['before the enter frame', 0],
+    ['while the enter animation runs', 2],
+  ])('closes on a backdrop press %s', (_, frames) => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'dialog',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        closeOnOutsidePointer: true,
+      }),
+    );
+    const { closed } = track(ref);
+
+    s.frame(frames);
+    ref.elements.backdropElement()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    s.flush();
+
+    expect(ref.state()).toBe('closed');
+    expect(closed.map((event) => event.source)).toEqual(['outside-pointer']);
+    expect(rootsInDocument()).toEqual([]);
+  });
+
   it('ignores an outside pointer press that lands before the enter animation starts', () => {
     const s = scenario();
     const ref = s.run(() =>

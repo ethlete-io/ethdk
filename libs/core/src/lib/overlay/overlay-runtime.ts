@@ -438,7 +438,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          if (!interactiveCloseReady) {
+          if (!interactiveCloseReady && target !== backdropElement()) {
             animationDebugLog(`runtime ${config.id}`, 'outside pointer ignored (enter transition has not started yet)');
 
             return;
