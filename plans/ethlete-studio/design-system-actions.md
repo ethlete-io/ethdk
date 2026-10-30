@@ -468,6 +468,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** a click on "Pick c" shows c as picked at once and enables Merge, also for a variant
   that changes no pixel; a failed pick shows an error instead of a silent reset.
 
+- **Migration (Tom, 2026-10-30):** once the 4.47 and 4.53 rules stand, every existing Studio
+  design gets one pass: declare its interactive controls, draw the missing states and
+  surfaces, and cut CSS to what utilities cannot express. One page per commit.
+
 ### 4.53 Studio designs use plain CSS where Tailwind utilities would do - open
 
 - **Pain (Tom, 2026-10-30):** many Studio designs style with plain CSS, though the rule is
