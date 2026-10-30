@@ -351,6 +351,9 @@ Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's 
 - Q66 (2026-10-31): the live Studio canvas does not fit the frame yet. After a Studio restart, select
   `open-option-hover` at 320 px is only a little taller than the closed field, and the open panel scrolls inside the
   frame. Shots are fine. `ethlete-sdk-57` fixes it now, despite the usage limit, because it blocks the select merge.
+- Q69 (2026-10-31): static images in the Studio grid render in light mode while live iframes follow the dark Studio,
+  so one grid (sdk button, states by interaction) mixes two colour modes. A static image always takes the colour mode
+  of the live iframe. `ethlete-sdk-57` fixes it now, next to Q66, despite the usage limit.
 
 ### Form-field error colours decision (2026-10-31)
 
