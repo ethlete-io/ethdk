@@ -438,6 +438,40 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   repeat on every page; let a page attribute them to the part that draws them (a marker with
   `part`, as for the disclosure) instead of declaring each again. Then the per-page inventory
   contact sheet with Studio approval, then the other kinds (`button`, `row`, `select`, ...).
+- **Status:** part ownership built (`77c506b3d`, Q22 a). The `data-et-part` root marker already came
+  from the part-marks transform; `markPart` now also stamps `data-et-slot="<key>"` on every element of the
+  markup a host passes into a part through its props (strings in props, arrays and plain objects to depth
+  4, copied). An element belongs to the nearest `data-et-part` key up its ancestors, skipping one root per
+  slot key it carries; the frame's own key or none means the part itself. So a page's content passed into
+  `elements/shell-main` stays the page's, the shell's own buttons are the shell's. Owned controls and
+  unclassified elements are skipped on the host, owned `data-et-control`/`data-et-surface` markers are
+  ignored there, and the host reports each owning part once as `CONTROL-PART-INCOMPLETE` ("`<owner>`
+  draws N control(s) here and is not design complete: K gap(s)"), unless a declared control already names
+  that part. Owners are checked once per run (memo). `CONTROL-OVERRIDDEN`: every rule of the `*.css`
+  files in the host part's own folder is parsed in the frame (`CSSStyleSheet.replaceSync`, nesting
+  resolved, `:hover`/`:focus*`/`:active` matched as always-on, pseudo-elements on their element) and
+  matched against owned elements; on the owned root, outer layout (margin, inset, size, position,
+  z-index, flex and grid placement, order, transform) does not count, everything else does, and inside
+  the root every property counts. A host `data-et-control` around the element declares it. Limits: CSS
+  the host returns from `render` or imports from elsewhere, Tailwind classes, and inline styles are not
+  seen; raw files are parsed, so `@apply` is not expanded (no Studio part uses it).
+  Bites: each fails the new spec when removed - the owner skip (shell `Menu` button undeclared on the
+  page), the owner report, the root layout filter, the override check, the slot marks (page `Own` button
+  given to the shell). Verified: design vitest 743/743 (one `sketch-stylesheets` load flake, passes
+  alone), tsc spec, build, eslint, prettier. Findings (`.ethlete/design/studio`, unchanged), gaps before
+  -> after: `pages/merge` 6 -> 5 (`li` rows unclassified; `components/button` (3 buttons, its own gaps:
+  `PART-UNREVIEWED`, its `button` undeclared) and `elements/shell-main` incomplete; two overrides:
+  `.mg-shot .et-button` outline and `.mg-shot[data-side="after"] .et-button` border-radius),
+  `pages/system` 7 -> 3 (button, tree-row, shell-main), `pages/sketches` 13 -> 9 (tabindex div, pin
+  button, preset `et-form-field`, button/tree-row/shell-main, overrides: zoom `.et-button` padding,
+  color, font twice and `.st-shell-side` width), `pages/inbox` 8 -> 7 (comment draft `et-button`,
+  `et-textarea`, pin button, `et-switch`; button, canvas-frames, shell-main), `pages/flows` 5 -> 4
+  (`et-form-field`; button, tree-row, shell-main), `pages/start` 2 -> 1 (button). Owners:
+  `elements/shell-main` 4 (project, collapse, picker options, picker action), `components/tree-row` 1,
+  `elements/canvas-frames` 18 -> 1 (its grid buttons are `components/button`), `components/comment-pin`
+  1, `components/button` 2. Fixing `components/button` and `elements/shell-main` clears most page gaps.
+- **Next:** the per-page inventory contact sheet with approval in Studio, then the other kinds (`button`,
+  `row`, `select`, ...), so `components/button` and the shell can declare their controls.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
