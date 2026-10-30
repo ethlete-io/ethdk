@@ -157,6 +157,11 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   of old Storybook CSS: themes `accent`/`danger` where the mocks and `calls/components/themes.ts` use `brand`,
   `danger`, `warning`; no `--et-shadow-color-rgb` or `--et-font-family`; a dead Tailwind `--color-et-*` layer.
   Q47 (token source: hand fix or generated from the real themes) is with the grill session.
+- **Token source decision (Tom, 2026-10-30, Q47):** generate `foundations/tokens` from
+  `.ethlete/design/calls/components/themes.ts` with the real SDK theme generators, through the product
+  `generated` hook Studio already uses; the part only draws, no hand-kept colour CSS. Drop the Tailwind
+  `--color-et-*` layer. Include `--et-shadow-color-rgb` and `--et-font-family`. Label `brand`, `danger` and
+  `warning` as demo themes of this fixture: the SDK ships no theme names, the app registers them.
 - **CLI gap (sent to stream A):** `design complete` checks only merged parts, so a sketch variant cannot prove
   its 4.47 coverage before the merge. Request: `design complete --variant`.
 
@@ -166,3 +171,6 @@ The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element ma
 (`UPWARD-DEPENDENCY`). Before Tom merges r1 (3d00519df): its `−`, `+` and `Fit` buttons are declared controls with
 hover, active and focus, and `design complete components/zoom-chip` passes. The zoom values (100 %, 250 %, 25 %)
 are content states, not the interaction coverage Q43 asked for.
+
+- **r2 ready (2026-10-30, 1534846c9):** variant b declares −, percent, + and Fit as button controls in 16 states;
+  `design complete` passed in a scratch copy with b merged. Not checked by eye. Waits for Tom's merge in Studio.
