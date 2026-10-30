@@ -4303,6 +4303,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"
   dependencies:
+    "@tailwindcss/node": "npm:4.3.3"
     "@tailwindcss/postcss": "npm:4.3.3"
     postcss: "npm:8.5.32"
     postcss-selector-parser: "npm:7.1.7"
