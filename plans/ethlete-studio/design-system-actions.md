@@ -524,6 +524,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   existing pages draw the same pictures with their CSS cut to what utilities cannot do.
 - **Decision (Tom, 2026-10-30):** option 1, the `design check` rule, then the one-page-per-commit
   move. `foundations/colors` stays CSS.
+- **State (2026-10-30):** the `UTILITY-CSS` rule is in `libs/cli/src/lib/design/system/rules/utility-css.ts`,
+  not yet in `RULES`. Token utilities come from the product's `@theme`, keywords from a fixed table. The checkout
+  has 318 findings in 12 files, most in `elements/shell-main/shell-main.css` (55) and `pages/inbox/shared/inbox.css`
+  (42). Known gaps: a parent-state selector over an SDK element is flagged; inline `style="..."` is not checked.
+  Next: the one-page-per-commit move through sketches, then register the rule.
 
 ### 4.54 A design cannot say that a change between states animates - open
 
