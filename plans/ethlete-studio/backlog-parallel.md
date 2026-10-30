@@ -334,6 +334,21 @@ at 320 px: the open panel is cut off at the closed trigger's height. The same ho
 error versus one without, and for each size and variant of a part. Content outside the normal flow, for example an
 open overlay panel, counts towards the state's size. Fix it in the tool and Studio, not per sketch.
 
+Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's decisions on its edges:
+
+- Q62: a frame with a declared width does not grow sideways; a wider overlay is cut.
+- Q63: content above the root (a `top` placement) is not counted; add it only when a part needs it.
+- Q64: elements that fill the whole viewport (`position: fixed; inset: 0`, for example a backdrop) are skipped
+  in the measure. To build after the usage limit reset.
+
+### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
+
+Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
+invisible; on "Surface, light" the shadows work. On dark UIs an elevated element usually also gets a lighter
+background, but a raised background breaks the surface system (one background per surface theme). Needs its own
+design round: how elevation reads on a dark surface within the surface theming. Doc only for now, nothing to
+build.
+
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
 The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
