@@ -1051,12 +1051,17 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   4.76 cheaper. Effort M-L.
 - **In progress (2026-10-30):** a subagent builds the warm page per worker and viewport; measure before and after.
 
-### 4.78 A file change reloads several lists at once - in progress
+### 4.78 A file change reloads several lists at once - open
 
 - **From the code:** each `tick` reloads products, calls, flows, comments and sketches
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
 - **Fix option:** reload only what the `parts` event names. Effort M.
-- **In progress (2026-10-30):** a subagent builds it while 4.77 runs; 4.81 follows 4.77.
+- **Found (2026-10-30):** `tick` comes from the Tauri watcher (`host/design.ts:108`, `src-tauri/src/design_watch.rs`,
+  `Channel<()>`): it names no path and no kind. The design server events (`serve.ts:326,505-530`) name `comments`,
+  `notes`, `flows` and `parts`, but nothing for a call file or a `sketch.json` change.
+- **Plan (builder):** `src-tauri` is off-limits, so the design server also sends `calls` and `sketches` events;
+  Studio reloads each list on its own event, and `parts` with `all`, a reconnect or an unknown change reload
+  everything. Build after 4.77 (both touch `libs/cli`), then 4.81.
 
 ### 4.79 Four SSE streams to the same host - built
 
