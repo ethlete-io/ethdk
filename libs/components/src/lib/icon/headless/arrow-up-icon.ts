@@ -10,7 +10,7 @@ import { IconDefinition } from './icon-definition';
 export const ARROW_UP_ICON: IconDefinition = {
   name: 'et-arrow-up',
   data: `
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
       <path
         d="M12 20.5V3.5"
         stroke="currentColor"

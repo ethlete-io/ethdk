@@ -1,6 +1,6 @@
 {
   "target": "foundations/icons",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T23:25:25.546Z",
   "baseline": {
     "foundations/colors": "f4a7642306093b96",
@@ -22,10 +22,5 @@
       "round": "r1",
       "note": "A grid of every shipped icon with its name, on a light and a dark surface. Discovered from the icon files, so a new icon shows up without an edit here."
     }
-  },
-  "hold": {
-    "until": "Tom's call on the stroke icons without fill=\"none\" (clipboard-check, floppy-disk, pencil, arrow-up, arrow-right, arrows-left-right, plus, underline): they draw filled on a light surface",
-    "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:26:18.368Z"
   }
 }
