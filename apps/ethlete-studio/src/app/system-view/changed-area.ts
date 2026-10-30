@@ -34,7 +34,7 @@ export const changedArea$ = (address: ChangedAreaAddress): Observable<{ area: Ch
 export const changedAreaShownByDefault = ({ frame, crops }: ChangedArea) =>
   crops.reduce((sum, crop) => sum + crop.width * crop.height, 0) < (frame.width * frame.height) / 2;
 
-/** Every drawn frame of `columns` cropped to each crop of `area`, enlarged to the frame's width; other frames stay as they are. */
+/** Every drawn frame of `columns` cropped to each crop of `area`, enlarged up to the frame's width; other frames stay as they are. */
 export const croppedFramesOf = (
   frames: CanvasFrame[],
   { columns, area }: { columns: ReadonlySet<string>; area: ChangedArea },

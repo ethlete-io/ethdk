@@ -1,5 +1,13 @@
 import { Subject } from 'rxjs';
-import { MeasuredSide, cropPointOf, cropRectOf, followedSizes, frameMessageOf, pagePointOfCrop } from './canvas-frame';
+import {
+  MeasuredSide,
+  cropPointOf,
+  cropRectOf,
+  croppedLayoutOf,
+  followedSizes,
+  frameMessageOf,
+  pagePointOfCrop,
+} from './canvas-frame';
 
 const followAPage = (contentAt: (viewport: number) => number, viewport: number) => {
   const measures$ = new Subject<MeasuredSide>();
@@ -101,6 +109,29 @@ describe('followedSizes', () => {
   });
 });
 
+describe('croppedLayoutOf', () => {
+  it('enlarges a small area at most twice, so a button does not span the frame', () => {
+    const { width, height, views } = croppedLayoutOf({
+      areas: [{ x: 1300, y: 90, width: 72, height: 30 }],
+      frame: { width: 1440, height: 900 },
+    });
+
+    expect(views).toEqual([
+      { top: 204, scale: 2, width: 144, height: 60, area: { x: 1300, y: 90, width: 72, height: 30 } },
+    ]);
+    expect({ width, height }).toEqual({ width: 1440, height: 264 });
+  });
+
+  it('enlarges a wide area only up to the frame width', () => {
+    const [view] = croppedLayoutOf({
+      areas: [{ x: 0, y: 0, width: 960, height: 100 }],
+      frame: { width: 1440, height: 900 },
+    }).views;
+
+    expect(view).toMatchObject({ scale: 1.5, width: 1440, height: 150 });
+  });
+});
+
 describe('a crop of two areas', () => {
   const crop = {
     areas: [
@@ -109,20 +140,20 @@ describe('a crop of two areas', () => {
     ],
     frame: { width: 1440, height: 900 },
   };
-  const secondTop = 180 + 24 + 54 * 20 + 24;
+  const secondTop = 180 + 24 + 54 * 2 + 24;
 
   it('maps a page point into the area that shows it, and back', () => {
-    expect(cropPointOf(crop, { x: 10, y: 810 })).toEqual({ x: 100, y: secondTop + 100 });
-    expect(pagePointOfCrop(crop, { x: 100, y: secondTop + 100 })).toEqual({ x: 10, y: 810 });
-    expect(pagePointOfCrop(crop, { x: 200, y: 204 })).toEqual({ x: 110, y: 200 });
+    expect(cropPointOf(crop, { x: 10, y: 810 })).toEqual({ x: 20, y: secondTop + 20 });
+    expect(pagePointOfCrop(crop, { x: 20, y: secondTop + 20 })).toEqual({ x: 10, y: 810 });
+    expect(pagePointOfCrop(crop, { x: 100, y: 204 })).toEqual({ x: 150, y: 200 });
   });
 
   it('cuts a rectangle to the first area that shows it', () => {
     expect(cropRectOf(crop, { x: 0, y: 800, width: 10, height: 5 })).toEqual({
       x: 0,
       y: secondTop,
-      width: 100,
-      height: 50,
+      width: 20,
+      height: 10,
     });
     expect(cropRectOf(crop, { x: 1000, y: 10, width: 10, height: 5 })).toBeNull();
   });

@@ -59,7 +59,7 @@ describe('changedAreaViewOf', () => {
     expect(new Set(cropped.map((frame) => JSON.stringify([frame.crop, frame.width, frame.height]))).size).toBe(1);
     expect(cropped[0]?.crop).toEqual({ areas: SMALL.crops, frame: FRAME });
     expect(cropped[0]?.width).toBe(1440);
-    expect(cropped[0]?.height).toBe(180 + 24 + 54 * 20);
+    expect(cropped[0]?.height).toBe(180 + 24 + 54 * 2);
     expect(view.frames.find((frame) => frame.column === 'in context a')?.crop).toBeUndefined();
     expect(switchOf(view)).toMatchObject({ label: 'Changed area', on: true });
   });
@@ -72,7 +72,7 @@ describe('changedAreaViewOf', () => {
     const [first] = viewOf({ r2: { frame: FRAME, crops } }).frames.filter((frame) => frame.crop);
 
     expect(first?.crop?.areas).toEqual(crops);
-    expect(first?.height).toBe(180 + 24 + 54 * 20 + 24 + 36 * 10);
+    expect(first?.height).toBe(180 + 24 + 54 * 2 + 24 + 36 * 2);
   });
 
   it('keeps the whole page by default when the changed area covers half of the frame or more', () => {

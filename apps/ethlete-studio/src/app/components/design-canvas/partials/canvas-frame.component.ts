@@ -139,8 +139,9 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       @for (view of cropped.views; track $index) {
         <div
           [style.top.px]="view.top"
+          [style.width.px]="view.width"
           [style.height.px]="view.height"
-          class="absolute right-0 left-0 overflow-hidden"
+          class="absolute left-0 overflow-hidden"
           data-crop-view
         >
           <div

@@ -42,7 +42,7 @@ export type CanvasFrame = {
   at?: { x: number; y: number };
   /** Draws a table of fitted cells inside the frame instead of `src`; each cell takes comments of its own. */
   grid?: FrameGrid;
-  /** Draws only these areas of the page, each enlarged to the frame's width, below a small picture of the whole page. */
+  /** Draws only these areas of the page, each enlarged up to the frame's width, below a small picture of the whole page. */
   crop?: FrameCrop;
 };
 
@@ -57,6 +57,7 @@ export type FrameCrop = {
 
 const CROP_THUMB_SCALE = 0.2;
 const CROP_THUMB_GAP = 24;
+const CROP_MAX_SCALE = 2;
 
 /** Where a cropped frame draws the picture of the whole page and each enlarged area, and its own size. */
 export const croppedLayoutOf = (crop: FrameCrop) => {
@@ -64,8 +65,8 @@ export const croppedLayoutOf = (crop: FrameCrop) => {
   const thumb = { width: width * CROP_THUMB_SCALE, height: height * CROP_THUMB_SCALE };
   let top = thumb.height + CROP_THUMB_GAP;
   const views = crop.areas.map((area) => {
-    const scale = width / area.width;
-    const view = { top, scale, height: area.height * scale, area };
+    const scale = Math.min(width / area.width, CROP_MAX_SCALE);
+    const view = { top, scale, width: area.width * scale, height: area.height * scale, area };
 
     top += view.height + CROP_THUMB_GAP;
 
