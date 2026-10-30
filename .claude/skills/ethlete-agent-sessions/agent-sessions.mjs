@@ -92,6 +92,9 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
+const runsInSession = (agentArgs) =>
+  Boolean(process.stdin.isTTY && process.stdout.isTTY) && !agentArgs.some((arg) => ONE_SHOT_FLAGS.has(arg));
 
 /**
  * Reads the last prompt line (`❯` for Claude Code, `›` for Codex) of the pane. Dim text is the empty
@@ -227,6 +230,9 @@ if (command === 'send' && sender) {
     const [name, ...rest] = spec.split('=');
     startSession(sessionFor(name), rest.join('=') || undefined);
   });
+} else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
+  const [program, ...programArgs] = words;
+  process.exitCode = spawnSync(program, programArgs, { stdio: 'inherit' }).status ?? 1;
 } else if (command === 'run' && sender && words.length) {
   const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
   if (!sessionExists(DISPATCH_SESSION))
