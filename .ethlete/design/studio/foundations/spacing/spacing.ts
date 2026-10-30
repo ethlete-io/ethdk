@@ -1,8 +1,5 @@
-import { definePart, drawing, html } from '@design-system';
-import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
+import { definePart, html, tokenSheet } from '@design-system';
 import tokens from './spacing.css?inline';
-
-const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
 
 const sampleOf = (name: string) => {
   if (name.startsWith('space-')) return html`<span class="sp-bar" style="width: var(--${name})"></span>`;
@@ -26,10 +23,13 @@ export default definePart({
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
   states: { scale: {} },
   render: () =>
-    drawing({
-      body: tokenSheet({ title: 'Spacing, radius and heights', sample, names, sampleOf }),
-      setup: (root) => fillTokenValues(root, true),
-      styles: `${tokenSheetStyles}
+    tokenSheet({
+      title: 'Spacing, radius and heights',
+      css: tokens,
+      sample,
+      sampleOf,
+      pixels: true,
+      styles: `
         .sp-cluster { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-5); }
         .sp-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .sp-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }

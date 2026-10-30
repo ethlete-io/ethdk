@@ -1,8 +1,5 @@
-import { definePart, drawing, html } from '@design-system';
-import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
+import { definePart, html, tokenSheet } from '@design-system';
 import tokens from './motion.css?inline';
-
-const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
 
 const steps = [0, 25, 50, 75, 100];
 
@@ -37,10 +34,12 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   states: { scale: {} },
   render: () =>
-    drawing({
-      body: tokenSheet({ title: 'Motion', sample, names, sampleOf }),
-      setup: (root) => fillTokenValues(root),
-      styles: `${tokenSheetStyles}
+    tokenSheet({
+      title: 'Motion',
+      css: tokens,
+      sample,
+      sampleOf,
+      styles: `
         .mo-sample { display: flex; flex-direction: column; gap: var(--space-3); }
         .mo-strip { display: flex; align-items: flex-end; gap: var(--space-3); }
         .mo-label { width: 160px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }

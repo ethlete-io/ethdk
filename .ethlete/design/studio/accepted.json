@@ -644,5 +644,37 @@
     "hash": "c874a2454241b87f",
     "at": "2026-10-30T19:07:12.235Z",
     "auto": true
+  },
+  {
+    "part": "foundations/colors",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "2f3cc4b7428ce3b7",
+    "at": "2026-10-30T22:35:53.783Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/spacing",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "13bb41596aea7827",
+    "at": "2026-10-30T22:35:53.784Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/type",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "55cbe2495f74530a",
+    "at": "2026-10-30T22:35:53.784Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/motion",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "796429fd3514f1b5",
+    "at": "2026-10-30T22:35:53.785Z",
+    "auto": true
   }
 ]

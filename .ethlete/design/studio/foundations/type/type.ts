@@ -1,8 +1,5 @@
-import { definePart, drawing, html } from '@design-system';
-import { fillTokenValues, tokenSheet, tokenSheetStyles } from '@shared/token-sheet';
+import { definePart, html, tokenSheet } from '@design-system';
 import tokens from './type.css?inline';
-
-const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
 
 const steps = ['xs', 'sm', 'md', 'lg', 'xl'];
 
@@ -33,16 +30,14 @@ export default definePart({
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: { scale: {} },
   render: () =>
-    drawing({
-      body: tokenSheet({
-        title: 'Type scale',
-        sample: steps.map(typeSample).join(''),
-        sampleClass: 'ty-stack',
-        names,
-        sampleOf,
-      }),
-      setup: (root) => fillTokenValues(root, true),
-      styles: `${tokenSheetStyles}
+    tokenSheet({
+      title: 'Type scale',
+      css: tokens,
+      sample: steps.map(typeSample).join(''),
+      sampleClass: 'ty-stack',
+      sampleOf,
+      pixels: true,
+      styles: `
         .ty-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .ty-step { display: grid; grid-template-columns: 120px 300px 1fr; align-items: center; gap: var(--space-3); }
         .ty-step-text { min-width: 0; }

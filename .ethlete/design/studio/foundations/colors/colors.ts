@@ -1,5 +1,4 @@
-import { contrastRatioOf, definePart, drawing, html } from '@design-system';
-import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
+import { contrastRatioOf, definePart, html, tokenSheet } from '@design-system';
 import tokens from './colors.css?inline';
 
 type Group = 'surfaces' | 'accent' | 'warning' | 'error';
@@ -13,10 +12,6 @@ const groups: Record<Group, { title: string; owns: (name: string) => boolean }> 
   warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
   error: { title: 'Error', owns: (name) => /^(on-)?danger/.test(name) },
 };
-
-const namesOf = (group: Group) => [
-  ...new Set([...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '').filter(groups[group].owns)),
-];
 
 const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
 
@@ -201,16 +196,15 @@ export default definePart<{ group: Group }>({
     error: { group: 'error' },
   },
   render: ({ group }) =>
-    drawing({
-      body: `${tokenSheet({
-        title: groups[group].title,
-        sample: surfaces.map(cards[group]).join(''),
-        sampleClass: 'co-grid',
-        names: namesOf(group),
-        sampleOf,
-      })}`,
-      setup: [fillTokenValues, fillRatios],
-      styles: `${tokenSheetStyles}
+    tokenSheet({
+      title: groups[group].title,
+      css: tokens,
+      sample: surfaces.map(cards[group]).join(''),
+      sampleClass: 'co-grid',
+      only: groups[group].owns,
+      sampleOf,
+      setup: fillRatios,
+      styles: `
         .co-ratios { display: flex; align-items: center; gap: var(--space-1); width: 248px; margin-left: auto; }
         .co-needs { width: 48px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .co-ratio { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--space-1); width: 64px; height: var(--control-sm); padding: 0 var(--space-2); box-sizing: border-box; border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); font-family: var(--font-code); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
