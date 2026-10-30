@@ -351,6 +351,13 @@ Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's 
   `open-option-hover` at 320 px is only a little taller than the closed field, and the open panel scrolls inside the
   frame. Shots are fine. `ethlete-sdk-57` fixes it now, despite the usage limit, because it blocks the select merge.
 
+### Form-field error colours decision (2026-10-31)
+
+- Q67: accepted as built in `c5309a6b2`. In error, the field only remaps its colour variables to the error theme.
+  Rest border is error primary at 50%, hover is error ink, focus-visible is error primary. Label and error text stay
+  ink. No focus ring. Hover and focus-visible are close, which is fine: a keyboard user sees rest to focus-visible.
+  The sdk form-field sketch goes to ready.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
