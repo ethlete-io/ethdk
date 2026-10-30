@@ -1019,12 +1019,24 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   grace. Tom checks the sharpness and the pop-in in the real Tauri app; if the steps remain, the builder measures
   there. The 12 s cold wait becomes item 4.81.
 
-### 4.81 A cold sketch shows no frame until `GET /__design/sketches` answers - in progress
+### 4.81 A cold sketch shows no frame until `GET /__design/sketches` answers - built
 
 - **Pain (found in 4.75, 2026-10-30):** a cold sketch showed no frame for about 12 s. Studio waits for
   `GET /__design/sketches` before it asks for any shot or diff.
 - **Decision (Tom, 2026-10-30):** Studio requests the shots without waiting for `/__design/sketches`.
-- **In progress (2026-10-30):** a subagent builds it; 4.78 follows.
+- **As built (2026-10-30, `06b5dd248` cli, `b82f9f144` Studio):** shots need the sketch's states (only the sketch
+  list has them), so the list got a quick form: `GET /__design/sketches?unchanged=no` skips the slow part, the
+  pixel comparison behind `unchanged` (cold 4.4-4.7 s, quick 0.75 s). On the first listing of a product the system
+  view reads the quick list, then the full one (`concat`); later reloads read the full list only. Shots and diffs
+  start from the quick list. Until the full list arrives the unchanged states are not folded, so frames of states
+  that later fold may draw once.
+  - Measured (own production Studio build, own design server on the scratch copy, cold server, Chromium
+    1600x1000, sketch `components/card`, 3 runs each), before / after: first shot and diff request 5.2-5.5 s /
+    1.9-2.0 s after page load; first frame painted 5.2-5.55 s / 3.2-3.3 s. The cold list alone: 4.4-4.7 s / 0.75 s
+    quick. The old 12 s is now about 5 s because the server is faster since 4.76 and 4.77.
+  - Specs bite: the system view spec (the shot starts while the full list never answers) fails on the HEAD
+    component; the serve spec (fewer loads with `unchanged=no`) fails on the HEAD `studio-api.ts`.
+  - Not verified: WebKitGTK in the Tauri window, the dev Studio on :4221, Tom's design server under real load.
 
 ### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - built
 
