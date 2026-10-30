@@ -4,7 +4,7 @@ Source: the fifagg session `fifagg-frontend-d4`, `/home/tom/dev/fifagg/fifagg-fr
 `chore/post-angular-22-cleanup`, commit `4114f85b9e`. The files there are `apps/e2e/tools/failure-reporter.ts`
 and `apps/e2e/tools/run-slices.mjs`.
 
-Status on 2026-10-30: slice 1 is done (see the commit "Add a Playwright failure reporter"). The slice runner
+Status on 2026-10-30: slices 1 (`9b7617fc5`) and 3 are done. The slice runner
 did not finish a live run. Slice 2 waits for a confirmation from `fifagg-frontend-d4`.
 
 Done already: the Angular 22 `?.` note in the `sdk-update` skill (`9f86816bf`).

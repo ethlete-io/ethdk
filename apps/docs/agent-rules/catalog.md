@@ -33,32 +33,33 @@ its own replacement for one of them.
 
 ## On-demand skills
 
-| Name                  | Use it for                                                                                                    | Availability                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `angular-patterns`    | Choosing and structuring Angular components, directives, services, pipes, templates and lifecycle behavior.   | All profiles; requires `@ethlete/core`              |
-| `api-source`          | Reading a configured backend checkout to verify API behavior without editing that checkout.                   | Consumer profile                                    |
-| `app-testing`         | Unit-testing an app built on the SDK: query views, overlays and views that read the URL.                      | Consumer profile; requires `@ethlete/core`          |
-| `codex-subagent`      | Delegating a task to a Codex agent for a second opinion, a review or a cheap parallel lookup.                 | All profiles                                        |
-| `design-exploration`  | Running a visual design exploration in steps, with the user as the designer.                                  | All profiles                                        |
-| `domain-modeling`     | Building a project's glossary and recording an architecture decision while a design is discussed.             | All profiles                                        |
-| `figma-export`        | Reconciling rendered components with SVG and CSS exports from Figma.                                          | All profiles                                        |
-| `git-commit`          | Writing commitlint-compatible, scoped, lean commit messages.                                                  | All profiles                                        |
-| `git-flow`            | Naming, basing and targeting feature, sub-feature, release and hotfix branches.                               | All profiles                                        |
-| `grill-with-docs`     | Running the interview and the documentation together; the user starts it, no agent does.                      | All profiles                                        |
-| `grilling`            | Stress-testing a plan or a decision through rounds of questions, one settled frontier at a time.              | All profiles                                        |
-| `handoff`             | Saving work state for a fresh agent session or resuming a saved handoff.                                      | All profiles                                        |
-| `query`               | Building with the signals-first query client, reactive arguments, auth, polling, pagination and RxJS bridges. | Consumer profile; requires `@ethlete/query`         |
-| `rxjs-signals`        | Choosing between signals and RxJS, managing subscriptions and avoiding streams inside effects or computeds.   | All profiles; requires `@ethlete/core`              |
-| `sdk-docs`            | Finding the authoritative SDK guide or Storybook documentation before using an unfamiliar API.                | Consumer profile                                    |
-| `sdk-local-build`     | Building an unreleased SDK checkout and temporarily installing it through a `file:` dependency.               | Consumer profile                                    |
-| `sdk-source`          | Reading a configured SDK checkout when published docs and installed types are insufficient.                   | Consumer profile                                    |
-| `sdk-update`          | Updating the `@ethlete/*` packages with `et update` and working the migration tasks it leaves behind.         | Consumer profile; requires `@ethlete/cli`           |
-| `story-styling`       | Styling Storybook stories with the repository's trimmed Tailwind theme.                                       | Consumer profile; requires `@ethlete/core`          |
-| `styleguide`          | Applying the TypeScript and Angular judgment calls that lint cannot enforce.                                  | Consumer profile; requires `@ethlete/eslint-plugin` |
-| `theming`             | Using surface and semantic color theming, including across overlays and portals.                              | Consumer profile; requires `@ethlete/core`          |
-| `timetrack`           | Reading and writing Jira data through the running Timetrack app without repository credentials.               | All profiles                                        |
-| `verify-in-app`       | Driving the running app with Playwright to verify a view or style change and prove a fix with a test.         | Consumer profile                                    |
-| `verify-in-storybook` | Driving a Storybook story with Playwright to verify DOM, styles, animations and interactions.                 | Consumer profile                                    |
+| Name                  | Use it for                                                                                                       | Availability                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `angular-patterns`    | Choosing and structuring Angular components, directives, services, pipes, templates and lifecycle behavior.      | All profiles; requires `@ethlete/core`              |
+| `api-source`          | Reading a configured backend checkout to verify API behavior without editing that checkout.                      | Consumer profile                                    |
+| `app-testing`         | Unit-testing an app built on the SDK: query views, overlays and views that read the URL.                         | Consumer profile; requires `@ethlete/core`          |
+| `codex-subagent`      | Delegating a task to a Codex agent for a second opinion, a review or a cheap parallel lookup.                    | All profiles                                        |
+| `design-exploration`  | Running a visual design exploration in steps, with the user as the designer.                                     | All profiles                                        |
+| `domain-modeling`     | Building a project's glossary and recording an architecture decision while a design is discussed.                | All profiles                                        |
+| `e2e-triage`          | Working through a failed Playwright e2e run: group the failures, fix the largest group, re-run only what failed. | Consumer profile; requires `@ethlete/cli`           |
+| `figma-export`        | Reconciling rendered components with SVG and CSS exports from Figma.                                             | All profiles                                        |
+| `git-commit`          | Writing commitlint-compatible, scoped, lean commit messages.                                                     | All profiles                                        |
+| `git-flow`            | Naming, basing and targeting feature, sub-feature, release and hotfix branches.                                  | All profiles                                        |
+| `grill-with-docs`     | Running the interview and the documentation together; the user starts it, no agent does.                         | All profiles                                        |
+| `grilling`            | Stress-testing a plan or a decision through rounds of questions, one settled frontier at a time.                 | All profiles                                        |
+| `handoff`             | Saving work state for a fresh agent session or resuming a saved handoff.                                         | All profiles                                        |
+| `query`               | Building with the signals-first query client, reactive arguments, auth, polling, pagination and RxJS bridges.    | Consumer profile; requires `@ethlete/query`         |
+| `rxjs-signals`        | Choosing between signals and RxJS, managing subscriptions and avoiding streams inside effects or computeds.      | All profiles; requires `@ethlete/core`              |
+| `sdk-docs`            | Finding the authoritative SDK guide or Storybook documentation before using an unfamiliar API.                   | Consumer profile                                    |
+| `sdk-local-build`     | Building an unreleased SDK checkout and temporarily installing it through a `file:` dependency.                  | Consumer profile                                    |
+| `sdk-source`          | Reading a configured SDK checkout when published docs and installed types are insufficient.                      | Consumer profile                                    |
+| `sdk-update`          | Updating the `@ethlete/*` packages with `et update` and working the migration tasks it leaves behind.            | Consumer profile; requires `@ethlete/cli`           |
+| `story-styling`       | Styling Storybook stories with the repository's trimmed Tailwind theme.                                          | Consumer profile; requires `@ethlete/core`          |
+| `styleguide`          | Applying the TypeScript and Angular judgment calls that lint cannot enforce.                                     | Consumer profile; requires `@ethlete/eslint-plugin` |
+| `theming`             | Using surface and semantic color theming, including across overlays and portals.                                 | Consumer profile; requires `@ethlete/core`          |
+| `timetrack`           | Reading and writing Jira data through the running Timetrack app without repository credentials.                  | All profiles                                        |
+| `verify-in-app`       | Driving the running app with Playwright to verify a view or style change and prove a fix with a test.            | Consumer profile                                    |
+| `verify-in-storybook` | Driving a Storybook story with Playwright to verify DOM, styles, animations and interactions.                    | Consumer profile                                    |
 
 Skills are emitted in the Agent Skills `SKILL.md` format and load on demand. Their
 frontmatter descriptions tell each agent when the guide applies.
