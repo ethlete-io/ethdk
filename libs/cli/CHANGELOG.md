@@ -1,5 +1,23 @@
 # @ethlete/cli
 
+## 3.0.0-next.23
+
+### Minor Changes
+
+- `et design shot --variants --crop changed` cuts every cell to one box around the pixels the shown variants change from the merged part, and prints that box for a later `--crop`.
+- Add `@ethlete/cli/playwright/failure-reporter`, a Playwright reporter that writes one JSON line per failed test attempt while the run goes on.
+- The Playwright failure reporter writes a `detail` field: the first line past the kept error lines that holds a URL or a diff line, so a refused request stays visible.
+- Reject and reopen single sketch variants with `et design sketch reject|reopen` or in Studio; a rejected variant keeps its reason, origin and history and can no longer be picked or merged.
+- Studio's sketch view gets a "Changed area" switch per round that shows every column cropped to the one area the round's variants change, enlarged, under a small whole-page thumbnail, and the design server answers that area on `/__design/sketch-crop`.
+
+### Patch Changes
+
+- `et design` commands that render Angular markup now exit after they print their result.
+- A sketch state whose markup differs or only renders in a browser now counts as unchanged when its pictures match the product. Studio folds such states and shows a count with a "Show all states" button.
+- `design shot --state <s> --variants` shows a neutral "New state - no merged version" cell when only the variants have the state, instead of a red render error.
+- `et design shot --variants` takes `--round <key>` and `--variant <name>` to draw only the current round next to the merged row.
+- A design check now reports a type checker that failed without output as `NO-TYPE-CHECKER`, with the command and the process error, instead of an empty `TYPE-ERROR`.
+
 ## 3.0.0-next.22
 
 ### Major Changes
