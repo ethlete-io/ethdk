@@ -15,7 +15,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, SELECT_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
+import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
   ListedCall,
   ListedProduct,
@@ -620,9 +620,20 @@ export class SystemViewComponent {
         statusChanges: this.statusChanges(),
       })),
     ).pipe(
-      switchMap(({ port, product }) =>
+      scan(
+        (known: { port: number | null; product: string | undefined; first: boolean }, request) => ({
+          port: request.port,
+          product: request.product,
+          first: known.port !== request.port || known.product !== request.product,
+        }),
+        { port: null, product: undefined, first: true },
+      ),
+      switchMap(({ port, product, first }) =>
         port && product
-          ? listedSketches$(port, product).pipe(
+          ? (first
+              ? concat(listedSketches$({ port, product, quick: true }), listedSketches$({ port, product }))
+              : listedSketches$({ port, product })
+            ).pipe(
               map(({ sketches }) => sketches),
               catchError(() => of<ListedSketch[]>([])),
               map((items) => ({ product, items })),

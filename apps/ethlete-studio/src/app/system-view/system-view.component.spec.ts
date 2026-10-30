@@ -301,6 +301,38 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.nativeElement.querySelector('[data-merge]')).toBeNull();
   });
 
+  it('shows the picked sketch before the slow listing with its unchanged states answers', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        return url.includes('unchanged=no')
+          ? json({ sketches: [sketch], unreadable: [] })
+          : new Promise(() => undefined);
+      }
+
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+
+    expect(fixture.componentInstance['sketchShown']()?.sketch.target).toBe('elements/rating');
+  });
+
   it('marks the sketch "merging" while the merge runs, then selects the target part', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

@@ -511,8 +511,18 @@ export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observa
 // A string body goes as text/plain, a simple request: the design server answers no CORS preflight.
 const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
 
-export const listedSketches$ = (port: number, product: string): Observable<ListedSketches> =>
-  designAnswer$<ListedSketches>(`http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}`);
+export const listedSketches$ = ({
+  port,
+  product,
+  quick = false,
+}: {
+  port: number;
+  product: string;
+  quick?: boolean;
+}): Observable<ListedSketches> =>
+  designAnswer$<ListedSketches>(
+    `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}${quick ? '&unchanged=no' : ''}`,
+  );
 
 export const sketchPreview$ = (address: SketchAddress & { variant: string }): Observable<MergePreview> =>
   designAnswer$<MergePreview>(
