@@ -1105,6 +1105,8 @@ measurement) found the Rust side lean: no polling in Rust, no unbounded channels
 watcher findings (recursive over all of `.ethlete/design`, no debounce, a full `design_project` rescan per burst)
 belong to 4.78, which replaces the `tick` with design server events.
 
+- **Decision (Tom, 2026-10-30):** build 4.82, 4.83 and 4.84 right after 4.78, then 4.47 discovery.
+
 ### 4.82 `design_server_state` spawns `node` on every 3 s poll - open
 
 - **From the code:** while a foreign server listens, Studio polls `design_server_state` every 3 s
