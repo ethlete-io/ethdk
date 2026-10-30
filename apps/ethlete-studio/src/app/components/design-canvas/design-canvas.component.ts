@@ -21,7 +21,15 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame, FrameCrop, cropPointOf, cropRectOf, pagePointOfCrop, placeableFramesOf } from './canvas-frame';
-import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
+import {
+  CanvasNote,
+  NOTE_BELOW_GAP,
+  PlacedNoteGroup,
+  noteConnectorPath,
+  noteKeyOf,
+  placeNoteMarkers,
+  placeNotes,
+} from './canvas-note';
 import {
   CameraScene,
   CameraTarget,
@@ -76,6 +84,7 @@ const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const LABEL_MIN_ZOOM = 0.25;
 const NOTE_MAX_SCALE = 2;
+const LABEL_MAX_SCALE = 1 / LABEL_MIN_ZOOM;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
@@ -241,6 +250,28 @@ export class DesignCanvasComponent {
   /** By grid frame id, the box of each of its cells from the frame's top left corner. */
   private cellRects = signal<Record<string, Record<string, Rect>>>({});
 
+  /** The key of the pointed note whose marker or card the pointer is over; only its line shows. */
+  protected hoveredNote = signal<string | null>(null);
+
+  protected readonly NOTE_KEY_OF = noteKeyOf;
+
+  protected worldTransform = computed(() => {
+    const { x, y, zoom } = this.camera();
+
+    return `translate(${x}px, ${y}px) scale(${zoom})`;
+  });
+
+  protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
+
+  /** The scale of the note column below a frame; it stops growing at `NOTE_MAX_SCALE`, the room the layout keeps for it. */
+  private noteScale = computed(() => Math.min(this.labelScale(), NOTE_MAX_SCALE));
+
+  protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
+
+  private everyZoomNoteFrames = computed(
+    () => new Set(this.notes().flatMap((note) => (note.everyZoom && note.frameId !== undefined ? [note.frameId] : []))),
+  );
+
   private layout = computed(() => {
     const measured = this.measured();
     const frames = this.frames();
@@ -296,7 +327,10 @@ export class DesignCanvasComponent {
       columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
     );
     const below = Object.fromEntries(
-      Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height * NOTE_MAX_SCALE]),
+      Object.entries(this.noteColumnHeights()).map(([id, height]) => [
+        id,
+        NOTE_BELOW_GAP + height * (this.everyZoomNoteFrames().has(id) ? LABEL_MAX_SCALE : NOTE_MAX_SCALE),
+      ]),
     );
     const sections = this.sections();
     const matrix =
@@ -466,7 +500,7 @@ export class DesignCanvasComponent {
       const crop = frame?.frame.crop;
       const point = crop && pin.point ? cropPointOf(crop, pin.point) : (pin.point ?? null);
 
-      if (!frame || (pin.point && !point)) return [];
+      if (!frame) return [];
 
       return [{ pin, x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0), open: pin.id === openId }];
     });
@@ -500,11 +534,6 @@ export class DesignCanvasComponent {
 
   protected noteNumbers = computed(() => new Map(this.noteMarkers().map((marker) => [marker.key, marker.number])));
 
-  /** The key of the pointed note whose marker or card the pointer is over; only its line shows. */
-  protected hoveredNote = signal<string | null>(null);
-
-  protected readonly NOTE_KEY_OF = noteKeyOf;
-
   protected placedDraft = computed(() => {
     const draft = this.draft();
 
@@ -514,7 +543,7 @@ export class DesignCanvasComponent {
     const crop = frame?.frame.crop;
     const point = crop && draft?.point ? cropPointOf(crop, draft.point) : (draft?.point ?? null);
 
-    if (!frame || !draft || (draft.point && !point)) return null;
+    if (!frame || !draft) return null;
 
     return { x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0) };
   });
@@ -522,19 +551,6 @@ export class DesignCanvasComponent {
   protected pointTargets = computed(() =>
     this.pointing() ? this.targets().filter((placed) => placed.frame.place) : [],
   );
-
-  protected worldTransform = computed(() => {
-    const { x, y, zoom } = this.camera();
-
-    return `translate(${x}px, ${y}px) scale(${zoom})`;
-  });
-
-  protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
-
-  /** The scale of the note column below a frame; it stops growing at `NOTE_MAX_SCALE`, the room the layout keeps for it. */
-  protected noteScale = computed(() => Math.min(this.labelScale(), NOTE_MAX_SCALE));
-
-  protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
 
   protected noteConnectors = computed(() => {
     if (this.notesCompact()) return [];
@@ -647,6 +663,12 @@ export class DesignCanvasComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  protected noteGroupScale(group: PlacedNoteGroup) {
+    return group.anchor !== 'below' || (group.frameId !== undefined && this.everyZoomNoteFrames().has(group.frameId))
+      ? this.labelScale()
+      : this.noteScale();
   }
 
   protected select(id: string, event: MouseEvent) {

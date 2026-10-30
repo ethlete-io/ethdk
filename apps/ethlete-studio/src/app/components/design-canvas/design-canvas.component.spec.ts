@@ -73,6 +73,23 @@ describe('DesignCanvasComponent', () => {
     expect(host.querySelector('[data-note-connector]')).not.toBeNull();
   });
 
+  it('keeps an every-zoom note below its frame at label size once other cards hide', async () => {
+    const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
+
+    fixture.componentRef.setInput('notes', [
+      { id: 'n', text: 'Hero', frameId: 'a' },
+      { id: 'v', text: '32 × 18', frameId: 'a', everyZoom: true },
+    ]);
+    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.2 });
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('[data-note="n"]')).toBeNull();
+    expect(host.querySelector('[data-note="v"]')).not.toBeNull();
+    expect(host.querySelector<HTMLElement>('[data-note-anchor="below"]')?.style.transform).toBe('scale(4)');
+  });
+
   it('shows each note at its place, and reports the world point of a click on empty space while pointing', async () => {
     const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
     const picks: { x: number; y: number }[] = [];
@@ -650,7 +667,7 @@ describe('DesignCanvasComponent', () => {
       place: { part: 'p', state: 'rest', size: 'fitted' },
     };
 
-    it('places a pin and an outline through the crop and hides what lies outside it', async () => {
+    it('places a pin and an outline through the crop, a pin outside it on the small whole page, and hides an outline outside it', async () => {
       const fixture = await render([cropped]);
 
       fixture.componentRef.setInput('pins', [
@@ -672,9 +689,10 @@ describe('DesignCanvasComponent', () => {
         parseFloat(element?.style.top ?? '') - parseFloat(frame.style.top),
       ];
 
-      expect(pins).toHaveLength(1);
+      expect(pins).toHaveLength(2);
       expect(outlines).toHaveLength(1);
       expect(offset(pins[0]?.parentElement ?? undefined)).toEqual([200, 404]);
+      expect(offset(pins[1]?.parentElement ?? undefined)).toEqual([2, 2]);
       expect(offset(outlines[0])).toEqual([200, 404]);
       expect([outlines[0]?.style.width, outlines[0]?.style.height]).toEqual(['200px', '100px']);
     });
@@ -693,6 +711,22 @@ describe('DesignCanvasComponent', () => {
       target.nativeElement.dispatchEvent(new MouseEvent('click', { clientX: 200, clientY: 404 }));
 
       expect(picks).toEqual([{ frameId: 'a', point: { x: 110, y: 210 } }]);
+    });
+
+    it('stores the full-page point of a click on the small whole page above the crop', async () => {
+      const fixture = await render([cropped]);
+      const picks: FramePoint[] = [];
+
+      fixture.componentInstance.pointPick.subscribe((pick) => picks.push(pick));
+      fixture.componentRef.setInput('pointing', true);
+      await fixture.whenStable();
+
+      const target = fixture.debugElement.query(By.css('[data-comment-target]'));
+
+      vi.spyOn(target.nativeElement, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1440, 1284));
+      target.nativeElement.dispatchEvent(new MouseEvent('click', { clientX: 100, clientY: 60 }));
+
+      expect(picks).toEqual([{ frameId: 'a', point: { x: 500, y: 300 } }]);
     });
   });
 });

@@ -651,4 +651,47 @@ describe('SketchViewComponent on a refused merge', () => {
     expect(croppedIds()).toEqual([]);
     expect(areaSwitch()?.getAttribute('aria-pressed')).toBe('false');
   });
+
+  it('keeps the changed-area switch of a round over a reload', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-crop'))
+        return json({ area: { frame: { width: 1440, height: 900 }, crop: { x: 80, y: 182, width: 72, height: 54 } } });
+
+      return new Promise(() => undefined);
+    });
+
+    const open = async () => {
+      const fixture = TestBed.createComponent(SketchViewComponent);
+
+      fixture.componentRef.setInput('port', 4402);
+      fixture.componentRef.setInput('product', PRODUCT);
+      fixture.componentRef.setInput('sketch', {
+        ...SKETCH,
+        rounds: [{ key: 'r1', title: 'Switch sizing', note: '' }],
+        variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
+        targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: [] })),
+      });
+      fixture.componentRef.setInput('part', null as ListedPart | null);
+      fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+      fixture.autoDetectChanges();
+      await settle(fixture);
+
+      return fixture;
+    };
+    const areaSwitch = (fixture: ComponentFixture<SketchViewComponent>) =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        '[data-group-switch="round r1"], [data-changed-area]',
+      );
+
+    const first = await open();
+
+    areaSwitch(first)?.click();
+    await settle(first);
+    first.destroy();
+
+    const reloaded = await open();
+
+    expect(areaSwitch(reloaded)?.getAttribute('aria-pressed')).toBe('false');
+  });
 });

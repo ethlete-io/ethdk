@@ -853,9 +853,17 @@ export class SketchViewComponent {
     { initialValue: {} as Record<string, ChangedArea | null> },
   );
 
-  private changedAreaChoices = linkedSignal<string, Record<string, boolean>>({
-    source: () => this.sketch().createdAt,
-    computation: () => ({}),
+  private changedAreaSource = computed(() => ({ key: this.cameraKey(), createdAt: this.sketch().createdAt }), {
+    equal: (a, b) => a.key === b.key && a.createdAt === b.createdAt,
+  });
+
+  private changedAreaChoices = linkedSignal({
+    source: this.changedAreaSource,
+    computation: ({ key, createdAt }): Record<string, boolean> => {
+      const pick = key === null ? undefined : rememberedView().sketchViews?.[key];
+
+      return pick?.changedAreasFor === createdAt ? (pick.changedAreas ?? {}) : {};
+    },
   });
 
   protected changedAreaView = computed((): ReturnType<typeof changedAreaViewOf> =>
@@ -912,7 +920,10 @@ export class SketchViewComponent {
   }
 
   protected switchChangedArea(round: string, on: boolean) {
-    this.changedAreaChoices.update((choices) => ({ ...choices, [round]: on }));
+    const changedAreas = { ...this.changedAreaChoices(), [round]: on };
+
+    this.changedAreaChoices.set(changedAreas);
+    this.remember({ changedAreas, changedAreasFor: this.sketch().createdAt });
   }
 
   protected switchChangedAreaOfGroup(group: string) {

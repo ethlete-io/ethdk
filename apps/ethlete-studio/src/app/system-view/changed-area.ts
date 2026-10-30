@@ -97,7 +97,7 @@ export const changedAreaViewOf = ({
     const frame = column.note === undefined ? undefined : lastFrameOf(column.key);
 
     return frame && column.note !== undefined
-      ? [{ id: `column note ${column.key}`, text: column.note, frameId: frame.id }]
+      ? [{ id: `column note ${column.key}`, text: column.note, frameId: frame.id, everyZoom: true }]
       : [];
   });
   const noted = new Set(notes.map((note) => note.id));

@@ -88,8 +88,8 @@ describe('changedAreaViewOf', () => {
     const view = viewOf({ r2: SMALL });
 
     expect(view.notes).toEqual([
-      { id: 'column note a', text: '32 × 18', frameId: 'a empty' },
-      { id: 'column note b', text: '40 × 22', frameId: 'b default' },
+      { id: 'column note a', text: '32 × 18', frameId: 'a empty', everyZoom: true },
+      { id: 'column note b', text: '40 × 22', frameId: 'b default', everyZoom: true },
     ]);
     expect(view.columns.map((column) => column.note)).toEqual([undefined, undefined, undefined, undefined]);
     expect(view.columns[1]?.group).toEqual({

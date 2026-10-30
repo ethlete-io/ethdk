@@ -234,6 +234,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   changed-box outline and comment drafts follow the crop. Known gaps: below 25 % zoom the
   variant notes hide; the choice is not remembered across reloads; a click on the whole-page
   thumbnail drafts a comment at the top edge of the crop.
+- **Gaps closed (2026-10-30, `ethlete-sdk-57`):** a variant note is an `everyZoom` canvas note: it
+  stays at column-label size below 25 % zoom, and the layout keeps room for that. The switch of
+  each round is stored in the sketch view state for the sketch's `createdAt`. A click on the
+  whole-page thumbnail drafts at that page point, and a pin outside the crop sits on the
+  thumbnail. Specs only, not seen rendered.
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 

@@ -13,6 +13,8 @@ export type CanvasNote = {
   point?: Point;
   at?: Point;
   heading?: boolean;
+  /** Keeps the card at the size of a column label at every zoom; a card without it hides once labels stop growing. */
+  everyZoom?: boolean;
 };
 
 /** Where a group of notes sits: `below` hangs under a frame, `at` at a world point, `above` stands on top of everything. */
