@@ -47,6 +47,26 @@
        injected by the control, so a control instantiated before any form-field would inject it
        *before* the base sheet and lose every source-order tie against the base frame/label rules. */
     &[data-text-shell] {
+      --_et-form-field-frame-border: var(--et-surface-border-solid, currentColor);
+      --_et-form-field-frame-border-hover: var(--et-surface-interaction-hover-solid, currentColor);
+      --_et-form-field-label-color: var(--et-surface-color-muted-solid, currentColor);
+      --_et-form-field-label-color-active: var(--et-surface-color-solid, currentColor);
+
+      &[data-error] {
+        --_et-form-field-frame-border: color-mix(in srgb, var(--et-theme-color-primary-solid) 50%, transparent);
+        --_et-form-field-frame-border-hover: var(--et-theme-color-ink-solid);
+        --_et-form-field-label-color: var(--et-theme-color-ink-solid);
+        --_et-form-field-label-color-active: var(--et-theme-color-ink-solid);
+      }
+
+      .et-form-field-control-frame {
+        border-color: var(--_et-form-field-frame-border);
+      }
+
+      .et-form-field-affix {
+        color: var(--_et-form-field-label-color);
+      }
+
       &[data-label-mode='static'] {
         &[data-has-label]:not(:has(et-label[hidden])) .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
@@ -178,6 +198,7 @@
       }
 
       .et-form-field-label-area {
+        color: var(--_et-form-field-label-color);
         max-inline-size: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -194,12 +215,12 @@
             :has(.et-form-field-label-area:hover)
           ) {
           .et-form-field-control-frame {
-            border-color: var(--et-surface-interaction-hover-solid, currentColor);
+            border-color: var(--_et-form-field-frame-border-hover);
           }
 
           .et-form-field-label-area,
           .et-form-field-affix {
-            color: var(--et-surface-color-solid, currentColor);
+            color: var(--_et-form-field-label-color-active);
             opacity: 1;
           }
         }
@@ -217,7 +238,7 @@
       &:where([data-expanded]:not([data-readonly])) .et-form-field-affix,
       &:where([data-focused]:not([data-readonly])) .et-form-field-label-area,
       &:where([data-focused]:not([data-readonly])) .et-form-field-affix {
-        color: var(--et-surface-color-solid, currentColor);
+        color: var(--_et-form-field-label-color-active);
         opacity: 1;
       }
 
@@ -240,19 +261,6 @@
         [contenteditable] {
           cursor: default;
         }
-      }
-
-      &[data-error] .et-form-field-control-frame {
-        border-color: var(--et-theme-color-primary-solid);
-      }
-
-      &[data-error] .et-form-field-label-area {
-        color: var(--et-theme-color-ink-solid);
-      }
-
-      &[data-error] .et-form-field-affix {
-        color: var(--et-theme-color-ink-solid);
-        opacity: 1;
       }
 
       /* Driven by the registered control's disabled state (data-disabled), NOT :has(:disabled) —
