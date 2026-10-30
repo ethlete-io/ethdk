@@ -902,7 +902,8 @@ For the missing states (`*-active`, `*-disabled`, `--text-subtle`) in `foundatio
 
 - **Step A, no visible change:** add the part tokens with today's generator values: active = the
   base colour, disabled = base at 0.4 opacity, on-colour disabled = 0.6, `--text-subtle` =
-  `--text-muted` (oklch(0.72 0 0)). `generate-studio-themes.mjs` reads them from the part.
+  `--text-muted` (oklch(0.72 0 0)). `generate-studio-themes.mjs` reads them from the part. Done: Tom
+  merged it (`31c882a86`); the generator reads the tokens (`b39d636d4`), output byte-identical.
 - **Step B, its own sketch:** tune the values, for example active darker than base (accent
   oklch(0.62 0.11 190)) and `--text-subtle` one step below muted (oklch(0.6 0 0)), with contrast
   numbers in the drawing. Tom picks in Studio.
