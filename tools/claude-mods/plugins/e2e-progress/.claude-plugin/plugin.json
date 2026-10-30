@@ -1,0 +1,6 @@
+{
+  "name": "e2e-progress",
+  "version": "0.1.2",
+  "description": "Live Playwright e2e progress from a run log, as a status line entry and a pane",
+  "types": "./types/index.d.ts"
+}

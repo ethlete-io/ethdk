@@ -1,0 +1,11 @@
+{
+  "name": "tom-mods",
+  "owner": { "name": "Tom" },
+  "plugins": [
+    {
+      "name": "e2e-progress",
+      "source": "./plugins/e2e-progress",
+      "description": "Live Playwright e2e progress from a run log, as a status line entry and a pane"
+    }
+  ]
+}
