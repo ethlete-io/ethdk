@@ -968,6 +968,66 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   variant, sketch, product). Part hashes cover the shared files they reach. A sketch file with a product
   shared path replaces it at merge. The sheet is `shared/token-sheet.ts`; `foundations/sheet` is removed.
 
+### 4.74 Studio performance check - findings (2026-10-30)
+
+A headless check (own production build, own design server, scratch copy, studio-lab with 3 small sketches)
+measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan events: 26 ms script; part switch:
+13-30 ms; startup 148 ms task time), and nothing polls while idle. Not measured: frame times in WebKitGTK, the
+`tick` burst of a real file save, the dev build on :4221, and a sketch with many variants.
+
+### 4.75 Variants pop in one by one on a part with many states - open
+
+- **Pain (Tom, 2026-10-30):** on a part like `components/comment-pin`, the variants appear one after another,
+  about 300 ms apart. In a sketch this is very slow.
+- **Measured:** zoom to 158 % on `components/comment-pin` (40 states) mounted 42 iframes: 1,443 requests and 43
+  documents; JS heap 10 to 38 MB, one Vite HMR client per frame. A frame that leaves the view unmounts, and back in
+  view it loads everything again (one zoom run: 316 requests, 289 duplicates).
+- **Cause:** `design-canvas.component.ts:85-86,457-476` makes every frame in the viewport plus a 400-unit margin
+  live at zoom 0.5 and up, with no cap, delay or hysteresis. Each live frame is a full `frame.html` with 24-34
+  module requests (`partials/canvas-frame.component.ts:182-193`). `frame-render-queue.ts:5` loads at most 4 at once.
+- **Fix option:** go live only after the camera rests about 250 ms; cap live frames (for example 6, nearest the
+  centre); keep a loaded iframe for a grace period after it leaves the view; show the drawn shot `img` elsewhere.
+  Effort M. The measure did not prove that this alone explains the 300 ms steps; measure the steps on a real
+  sketch before and after.
+
+### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - open
+
+- **Measured:** 2.05-2.1 s per call (5.1 s first), about 2.5 s server CPU each (0.9 s Node, 1.6 s Chromium). The
+  system view is usable at 283 ms but the sketch list and tree badges arrive at 2.2 s. It reloads on every `tick`
+  and agent status change (`system-view.component.ts:603-623`).
+- **Cause:** `sketch/unchanged-states.ts:161` skips the cache when `pictureOf` is set, `:204` never stores the
+  result; `merge-compare.ts:50` (`drawnPair`) redraws both pictures whenever they differ, and fresh draws replace
+  the shot cache (`shot.ts:308`).
+- **Fix option:** cache the unchanged-states result under the hash key it already computes; clear it on the
+  `parts` event. Later: serve `unchanged` from a separate lazy request. Effort S-M.
+
+### 4.77 Each server shot opens a new browser context and loads all modules - open
+
+- **Measured:** one warm shot 70-190 ms (cold up to 944 ms), 4 at once (`thumb.ts:84`); 13 library shots cost
+  about 870 ms CPU.
+- **Cause:** `shot.ts:213-222` makes a `newContext`, a `newPage` and opens `frame.html` for every draw.
+- **Fix option (not measured):** one warm page per worker and viewport that switches the part in place. Also makes
+  4.76 cheaper. Effort M-L.
+
+### 4.78 A file change reloads several lists at once - open
+
+- **From the code:** each `tick` reloads products, calls, flows, comments and sketches
+  (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
+- **Fix option:** reload only what the `parts` event names. Effort M.
+
+### 4.79 Four SSE streams to the same host - open
+
+- **Measured:** `comment-events` opens 4 times (`host/design.ts:640`, `host/design-parts.ts:32`,
+  `host/design-notes.ts:71`, `host/design-flows.ts:25`), which leaves 2 of 6 per-host connections. No effect in
+  headless Chromium; WebKitGTK not measured.
+- **Fix option:** one shared `EventSource` with `share()`, split by event name. Effort S.
+
+### 4.80 The lazy Studio chunk holds every view - open
+
+- **Measured:** 887 KB raw, 247 KB gzip: `main` 289 KB, one lazy chunk 539 KB; `libs/components` forms 178 KB of
+  it (select 74 KB, form-field 60 KB). Low priority for a desktop app.
+- **Fix option:** lazy-load the agent view and the dialogs. Effort S-M.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
