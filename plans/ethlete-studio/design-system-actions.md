@@ -393,11 +393,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `libs/cli/src/lib/design/system/complete.ts`). `components/disclosure` fails until step 2.
 - **Status:** `components/disclosure` d merged (`31a6708e1`): full width, `active` tint, grid of
   `rest` and `open` by hover, active and focus-visible.
-- **In progress (next steps, in order):** 3. sketch `pages/merge` r1 a is ready for Tom: the
-  unchanged line is `components/disclosure` at a new `size: 'xs'`, control `toggle` with `part`,
-  `unchanged-hover` and `unchanged-focus` dropped, `.mg-unchanged*` gone. After the merge, run
-  `design complete pages/merge`. Next: discovery
-  (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
+- **Status:** `pages/merge` merged (`7441190de`): the unchanged line is `components/disclosure`
+  at `size: 'xs'`, control `toggle` with `part`. Both parts pass `design complete`.
+- **Next:** 4.56 (a control needs an interaction grid), then discovery (`CONTROL-UNDECLARED`,
+  `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
