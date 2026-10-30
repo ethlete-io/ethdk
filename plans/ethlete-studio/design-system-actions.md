@@ -383,7 +383,21 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Hover and focus-visible then come from that part, which must be design complete itself.
   The page only draws what depends on its placement: the open body. A page control without
   `part` fails. Then `components/disclosure` gets the unchanged line, and `pages/merge` loses
-  its two interaction states. Next: discovery
+  its two interaction states.
+- **Decided (Tom, 2026-10-30):** build the proposal. Built in `0788954d7` (`part` on a control,
+  `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`). `components/disclosure` is merged and
+  design complete (`826738337`).
+- **Feedback (Tom, 2026-10-30):** the disclosure toggle lacks an `active` state. Pointer input
+  should require `active` as well as `hover`.
+- **In progress (next steps, in order):** 1. `design complete`: `pointer` requires `hover` and
+  `active` (`INPUT_INTERACTIONS` in `libs/cli/src/lib/design/system/complete.ts`, specs and
+  `apps/docs/cli/index.md`, changeset). 2. a sketch on `components/disclosure` that draws the
+  `active` state, variants for Tom. 3. after Tom merges: `pages/merge` uses
+  `components/disclosure` for the unchanged line, declares
+  `toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } }`,
+  drops `unchanged-hover` and `unchanged-focus` and the `.mg-unchanged*` rules (keep the
+  `.mg-c-panel` size override as a page rule on `.st-disclosure`), with no pixel change; Tom
+  accepts it. Next: discovery
   (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
