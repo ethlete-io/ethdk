@@ -137,11 +137,13 @@ damping ratio (below 1 it overshoots), `frequency` the undamped frequency in Hz.
 and `duration`, the ms until it settles (10 s at most); as a string it reads `<duration>ms <easing>`, so
 `` `--motion-capsule: ${spring({ damping: 0.6, frequency: 2 })};` `` gives a token for `transition: width var(--motion-capsule)`.
 
-`tokenSheet({ title, css, sample, sampleOf, sampleClass, only, pixels, styles, setup })` from `@design-system` draws a
+`tokenSheet({ title, note, scope, css, sample, sampleOf, sampleClass, only, pixels, styles, setup })` from `@design-system` draws a
 `foundations` part as one sheet, the same in every product: a `sample` panel, then a row per custom property declared in `css`
 (the part's own `./<name>.css?inline`), kept by `only`, with the value the drawing resolves and `sampleOf(name)` next to it.
 `pixels` adds the px size of a rem value. `styles` and `setup` are the part's own, added after the sheet's. The sheet uses the
 product's `--space-*`, `--text-*`, `--surface*` and `--font-*` tokens, so no part types a value by hand.
+`note` is text or markup drawn under the title. `scope` is a class list put on the sheet's root, which is also where values
+are read, so tokens scoped to a theme class resolve: `scope: 'et-surface--dark et-color--brand'`.
 
 ```ts
 import { definePart, tokenSheet } from '@design-system';
