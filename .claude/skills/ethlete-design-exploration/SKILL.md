@@ -601,6 +601,12 @@ et design check --call <slug> --variant b # one of them
 node check-story.mjs --tsconfig <path> --story <story-id>
 ```
 
+A passing check says the variant builds, not that it looks good. Before `sketch ready`, look at
+each variant at a readable scale and in its whole host page, and critique its hierarchy, spacing,
+nesting and host context together. Drop a variant that is technically valid but visually weak
+before the user sees it. In your summary, say "renders correctly", never "good" or "approved":
+the user decides that.
+
 ## Delegating a sketch
 
 Every brief names `model: opus`, and every prompt names the exact model id the sub-agent runs on,
