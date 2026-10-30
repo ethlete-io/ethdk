@@ -734,7 +734,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `return null`). Verified: unit specs, spec typecheck, `nx build cli`, lint. Not verified: a live run against a
   render server. Affected parts draw only at the first width, as `compareMerge` does.
 
-### 4.65 A token value change in a sketch auto-merges as "no visible change" - in progress (builder, 2026-10-30)
+### 4.65 A token value change in a sketch auto-merges as "no visible change" - done
 
 - **Pain (2026-10-30):** the colour step B sketch `foundations/colors` had two variants: a (each `*-active`
   0.05 L darker, `--text-subtle` oklch(0.62 0 0)) and b (0.09 L darker, oklch(0.58 0 0)). `sketch ready`
@@ -752,6 +752,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Step B values and WCAG 2 contrast** (redo the sketch after the fix): subtle on surface / raised / overlay:
   a 5.25 / 4.46 / 3.88, b 4.46 / 3.79 / 3.30; `on-*` on `*-active` accent / warning / danger: a 5.75 / 7.42 /
   4.95, b 4.95 / 6.40 / 4.20.
+- **As built (2026-10-30, 2b3919780):** cause: a frame loaded the product stylesheet as merged, so its `@import`
+  of `foundations/colors/colors.css` drew the merged tokens for every variant, and the markup shortcut called
+  equal markup unchanged. Now a variant frame loads the product stylesheet with the variant's file in place of the
+  merged one, and the shortcut is off when a variant changes a stylesheet the product imports. Defect 2 was defect
+  1: `ready` already needs every variant equal. Verified: specs that bite, a scratch `sketch ready` stops with
+  "variant a changes accent". Not verified: Studio frames by eye; rejected variants still block an auto-merge.
 
 ### 4.64 Shared helper code had to be a part - done
 
