@@ -17,6 +17,10 @@ import {
   COMMENTS_PATH,
   FLOWS_PATH,
   flowsAnswer,
+  INVENTORY_APPROVE_PATH,
+  INVENTORY_PATH,
+  inventoryAnswer,
+  inventoryApproveAnswer,
   FLOW_NOTE_CHANGE_PATH,
   FLOW_NOTE_DELETE_PATH,
   FLOW_NOTE_PATH,
@@ -77,7 +81,8 @@ import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
-import { createThumbnailer, send, THUMB_PATH } from './thumb';
+import { inventoryOf } from './system/inventory';
+import { createDrawQueue, createThumbnailer, send, THUMB_PATH } from './thumb';
 import {
   assetRoot,
   snapshotPackage,
@@ -412,6 +417,7 @@ const designExplore = ({
         return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
       };
       const thumbs = createThumbnailer({ target, base });
+      const inventoryDraws = createDrawQueue({ target });
       const shots = createPartShooter({
         target,
         base,
@@ -638,6 +644,15 @@ const designExplore = ({
               load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
               pictureOf: shots.pictureOf,
               boxOf: shots.changedBoxesOf,
+              inventoryOf: ({ product, part }) =>
+                inventoryOf({
+                  product,
+                  part,
+                  system,
+                  base: base(),
+                  load: (id) => vite.ssrLoadModule(id),
+                  draw: (job) => inventoryDraws.run(job),
+                }),
             }),
           ),
         );
@@ -663,10 +678,12 @@ const designExplore = ({
       studio(FLOW_NOTE_PATH, flowNoteAnswer);
       studio(FLOW_NOTE_CHANGE_PATH, flowNoteChangeAnswer);
       studio(FLOW_NOTE_DELETE_PATH, flowNoteDeleteAnswer);
+      studio(INVENTORY_PATH, inventoryAnswer);
+      studio(INVENTORY_APPROVE_PATH, inventoryApproveAnswer);
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
       vite.httpServer?.on('close', () => {
         events.close();
-        void Promise.all([thumbs.close(), shots.close()]);
+        void Promise.all([thumbs.close(), shots.close(), inventoryDraws.close()]);
       });
       vite.watcher.add([designRoot, ...baseDirs]);
       vite.watcher.on('add', refresh);

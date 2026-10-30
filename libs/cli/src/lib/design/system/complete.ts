@@ -7,13 +7,17 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
-import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
-import { createSystemModules, productModuleIdOf } from './system-modules';
+import { createSystemModules, productModuleIdOf, SystemModules } from './system-modules';
+import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
 export type CompletenessGap = { code: string; target: string; detail: string };
+
+/** A box in the pixels of a drawn frame, as its `/__design/shot` picture shows it. */
+export type FrameBox = { x: number; y: number; width: number; height: number };
 
 /**
  * An element of a drawn frame that looks interactive. `control` is a native control, an interactive role or a known
@@ -28,6 +32,7 @@ export type FoundControl = {
   marked: string | null;
   within: string[];
   owner?: string | null;
+  box?: FrameBox | null;
 };
 
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
@@ -46,13 +51,20 @@ export type SeenOption = { selected: boolean; look: string; forced: SeenForce[] 
 export type SeenFrame = {
   state: string;
   interaction: string | null;
-  controls: { id: string; forced: SeenForce[]; selected?: boolean; disabled?: boolean; look?: string }[];
+  controls: {
+    id: string;
+    forced: SeenForce[];
+    selected?: boolean;
+    disabled?: boolean;
+    look?: string;
+    box?: FrameBox | null;
+  }[];
   surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
   found?: FoundControl[];
   overrides?: FoundOverride[];
 };
 
-type DeclaredControl = {
+export type DeclaredControl = {
   kind: string;
   input: string[];
   part: string | null;
@@ -118,7 +130,7 @@ const gridGapOf = (options: { grid: unknown; states: string[]; interactions: str
   return holes.length > 0 ? `its grid draws no state in ${holes.join(', ')} - ${fix}` : null;
 };
 
-const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | null =>
+export const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | null =>
   isRecord(value)
     ? Object.fromEntries(
         Object.entries(value).map(([id, control]) => {
@@ -146,23 +158,30 @@ const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | n
       )
     : null;
 
+/** Whether a discovered element is an undeclared or unclassified finding of the part, not owned or declared. */
+export const isFindingOf = (declared: Record<string, DeclaredControl>) => (found: FoundControl) =>
+  (found.owner ?? null) === null &&
+  !found.within.some((id) => (declared[id]?.part ?? null) !== null) &&
+  !(found.kind === 'control' && found.marked !== null);
+
+export const findingKeyOf = (found: FoundControl) => `${found.kind} ${found.what} ${found.path}`;
+
 const discoveryGapsOf = (options: {
   part: string;
   declared: Record<string, DeclaredControl>;
   frames: SeenFrame[];
 }): CompletenessGap[] => {
   const { part, declared, frames } = options;
-  const ownedByPart = (found: FoundControl) => found.within.some((id) => (declared[id]?.part ?? null) !== null);
+  const isFinding = isFindingOf(declared);
   const groups = new Map<string, { found: FoundControl; states: string[]; count: number }>();
 
   for (const frame of frames.filter((seen) => seen.interaction === null)) {
     const counts = new Map<string, number>();
 
     for (const found of frame.found ?? []) {
-      if ((found.owner ?? null) !== null) continue;
-      if (ownedByPart(found) || (found.kind === 'control' && found.marked !== null)) continue;
+      if (!isFinding(found)) continue;
 
-      const key = `${found.kind} ${found.what} ${found.path}`;
+      const key = findingKeyOf(found);
       const group = groups.get(key) ?? { found, states: [], count: 0 };
 
       counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -449,8 +468,9 @@ export const completenessGapsOf = (options: {
   reviewed: boolean;
   grid?: unknown;
   referenced?: ReferencedParts;
+  inventory?: InventoryState;
 }): CompletenessGap[] => {
-  const { part, states, frames, reviewed, grid, referenced = {} } = options;
+  const { part, states, frames, reviewed, grid, referenced = {}, inventory } = options;
   const declared = declaredControlsOf(options.controls) ?? {};
   const gaps: CompletenessGap[] = [];
 
@@ -538,7 +558,16 @@ export const completenessGapsOf = (options: {
     ...discoveryGapsOf({ part, declared, frames }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
+    ...inventoryGapsOf({ part, inventory }),
   ];
+};
+
+const inventoryGapsOf = ({ part, inventory }: { part: string; inventory?: InventoryState }): CompletenessGap[] => {
+  const reason = inventory ? inventoryReasonOf(inventory) : null;
+
+  return reason === null
+    ? []
+    : [{ code: 'INVENTORY-UNAPPROVED', target: part, detail: `${reason} - check and approve it in Studio` }];
 };
 
 export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
@@ -771,7 +800,7 @@ const discoverControls = `((root) => {
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
-      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null });
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
       continue;
     }
     const cursor = getComputedStyle(element).cursor;
@@ -779,7 +808,7 @@ const discoverControls = `((root) => {
     if (!pointer && !hovered.has(element)) continue;
     if (element.closest('[data-et-control], ' + likely) !== null) continue;
     const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
-    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null });
+    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
   }
   return found;
 })`;
@@ -850,10 +879,17 @@ const findOverrides = `((ownCss) => {
   return overrides;
 })`;
 
-const seeFrame = (options: { discover: boolean; part: string; ownCss: string[] }) => `(() => {
+const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; clip: boolean }) => `(() => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
   if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
+  const ORIGIN = ${options.clip} ? root.getBoundingClientRect() : { left: -scrollX, top: -scrollY };
+  const frameBoxOf = (element) => {
+    const box = element.getBoundingClientRect();
+    return box.width > 0 && box.height > 0
+      ? { x: Math.round(box.left - ORIGIN.left), y: Math.round(box.top - ORIGIN.top), width: Math.round(box.width), height: Math.round(box.height) }
+      : null;
+  };
   const OWN = ${JSON.stringify(options.part)};
   const tokensOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
   const ownerOf = (element) => {
@@ -942,6 +978,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[] }
   const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-control'),
     disabled: isDisabled(element),
+    frameBox: frameBoxOf(element),
     ...tagged(element),
   }));
   const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
@@ -986,7 +1023,7 @@ type Tagged = {
 type Seen =
   | { refused: string }
   | {
-      controls: (Tagged & { id: string; disabled: boolean })[];
+      controls: (Tagged & { id: string; disabled: boolean; frameBox: FrameBox | null })[];
       surfaces: { id: string; shown: boolean; options: Tagged[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
@@ -997,6 +1034,7 @@ type CompleteFrame = {
   interaction: string | null;
   search: string;
   size: { width: number; height?: number } | null;
+  clip: boolean;
 };
 
 const FORCEABLE = new Set(['hover', 'focus-visible', 'active']);
@@ -1022,7 +1060,9 @@ const seeFrames = async (options: {
       await page.addStyleTag({ content: NO_MOTION });
       await page.evaluate(settled);
 
-      const found = (await page.evaluate(seeFrame({ discover: frame.interaction === null, part, ownCss }))) as Seen;
+      const found = (await page.evaluate(
+        seeFrame({ discover: frame.interaction === null, part, ownCss, clip: frame.clip }),
+      )) as Seen;
 
       if ('refused' in found) {
         refused.push(`${frame.state}: ${found.refused}`);
@@ -1069,6 +1109,7 @@ const seeFrames = async (options: {
           selected: control.selected,
           disabled: control.disabled,
           look: control.look,
+          box: control.frameBox,
         });
 
       for (const surface of found.surfaces) {
@@ -1100,10 +1141,98 @@ type PartModule = {
   default?: { states?: unknown; interactions?: unknown; widths?: unknown; controls?: unknown; grid?: unknown };
 };
 
+/** Where a rest frame of a part is drawn: its state at a preset, or at a width, as `/__design/shot` takes it. */
+export type FrameAddress = { state: string; preset: string | null; width: number | null };
+
+/**
+ * Draws every state of one part of the product, at rest and, unless `restOnly`, in each interaction it declares,
+ * once at its first preset or width, and answers what each frame showed, or why its module did not load as a string.
+ */
+export const seePart = async (options: {
+  product: ResolvedProduct;
+  part: ResolvedPart;
+  system: SystemModules;
+  base: string;
+  load: (id: string) => Promise<unknown>;
+  draw: <T>(job: (browser: Browser) => Promise<T>) => Promise<T>;
+  restOnly?: boolean;
+}) => {
+  const { product, part, system, base, load, draw, restOnly = false } = options;
+  const key = partKeyOf(part);
+  const loaded = await load(productModuleIdOf({ file: part.file, product: product.name, sketch: null }))
+    .then((module) => ({ module: module as PartModule }))
+    .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+
+  if ('error' in loaded) return loaded.error;
+
+  const definition = loaded.module.default;
+  const states = isRecord(definition?.states) ? Object.keys(definition.states) : [];
+  const interactions = Array.isArray(definition?.interactions)
+    ? definition.interactions.filter((name): name is string => INTERACTIONS.some((known) => known === name))
+    : [];
+  const widths = Array.isArray(definition?.widths)
+    ? definition.widths.filter((width): width is number => typeof width === 'number')
+    : [];
+  const presets = Object.keys(system.drawnOf(product.name, null)?.presets ?? {});
+  const preset = part.layer === 'pages' ? (presets[0] ?? null) : null;
+  const width = preset === null ? (widths[0] ?? null) : null;
+  const frames: CompleteFrame[] = [];
+
+  for (const state of states)
+    for (const interaction of [null, ...(restOnly ? [] : interactions)]) {
+      const frame = partFrameOf({
+        system,
+        product: product.name,
+        part: key,
+        state,
+        preset,
+        width,
+        sketch: null,
+        interaction,
+      });
+
+      if (!(frame instanceof Error))
+        frames.push({
+          state,
+          interaction,
+          search: frame.search.toString(),
+          size: frame.size ?? null,
+          clip: preset === null,
+        });
+    }
+
+  const dir = dirname(part.file);
+  const ownCss = readdirSync(dir)
+    .filter((file) => file.endsWith('.css'))
+    .sort()
+    .map((file) => readFileSync(join(dir, file), 'utf8'));
+  const { seen, refused } = await draw((browser) => seeFrames({ browser, base, frames, part: key, ownCss }));
+  const owner = partOwnerOf({ product, part });
+
+  return {
+    definition,
+    states,
+    seen,
+    refused,
+    addresses: states.map((state): FrameAddress => ({ state, preset, width })),
+    owner,
+    hash: partHashOf({ product: owner, dir }),
+  };
+};
+
+/** The control ids a page draws at rest, the set its inventory approval holds. */
+export const inventoryIdsOf = (frames: SeenFrame[]) =>
+  [
+    ...new Set(
+      frames.filter((frame) => frame.interaction === null).flatMap((frame) => frame.controls.map(({ id }) => id)),
+    ),
+  ].sort();
+
 /**
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
  * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
  * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it.
+ * A page fails until the user approves its control inventory in Studio.
  */
 export const completenessOf = async (options: {
   target: string;
@@ -1129,7 +1258,6 @@ export const completenessOf = async (options: {
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const system = createSystemModules({ target, config });
-    const presets = Object.keys(system.drawnOf(product.name, null)?.presets ?? {});
 
     const checked = new Map<string, CompletenessGap[] | string>();
     const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
@@ -1149,52 +1277,19 @@ export const completenessOf = async (options: {
       if (!resolved) return `product "${product.name}" has no part "${key}"`;
       if (chain.includes(key)) return `its controls name each other in a cycle: ${[...chain, key].join(' > ')}`;
 
-      const loaded = await server
-        .ssrLoadModule(productModuleIdOf({ file: resolved.file, product: product.name, sketch: null }))
-        .then((module) => ({ module: module as PartModule }))
-        .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+      const sight = await seePart({
+        product,
+        part: resolved,
+        system,
+        base: `http://localhost:${port}`,
+        load: (id) => server.ssrLoadModule(id),
+        draw: (job) => queue.run(job),
+      });
 
-      if ('error' in loaded) return [{ code: 'RENDER', target: key, detail: loaded.error.split('\n')[0] ?? '' }];
+      if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
-      const definition = loaded.module.default;
-      const states = isRecord(definition?.states) ? Object.keys(definition.states) : [];
-      const interactions = Array.isArray(definition?.interactions)
-        ? definition.interactions.filter((name): name is string => INTERACTIONS.some((known) => known === name))
-        : [];
-      const widths = Array.isArray(definition?.widths)
-        ? definition.widths.filter((width): width is number => typeof width === 'number')
-        : [];
-      const preset = resolved.layer === 'pages' ? (presets[0] ?? null) : null;
-      const width = preset === null ? (widths[0] ?? null) : null;
-      const frames: CompleteFrame[] = [];
-
-      for (const state of states)
-        for (const interaction of [null, ...interactions]) {
-          const frame = partFrameOf({
-            system,
-            product: product.name,
-            part: key,
-            state,
-            preset,
-            width,
-            sketch: null,
-            interaction,
-          });
-
-          if (!(frame instanceof Error))
-            frames.push({ state, interaction, search: frame.search.toString(), size: frame.size ?? null });
-        }
-
-      const dir = dirname(resolved.file);
-      const ownCss = readdirSync(dir)
-        .filter((file) => file.endsWith('.css'))
-        .sort()
-        .map((file) => readFileSync(join(dir, file), 'utf8'));
-      const { seen, refused } = await queue.run((browser) =>
-        seeFrames({ browser, base: `http://localhost:${port}`, frames, part: key, ownCss }),
-      );
-      const owner = resolved.origin === 'base' && product.base ? { dir: product.base.dir, base: null } : product;
-      const reviewed = readMerged(owner.dir)[key] === partHashOf({ product: owner, dir });
+      const { definition, states, seen, refused, owner, hash } = sight;
+      const reviewed = readMerged(owner.dir)[key] === hash;
       const referenced: ReferencedParts = {};
       const used = [
         ...Object.values(declaredControlsOf(definition?.controls) ?? {}).map((control) => control.part),
@@ -1214,6 +1309,10 @@ export const completenessOf = async (options: {
           reviewed,
           grid: definition?.grid,
           referenced,
+          inventory:
+            resolved.layer === 'pages'
+              ? inventoryStateOf({ approval: readInventory(owner.dir)[key], ids: inventoryIdsOf(seen), hash })
+              : undefined,
         }),
       ];
     };

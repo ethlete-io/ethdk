@@ -286,6 +286,14 @@ an owned part fails as `CONTROL-OVERRIDDEN`, unless the host marks it with `data
 declares it. On the owned root itself, outer layout (margin, size, position, inset, flex and grid
 placement, transform) is not an override.
 
+A page also fails as `INVENTORY-UNAPPROVED` until the user approves its control inventory in
+Studio: each rest frame with a numbered box over every control it draws. The approval stores the
+page's control ids and part hash in `.ethlete/design/<product>/inventory.json`; an added or removed
+control id or any edit of the page reopens it. A page with an undeclared or unclassified control
+cannot be approved, and no CLI command approves one. The design server answers
+`GET /__design/inventory?product=&part=` and `POST /__design/inventory-approve?product=` with
+`{ part, hash, by }`.
+
 The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
 `CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`, `CONTROL-OVERRIDDEN` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run

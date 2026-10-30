@@ -6,7 +6,9 @@ import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { completenessGapLineOf, completenessGapsOf, completenessOf, FoundControl, SeenFrame } from './complete';
 import { designComplete } from './complete-command';
-import { resolveProduct } from './resolve-product';
+import { writeInventoryApproval } from './inventory-approval';
+import { ResolvedProduct, resolveProduct } from './resolve-product';
+import { partHashOf } from './sketch/baseline';
 import { recordMerged } from './sketch/merged-parts';
 
 const STYLES = [
@@ -241,6 +243,18 @@ export default definePart({
 
   return { target, config, product };
 };
+
+const approve = (options: { product: ResolvedProduct; part: string; ids: string[]; hash?: string }) =>
+  writeInventoryApproval({
+    productDir: options.product.dir,
+    part: options.part,
+    approval: {
+      ids: options.ids,
+      hash: options.hash ?? partHashOf({ product: options.product, dir: join(options.product.dir, options.part) }),
+      by: 'claude-opus-5-5',
+      at: '2026-10-30T00:00:00.000Z',
+    },
+  });
 
 const cwd = process.cwd();
 
@@ -587,6 +601,7 @@ describe('completenessOf', () => {
       'REQUIREMENT-MISSING pages/merge.more.active - no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
+      'INVENTORY-UNAPPROVED pages/merge - its control inventory is not approved - check and approve it in Studio',
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/done' })).toEqual({ gaps: [] });
@@ -621,12 +636,14 @@ describe('completenessOf', () => {
       'REQUIREMENT-MISSING components/always-open.more.collapsed - every state that draws it also shows its body - draw a state with more.body closed',
     ]);
 
+    approve({ product, part: 'pages/uses', ids: ['more'] });
     expect(await completenessOf({ target, config, product, part: 'pages/uses' })).toEqual({ gaps: [] });
 
     const usesFlat = await completenessOf({ target, config, product, part: 'pages/uses-flat' });
 
     expect('gaps' in usesFlat && usesFlat.gaps.map(completenessGapLineOf)).toEqual([
       'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 4 gap(s) - run design complete components/flat',
+      'INVENTORY-UNAPPROVED pages/uses-flat - its control inventory is not approved - check and approve it in Studio',
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/rows' })).toEqual({ gaps: [] });
@@ -695,7 +712,9 @@ describe('completenessOf', () => {
     ]);
     expect(await lines('pages/inner')).toEqual([
       'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with data-et-control and declare it in controls',
+      'INVENTORY-UNAPPROVED pages/inner - its control inventory is not approved - check and approve it in Studio',
     ]);
+    approve({ product, part: 'pages/host', ids: [] });
     expect(await lines('pages/host')).toEqual([]);
   }, 120_000);
 
@@ -706,6 +725,8 @@ describe('completenessOf', () => {
 
       return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
     };
+    approve({ product, part: 'pages/owns', ids: [] });
+
     const owns = await lines('pages/owns');
 
     if (!Array.isArray(owns)) return context.skip(JSON.stringify(owns));
@@ -714,10 +735,41 @@ describe('completenessOf', () => {
     expect(await lines('pages/slotted')).toEqual([
       'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with data-et-control and declare it in controls',
       'CONTROL-PART-INCOMPLETE pages/slotted - elements/slot draws 1 control(s) here and is not design complete: 1 gap(s) - run design complete elements/slot',
+      'INVENTORY-UNAPPROVED pages/slotted - its control inventory is not approved - check and approve it in Studio',
     ]);
     expect(await lines('pages/recolours')).toEqual([
       'CONTROL-OVERRIDDEN pages/recolours - ".aa-page > div" sets padding on main.aa-page > div, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
       'CONTROL-OVERRIDDEN pages/recolours - ":is(.aa-page) .aa-toggle:hover" sets color on main.aa-page > div > button.aa-toggle, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
+      'INVENTORY-UNAPPROVED pages/recolours - its control inventory is not approved - check and approve it in Studio',
+    ]);
+  }, 120_000);
+
+  it('reopens the inventory approval of a page on an added or removed control id or a part change', async (context) => {
+    const { target, config, product } = checkout();
+    const lines = async () => {
+      const result = await completenessOf({ target, config, product, part: 'pages/uses' });
+
+      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
+    };
+
+    approve({ product, part: 'pages/uses', ids: [] });
+
+    const added = await lines();
+
+    if (!Array.isArray(added)) return context.skip(JSON.stringify(added));
+
+    expect(added).toEqual([
+      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: added more - check and approve it in Studio',
+    ]);
+
+    approve({ product, part: 'pages/uses', ids: ['gone', 'more'] });
+    expect(await lines()).toEqual([
+      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: removed gone - check and approve it in Studio',
+    ]);
+
+    approve({ product, part: 'pages/uses', ids: ['more'], hash: 'before' });
+    expect(await lines()).toEqual([
+      'INVENTORY-UNAPPROVED pages/uses - its approved control inventory reopened: the part changed - check and approve it in Studio',
     ]);
   }, 120_000);
 
@@ -747,7 +799,7 @@ describe('completenessOf', () => {
     expect(await designComplete({ target, argv: ['pages/merge', '--product', 'app-a'], invocation: 'et design' })).toBe(
       1,
     );
-    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 5 gap(s)');
+    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 6 gap(s)');
     expect(
       await designComplete({ target, argv: ['components/done', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(0);
