@@ -407,6 +407,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   at `size: 'xs'`, control `toggle` with `part`. Both parts pass `design complete`.
 - **Next:** discovery (`CONTROL-UNDECLARED`,
   `CONTROL-UNCLASSIFIED`), then the other kinds.
+- **In progress (2026-10-30):** a subagent builds discovery.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
