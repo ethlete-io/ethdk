@@ -420,6 +420,11 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q74: 8 shipped icons draw stroke paths without `fill="none"` and render filled (clipboard-check, floppy-disk,
   pencil, arrow-up, arrow-right, arrows-left-right, plus, underline). The real `et-icon` shows the same, so it is an
   SDK defect. Fixed in `libs/components` as a patch; then `foundations/icons` r1 a goes to ready.
+- Q75: `design check --product sdk` showed 12 CONTRAST lines on button outline/tonal/transparent labels (1.0-1.33:1):
+  `foundations/colors/colors.css` kept the mint ink `0 255 161` on `:root` / `.et-color--brand` under
+  `prefers-color-scheme: light`. Under the light scheme `:root` takes the brand-on-light ink (`4 120 87` and its
+  states), per "ink on light". The button part does not move onto `et-color--brand-on-light`; that would hide the
+  defect from consumers.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
