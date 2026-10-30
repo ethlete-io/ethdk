@@ -4,7 +4,7 @@ import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
-import canvasFrames from '@system/elements/canvas-frames';
+import canvasFrames, { canvasZoomClass, canvasZoomValueClass } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -161,9 +161,9 @@ export default definePart<Props>({
         </section>
       </div>
       ${PAGE_VARIANTS.map(variantHead).join('')}
-      <div class="st-canvas-zoom z-3">
+      <div class="${canvasZoomClass} z-3">
         <span data-camera-fit>${fit.body}</span>
-        <span class="st-canvas-zoom-value" data-camera-reset>${reset.body}</span>
+        <span class="${canvasZoomValueClass}" data-camera-reset>${reset.body}</span>
       </div>
     </div>`;
 

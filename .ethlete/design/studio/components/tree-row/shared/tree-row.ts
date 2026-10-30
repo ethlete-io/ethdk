@@ -43,7 +43,7 @@ const rowMarkup = (r: Row) => {
   const color = r.selected ? 'text-accent-text' : r.kind === 'group' ? 'text-text-muted' : 'text-text';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-accent-subtle ' : ''}hover:bg-surface-raised active:bg-(--surface-pressed) ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"

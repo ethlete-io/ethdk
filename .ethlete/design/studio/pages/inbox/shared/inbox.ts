@@ -172,11 +172,11 @@ const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
-  return body.replace(/<div class="st-sgrid-cell">/gu, (match) => {
+  return body.replace(/<div class="(st-sgrid-cell[^"]*)">/gu, (match, cls: string) => {
     index += 1;
     const c = comments.find((comment) => comment.cell === index);
     if (!c) return match;
-    return `<div class="st-sgrid-cell relative"><span class="absolute -top-3.5 right-1.5 z-11 flex">${pin(c)}</span>`;
+    return `<div class="${cls} relative"><span class="absolute -top-3.5 right-1.5 z-11 flex">${pin(c)}</span>`;
   });
 };
 

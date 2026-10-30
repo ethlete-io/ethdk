@@ -41,7 +41,7 @@ const crop: Row = {
 
 const listRow = (row: Row) =>
   html`<li
-    class="mg-c-item px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-accent-subtle"
+    class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-accent-subtle"
     ${row === selected ? ' data-selected' : ''}
   >
     ${rowCaption(row, true)}
@@ -51,7 +51,7 @@ const panelOf = (unchanged: boolean) =>
   html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
     <div class="mg-d-back flex">${back.body}</div>
     <div class="flex flex-col gap-space-2 pb-space-3 border-b border-surface-border">
-      <span class="mg-c-target-part font-code">${TARGET.part}</span>
+      <span class="font-code text-(length:--text-sm)">${TARGET.part}</span>
       <span class="flex items-center gap-space-2 text-text-muted text-ui-xs"
         >${picked(TARGET.variant)}<span>${TARGET.note}</span></span
       >

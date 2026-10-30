@@ -13,20 +13,27 @@ const perLine = 4;
 
 const restOnly = (row: GridRow) => row.cells.every((cell, index) => index === 0 || cell === undefined);
 
-const label = (text: string) => `<span class="st-sgrid-label self-end pb-1 font-code">${text}</span>`;
-const cell = (body: string | undefined) => `<div class="st-sgrid-cell">${body ?? ''}</div>`;
+const label = (text: string, extra = '') =>
+  `<span class="st-sgrid-label self-end pb-1 font-code${extra}">${text}</span>`;
 
-const tableRow = ({ label: text, cells }: GridRow) =>
-  `<span class="self-center font-code">${text}</span>` + cells.map(cell).join('');
+type Place = NonNullable<StateGridOptions['place']>;
 
-const packedLine = (rows: GridRow[]) => {
+const cell = (place: Place) => (body: string | undefined) =>
+  `<div class="st-sgrid-cell py-space-2 px-space-1 bg-surface${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
+
+const tableRow =
+  (place: Place) =>
+  ({ label: text, cells }: GridRow) =>
+    `<span class="self-center font-code">${text}</span>` + cells.map(cell(place)).join('');
+
+const packedLine = (place: Place) => (rows: GridRow[], index: number) => {
   const blanks = '<span></span>'.repeat(perLine - rows.length);
   return (
     '<span></span>' +
-    rows.map((row) => label(row.label)).join('') +
+    rows.map((row) => label(row.label, index === 0 ? ' pt-0' : '')).join('') +
     blanks +
     '<span></span>' +
-    rows.map((row) => cell(row.cells[0])).join('') +
+    rows.map((row) => cell(place)(row.cells[0])).join('') +
     blanks
   );
 };
@@ -47,13 +54,13 @@ export const stateGrid = (
     ? `<div class="st-sgrid-group grid items-stretch gap-px">
         <span class="st-sgrid-head col-span-full mb-2 border-b border-surface-border pb-1 uppercase">States by interaction</span>
         <span></span>
-        ${columns.map(label).join('')} ${interactive.map(tableRow).join('')}
+        ${columns.map((column) => label(column)).join('')} ${interactive.map(tableRow(place)).join('')}
       </div>`
     : '';
   const restGroup = rest.length
     ? `<div class="st-sgrid-group st-sgrid-packed grid items-stretch gap-px">
         <span class="st-sgrid-head col-span-full mb-2 border-b border-surface-border pb-1 uppercase">Rest only</span>
-        ${lines(rest).map(packedLine).join('')}
+        ${lines(rest).map(packedLine(place)).join('')}
       </div>`
     : '';
   return html`<div
@@ -74,11 +81,16 @@ export const canvasFrame = (name: string, body: string, width = '') =>
     ${body}
   </figure>`;
 
+export const canvasZoomClass =
+  'st-canvas-zoom absolute right-space-4 bottom-space-4 flex items-center gap-space-3 h-control-sm px-space-3 rounded-control-md bg-surface text-text-muted text-(length:--text-sm)';
+
+export const canvasZoomValueClass = 'text-text font-code';
+
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
 export const canvasView = (frames: string[], zoom: string) =>
   html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
-    <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">${zoom}</span></div>
+    <div class="${canvasZoomClass}"><span>Fit</span><span class="${canvasZoomValueClass}">${zoom}</span></div>
   </div>`;
 
 type Props = { part: string; states: string[]; zoom: string };

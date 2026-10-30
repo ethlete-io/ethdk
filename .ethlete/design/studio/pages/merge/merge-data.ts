@@ -1,4 +1,5 @@
 import { embedPage, html } from '@design-system';
+import { disclosureBodyClass } from '@system/components/disclosure';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 
@@ -42,17 +43,18 @@ export const rowCaption = (row: Row, stacked = false) =>
   html`<span
     class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap${stacked ? ' flex-wrap gap-y-0' : ''}"
     ><span class="text-text font-code">${row.part}</span><span class="text-text-muted">${row.state}</span
-    ><span class="mg-row-count text-text-muted${stacked ? ' basis-full' : ''}"
+    ><span
+      class="text-text-muted text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
       >${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span
     ></span
   >`;
 
 export const picked = (variant: string) =>
   html`<span
-    class="mg-picked inline-flex items-center gap-space-1 h-control-sm px-space-3 box-border rounded-control-md bg-accent-subtle text-accent-text whitespace-nowrap"
+    class="mg-picked inline-flex items-center gap-space-1 h-control-sm px-space-3 box-border rounded-control-md bg-accent-subtle text-accent-text text-(length:--text-sm) whitespace-nowrap"
     >Picked <code class="font-code">${variant}</code></span
   >`;
 
-export const unchangedBody = html`<ul class="st-disclosure-body">
+export const unchangedBody = html`<ul class="${disclosureBodyClass}">
   ${UNCHANGED.states.map((state) => html`<li><span class="text-text font-code">${UNCHANGED.part}</span><span class="text-text-muted">${state}</span></li>`).join('')}
 </ul>`;

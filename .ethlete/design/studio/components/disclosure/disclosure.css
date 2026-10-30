@@ -1,35 +1,20 @@
 @layer components {
   .st-disclosure {
     background: none;
-    color: var(--text-muted);
     font: inherit;
-    font-size: var(--text-sm);
     transition: var(--transition-state);
   }
 
-  .st-disclosure:where([data-size='xs']) {
-    font-size: var(--text-xs);
-  }
-
-  .st-disclosure:hover {
-    color: var(--text);
-  }
-
   .st-disclosure:active {
-    border-radius: var(--radius-control-sm);
     background: var(--surface-pressed);
-    color: var(--text);
   }
 
   .st-disclosure:focus-visible {
-    color: var(--text);
-    border-radius: var(--radius-control-sm);
     outline: none;
     box-shadow: inset 0 0 0 1.5px var(--focus-ring);
   }
 
   .st-disclosure svg {
-    flex: none;
     transition: rotate var(--duration-appear) var(--ease-standard);
   }
 
@@ -46,18 +31,7 @@
   }
 
   .st-disclosure-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    margin: 0;
     padding: var(--space-1) 0 0 calc(var(--space-2) + 14px + var(--space-2));
     list-style: none;
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-  }
-
-  .st-disclosure-body li {
-    display: flex;
-    gap: var(--space-2);
   }
 }

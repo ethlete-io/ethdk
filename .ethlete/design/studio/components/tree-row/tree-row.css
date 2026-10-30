@@ -26,20 +26,8 @@
     color: var(--warning);
   }
 
-  .st-trow:where([data-selected]) {
-    background: var(--accent-subtle);
-  }
-
-  .st-trow:hover {
-    background: var(--surface-raised);
-  }
-
   .st-trow[data-selected]:hover {
     background: linear-gradient(var(--accent-subtle), var(--accent-subtle)), var(--surface-raised);
-  }
-
-  .st-trow:active {
-    background: var(--surface-pressed);
   }
 
   .st-trow[data-selected]:active {

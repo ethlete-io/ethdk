@@ -1,12 +1,4 @@
 @layer components {
-  .mg-c-target-part {
-    font-size: var(--text-sm);
-  }
-
-  .mg-c-item .mg-row-count::before {
-    content: none;
-  }
-
   .mg-d-back {
     margin: calc(var(--space-1) * -1) 0 0 calc(var(--space-3) * -1 - var(--space-1) / 2);
   }

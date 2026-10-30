@@ -1,8 +1,8 @@
 {
   "components/comment-pin": "758700ef5e2d5dac",
-  "components/disclosure": "20878ff171fae0f2",
-  "components/tree-row": "171b42bc14eae086",
-  "elements/canvas-frames": "a5eca7e6e43053a4",
+  "components/disclosure": "443b083753ec221e",
+  "components/tree-row": "26f501621b293428",
+  "elements/canvas-frames": "9337715fff551a31",
   "elements/part-tree": "bc6764638ee1f7c5",
   "elements/shell-main": "eeafdea25c3b72ed",
   "foundations/agent-logos": "9d16069b875f1e82",
@@ -13,9 +13,9 @@
   "foundations/spacing": "fafb6399e642b416",
   "foundations/type": "0d78e0b9b28ef1dc",
   "pages/flows": "d5426cf399e75a03",
-  "pages/inbox": "aada4bbb841dcece",
-  "pages/merge": "b6874aa34da88659",
-  "pages/sketches": "bf286179076df52f",
+  "pages/inbox": "5af40e496401e7dd",
+  "pages/merge": "8dd4fa36943b69d1",
+  "pages/sketches": "c874a2454241b87f",
   "pages/start": "5be284500a37da1a",
   "pages/system": "7f898322145e4f51"
 }

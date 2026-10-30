@@ -32,39 +32,11 @@
     padding-top: 1.2rem;
   }
 
-  .st-sgrid-packed > .st-sgrid-label:nth-child(-n + 6) {
-    padding-top: 0;
-  }
-
   .st-sgrid-cell {
-    padding: var(--space-2) var(--space-1);
-    background: var(--surface);
     box-shadow: 0 0 0 1px var(--surface-border);
   }
 
-  .st-sgrid[data-place='center'] .st-sgrid-cell {
-    display: grid;
-    place-items: center;
-  }
-
   .st-canvas-zoom {
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    height: var(--control-sm);
-    padding: 0 var(--space-3);
-    border-radius: var(--radius-control-md);
-    background: var(--surface);
     box-shadow: inset 0 0 0 1px var(--surface-border);
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-  }
-
-  .st-canvas-zoom-value {
-    color: var(--text);
-    font-family: var(--font-code);
   }
 }

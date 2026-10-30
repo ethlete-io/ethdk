@@ -12,14 +12,16 @@ export type Props = {
   interaction?: DisclosureInteraction;
 };
 
-const CHEVRON = icon('chevron-right', { size: 14 });
+const CHEVRON = icon('chevron-right', { size: 14, cls: 'flex-none' });
+
+export const disclosureBodyClass =
+  'st-disclosure-body flex flex-col gap-space-1 m-0 text-text-muted text-(length:--text-xs) *:flex *:gap-space-2';
 
 export const disclosure = ({ label, body, open, size = 'sm', interaction }: Props) => {
   const toggle = html`<button
-    class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 cursor-pointer ${size === 'xs' ? 'items-start text-start' : 'items-center'}"
+    class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 text-text-muted hover:text-text active:text-text active:rounded-control-sm focus-visible:text-text focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
     type="button"
     data-et-control="toggle"
-    data-size="${size}"
     aria-expanded="${open}"
   >
     ${CHEVRON}<span>${label}</span>
@@ -31,7 +33,7 @@ export const disclosure = ({ label, body, open, size = 'sm', interaction }: Prop
 
 const demo: Omit<Props, 'open'> = {
   label: '2 states of pages/inbox without visible change',
-  body: html`<ul class="st-disclosure-body">
+  body: html`<ul class="${disclosureBodyClass}">
     <li><span>pages/inbox</span><span>all</span></li>
     <li><span>pages/inbox</span><span>none</span></li>
   </ul>`,
