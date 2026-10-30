@@ -1,0 +1,19 @@
+{
+  "part": "foundations/agent-logos",
+  "state": "detail",
+  "size": "fitted",
+  "text": "hier fehlt auch noch ein generischer anbieter. zudem vielleicht noch weitere namenhafte wie grok, kimi, deepseek, meta...",
+  "point": {
+    "x": 69,
+    "y": 82
+  },
+  "createdAt": "2026-10-30T14:48:19.212Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Sketch foundations/agent-logos ist ready: DeepSeek, Kimi und Meta aus Simple Icons, dazu eine generische Marke (a: Bot-Kopf, b: drei verbundene Knoten). Grok fehlt, weil Simple Icons kein Grok- oder xAI-Icon hat.",
+      "createdAt": "2026-10-30T14:53:22.908Z"
+    }
+  ]
+}
