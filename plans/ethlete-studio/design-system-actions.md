@@ -647,8 +647,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   viewBox and a 1.5 stroke. The Studio app later takes the same files through the SDK icon
   system, in a later slice.
 - **State (2026-10-30):** Tom merged `foundations/icons` (`merged.json` hash `9f686e3ce096e6b8`); the parts draw from it since `d8e224f30`. The sketch had 15 icons, `icon(name, { size, cls })`, a `construction` state with the grid).
-  The `INLINE-SVG` rule is in `libs/cli/src/lib/design/system/rules/inline-svg.ts`, not yet in `RULES` of
-  `check-system.ts`: the checkout fails it until the parts draw `icon()`. An `<svg>` with `data-et-drawing`
+  The `INLINE-SVG` rule is in `libs/cli/src/lib/design/system/rules/inline-svg.ts`, in `RULES` of
+  `check-system.ts`: active since `928eebbc9`. An `<svg>` with `data-et-drawing`
   passes, so the `pages/flows` sketch adds it to its edges. Next: after the merge, one sketch per part, then
   register the rule with a minor changeset and `apps/docs/cli/index.md`. The `elements/shell-main` mark is a logo
   and moves to `foundations/logo`.
