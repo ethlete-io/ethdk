@@ -18,6 +18,7 @@ const interaction = product ? params.get('interaction') : null;
 const propsSketch = product ? params.get('props') : null;
 const propsVariant = params.get('props-variant') ?? '';
 const motionName = product ? params.get('motion') : null;
+const flowTo = product ? params.get('flow-to') : null;
 
 // Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
 let errored = false;
@@ -188,6 +189,29 @@ const stateMarkupOf = ({ part, states }: NonNullable<typeof drawnPart>, styles: 
     );
 };
 
+const exposeStepped = (options: { start: () => Promise<SteppedMotion>; interrupt: number | null }) => {
+  let stepped: SteppedMotion | null = null;
+  const steppedOf = () => {
+    if (!stepped) throw new Error('design-explore: start the motion first');
+
+    return stepped;
+  };
+
+  Object.assign(window, {
+    etMotion: {
+      start: () =>
+        options.start().then((started) => {
+          stepped = started;
+
+          return true;
+        }),
+      seek: (ms: number) => steppedOf().seek(ms),
+      bounds: () => steppedOf().bounds(),
+      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks(), interrupt: options.interrupt }),
+    },
+  });
+};
+
 const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: string; styles: string }) => {
   const { drawn, name, styles } = options;
   const motion = drawn.part.motions?.[name];
@@ -201,43 +225,59 @@ const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: str
   }
 
   const markupOf = stateMarkupOf(drawn, styles);
-  let stepped: SteppedMotion | null = null;
-  const steppedOf = () => {
-    if (!stepped) throw new Error('design-explore: start the motion first');
 
-    return stepped;
-  };
-
-  Object.assign(window, {
-    etMotion: {
-      start: () =>
-        Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)])
-          .then(([markup, back]) =>
-            stepMotion({
-              root,
-              markup,
-              motion,
-              ...(back === null
-                ? {}
-                : {
-                    reverse: {
-                      markup: back,
-                      motion: Object.values(drawn.part.motions ?? {}).find(
-                        (other) => other.from === motion.to && other.to === motion.from,
-                      ),
-                    },
-                  }),
-            }),
-          )
-          .then((started) => {
-            stepped = started;
-
-            return true;
+  exposeStepped({
+    interrupt: motion.interrupt ?? null,
+    start: () =>
+      Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)]).then(
+        ([markup, back]) =>
+          stepMotion({
+            root,
+            markup,
+            motion,
+            ...(back === null
+              ? {}
+              : {
+                  reverse: {
+                    markup: back,
+                    motion: Object.values(drawn.part.motions ?? {}).find(
+                      (other) => other.from === motion.to && other.to === motion.from,
+                    ),
+                  },
+                }),
           }),
-      seek: (ms: number) => steppedOf().seek(ms),
-      bounds: () => steppedOf().bounds(),
-      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks(), interrupt: motion.interrupt ?? null }),
-    },
+      ),
+  });
+};
+
+const exposeFlowLine = (options: { product: string; to: string; styles: string }) => {
+  const [toPart = '', toState = ''] = options.to.split('#');
+  const load = parts[options.product]?.[toPart];
+
+  if (!load) {
+    showSetupError(`design-explore: product "${options.product}" has no part "${toPart}"`);
+
+    return;
+  }
+
+  exposeStepped({
+    interrupt: null,
+    start: () =>
+      load().then(({ default: part }) => {
+        const states = (part as Part<unknown>).states;
+
+        if (!(toState in states)) throw new Error(`design-explore: part "${toPart}" has no state "${toState}"`);
+
+        // The styles of the to page ride in the markup: in <head> they would restyle the from page before the View Transition captures it.
+
+        return Promise.resolve((part as Part<unknown>).render(states[toState]))
+          .then((drawn) =>
+            drawn.styles === options.styles
+              ? drawn.body
+              : forced(drawn.styles).then((css) => `<style>${css}</style>${drawn.body}`),
+          )
+          .then((markup) => stepMotion({ root, markup, motion: { from: key, to: toState, viewTransition: true } }));
+      }),
   });
 };
 
@@ -283,7 +323,8 @@ const drawFrame = async () => {
     if (error)
       showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
 
-    if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
+    if (flowTo && product) exposeFlowLine({ product, to: flowTo, styles: loaded.styles ?? '' });
+    else if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
     else if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
   }
 

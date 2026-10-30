@@ -137,6 +137,14 @@ damping ratio (below 1 it overshoots), `frequency` the undamped frequency in Hz.
 and `duration`, the ms until it settles (10 s at most); as a string it reads `<duration>ms <easing>`, so
 `` `--motion-capsule: ${spring({ damping: 0.6, frequency: 2 })};` `` gives a token for `transition: width var(--motion-capsule)`.
 
+A flow line (`<product>/flows/<name>.json`) animates when it has `"transition": "view"`. `et design motion flow <flow> <line>`
+draws the `from` page, then morphs it to the `to` page inside a same-document View Transition, stepped and shot like a motion, in
+the whole viewport of `--preset` (the product's first preset by default). The `to` page's styles, with its
+`::view-transition-*` rules, arrive with its markup, so the `from` page is captured unchanged; the `from` page's styles stay
+loaded. Name the line by its `id` when it has one, otherwise as `<part>#<state>→<part>#<state>` (`->` works too), for example
+`{ "from": { "part": "pages/list", "state": "rest" }, "to": { "part": "pages/detail", "state": "rest" }, "id": "open", "transition": "view" }`.
+It takes `--mode`, `--scale`, `--surface`, `--color`, `--product` and `--out`; the JSON names the line, its label and both ends.
+
 `et design mcp` serves the design tools to an MCP client over stdio, in the working directory of the session: `parts`,
 `check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `inbox` and
 `inbox_done`. Each runs the `et design` command of the same name and takes its flags as arguments; `product` may be left out
@@ -186,6 +194,11 @@ refuses without one of two flags: `--override` sketches the product copy, and `-
 into the base and removes the copy with its `merged.json` entry. A part of a built-in base takes `--override` only.
 
 `sketch ready` refuses while a target of a live variant does not load.
+
+`sketch ready` also refuses (rule `UNUSED`) while the files of a live variant, with the `shared/` files they import, keep
+an import nothing uses, a parameter a named function never reads, a parameter of a `shared/` function no call passes, or a
+class no drawing uses (`et-` classes of the SDK are not checked): code of another candidate must not reach a merge. Keep
+rendering for one candidate in that variant's files and only common code in `shared/`.
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags

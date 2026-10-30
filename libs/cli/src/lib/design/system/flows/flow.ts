@@ -8,7 +8,8 @@ export type FlowState = { part: string; state: string };
 /** `position` is the frame's top-left corner on the flow canvas in CSS pixels; without one Studio lays the frame out. */
 export type FlowFrame = FlowState & { position?: CommentPoint };
 
-export type FlowLine = { from: FlowState; to: FlowState; label?: string };
+/** `transition: 'view'` makes `et design motion flow` animate the line as a same-document View Transition; `id` names it there. */
+export type FlowLine = { from: FlowState; to: FlowState; label?: string; id?: string; transition?: 'view' };
 
 /** A note of the flow itself, such as a heading over a group of frames; `at` is its top-left corner on the flow canvas, and may be negative. */
 export type FlowNote = { id: string; text: string; at?: CommentPoint };
@@ -51,9 +52,11 @@ const lineProblemOf = (line: unknown, index: number) =>
   isRecord(line) &&
   isState(line['from']) &&
   isState(line['to']) &&
-  (line['label'] === undefined || isText(line['label']))
+  (line['label'] === undefined || isText(line['label'])) &&
+  (line['id'] === undefined || isText(line['id'])) &&
+  (line['transition'] === undefined || line['transition'] === 'view')
     ? null
-    : `lines[${index}] must be { from: { part, state }, to: { part, state }, label? }`;
+    : `lines[${index}] must be { from: { part, state }, to: { part, state }, label?, id?, transition?: "view" }`;
 
 const noteProblemOf = (note: unknown, index: number) =>
   isRecord(note) &&
@@ -81,10 +84,12 @@ const flowOf = ({ parsed, name, file }: { parsed: FlowFile; name: string; file: 
   name,
   file,
   frames: parsed.frames.map(({ part, state, position }) => ({ part, state, ...(position ? { position } : {}) })),
-  lines: (parsed.lines ?? []).map(({ from, to, label }) => ({
+  lines: (parsed.lines ?? []).map(({ from, to, label, id, transition }) => ({
     from: { part: from.part, state: from.state },
     to: { part: to.part, state: to.state },
     ...(label ? { label } : {}),
+    ...(id ? { id } : {}),
+    ...(transition ? { transition } : {}),
   })),
   notes: (parsed.notes ?? []).map(({ id, text, at }) => ({ id, text, ...(at ? { at } : {}) })),
 });

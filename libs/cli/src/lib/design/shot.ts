@@ -491,10 +491,17 @@ export const createPartShooter = (options: {
       partShotOf({ ...options, priority: 'high' }),
     /**
      * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;
-     * `mode` picks `prefers-reduced-motion`. Kept until a change redraws the part.
+     * `mode` picks `prefers-reduced-motion`. Kept until a change redraws the part. With `flowTo`, `motion` names a flow
+     * line instead: the part morphs to that page state in a View Transition, drawn in the whole viewport.
      */
     motionOf: (
-      options: PartAddress & { motion: string; at?: readonly number[]; mode: MotionMode; params: URLSearchParams },
+      options: PartAddress & {
+        motion: string;
+        flowTo?: { part: string; state: string };
+        at?: readonly number[];
+        mode: MotionMode;
+        params: URLSearchParams;
+      },
     ) => {
       const frame = partFrameOf({ system, ...options });
 
@@ -505,6 +512,7 @@ export const createPartShooter = (options: {
       const key = JSON.stringify([
         ...frame.key,
         options.motion,
+        options.flowTo ?? null,
         options.at ?? [],
         options.mode,
         theme.surface,
@@ -517,7 +525,8 @@ export const createPartShooter = (options: {
       if (kept) return kept.pictures;
 
       for (const [name, value] of Object.entries(theme)) if (value) frame.search.set(name, value);
-      frame.search.set('motion', options.motion);
+      if (options.flowTo) frame.search.set('flow-to', `${options.flowTo.part}#${options.flowTo.state}`);
+      else frame.search.set('motion', options.motion);
 
       const pictures = drawQueue.run(
         (browser) =>
@@ -534,7 +543,8 @@ export const createPartShooter = (options: {
               motionPicturesOf({
                 page,
                 url: `${baseOf()}/frame.html?${frame.search}`,
-                clip: frame.clip,
+                clip: frame.clip && !options.flowTo,
+                viewport: !!options.flowTo,
                 at: options.at,
               }),
           ),

@@ -171,7 +171,11 @@ describe('flowProblemsOf', () => {
 
     expect(flowProblemsOf(resolveAcme(target))).toEqual([
       { rule: 'FLOW', file: shape, message: 'frames[0] must be { part: "<layer>/<name>", state, position? }' },
-      { rule: 'FLOW', file: label, message: 'lines[0] must be { from: { part, state }, to: { part, state }, label? }' },
+      {
+        rule: 'FLOW',
+        file: label,
+        message: 'lines[0] must be { from: { part, state }, to: { part, state }, label?, id?, transition?: "view" }',
+      },
       { rule: 'FLOW', file: json, message: expect.stringMatching(/^is no JSON: /) },
       {
         rule: 'FLOW',

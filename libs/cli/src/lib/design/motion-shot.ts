@@ -45,16 +45,19 @@ const failureOf = async (page: Page) => {
 };
 
 /**
- * Draws a motion in a frame opened with `motion=<name>` at its `from` state: one run to its end finds the end and the
+ * Draws a motion in a frame opened with `motion=<name>` (or `flow-to=<part>#<state>`) at its `from` state; `viewport`
+ * draws the visible viewport instead of the whole page: one run to its end finds the end and the
  * tracks, a second run is drawn at each keyframe time.
  */
 export const motionPicturesOf = async (options: {
   page: Page;
   url: string;
   clip: boolean;
+  viewport?: boolean;
   at?: readonly number[];
 }): Promise<MotionPictures> => {
   const { page, url, clip, at } = options;
+  const fullPage = !options.viewport;
 
   const start = async () => {
     await openFrame(page, url);
@@ -96,7 +99,7 @@ export const motionPicturesOf = async (options: {
 
     const png = await (region
       ? page.screenshot({ type: 'png', fullPage: true, clip: region, timeout: DRAW_TIMEOUT_MS })
-      : page.screenshot({ type: 'png', fullPage: true, timeout: DRAW_TIMEOUT_MS }));
+      : page.screenshot({ type: 'png', fullPage, timeout: DRAW_TIMEOUT_MS }));
 
     keyframes.push({ ms, png });
   }
