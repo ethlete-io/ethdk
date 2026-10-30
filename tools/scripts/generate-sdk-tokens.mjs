@@ -10,16 +10,22 @@ const optionOf = (name) => {
 
   return index === -1 ? null : process.argv[index + 1];
 };
-const file = resolve(root, optionOf('--out') ?? '.ethlete/design/sdk/foundations/tokens/tokens.css');
+const file = resolve(root, optionOf('--out') ?? '.ethlete/design/sdk/foundations/colors/colors.css');
 const check = process.argv.includes('--check');
 const overridesFile = optionOf('--overrides');
 const overrides = overridesFile ? JSON.parse(readFileSync(resolve(root, overridesFile), 'utf8')) : {};
 
 const jiti = createJiti(import.meta.url, { interopDefault: true });
 const { themeCss } = await jiti.import(join(root, 'libs/core/design/theme-css.ts'));
-const { BRAND_THEME, DANGER_THEME, WARNING_THEME, THEMES } = await jiti.import(
-  join(root, 'apps/storybook/src/themes.ts'),
-);
+const {
+  BRAND_THEME,
+  DANGER_THEME,
+  WARNING_THEME,
+  BRAND_ON_LIGHT_THEME,
+  DANGER_ON_LIGHT_THEME,
+  WARNING_ON_LIGHT_THEME,
+  THEMES,
+} = await jiti.import(join(root, 'apps/storybook/src/themes.ts'));
 const { LIGHT_SURFACE, DARK_SURFACE } = await jiti.import(join(root, 'apps/storybook/src/surface-themes.ts'));
 
 const themeNamed = (name) => {
@@ -44,11 +50,17 @@ const withValues = (theme) => {
 };
 
 const surfaceThemes = [LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: true }));
-const colorThemes = [
+const defaultColorThemes = [
   BRAND_THEME,
   DANGER_THEME,
   WARNING_THEME,
-  ...(overrides.extraColorThemes ?? []).map(themeNamed),
+  BRAND_ON_LIGHT_THEME,
+  DANGER_ON_LIGHT_THEME,
+  WARNING_ON_LIGHT_THEME,
+];
+const colorThemes = [
+  ...defaultColorThemes,
+  ...(overrides.extraColorThemes ?? []).map(themeNamed).filter((theme) => !defaultColorThemes.includes(theme)),
 ].map(withValues);
 const unknownTargets = Object.keys(overrides.values ?? {}).filter(
   (name) => ![...surfaceThemes, ...colorThemes].some((theme) => theme.name === name),

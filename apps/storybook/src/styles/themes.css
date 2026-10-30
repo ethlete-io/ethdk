@@ -29,9 +29,9 @@
 
   /* danger theme */
   --color-et-danger: rgb(220 38 38);
-  --color-et-danger-hover: rgb(239 68 68);
-  --color-et-danger-focus: rgb(239 68 68);
-  --color-et-danger-active: rgb(185 28 28);
+  --color-et-danger-hover: rgb(185 28 28);
+  --color-et-danger-focus: rgb(185 28 28);
+  --color-et-danger-active: rgb(153 27 27);
   --color-et-danger-disabled: rgb(120 52 52);
 
   --color-et-on-danger: rgb(255 255 255);
@@ -69,7 +69,7 @@
   --color-et-warning: rgb(217 119 6);
   --color-et-warning-hover: rgb(245 158 11);
   --color-et-warning-focus: rgb(245 158 11);
-  --color-et-warning-active: rgb(180 83 9);
+  --color-et-warning-active: rgb(251 191 36);
   --color-et-warning-disabled: rgb(133 77 14);
 
   --color-et-on-warning: rgb(23 23 23);
@@ -200,9 +200,9 @@
 
   /* danger-on-light theme */
   --color-et-danger-on-light: rgb(220 38 38);
-  --color-et-danger-on-light-hover: rgb(239 68 68);
-  --color-et-danger-on-light-focus: rgb(239 68 68);
-  --color-et-danger-on-light-active: rgb(185 28 28);
+  --color-et-danger-on-light-hover: rgb(185 28 28);
+  --color-et-danger-on-light-focus: rgb(185 28 28);
+  --color-et-danger-on-light-active: rgb(153 27 27);
   --color-et-danger-on-light-disabled: rgb(120 52 52);
 
   --color-et-on-danger-on-light: rgb(255 255 255);
@@ -259,7 +259,7 @@
   --color-et-warning-on-light: rgb(217 119 6);
   --color-et-warning-on-light-hover: rgb(245 158 11);
   --color-et-warning-on-light-focus: rgb(245 158 11);
-  --color-et-warning-on-light-active: rgb(180 83 9);
+  --color-et-warning-on-light-active: rgb(251 191 36);
   --color-et-warning-on-light-disabled: rgb(133 77 14);
 
   --color-et-on-warning-on-light: rgb(23 23 23);
@@ -319,9 +319,9 @@
 
   .et-color--danger {
     --et-color-primary: 220 38 38;
-    --et-color-primary-hover: 239 68 68;
-    --et-color-primary-focus: 239 68 68;
-    --et-color-primary-active: 185 28 28;
+    --et-color-primary-hover: 185 28 28;
+    --et-color-primary-focus: 185 28 28;
+    --et-color-primary-active: 153 27 27;
     --et-color-primary-disabled: 120 52 52;
 
     --et-color-on-primary: 255 255 255;
@@ -361,7 +361,7 @@
     --et-color-primary: 217 119 6;
     --et-color-primary-hover: 245 158 11;
     --et-color-primary-focus: 245 158 11;
-    --et-color-primary-active: 180 83 9;
+    --et-color-primary-active: 251 191 36;
     --et-color-primary-disabled: 133 77 14;
 
     --et-color-on-primary: 23 23 23;
@@ -499,9 +499,9 @@
 
   .et-color--danger-on-light {
     --et-color-primary: 220 38 38;
-    --et-color-primary-hover: 239 68 68;
-    --et-color-primary-focus: 239 68 68;
-    --et-color-primary-active: 185 28 28;
+    --et-color-primary-hover: 185 28 28;
+    --et-color-primary-focus: 185 28 28;
+    --et-color-primary-active: 153 27 27;
     --et-color-primary-disabled: 120 52 52;
 
     --et-color-on-primary: 255 255 255;
@@ -561,7 +561,7 @@
     --et-color-primary: 217 119 6;
     --et-color-primary-hover: 245 158 11;
     --et-color-primary-focus: 245 158 11;
-    --et-color-primary-active: 180 83 9;
+    --et-color-primary-active: 251 191 36;
     --et-color-primary-disabled: 133 77 14;
 
     --et-color-on-primary: 23 23 23;

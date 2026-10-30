@@ -25,7 +25,7 @@ export const LIGHT_SURFACE: SurfaceTheme = {
   background: '255 255 255',
   color: '23 23 23',
   colorMuted: '82 82 82',
-  colorSubtle: '161 161 161',
+  colorSubtle: '112 112 112',
   border: '229 229 229',
 };
 
@@ -66,7 +66,7 @@ export const DARK_SURFACE: SurfaceTheme = {
   background: '23 23 23',
   color: '250 250 250',
   colorMuted: '161 161 161',
-  colorSubtle: '115 115 115',
+  colorSubtle: '135 135 135',
   border: '64 64 64',
 };
 

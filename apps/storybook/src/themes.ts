@@ -24,9 +24,9 @@ export const DANGER_THEME: ColorTheme = {
   primary: {
     color: {
       default: '220 38 38',
-      hover: '239 68 68',
-      focus: '239 68 68',
-      active: '185 28 28',
+      hover: '185 28 28',
+      focus: '185 28 28',
+      active: '153 27 27',
       disabled: '120 52 52',
     },
     onColor: {
@@ -73,9 +73,9 @@ export const DANGER_ON_LIGHT_THEME: ColorTheme = {
   primary: {
     color: {
       default: '220 38 38',
-      hover: '239 68 68',
-      focus: '239 68 68',
-      active: '185 28 28',
+      hover: '185 28 28',
+      focus: '185 28 28',
+      active: '153 27 27',
       disabled: '120 52 52',
     },
     onColor: {
@@ -124,7 +124,7 @@ export const WARNING_THEME: ColorTheme = {
       default: '217 119 6',
       hover: '245 158 11',
       focus: '245 158 11',
-      active: '180 83 9',
+      active: '251 191 36',
       disabled: '133 77 14',
     },
     onColor: {
@@ -270,7 +270,7 @@ export const WARNING_ON_LIGHT_THEME: ColorTheme = {
       default: '217 119 6',
       hover: '245 158 11',
       focus: '245 158 11',
-      active: '180 83 9',
+      active: '251 191 36',
       disabled: '133 77 14',
     },
     onColor: {
