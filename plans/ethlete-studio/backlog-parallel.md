@@ -132,3 +132,12 @@ http://localhost:4402/@fs/.../.ethlete/design/studio/components/tree-row/tree-ro
 - **Fix option:** reproduce first (edit a part while its grid loads). Then the frame retries a failed dynamic
   import after the next `parts` event for that part, or after a short back-off; only a repeated failure shows the
   error. A spec that bites. Stream A or C, whichever owns `libs/cli/design/web/frame.ts` now.
+
+## SDK base designs (Tom, 2026-10-30, Q44)
+
+A separate design session draws the SDK base parts under `.ethlete/design/sdk/` that Studio uses. It starts once
+the builder's `components/button` move into the base (Q32) has landed, so both never edit the same part. Order by
+use: `components/select` with the open panel and options (the 4.47 gap that blocks inherited coverage), then
+`form-field` with `input` and `textarea`, then `tree`, `switch` and the tooltip. Each part declares its controls
+for 4.47, goes to `ready` and waits on the merge queue for Tom. The session follows the
+`ethlete-design-exploration` skill: Tom picks every design.
