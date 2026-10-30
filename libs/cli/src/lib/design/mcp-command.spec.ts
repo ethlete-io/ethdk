@@ -71,11 +71,20 @@ describe('et design mcp', () => {
       'sketch_ready',
       'sketch_merge',
       'sketch_discard',
+      'sketch_variant',
+      'sketch_round',
+      'sketch_list',
+      'sketch_check',
+      'sketch_preview',
+      'sketch_rebase',
+      'comment_reply',
       'inbox',
       'inbox_done',
     ]);
     expect(tools['motion_shots']).toEqual(['part', 'motion']);
     expect(tools['sketch_ready']).toEqual(['part', 'by']);
+    expect(tools['sketch_variant']).toEqual(['part', 'variant', 'from', 'by']);
+    expect(tools['comment_reply']).toEqual(['id', 'text', 'by']);
   });
 
   it('refuses a call without a required input and runs nothing', async () => {
@@ -170,5 +179,77 @@ describe('et design mcp', () => {
 
     expect(inbox.result.isError).toBe(false);
     expect(JSON.parse(inbox.result.content[0]?.text ?? '')).toEqual({ items: [], waitingForUser: [] });
+  });
+
+  it('maps the sketch and comment tools onto their commands and arguments', async () => {
+    const run = vi.fn<ToolRunner>(async () => ({ code: 0, stdout: 'ok', stderr: '' }));
+    const argvOf = async (name: string, args: Record<string, unknown>) => {
+      run.mockClear();
+      await call({ target: '/w', run, name, args });
+
+      return run.mock.calls[0]?.[0];
+    };
+
+    expect(await argvOf('sketch_variant', { part: 'elements/hero', variant: 'c', from: 'a', by: 'm' })).toEqual([
+      'sketch',
+      'variant',
+      'elements/hero',
+      'c',
+      '--from',
+      'a',
+      '--by',
+      'm',
+    ]);
+    expect(
+      await argvOf('sketch_round', { part: 'elements/hero', round: '2', title: 'T', drops: 'x,y', by: 'm' }),
+    ).toEqual(['sketch', 'round', 'elements/hero', '2', '--title', 'T', '--drops', 'x,y', '--by', 'm']);
+    expect(await argvOf('sketch_list', {})).toEqual(['sketch', 'list', '--json']);
+    expect(await argvOf('sketch_check', { part: 'elements/hero' })).toEqual(['sketch', 'check', 'elements/hero']);
+    expect(await argvOf('sketch_check', {})).toEqual(['sketch', 'check']);
+    expect(await argvOf('sketch_preview', { part: 'elements/hero', variant: 'a' })).toEqual([
+      'sketch',
+      'preview',
+      'elements/hero',
+      'a',
+    ]);
+    expect(await argvOf('sketch_rebase', { part: 'elements/hero', by: 'm' })).toEqual([
+      'sketch',
+      'rebase',
+      'elements/hero',
+      '--by',
+      'm',
+    ]);
+    expect(await argvOf('comment_reply', { id: 'c1', text: 'hi', by: 'm', question: true })).toEqual([
+      'comment',
+      'reply',
+      'c1',
+      'hi',
+      '--by',
+      'm',
+      '--question',
+    ]);
+  });
+
+  it('reaches the real sketch list, check and variant commands', async () => {
+    const target = acme();
+    const run = inProcessRunner(target);
+
+    await call({
+      target,
+      run,
+      name: 'sketch_new',
+      args: { part: 'elements/hero', variants: 'a,b', by: 'm', product: 'acme' },
+    });
+
+    const variant = await call({
+      target,
+      run,
+      name: 'sketch_variant',
+      args: { part: 'elements/hero', variant: 'c', from: 'a', by: 'm', product: 'acme' },
+    });
+    const list = await call({ target, run, name: 'sketch_list', args: {} });
+
+    expect(variant.result.isError).toBe(false);
+    expect(list.result.content[0]?.text).toContain('"c"');
   });
 });

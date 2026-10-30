@@ -172,7 +172,7 @@ loaded. Name the line by its `id` when it has one, otherwise as `<part>#<state>â
 It takes `--mode`, `--scale`, `--surface`, `--color`, `--product` and `--out`; the JSON names the line, its label and both ends.
 
 `et design mcp` serves the design tools to an MCP client over stdio, in the working directory of the session: `parts`,
-`check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `inbox` and
+`check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `sketch_variant`, `sketch_round`, `sketch_list`, `sketch_check`, `sketch_preview`, `sketch_rebase`, `comment_reply`, `inbox` and
 `inbox_done`. Each runs the `et design` command of the same name and takes its flags as arguments; `product` may be left out
 when the workspace has one product, and every write takes `by`. `shot` returns the contact sheet image, drawn the same way as
 the Studio screenshots; `motion_shots` returns the sheet image and the JSON of its tracks. Part files are written with the
