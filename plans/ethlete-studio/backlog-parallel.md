@@ -277,8 +277,17 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   progress at ethlete-sdk-57 (pointer needs hover, not active); (2) textarea rows not drawn yet; (3) `sketch check`
   contrast: `danger` label and error text 2.77:1 on light - per Q51 the rows use `danger-on-light` after Tom
   merges `foundations/colors`. Q60 (pending at the grill): drop the pressed look on text fields (recommended).
-- **Next:** when the field kind lands and Q60 is answered: switch the kind, add textarea rows, apply Q60; after the
-  colors merge, `errorColor: 'danger-on-light'`; then `sketch check`, `design complete --variant a`, release, ready.
+- **As built (ethlete-sdk-33, 2026-10-31):** Tom merged `foundations/colors` (`7520c12ec`). The Q57 values and the
+  three `-on-light` themes are in `apps/storybook/src/themes.ts`/`surface-themes.ts`, the generator default set
+  and its default `--out` is `foundations/colors/colors.css`; `yarn sdk:tokens:check` passes (`2edcd1eed`).
+  Form-field: `kind: 'field'` (57, `855f4c06e`), textarea rows, no pressed look (Q61) (`827fe33d0`), errors in
+  `danger-on-light` (`86788394d`); `sketch check` and `design complete --variant a` pass. After 57's per-state
+  viewport fix (`e9a7ba58c`) the select open panel shows all options; select r2 d is ready again (`bbcef9574`).
+  Verified by eye: both shots at 320px.
+- **Open:** form-field error rows show no hover and no focus-visible change (SDK rule
+  `form-field-text-shell-styles.component.css:245`); question at the grill, recommendation: keep the danger border,
+  add the focus ring, hover in the danger hover colour. Form-field stays on hold until that lib change lands.
+  `part remove foundations/tokens` and its config entries wait on Tom's discard of the held tokens sketch.
 
 ### Foundation sheet decisions (2026-10-30)
 
