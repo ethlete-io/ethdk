@@ -982,7 +982,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Decision (Tom, 2026-10-30):** build in this order: 4.76, then 4.75, then 4.77, then 4.78 to 4.80. For 4.75,
   measure the pop-in steps on a real sketch before and after the change.
 
-### 4.75 Variants pop in one by one on a part with many states - open
+### 4.75 Variants pop in one by one on a part with many states - in progress (builder, 2026-10-30)
 
 - **Pain (Tom, 2026-10-30):** on a part like `components/comment-pin`, the variants appear one after another,
   about 300 ms apart. In a sketch this is very slow.
