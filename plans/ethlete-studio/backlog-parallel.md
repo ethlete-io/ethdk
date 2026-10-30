@@ -11,6 +11,11 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   `UTILITY-CSS` in `RULES`). C1 done (`2a90d0cfd`, Inventory toggle on `pages/*` parts; `by` is `designer`). B, E and G slice 5 run; C2
   waits for B2; C3 (1.2 re-run) not started; F 5.51 r2 at ready; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
+- Tom merged `foundations/colors` r2 and `elements/canvas-frames` + `pages/sketches` r1 (`b47bae5e9`). Q43 (zoom
+  chip as its own part `elements/zoom-chip`) is now a new sketch on the merged parts - in progress.
+- In progress (2026-10-30): 4.85 frame import retry (opus), fifagg backdrop close during enter (opus, `libs/cdk`).
+- B done: `et design mcp` (`90724234f`), `/__design/motion` (`dacf9bd64`). E done: 5.52, 5.55, 5.56. G slice 5 done
+  (`a0ba7dd81`). A: 5.60 done (`0652fc1df`).
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
 
@@ -73,10 +78,7 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-- `elements/canvas-frames` + `pages/sketches` r1 "Named frame parts" (`b907cf29d`, 5.32): merge the named exports
-  `canvasFrameHead`, `canvasFrameBox`, `canvasZoomChip`, with the app chip on `pages/sketches`? Q43 with the grill.
-- `foundations/colors` r2 "Surface border exempt" (`40157a02b`, 5.51 + Q42): merge variant b, the contrast chips
-  per token on surface, raised and overlay, with `--surface-border` shown exempt?
+Empty. Tom merged colors r2 and canvas-frames r1 (`b47bae5e9`).
 
 ## Waits for Tom in the real Studio
 
@@ -121,8 +123,8 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
 ## New finding 4.85 (Tom, 2026-10-30): a failed module import stays in the frame
 
 - **Pain (screenshot):** on `components/tree-row` most state frames show `design-explore: state "<state>" of
-  "components/tree-row" failed / Failed to fetch dynamically imported module:
-  http://localhost:4402/@fs/.../.ethlete/design/studio/components/tree-row/tree-row.ts?design-product=studio`.
+"components/tree-row" failed / Failed to fetch dynamically imported module:
+http://localhost:4402/@fs/.../.ethlete/design/studio/components/tree-row/tree-row.ts?design-product=studio`.
   The first states rendered, the rest failed. Tom sees this often, after parts change.
 - **Likely cause (not verified):** the part file changed while the frames loaded (for example the auto-merged
   `34f73f3e2`), Vite invalidated the module, and each frame that imported it during the change failed. Nothing
