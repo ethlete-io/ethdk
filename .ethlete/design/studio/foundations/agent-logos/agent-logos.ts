@@ -1,19 +1,61 @@
 import { definePart, drawing, html, svgAsset } from '@design-system';
 import claude from '@assets/agent-claude.svg?raw';
 import codex from '@assets/agent-codex.svg?raw';
+import copilot from '@assets/agent-copilot.svg?raw';
+import cursor from '@assets/agent-cursor.svg?raw';
 import deepseek from '@assets/agent-deepseek.svg?raw';
 import gemini from '@assets/agent-gemini.svg?raw';
 import generic from '@assets/agent-generic.svg?raw';
 import grok from '@assets/agent-grok.svg?raw';
 import kimi from '@assets/agent-kimi.svg?raw';
 import meta from '@assets/agent-meta.svg?raw';
+import mistral from '@assets/agent-mistral.svg?raw';
+import qwen from '@assets/agent-qwen.svg?raw';
 import styles from './agent-logos.css?inline';
 
-export type Agent = 'claude' | 'codex' | 'gemini' | 'grok' | 'deepseek' | 'kimi' | 'meta' | 'generic';
+export type Agent =
+  | 'claude'
+  | 'codex'
+  | 'gemini'
+  | 'grok'
+  | 'deepseek'
+  | 'kimi'
+  | 'meta'
+  | 'qwen'
+  | 'mistral'
+  | 'cursor'
+  | 'copilot'
+  | 'generic';
 
-export const agents: Agent[] = ['claude', 'codex', 'gemini', 'grok', 'deepseek', 'kimi', 'meta', 'generic'];
+export const agents: Agent[] = [
+  'claude',
+  'codex',
+  'gemini',
+  'grok',
+  'deepseek',
+  'kimi',
+  'meta',
+  'qwen',
+  'mistral',
+  'cursor',
+  'copilot',
+  'generic',
+];
 
-const logos: Record<Agent, string> = { claude, codex, gemini, grok, deepseek, kimi, meta, generic };
+const logos: Record<Agent, string> = {
+  claude,
+  codex,
+  gemini,
+  grok,
+  deepseek,
+  kimi,
+  meta,
+  qwen,
+  mistral,
+  cursor,
+  copilot,
+  generic,
+};
 
 /** The brand mark of an agent as inline SVG, 1.2rem by default; `cls` lets a host size it in its own CSS. */
 export const agentLogo = (agent: Agent, cls = '') =>
