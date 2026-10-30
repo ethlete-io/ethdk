@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.70
+
+### Patch Changes
+
+- The `migrate-to-v5` codemod now reports each `toSignal(…, { requireSync: true })`, `take(1)`, `first()` or `withLatestFrom` that reads an observable it rewrote to `toObservable()`, because that observable no longer emits synchronously.
+- The `surface-interaction-swatch` migration declares that it needs `ts-morph`, so `et update` installs it first. The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+- Overlay runtime: Escape now closes an overlay during its enter transition instead of being dropped; outside-pointer closes stay ignored until the transition starts.
+
 ## 5.0.0-next.69
 
 ### Patch Changes

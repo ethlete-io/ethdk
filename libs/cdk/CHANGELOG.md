@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 5.0.0-next.45
+
+### Patch Changes
+
+- The combobox now closes on Escape pressed during its enter animation instead of ignoring it.
+- The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+- Dialogs and selects now close on an Escape pressed during the enter animation instead of dropping it; the click that opens them still cannot close them.
+- An auto-resized overlay, such as a menu, opened near the viewport bottom now flips to the top instead of staying squeezed below its trigger.
+- The `to-v5` migration now renames `theme` and `altTheme` to `color` and `altColor` only on `et-button`, `et-fab`, `et-icon-button` and `et-text-button` hosts, not on app components with their own `theme` input.
+
 ## 5.0.0-next.44
 
 ### Patch Changes

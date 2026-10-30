@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.16
+
+### Patch Changes
+
+- The `@nx/devkit` peer range is now `>=23.0.0`, matching the Nx floor of the migration guide.
+
 ## 4.0.0-next.15
 
 ### Patch Changes
