@@ -359,6 +359,25 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   all-clear. This supplies the folding evidence that was missing before. No restart was
   performed by this design session.
 
+### 4.51 A round that changes no pixel looks broken in Studio - open
+
+- **Pain (Tom, 2026-10-30):** "was ist mit dem inbox sketch?" The Inbox round r2 showed only
+  folded "unchanged in c" row heads, empty dashed cells under Current and c, and the folded
+  r1. Nothing said what c changes or why the canvas is empty.
+- **Cause:** c restores the accepted L look on purpose (6.8). It drops the extra
+  `comment-draft-focus` state and adds one sentence to the page note: the editor is open only
+  while focus is within it. Both are real changes, but no state differs in pixels, so every
+  row folds. c also has no variant note, and Studio shows no change to the part note.
+- **Now:** the agent compares `shared/inbox.ts` with `c/shared/inbox.ts` by hand and
+  explains it in chat.
+- **Fix options:** 1. when a round's variants change no pixel, the canvas shows one line in
+  place of the empty grid, for example "c changes no pixel: part note changed, state
+  `comment-draft-focus` dropped", with the note diff on a click (recommended). 2. a
+  variant-note check: `sketch ready` refuses a variant without a note when its round has a
+  new variant. 3. a note-only change opens the merge preview directly.
+- **Acceptance:** for the Inbox r2, Tom sees at the first view that c changes only the
+  part note and drops one state, and can read the new note text without the agent.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
