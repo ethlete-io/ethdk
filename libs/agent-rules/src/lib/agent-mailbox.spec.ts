@@ -238,6 +238,34 @@ describe('agent-mailbox', () => {
     10000,
   );
 
+  it.skipIf(!hasTmux)(
+    'types the clear command and the prompt into the session for restart',
+    async () => {
+      const agent = `claude-restart-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+      try {
+        expect(run(['restart', agent, '--after', '1', 'resume', 'slug']).stdout).toContain('Restarting');
+        await new Promise((resolve) => setTimeout(resolve, 6000));
+
+        expect(readFileSync(log, 'utf8')).toMatch(/\/clear\s+resume slug/);
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    10000,
+  );
+
+  it('fails restart when no tmux session exists for the agent', () => {
+    const result = run(['restart', `nobody-${process.pid}`, 'resume']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('No tmux session');
+  });
+
   it('prints a shell function for each agent that falls back to the plain command', () => {
     const output = run(['shell-init', 'codex', 'gemini']).stdout;
 

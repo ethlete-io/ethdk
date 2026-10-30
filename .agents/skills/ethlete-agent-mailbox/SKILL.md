@@ -33,6 +33,7 @@ node <skill-dir>/agent-mailbox.mjs up <name>[=<command>]...
 node <skill-dir>/agent-mailbox.mjs run <name> <command...>
 node <skill-dir>/agent-mailbox.mjs shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
 node <skill-dir>/agent-mailbox.mjs shell-init [<agent>...]
+node <skill-dir>/agent-mailbox.mjs restart <name> [--after <seconds>] <prompt...>
 node <skill-dir>/agent-mailbox.mjs down [<name>...]
 node <skill-dir>/agent-mailbox.mjs dispatch
 ```
@@ -81,6 +82,8 @@ A background `--wait` also ends after one message, so it is not a lasting watch.
 `shell-install` writes one shell function per agent into `~/.zshrc` or `~/.bashrc`, between two marker lines. A second run replaces the block, and `--remove` deletes it. Use `--file` for another startup file and `--dry-run` to preview. After a new terminal opens, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. Run `shell-install` only when the user asks: it changes a file the user owns.
 
 `shell-init` prints the same functions without writing a file.
+
+`restart <name> <prompt...>` types the clear command (`/clear`, or `/new` for a `codex` name) and then the prompt into the session `<name>@<repo>` after `--after` seconds (default 5). The command returns at once, so end your turn after it. An agent uses it to clear itself and resume from its saved work state. Background commands of the old session still report into the new one.
 
 ## Rules
 

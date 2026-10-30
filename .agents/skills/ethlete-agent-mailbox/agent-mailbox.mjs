@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -20,6 +20,8 @@ const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
 const WAKE_GRACE_MS = 1500;
+const RESTART_AFTER_SECONDS = 5;
+const RESTART_CLEAR_MS = 2500;
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -40,6 +42,8 @@ const waitSeconds = takeFlag(args, '--wait', true);
 const recipient = takeFlag(args, '--to', true);
 const rcFile = takeFlag(args, '--file', true);
 const remove = takeFlag(args, '--remove', false);
+const afterSeconds = takeFlag(args, '--after', true);
+const now = takeFlag(args, '--now', false);
 const dryRun = takeFlag(args, '--dry-run', false);
 const [command, sender, ...words] = args;
 
@@ -58,6 +62,8 @@ Run:     node ${script} run <name> <command...>       (start or attach the agent
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
+Restart: node ${script} restart <name> [--after <seconds>] <prompt...>
+                                                      (type the clear command and then the prompt into the tmux session of <name>)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -227,6 +233,29 @@ if (command === 'send' && sender) {
         );
       }
     }
+  }
+} else if (command === 'restart' && sender && words.length) {
+  const session = [sessionFor(sender), sender].find(sessionExists);
+  if (!session) {
+    process.stderr.write(`No tmux session for ${sender}.\n`);
+    process.exitCode = 1;
+  } else if (now) {
+    const type = (...keys) => tmux('send-keys', '-t', `=${session}:`, ...keys);
+    sleep(Number(afterSeconds ?? RESTART_AFTER_SECONDS) * 1000);
+    type('-l', sender.startsWith('codex') ? '/new' : '/clear');
+    sleep(ENTER_DELAY_MS);
+    type('Enter');
+    sleep(RESTART_CLEAR_MS);
+    type('-l', words.join(' '));
+    sleep(ENTER_DELAY_MS);
+    type('Enter');
+  } else {
+    const delay = Number(afterSeconds ?? RESTART_AFTER_SECONDS);
+    spawn(process.execPath, [script, 'restart', sender, '--now', '--after', String(delay), ...words], {
+      detached: true,
+      stdio: 'ignore',
+    }).unref();
+    process.stdout.write(`Restarting ${session} in ${delay} seconds. End your turn now.\n`);
   }
 } else if (command === 'down') {
   [DISPATCH_SESSION, ...[sender, ...words].filter(Boolean).map(sessionFor)].forEach((name) => {

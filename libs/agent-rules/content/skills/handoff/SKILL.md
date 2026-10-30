@@ -152,6 +152,31 @@ map, not a transcript.
 After writing, tell the user where it landed and that a fresh session should
 resume from it.
 
+## Clear and resume on your own
+
+Run inside a `tmux` session started with the mailbox `run` command or the shell functions from `shell-install` (`echo $TMUX` is not empty and
+the mailbox script `restart` finds the session)? Then you may clear and
+resume yourself after the save, instead of asking the user to. You decide. Do it only if every line
+is true:
+
+- No sub-agent, workflow or background command still runs. A background command from the old
+  session reports back into the new one, and a sub-agent answer has no reader after the clear.
+- No answer you wait for is open: a peer session, a mailbox reply, a CI run.
+- The tree is committed, or the handoff file names every uncommitted change.
+- The handoff file is saved and its Next steps are concrete.
+
+If one line is false, finish or collect that first. If you cannot, hand the prompt to the user as
+before. Then run, with the slug of the file you saved:
+
+```bash
+node <mailbox-skill-dir>/agent-mailbox.mjs restart <name> '/handoff resume <slug>'
+```
+
+`<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
+types `/clear` (`/new` for a `codex` name) and the prompt into your pane a few seconds later, so
+end your turn after you run it and do not start another tool call. Tell the user in one line that
+you restarted and why.
+
 ## Resume mode
 
 1. List `{%handoffDir%}/`. Pick the file matching the given name, or the most
