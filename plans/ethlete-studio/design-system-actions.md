@@ -744,6 +744,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `openFrame` (`thumb.ts`) gives up silently after `DRAW_TIMEOUT_MS`, so a frame that never draws becomes a blank
   picture with no error. Recommended next: a frame that never draws fails the drawing, and `ready` redraws each
   changed state one at a time before it accepts the change. Keep 4 at once.
+- **As built (guard, `ee14a8bee`):** `openFrame` throws a `ShotTimeoutError` with the URL when the frame content
+  or an embedded frame never draws (a Vite error overlay still passes). `drawnPair` (`merge-compare.ts`) draws a
+  differing pair once more with `fresh` (no picture cache), and only the second pair counts; `compareMerge` and the
+  target-state check use it. Five specs; each fails on the old source (run, not read). Not verified: a real
+  `ready` that meets an odd picture.
 
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
