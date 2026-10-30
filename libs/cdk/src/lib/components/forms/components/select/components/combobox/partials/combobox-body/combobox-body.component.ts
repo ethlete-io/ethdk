@@ -100,7 +100,7 @@ export class ComboboxBodyComponent implements AbstractComboboxBody {
   constructor() {
     outputToObservable(this.clickOutside.didClickOutside)
       .pipe(
-        tap(() => this.combobox.close()),
+        tap(() => this.combobox._closeFromOutsideClick()),
         takeUntilDestroyed(),
       )
       .subscribe();

@@ -589,6 +589,13 @@ export class ComboboxDirective implements OnInit {
   }
 
   close() {
+    if (!this._animatedOverlay.canUnmount()) return;
+
+    this._animatedOverlay.unmount();
+  }
+
+  _closeFromOutsideClick() {
+    // the click that opened the combobox bubbles to the document after the body exists
     if (!this._isOpen || this._animatedOverlay.isUnmounting()) return;
 
     this._animatedOverlay.unmount();
@@ -695,7 +702,7 @@ export class ComboboxDirective implements OnInit {
     }
 
     if (keyCode === ESCAPE) {
-      if (isOpen) {
+      if (this._animatedOverlay.canUnmount()) {
         result.overlayOperation = 'close';
         event.preventDefault();
         event.stopPropagation();
