@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::future::Future;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
 use std::path::Path;
 use std::process::Stdio;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -49,17 +51,49 @@ pub struct ServerState {
     pub stale: bool,
     /// True when a server this Studio started has since ended. Its last output stays in `log`.
     pub exited: bool,
-    pub log: Vec<String>,
+    /// `None` when the log is still the one the caller named by `log_revision`.
+    pub log: Option<Vec<String>>,
+    pub log_revision: u64,
+}
+
+#[derive(Default)]
+struct Log {
+    lines: Vec<String>,
+    revision: u64,
+}
+
+static LOG_REVISION: AtomicU64 = AtomicU64::new(1);
+
+impl Log {
+    fn new(lines: Vec<String>) -> Self {
+        Self {
+            lines,
+            revision: LOG_REVISION.fetch_add(1, Ordering::Relaxed),
+        }
+    }
+
+    fn push(&mut self, line: String) {
+        self.lines.push(line);
+
+        let overflow = self.lines.len().saturating_sub(LOG_LINES);
+
+        self.lines.drain(..overflow);
+        self.revision = LOG_REVISION.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
 struct Server {
     child: Child,
     _stdin: Option<ChildStdin>,
-    log: Arc<Mutex<Vec<String>>>,
+    log: Arc<Mutex<Log>>,
 }
 
 #[derive(Default, Clone)]
-pub struct DesignServers(Arc<Mutex<HashMap<String, Server>>>);
+pub struct DesignServers {
+    table: Arc<Mutex<HashMap<String, Server>>>,
+    /// Stale verdicts per checkout and port, kept until the port stops answering or Studio starts a server on it.
+    verdicts: Arc<Mutex<HashMap<(String, u16), bool>>>,
+}
 
 fn port_of_checkout(checkout: &str) -> StudioResult<u16> {
     read_config(checkout)
@@ -77,14 +111,23 @@ fn listening(port: u16) -> bool {
         .any(|host| TcpStream::connect_timeout(&SocketAddr::new(*host, port), POLL).is_ok())
 }
 
-fn state(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<ServerState> {
-    let mut table = servers.0.lock().map_err(|_| StudioError::Poisoned)?;
-    let mut log = Vec::new();
+fn state(servers: &DesignServers, checkout: &str, port: u16, known_log: Option<u64>) -> StudioResult<ServerState> {
+    let mut table = servers.table.lock().map_err(|_| StudioError::Poisoned)?;
+    let mut lines = Vec::new();
+    let mut log_revision = 0;
     let mut managed = false;
     let mut exited = false;
 
     if let Some(server) = table.get_mut(checkout) {
-        log = server.log.lock().map_err(|_| StudioError::Poisoned)?.clone();
+        let log = server.log.lock().map_err(|_| StudioError::Poisoned)?;
+
+        log_revision = log.revision;
+
+        if known_log != Some(log_revision) {
+            lines = log.lines.clone();
+        }
+
+        drop(log);
         managed = matches!(server.child.try_wait(), Ok(None));
         exited = !managed;
     }
@@ -98,7 +141,8 @@ fn state(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<Ser
         foreign: listening && !managed,
         stale: false,
         exited,
-        log,
+        log: (known_log != Some(log_revision)).then_some(lines),
+        log_revision,
     })
 }
 
@@ -169,14 +213,76 @@ async fn is_stale(checkout: &str, port: u16) -> bool {
     }
 }
 
-async fn judged(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<ServerState> {
-    let mut current = state(servers, checkout, port)?;
+async fn judge_stale(checkout: String, port: u16) -> bool {
+    let outdated = cfg!(debug_assertions) && tokio::task::spawn_blocking(built_cli_outdated).await.unwrap_or(false);
 
-    if current.listening {
-        current.stale = (cfg!(debug_assertions) && built_cli_outdated()) || is_stale(checkout, port).await;
+    outdated || is_stale(&checkout, port).await
+}
+
+fn forget_verdict(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<()> {
+    servers
+        .verdicts
+        .lock()
+        .map_err(|_| StudioError::Poisoned)?
+        .remove(&(checkout.to_owned(), port));
+
+    Ok(())
+}
+
+async fn judged_with<F, J>(
+    servers: &DesignServers,
+    checkout: &str,
+    port: u16,
+    known_log: Option<u64>,
+    judge: J,
+) -> StudioResult<ServerState>
+where
+    J: FnOnce() -> F,
+    F: Future<Output = bool>,
+{
+    let mut current = state(servers, checkout, port, known_log)?;
+
+    if !current.listening {
+        forget_verdict(servers, checkout, port)?;
+
+        return Ok(current);
     }
 
+    let key = (checkout.to_owned(), port);
+    let cached = servers
+        .verdicts
+        .lock()
+        .map_err(|_| StudioError::Poisoned)?
+        .get(&key)
+        .copied();
+
+    current.stale = match cached {
+        Some(stale) => stale,
+        None => {
+            let stale = judge().await;
+
+            servers
+                .verdicts
+                .lock()
+                .map_err(|_| StudioError::Poisoned)?
+                .insert(key, stale);
+            stale
+        }
+    };
+
     Ok(current)
+}
+
+async fn judged(
+    servers: &DesignServers,
+    checkout: &str,
+    port: u16,
+    known_log: Option<u64>,
+) -> StudioResult<ServerState> {
+    judged_with(servers, checkout, port, known_log, || {
+        judge_stale(checkout.to_owned(), port)
+    })
+    .await
 }
 
 fn built_cli_outdated() -> bool {
@@ -308,7 +414,7 @@ async fn stop_port(port: u16) {
 #[cfg(not(unix))]
 async fn stop_port(_port: u16) {}
 
-fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Vec<String>>>) {
+fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Log>>) {
     tokio::spawn(async move {
         let mut lines = BufReader::new(source).lines();
 
@@ -318,10 +424,6 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Vec<
             };
 
             log.push(line);
-
-            let overflow = log.len().saturating_sub(LOG_LINES);
-
-            log.drain(..overflow);
         }
     });
 }
@@ -362,7 +464,7 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
     })?;
 
     let stdin = child.stdin.take();
-    let log = Arc::new(Mutex::new(preface));
+    let log = Arc::new(Mutex::new(Log::new(preface)));
 
     if let Some(stdout) = child.stdout.take() {
         collect(stdout, log.clone());
@@ -372,7 +474,7 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
         collect(stderr, log.clone());
     }
 
-    servers.0.lock().map_err(|_| StudioError::Poisoned)?.insert(
+    servers.table.lock().map_err(|_| StudioError::Poisoned)?.insert(
         checkout.to_owned(),
         Server {
             child,
@@ -431,7 +533,7 @@ async fn await_listening(servers: &DesignServers, checkout: &str, port: u16) {
             return;
         }
 
-        if state(servers, checkout, port).is_ok_and(|read| read.exited) {
+        if state(servers, checkout, port, None).is_ok_and(|read| read.exited) {
             return;
         }
 
@@ -475,7 +577,7 @@ async fn end(child: &mut Child) {
 /// Every server this Studio started, stopped. The window is gone when the app exits, so nothing
 /// can reach the Stop control any more and a left-over server would hold the port.
 pub fn stop_every(servers: &DesignServers) {
-    let Ok(mut table) = servers.0.lock() else {
+    let Ok(mut table) = servers.table.lock() else {
         return;
     };
 
@@ -490,10 +592,11 @@ pub fn stop_every(servers: &DesignServers) {
 pub async fn design_server_state(
     servers: tauri::State<'_, DesignServers>,
     checkout: String,
+    log_revision: Option<u64>,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
 
-    judged(servers.inner(), &checkout, port).await
+    judged(servers.inner(), &checkout, port, log_revision).await
 }
 
 /// Starts the checkout's design server and answers once it accepts connections. A server that
@@ -504,16 +607,17 @@ pub async fn design_server_start(
     checkout: String,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
-    let current = state(servers.inner(), &checkout, port)?;
+    let current = state(servers.inner(), &checkout, port, None)?;
 
     if current.listening || current.managed {
         return Ok(current);
     }
 
     spawn(servers.inner(), &checkout, Vec::new())?;
+    forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
-    state(servers.inner(), &checkout, port)
+    state(servers.inner(), &checkout, port, None)
 }
 
 /// Stops the server this Studio started. A server somebody else started stays up.
@@ -523,13 +627,17 @@ pub async fn design_server_stop(
     checkout: String,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
-    let taken = servers.0.lock().map_err(|_| StudioError::Poisoned)?.remove(&checkout);
+    let taken = servers
+        .table
+        .lock()
+        .map_err(|_| StudioError::Poisoned)?
+        .remove(&checkout);
 
     if let Some(mut server) = taken {
         end(&mut server.child).await;
     }
 
-    state(servers.inner(), &checkout, port)
+    state(servers.inner(), &checkout, port, None)
 }
 
 /// Stops whatever listens on the checkout's port, then starts the server Studio owns.
@@ -539,7 +647,11 @@ pub async fn design_server_restart(
     checkout: String,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
-    let taken = servers.0.lock().map_err(|_| StudioError::Poisoned)?.remove(&checkout);
+    let taken = servers
+        .table
+        .lock()
+        .map_err(|_| StudioError::Poisoned)?
+        .remove(&checkout);
 
     if let Some(mut server) = taken {
         end(&mut server.child).await;
@@ -558,9 +670,10 @@ pub async fn design_server_restart(
     let preface = build_cli().await?;
 
     spawn(servers.inner(), &checkout, preface)?;
+    forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
-    judged(servers.inner(), &checkout, port).await
+    judged(servers.inner(), &checkout, port, None).await
 }
 
 #[cfg(test)]
@@ -614,12 +727,12 @@ mod tests {
     #[test]
     fn a_checkout_nobody_started_reads_as_not_managed() {
         let servers = DesignServers::default();
-        let read = state(&servers, "/nowhere", 65000).expect("a state");
+        let read = state(&servers, "/nowhere", 65000, None).expect("a state");
 
         assert!(!read.managed);
         assert!(!read.listening);
         assert_eq!(read.port, 65000);
-        assert!(read.log.is_empty());
+        assert_eq!(read.log, Some(Vec::new()));
     }
 
     #[test]
@@ -676,20 +789,20 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        let mut read = state(&servers, &checkout, PORT).expect("a state");
+        let mut read = state(&servers, &checkout, PORT, None).expect("a state");
 
         for _ in 0..20 {
-            if !read.log.is_empty() {
+            if read.log.as_ref().is_some_and(|log| !log.is_empty()) {
                 break;
             }
 
             tokio::time::sleep(POLL).await;
-            read = state(&servers, &checkout, PORT).expect("a state");
+            read = state(&servers, &checkout, PORT, None).expect("a state");
         }
 
         assert!(read.exited);
         assert!(!read.managed);
-        assert!(read.log.iter().any(|line| line.contains("EMFILE")));
+        assert!(read.log.iter().flatten().any(|line| line.contains("EMFILE")));
 
         let _ = std::fs::remove_dir_all(&checkout);
     }
@@ -705,15 +818,15 @@ mod tests {
         await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
-        assert!(state(&servers, &checkout, PORT).expect("a state").managed);
+        assert!(state(&servers, &checkout, PORT, None).expect("a state").managed);
 
-        let taken = servers.0.lock().expect("the table").remove(&checkout);
+        let taken = servers.table.lock().expect("the table").remove(&checkout);
 
         end(&mut taken.expect("the server").child).await;
         await_stopped(PORT).await;
 
         assert!(!listening(PORT), "the server the design tool started is still up");
-        assert!(!state(&servers, &checkout, PORT).expect("a state").managed);
+        assert!(!state(&servers, &checkout, PORT, None).expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
     }
@@ -734,7 +847,7 @@ mod tests {
         await_stopped(PORT).await;
 
         assert!(!listening(PORT), "a server outlived the app");
-        assert!(!state(&servers, &checkout, PORT).expect("a state").managed);
+        assert!(!state(&servers, &checkout, PORT, None).expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
     }
@@ -752,7 +865,7 @@ mod tests {
         assert!(listening(PORT), "the design tool never answered");
 
         servers
-            .0
+            .table
             .lock()
             .expect("the servers")
             .get_mut(&checkout)
@@ -832,7 +945,7 @@ mod tests {
 
         await_listening(&DesignServers::default(), &checkout, PORT).await;
 
-        let read = state(&DesignServers::default(), &checkout, PORT).expect("a state");
+        let read = state(&DesignServers::default(), &checkout, PORT, None).expect("a state");
 
         assert!(read.listening && read.foreign && !read.managed);
 
@@ -848,12 +961,12 @@ mod tests {
     #[tokio::test]
     async fn the_log_keeps_only_the_last_lines() {
         let printed: String = (0..LOG_LINES + 10).map(|line| format!("{line}\n")).collect();
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log = Arc::new(Mutex::new(Log::default()));
 
         collect(std::io::Cursor::new(printed.into_bytes()), log.clone());
 
         for _ in 0..40 {
-            if log.lock().expect("the log").len() == LOG_LINES {
+            if log.lock().expect("the log").lines.len() == LOG_LINES {
                 break;
             }
 
@@ -862,7 +975,95 @@ mod tests {
 
         let held = log.lock().expect("the log");
 
-        assert_eq!(held.len(), LOG_LINES);
-        assert_eq!(held[0], "10");
+        assert_eq!(held.lines.len(), LOG_LINES);
+        assert_eq!(held.lines[0], "10");
+    }
+
+    #[tokio::test]
+    async fn the_log_is_sent_only_when_it_changed_since_the_named_revision() {
+        let checkout = fake_checkout(45878);
+        let servers = DesignServers::default();
+
+        spawn(&servers, &checkout, vec!["first".to_owned()]).expect("the design tool runs");
+
+        let first = state(&servers, &checkout, 45878, None).expect("a state");
+
+        assert_eq!(first.log, Some(vec!["first".to_owned()]));
+
+        let again = state(&servers, &checkout, 45878, Some(first.log_revision)).expect("a state");
+
+        assert_eq!(again.log, None);
+        assert_eq!(again.log_revision, first.log_revision);
+
+        servers
+            .table
+            .lock()
+            .expect("the table")
+            .get(&checkout)
+            .expect("a server")
+            .log
+            .lock()
+            .expect("the log")
+            .push("second".to_owned());
+
+        let changed = state(&servers, &checkout, 45878, Some(first.log_revision)).expect("a state");
+
+        assert_eq!(changed.log, Some(vec!["first".to_owned(), "second".to_owned()]));
+        assert_ne!(changed.log_revision, first.log_revision);
+
+        stop_every(&servers);
+        let _ = std::fs::remove_dir_all(&checkout);
+    }
+
+    #[tokio::test]
+    async fn the_stale_verdict_is_judged_once_per_server_start() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a listener");
+        let port = listener.local_addr().expect("an address").port();
+        let servers = DesignServers::default();
+        let judged = std::sync::atomic::AtomicUsize::new(0);
+        let judge = |stale: bool| {
+            judged.fetch_add(1, Ordering::SeqCst);
+            async move { stale }
+        };
+
+        let first = judged_with(&servers, "/checkout", port, None, || judge(true))
+            .await
+            .expect("a state");
+        let second = judged_with(&servers, "/checkout", port, None, || judge(false))
+            .await
+            .expect("a state");
+
+        assert!(first.stale && second.stale);
+        assert_eq!(judged.load(Ordering::SeqCst), 1);
+
+        forget_verdict(&servers, "/checkout", port).expect("forgotten");
+
+        let restarted = judged_with(&servers, "/checkout", port, None, || judge(false))
+            .await
+            .expect("a state");
+
+        assert!(!restarted.stale);
+        assert_eq!(judged.load(Ordering::SeqCst), 2);
+
+        const STOPPED: u16 = 45879;
+
+        servers
+            .verdicts
+            .lock()
+            .expect("the verdicts")
+            .insert(("/checkout".to_owned(), STOPPED), true);
+
+        let stopped = judged_with(&servers, "/checkout", STOPPED, None, || judge(true))
+            .await
+            .expect("a state");
+
+        assert!(!stopped.listening);
+        assert_eq!(judged.load(Ordering::SeqCst), 2);
+        assert!(!servers
+            .verdicts
+            .lock()
+            .expect("the verdicts")
+            .contains_key(&("/checkout".to_owned(), STOPPED)));
+        drop(listener);
     }
 }

@@ -1,5 +1,14 @@
 import { firstValueFrom } from 'rxjs';
-import { OLDER_SERVER_MESSAGE, callShotUrl, designAnswer$, designReadError, frameUrl, listedSystem$ } from './design';
+import {
+  OLDER_SERVER_MESSAGE,
+  ServerState,
+  callShotUrl,
+  designAnswer$,
+  designReadError,
+  designServerState$,
+  frameUrl,
+  listedSystem$,
+} from './design';
 
 describe('frameUrl', () => {
   it('encodes the slug and the variant', () => {
@@ -66,5 +75,39 @@ describe('an older design server', () => {
     html();
 
     await expect(firstValueFrom(listedSystem$(1))).rejects.toThrow(OLDER_SERVER_MESSAGE);
+  });
+});
+
+describe('designServerState$', () => {
+  const known: ServerState = {
+    port: 1,
+    listening: true,
+    managed: false,
+    foreign: true,
+    stale: false,
+    exited: true,
+    log: ['kept'],
+    logRevision: 7,
+  };
+
+  afterEach(() => delete (window as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
+
+  it('names the known log revision and keeps the known log when the host sends none', async () => {
+    const sent: unknown[] = [];
+
+    Object.defineProperty(window, '__TAURI_INTERNALS__', {
+      configurable: true,
+      value: {
+        invoke: (_: string, args: unknown) => {
+          sent.push(args);
+
+          return Promise.resolve({ ...known, log: sent.length === 1 ? null : ['new'], logRevision: 8 });
+        },
+      },
+    });
+
+    expect((await firstValueFrom(designServerState$('/c', known))).log).toEqual(['kept']);
+    expect((await firstValueFrom(designServerState$('/c', known))).log).toEqual(['new']);
+    expect(sent[0]).toEqual({ checkout: '/c', logRevision: 7 });
   });
 });

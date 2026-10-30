@@ -63,6 +63,7 @@ const RUNNING = {
   stale: false,
   exited: false,
   log: [] as string[],
+  logRevision: 0,
 };
 
 const sent: { command: string; args: unknown }[] = [];

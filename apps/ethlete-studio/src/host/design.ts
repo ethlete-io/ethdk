@@ -130,11 +130,15 @@ export type ServerState = {
   /** True when a server Studio started has since ended. `log` holds its last output. */
   exited: boolean;
   log: string[];
+  logRevision: number;
 };
 
-/** Reads whether the checkout's design server answers on its port. */
-export const designServerState$ = (checkout: string): Observable<ServerState> =>
-  invokeHost$<ServerState>('design_server_state', { checkout });
+/** Reads whether the checkout's design server answers on its port. `known` saves resending an unchanged log. */
+export const designServerState$ = (checkout: string, known?: ServerState | null): Observable<ServerState> =>
+  invokeHost$<Omit<ServerState, 'log'> & { log: string[] | null }>('design_server_state', {
+    checkout,
+    logRevision: known?.logRevision ?? null,
+  }).pipe(map((state) => ({ ...state, log: state.log ?? known?.log ?? [] })));
 
 /** Starts the checkout's design server. Answers once the port accepts connections. */
 export const designServerStart$ = (checkout: string): Observable<ServerState> =>

@@ -413,7 +413,7 @@ export class StudioViewComponent {
 
     this.foreignWatch = interval(FOREIGN_SERVER_POLL_MS)
       .pipe(
-        switchMap(() => designServerState$(checkout).pipe(catchError(() => EMPTY))),
+        switchMap(() => designServerState$(checkout, this.server()).pipe(catchError(() => EMPTY))),
         first((state) => !state.listening || !state.foreign),
         tap((state) => {
           if (this.serverBusy()) return;
