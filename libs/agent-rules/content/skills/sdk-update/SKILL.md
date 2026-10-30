@@ -86,6 +86,13 @@ Every task carries a `kind`, and the kind decides who acts:
 3. Delete the task files you finished under `.ethlete/update`, and leave the ones you could not decide.
 4. Tell the user, per task: what you changed, and what still needs their decision.
 
+## Known traps
+
+- **Angular 22: `a?.b` gives `undefined`, not `null`.** Once the `$safeNavigationMigration` flag is
+  gone, a pipe that treats `null` and `undefined` differently breaks at runtime, with no type error. A
+  pipe that resets its state on `undefined` returns `null`, and the template then throws on a member
+  read. Pass `null` explicitly: `(x?.store ?? null) | suspense`.
+
 ## Rules
 
 - **Never invent a migration.** Only the tasks in `.ethlete/update` and the guides they link are real.
