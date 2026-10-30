@@ -42,5 +42,10 @@
       "authors": ["claude-opus-5-5"],
       "round": "r2"
     }
+  },
+  "hold": {
+    "until": "rebuilt as foundations/colors with tokenSheet (Q54/Q55)",
+    "by": "claude-opus-5-5",
+    "heldAt": "2026-10-30T22:41:39.104Z"
   }
 }

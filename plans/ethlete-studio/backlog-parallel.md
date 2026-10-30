@@ -89,8 +89,11 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-No sdk sketch is ready. `components/select` r2 d (Q56 b) waits on `data-et-control-part`, `foundations/tokens` r2 g
-(Q57 e) waits on the Q54 sheet helper; both are `in progress`.
+- `sdk` `components/select`, round r2 "Final select": merge variant d - Tom's pick b (Q56) with the field frame and
+  trigger as `data-et-control-part`. `design complete --variant d` passes and fails without the markers.
+
+`foundations/tokens` r2 g (Q57 e) is held (`sketch hold`) until it is rebuilt as `foundations/colors` with
+`tokenSheet` (Q54/Q55).
 
 Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
 Tom merged `sdk` `foundations/tokens` r1 c, the token sheet (`d40af99ed`).

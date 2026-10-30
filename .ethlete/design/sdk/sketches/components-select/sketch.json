@@ -1,6 +1,6 @@
 {
   "target": "components/select",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T22:32:10.456Z",
   "baseline": {
     "foundations/tokens": "67c964a1f59e8dc3",
