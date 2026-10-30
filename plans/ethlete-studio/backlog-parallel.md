@@ -42,7 +42,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   4. Q64: `fitOutOfFlow` skips full-inset fixed elements (a backdrop). Earlier only if sdk-33 is blocked by it.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
-  7. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
+  7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
+  8. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
 
 ## Rules for every stream
 
