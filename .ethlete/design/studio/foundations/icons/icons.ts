@@ -103,7 +103,7 @@ type View = 'catalogue' | 'construction';
 
 export default definePart<{ view: View }>({
   note: 'The icon set as one SVG asset per icon with one icon() export',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { catalogue: { view: 'catalogue' }, construction: { view: 'construction' } },
   render: ({ view }) => drawing({ body: view === 'catalogue' ? catalogue : construction, styles }),
 });

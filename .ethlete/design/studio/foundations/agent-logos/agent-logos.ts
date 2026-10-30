@@ -98,7 +98,7 @@ const detail = html`<div class="al-root">
 
 export default definePart<{ view: View }>({
   note: 'The agent logos as SVG assets with one named export; generic stands for a provider without its own mark',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: { hosts: { view: 'hosts' }, detail: { view: 'detail' } },
   render: ({ view }) => drawing({ body: view === 'hosts' ? hosts : detail, styles }),
 });

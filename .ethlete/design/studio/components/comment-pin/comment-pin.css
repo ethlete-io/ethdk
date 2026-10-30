@@ -90,7 +90,7 @@
   }
 
   .st-pin[data-selected]:active .st-pin-face {
-    background: color-mix(in srgb, var(--accent), var(--surface-sunken) 25%);
+    background: color-mix(in srgb, var(--accent), var(--surface) 25%);
   }
 
   .st-pin[data-selected] .st-pin-face[data-agent] {

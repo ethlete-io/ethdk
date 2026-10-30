@@ -102,7 +102,7 @@ const defaultFrames: Props = {
 
 export default definePart({
   note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states: {
     default: defaultFrames,

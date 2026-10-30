@@ -6,7 +6,7 @@
     height: calc(var(--mg-h) * var(--mg-scale));
     overflow: hidden;
     border-radius: var(--radius-control-md);
-    background: var(--surface-sunken);
+    background: var(--surface);
     box-shadow: 0 0 0 1px var(--surface-border);
   }
 

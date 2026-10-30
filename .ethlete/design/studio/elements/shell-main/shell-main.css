@@ -5,7 +5,7 @@
     width: 1440px;
     height: 900px;
     overflow: hidden;
-    background: var(--surface-sunken);
+    background: var(--surface);
     color: var(--text);
     font-family: var(--font-ui);
     font-size: var(--text-md);
@@ -47,7 +47,7 @@
     align-items: center;
     gap: var(--space-1);
     padding: var(--space-3) 0;
-    background: var(--surface-sunken);
+    background: var(--surface);
     border-right: 1px solid var(--surface-border);
   }
 
@@ -230,7 +230,7 @@
     position: relative;
     min-width: 0;
     overflow: hidden;
-    background-color: var(--surface-sunken);
+    background-color: var(--surface);
     background-image: radial-gradient(circle, var(--surface-border) 1px, transparent 1.2px);
     background-size: 16px 16px;
     background-position: 8px 8px;

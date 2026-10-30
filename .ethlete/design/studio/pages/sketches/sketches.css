@@ -6,7 +6,7 @@
     z-index: 1;
     pointer-events: none;
     width: var(--st-shell-inset-left);
-    background: color-mix(in srgb, var(--surface-sunken) 60%, transparent);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
   }
   .sk-col-head {
     translate: 0 -100%;

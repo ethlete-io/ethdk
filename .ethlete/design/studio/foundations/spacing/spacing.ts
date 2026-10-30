@@ -23,7 +23,7 @@ const sample = html`<div class="sp-cluster">
 
 export default definePart({
   note: 'The Studio spacing, radius and control heights on their own sheet, split from foundations/tokens.',
-  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
   states: { scale: {} },
   render: () =>
     drawing({

@@ -62,7 +62,7 @@ const panelOf = (unchanged: boolean) =>
 
 export default definePart<Props>({
   note: 'focus-visible nimmt --text wie hover',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   states: {
     open: { unchanged: false },
