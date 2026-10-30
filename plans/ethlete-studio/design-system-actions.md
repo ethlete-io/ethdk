@@ -172,6 +172,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
       the terminal only, so the origin stays true.
     - Does a rejected variant count for "all variants decided" checks? Recommended yes, as
       decided.
+- **Decided (Tom, 2026-10-30):** build it as proposed, with these changes. The reason is
+  optional. An agent may reject a variant itself, for example when Tom says "X is out" in chat.
+  Each rejection and each reason stores who wrote it (`by: 'designer' | 'agent'`), each on its
+  own. A rejected variant counts as decided and drops out of the pick and merge choice, but
+  stays visible.
 
 ## 4. Render checks and shots
 
@@ -217,6 +222,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Toggle off gives today's full-page columns. Variant notes move under their column, so the
   header holds only the round title and the toggle. Open point: the trigger threshold.
   Recommended: half of the frame area, because a larger crop gains little.
+- **Decided (Tom, 2026-10-30):** build the Studio toggle as proposed. It is on by default when
+  the crop is less than half of the frame area.
 
 ### 4.47 No enforceable design-completeness check for controls and their surfaces - open
 
