@@ -410,6 +410,16 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   each row is one value with the other axes at default, with the interaction states in the columns. Not all 48
   combinations; a hard combination (for example underline + floating-inside) can come later as a single row. Select
   shows only the default variant, because its variants come from form-field. After the limit reset.
+- Q73: the sdk design product ships with `@ethlete/components`. `.ethlete/design/sdk/` stays the working place in
+  Studio; the build copies it into the package (for example `design/sdk/`). The drawings stay in
+  `libs/components/design/`, next to their `*.design.spec.ts`, which compare drawing and real DOM. Another repo uses
+  the product by pointing `"base"` in its `.ethlete/design/config.json` at the folder in `node_modules`, the same way
+  `studio` uses `"base": ".ethlete/design/sdk"`. Before the build, `ethlete-sdk-33` checks what a consumer needs to
+  resolve the part imports (`@design-system` from `@ethlete/cli`, `@ethlete/components/design/*`). After the limit
+  reset.
+- Q74: 8 shipped icons draw stroke paths without `fill="none"` and render filled (clipboard-check, floppy-disk,
+  pencil, arrow-up, arrow-right, arrows-left-right, plus, underline). The real `et-icon` shows the same, so it is an
+  SDK defect. Fixed in `libs/components` as a patch; then `foundations/icons` r1 a goes to ready.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
