@@ -52,6 +52,13 @@ Serial, all in `system/sketch`, `system/complete.ts`, `inventory*.ts`:
 
 1. `et design mcp` (design-system.md slice 8), then the `motion_shots` tool (sheet image + JSON).
 2. `/__design/motion` over `motionOf` with the shot cache (`serve.ts`), for motion slice 3.
+3. `ethlete-agents sync` registers `et design mcp` as `ethlete-design` in `.mcp.json` and `.codex/config.toml`
+   when `@ethlete/cli` is installed, started through `packageRunner`: built (`0d81f2066`, `2c0d2ad4c`). Specs only;
+   no real Claude Code or Codex client started the server.
+4. The `motionOf` cache key: no change needed. The motion cache in `shot.ts` has its own key with every field that
+   changes the render.
+5. Studio chat on `et design mcp`, delete `tools.rs`: blocked. `read_call`, `read_fixture` and `check_call` (with
+   its receipt for `call_status.rs`) have no MCP match. Question sent to the grill session.
 
 ## Stream C - Studio app (`apps/ethlete-studio/src`)
 
@@ -60,7 +67,8 @@ Serial, all in `system/sketch`, `system/complete.ts`, `inventory*.ts`:
 2. Motion slice 3: keyframe strip and timeline: built (`4b57f37af`). A strip below the part canvas with a row of
    keyframes per motion (preset and reduced toggles); a keyframe opens a read-only timeline. Specs and build only,
    not seen live.
-3. 1.2 re-run the 100-cycle frame-reload test and record the result.
+3. 1.2 re-run the 100-cycle frame-reload test: done. 0 hangs in 4000 cycles; Tom closed 1.2 as not reproduced
+   (`design-system-actions.md` 1.2, Results 3 and 4).
 4. 4.47 exception approval: built (`4a15e30a9`). An Exceptions button on a part lists its pending and reopened
    exceptions (key, reason) with an approve button (`by: designer`). Specs and build only, not seen live.
 5. 5.39 empty grid cells: built (`2ec039ddc`). A grid row that draws a state marks each empty column "not drawn".
