@@ -57,6 +57,23 @@ describe('definePart', () => {
       controls: { more: { kind: 'slider', input: ['pointer'], surfaces: { body: 'filled' } } },
     });
 
+    definePart({
+      ...source,
+      controls: {
+        // @ts-expect-error a control takes its interactions from a part or from its own states, not both
+        more: { kind: 'disclosure', input: ['pointer'], part: 'components/toggle', surfaces: { body: 'filled' } },
+      },
+    });
+    definePart({
+      ...source,
+      // @ts-expect-error a page draws no control for another part
+      controls: { more: { kind: 'disclosure', part: 'pages/toggle', surfaces: { body: 'filled' } } },
+    });
+    definePart({
+      ...source,
+      controls: { more: { kind: 'disclosure', part: 'components/toggle', surfaces: { body: 'filled' } } },
+    });
+
     expect(controlled.controls?.['more']?.surfaces.body).toBe('filled');
   });
 

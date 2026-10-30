@@ -118,7 +118,19 @@ pixels in the control's box than the same frame at rest. A `disclosure` also nee
 draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
 A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
 hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.
+
+A page does not draw the interactions of its controls. A page control names the component or
+element that draws it in `part`, instead of `input`, and that part must be design complete
+itself. The page still draws the collapsed state and the body in its own placement:
+
+```ts
+controls: {
+  unchanged: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } },
+},
+```
+
 Only the `disclosure` kind is checked so far. A part that declares no `controls` fails with
 `CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-UNDRAWN`,
-`CONTROL-UNKNOWN`, `CONTROL-KIND` and `PART-UNREVIEWED`. `sketch ready` and `check` do not run
+`CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
+`PART-UNREVIEWED`. `sketch ready` and `check` do not run
 it, so a partial round stays reviewable.

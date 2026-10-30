@@ -57,16 +57,18 @@ export type StateGrid<TState extends string = string, TColumn extends string = s
 /** How a control is operated: `pointer` requires a drawn hover, `keyboard` a drawn focus-visible. */
 export type ControlInput = 'pointer' | 'keyboard';
 
+/** A component or element part that draws a control and its interactions. */
+export type ControlPart = `components/${string}` | `elements/${string}`;
+
 /**
  * A control `design complete` checks. A `disclosure` needs a state that draws it collapsed and the state its
  * `surfaces.body` names, which draws the element marked `data-et-surface="<id>.body"` visible and filled.
- * A required interaction is drawn by a state that forces it on the control, e.g. with `forceInteraction`.
+ * With `part`, the interactions come from that part, which must be design complete itself; a page control needs it.
+ * With `input`, a state of this part draws each required interaction, e.g. with `forceInteraction`.
  */
-export type Control<TState extends string = string> = {
-  kind: 'disclosure';
-  input: ControlInput[];
-  surfaces: { body: TState };
-};
+export type Control<TState extends string = string> = { kind: 'disclosure'; surfaces: { body: TState } } & (
+  { part: ControlPart; input?: never } | { input: ControlInput[]; part?: never }
+);
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
 export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';

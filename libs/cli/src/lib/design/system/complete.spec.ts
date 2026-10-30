@@ -54,6 +54,14 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
     extra: "controls: { more: { kind: 'disclosure', input: [], surfaces: { body: 'open' } } },",
   },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
+  'pages/uses': {
+    states: { rest: `<main>${toggle()}</main>`, open: `<main>${toggle()}${body}</main>` },
+    extra: "controls: { more: { kind: 'disclosure', part: 'components/done', surfaces: { body: 'open' } } },",
+  },
+  'pages/uses-flat': {
+    states: { rest: `<main>${toggle()}</main>`, open: `<main>${toggle()}${body}</main>` },
+    extra: "controls: { more: { kind: 'disclosure', part: 'components/flat', surfaces: { body: 'open' } } },",
+  },
 };
 
 const checkout = () => {
@@ -117,9 +125,13 @@ const DECLARED = { more: { kind: 'disclosure', input: ['pointer', 'keyboard'], s
 describe('completenessGapsOf', () => {
   it('fails a part that declares no controls', () => {
     expect(
-      completenessGapsOf({ part: 'pages/a', controls: undefined, states: ['rest'], frames: [], reviewed: true }).map(
-        (gap) => gap.code,
-      ),
+      completenessGapsOf({
+        part: 'components/a',
+        controls: undefined,
+        states: ['rest'],
+        frames: [],
+        reviewed: true,
+      }).map((gap) => gap.code),
     ).toEqual(['CONTROLS-MISSING']);
   });
 
@@ -132,11 +144,17 @@ describe('completenessGapsOf', () => {
     ];
 
     expect(
-      completenessGapsOf({ part: 'pages/a', controls: DECLARED, states: ['rest', 'open'], frames, reviewed: true }),
+      completenessGapsOf({
+        part: 'components/a',
+        controls: DECLARED,
+        states: ['rest', 'open'],
+        frames,
+        reviewed: true,
+      }),
     ).toEqual([]);
     expect(
       completenessGapsOf({
-        part: 'pages/a',
+        part: 'components/a',
         controls: DECLARED,
         states: ['rest', 'open'],
         frames,
@@ -147,7 +165,7 @@ describe('completenessGapsOf', () => {
 
   it('fails a stale declaration, an undrawn control and an unknown marker', () => {
     const gaps = completenessGapsOf({
-      part: 'pages/a',
+      part: 'components/a',
       controls: {
         ...DECLARED,
         gone: { kind: 'disclosure', input: [], surfaces: { body: 'open' } },
@@ -167,16 +185,43 @@ describe('completenessGapsOf', () => {
     });
 
     expect(gaps.map(completenessGapLineOf)).toContain(
-      'REQUIREMENT-MISSING pages/a.more.body - surfaces.body names state open, which the part does not declare',
+      'REQUIREMENT-MISSING components/a.more.body - surfaces.body names state open, which the part does not declare',
     );
     expect(gaps.map((gap) => `${gap.code} ${gap.target}`)).toEqual([
-      'CONTROL-UNKNOWN pages/a.stray',
-      'CONTROL-UNKNOWN pages/a.more',
-      'REQUIREMENT-MISSING pages/a.more.hover',
-      'REQUIREMENT-MISSING pages/a.more.focus-visible',
-      'REQUIREMENT-MISSING pages/a.more.body',
-      'CONTROL-UNDRAWN pages/a.gone',
-      'CONTROL-KIND pages/a.tip',
+      'CONTROL-UNKNOWN components/a.stray',
+      'CONTROL-UNKNOWN components/a.more',
+      'REQUIREMENT-MISSING components/a.more.hover',
+      'REQUIREMENT-MISSING components/a.more.focus-visible',
+      'REQUIREMENT-MISSING components/a.more.body',
+      'CONTROL-UNDRAWN components/a.gone',
+      'CONTROL-KIND components/a.tip',
+    ]);
+  });
+
+  it('fails a page control that names no part, and takes the interactions from the part it names', () => {
+    const frames = [frame('rest'), frame('open', { surfaces: [{ id: 'more.body', shown: true }] })];
+    const used = { more: { kind: 'disclosure', part: 'components/toggle', surfaces: { body: 'open' } } };
+    const gapsOf = (controls: unknown, referenced = {}) =>
+      completenessGapsOf({
+        part: 'pages/a',
+        controls,
+        states: ['rest', 'open'],
+        frames,
+        reviewed: true,
+        referenced,
+      }).map(completenessGapLineOf);
+
+    expect(gapsOf(DECLARED)).toEqual([
+      "CONTROL-PART-MISSING pages/a.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
+      'REQUIREMENT-MISSING pages/a.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING pages/a.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
+    ]);
+    expect(gapsOf(used, { 'components/toggle': [] })).toEqual([]);
+    expect(gapsOf(used, { 'components/toggle': [{ code: 'X', target: 'components/toggle', detail: '' }] })).toEqual([
+      'CONTROL-PART-INCOMPLETE pages/a.more - components/toggle is not design complete: 1 gap(s) - run design complete components/toggle',
+    ]);
+    expect(gapsOf(used, { 'components/toggle': 'product "app-a" has no part "components/toggle"' })).toEqual([
+      'CONTROL-PART-INCOMPLETE pages/a.more - components/toggle: product "app-a" has no part "components/toggle"',
     ]);
   });
 });
@@ -195,6 +240,7 @@ describe('completenessOf', () => {
     if ('problem' in merge) throw new Error(merge.problem);
 
     expect(merge.gaps.map(completenessGapLineOf)).toEqual([
+      "CONTROL-PART-MISSING pages/merge.more - a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
       'REQUIREMENT-MISSING pages/merge.more.hover - no state draws it hover - draw a state that forces hover on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction',
       'REQUIREMENT-MISSING pages/merge.more.body - state open draws no visible, non-empty data-et-surface="more.body" next to data-et-control="more"',
@@ -215,6 +261,14 @@ describe('completenessOf', () => {
 
     expect('gaps' in alwaysOpen && alwaysOpen.gaps.map(completenessGapLineOf)).toEqual([
       'REQUIREMENT-MISSING components/always-open.more.collapsed - every state that draws it also shows its body - draw a state with more.body closed',
+    ]);
+
+    expect(await completenessOf({ target, config, product, part: 'pages/uses' })).toEqual({ gaps: [] });
+
+    const usesFlat = await completenessOf({ target, config, product, part: 'pages/uses-flat' });
+
+    expect('gaps' in usesFlat && usesFlat.gaps.map(completenessGapLineOf)).toEqual([
+      'CONTROL-PART-INCOMPLETE pages/uses-flat.more - components/flat is not design complete: 2 gap(s) - run design complete components/flat',
     ]);
 
     const bare = await completenessOf({ target, config, product, part: 'components/bare' });
@@ -239,7 +293,7 @@ describe('completenessOf', () => {
     expect(await designComplete({ target, argv: ['pages/merge', '--product', 'app-a'], invocation: 'et design' })).toBe(
       1,
     );
-    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 3 gap(s)');
+    expect(errors.at(-1)).toBe('pages/merge in app-a is not design complete: 4 gap(s)');
     expect(
       await designComplete({ target, argv: ['components/done', '--product', 'app-a'], invocation: 'et design' }),
     ).toBe(0);

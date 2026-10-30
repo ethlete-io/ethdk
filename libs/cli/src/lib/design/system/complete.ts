@@ -22,7 +22,10 @@ export type SeenFrame = {
   surfaces: { id: string; shown: boolean }[];
 };
 
-type DeclaredControl = { kind: string; input: string[]; surfaces: Record<string, string> };
+type DeclaredControl = { kind: string; input: string[]; part: string | null; surfaces: Record<string, string> };
+
+/** The gaps of each part a control names in `part`, or why it could not be checked. */
+export type ReferencedParts = Record<string, CompletenessGap[] | string>;
 
 const CHECKED_KINDS = ['disclosure'];
 
@@ -41,6 +44,7 @@ const declaredControlsOf = (value: unknown): Record<string, DeclaredControl> | n
             id,
             {
               kind: typeof declared['kind'] === 'string' ? declared['kind'] : '',
+              part: typeof declared['part'] === 'string' ? declared['part'] : null,
               input: Array.isArray(declared['input'])
                 ? declared['input'].filter((input): input is string => typeof input === 'string')
                 : [],
@@ -87,7 +91,7 @@ const disclosureGapsOf = (options: {
   const drawsControl = (frame: SeenFrame) => frame.controls.some((seen) => seen.id === id);
   const gaps: [string, string][] = [];
 
-  for (const input of control.input) {
+  for (const input of control.part === null ? control.input : []) {
     const interaction = INPUT_INTERACTIONS[input];
     const gap = interaction ? interactionGapOf({ frames, id, interaction }) : null;
 
@@ -119,8 +123,9 @@ export const completenessGapsOf = (options: {
   states: string[];
   frames: SeenFrame[];
   reviewed: boolean;
+  referenced?: ReferencedParts;
 }): CompletenessGap[] => {
-  const { part, states, frames, reviewed } = options;
+  const { part, states, frames, reviewed, referenced = {} } = options;
   const declared = declaredControlsOf(options.controls);
 
   if (declared === null)
@@ -174,6 +179,25 @@ export const completenessGapsOf = (options: {
       });
       continue;
     }
+
+    if (control.part === null && part.startsWith('pages/'))
+      gaps.push({
+        code: 'CONTROL-PART-MISSING',
+        target: `${part}.${id}`,
+        detail:
+          "a page draws no interactions of its controls - name the part that draws them, e.g. part: 'components/disclosure'",
+      });
+
+    const used = control.part === null ? undefined : referenced[control.part];
+
+    if (typeof used === 'string')
+      gaps.push({ code: 'CONTROL-PART-INCOMPLETE', target: `${part}.${id}`, detail: `${control.part}: ${used}` });
+    else if (used && used.length > 0)
+      gaps.push({
+        code: 'CONTROL-PART-INCOMPLETE',
+        target: `${part}.${id}`,
+        detail: `${control.part} is not design complete: ${used.length} gap(s) - run design complete ${control.part}`,
+      });
 
     if (!seenIds.has(id)) {
       gaps.push({ code: 'CONTROL-UNDRAWN', target: `${part}.${id}`, detail: `no state draws data-et-control="${id}"` });
@@ -332,7 +356,8 @@ type PartModule = { default?: { states?: unknown; interactions?: unknown; widths
 
 /**
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
- * and answers the gaps of its `controls` declaration, or why it could not draw.
+ * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`
+ * is checked the same way, and its gaps fail the control.
  */
 export const completenessOf = async (options: {
   target: string;
@@ -343,9 +368,9 @@ export const completenessOf = async (options: {
 }): Promise<{ gaps: CompletenessGap[] } | { unavailable: string } | { problem: string }> => {
   const { target, config, product, part } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
-  const resolved = product.parts.find((candidate) => partKeyOf(candidate) === part);
 
-  if (!resolved) return { problem: `product "${product.name}" has no part "${part}"` };
+  if (!product.parts.some((candidate) => partKeyOf(candidate) === part))
+    return { problem: `product "${product.name}" has no part "${part}"` };
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -358,55 +383,76 @@ export const completenessOf = async (options: {
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const system = createSystemModules({ target, config });
-    const loaded = await server
-      .ssrLoadModule(productModuleIdOf({ file: resolved.file, product: product.name, sketch: null }))
-      .then((module) => ({ module: module as PartModule }))
-      .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
-
-    if ('error' in loaded)
-      return { gaps: [{ code: 'RENDER', target: part, detail: loaded.error.split('\n')[0] ?? '' }] };
-
-    const definition = loaded.module.default;
-    const states = isRecord(definition?.states) ? Object.keys(definition.states) : [];
-    const interactions = Array.isArray(definition?.interactions)
-      ? definition.interactions.filter((name): name is string => INTERACTIONS.some((known) => known === name))
-      : [];
     const presets = Object.keys(system.drawnOf(product.name, null)?.presets ?? {});
-    const widths = Array.isArray(definition?.widths)
-      ? definition.widths.filter((width): width is number => typeof width === 'number')
-      : [];
-    const preset = resolved.layer === 'pages' ? (presets[0] ?? null) : null;
-    const width = preset === null ? (widths[0] ?? null) : null;
-    const frames: CompleteFrame[] = [];
 
-    for (const state of states)
-      for (const interaction of [null, ...interactions]) {
-        const frame = partFrameOf({
-          system,
-          product: product.name,
-          part,
-          state,
-          preset,
-          width,
-          sketch: null,
-          interaction,
-        });
+    const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
+      const resolved = product.parts.find((candidate) => partKeyOf(candidate) === key);
 
-        if (!(frame instanceof Error))
-          frames.push({ state, interaction, search: frame.search.toString(), size: frame.size ?? null });
-      }
+      if (!resolved) return `product "${product.name}" has no part "${key}"`;
+      if (chain.includes(key)) return `its controls name each other in a cycle: ${[...chain, key].join(' > ')}`;
 
-    const { seen, refused } = await queue.run((browser) =>
-      seeFrames({ browser, base: `http://localhost:${port}`, frames }),
-    );
-    const reviewed = readMerged(product.dir)[part] === partHashOf({ product, dir: dirname(resolved.file) });
+      const loaded = await server
+        .ssrLoadModule(productModuleIdOf({ file: resolved.file, product: product.name, sketch: null }))
+        .then((module) => ({ module: module as PartModule }))
+        .catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
 
-    return {
-      gaps: [
-        ...refused.map((detail) => ({ code: 'RENDER', target: part, detail })),
-        ...completenessGapsOf({ part, controls: definition?.controls, states, frames: seen, reviewed }),
-      ],
+      if ('error' in loaded) return [{ code: 'RENDER', target: key, detail: loaded.error.split('\n')[0] ?? '' }];
+
+      const definition = loaded.module.default;
+      const states = isRecord(definition?.states) ? Object.keys(definition.states) : [];
+      const interactions = Array.isArray(definition?.interactions)
+        ? definition.interactions.filter((name): name is string => INTERACTIONS.some((known) => known === name))
+        : [];
+      const widths = Array.isArray(definition?.widths)
+        ? definition.widths.filter((width): width is number => typeof width === 'number')
+        : [];
+      const preset = resolved.layer === 'pages' ? (presets[0] ?? null) : null;
+      const width = preset === null ? (widths[0] ?? null) : null;
+      const frames: CompleteFrame[] = [];
+
+      for (const state of states)
+        for (const interaction of [null, ...interactions]) {
+          const frame = partFrameOf({
+            system,
+            product: product.name,
+            part: key,
+            state,
+            preset,
+            width,
+            sketch: null,
+            interaction,
+          });
+
+          if (!(frame instanceof Error))
+            frames.push({ state, interaction, search: frame.search.toString(), size: frame.size ?? null });
+        }
+
+      const { seen, refused } = await queue.run((browser) =>
+        seeFrames({ browser, base: `http://localhost:${port}`, frames }),
+      );
+      const reviewed = readMerged(product.dir)[key] === partHashOf({ product, dir: dirname(resolved.file) });
+      const referenced: ReferencedParts = {};
+
+      for (const control of Object.values(declaredControlsOf(definition?.controls) ?? {}))
+        if (control.part !== null && !(control.part in referenced))
+          referenced[control.part] = await gapsOfPart(control.part, [...chain, key]);
+
+      return [
+        ...refused.map((detail) => ({ code: 'RENDER', target: key, detail })),
+        ...completenessGapsOf({
+          part: key,
+          controls: definition?.controls,
+          states,
+          frames: seen,
+          reviewed,
+          referenced,
+        }),
+      ];
     };
+
+    const gaps = await gapsOfPart(part, []);
+
+    return typeof gaps === 'string' ? { problem: gaps } : { gaps };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
 
