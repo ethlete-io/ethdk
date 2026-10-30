@@ -164,7 +164,33 @@ As built (2026-10-30): Tom merged the `foundations/colors` sketch. The four disa
 the token sheet. `design check --product studio` exits 0. Not verified: the table values as drawn, against the
 computed ones (lowest 5.68:1).
 
-## Colour step B redo (in progress, 2026-10-30)
+## Colour step B redo: as built (2026-10-30)
 
-Order item 5: a `foundations/colors` sketch with variants a and b, every pair at 4.5:1 or more, the `CONTRAST`
-rule checks each variant, and the ratio table in the drawing gives the numbers. Stops at `ready` for Tom.
+- No CLI change was needed. `sketch check` already runs `CONTRAST` on each variant with the variant's
+  `colors.css`, and the ratio table in `foundations/colors` draws the variant's numbers.
+- Proof: with the old step B values (a: subtle 0.62, `*-active` 0.05 L darker; b: subtle 0.58, 0.09 L darker),
+  `sketch check` failed with `CONTRAST`. a: subtle on raised 4.46 and on overlay 3.88. b: subtle on surface 4.46,
+  on raised 3.79 and on overlay 3.30, and `on-danger` on `danger-active` 4.20. Each was reported as a token pair and
+  as drawn text. These are the numbers in 4.65.
+- Sketch `foundations/colors`, round r1 "Step B at 4.5:1" (399b0ae9e), waits at `ready`. `ready` printed
+  "auto-merge skipped" because both variants change all four states. Both variants were shifted until every
+  pair reaches 4.5:1:
+
+  | Token              | merged | a    | b                     |
+  | ------------------ | ------ | ---- | --------------------- |
+  | `--text-subtle`    | 0.72   | 0.70 | 0.66                  |
+  | `--accent-active`  | 0.68   | 0.63 | 0.59                  |
+  | `--warning-active` | 0.78   | 0.73 | 0.69                  |
+  | `--danger-active`  | 0.68   | 0.63 | 0.61 (0.07, not 0.09) |
+
+  Lowest ratios as drawn in the table: a subtle 7.16 / 6.07 / 5.28 on surface / raised / overlay, `on-danger` on
+  `danger-active` 4.95. b subtle 6.15 / 5.22 / 4.54, `on-danger` on `danger-active` 4.56.
+
+- Verified: `sketch check` passes for both variants. A `design shot --variants` of the surfaces and error states
+  shows the variant numbers in the table. `design check --product studio` passes.
+- Open points (for Tom):
+  - Subtle can go no lower than 0.66, because of overlay (0.29). b's subtle is at that limit. a keeps the old gap
+    of 0.04 above b, so it is 0.70, close to `--text-muted` at 0.72. Recommendation: b. It is the only variant
+    where subtle reads differently from muted.
+  - b's `danger-active` is 0.07 L darker, not 0.09, because 0.09 gives 4.20. The other option is a darker
+    `--on-danger`. Recommendation: keep the clamp, so `--on-danger` stays the same as on the other danger fills.
