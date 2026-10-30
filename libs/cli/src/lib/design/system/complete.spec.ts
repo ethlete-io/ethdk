@@ -9,11 +9,16 @@ import { designComplete } from './complete-command';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 
-const STYLES =
-  '.aa-toggle { display: block; border: 0; background: white; } .aa-toggle:hover { background: black; color: white; } .aa-toggle:focus-visible { outline: 2px solid black; } .aa-toggle:active { background: gray; }';
+const STYLES = [
+  '.aa-toggle, .aa-still { display: block; border: 1px solid; background: white; }',
+  '.aa-toggle { transition: background-color 120ms ease, color 120ms ease; }',
+  '.aa-toggle:hover, .aa-still:hover { background: black; color: white; }',
+  '.aa-toggle:focus-visible, .aa-still:focus-visible { outline: 2px solid black; }',
+  '.aa-toggle:active, .aa-still:active { background: gray; }',
+].join(' ');
 
-const toggle = (attributes = '') =>
-  `<button class="aa-toggle" type="button" data-et-control="more"${attributes}>More</button>`;
+const toggle = (attributes = '', name = 'aa-toggle') =>
+  `<button class="${name}" type="button" data-et-control="more"${attributes}><span>More</span></button>`;
 
 const CORNER = ' style="position: fixed; top: 0; left: 0; width: 100%"';
 
@@ -44,6 +49,19 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
       pressed: `<div>${toggle(' data-et-force="active"')}</div>`,
       open: `<div>${toggle()}${body}</div>`,
       ...openRow(),
+    },
+    extra: `${DISCLOSURE} ${GRID}`,
+  },
+  'components/still': {
+    states: {
+      rest: `<div>${toggle('', 'aa-still')}</div>`,
+      hovered: `<div>${toggle(' data-et-force="hover"', 'aa-still')}</div>`,
+      focused: `<div>${toggle(' data-et-force="focus-visible"', 'aa-still')}</div>`,
+      pressed: `<div>${toggle(' data-et-force="active"', 'aa-still')}</div>`,
+      open: `<div>${toggle('', 'aa-still')}${body}</div>`,
+      'open-hovered': `<div>${toggle(' data-et-force="hover"', 'aa-still')}${body}</div>`,
+      'open-pressed': `<div>${toggle(' data-et-force="active"', 'aa-still')}${body}</div>`,
+      'open-focused': `<div>${toggle(' data-et-force="focus-visible"', 'aa-still')}${body}</div>`,
     },
     extra: `${DISCLOSURE} ${GRID}`,
   },
@@ -340,6 +358,13 @@ describe('completenessOf', () => {
 
     expect('gaps' in flatDone && flatDone.gaps.map(completenessGapLineOf)).toEqual([
       'CONTROL-GRID-MISSING components/flat-done.more - the part has no grid - draw its states with interactionRows, which gives the grid a column per interaction (hover, active, focus-visible)',
+    ]);
+
+    const still = await completenessOf({ target, config, product, part: 'components/still' });
+
+    expect('gaps' in still && still.gaps.map(completenessGapLineOf)).toEqual([
+      "CONTROL-TRANSITION-MISSING components/still.more.hover - state hovered changes background-color, color of button.aa-still in one frame - give them a transition with the product's motion tokens",
+      "CONTROL-TRANSITION-MISSING components/still.more.active - state pressed changes background-color of button.aa-still in one frame - give them a transition with the product's motion tokens",
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/clipped' })).toEqual({ gaps: [] });

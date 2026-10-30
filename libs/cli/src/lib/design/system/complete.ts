@@ -18,7 +18,7 @@ export type CompletenessGap = { code: string; target: string; detail: string };
 export type SeenFrame = {
   state: string;
   interaction: string | null;
-  controls: { id: string; forced: { interaction: string; differs: boolean }[] }[];
+  controls: { id: string; forced: { interaction: string; differs: boolean; still?: string[] }[] }[];
   surfaces: { id: string; shown: boolean }[];
 };
 
@@ -103,6 +103,17 @@ const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interactio
     return `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest`;
 
   return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction`;
+};
+
+const stillGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
+  const { frames, id, interaction } = options;
+
+  for (const frame of frames)
+    for (const control of frame.controls.filter((seen) => seen.id === id))
+      for (const force of control.forced.filter((seen) => seen.interaction === interaction && seen.still?.length))
+        return `state ${frame.state} changes ${force.still?.join(', ')} in one frame - give them a transition with the product's motion tokens`;
+
+  return null;
 };
 
 const disclosureGapsOf = (options: {
@@ -239,6 +250,12 @@ export const completenessGapsOf = (options: {
 
     for (const [requirement, detail] of disclosureGapsOf({ frames, id, control, states }))
       gaps.push({ code: 'REQUIREMENT-MISSING', target: `${part}.${id}.${requirement}`, detail });
+
+    for (const interaction of interactions) {
+      const gap = stillGapOf({ frames, id, interaction });
+
+      if (gap) gaps.push({ code: 'CONTROL-TRANSITION-MISSING', target: `${part}.${id}.${interaction}`, detail: gap });
+    }
   }
 
   return gaps;
@@ -249,6 +266,79 @@ export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${ga
 const NO_MOTION = '*, *::before, *::after { transition: none !important; animation: none !important; }';
 
 const PAD = 8;
+
+const COLOUR_PROPERTIES = [
+  'background-color',
+  'color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'box-shadow',
+];
+
+const COLOUR = COLOUR_PROPERTIES.indexOf('color');
+
+const colourSnapshot = (at: number) => `((at) => {
+  const control = document.querySelector('[data-et-complete="' + at + '"]');
+  const motionOff = [...document.querySelectorAll('style')].find((style) => style.textContent === ${JSON.stringify(NO_MOTION)});
+  const elements = [control, ...control.querySelectorAll('*')];
+  const colours = elements.map((element) => {
+    const style = getComputedStyle(element);
+    return ${JSON.stringify(COLOUR_PROPERTIES)}.map((name) => {
+      const side = name.match(/^border-(\\w+)-color$/);
+      return side && parseFloat(style.getPropertyValue('border-' + side[1] + '-width')) === 0 ? '' : style.getPropertyValue(name);
+    });
+  });
+  if (motionOff) motionOff.disabled = true;
+  const transitions = elements.map((element) => {
+    const style = getComputedStyle(element);
+    return {
+      properties: style.transitionProperty.split(',').map((name) => name.trim()),
+      durations: style.transitionDuration.split(',').map((duration) => parseFloat(duration)),
+    };
+  });
+  if (motionOff) motionOff.disabled = false;
+  const parents = elements.map((element) => elements.indexOf(element.parentElement));
+  const names = elements.map((element) => element.tagName.toLowerCase() + (element.classList[0] ? '.' + element.classList[0] : ''));
+  return { colours, transitions, parents, names };
+})(${JSON.stringify(at)})`;
+
+type ColourSnapshot = {
+  colours: string[][];
+  transitions: { properties: string[]; durations: number[] }[];
+  parents: number[];
+  names: string[];
+};
+
+const coversOf = (property: string) => {
+  if (property === 'background-color') return ['all', 'background', property];
+  if (property.startsWith('border-'))
+    return ['all', 'border', 'border-color', property.replace(/-color$/, ''), property];
+
+  return ['all', property];
+};
+
+const stillChangesOf = (rest: ColourSnapshot, forced: ColourSnapshot) =>
+  forced.names.flatMap((name, element) => {
+    const { properties, durations } = forced.transitions[element] ?? { properties: [], durations: [] };
+    const still = COLOUR_PROPERTIES.filter((property, at) => {
+      const [before, after] = [rest.colours[element] ?? [], forced.colours[element] ?? []];
+
+      if (before[at] === after[at]) return false;
+      const parent = forced.parents[element] ?? -1;
+      const inherited = parent >= 0 ? [rest.colours[parent]?.[at], forced.colours[parent]?.[at]] : [];
+
+      if (property !== 'color' && before[at] === before[COLOUR] && after[at] === after[COLOUR]) return false;
+      if (property === 'color' && before[at] === inherited[0] && after[at] === inherited[1]) return false;
+
+      return !properties.some(
+        (covered, index) => coversOf(property).includes(covered) && (durations[index % durations.length] ?? 0) > 0,
+      );
+    });
+
+    return still.length > 0 ? [`${still.join(', ')} of ${name}`] : [];
+  });
 
 const seeFrame = `(() => {
   const root = document.getElementById('root');
@@ -363,14 +453,20 @@ const seeFrames = async (options: { browser: Browser; base: string; frames: Comp
           const shot = () =>
             page.screenshot({ type: 'png', fullPage: true, clip: control.box ?? undefined, animations: 'disabled' });
           const drawn = await shot();
+          const drawnColours = (await page.evaluate(colourSnapshot(control.at))) as ColourSnapshot;
 
           await page.evaluate(forceOn({ at: control.at, interaction, on: false }));
           await page.evaluate(settled);
 
           const rest = await shot();
+          const restColours = (await page.evaluate(colourSnapshot(control.at))) as ColourSnapshot;
 
           await page.evaluate(forceOn({ at: control.at, interaction, on: true }));
-          forced.push({ interaction, differs: !drawn.equals(rest) });
+          forced.push({
+            interaction,
+            differs: !drawn.equals(rest),
+            still: stillChangesOf(restColours, drawnColours),
+          });
         }
 
         controls.push({ id: control.id, forced });

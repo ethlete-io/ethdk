@@ -125,7 +125,10 @@ needs a state in each of those columns, so the open row is drawn hovered too. Fl
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. A `disclosure` also needs a state that
 draws it collapsed, and the state `surfaces.body` names must draw its body visible and not empty.
-A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
+A forced interaction that changes the background, text, border or shadow colour of the control
+or an element in it must fade: a property with a computed `transition-duration` of 0 fails with
+`CONTROL-TRANSITION-MISSING`. A colour that the element inherits or takes from `currentColor`
+fades with its source. A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
 hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.
 
 A page does not draw the interactions of its controls. A page control names the component or
@@ -140,6 +143,6 @@ controls: {
 
 Only the `disclosure` kind is checked so far. A part that declares no `controls` fails with
 `CONTROLS-MISSING`. The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
-`CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
+`CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run
 it, so a partial round stays reviewable.
