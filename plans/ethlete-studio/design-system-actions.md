@@ -1079,7 +1079,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   - Not verified: the thumbnailer (`thumb.ts`, call thumbnails) and `changedBoxesOf` still open a context per
     draw; Tom's server under real load; the Studio app.
 
-### 4.78 A file change reloads several lists at once - open
+### 4.78 A file change reloads several lists at once - in progress
 
 - **From the code:** each `tick` reloads products, calls, flows, comments and sketches
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
@@ -1094,6 +1094,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   not a workaround around the Rust watcher: each change names what changed, and Studio reloads only that list.
   If the watcher and the design server events then overlap, keep one source. A reconnect or an unknown change
   still reloads everything.
+- **In progress (2026-10-30):** a subagent builds it.
 
 ### 4.79 Four SSE streams to the same host - built
 
