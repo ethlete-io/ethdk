@@ -27,5 +27,10 @@
       "text": "Runde 2 (d, e): Header wie bei Sketches, mit dem Namen des Flows als Titel.",
       "createdAt": "2026-10-29T11:23:58.370Z"
     }
-  ]
+  ],
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  }
 }

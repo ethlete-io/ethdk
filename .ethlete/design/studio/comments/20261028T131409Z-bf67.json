@@ -13,10 +13,15 @@
   },
   "createdAt": "2026-10-28T13:14:09.529Z",
   "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  },
+  "addressed": {
     "by": "agent",
     "author": "gpt-6",
     "reason": "round",
-    "resolvedAt": "2026-10-28T13:15:09.839Z",
+    "addressedAt": "2026-10-28T13:15:09.839Z",
     "note": "Tom markiert abgeschnittene Button- und Frame-Konturen, am Bildschirmboden klebende frühere Runden, fehlende Platzhalter und die kleinen Variantenkästchen. Runde e nimmt Konturen in die Geometrie auf und führt frühere Runden im Canvas weiter.",
     "round": "r5"
   }

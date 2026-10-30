@@ -13,10 +13,15 @@
   },
   "createdAt": "2026-10-28T12:44:27.530Z",
   "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  },
+  "addressed": {
     "by": "agent",
     "author": "gpt-6",
     "reason": "round",
-    "resolvedAt": "2026-10-28T12:44:48.721Z",
+    "addressedAt": "2026-10-28T12:44:48.721Z",
     "note": "Tom markiert unklaren Weißraum in beiden Zuständen, eine zu lange Zeichnet-noch-Badge, doppelte Variantenbuchstaben im Rundentitel und ein zu langes Wort im Variantenkopf.",
     "round": "r2"
   }

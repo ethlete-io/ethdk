@@ -26,5 +26,10 @@
       "text": "Stimmt. Variante c (Runde 2) zeigt den Aktuell-Kopf ohne Gemergt.",
       "createdAt": "2026-10-29T10:57:53.527Z"
     }
-  ]
+  ],
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  }
 }

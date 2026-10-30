@@ -20,5 +20,10 @@
     "addressedAt": "2026-10-29T15:40:55.578Z",
     "note": "r1 showed three merge-compare layouts; the human took c's review panel, but its note/Merge area at the bottom reads untidy and there is no way back out of the merge view",
     "round": "r2"
+  },
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
   }
 }

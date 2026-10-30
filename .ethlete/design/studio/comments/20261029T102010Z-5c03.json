@@ -27,5 +27,10 @@
       "text": "Runde 2 zeigt d mit einer Runden-Auswahl statt der Knöpfe und e mit derselben Auswahl plus Pfeilen für vorige und nächste Runde.",
       "createdAt": "2026-10-29T10:23:30.083Z"
     }
-  ]
+  ],
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  }
 }

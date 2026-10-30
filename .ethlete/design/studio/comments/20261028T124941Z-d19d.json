@@ -13,10 +13,15 @@
   },
   "createdAt": "2026-10-28T12:49:41.547Z",
   "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-30T16:22:02.529Z",
+    "note": "sketch ended"
+  },
+  "addressed": {
     "by": "agent",
     "author": "gpt-6",
     "reason": "round",
-    "resolvedAt": "2026-10-28T12:52:15.159Z",
+    "addressedAt": "2026-10-28T12:52:15.159Z",
     "note": "Tom markiert die fehlende Ausrichtung der Kopf- und Frame-Spalten, verbleibenden Leerraum und fragt nach direktem Zoom in den Kontext. Kopf und Frames verwenden jetzt dieselbe Kamerageometrie; Kontextseiten werden vollständig statt beschnitten gezeigt.",
     "round": "r3"
   }
