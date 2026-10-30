@@ -373,7 +373,17 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
   box; the part must match its `merged.json` hash). Until discovery lands, a part without
   `controls` fails as `CONTROLS-MISSING`. `pages/merge` declares its unchanged line as a
-  disclosure and passes (Tom merged variant a, 2026-10-30). Next: discovery
+  disclosure and passes (Tom merged variant a, 2026-10-30).
+- **Feedback (Tom, 2026-10-30):** hover and focus states of an accordion do not belong in a
+  page design. `pages/merge` now draws `unchanged-hover` and `unchanged-focus`, because slice 1
+  asks every declared control for its interactions on the part that declares it.
+- **Proposal (for Tom - not built):** interactions belong to the component. On a page, a
+  control names the part that draws it, for example
+  `unchanged: { part: 'components/disclosure', surfaces: { body: 'unchanged-open' } }`.
+  Hover and focus-visible then come from that part, which must be design complete itself.
+  The page only draws what depends on its placement: the open body. A page control without
+  `part` fails. Then `components/disclosure` gets the unchanged line, and `pages/merge` loses
+  its two interaction states. Next: discovery
   (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
