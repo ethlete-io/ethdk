@@ -1415,7 +1415,7 @@ section without a page.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
 
-### 6.8 The agent invented focus variants without establishing the editor lifecycle - open
+### 6.8 The agent invented focus variants without establishing the editor lifecycle - done (`7c09b38b4`)
 
 - **Correction (Tom, 2026-10-30):** "ich denke nicht dass wir das comment fenster ohne
   focus offen lassen. der bereits gestaltete stand ist der focus stand. kein focus ->
