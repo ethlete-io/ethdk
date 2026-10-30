@@ -625,7 +625,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `HARD-CODED-MOTION` (`bb9754494`). Shots now show the end of finite transitions (`3737b12a3`),
   so a `@starting-style` body is drawn fully visible. The disclosure and tree-row fade with the tokens.
 
-### 4.59 Icons are inline SVG in each part, not a catalogue - open
+### 4.59 Icons are inline SVG in each part, not a catalogue - done
 
 - **Pain (Tom, 2026-10-30):** "ist das chevron nicht eig ein icon was wir als asset extrahieren
   sollten in eine art icon catalouge?"
@@ -655,6 +655,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `pages/flows` edges, carries an explicit marker attribute (for example `data-et-drawing`);
   every other inline `<svg>` outside `foundations/` fails `INLINE-SVG`. The rail mark of
   `elements/shell-main` moving to `foundations/logo` is confirmed.
+- **Done (2026-10-30):** every part outside `foundations/` draws `icon()`, the rail logo is
+  `studioMarkLine` from `foundations/logo`, and `INLINE-SVG` is in `RULES` (commit 928eebbc9).
+  `foundations/colors` still draws its status marks inline; foundations are exempt.
 
 ### 4.60 The changed area is one box around all changes - open
 
@@ -667,6 +670,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   shows each box as its own crop, before and after side by side (recommended). 2. keep one box, but outline
   each cluster inside it. 3. no change.
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
+
+### 4.61 The merge editor renders slowly - open
+
+- **Pain (Tom, 2026-10-30):** "das rendering im merge editor etc ist mittlerweile ziemlich langsam
+  geworden." It got slower over time, also in other views.
+- **Evidence:** not measured yet.
+- **Next:** measure before a fix. Time each shot request of the merge view (server log or the
+  network panel of a headless run on an own server): render queue wait, page render, pixel diff,
+  changed box. Compare with a small part to see if the time grows with the part count or the state count.
 
 ## 5. Drawing parts and pages
 
