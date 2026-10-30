@@ -502,8 +502,14 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Next:** the per-page inventory contact sheet with approval in Studio; sketches for `components/button`
   and `elements/shell-main` that declare their controls with these kinds; then `controls` on the SDK
   base parts (select options) for inherited coverage, exceptions, and the `handoff` status with CI.
-- **In progress (2026-10-30):** a sketch of `components/button` that declares its `button` control (subagent; stops
-  at ready for Tom). The inventory contact sheet UI went to the grill session as Q25.
+- **Status (2026-10-30):** sketch `components/button` a r1 at ready (`111e56d73`), not merged: each button gets
+  `data-et-control="button"` and `data-can-animate` (the real `et-button` gets it; without it the forced states fail
+  `CONTROL-TRANSITION-MISSING`), `interactionRows` with the 7 states plus `disabled`, each with forced hover, active
+  and focus-visible, and `controls.button` `kind: 'button'`, pointer and keyboard, `disabled: true`. On the sketch
+  code `design complete` leaves only `PART-UNREVIEWED`. Not auto-merged: every rest frame counts as changed. Gaps
+  found: `design complete` cannot take a sketch (checked by a temporary copy over the base part); the base part lives
+  under `.ethlete/design/sdk/` while the sketch is under `studio/sketches`, so check the merge target. Q25 (inventory
+  sheet UI) is with Tom.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
