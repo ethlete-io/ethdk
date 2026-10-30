@@ -28,9 +28,10 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
      the Rust failure is probably flaky; if it fails again, fix it. Then merge version PR #3162 (base `next`), wait for
      the publish, and send `fifagg-frontend-a5` the new `@ethlete/cdk` version (backdrop click during enter closes; the
      second click of a double-click does not).
-  2. Viewport per state (Tom): each state gets its own viewport that fits it, out-of-flow content (open overlay
-     panel) included. Example: sdk `components/select` at 320 px cuts the open panel at the closed trigger height.
-     Find the cause in the tool, not per sketch. `ethlete-sdk-33` holds select and form-field until the sha lands.
+  2. Viewport per state: built (`e9a7ba58c`). `fitOutOfFlow` in `define-call.ts` grows `#root` to cover absolute and
+     fixed descendants after `placeOverlays`. Real sdk select open shot at 320 px checked; live Studio canvas not seen.
+     Open for Tom: a frame with a declared width does not grow sideways; content above the root is not added; a
+     `fixed; inset: 0` backdrop stretches the frame to the 800 px viewport.
   3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
