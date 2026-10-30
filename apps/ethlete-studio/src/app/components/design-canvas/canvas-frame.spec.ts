@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { MeasuredSide, followedSizes, frameMessageOf } from './canvas-frame';
+import { MeasuredSide, cropPointOf, cropRectOf, followedSizes, frameMessageOf, pagePointOfCrop } from './canvas-frame';
 
 const followAPage = (contentAt: (viewport: number) => number, viewport: number) => {
   const measures$ = new Subject<MeasuredSide>();
@@ -98,5 +98,32 @@ describe('followedSizes', () => {
     [632, 664, 696].forEach((size) => measures$.next({ size }));
 
     expect(followed).toEqual([632, 664, 696]);
+  });
+});
+
+describe('a crop of two areas', () => {
+  const crop = {
+    areas: [
+      { x: 100, y: 200, width: 72, height: 54 },
+      { x: 0, y: 800, width: 144, height: 36 },
+    ],
+    frame: { width: 1440, height: 900 },
+  };
+  const secondTop = 180 + 24 + 54 * 20 + 24;
+
+  it('maps a page point into the area that shows it, and back', () => {
+    expect(cropPointOf(crop, { x: 10, y: 810 })).toEqual({ x: 100, y: secondTop + 100 });
+    expect(pagePointOfCrop(crop, { x: 100, y: secondTop + 100 })).toEqual({ x: 10, y: 810 });
+    expect(pagePointOfCrop(crop, { x: 200, y: 204 })).toEqual({ x: 110, y: 200 });
+  });
+
+  it('cuts a rectangle to the first area that shows it', () => {
+    expect(cropRectOf(crop, { x: 0, y: 800, width: 10, height: 5 })).toEqual({
+      x: 0,
+      y: secondTop,
+      width: 100,
+      height: 50,
+    });
+    expect(cropRectOf(crop, { x: 1000, y: 10, width: 10, height: 5 })).toBeNull();
   });
 });

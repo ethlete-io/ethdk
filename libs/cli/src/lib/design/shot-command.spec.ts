@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { readConfig } from './paths';
 import {
-  changedCropIn,
+  changedCropsIn,
   designShot,
   gridRowsOf,
   NEW_STATE_NOTE,
@@ -447,7 +447,7 @@ describe('withDiffRows', () => {
   });
 });
 
-describe('changedCropIn', () => {
+describe('changedCropsIn', () => {
   const png = (width: number, height: number, tag: string) => {
     const header = Buffer.alloc(25);
 
@@ -463,7 +463,7 @@ describe('changedCropIn', () => {
     sketch: variant ? { target: 'components/button', variant } : null,
   });
 
-  it('unions the boxes of every variant cell against the merged cell of its state', async () => {
+  it('crops each cluster of the boxes of every variant cell against the merged cell of its state', async () => {
     const merged = [png(200, 100, 'a'), png(200, 100, 'b')];
     const variant = [png(200, 100, 'c'), png(200, 100, 'd')];
     const plan = [
@@ -481,18 +481,19 @@ describe('changedCropIn', () => {
     );
     const boxOf = vi.fn(async (before: Buffer, after: Buffer) =>
       before === merged[0] && after === variant[0]
-        ? { x: 40, y: 20, width: 10, height: 10 }
+        ? [{ x: 40, y: 20, width: 10, height: 10 }]
         : before === merged[1] && after === variant[1]
-          ? { x: 60, y: 30, width: 10, height: 10 }
-          : null,
+          ? [
+              { x: 60, y: 30, width: 10, height: 10 },
+              { x: 160, y: 80, width: 10, height: 10 },
+            ]
+          : [],
     );
 
-    expect(await changedCropIn({ plan, sheet, mergedIndex: 0, boxOf, scale: 1 })).toEqual({
-      x: 24,
-      y: 4,
-      width: 62,
-      height: 52,
-    });
+    expect(await changedCropsIn({ plan, sheet, mergedIndex: 0, boxOf, scale: 1 })).toEqual([
+      { x: 24, y: 4, width: 62, height: 52 },
+      { x: 144, y: 64, width: 42, height: 36 },
+    ]);
     expect(boxOf).toHaveBeenCalledTimes(2);
   });
 
@@ -501,6 +502,6 @@ describe('changedCropIn', () => {
     const plan = [[{ label: 'rest', address: address('rest', null) }], [{ label: 'i', address: address('rest', 'i') }]];
     const sheet = plan.map((row) => row.map((cell) => ({ label: cell.label, png: one })));
 
-    expect(await changedCropIn({ plan, sheet, mergedIndex: 0, boxOf: async () => null, scale: 1 })).toBeNull();
+    expect(await changedCropsIn({ plan, sheet, mergedIndex: 0, boxOf: async () => [], scale: 1 })).toEqual([]);
   });
 });

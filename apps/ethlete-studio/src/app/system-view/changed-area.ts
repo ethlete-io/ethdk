@@ -6,8 +6,8 @@ import { CanvasColumnGroup } from '../components/design-canvas/design-canvas.com
 import { CompareRect } from './merge-preview';
 import { MatrixColumn } from './system-tree';
 
-/** The one crop around every pixel some variants change, and the size of the frame it sits in. */
-export type ChangedArea = { frame: { width: number; height: number }; crop: CompareRect };
+/** One crop per cluster of the pixels some variants change, and the size of the frame they sit in. */
+export type ChangedArea = { frame: { width: number; height: number }; crops: CompareRect[] };
 
 export type ChangedAreaAddress = SketchAddress & {
   variants: string[];
@@ -30,16 +30,16 @@ const changedAreaUrl = ({ port, product, sketch, variants, size, surface, color 
 export const changedArea$ = (address: ChangedAreaAddress): Observable<{ area: ChangedArea | null }> =>
   designAnswer$<{ area: ChangedArea | null }>(changedAreaUrl(address));
 
-/** Whether a round shows only its changed area before the user chose: while the area covers less than half the frame. */
-export const changedAreaShownByDefault = ({ frame, crop }: ChangedArea) =>
-  crop.width * crop.height < (frame.width * frame.height) / 2;
+/** Whether a round shows only its changed area before the user chose: while its crops cover less than half the frame. */
+export const changedAreaShownByDefault = ({ frame, crops }: ChangedArea) =>
+  crops.reduce((sum, crop) => sum + crop.width * crop.height, 0) < (frame.width * frame.height) / 2;
 
-/** Every drawn frame of `columns` cropped to `area`, enlarged to the frame's width; other frames stay as they are. */
+/** Every drawn frame of `columns` cropped to each crop of `area`, enlarged to the frame's width; other frames stay as they are. */
 export const croppedFramesOf = (
   frames: CanvasFrame[],
   { columns, area }: { columns: ReadonlySet<string>; area: ChangedArea },
 ): CanvasFrame[] => {
-  const crop = { ...area.crop, frame: area.frame };
+  const crop = { areas: area.crops, frame: area.frame };
   const { width, height } = croppedLayoutOf(crop);
 
   return frames.map((frame) =>

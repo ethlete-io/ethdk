@@ -42,84 +42,100 @@ export type CanvasFrame = {
   at?: { x: number; y: number };
   /** Draws a table of fitted cells inside the frame instead of `src`; each cell takes comments of its own. */
   grid?: FrameGrid;
-  /** Draws only this area of the page, enlarged to the frame's width, below a small picture of the whole page. */
+  /** Draws only these areas of the page, each enlarged to the frame's width, below a small picture of the whole page. */
   crop?: FrameCrop;
 };
 
-/** An area of a page `frame` big, in the page's CSS pixels. */
+/** An area of a page, in the page's CSS pixels. */
+export type CropArea = { x: number; y: number; width: number; height: number };
+
+/** The areas of a page `frame` big that a cropped frame draws, top to bottom. */
 export type FrameCrop = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  areas: CropArea[];
   frame: { width: number; height: number };
 };
 
 const CROP_THUMB_SCALE = 0.2;
 const CROP_THUMB_GAP = 24;
 
-/** Where a cropped frame draws the picture of the whole page and the enlarged area, and its own size. */
+/** Where a cropped frame draws the picture of the whole page and each enlarged area, and its own size. */
 export const croppedLayoutOf = (crop: FrameCrop) => {
   const { width, height } = crop.frame;
-  const scale = width / crop.width;
   const thumb = { width: width * CROP_THUMB_SCALE, height: height * CROP_THUMB_SCALE };
-  const top = thumb.height + CROP_THUMB_GAP;
+  let top = thumb.height + CROP_THUMB_GAP;
+  const views = crop.areas.map((area) => {
+    const scale = width / area.width;
+    const view = { top, scale, height: area.height * scale, area };
+
+    top += view.height + CROP_THUMB_GAP;
+
+    return view;
+  });
 
   return {
     width,
-    height: top + crop.height * scale,
+    height: top - CROP_THUMB_GAP,
     thumb: {
       ...thumb,
       scale: CROP_THUMB_SCALE,
-      outline: {
-        x: crop.x * CROP_THUMB_SCALE,
-        y: crop.y * CROP_THUMB_SCALE,
-        width: crop.width * CROP_THUMB_SCALE,
-        height: crop.height * CROP_THUMB_SCALE,
-      },
+      outlines: crop.areas.map((area) => ({
+        x: area.x * CROP_THUMB_SCALE,
+        y: area.y * CROP_THUMB_SCALE,
+        width: area.width * CROP_THUMB_SCALE,
+        height: area.height * CROP_THUMB_SCALE,
+      })),
     },
-    view: { top, scale, x: crop.x, y: crop.y },
+    views,
     page: crop.frame,
   };
 };
 
-const inCrop = (crop: FrameCrop, point: { x: number; y: number }) =>
-  point.x >= crop.x && point.y >= crop.y && point.x <= crop.x + crop.width && point.y <= crop.y + crop.height;
+const inArea = (area: CropArea, point: { x: number; y: number }) =>
+  point.x >= area.x && point.y >= area.y && point.x <= area.x + area.width && point.y <= area.y + area.height;
 
-/** Where a page point sits in a cropped frame: in the enlarged crop when it shows it, else on the small whole page. */
+/** Where a page point sits in a cropped frame: in the first enlarged area that shows it, else on the small whole page. */
 export const cropPointOf = (crop: FrameCrop, point: { x: number; y: number }) => {
-  const { thumb, view } = croppedLayoutOf(crop);
+  const { thumb, views } = croppedLayoutOf(crop);
+  const view = views.find((candidate) => inArea(candidate.area, point));
 
-  return inCrop(crop, point)
-    ? { x: (point.x - crop.x) * view.scale, y: view.top + (point.y - crop.y) * view.scale }
+  return view
+    ? { x: (point.x - view.area.x) * view.scale, y: view.top + (point.y - view.area.y) * view.scale }
     : { x: point.x * thumb.scale, y: point.y * thumb.scale };
 };
 
-/** The page point under a point of a cropped frame, in the enlarged crop or on the small whole page above it. */
+/** The page point under a point of a cropped frame, in an enlarged area or on the small whole page above them. */
 export const pagePointOfCrop = (crop: FrameCrop, point: { x: number; y: number }) => {
-  const { thumb, view } = croppedLayoutOf(crop);
+  const { thumb, views } = croppedLayoutOf(crop);
+  const view = [...views].reverse().find((candidate) => candidate.top <= point.y);
 
-  return point.y < view.top
-    ? {
+  return view
+    ? { x: view.area.x + point.x / view.scale, y: view.area.y + (point.y - view.top) / view.scale }
+    : {
         x: Math.min(point.x / thumb.scale, crop.frame.width),
         y: Math.min(point.y / thumb.scale, crop.frame.height),
-      }
-    : { x: crop.x + point.x / view.scale, y: crop.y + (point.y - view.top) / view.scale };
+      };
 };
 
-/** Where a page rectangle sits in a cropped frame, cut to the crop, or `null` when the crop does not show it. */
+/** Where a page rectangle sits in a cropped frame, cut to the first area that shows it, or `null` when none does. */
 export const cropRectOf = (crop: FrameCrop, rect: { x: number; y: number; width: number; height: number }) => {
-  const left = Math.max(rect.x, crop.x);
-  const top = Math.max(rect.y, crop.y);
-  const right = Math.min(rect.x + rect.width, crop.x + crop.width);
-  const bottom = Math.min(rect.y + rect.height, crop.y + crop.height);
+  for (const view of croppedLayoutOf(crop).views) {
+    const { area } = view;
+    const left = Math.max(rect.x, area.x);
+    const top = Math.max(rect.y, area.y);
+    const right = Math.min(rect.x + rect.width, area.x + area.width);
+    const bottom = Math.min(rect.y + rect.height, area.y + area.height);
 
-  if (right <= left || bottom <= top) return null;
+    if (right > left && bottom > top) {
+      return {
+        x: (left - area.x) * view.scale,
+        y: view.top + (top - area.y) * view.scale,
+        width: (right - left) * view.scale,
+        height: (bottom - top) * view.scale,
+      };
+    }
+  }
 
-  const start = cropPointOf(crop, { x: left, y: top });
-  const { scale } = croppedLayoutOf(crop).view;
-
-  return { ...start, width: (right - left) * scale, height: (bottom - top) * scale };
+  return null;
 };
 
 /** One fitted page in a frame's grid, at a row and a column of it. */

@@ -35,7 +35,7 @@ const pictureOf = vi.fn<PictureOf>(async ({ state, sketch }) => {
 });
 
 const boxOf = vi.fn<BoxOf>(async (before, after) =>
-  before.equals(after) ? null : { x: 4, y: 2, width: 8, height: 4 },
+  before.equals(after) ? [] : [{ x: 4, y: 2, width: 8, height: 4 }],
 );
 
 const loadOf =
@@ -68,8 +68,13 @@ describe('diffVariant', () => {
       variant: 'a',
       width: 480,
       states: [
-        { state: 'default', box: { x: 4, y: 2, width: 8, height: 4 }, frame: { width: 480, height: 120 } },
-        { state: 'empty', box: null, frame: { width: 480, height: 120 } },
+        {
+          state: 'default',
+          box: { x: 4, y: 2, width: 8, height: 4 },
+          boxes: [{ x: 4, y: 2, width: 8, height: 4 }],
+          frame: { width: 480, height: 120 },
+        },
+        { state: 'empty', box: null, boxes: [], frame: { width: 480, height: 120 } },
         { state: 'broken', error: 'state "broken" failed' },
         { state: 'loading', new: true },
       ],
@@ -112,38 +117,48 @@ describe('changedAreaOf', () => {
     states,
   });
 
-  it('crops every variant and state to one shared box around all their changed pixels', () => {
+  const frame = { width: 1440, height: 900 };
+  const drawn = (state: string, boxes: { x: number; y: number; width: number; height: number }[]) => ({
+    state,
+    box: null,
+    boxes,
+    frame,
+  });
+
+  it('shares one crop per cluster of changed pixels across every variant and state', () => {
     const area = changedAreaOf([
       diffOf('a', [
-        { state: 'default', box: { x: 100, y: 200, width: 32, height: 18 }, frame: { width: 1440, height: 900 } },
-        { state: 'empty', box: null, frame: { width: 1440, height: 900 } },
+        drawn('default', [
+          { x: 100, y: 200, width: 32, height: 18 },
+          { x: 100, y: 700, width: 10, height: 10 },
+        ]),
+        drawn('empty', []),
       ]),
       diffOf('b', [
-        { state: 'default', box: { x: 96, y: 198, width: 40, height: 22 }, frame: { width: 1440, height: 900 } },
+        drawn('default', [{ x: 96, y: 198, width: 40, height: 22 }]),
         { state: 'loading', new: true },
         { state: 'broken', error: 'failed' },
       ]),
     ]);
 
-    expect(area).toEqual({ frame: { width: 1440, height: 900 }, crop: { x: 80, y: 182, width: 72, height: 54 } });
+    expect(area).toEqual({
+      frame,
+      crops: [
+        { x: 80, y: 182, width: 72, height: 54 },
+        { x: 84, y: 684, width: 42, height: 42 },
+      ],
+    });
   });
 
   it('keeps the crop inside the frame', () => {
-    const area = changedAreaOf([
-      diffOf('a', [
-        { state: 'default', box: { x: 0, y: 880, width: 20, height: 20 }, frame: { width: 1440, height: 900 } },
-      ]),
-    ]);
+    const area = changedAreaOf([diffOf('a', [drawn('default', [{ x: 0, y: 880, width: 20, height: 20 }])])]);
 
-    expect(area?.crop).toEqual({ x: 0, y: 864, width: 36, height: 36 });
+    expect(area?.crops).toEqual([{ x: 0, y: 864, width: 36, height: 36 }]);
   });
 
   it('is null when no variant changes a pixel', () => {
     expect(
-      changedAreaOf([
-        diffOf('a', [{ state: 'default', box: null, frame: { width: 1440, height: 900 } }]),
-        diffOf('b', [{ state: 'loading', new: true }]),
-      ]),
+      changedAreaOf([diffOf('a', [drawn('default', [])]), diffOf('b', [{ state: 'loading', new: true }])]),
     ).toBeNull();
   });
 });

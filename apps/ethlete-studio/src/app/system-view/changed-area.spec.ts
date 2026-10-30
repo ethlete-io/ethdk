@@ -3,8 +3,8 @@ import { AreaRound, ChangedArea, changedAreaShownByDefault, changedAreaViewOf } 
 import { MatrixColumn } from './system-tree';
 
 const FRAME = { width: 1440, height: 900 };
-const SMALL: ChangedArea = { frame: FRAME, crop: { x: 80, y: 182, width: 72, height: 54 } };
-const LARGE: ChangedArea = { frame: FRAME, crop: { x: 0, y: 0, width: 1440, height: 460 } };
+const SMALL: ChangedArea = { frame: FRAME, crops: [{ x: 80, y: 182, width: 72, height: 54 }] };
+const LARGE: ChangedArea = { frame: FRAME, crops: [{ x: 0, y: 0, width: 1440, height: 460 }] };
 
 const frameOf = (column: string, state = 'default'): CanvasFrame => ({
   id: `${column} ${state}`,
@@ -44,8 +44,8 @@ const switchOf = (view: ReturnType<typeof viewOf>) =>
 describe('changedAreaShownByDefault', () => {
   it('shows the changed area while it covers less than half of the frame', () => {
     expect(changedAreaShownByDefault(SMALL)).toBe(true);
-    expect(changedAreaShownByDefault({ frame: FRAME, crop: { x: 0, y: 0, width: 1440, height: 449 } })).toBe(true);
-    expect(changedAreaShownByDefault({ frame: FRAME, crop: { x: 0, y: 0, width: 1440, height: 450 } })).toBe(false);
+    expect(changedAreaShownByDefault({ frame: FRAME, crops: [{ x: 0, y: 0, width: 1440, height: 449 }] })).toBe(true);
+    expect(changedAreaShownByDefault({ frame: FRAME, crops: [{ x: 0, y: 0, width: 1440, height: 450 }] })).toBe(false);
     expect(changedAreaShownByDefault(LARGE)).toBe(false);
   });
 });
@@ -57,11 +57,22 @@ describe('changedAreaViewOf', () => {
 
     expect(cropped.map((frame) => frame.id)).toEqual(['current default', 'a default', 'a empty', 'b default']);
     expect(new Set(cropped.map((frame) => JSON.stringify([frame.crop, frame.width, frame.height]))).size).toBe(1);
-    expect(cropped[0]?.crop).toEqual({ ...SMALL.crop, frame: FRAME });
+    expect(cropped[0]?.crop).toEqual({ areas: SMALL.crops, frame: FRAME });
     expect(cropped[0]?.width).toBe(1440);
     expect(cropped[0]?.height).toBe(180 + 24 + 54 * 20);
     expect(view.frames.find((frame) => frame.column === 'in context a')?.crop).toBeUndefined();
     expect(switchOf(view)).toMatchObject({ label: 'Changed area', on: true });
+  });
+
+  it('stacks one enlarged crop per cluster of changes below the small whole page', () => {
+    const crops = [
+      { x: 80, y: 20, width: 72, height: 54 },
+      { x: 80, y: 800, width: 144, height: 36 },
+    ];
+    const [first] = viewOf({ r2: { frame: FRAME, crops } }).frames.filter((frame) => frame.crop);
+
+    expect(first?.crop?.areas).toEqual(crops);
+    expect(first?.height).toBe(180 + 24 + 54 * 20 + 24 + 36 * 10);
   });
 
   it('keeps the whole page by default when the changed area covers half of the frame or more', () => {

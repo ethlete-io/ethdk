@@ -626,7 +626,7 @@ describe('DesignCanvasComponent', () => {
   });
 
   it('draws a cropped frame as a small whole page with the crop outlined, above the crop enlarged to its width', async () => {
-    const crop = { x: 100, y: 200, width: 72, height: 54, frame: { width: 1440, height: 900 } };
+    const crop = { areas: [{ x: 100, y: 200, width: 72, height: 54 }], frame: { width: 1440, height: 900 } };
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
     });
@@ -657,7 +657,7 @@ describe('DesignCanvasComponent', () => {
     );
   });
   describe('on a cropped frame', () => {
-    const crop = { x: 100, y: 200, width: 72, height: 54, frame: { width: 1440, height: 900 } };
+    const crop = { areas: [{ x: 100, y: 200, width: 72, height: 54 }], frame: { width: 1440, height: 900 } };
     const cropped: CanvasFrame = {
       ...FITTED,
       id: 'a',

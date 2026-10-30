@@ -16,13 +16,16 @@ const SAME_PIXELS_OTHER_MARKUP = 'no pixel change, but the markup differs';
 
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
 
-/** The smallest rectangle around every changed pixel, in pixels from the top left of the picture. */
+/** A rectangle of changed pixels, in pixels from the top left of the picture. */
 export type ChangedBox = { x: number; y: number; width: number; height: number };
+
+const CLUSTER_GAP = 16;
+const MAX_BOXES = 8;
 
 /**
  * `after` faded to grey with each pixel that differs from `before` in red, over the larger of both sizes, with the
- * count of changed pixels and the `box` around them (`null` without one); a pixel only one of them covers counts as
- * changed. Runs in a browser page through its source, so it may use nothing outside its own body.
+ * count of changed pixels and one box per group of them (16 pixel tiles that touch); a pixel only one of them covers
+ * counts as changed. Runs in a browser page through its source, so it may use nothing outside its own body.
  */
 export function diffPixelsOf(before: Pixels, after: Pixels) {
   const width = Math.max(before.width, after.width);
@@ -35,11 +38,11 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
   const out = new Uint32Array(data.buffer);
   // Word layout is little-endian RGBA (red in the low byte), as on every platform a browser runs on.
   const red = 0xff0000ff;
+  const tile = 16;
+  const columns = Math.ceil(width / tile);
+  const rows = Math.ceil(height / tile);
+  const tileBounds = new Int32Array(columns * rows * 4).fill(-1);
   let changed = 0;
-  let left = width;
-  let top = height;
-  let right = -1;
-  let bottom = -1;
 
   for (let y = 0; y < height; y++) {
     const inBoth = y < before.height && y < after.height;
@@ -58,18 +61,113 @@ export function diffPixelsOf(before: Pixels, after: Pixels) {
       } else {
         changed++;
         out[index] = red;
-        left = Math.min(left, x);
-        right = Math.max(right, x);
-        top = Math.min(top, y);
-        bottom = y;
+
+        const at = (Math.floor(y / tile) * columns + Math.floor(x / tile)) * 4;
+
+        if ((tileBounds[at + 2] as number) < 0) {
+          tileBounds.set([x, y, x, y], at);
+        } else {
+          tileBounds[at] = Math.min(tileBounds[at] as number, x);
+          tileBounds[at + 2] = Math.max(tileBounds[at + 2] as number, x);
+          tileBounds[at + 3] = y;
+        }
       }
     }
   }
 
-  const box = changed > 0 ? { x: left, y: top, width: right - left + 1, height: bottom - top + 1 } : null;
+  const boxes: { x: number; y: number; width: number; height: number }[] = [];
+  const seen = new Uint8Array(columns * rows);
+  const isChanged = (cell: number) => (tileBounds[cell * 4 + 2] as number) >= 0;
 
-  return { width, height, data, changed, box };
+  for (let start = 0; start < columns * rows; start++) {
+    if (seen[start] || !isChanged(start)) continue;
+
+    const stack = [start];
+    let [left, top, right, bottom] = [width, height, -1, -1];
+
+    seen[start] = 1;
+
+    while (stack.length > 0) {
+      const cell = stack.pop() as number;
+      const column = cell % columns;
+      const row = (cell - column) / columns;
+
+      left = Math.min(left, tileBounds[cell * 4] as number);
+      top = Math.min(top, tileBounds[cell * 4 + 1] as number);
+      right = Math.max(right, tileBounds[cell * 4 + 2] as number);
+      bottom = Math.max(bottom, tileBounds[cell * 4 + 3] as number);
+
+      for (let y = Math.max(0, row - 1); y <= Math.min(rows - 1, row + 1); y++) {
+        for (let x = Math.max(0, column - 1); x <= Math.min(columns - 1, column + 1); x++) {
+          const next = y * columns + x;
+
+          if (!seen[next] && isChanged(next)) {
+            seen[next] = 1;
+            stack.push(next);
+          }
+        }
+      }
+    }
+
+    boxes.push({ x: left, y: top, width: right - left + 1, height: bottom - top + 1 });
+  }
+
+  return { width, height, data, changed, boxes };
 }
+
+const unionOf = (a: ChangedBox, b: ChangedBox): ChangedBox => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+};
+
+/** The smallest box around every one of `boxes`, or `null` for none. */
+export const boundsOf = (boxes: ChangedBox[]) =>
+  boxes.length === 0 ? null : boxes.reduce((all, box) => unionOf(all, box));
+
+const isNear = ([a, b]: [ChangedBox, ChangedBox], gap: number) =>
+  a.x - gap <= b.x + b.width &&
+  b.x - gap <= a.x + a.width &&
+  a.y - gap <= b.y + b.height &&
+  b.y - gap <= a.y + a.height;
+
+/**
+ * `boxes` with every two at most `gap` apart merged into one, top to bottom, then left to right. While more than
+ * `max` remain, the gap doubles.
+ */
+export const clusteredBoxesOf = (boxes: ChangedBox[], options: { gap: number; max?: number }): ChangedBox[] => {
+  const { max = MAX_BOXES } = options;
+  const clusters = [...boxes];
+  let gap = options.gap;
+  let merged = true;
+
+  while (merged) {
+    merged = false;
+
+    for (let i = 0; i < clusters.length; i++) {
+      for (let j = clusters.length - 1; j > i; j--) {
+        if (isNear([clusters[i] as ChangedBox, clusters[j] as ChangedBox], gap)) {
+          clusters[i] = unionOf(clusters[i] as ChangedBox, clusters[j] as ChangedBox);
+          clusters.splice(j, 1);
+          merged = true;
+        }
+      }
+    }
+
+    if (!merged && clusters.length > max) {
+      gap = Math.max(1, gap * 2);
+      merged = true;
+    }
+  }
+
+  return clusters.sort((a, b) => a.y - b.y || a.x - b.x);
+};
 
 // tsx (esbuild keepNames) wraps named inner functions in `__name(...)`, which a browser page does not define.
 const diffSourceOf = () => `((__name) => ${diffPixelsOf.toString()})((fn) => fn)`;
@@ -78,33 +176,31 @@ const diffSourceOf = () => `((__name) => ${diffPixelsOf.toString()})((fn) => fn)
 export const pngSizeOf = (png: Buffer) => ({ width: png.readUInt32BE(16), height: png.readUInt32BE(20) });
 
 /**
- * One crop in CSS pixels around every changed box (in picture pixels, `scale` per CSS pixel), widened by `margin`
- * CSS pixels on each side and kept inside the `frame` picture; `null` when no box has a change.
+ * One crop in CSS pixels per cluster of changed `boxes` (in picture pixels, `scale` per CSS pixel), each widened by
+ * `margin` CSS pixels on each side and kept inside the `frame` picture; crops that touch merge. Empty without a box.
  */
-export const changedCropOf = (options: {
-  boxes: (ChangedBox | null)[];
+export const changedCropsOf = (options: {
+  boxes: ChangedBox[];
   frame: { width: number; height: number };
   scale?: number;
   margin?: number;
-}): ChangedBox | null => {
-  const { frame, scale = 1, margin = 16 } = options;
-  const boxes = options.boxes.filter((box): box is ChangedBox => box !== null);
+}): ChangedBox[] => {
+  const { boxes, frame, scale = 1, margin = 16 } = options;
+  const frameWidth = Math.ceil(frame.width / scale);
+  const frameHeight = Math.ceil(frame.height / scale);
+  const crops = boxes.map((box) => {
+    const x = Math.max(0, Math.floor(box.x / scale) - margin);
+    const y = Math.max(0, Math.floor(box.y / scale) - margin);
 
-  if (boxes.length === 0) return null;
+    return {
+      x,
+      y,
+      width: Math.max(1, Math.min(frameWidth, Math.ceil((box.x + box.width) / scale) + margin) - x),
+      height: Math.max(1, Math.min(frameHeight, Math.ceil((box.y + box.height) / scale) + margin) - y),
+    };
+  });
 
-  const left = Math.floor(Math.min(...boxes.map((box) => box.x)) / scale);
-  const top = Math.floor(Math.min(...boxes.map((box) => box.y)) / scale);
-  const right = Math.ceil(Math.max(...boxes.map((box) => box.x + box.width)) / scale);
-  const bottom = Math.ceil(Math.max(...boxes.map((box) => box.y + box.height)) / scale);
-  const x = Math.max(0, left - margin);
-  const y = Math.max(0, top - margin);
-
-  return {
-    x,
-    y,
-    width: Math.max(1, Math.min(Math.ceil(frame.width / scale), right + margin) - x),
-    height: Math.max(1, Math.min(Math.ceil(frame.height / scale), bottom + margin) - y),
-  };
+  return clusteredBoxesOf(crops, { gap: 0 });
 };
 
 const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
@@ -144,7 +240,7 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
   return lines;
 })(${diff})`;
 
-const changedBoxIn = (diff: string, urls: string[]) => `(async ([before, after]) => {
+const changedBoxesIn = (diff: string, urls: string[]) => `(async ([before, after]) => {
   const pixelsOf = async (src) => {
     const image = new Image();
     image.src = src;
@@ -157,22 +253,26 @@ const changedBoxIn = (diff: string, urls: string[]) => `(async ([before, after])
     return context.getImageData(0, 0, canvas.width, canvas.height);
   };
   const [beforePixels, afterPixels] = await Promise.all([pixelsOf(before), pixelsOf(after)]);
-  return (${diff})(beforePixels, afterPixels).box;
+  return (${diff})(beforePixels, afterPixels).boxes;
 })(${JSON.stringify(urls)})`;
 
-/** The box around the pixels `after` changes from `before`, or `null` when both draw the same pixels. */
-export const changedBoxOf = async (options: { browser: Browser; before: Buffer; after: Buffer }) => {
+/**
+ * One box per cluster of the pixels `after` changes from `before`: groups closer than 16 pixels merge, and at most
+ * eight remain. Empty when both draw the same pixels.
+ */
+export const changedBoxesOf = async (options: { browser: Browser; before: Buffer; after: Buffer }) => {
   const { browser, before, after } = options;
 
-  if (before.equals(after)) return null;
+  if (before.equals(after)) return [];
 
   const context = await browser.newContext();
 
   try {
     const page = await context.newPage();
     const urls = [before, after].map((png) => `data:image/png;base64,${png.toString('base64')}`);
+    const groups = (await page.evaluate(changedBoxesIn(diffSourceOf(), urls))) as ChangedBox[];
 
-    return (await page.evaluate(changedBoxIn(diffSourceOf(), urls))) as ChangedBox | null;
+    return clusteredBoxesOf(groups, { gap: CLUSTER_GAP });
   } finally {
     await context.close();
   }

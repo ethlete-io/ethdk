@@ -565,7 +565,7 @@ const designExplore = ({ target, config, system }: { target: string; config: Des
               request,
               load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
               pictureOf: shots.pictureOf,
-              boxOf: shots.changedBoxOf,
+              boxOf: shots.changedBoxesOf,
             }),
           ),
         );

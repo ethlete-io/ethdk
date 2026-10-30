@@ -93,6 +93,11 @@ A screenshot of a state shows the end of every finite CSS animation and transiti
 element that fades in with `@starting-style` is drawn fully visible. An infinite animation keeps
 running.
 
+A pixel comparison gives one box per cluster of changed pixels: changes closer than 16 pixels
+merge, and at most eight boxes remain. `et design shot <part> --variants --crop changed` writes one
+contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single cluster keeps
+`<out>`), and Studio's changed area stacks one enlarged crop per cluster below the whole page.
+
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.

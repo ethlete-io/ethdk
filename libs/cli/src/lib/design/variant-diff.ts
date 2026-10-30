@@ -1,4 +1,4 @@
-import { ChangedBox, changedCropOf, pngSizeOf } from './contact-sheet';
+import { boundsOf, ChangedBox, changedCropsOf, pngSizeOf } from './contact-sheet';
 import { PictureOf } from './merge-compare';
 import { readPartModule } from './system/list-system';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
@@ -6,8 +6,8 @@ import { overlaySketch } from './system/sketch/overlay';
 import { Sketch } from './system/sketch/sketch';
 import { SketchVariant } from './system/system-modules';
 
-/** The box around the pixels `after` changes from `before`, or `null` when both draw the same pixels. */
-export type BoxOf = (before: Buffer, after: Buffer) => Promise<ChangedBox | null>;
+/** One box per cluster of the pixels `after` changes from `before`; empty when both draw the same pixels. */
+export type BoxOf = (before: Buffer, after: Buffer) => Promise<ChangedBox[]>;
 
 export type VariantPartLoad = (options: {
   file: string;
@@ -18,17 +18,17 @@ export type VariantPartLoad = (options: {
 export type FrameSize = { width: number; height: number };
 
 /**
- * One state of the sketched part: the box of the pixels the variant changes against the product (`null` for none)
- * with the size of the picture it was found in, `new` when the product does not draw the state, or why a side could
+ * One state of the sketched part: the box around the pixels the variant changes against the product (`null` for
+ * none), one box per cluster of them, and the size of the picture they were found in, `new` when the product does not draw the state, or why a side could
  * not be drawn.
  */
 export type StateDiff =
-  | { state: string; box: ChangedBox | null; frame: FrameSize }
+  | { state: string; box: ChangedBox | null; boxes: ChangedBox[]; frame: FrameSize }
   | { state: string; new: true }
   | { state: string; error: string };
 
-/** The one crop every column of a comparison shares, and the frame it sits in. */
-export type ChangedArea = { frame: FrameSize; crop: ChangedBox };
+/** The crops every column of a comparison shares, one per cluster of changes, and the frame they sit in. */
+export type ChangedArea = { frame: FrameSize; crops: ChangedBox[] };
 
 export type VariantDiff = { target: string; variant: string; preset?: string; width?: number; states: StateDiff[] };
 
@@ -36,7 +36,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
 /**
  * Draws every state of the sketched part as `variant` draws it and as the product draws it now, at rest, and
- * returns the box of the changed pixels per state. A page is drawn at the preset `size` names, or its first; a part
+ * returns the boxes of the changed pixels per state. A page is drawn at the preset `size` names, or its first; a part
  * with `widths` at the width `size` names, or its first; any other part fitted to its content.
  */
 export const diffVariant = async (options: {
@@ -96,7 +96,9 @@ export const diffVariant = async (options: {
       try {
         const [before, changed] = await Promise.all([draw(null), draw(drawn)]);
 
-        return { state, box: await boxOf(before.png, changed.png), frame: pngSizeOf(before.png) };
+        const boxes = await boxOf(before.png, changed.png);
+
+        return { state, box: boundsOf(boxes), boxes, frame: pngSizeOf(before.png) };
       } catch (error) {
         return { state, error: messageOf(error) };
       }
@@ -107,8 +109,8 @@ export const diffVariant = async (options: {
 };
 
 /**
- * The crop around every pixel any of `diffs` changes in any state, padded by `margin`, inside the largest frame they
- * were drawn in; `null` when no pixel changes.
+ * One crop per cluster of the pixels any of `diffs` changes in any state, padded by `margin`, inside the largest
+ * frame they were drawn in; `null` when no pixel changes.
  */
 export const changedAreaOf = (diffs: VariantDiff[], margin?: number): ChangedArea | null => {
   const drawn = diffs.flatMap((diff) => diff.states.flatMap((entry) => ('box' in entry ? [entry] : [])));
@@ -116,7 +118,7 @@ export const changedAreaOf = (diffs: VariantDiff[], margin?: number): ChangedAre
     width: Math.max(0, ...drawn.map((entry) => entry.frame.width)),
     height: Math.max(0, ...drawn.map((entry) => entry.frame.height)),
   };
-  const crop = changedCropOf({ boxes: drawn.map((entry) => entry.box), frame, margin });
+  const crops = changedCropsOf({ boxes: drawn.flatMap((entry) => entry.boxes), frame, margin });
 
-  return crop ? { frame, crop } : null;
+  return crops.length > 0 ? { frame, crops } : null;
 };

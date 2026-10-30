@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  changedBoxOf,
-  changedCropOf,
+  changedBoxesOf,
+  changedCropsOf,
+  clusteredBoxesOf,
   contactSheetHtml,
   contactSheetOf,
   diffPixelsOf,
@@ -70,7 +71,7 @@ describe('diffPixelsOf', () => {
       height: 1,
       data: new Uint8ClampedArray([191, 191, 191, 255, 255, 0, 0, 255]),
       changed: 1,
-      box: { x: 1, y: 0, width: 1, height: 1 },
+      boxes: [{ x: 1, y: 0, width: 1, height: 1 }],
     });
   });
 
@@ -80,14 +81,37 @@ describe('diffPixelsOf', () => {
     expect([diff.width, diff.height, diff.changed]).toEqual([1, 2, 1]);
   });
 
-  it('boxes every changed pixel, and gives no box without one', () => {
+  it('boxes changed pixels that sit close together as one group, and gives no box without one', () => {
     const grey = [9, 9, 9, 255];
     const red = [255, 0, 0, 255];
     const before = pixels(3, 3, [...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey]);
     const after = pixels(3, 3, [...grey, ...red, ...grey, ...grey, ...grey, ...grey, ...grey, ...grey, ...red]);
 
-    expect(diffPixelsOf(before, after).box).toEqual({ x: 1, y: 0, width: 2, height: 3 });
-    expect(diffPixelsOf(before, before).box).toBeNull();
+    expect(diffPixelsOf(before, after).boxes).toEqual([{ x: 1, y: 0, width: 2, height: 3 }]);
+    expect(diffPixelsOf(before, before).boxes).toEqual([]);
+  });
+
+  it('gives each of two changed regions far apart a box of its own', () => {
+    const blank = () =>
+      pixels(
+        100,
+        100,
+        Array.from({ length: 100 * 100 * 4 }, () => 0),
+      );
+    const after = blank();
+
+    for (const [x, y] of [
+      [4, 4],
+      [6, 7],
+      [90, 92],
+    ] as const) {
+      after.data.set([255, 0, 0, 255], (y * 100 + x) * 4);
+    }
+
+    expect(diffPixelsOf(blank(), after).boxes).toEqual([
+      { x: 4, y: 4, width: 3, height: 4 },
+      { x: 90, y: 92, width: 1, height: 1 },
+    ]);
   });
 
   it('runs from its own source, as the sheet page runs it', () => {
@@ -97,50 +121,62 @@ describe('diffPixelsOf', () => {
   });
 });
 
-describe('changedCropOf', () => {
-  const frame = { width: 1440, height: 900 };
-  const blank = (width: number, height: number) => ({ width, height, data: new Uint8ClampedArray(width * height * 4) });
-  const painted = (width: number, height: number, x: number, y: number) => {
-    const pixels = blank(width, height);
-
-    pixels.data.set([255, 0, 0, 255], (y * width + x) * 4);
-
-    return pixels;
-  };
-
-  it('unions the changed bounds of every pair and pads them by the margin', () => {
+describe('clusteredBoxesOf', () => {
+  it('merges boxes at most the gap apart and keeps the others apart', () => {
     const boxes = [
-      diffPixelsOf(blank(8, 8), painted(8, 8, 2, 3)).box,
-      diffPixelsOf(blank(8, 8), painted(8, 8, 5, 1)).box,
-      diffPixelsOf(blank(8, 8), blank(8, 8)).box,
+      { x: 0, y: 0, width: 10, height: 10 },
+      { x: 26, y: 0, width: 10, height: 10 },
+      { x: 0, y: 200, width: 10, height: 10 },
     ];
 
-    expect(changedCropOf({ boxes, frame: { width: 8, height: 8 }, margin: 1 })).toEqual({
-      x: 1,
-      y: 0,
-      width: 6,
-      height: 5,
-    });
+    expect(clusteredBoxesOf(boxes, { gap: 16 })).toEqual([
+      { x: 0, y: 0, width: 36, height: 10 },
+      { x: 0, y: 200, width: 10, height: 10 },
+    ]);
+    expect(clusteredBoxesOf(boxes, { gap: 15 })).toHaveLength(3);
+  });
+
+  it('widens the gap until no more than the cap remain', () => {
+    const noise = Array.from({ length: 50 }, (_, index) => ({ x: index * 40, y: 0, width: 1, height: 1 }));
+
+    expect(clusteredBoxesOf(noise, { gap: 16, max: 4 }).length).toBeLessThanOrEqual(4);
+  });
+});
+
+describe('changedCropsOf', () => {
+  const frame = { width: 1440, height: 900 };
+
+  it('pads each box by the margin and merges crops that touch', () => {
+    expect(
+      changedCropsOf({
+        boxes: [
+          { x: 2, y: 3, width: 1, height: 1 },
+          { x: 5, y: 1, width: 1, height: 1 },
+          { x: 600, y: 400, width: 10, height: 10 },
+        ],
+        frame,
+        margin: 1,
+      }),
+    ).toEqual([
+      { x: 1, y: 0, width: 6, height: 5 },
+      { x: 599, y: 399, width: 12, height: 12 },
+    ]);
   });
 
   it('clamps the padded box to the frame', () => {
-    expect(changedCropOf({ boxes: [{ x: 1430, y: 4, width: 6, height: 6 }], frame })).toEqual({
-      x: 1414,
-      y: 0,
-      width: 26,
-      height: 26,
-    });
+    expect(changedCropsOf({ boxes: [{ x: 1430, y: 4, width: 6, height: 6 }], frame })).toEqual([
+      { x: 1414, y: 0, width: 26, height: 26 },
+    ]);
   });
 
   it('converts picture pixels to CSS pixels at the scale, widening to whole pixels', () => {
     expect(
-      changedCropOf({ boxes: [{ x: 101, y: 40, width: 3, height: 1 }], frame: { width: 400, height: 200 }, scale: 2 }),
-    ).toEqual({ x: 34, y: 4, width: 34, height: 33 });
+      changedCropsOf({ boxes: [{ x: 101, y: 40, width: 3, height: 1 }], frame: { width: 400, height: 200 }, scale: 2 }),
+    ).toEqual([{ x: 34, y: 4, width: 34, height: 33 }]);
   });
 
-  it('gives no crop when no pair changes a pixel', () => {
-    expect(changedCropOf({ boxes: [null, null], frame })).toBeNull();
-    expect(changedCropOf({ boxes: [], frame })).toBeNull();
+  it('gives no crop without a box', () => {
+    expect(changedCropsOf({ boxes: [], frame })).toEqual([]);
   });
 });
 
@@ -201,25 +237,29 @@ describe('contactSheetOf', () => {
   });
 });
 
-describe('changedBoxOf', () => {
+describe('changedBoxesOf', () => {
   it('opens no page for equal pictures', async () => {
     const browser = { newContext: vi.fn() } as unknown as Browser;
 
-    expect(await changedBoxOf({ browser, before: Buffer.from('a'), after: Buffer.from('a') })).toBeNull();
+    expect(await changedBoxesOf({ browser, before: Buffer.from('a'), after: Buffer.from('a') })).toEqual([]);
     expect(browser.newContext).not.toHaveBeenCalled();
   });
 
-  it('diffs both pictures in a page and closes the context', async () => {
-    const page = { evaluate: vi.fn().mockResolvedValue({ x: 1, y: 2, width: 3, height: 4 }) };
+  it('diffs both pictures in a page, clusters the groups and closes the context', async () => {
+    const page = {
+      evaluate: vi.fn().mockResolvedValue([
+        { x: 1, y: 2, width: 3, height: 4 },
+        { x: 10, y: 2, width: 3, height: 4 },
+        { x: 300, y: 2, width: 3, height: 4 },
+      ]),
+    };
     const context = { newPage: vi.fn().mockResolvedValue(page), close: vi.fn() };
     const browser = { newContext: vi.fn().mockResolvedValue(context) } as unknown as Browser;
 
-    expect(await changedBoxOf({ browser, before: Buffer.from('a'), after: Buffer.from('b') })).toEqual({
-      x: 1,
-      y: 2,
-      width: 3,
-      height: 4,
-    });
+    expect(await changedBoxesOf({ browser, before: Buffer.from('a'), after: Buffer.from('b') })).toEqual([
+      { x: 1, y: 2, width: 12, height: 4 },
+      { x: 300, y: 2, width: 3, height: 4 },
+    ]);
     expect(page.evaluate.mock.calls[0]?.[0]).toContain('function diffPixelsOf');
     expect(page.evaluate.mock.calls[0]?.[0]).toContain('data:image/png;base64,YQ==');
     expect(context.close).toHaveBeenCalled();

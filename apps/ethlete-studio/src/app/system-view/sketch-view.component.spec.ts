@@ -673,7 +673,9 @@ describe('SketchViewComponent on a refused merge', () => {
       asked.push(url);
       if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
       if (url.includes('/__design/sketch-crop'))
-        return json({ area: { frame: { width: 1440, height: 900 }, crop: { x: 80, y: 182, width: 72, height: 54 } } });
+        return json({
+          area: { frame: { width: 1440, height: 900 }, crops: [{ x: 80, y: 182, width: 72, height: 54 }] },
+        });
 
       return new Promise(() => undefined);
     });
@@ -726,7 +728,9 @@ describe('SketchViewComponent on a refused merge', () => {
     vi.stubGlobal('fetch', (url: string) => {
       if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
       if (url.includes('/__design/sketch-crop'))
-        return json({ area: { frame: { width: 1440, height: 900 }, crop: { x: 80, y: 182, width: 72, height: 54 } } });
+        return json({
+          area: { frame: { width: 1440, height: 900 }, crops: [{ x: 80, y: 182, width: 72, height: 54 }] },
+        });
 
       return new Promise(() => undefined);
     });

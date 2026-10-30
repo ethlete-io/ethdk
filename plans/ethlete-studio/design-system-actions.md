@@ -661,7 +661,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `studioMarkLine` from `foundations/logo`, and `INLINE-SVG` is in `RULES` (commit 928eebbc9).
   `foundations/colors` still draws its status marks inline; foundations are exempt.
 
-### 4.60 The changed area is one box around all changes - open
+### 4.60 The changed area is one box around all changes - done
 
 - **Pain (Tom, 2026-10-30):** in the `components/tree-row` icon sketch, the changed area of the `tree` state
   covers almost the whole row column, though only four small icons change.
@@ -672,6 +672,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   shows each box as its own crop, before and after side by side (recommended). 2. keep one box, but outline
   each cluster inside it. 3. no change.
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
+- **Done (2026-10-30):** one box per cluster (16 px gap, max 8), one crop per box in Studio and `--crop changed`.
 
 ### 4.61 The merge editor renders slowly - open
 

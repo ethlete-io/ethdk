@@ -124,28 +124,43 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             class="absolute top-0 left-0 max-w-none origin-top-left"
             alt=""
           />
-          <div
-            [style.left.px]="cropped.thumb.outline.x"
-            [style.top.px]="cropped.thumb.outline.y"
-            [style.width.px]="cropped.thumb.outline.width"
-            [style.height.px]="cropped.thumb.outline.height"
-            class="absolute outline-2 outline-accent outline-solid"
-            data-crop-outline
-          ></div>
+          @for (outline of cropped.thumb.outlines; track $index) {
+            <div
+              [style.left.px]="outline.x"
+              [style.top.px]="outline.y"
+              [style.width.px]="outline.width"
+              [style.height.px]="outline.height"
+              class="absolute outline-2 outline-accent outline-solid"
+              data-crop-outline
+            ></div>
+          }
         </div>
       }
-      <div [style.top.px]="cropped.view.top" class="absolute right-0 bottom-0 left-0 overflow-hidden" data-crop-view>
+      @for (view of cropped.views; track $index) {
         <div
-          [style.width.px]="cropped.page.width"
-          [style.height.px]="cropped.page.height"
-          [style.transform]="
-            'scale(' + cropped.view.scale + ') translate(' + -cropped.view.x + 'px, ' + -cropped.view.y + 'px)'
-          "
-          class="absolute top-0 left-0 origin-top-left"
+          [style.top.px]="view.top"
+          [style.height.px]="view.height"
+          class="absolute right-0 left-0 overflow-hidden"
+          data-crop-view
         >
-          <ng-container [ngTemplateOutlet]="page" />
+          <div
+            [style.width.px]="cropped.page.width"
+            [style.height.px]="cropped.page.height"
+            [style.transform]="'scale(' + view.scale + ') translate(' + -view.area.x + 'px, ' + -view.area.y + 'px)'"
+            class="absolute top-0 left-0 origin-top-left"
+          >
+            @if ($first) {
+              <ng-container [ngTemplateOutlet]="page" />
+            } @else if (frame().screenshot; as screenshot) {
+              <img
+                [src]="live() ? screenshot : (admittedShot() ?? screenshot)"
+                class="absolute inset-0 size-full border-0 object-none object-left-top"
+                alt=""
+              />
+            }
+          </div>
         </div>
-      </div>
+      }
     } @else {
       <ng-container [ngTemplateOutlet]="page" />
     }

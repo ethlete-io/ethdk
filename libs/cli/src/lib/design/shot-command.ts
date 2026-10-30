@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
-import { changedCropOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
+import { changedCropsOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { DesignConfig, workRootOf } from './paths';
@@ -248,10 +248,10 @@ export const shotProductOf = (options: {
 const CROP_CHANGED = 'changed';
 
 /**
- * The crop around every pixel a variant cell changes from the merged cell of its state, in CSS pixels inside the
- * largest picture, or `null` when no variant changes a pixel.
+ * One crop per cluster of the pixels a variant cell changes from the merged cell of its state, in CSS pixels inside
+ * the largest picture; empty when no variant changes a pixel.
  */
-export const changedCropIn = async (options: {
+export const changedCropsIn = async (options: {
   plan: Plan[][];
   sheet: SheetCell[][];
   mergedIndex: number;
@@ -277,13 +277,13 @@ export const changedCropIn = async (options: {
         }),
   );
 
-  if (pngs.length === 0) return null;
+  if (pngs.length === 0) return [];
 
   const sizes = pngs.map(pngSizeOf);
   const boxes = await Promise.all(pairs.map(([before, after]) => boxOf(before, after)));
 
-  return changedCropOf({
-    boxes,
+  return changedCropsOf({
+    boxes: boxes.flat(),
     frame: {
       width: Math.max(...sizes.map((size) => size.width)),
       height: Math.max(...sizes.map((size) => size.height)),
@@ -523,58 +523,72 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       };
       let sheet = await shootAll();
       const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
-
-      if (cropChanged) {
-        const crop = await changedCropIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxOf, scale });
-
-        if (crop) {
-          params.set('clip', `${crop.x},${crop.y},${crop.width},${crop.height}`);
-          console.log(`crop ${crop.x},${crop.y},${crop.width},${crop.height} (changed bounds)`);
-          sheet = await shootAll();
-        } else {
-          console.log('crop changed: no variant changes a pixel of the merged part, so the full frame is drawn');
-        }
-      }
-
-      const mergedStates = new Set(plan[mergedIndex]?.flatMap((cell) => (cell.absent ? [] : [cell.address.state])));
-      const props: SheetCell[][] = [];
-
-      for (const row of diffProps ? plan : []) {
-        const cells: SheetCell[] = [];
-
-        for (const { label, address } of row) {
-          cells.push(
-            address.sketch && mergedStates.has(address.state)
-              ? await shoot({ label, address: { ...address, sketch: null, props: address.sketch } })
-              : { label, note: '' },
-          );
-        }
-
-        props.push(cells);
-      }
-
-      if (sheet.every((row) => row.length === 0)) {
-        console.error(`design-explore: ${part} has no state to draw`);
-
-        return 1;
-      }
-
-      const shown = withDiffRows({
-        rows,
-        plan,
-        sheet,
-        props: diffProps ? props : undefined,
-        grids: rows.map((axis) => (states ? grids.get(axis) : undefined)),
-      });
-      const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
-      const out = resolve(
+      const sheetOut = resolve(
         target,
         args.values['--out'] ?? `${workRootOf(target)}/shots/${product}-${part.replace('/', '-')}.png`,
       );
+      const crops = cropChanged
+        ? await changedCropsIn({ plan, sheet, mergedIndex, boxOf: shooter.changedBoxesOf, scale })
+        : [];
 
-      mkdirSync(dirname(out), { recursive: true });
-      writeFileSync(out, png);
-      for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
+      if (cropChanged && crops.length === 0) {
+        console.log('crop changed: no variant changes a pixel of the merged part, so the full frame is drawn');
+      }
+
+      const takes =
+        crops.length > 0
+          ? crops.map((crop, index) => ({
+              crop,
+              out: crops.length === 1 ? sheetOut : sheetOut.replace(/(\.png)?$/u, `-area-${index + 1}.png`),
+            }))
+          : [{ crop: null, out: sheetOut }];
+
+      mkdirSync(dirname(sheetOut), { recursive: true });
+
+      for (const [index, { crop, out }] of takes.entries()) {
+        if (crop) {
+          params.set('clip', `${crop.x},${crop.y},${crop.width},${crop.height}`);
+          console.log(
+            `crop ${crop.x},${crop.y},${crop.width},${crop.height} (changed area ${index + 1} of ${takes.length})`,
+          );
+          sheet = await shootAll();
+        }
+
+        const mergedStates = new Set(plan[mergedIndex]?.flatMap((cell) => (cell.absent ? [] : [cell.address.state])));
+        const props: SheetCell[][] = [];
+
+        for (const row of diffProps ? plan : []) {
+          const cells: SheetCell[] = [];
+
+          for (const { label, address } of row) {
+            cells.push(
+              address.sketch && mergedStates.has(address.state)
+                ? await shoot({ label, address: { ...address, sketch: null, props: address.sketch } })
+                : { label, note: '' },
+            );
+          }
+
+          props.push(cells);
+        }
+
+        if (sheet.every((row) => row.length === 0)) {
+          console.error(`design-explore: ${part} has no state to draw`);
+
+          return 1;
+        }
+
+        const shown = withDiffRows({
+          rows,
+          plan,
+          sheet,
+          props: diffProps ? props : undefined,
+          grids: rows.map((axis) => (states ? grids.get(axis) : undefined)),
+        });
+        const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
+
+        writeFileSync(out, png);
+        for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
+      }
 
       return 0;
     } finally {
