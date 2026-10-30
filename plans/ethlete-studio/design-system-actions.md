@@ -1538,7 +1538,7 @@ These pains came from how the agent worked, not from the tool. Each one has a ru
   completeness gate, including interactive-element declarations and associated surfaces.
   The manual inventory alone does not satisfy this requirement.
 
-### 6.6 Literal attachment variants passed checks but failed visual judgment - open
+### 6.6 Literal attachment variants passed checks but failed visual judgment - built ()
 
 - **Pain (Tom, 2026-10-30):** "das schaut alles nicht wirklich gut aus" after reviewing the
   Avatar attachment round D/E/F. All 36 state renders passed; none of these alternatives
