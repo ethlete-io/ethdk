@@ -44,6 +44,7 @@
       }
     },
     "sdk": {
+      "tokens": ["foundations/tokens", "foundations/colors"],
       "presets": {
         "phone": {
           "width": 390,

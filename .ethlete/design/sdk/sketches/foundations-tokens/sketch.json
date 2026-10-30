@@ -44,8 +44,8 @@
     }
   },
   "hold": {
-    "until": "rebuilt as foundations/colors with tokenSheet (Q54/Q55)",
+    "until": "superseded by sketch foundations/colors (Q55): discard this one, then part remove foundations/tokens, after colors merges",
     "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T22:41:39.104Z"
+    "heldAt": "2026-10-30T22:46:49.852Z"
   }
 }
