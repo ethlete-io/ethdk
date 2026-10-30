@@ -92,13 +92,13 @@ const pickerRow = (name: string, selected: boolean) =>
 
 const picker = (placement: 'above' | 'beside') =>
   html`<div
-    class="st-project-picker absolute box-border p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 border border-surface-border p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
     data-placement="${placement}"
   >
     <div role="listbox" aria-label="Projekt auswählen">
       ${pickerRow('ethlete-sdk', true)} ${pickerRow('fut-frontend', false)} ${pickerRow('design-playground', false)}
     </div>
-    <div class="st-project-picker-action mt-space-1 pt-space-1 rounded-none">
+    <div class="st-project-picker-action mt-space-1 border-t border-surface-border pt-space-1 rounded-none">
       ${button({
         label: 'Projekt öffnen…',
         variant: 'transparent',
