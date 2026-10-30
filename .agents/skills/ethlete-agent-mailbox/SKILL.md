@@ -20,6 +20,8 @@ node <skill-dir>/agent-mailbox.mjs send <name> [--to <agent>] '<message>'
 node <skill-dir>/agent-mailbox.mjs inbox <name> [--wait <seconds>]
 node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
+node <skill-dir>/agent-mailbox.mjs up <name>[=<command>]...
+node <skill-dir>/agent-mailbox.mjs down [<name>...]
 node <skill-dir>/agent-mailbox.mjs dispatch
 ```
 
@@ -49,14 +51,14 @@ holder agreed. Silence is not approval. Acknowledge each handoff in words.
 
 ## Wake an idle agent
 
-An idle agent cannot read the mailbox. The user starts one `dispatch` process outside every agent. It polls the mailbox for free. When a message carries `--to <agent>`, it types a wake-up line into the `tmux` session that has the same name as the agent. The agent then runs `inbox` and acts.
+An idle agent cannot read the mailbox. One `dispatch` process outside every agent fixes this. It polls the mailbox for free. When a message carries `--to <agent>`, it types a wake-up line into the `tmux` session that has the same name as the agent. The agent then runs `inbox` and acts.
 
-1. Start each agent inside its own `tmux` session, and name the session like the sender name: `tmux new -s codex`, then start the agent.
-2. Start `node <skill-dir>/agent-mailbox.mjs dispatch` in a separate terminal.
+1. Run `up` once. `up codex=codex gemini=gemini` starts a detached `tmux` session per agent, named like its sender name, and runs the command in it. It also starts a session named `mailbox-dispatch` that runs `dispatch`. A running session is left alone.
+2. Attach to a session with `tmux attach -t <name>`. Detach with `Ctrl-b`, then `d`. The session and its agent keep running.
 3. Send a message with `send <name> --to <agent> '<message>'`. A message without `--to` wakes nobody.
 
-If the agent is in the middle of a turn, the wake-up line waits as its next prompt. An agent that
-uses this does not need the `--wait` loop, which costs a turn at every timeout.
+If the agent is in the middle of a turn, the wake-up line waits as its next prompt. An agent in a `tmux` session does not need the `--wait` loop, which costs a turn at every timeout.
+A background `--wait` also ends after one message, so it is not a lasting watch. Use `down` to stop the sessions.
 
 ## Rules
 

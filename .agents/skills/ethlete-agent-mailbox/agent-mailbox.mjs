@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,7 @@ const script = fileURLToPath(import.meta.url);
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
+const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? 'mailbox-dispatch';
 
 const takeFlag = (args, name, hasValue) => {
   const index = args.indexOf(name);
@@ -45,6 +46,8 @@ Watch:   node ${script} watch <name>
 Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
 Release: node ${script} release <name> [path...]      (no path: release every claim of <name>)
 Claims:  node ${script} claims
+Up:      node ${script} up <name>[=<command>]...      (start a tmux session per agent, plus one that runs dispatch)
+Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
 Protocol: append one JSON object per line; never rewrite or truncate.
@@ -141,6 +144,27 @@ if (command === 'send' && sender) {
     append({ sender, message, ...(recipient ? { to: recipient } : {}) });
     process.stdout.write(`Sent as ${sender}.\n`);
   }
+} else if (command === 'up') {
+  const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
+  const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
+  const exists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+  const start = (name, shellCommand) => {
+    if (exists(name)) return process.stdout.write(`Session ${name} already runs.\n`);
+    const result = tmux('new-session', '-d', '-s', name, '-c', root, ...(shellCommand ? [shellCommand] : []));
+    if (result.status !== 0) return process.stderr.write(`Could not start ${name}: ${result.stderr.trim()}\n`);
+    process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
+  };
+  const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
+  start(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`);
+  [sender, ...words].filter(Boolean).forEach((spec) => {
+    const [name, ...rest] = spec.split('=');
+    start(name, rest.join('=') || undefined);
+  });
+} else if (command === 'down') {
+  [DISPATCH_SESSION, sender, ...words].filter(Boolean).forEach((name) => {
+    const result = spawnSync('tmux', ['kill-session', '-t', `=${name}`], { encoding: 'utf8' });
+    process.stdout.write(result.status === 0 ? `Stopped ${name}.\n` : `No session ${name}.\n`);
+  });
 } else if (command === 'dispatch') {
   prepare();
   appendFileSync(mailbox, '');

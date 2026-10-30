@@ -148,4 +148,35 @@ describe('agent-mailbox', () => {
       spawnSync('tmux', ['kill-session', '-t', session]);
     }
   });
+
+  it.skipIf(!hasTmux)('starts and stops the tmux sessions for up and down', () => {
+    const suffix = process.pid;
+    const dispatchSession = `mailbox-dispatch-${suffix}`;
+    const agent = `mailbox-agent-${suffix}`;
+    const env = {
+      ...process.env,
+      AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
+      AGENT_MAILBOX_DISPATCH_SESSION: dispatchSession,
+    };
+    const has = (name: string) => spawnSync('tmux', ['has-session', '-t', `=${name}`]).status === 0;
+
+    try {
+      const up = spawnSync('node', [SCRIPT, 'up', `${agent}=cat`], { cwd: dir, env, encoding: 'utf8' });
+
+      expect(up.stdout).toContain(`Started ${agent}`);
+      expect(has(agent)).toBe(true);
+      expect(has(dispatchSession)).toBe(true);
+      expect(spawnSync('node', [SCRIPT, 'up', `${agent}=cat`], { cwd: dir, env, encoding: 'utf8' }).stdout).toContain(
+        `Session ${agent} already runs.`,
+      );
+
+      spawnSync('node', [SCRIPT, 'down', agent], { cwd: dir, env });
+
+      expect(has(agent)).toBe(false);
+      expect(has(dispatchSession)).toBe(false);
+    } finally {
+      spawnSync('tmux', ['kill-session', '-t', `=${agent}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${dispatchSession}`]);
+    }
+  });
 });
