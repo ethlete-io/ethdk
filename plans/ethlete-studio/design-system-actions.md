@@ -684,6 +684,18 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   network panel of a headless run on an own server): render queue wait, page render, pixel diff,
   changed box. Compare with a small part to see if the time grows with the part count or the state count.
 
+### 4.63 Auto-merge ignores the parts that use the changed part - open
+
+- **Pain (2026-10-30):** the `foundations/colors` sketch that removed the copied generator output auto-merged
+  as "no visible change", but it removed `.et-color--accent`, which the inherited sdk part `components/select`
+  (state `open`, `panelColor: 'accent'`) needs. `design check --product studio` fails since then.
+- **Cause:** `sketch ready` compares only the target part's own states with the merged part.
+- **Decision (Tom, 2026-10-30):** fix the tool. The auto-merge also draws the affected parts that
+  `sketch preview` lists and stops at `ready` if any of them changes visibly.
+- **Not part of this fix:** the select part itself. Tom: the sdk part is not usable as it is; it waits for the
+  open plan to adopt the needed SDK components cleanly. Until then the `UNKNOWN-THEME` finding on
+  `components/select` stays.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
