@@ -6,8 +6,9 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
 ## Builder status (2026-10-30)
 
 - A1 done (`0c4b8a887`). A2 and F1 run in one subagent with the Q32 merge-target change; A3-A5 start after it.
-- D done (`493d1f6f9`: 6.7, 5.60 rule); 6.6 runs. B, C1, E (5.52, 5.55, 5.56), F2-F4 and G run. Queued: A 5.39
-  after A2-A5; F 5.51 and 5.32 after F2-F4. Found on the way: `aae2914f3` broke every render of the built CLI
+- D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
+  `UTILITY-CSS` in `RULES`). B, C1, E, F 5.51 and G run. Queued: A 5.39 after A2-A5; F 5.32 after Tom merges F2.
+- `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
 
 ## Rules for every stream
@@ -70,6 +71,8 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
 - `components/button` controls into the SDK base (Q32): runs, may auto-merge.
+- `elements/canvas-frames` round "App zoom chip" (`44cef3dcc`, 2.2): merge the app chip `− | 100 % | + | Fit`, keeping
+  the 6px control radius instead of the app's 3px? `pages/sketches` moves to it with 5.32.
 
 ## Waits for Tom in the real Studio
 
