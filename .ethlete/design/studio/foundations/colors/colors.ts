@@ -5,7 +5,10 @@ import tokens from './colors.css?inline';
 type Group = 'surfaces' | 'accent' | 'warning' | 'error';
 
 const groups: Record<Group, { title: string; owns: (name: string) => boolean }> = {
-  surfaces: { title: 'Surfaces and text', owns: (name) => /^surface(-|$)/.test(name) || /^text(-muted)?$/.test(name) },
+  surfaces: {
+    title: 'Surfaces and text',
+    owns: (name) => /^surface(-|$)/.test(name) || /^text(-muted|-subtle)?$/.test(name),
+  },
   accent: { title: 'Accent', owns: (name) => /^(accent|on-accent|focus-ring)/.test(name) },
   warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
   error: { title: 'Error', owns: (name) => /^(on-)?danger/.test(name) },
@@ -20,6 +23,11 @@ const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
 const sampleOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="co-shadow"></span>`;
   if (name === 'focus-ring') return html`<span class="co-ring">Focus</span>`;
+  const stateFill = /^on-(accent|warning|danger)-disabled$/.exec(name);
+  if (stateFill) return html`<span class="co-fill co-fill--${stateFill[1]} co-fill--disabled">Disabled</span>`;
+  if (name === 'text-subtle') return html`<span class="co-subtle-text">Subtle text</span>`;
+  if (/^(accent|warning|danger)-active$/.test(name))
+    return html`<span class="co-swatch" style="background: var(--${name})"></span>`;
   if (name === 'on-accent') return html`<span class="co-fill">Merge</span>`;
   if (name === 'on-warning') return html`<span class="co-fill co-fill--warning">Check again</span>`;
   if (name === 'on-danger') return html`<span class="co-fill co-fill--danger">Discard sketch</span>`;
@@ -32,12 +40,16 @@ const surfaceCard = (surface: string) =>
     <span class="co-surface-name">${surface}</span>
     <span>Text on ${surface}</span>
     <span class="co-muted">Muted on ${surface}</span>
+    <span class="co-subtle-text">Subtle on ${surface}</span>
   </div>`;
 
 const accentCard = (surface: string) =>
   html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
-    <span class="co-cluster"><span class="co-fill">Merge</span><span class="co-fill co-fill--hover">Hover</span></span>
+    <span class="co-cluster"
+      ><span class="co-fill">Merge</span><span class="co-fill co-fill--hover">Hover</span
+      ><span class="co-fill co-fill--active">Active</span><span class="co-fill co-fill--disabled">Disabled</span></span
+    >
     <span class="co-ink">Accent text link</span>
     <span class="co-subtle">Selected row</span>
     <span class="co-ring">Focused</span>
@@ -77,6 +89,11 @@ const warningCard = (surface: string) =>
   html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
+    <span class="co-cluster"
+      ><span class="co-fill co-fill--warning">Check again</span
+      ><span class="co-fill co-fill--warning co-fill--active">Active</span
+      ><span class="co-fill co-fill--warning co-fill--disabled">Disabled</span></span
+    >
     <span class="co-warning-ink">Render check: 1 warning</span>
     <span class="co-warning-note"
       ><span class="co-mark co-mark--warning">${marks.warning}</span>The base product changed since this sketch
@@ -88,6 +105,11 @@ const errorCard = (surface: string) =>
   html`<div class="co-surface" style="background: var(--${surface})">
     <span class="co-surface-name">${surface}</span>
     ${markRows}
+    <span class="co-cluster"
+      ><span class="co-fill co-fill--danger">Discard sketch</span
+      ><span class="co-fill co-fill--danger co-fill--active">Active</span
+      ><span class="co-fill co-fill--danger co-fill--disabled">Disabled</span></span
+    >
     <span class="co-danger-ink">Render check: 1 error</span>
     <span class="co-danger-note"
       ><span class="co-mark co-mark--error">${marks.error}</span>The dialog story threw while rendering.</span
@@ -103,7 +125,7 @@ const cards: Record<Group, (surface: string) => string> = {
 
 export default definePart<{ group: Group }>({
   note: 'The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
-  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
@@ -132,6 +154,13 @@ export default definePart<{ group: Group }>({
         .co-fill--hover { background: var(--accent-hover); }
         .co-fill--warning { background: var(--warning); color: var(--on-warning); }
         .co-fill--danger { background: var(--danger); color: var(--on-danger); }
+        .co-fill--active { background: var(--accent-active); }
+        .co-fill--warning.co-fill--active { background: var(--warning-active); }
+        .co-fill--danger.co-fill--active { background: var(--danger-active); }
+        .co-fill--disabled { background: var(--accent-disabled); color: var(--on-accent-disabled); }
+        .co-fill--warning.co-fill--disabled { background: var(--warning-disabled); color: var(--on-warning-disabled); }
+        .co-fill--danger.co-fill--disabled { background: var(--danger-disabled); color: var(--on-danger-disabled); }
+        .co-subtle-text { color: var(--text-subtle); }
         .co-trows { align-self: stretch; display: flex; flex-direction: column; }
         .co-trow { display: flex; align-items: center; gap: var(--space-2); height: var(--row); padding: 0 var(--space-2); }
         .co-trow-label { flex: 1; }
