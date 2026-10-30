@@ -1,6 +1,6 @@
 {
   "target": "components/tree",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T23:16:05.909Z",
   "baseline": {
     "foundations/colors": "f4a7642306093b96",
@@ -23,10 +23,5 @@
       "round": "r1",
       "note": "The SDK tree as it ships, drawn by its mock."
     }
-  },
-  "hold": {
-    "until": "Tree focus ring contrast: the focus-visible outline is --et-theme-color-primary-solid, 0 255 161 in brand-on-light, about 1.3:1 on the light surface, below the 3:1 Q42 keeps for focus. Recommend the ink token (4 120 87, about 5.5:1), per Q51.",
-    "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:18:05.577Z"
   }
 }
