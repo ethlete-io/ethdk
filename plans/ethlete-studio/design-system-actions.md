@@ -378,6 +378,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decided (Tom, 2026-10-30):** the proposal as written, with the recommendation for open
   points 1, 2 and 4 to 6. Exceptions differ from point 3: no keychain signature. Only the
   approve button in Studio writes an approval, and git shows every change to it.
+- **Decided (Tom, 2026-10-30), control ownership:** a control that a page draws through an embedded part
+  belongs to that part, automatically. Every rendered part root carries `data-et-part`; discovery gives each
+  control inside it to that part. A page declares only its own controls, and the owning part must pass
+  `design complete` itself. A page that restyles an owned control with its own CSS fails as
+  `CONTROL-OVERRIDDEN` and must declare that control. Merged parts change only through sketches after this.
 - **Status:** slice 1 built: `definePart({ controls })`, the `data-et-control` and
   `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
