@@ -587,7 +587,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `:hover` in drawn frames, so only `data-et-force` draws an interaction. Add a spec with a
   full-width control that bites.
 
-### 4.58 Controls change state without a transition - open
+### 4.58 Controls change state without a transition - done
 
 - **Pain (Tom, 2026-10-30):** "einfache transitions fehlen. zb beim disclosure". The hover and
   active fill of `components/disclosure` and `components/tree-row` switch in one frame.
@@ -614,6 +614,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
     tokens, never a literal duration or easing, and an appearing element (the disclosure body)
     uses `@starting-style`, as `motion.md` prescribes. The later motion system then recognizes
     these transitions and its timeline names them by token.
+- **Done (2026-10-30):** `foundations/motion` (`--duration-state`, `--duration-appear`,
+  `--ease-standard`, `--transition-state`), loaded in `apps/ethlete-studio/src/styles.css`.
+  `design complete` fails `CONTROL-TRANSITION-MISSING` (`87033303b`); `design check` fails
+  `HARD-CODED-MOTION` (`bb9754494`). Shots now show the end of finite transitions (`3737b12a3`),
+  so a `@starting-style` body is drawn fully visible. The disclosure and tree-row fade with the tokens.
 
 ### 4.59 Icons are inline SVG in each part, not a catalogue - open
 
