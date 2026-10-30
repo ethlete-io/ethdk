@@ -25,6 +25,7 @@ export * from './grid-2x2-icon';
 export * from './heading-1-icon';
 export * from './heading-2-icon';
 export * from './heading-3-icon';
+export * from './icon-definition';
 export * from './icon-errors';
 export * from './icon-provider';
 export * from './icon.directive';

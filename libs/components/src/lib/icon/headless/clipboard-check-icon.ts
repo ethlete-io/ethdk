@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const CLIPBOARD_CHECK_ICON: IconDefinition = {
   name: 'et-clipboard-check',

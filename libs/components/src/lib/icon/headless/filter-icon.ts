@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 /** Funnel glyph for a column's filter menu trigger. */
 export const FILTER_ICON: IconDefinition = {

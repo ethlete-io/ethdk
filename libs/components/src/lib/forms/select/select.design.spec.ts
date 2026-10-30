@@ -3,9 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import { formField } from '../../../../design/form-field';
-import { CHECK_ICON_SVG, CHEVRON_ICON_SVG, select, TIMES_ICON_SVG, SelectMockOptions } from '../../../../design/select';
+import { select, SelectMockOptions } from '../../../../design/select';
 import '../../../test-helpers';
-import { CHECK_ICON, CHEVRON_ICON, TIMES_ICON } from '../../icon';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { mockShapeOf, shapeOf } from '../../testing/design-mock-shape';
 import { FORM_FIELD_IMPORTS } from '../form-field/form-field.imports';
@@ -70,13 +69,6 @@ const render = async (testCase: Case) => {
   return fixture.nativeElement.querySelector('et-form-field') as HTMLElement;
 };
 
-const flatten = (svg: string) =>
-  svg
-    .replace(/\s+/g, ' ')
-    .replace(/>\s+</g, '><')
-    .replace(/\s*\/>/g, '/>')
-    .trim();
-
 describe('select design mock', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
@@ -100,11 +92,5 @@ describe('select design mock', () => {
 
       expect(mockShapeOf(drawn, 'et-select-panel')).toEqual(shapeOf(panel));
     }
-  });
-
-  it('draws the icons the component registers', () => {
-    expect(CHECK_ICON_SVG).toBe(flatten(CHECK_ICON.data));
-    expect(CHEVRON_ICON_SVG).toBe(flatten(CHEVRON_ICON.data));
-    expect(TIMES_ICON_SVG).toBe(flatten(TIMES_ICON.data));
   });
 });

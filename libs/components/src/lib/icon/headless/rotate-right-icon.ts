@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const ROTATE_RIGHT_ICON: IconDefinition = {
   name: 'et-rotate-right',

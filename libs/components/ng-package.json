@@ -24,6 +24,11 @@
       "glob": "**/*.css",
       "input": "src/lib",
       "output": "./src/lib"
+    },
+    {
+      "glob": "{icon-definition,*-icon,*-icons}.ts",
+      "input": "src/lib/icon/headless",
+      "output": "./src/lib/icon/headless"
     }
   ],
   "lib": {

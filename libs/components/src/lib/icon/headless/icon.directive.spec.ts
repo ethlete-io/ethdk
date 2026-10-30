@@ -3,7 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import * as iconExports from './index';
 import { ICON_ERROR_CODES } from './icon-errors';
-import { ET_BUILT_IN_ICON_NAMES, IconDefinition, provideIconOverrides, provideIcons } from './icon-provider';
+import type { IconDefinition } from './icon-definition';
+import { ET_BUILT_IN_ICON_NAMES, provideIconOverrides, provideIcons } from './icon-provider';
 import { IconDirective } from './icon.directive';
 
 const VALID_ICON = {

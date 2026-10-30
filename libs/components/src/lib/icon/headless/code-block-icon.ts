@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 // Custom icon: the inline-code chevrons inside a block, so it reads as a fenced block next to
 // `et-code` (the inline mark) in the same toolbar.

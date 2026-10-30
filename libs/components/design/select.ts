@@ -2,13 +2,11 @@ import controlSuffix from '../src/lib/forms/form-field/form-field-control-suffix
 import selectBase from '../src/lib/forms/select/select.component.css?inline';
 import selectOption from '../src/lib/forms/select/select-option-styles.component.css?inline';
 import selectPanel from '../src/lib/forms/select/select-panel.component.css?inline';
+import { CHECK_ICON } from '../src/lib/icon/headless/check-icon';
+import { CHEVRON_ICON } from '../src/lib/icon/headless/chevron-icon';
+import { TIMES_ICON } from '../src/lib/icon/headless/times-icon';
 import { FormFieldControlMock, formFieldStyles, FormFieldMockState } from './form-field';
-
-export const CHECK_ICON_SVG = `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>`;
-
-export const CHEVRON_ICON_SVG = `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M244.7 116.7c6.2-6.2 16.4-6.2 22.6 0l192 192c6.2 6.2 6.2 16.4 0 22.6s-16.4 6.2-22.6 0L256 150.6 75.3 331.3c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l192-192z"/></svg>`;
-
-export const TIMES_ICON_SVG = `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M324.5 411.1c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6L214.6 256 347.1 123.5c6.2-6.2 6.2-16.4 0-22.6s-16.4-6.2-22.6 0L192 233.4 59.6 100.9c-6.2-6.2-16.4-6.2-22.6 0s-6.2 16.4 0 22.6L169.4 256 36.9 388.5c-6.2 6.2-6.2 16.4 0 22.6s16.4 6.2 22.6 0L192 278.6 324.5 411.1z"/></svg>`;
+import { iconMarkup } from './icon';
 
 export type SelectMockOption = { value: string; label: string };
 
@@ -37,9 +35,6 @@ export const selectStyles = /* @__PURE__ */ [
   selectPanel,
 ].join('\n');
 
-const icon = (name: string, svg: string) =>
-  `<i eticon="${name}" aria-hidden="true" class="et-icon et-icon--${name}">${svg}</i>`;
-
 /**
  * Draws `<et-select>` as a control for `formField()`. Pass `open: true` to `formField()` to draw
  * the panel below the field, where the overlay would open.
@@ -60,7 +55,7 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
       isActive && 'data-active="true" data-active-source="keyboard"',
     ].filter(Boolean);
 
-    return `<et-select-option ${attributes.join(' ')}><span class="et-select-option-label">${option.label}</span><span class="et-select-option-check">${icon('et-check', CHECK_ICON_SVG)}</span></et-select-option>`;
+    return `<et-select-option ${attributes.join(' ')}><span class="et-select-option-label">${option.label}</span><span class="et-select-option-check">${iconMarkup(CHECK_ICON)}</span></et-select-option>`;
   };
 
   const optionsHtml = (state: FormFieldMockState) => options.options.map(optionHtml(state)).join('');
@@ -99,10 +94,10 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
     suffix: (state) => {
       const clear =
         (options.clearable ?? true) && selected && state.focused && !state.disabled && !state.readonly
-          ? `<button aria-label="${options.clearLabel ?? 'Clear'}" class="et-input-clear" tabindex="-1" type="button">${icon('et-times', TIMES_ICON_SVG)}</button>`
+          ? `<button aria-label="${options.clearLabel ?? 'Clear'}" class="et-input-clear" tabindex="-1" type="button">${iconMarkup(TIMES_ICON)}</button>`
           : '';
 
-      return `${clear}<button aria-hidden="true" tabindex="-1" type="button" class="et-input-picker-trigger et-select-arrow"${state.disabled ? ' disabled' : ''}>${icon('et-chevron', CHEVRON_ICON_SVG)}</button>`;
+      return `${clear}<button aria-hidden="true" tabindex="-1" type="button" class="et-input-picker-trigger et-select-arrow"${state.disabled ? ' disabled' : ''}>${iconMarkup(CHEVRON_ICON)}</button>`;
     },
     panel: (state) =>
       `<et-select-panel class="et-select-panel et-color--inherited${options.panelColor ? ` et-color--${options.panelColor}` : ''} et-surface--${options.panelSurface ?? 'inherited'}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div role="listbox" class="et-select-listbox" id="et-select-listbox-${state.id}"${state.labelId ? ` aria-labelledby="${state.labelId}"` : ''}>${optionsHtml(state)}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`,

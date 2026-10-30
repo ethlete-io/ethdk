@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 /** Arrows pointing apart along the inline axis - a "fit to width" action (the table's autosize). */
 export const ARROWS_LEFT_RIGHT_ICON: IconDefinition = {

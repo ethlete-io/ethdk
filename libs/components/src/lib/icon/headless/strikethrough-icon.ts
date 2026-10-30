@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 // Custom icon.
 export const STRIKETHROUGH_ICON: IconDefinition = {

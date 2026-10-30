@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const FILE_ICON: IconDefinition = {
   name: 'et-file',

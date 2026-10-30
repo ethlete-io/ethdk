@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const FLOPPY_DISK_ICON: IconDefinition = {
   name: 'et-floppy-disk',

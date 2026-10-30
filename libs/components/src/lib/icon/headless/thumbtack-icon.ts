@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 /** A pushpin - what the table's column menu pins a column with. */
 export const THUMBTACK_ICON: IconDefinition = {

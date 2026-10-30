@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const EYEDROPPER_ICON: IconDefinition = {
   name: 'et-eyedropper',

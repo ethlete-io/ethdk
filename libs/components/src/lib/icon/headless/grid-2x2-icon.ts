@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const GRID_2X2_ICON: IconDefinition = {
   name: 'et-grid-2x2',

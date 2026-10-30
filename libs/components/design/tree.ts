@@ -1,6 +1,7 @@
 import iconStyles from '../src/lib/icon/headless/icon-styles.component.css?inline';
 import treeBase from '../src/lib/tree/tree.component.css?inline';
-import { CHEVRON_ICON_SVG } from './select';
+import { CHEVRON_ICON } from '../src/lib/icon/headless/chevron-icon';
+import { iconMarkup } from './icon';
 
 export type TreeMockItem = {
   label: string;
@@ -53,9 +54,7 @@ const visibleRows = (
 
 const marker = (isBranch: boolean) =>
   `<et-tree-marker aria-hidden="true" class="et-tree-node-marker">${
-    isBranch
-      ? `<i etIcon="et-chevron" aria-hidden="true" class="et-tree-node-chevron et-icon et-icon--et-chevron">${CHEVRON_ICON_SVG}</i>`
-      : ''
+    isBranch ? iconMarkup(CHEVRON_ICON, 'et-tree-node-chevron') : ''
   }</et-tree-marker>`;
 
 /** Draws `<et-tree>` with the rows its `visibleRows()` would render for `items`. */

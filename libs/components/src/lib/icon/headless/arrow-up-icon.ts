@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 /**
  * Upward arrow. Rotate it 180° for the downward one - see the table's sort indicator.

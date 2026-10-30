@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 // Two filled quotation marks - the block-quote tool's mark, drawn rather than typeset so it doesn't
 // depend on the font's glyph.

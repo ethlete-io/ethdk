@@ -1,4 +1,4 @@
-import { IconDefinition } from './icon-provider';
+import { IconDefinition } from './icon-definition';
 
 export const PLUS_ICON: IconDefinition = {
   name: 'et-plus',
