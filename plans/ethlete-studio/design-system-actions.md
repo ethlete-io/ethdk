@@ -1033,13 +1033,14 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   0.150 s; after an edit to `components/button/button.ts`: 2.56, 0.125, 0.118 s. Not verified: on :4221, or in
   the Studio app.
 
-### 4.77 Each server shot opens a new browser context and loads all modules - open
+### 4.77 Each server shot opens a new browser context and loads all modules - in progress
 
 - **Measured:** one warm shot 70-190 ms (cold up to 944 ms), 4 at once (`thumb.ts:84`); 13 library shots cost
   about 870 ms CPU.
 - **Cause:** `shot.ts:213-222` makes a `newContext`, a `newPage` and opens `frame.html` for every draw.
 - **Fix option (not measured):** one warm page per worker and viewport that switches the part in place. Also makes
   4.76 cheaper. Effort M-L.
+- **In progress (2026-10-30):** a subagent builds the warm page per worker and viewport; measure before and after.
 
 ### 4.78 A file change reloads several lists at once - open
 
