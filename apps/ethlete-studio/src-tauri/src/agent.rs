@@ -178,6 +178,28 @@ pub fn detail(input: Option<&Value>) -> String {
     clip(&input.to_string())
 }
 
+/// The summary is clipped from the start of stderr, so the rest is never read.
+const COMPLAINTS_CAP: usize = 4096;
+
+fn note_complaint(pen: &mut String, line: &str) {
+    if pen.len() >= COMPLAINTS_CAP {
+        return;
+    }
+
+    pen.push_str(line);
+    pen.push('\n');
+
+    if pen.len() > COMPLAINTS_CAP {
+        let mut end = COMPLAINTS_CAP;
+
+        while !pen.is_char_boundary(end) {
+            end -= 1;
+        }
+
+        pen.truncate(end);
+    }
+}
+
 pub fn clip(text: &str) -> String {
     let text = text.trim();
 
@@ -295,8 +317,7 @@ async fn start(
                 return;
             };
 
-            pen.push_str(&line);
-            pen.push('\n');
+            note_complaint(&mut pen, &line);
         }
     });
 
@@ -474,6 +495,18 @@ mod tests {
         assert!(
             matches!(seen.last(), Some(AgentEvent::Finished { ok: false, summary }) if summary == "the CLI complained")
         );
+    }
+
+    #[test]
+    fn the_complaints_keep_only_their_start() {
+        let mut pen = String::new();
+
+        for line in 0..10_000 {
+            note_complaint(&mut pen, &format!("{line} ä complaint"));
+        }
+
+        assert!(pen.len() <= COMPLAINTS_CAP);
+        assert!(pen.starts_with("0 ä complaint\n1 ä complaint\n"));
     }
 
     #[tokio::test]

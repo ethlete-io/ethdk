@@ -105,13 +105,25 @@ fn port_of_checkout(checkout: &str) -> StudioResult<u16> {
 /// stopped and Studio starts a second one on a port already in use.
 const LOOPBACK: [IpAddr; 2] = [IpAddr::V6(Ipv6Addr::LOCALHOST), IpAddr::V4(Ipv4Addr::LOCALHOST)];
 
-fn listening(port: u16) -> bool {
-    LOOPBACK
-        .iter()
-        .any(|host| TcpStream::connect_timeout(&SocketAddr::new(*host, port), POLL).is_ok())
+async fn listening(port: u16) -> bool {
+    for host in LOOPBACK {
+        let probe = tokio::net::TcpStream::connect(SocketAddr::new(host, port));
+
+        if matches!(tokio::time::timeout(POLL, probe).await, Ok(Ok(_))) {
+            return true;
+        }
+    }
+
+    false
 }
 
-fn state(servers: &DesignServers, checkout: &str, port: u16, known_log: Option<u64>) -> StudioResult<ServerState> {
+async fn state(
+    servers: &DesignServers,
+    checkout: &str,
+    port: u16,
+    known_log: Option<u64>,
+) -> StudioResult<ServerState> {
+    let listening = listening(port).await;
     let mut table = servers.table.lock().map_err(|_| StudioError::Poisoned)?;
     let mut lines = Vec::new();
     let mut log_revision = 0;
@@ -131,8 +143,6 @@ fn state(servers: &DesignServers, checkout: &str, port: u16, known_log: Option<u
         managed = matches!(server.child.try_wait(), Ok(None));
         exited = !managed;
     }
-
-    let listening = listening(port);
 
     Ok(ServerState {
         port,
@@ -240,7 +250,7 @@ where
     J: FnOnce() -> F,
     F: Future<Output = bool>,
 {
-    let mut current = state(servers, checkout, port, known_log)?;
+    let mut current = state(servers, checkout, port, known_log).await?;
 
     if !current.listening {
         forget_verdict(servers, checkout, port)?;
@@ -401,11 +411,11 @@ async fn stop_port(port: u16) {
 
         let deadline = Instant::now() + STOP_GRACE;
 
-        while Instant::now() < deadline && listening(port) {
+        while Instant::now() < deadline && listening(port).await {
             tokio::time::sleep(POLL).await;
         }
 
-        if !listening(port) {
+        if !listening(port).await {
             return;
         }
     }
@@ -529,11 +539,11 @@ async fn await_listening(servers: &DesignServers, checkout: &str, port: u16) {
     let deadline = Instant::now() + START_TIMEOUT;
 
     while Instant::now() < deadline {
-        if listening(port) {
+        if listening(port).await {
             return;
         }
 
-        if state(servers, checkout, port, None).is_ok_and(|read| read.exited) {
+        if state(servers, checkout, port, None).await.is_ok_and(|read| read.exited) {
             return;
         }
 
@@ -607,7 +617,7 @@ pub async fn design_server_start(
     checkout: String,
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
-    let current = state(servers.inner(), &checkout, port, None)?;
+    let current = state(servers.inner(), &checkout, port, None).await?;
 
     if current.listening || current.managed {
         return Ok(current);
@@ -617,7 +627,7 @@ pub async fn design_server_start(
     forget_verdict(servers.inner(), &checkout, port)?;
     await_listening(servers.inner(), &checkout, port).await;
 
-    state(servers.inner(), &checkout, port, None)
+    state(servers.inner(), &checkout, port, None).await
 }
 
 /// Stops the server this Studio started. A server somebody else started stays up.
@@ -637,7 +647,7 @@ pub async fn design_server_stop(
         end(&mut server.child).await;
     }
 
-    state(servers.inner(), &checkout, port, None)
+    state(servers.inner(), &checkout, port, None).await
 }
 
 /// Stops whatever listens on the checkout's port, then starts the server Studio owns.
@@ -657,11 +667,11 @@ pub async fn design_server_restart(
         end(&mut server.child).await;
     }
 
-    if listening(port) {
+    if listening(port).await {
         stop_port(port).await;
     }
 
-    if listening(port) {
+    if listening(port).await {
         return Err(StudioError::Rejected(format!(
             "Port {port} is still in use after stopping its listener."
         )));
@@ -724,10 +734,10 @@ mod tests {
         std::fs::remove_dir_all(&root).expect("cleaned up");
     }
 
-    #[test]
-    fn a_checkout_nobody_started_reads_as_not_managed() {
+    #[tokio::test]
+    async fn a_checkout_nobody_started_reads_as_not_managed() {
         let servers = DesignServers::default();
-        let read = state(&servers, "/nowhere", 65000, None).expect("a state");
+        let read = state(&servers, "/nowhere", 65000, None).await.expect("a state");
 
         assert!(!read.managed);
         assert!(!read.listening);
@@ -735,13 +745,13 @@ mod tests {
         assert_eq!(read.log, Some(Vec::new()));
     }
 
-    #[test]
-    fn a_port_that_answers_on_the_ipv6_loopback_reads_as_listening() {
+    #[tokio::test]
+    async fn a_port_that_answers_on_the_ipv6_loopback_reads_as_listening() {
         let Ok(listener) = std::net::TcpListener::bind("[::1]:0") else {
             return;
         };
 
-        assert!(listening(listener.local_addr().expect("an address").port()));
+        assert!(listening(listener.local_addr().expect("an address").port()).await);
     }
 
     /// A checkout that installs a design tool which answers on one port, which is all Studio asks.
@@ -761,7 +771,7 @@ mod tests {
 
     async fn await_stopped(port: u16) {
         for _ in 0..20 {
-            if !listening(port) {
+            if !listening(port).await {
                 return;
             }
 
@@ -789,7 +799,7 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        let mut read = state(&servers, &checkout, PORT, None).expect("a state");
+        let mut read = state(&servers, &checkout, PORT, None).await.expect("a state");
 
         for _ in 0..20 {
             if read.log.as_ref().is_some_and(|log| !log.is_empty()) {
@@ -797,7 +807,7 @@ mod tests {
             }
 
             tokio::time::sleep(POLL).await;
-            read = state(&servers, &checkout, PORT, None).expect("a state");
+            read = state(&servers, &checkout, PORT, None).await.expect("a state");
         }
 
         assert!(read.exited);
@@ -817,16 +827,16 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT), "the design tool never answered");
-        assert!(state(&servers, &checkout, PORT, None).expect("a state").managed);
+        assert!(listening(PORT).await, "the design tool never answered");
+        assert!(state(&servers, &checkout, PORT, None).await.expect("a state").managed);
 
         let taken = servers.table.lock().expect("the table").remove(&checkout);
 
         end(&mut taken.expect("the server").child).await;
         await_stopped(PORT).await;
 
-        assert!(!listening(PORT), "the server the design tool started is still up");
-        assert!(!state(&servers, &checkout, PORT, None).expect("a state").managed);
+        assert!(!listening(PORT).await, "the server the design tool started is still up");
+        assert!(!state(&servers, &checkout, PORT, None).await.expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
     }
@@ -841,13 +851,13 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT), "the design tool never answered");
+        assert!(listening(PORT).await, "the design tool never answered");
 
         stop_every(&servers);
         await_stopped(PORT).await;
 
-        assert!(!listening(PORT), "a server outlived the app");
-        assert!(!state(&servers, &checkout, PORT, None).expect("a state").managed);
+        assert!(!listening(PORT).await, "a server outlived the app");
+        assert!(!state(&servers, &checkout, PORT, None).await.expect("a state").managed);
 
         let _ = std::fs::remove_dir_all(&checkout);
     }
@@ -862,7 +872,7 @@ mod tests {
         spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
-        assert!(listening(PORT), "the design tool never answered");
+        assert!(listening(PORT).await, "the design tool never answered");
 
         servers
             .table
@@ -874,7 +884,7 @@ mod tests {
             .take();
         await_stopped(PORT).await;
 
-        assert!(!listening(PORT), "a server outlived its stdin");
+        assert!(!listening(PORT).await, "a server outlived its stdin");
 
         stop_every(&servers);
         let _ = std::fs::remove_dir_all(&checkout);
@@ -945,14 +955,16 @@ mod tests {
 
         await_listening(&DesignServers::default(), &checkout, PORT).await;
 
-        let read = state(&DesignServers::default(), &checkout, PORT, None).expect("a state");
+        let read = state(&DesignServers::default(), &checkout, PORT, None)
+            .await
+            .expect("a state");
 
         assert!(read.listening && read.foreign && !read.managed);
 
         stop_port(PORT).await;
         await_stopped(PORT).await;
 
-        assert!(!listening(PORT), "the foreign server is still up");
+        assert!(!listening(PORT).await, "the foreign server is still up");
 
         let _ = foreign.wait().await;
         let _ = std::fs::remove_dir_all(&checkout);
@@ -986,11 +998,13 @@ mod tests {
 
         spawn(&servers, &checkout, vec!["first".to_owned()]).expect("the design tool runs");
 
-        let first = state(&servers, &checkout, 45878, None).expect("a state");
+        let first = state(&servers, &checkout, 45878, None).await.expect("a state");
 
         assert_eq!(first.log, Some(vec!["first".to_owned()]));
 
-        let again = state(&servers, &checkout, 45878, Some(first.log_revision)).expect("a state");
+        let again = state(&servers, &checkout, 45878, Some(first.log_revision))
+            .await
+            .expect("a state");
 
         assert_eq!(again.log, None);
         assert_eq!(again.log_revision, first.log_revision);
@@ -1006,7 +1020,9 @@ mod tests {
             .expect("the log")
             .push("second".to_owned());
 
-        let changed = state(&servers, &checkout, 45878, Some(first.log_revision)).expect("a state");
+        let changed = state(&servers, &checkout, 45878, Some(first.log_revision))
+            .await
+            .expect("a state");
 
         assert_eq!(changed.log, Some(vec!["first".to_owned(), "second".to_owned()]));
         assert_ne!(changed.log_revision, first.log_revision);
