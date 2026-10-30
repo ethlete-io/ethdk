@@ -105,8 +105,12 @@ Decisions (Tom, 2026-10-30):
   As built (2026-10-30): a `label[for]`, a wrapping `<label>` or an `aria-labelledby` target of a `:disabled` or
   `aria-disabled="true"` control is exempt. Verified: a spec that fails without it; the finding is gone from `design check`.
 - **`pages/inbox` resolved rows:** `.ib-when` and `.ib-where` use `--text-muted` with no reduced opacity; the
-  resolved row looks paler through colour, not transparency.
-- **`components/comment-pin` initials:** use `--on-accent`.
+  resolved row looks paler through colour, not transparency. As built, both already were `--text-muted`, so the
+  sketch also sets `.ib-author` and `.ib-text` of a resolved row to `--text-muted`. Tom accepted that: open and
+  resolved rows must not look the same.
+- **`components/comment-pin` initials:** use `--on-accent`. As built, they already were; the cause was the
+  `selected:active` background `color-mix(accent, surface 25%)`. Tom accepted the fix: background
+  `var(--accent-active)`.
 
 Token pairs: none declared yet. The proposed list below gives, with the current `colors.css`: text, muted and
 subtle 7.71 / 6.54 / 5.69 on surface / raised / overlay; accent-, warning- and danger-text 6.98 or more;
