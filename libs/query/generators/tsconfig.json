@@ -8,5 +8,5 @@
     "ignoreDeprecations": "6.0"
   },
   "include": ["**/*.ts"],
-  "exclude": ["**/*.spec.ts"]
+  "exclude": ["**/*.spec.ts", "dist"]
 }

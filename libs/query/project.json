@@ -50,7 +50,8 @@
     "build-generators": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["rm -rf libs/query/generators/dist", "tsc -p libs/query/generators/tsconfig.json"]
+        "commands": ["rm -rf libs/query/generators/dist", "tsc -p libs/query/generators/tsconfig.json"],
+        "parallel": false
       }
     },
     "generate-version": {

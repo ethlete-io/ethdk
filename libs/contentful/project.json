@@ -31,7 +31,8 @@
     "build-generators": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["rm -rf libs/contentful/generators/dist", "tsc -p libs/contentful/generators/tsconfig.json"]
+        "commands": ["rm -rf libs/contentful/generators/dist", "tsc -p libs/contentful/generators/tsconfig.json"],
+        "parallel": false
       }
     },
     "lint": {
