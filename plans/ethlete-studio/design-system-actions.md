@@ -899,6 +899,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Not verified: a real multi-target sketch in the CLI or Studio. Open: diff marks and the "used in" band cover
   the first target only; Studio's `MergePreview` type lacks `shared`.
 
+### 4.73 A multi-target sketch shows diff marks and "used in" for its first target only - open
+
+- **Pain (2026-10-30, found in 4.68):** a sketch with several targets draws one row group per target, but the diff
+  marks and the "used in" band cover only the first target. A change in a later target has no mark, and the parts
+  that embed it do not show. Studio's `MergePreview` type also lacks `shared`, so Studio cannot name the parts a
+  `shared/` edit reaches.
+- **Fix option:** compute diff marks and the "used in" band per target; add `shared` to Studio's `MergePreview`
+  type and show those parts.
+
 ### 4.69 A CLI rebuild breaks sketch commands that run at the same time - done
 
 - **Pain (2026-10-30):** two agents ran at once: one rebuilt `dist/libs/cli`, one ran `sketch ready`. The
