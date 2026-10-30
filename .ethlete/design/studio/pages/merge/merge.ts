@@ -36,28 +36,35 @@ const crop: Row = {
   instances: 1,
   width: 266,
   height: 64,
-  body: html`<div class="mg-c-crop">${instance.body}</div>`,
+  body: html`<div class="flex items-center justify-center w-full h-full">${instance.body}</div>`,
 };
 
 const listRow = (row: Row) =>
-  html`<li class="mg-c-item" ${row === selected ? ' data-selected' : ''}>${rowCaption(row)}</li>`;
+  html`<li
+    class="mg-c-item px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-accent-subtle"
+    ${row === selected ? ' data-selected' : ''}
+  >
+    ${rowCaption(row, true)}
+  </li>`;
 
 const panelOf = (unchanged: boolean) =>
-  html`<div class="mg-c-panel">
-    <div class="mg-d-back">${back.body}</div>
-    <div class="mg-c-target">
-      <span class="mg-c-target-part">${TARGET.part}</span>
-      <span class="mg-c-target-variant">${picked(TARGET.variant)}<span>${TARGET.note}</span></span>
+  html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
+    <div class="mg-d-back flex">${back.body}</div>
+    <div class="flex flex-col gap-space-2 pb-space-3 border-b border-surface-border">
+      <span class="mg-c-target-part font-code">${TARGET.part}</span>
+      <span class="flex items-center gap-space-2 text-text-muted text-ui-xs"
+        >${picked(TARGET.variant)}<span>${TARGET.note}</span></span
+      >
     </div>
-    <span class="mg-c-label">Changed</span>
-    <ul class="mg-c-list">
+    <span class="text-text-muted text-ui-xs">Changed</span>
+    <ul class="flex flex-col gap-0.5 m-0 p-0 list-none">
       ${CHANGED.map(listRow).join('')}
     </ul>
     <div data-et-skip="WRAP">
       ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
     </div>
-    <span class="mg-c-gap"></span>
-    <div class="mg-c-merge mg-d-merge">${merge.body}</div>
+    <span class="flex-1"></span>
+    <div class="mg-d-merge flex flex-col gap-space-3 pt-space-3 border-t border-surface-border">${merge.body}</div>
   </div>`;
 
 export default definePart<Props>({
@@ -74,24 +81,26 @@ export default definePart<Props>({
   render: async ({ unchanged }) => {
     const row = selected ?? CHANGED[0];
     const content = row
-      ? html`<div class="mg-c-page">
-          <header class="mg-c-head">
-            <span class="mg-c-heading">Where ${TARGET.name} is used</span>
+      ? html`<div class="mg-c-page flex flex-col gap-space-5 h-full box-border overflow-hidden">
+          <header class="flex flex-col gap-space-1">
+            <span class="text-ui-lg font-ui-strong">Where ${TARGET.name} is used</span>
             <span>${rowCaption(row)}</span>
           </header>
-          <div class="mg-c-pair">
-            <figure class="mg-c-frame">
-              <figcaption>Now</figcaption>
+          <div class="flex gap-space-4">
+            <figure class="flex flex-col gap-space-2 m-0">
+              <figcaption class="text-text-muted text-ui-xs">Now</figcaption>
               ${shot(row, 'now', SCALE)}
             </figure>
-            <figure class="mg-c-frame">
-              <figcaption>After merging <code>${TARGET.variant}</code></figcaption>
+            <figure class="flex flex-col gap-space-2 m-0">
+              <figcaption class="text-text-muted text-ui-xs">
+                After merging <code class="text-accent-text font-code">${TARGET.variant}</code>
+              </figcaption>
               ${shot(row, 'after', SCALE)}
             </figure>
           </div>
-          <div class="mg-c-instances">
-            <span class="mg-c-label">Instance 1 of ${row.instances} · 200 %</span>
-            <div class="mg-c-pair">${shot(crop, 'now', CROP_SCALE)}${shot(crop, 'after', CROP_SCALE)}</div>
+          <div class="flex flex-col gap-space-2">
+            <span class="text-text-muted text-ui-xs">Instance 1 of ${row.instances} · 200 %</span>
+            <div class="flex gap-space-4">${shot(crop, 'now', CROP_SCALE)}${shot(crop, 'after', CROP_SCALE)}</div>
           </div>
         </div>`
       : '';

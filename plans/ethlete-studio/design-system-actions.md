@@ -547,7 +547,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   not reach the sketch stylesheet.
 - **Progress (2026-10-30):** `elements/canvas-frames` moved; `ready` auto-merged it. Kept in CSS: ring shadows,
   off-scale text sizes, calc grid columns, `nth-child` padding, `.st-sgrid-cell` (`inbox.ts` rewrites its exact
-  markup with a regex) and `.st-canvas-zoom*` (`pages/sketches` selects them). Next: `pages/merge`, then
+  markup with a regex) and `.st-canvas-zoom*` (`pages/sketches` selects them). `pages/merge` moved the same way. Next:
   `components/disclosure`, `foundations/*` (except colors); `inbox`, `comment-pin`, `pages/sketches` after their
   open sketches merge.
 

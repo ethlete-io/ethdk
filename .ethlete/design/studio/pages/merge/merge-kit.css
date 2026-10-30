@@ -1,12 +1,7 @@
 @layer components {
   .mg-shot {
-    position: relative;
-    flex: none;
     width: calc(var(--mg-w) * var(--mg-scale));
     height: calc(var(--mg-h) * var(--mg-scale));
-    overflow: hidden;
-    border-radius: var(--radius-control-md);
-    background: var(--surface);
     box-shadow: 0 0 0 1px var(--surface-border);
   }
 
@@ -14,8 +9,6 @@
     width: var(--mg-w);
     height: var(--mg-h);
     transform: scale(var(--mg-scale));
-    transform-origin: 0 0;
-    pointer-events: none;
   }
 
   .mg-shot .et-button {
@@ -27,27 +20,7 @@
     border-radius: var(--radius-pill);
   }
 
-  .mg-row-caption {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    min-width: 0;
-    font-size: var(--text-sm);
-    line-height: var(--text-sm-line);
-    white-space: nowrap;
-  }
-
-  .mg-row-part {
-    color: var(--text);
-    font-family: var(--font-code);
-  }
-
-  .mg-row-state {
-    color: var(--text-muted);
-  }
-
   .mg-row-count {
-    color: var(--text-muted);
     font-size: var(--text-xs);
   }
 
@@ -57,28 +30,7 @@
   }
 
   .mg-picked {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    height: var(--control-sm);
-    padding: 0 var(--space-3);
-    box-sizing: border-box;
-    border-radius: var(--radius-control-md);
-    background: var(--accent-subtle);
     box-shadow: inset 0 0 0 1px var(--accent);
-    color: var(--accent-text);
     font-size: var(--text-sm);
-    white-space: nowrap;
-  }
-
-  .mg-picked code {
-    font-family: var(--font-code);
-  }
-
-  .mg-needs-note {
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-line);
-    white-space: nowrap;
   }
 }

@@ -30,22 +30,29 @@ export const buttonTree = await partTree.render({
 
 export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
   html`<div
-    class="mg-shot"
+    class="mg-shot relative flex-none overflow-hidden rounded-control-md bg-surface"
     data-et-skip="CLIPPED"
     data-side="${side}"
     style="--mg-scale: ${scale}; --mg-w: ${row.width}px; --mg-h: ${row.height}px"
   >
-    <div class="mg-shot-page">${row.body}</div>
+    <div class="mg-shot-page pointer-events-none origin-top-left">${row.body}</div>
   </div>`;
 
-export const rowCaption = (row: Row) =>
-  html`<span class="mg-row-caption"
-    ><span class="mg-row-part">${row.part}</span><span class="mg-row-state">${row.state}</span
-    ><span class="mg-row-count">${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span></span
+export const rowCaption = (row: Row, stacked = false) =>
+  html`<span
+    class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap${stacked ? ' flex-wrap gap-y-0' : ''}"
+    ><span class="text-text font-code">${row.part}</span><span class="text-text-muted">${row.state}</span
+    ><span class="mg-row-count text-text-muted${stacked ? ' basis-full' : ''}"
+      >${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span
+    ></span
   >`;
 
-export const picked = (variant: string) => html`<span class="mg-picked">Picked <code>${variant}</code></span>`;
+export const picked = (variant: string) =>
+  html`<span
+    class="mg-picked inline-flex items-center gap-space-1 h-control-sm px-space-3 box-border rounded-control-md bg-accent-subtle text-accent-text whitespace-nowrap"
+    >Picked <code class="font-code">${variant}</code></span
+  >`;
 
 export const unchangedBody = html`<ul class="st-disclosure-body">
-  ${UNCHANGED.states.map((state) => html`<li><span class="mg-row-part">${UNCHANGED.part}</span><span class="mg-row-state">${state}</span></li>`).join('')}
+  ${UNCHANGED.states.map((state) => html`<li><span class="text-text font-code">${UNCHANGED.part}</span><span class="text-text-muted">${state}</span></li>`).join('')}
 </ul>`;
