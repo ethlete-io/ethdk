@@ -913,6 +913,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   merged one, and the shortcut is off when a variant changes a stylesheet the product imports. Defect 2 was defect
   1: `ready` already needs every variant equal. Verified: specs that bite, a scratch `sketch ready` stops with
   "variant a changes accent". Not verified: Studio frames by eye; rejected variants still block an auto-merge.
+- **Decision (Tom, 2026-10-30), step B redo r1 (399b0ae9e):** variant b: `text-subtle` 0.66, `accent-active`
+  0.59, `warning-active` 0.69, `danger-active` 0.61. Only b keeps `text-subtle` apart from `text-muted` (0.72).
+  `danger-active` stays 0.07 below `danger`, not 0.09, so `on-danger` stays the same on every danger fill
+  (4.56:1). The merge OK still has to be typed by Tom in the builder session.
 
 ### 4.66 `sketch ready` gives a different answer on a re-run - done
 
