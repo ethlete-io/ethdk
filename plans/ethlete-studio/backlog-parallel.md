@@ -112,3 +112,6 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
   Stream D.
 - 5.51 / Q42: `--surface-border` (1.2-1.6:1) is marked decorative and exempt from the 3:1 non-text bar (WCAG
   1.4.11: it only separates surfaces). Controls with a visible boundary (inputs, focus) keep their own 3:1 tokens.
+- 5.32 / Q43: the zoom chip becomes its own part (for example `elements/zoom-chip`) with its own states, so it
+  carries `data-et-part` and `design complete` checks it wherever it is drawn. Frame head and frame box stay named
+  exports of `elements/canvas-frames` (layout pieces without states). Redo r1 (b907cf29d) before Tom merges.
