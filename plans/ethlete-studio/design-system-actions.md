@@ -1051,11 +1051,12 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   4.76 cheaper. Effort M-L.
 - **In progress (2026-10-30):** a subagent builds the warm page per worker and viewport; measure before and after.
 
-### 4.78 A file change reloads several lists at once - open
+### 4.78 A file change reloads several lists at once - in progress
 
 - **From the code:** each `tick` reloads products, calls, flows, comments and sketches
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
 - **Fix option:** reload only what the `parts` event names. Effort M.
+- **In progress (2026-10-30):** a subagent builds it while 4.77 runs; 4.81 follows 4.77.
 
 ### 4.79 Four SSE streams to the same host - built
 
