@@ -24,8 +24,8 @@
     }
   },
   "hold": {
-    "until": "per-state viewport fix in the design tool (ethlete-sdk-57); re-check the drawing after it lands",
+    "until": "Q62-ish (grill): error rows show no hover and no focus-visible change; the SDK error border hides both",
     "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:05:41.389Z"
+    "heldAt": "2026-10-30T23:07:36.573Z"
   }
 }

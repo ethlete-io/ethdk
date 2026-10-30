@@ -1,6 +1,6 @@
 {
   "target": "components/select",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T22:32:10.456Z",
   "baseline": {
     "foundations/tokens": "67c964a1f59e8dc3",
@@ -42,10 +42,5 @@
       "authors": ["claude-opus-5-5"],
       "round": "r2"
     }
-  },
-  "hold": {
-    "until": "per-state viewport fix in the design tool (ethlete-sdk-57): the open panel is cut off at the closed trigger's height; re-check the drawing after it lands",
-    "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:00:01.110Z"
   }
 }
