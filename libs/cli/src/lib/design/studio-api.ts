@@ -75,6 +75,7 @@ export const FLOW_NOTE_CHANGE_PATH = '/__design/flow-note-change';
 export const FLOW_NOTE_DELETE_PATH = '/__design/flow-note-delete';
 export const INVENTORY_PATH = '/__design/inventory';
 export const INVENTORY_APPROVE_PATH = '/__design/inventory-approve';
+export const MOTION_PATH = '/__design/motion';
 
 export type Answer = { status: number; body: unknown };
 

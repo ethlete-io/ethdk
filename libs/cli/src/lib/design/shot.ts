@@ -22,7 +22,7 @@ import {
   ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
-import { MotionMode, motionPicturesOf } from './motion-shot';
+import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
 import { createWarmPages } from './warm-pages';
 
 export const SHOT_PATH = '/__design/shot';
@@ -211,6 +211,7 @@ export const createPartShooter = (options: {
   const drawQueue = createDrawQueue(options);
   const warmPages = createWarmPages();
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
+  const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
 
   const draw = (browser: Browser, frame: Frame): Promise<Picture> =>
@@ -490,7 +491,7 @@ export const createPartShooter = (options: {
       partShotOf({ ...options, priority: 'high' }),
     /**
      * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;
-     * `mode` picks `prefers-reduced-motion`.
+     * `mode` picks `prefers-reduced-motion`. Kept until a change redraws the part.
      */
     motionOf: (
       options: PartAddress & { motion: string; at?: readonly number[]; mode: MotionMode; params: URLSearchParams },
@@ -501,11 +502,24 @@ export const createPartShooter = (options: {
 
       const theme = themeOf(options.params);
       const scale = scaleOf(options.params);
+      const key = JSON.stringify([
+        ...frame.key,
+        options.motion,
+        options.at ?? [],
+        options.mode,
+        theme.surface,
+        theme.color,
+        theme.fill,
+        scale,
+      ]);
+      const kept = motions.get(key);
+
+      if (kept) return kept.pictures;
 
       for (const [name, value] of Object.entries(theme)) if (value) frame.search.set(name, value);
       frame.search.set('motion', options.motion);
 
-      return drawQueue.run(
+      const pictures = drawQueue.run(
         (browser) =>
           warmPages.run(
             {
@@ -526,6 +540,11 @@ export const createPartShooter = (options: {
           ),
         'high',
       );
+
+      motions.set(key, { drawn: frame.drawn, pictures });
+      pictures.catch(() => motions.get(key)?.pictures === pictures && motions.delete(key));
+
+      return pictures;
     },
     /** One box per cluster of the pixels `after` changes from `before`, kept per pair of pictures; drawn after every waiting shot. */
     changedBoxesOf: (before: Buffer, after: Buffer) => {
@@ -547,6 +566,9 @@ export const createPartShooter = (options: {
       for (const [key, { drawn }] of cache) {
         if ('part' in drawn && redraws(change, drawn.part)) cache.delete(key);
       }
+      for (const [key, { drawn }] of motions) {
+        if ('part' in drawn && redraws(change, drawn.part)) motions.delete(key);
+      }
     },
     /** Drops the call pictures a changed file under the calls root may draw into. */
     forgetCalls: (file: string) => {
@@ -554,9 +576,13 @@ export const createPartShooter = (options: {
         if ('slug' in drawn && callDrawsFrom({ slug: drawn.slug, file })) cache.delete(key);
       }
     },
-    clear: () => cache.clear(),
+    clear: () => {
+      cache.clear();
+      motions.clear();
+    },
     close: async () => {
       cache.clear();
+      motions.clear();
       boxes.clear();
       await drawQueue.close();
     },

@@ -144,6 +144,11 @@ when the workspace has one product, and every write takes `by`. `shot` returns t
 the Studio screenshots; `motion_shots` returns the sheet image and the JSON of its tracks. Part files are written with the
 agent's own file tools. Register it in `.mcp.json` as `{ "command": "npx", "args": ["et", "design", "mcp"] }`.
 
+The design server answers the same draw for Studio: `GET /__design/motion?product=&part=&motion=` takes `sketch` and
+`variant`, `mode` (`full` by default), `preset` or `width`, `scale`, `surface` and `color`, and answers JSON with `from`,
+`to`, `mode`, `preset`, `width`, `end`, `tracks` and `keyframes: [{ ms, src }]`. Each `src` is the same URL with `frame=<ms>`
+and answers that keyframe as a PNG. The draw is kept until a change redraws the part.
+
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow

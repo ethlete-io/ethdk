@@ -18,6 +18,7 @@ import {
   FLOWS_PATH,
   flowsAnswer,
   INVENTORY_APPROVE_PATH,
+  MOTION_PATH,
   INVENTORY_PATH,
   inventoryAnswer,
   inventoryApproveAnswer,
@@ -82,7 +83,8 @@ import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-ts
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
-import { createDrawQueue, createThumbnailer, send, THUMB_PATH } from './thumb';
+import { createDrawQueue, createThumbnailer, send, THUMB_PATH, ThumbMissingError } from './thumb';
+import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import {
   assetRoot,
   snapshotPackage,
@@ -585,6 +587,31 @@ const designExplore = ({
       vite.middlewares.use(FORCE_PATH, forceMiddleware);
       vite.middlewares.use(THUMB_PATH, thumbs.middleware);
       vite.middlewares.use(SHOT_PATH, shots.middleware);
+      vite.middlewares.use(
+        MOTION_PATH,
+        motionMiddleware({
+          system,
+          motionOf: shots.motionOf,
+          declaredOf: async ({ product, part, sketch }) => {
+            const file = system.partOf({ product, part, sketch })?.file;
+
+            if (!file) {
+              throw new ThumbMissingError(
+                sketch
+                  ? `design-explore: variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product}" has no part "${part}"`
+                  : `design-explore: product "${product}" has no part "${part}"`,
+              );
+            }
+
+            const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
+              default?: { motions?: unknown };
+            };
+            const motions = module.default?.motions;
+
+            return motions && typeof motions === 'object' ? (motions as Record<string, DeclaredMotion>) : {};
+          },
+        }),
+      );
       vite.middlewares.use(
         SYSTEM_PATH,
         answer(async (url) => {
