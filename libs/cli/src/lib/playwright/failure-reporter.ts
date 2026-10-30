@@ -10,6 +10,7 @@ export const FAILURES_FILE_LINE_PREFIX = '[failure-reporter] Writing failures to
 
 const ERROR_LINES = 6;
 const ERROR_CHARS = 700;
+const DETAIL_CHARS = 300;
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
 export type FailureReporterOptions = {
@@ -26,13 +27,22 @@ export type FailureRecord = {
   retry: number;
   seconds: number;
   error: string;
+  /** The first line past the `error` lines that holds a URL or a `+ ` diff line, or `null`. */
+  detail: string | null;
   context: string | null;
 };
+
+const isDetailLine = (line: string) =>
+  line.includes('http') || (line.startsWith('+ ') && !line.startsWith('+ Received'));
 
 const isInside = (file: string, dir: string) => file.startsWith(dir.endsWith(sep) ? dir : `${dir}${sep}`);
 
 export const toFailureRecord = (test: TestCase, result: TestResult): FailureRecord => {
-  const message = (result.error?.message ?? '').replace(ANSI, '');
+  const lines = (result.error?.message ?? '').replace(ANSI, '').split('\n');
+  const detail = lines
+    .slice(ERROR_LINES)
+    .map((line) => line.trim())
+    .find(isDetailLine);
 
   return {
     test: test.titlePath().slice(3).join(' > '),
@@ -41,7 +51,8 @@ export const toFailureRecord = (test: TestCase, result: TestResult): FailureReco
     status: result.status,
     retry: result.retry,
     seconds: Math.round(result.duration / 1000),
-    error: message.split('\n').slice(0, ERROR_LINES).join('\n').slice(0, ERROR_CHARS),
+    error: lines.slice(0, ERROR_LINES).join('\n').slice(0, ERROR_CHARS),
+    detail: detail?.slice(0, DETAIL_CHARS) ?? null,
     context: result.attachments.find((attachment) => attachment.name === 'error-context')?.path ?? null,
   };
 };

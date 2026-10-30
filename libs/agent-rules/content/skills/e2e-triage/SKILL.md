@@ -27,8 +27,8 @@ never fix failures one test at a time from the top of the log.
 The file is `e2e-failures.jsonl` next to `playwright.config.ts`, unless `E2E_FAILURES_FILE` or the
 `outputFile` option of the reporter names another path. You can read it while the run goes on.
 
-Each line has `test`, `location`, `project`, `status`, `retry`, `seconds`, `error` and `context`.
-`error` holds the first lines of the message. `context` is the path of Playwright's
+Each line has `test`, `location`, `project`, `status`, `retry`, `seconds`, `error`, `detail` and `context`.
+`error` holds the first lines of the message. `detail` holds the first later line with a URL, for errors whose first lines do not name it, or `null`. `context` is the path of Playwright's
 `error-context.md`, which holds the page snapshot at the failure.
 
 Do not parse the console log of the run. It mixes the output of parallel workers, and it has no end
@@ -44,6 +44,10 @@ line if the run stops.
 3. Take the largest group. Read one `context` file of it, then the code the error points at. Find
    one cause that explains the whole group.
 4. Fix that cause. Then re-run only the spec files of that group.
+
+A group whose errors are a connection refused (`ERR_CONNECTION_REFUSED`, `ECONNREFUSED`) on a local mock or
+`webServer` port is an infrastructure group, not a test verdict. Check that the server is still up,
+restart it, and re-run those tests before you read them as failures.
 
 Small groups that differ only in a locator often have the same cause. Check them after the large group
 is fixed, because a fix often clears them too.

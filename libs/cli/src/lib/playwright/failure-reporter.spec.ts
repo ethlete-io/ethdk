@@ -13,7 +13,7 @@ const dirs: string[] = [];
 
 afterEach(() => dirs.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
-const makeSuite = (reporterOptions: object = {}) => {
+const makeSuite = (reporterOptions: object = {}, extraTests = '') => {
   const dir = mkdtempSync(join(tmpdir(), 'failure-reporter-'));
   dirs.push(dir);
   mkdirSync(join(dir, 'tests'));
@@ -35,7 +35,7 @@ test.describe('sample', () => {
   test('fails', () => expect(1).toBe(2));
   test.fail('fails as expected', () => expect(1).toBe(2));
   test.skip('is skipped', () => {});
-});`,
+${extraTests}});`,
   );
   return dir;
 };
@@ -72,7 +72,27 @@ describe('FailureReporter', () => {
       status: 'failed',
     });
     expect(records[0]?.error).toContain('toBe');
+    expect(records[0]?.detail).toBeNull();
     expect(records[0]?.error).not.toContain(String.fromCharCode(27));
+  }, 60_000);
+
+  it('keeps the first url past the error lines in detail', () => {
+    const dir = makeSuite(
+      {},
+      `test.describe.configure({ retries: 0 });
+  test('refused', () => {
+    throw new Error(['Console errors', '', 'expect(received)', '', '- Expected  - 1', '+ Received  + 3', '', '+   "GET http://localhost:4310/entries -> net::ERR_CONNECTION_REFUSED",'].join('\\n'));
+  });
+`,
+    );
+
+    runSuite(dir);
+
+    const record = readRecords(join(dir, DEFAULT_FAILURES_FILE_NAME)).find(
+      (entry) => entry.test === 'sample > refused',
+    );
+    expect(record?.error).not.toContain('4310');
+    expect(record?.detail).toContain('http://localhost:4310/entries');
   }, 60_000);
 
   it('takes the env path over the option, and empties the file at the start of a run', () => {

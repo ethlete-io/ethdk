@@ -147,7 +147,7 @@ const parse = (
 
 const FAILURES_FILE_LINE = /^\[failure-reporter\] Writing failures to (.+)$/m;
 
-type FailureRecord = { test: string; location: string; error?: string };
+type FailureRecord = { test: string; location: string; error?: string; detail?: string | null };
 
 const recordsOf = (text: string): FailureRecord[] =>
   text.split('\n').flatMap((line) => {
@@ -172,7 +172,8 @@ const failuresOf = (records: FailureRecord[]) => {
   for (const record of records) latest.set(`${record.location} › ${record.test}`, record);
   return [...latest].map(([key, record]) => {
     const error = firstErrorLine(record.error);
-    return error ? `${key} — ${error}` : key;
+    const line = error ? `${key} — ${error}` : key;
+    return record.detail ? `${line} (${record.detail})` : line;
   });
 };
 

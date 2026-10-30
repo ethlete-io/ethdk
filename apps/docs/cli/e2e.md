@@ -50,17 +50,19 @@ A test that fails, times out or is interrupted gets one line per attempt, so a t
   "retry": 0,
   "seconds": 7,
   "error": "Error: expect(locator).toBeVisible() failed\n...",
+  "detail": null,
   "context": "/abs/path/test-results/checkout-pay-chromium/error-context.md"
 }
 ```
 
-| Field      | Value                                                                                |
-| ---------- | ------------------------------------------------------------------------------------ |
-| `test`     | The describe blocks and the test title, joined with `>`. Without project and file.   |
-| `location` | `file:line`, relative to the directory Playwright runs in.                           |
-| `project`  | The Playwright project name, or `null` without one.                                  |
-| `status`   | `failed`, `timedOut` or `interrupted`.                                               |
-| `retry`    | The attempt, `0` for the first one.                                                  |
-| `seconds`  | The duration of the attempt, rounded.                                                |
-| `error`    | The first 6 lines of the error message, without color codes, at most 700 characters. |
-| `context`  | The path of Playwright's `error-context.md` attachment, or `null`.                   |
+| Field      | Value                                                                                                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `test`     | The describe blocks and the test title, joined with `>`. Without project and file.                                                                                                                                       |
+| `location` | `file:line`, relative to the directory Playwright runs in.                                                                                                                                                               |
+| `project`  | The Playwright project name, or `null` without one.                                                                                                                                                                      |
+| `status`   | `failed`, `timedOut` or `interrupted`.                                                                                                                                                                                   |
+| `retry`    | The attempt, `0` for the first one.                                                                                                                                                                                      |
+| `seconds`  | The duration of the attempt, rounded.                                                                                                                                                                                    |
+| `error`    | The first 6 lines of the error message, without color codes, at most 700 characters.                                                                                                                                     |
+| `detail`   | The first line after those 6 that holds `http` or starts with `+ ` (not the `+ Received` count line), trimmed, at most 300 characters, or `null`. It keeps the URL of a failed request that the first lines do not name. |
+| `context`  | The path of Playwright's `error-context.md` attachment, or `null`.                                                                                                                                                       |
