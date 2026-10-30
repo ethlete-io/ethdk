@@ -1,5 +1,5 @@
 {
-  "components/comment-pin": "1b9a9aa22f9e991f",
+  "components/comment-pin": "53f6fa7698b80ee9",
   "components/disclosure": "6c6aca8e10a9eb75",
   "components/tree-row": "7318f16bfda04f5a",
   "elements/canvas-frames": "3cac4c1dfffce8be",
@@ -7,6 +7,7 @@
   "elements/shell-main": "32b45764c010d876",
   "foundations/agent-logos": "818ab92cd52f4c5d",
   "foundations/colors": "040f424f5c7ee78e",
+  "foundations/icons": "9f686e3ce096e6b8",
   "foundations/logo": "28d6551bf6d4e7cd",
   "foundations/motion": "35205772dea63308",
   "foundations/sheet": "ef5c3f26af57d647",

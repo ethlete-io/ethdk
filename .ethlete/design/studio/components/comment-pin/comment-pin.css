@@ -68,7 +68,7 @@
   }
 
   .st-pin:active .st-pin-face {
-    background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+    background: linear-gradient(var(--surface-pressed), var(--surface-pressed)), var(--surface-raised);
   }
 
   .st-pin:focus-visible .st-pin-face {
@@ -105,7 +105,7 @@
   }
 
   .st-pin[data-selected]:active .st-pin-face[data-agent] {
-    background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+    background: linear-gradient(var(--surface-pressed), var(--surface-pressed)), var(--surface-raised);
   }
 
   .st-pin[data-selected]:focus-visible .st-pin-face {
