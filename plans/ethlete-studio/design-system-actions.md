@@ -93,7 +93,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 3. Feedback, rounds and merge
 
-### 3.39 A rename across layers needs three merges - open
+### 3.39 A rename across layers needs three merges - done
 
 - **Pain:** moving `comment-pin` hosts from `commentPinStyles` to `commentPin.styles` needs: add
   `styles`, then one page sketch per host, then drop the export. A component sketch may not edit a
@@ -102,6 +102,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   (recommended). 2. a page variant resolves a part from another open sketch (5.21).
 - **Decision (Tom, 2026-10-30):** option 1. A component sketch may carry edits to its hosts
   that only change an import.
+- **As built (`a9ad0200c`):** a variant may hold a higher-layer part that imports a target when its CSS is unchanged
+  and its source differs only in imports and in how it spells imported names (`a` to `b.c`); the merge writes it.
 
 ### 3.41 A `sketch ready` run skipped the auto-merge on a markup-only change - open
 
