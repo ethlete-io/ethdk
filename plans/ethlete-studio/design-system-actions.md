@@ -1434,11 +1434,14 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   `frameElement` on each content change, gives every `mark` match `data-et-embed-marked` and an accent outline,
   and adds `css` once as a stylesheet. Spec: `embed-page.spec.ts`. Not driven in a real frame yet.
 
-### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - open
+### 5.56 `embedPage({ scale })` and a host's own scale wrapper overlap - built (772e86a62)
 
 - **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
+- **As built:** a render check, not a `RULES` entry: `design check` warns `EMBED-SCALE` on the element
+  around an embedded frame with a `scale` that scales it again (`transform`, `scale` or `zoom`). Spec:
+  `render-check.spec.ts`. The skill does not mention it yet.
 
 ### 5.60 Merging one candidate keeps all discarded candidate code in shared helpers - open
 
