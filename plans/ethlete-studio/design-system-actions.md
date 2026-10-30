@@ -864,7 +864,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   on the real product (variant accent changed `.et-color--brand`; merged compile byte-identical). Not verified:
   Studio by eye, a real colours sketch. Old run folders in `node_modules/.design-explore/generated` stay.
 
-### 4.68 One change across many parts needs one sketch per part - in progress (builder, 2026-10-30)
+### 4.68 One change across many parts needs one sketch per part - done
 
 - **Pain (2026-10-30):** the removal of the alias `--surface-sunken` touched 10 parts. It took 10 sketches, each
   with its own `new`, `report`, `ready` and commit. A `shared/` edit through `foundations/spacing` also
@@ -874,6 +874,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decision (Tom, 2026-10-30):** one sketch with several targets: `sketch new <part> <part>... --variants a`. One
   variant folder holds all target parts; one `ready` compares every target and every part the edit reaches; one
   merge, one commit. `ready` and `preview` name every part a `shared/` edit reaches.
+- **As built (2026-10-30):** `b1330edc6` `sketch new` with several parts; `sketch.json` gets `targets` only for more
+  than one, `target` stays the first (id, folder), so old sketches read unchanged; other commands find a sketch by
+  any target; merge notes and copies every target. `f0e6ad84d` `mergePreviewOf` returns `shared` (parts a changed
+  `shared/` file reaches); `preview`/`ready` name them; the no-visible-change check compares every target and
+  reached part. `f40478081` skill docs. `7bc1c025c` studio-api `targetParts`, `targetsOf` per part x variant.
+  `1d0517e74` Studio: one row group per target (`<part> · <state>`), later targets' keys prefixed by the part.
+  Verified: specs that failed on the old source, 717 CLI and 163 Studio system-view specs, both tsc runs.
+  Not verified: a real multi-target sketch in the CLI or Studio. Open: diff marks and the "used in" band cover
+  the first target only; Studio's `MergePreview` type lacks `shared`.
 
 ### 4.69 A CLI rebuild breaks sketch commands that run at the same time - done
 
