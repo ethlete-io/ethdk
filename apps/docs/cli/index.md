@@ -72,6 +72,26 @@ In `.ethlete/design/config.json`, a product can hide parts inherited from its ba
 a product's own part with the same key remains available. `tokens` lists the parts whose CSS
 every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
 
+`generated` lists stylesheets a command generates from one part, for example SDK theme classes generated
+from a colours part:
+
+```json
+{
+  "generated": [
+    {
+      "part": "foundations/colors",
+      "command": ["node", "tools/scripts/generate-studio-themes.mjs"],
+      "stylesheets": ["apps/ethlete-studio/src/styles/themes.css"]
+    }
+  ]
+}
+```
+
+A frame of a sketch variant that changes the part runs the command from the checkout root with
+`--part <the variant's part stylesheet> --out <folder>`, and loads each listed stylesheet from
+`<folder>/<its checkout path>` where the product stylesheet imports it. The command writes nothing
+else. A merged frame loads the checked-in files.
+
 `et design check` warns with `TOKEN-SELECTOR` when a listed token stylesheet contains a selector
 outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
 instead of the globally loaded token CSS.

@@ -48,6 +48,18 @@ export type DesignProduct = DesignProject & {
   tokens?: string[];
   /** Inherited parts to omit; a product's own part with the same key remains visible. */
   hideBaseParts?: string[];
+  generated?: DesignGeneratedStylesheets[];
+};
+
+/**
+ * Stylesheets a command generates from one part's stylesheet. A frame of a sketch variant that changes `part`
+ * runs `command` (checkout-relative, from the checkout root) with `--part <the variant's part stylesheet>
+ * --out <folder>` and loads each of `stylesheets` from `<folder>/<its checkout path>` instead.
+ */
+export type DesignGeneratedStylesheets = {
+  part: string;
+  command: string[];
+  stylesheets: string[];
 };
 
 export type DesignConfig = {

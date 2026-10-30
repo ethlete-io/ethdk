@@ -9,11 +9,13 @@ const PLUGIN = 'ethlete-sketch-stylesheets';
  * maps, called with the stylesheet's module id, for the rules of the file it maps to. It must run after the
  * `@import`s are inlined and before Tailwind compiles the sheet.
  */
-export const sketchStylesheetsPlugin = (replacementsOf: (id: string) => Map<string, string>): Plugin => ({
+export const sketchStylesheetsPlugin = (
+  replacementsOf: (id: string) => Map<string, string> | Promise<Map<string, string>>,
+): Plugin => ({
   postcssPlugin: PLUGIN,
-  Once: (root, { result, postcss }) => {
+  Once: async (root, { result, postcss }) => {
     const from = result.opts.from;
-    const replacements = from ? replacementsOf(from) : new Map<string, string>();
+    const replacements = from ? await replacementsOf(from) : new Map<string, string>();
 
     if (!from || replacements.size === 0) return;
 

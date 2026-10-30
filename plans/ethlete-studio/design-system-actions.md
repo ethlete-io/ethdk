@@ -796,12 +796,18 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `select` with a Studio `components/select` that uses `brand` or no `panelColor`, or drop the theme name from
   the SDK base part.
 
-### 4.72 A `foundations/colors` variant does not reach the SDK components in its frame - open
+### 4.72 A `foundations/colors` variant does not reach the SDK components in its frame - done
 
 - **Pain (2026-10-30, found in 4.67):** `themes.css` is generated from the merged `foundations/colors`. A colours
   sketch variant changes `--accent` and the other part tokens, but SDK components in that frame keep the merged
   theme colours until `yarn studio:themes` runs. Not tested with a real colours sketch.
 - **Fix option:** the render generates the theme classes from the variant's `foundations/colors` for a variant frame.
+- **As built (2026-10-30):** product config field `generated: [{ part, command, stylesheets }]`. When a variant
+  changes `part`, the render runs `command --part <variant css> --out <dir>` (cached by content) and the variant
+  frame loads the listed stylesheets from `<dir>`. `studio` lists `foundations/colors` with
+  `tools/scripts/generate-studio-themes.mjs` (new `--part`, `--out`). Verified: a fixture spec; an end-to-end run
+  on the real product (variant accent changed `.et-color--brand`; merged compile byte-identical). Not verified:
+  Studio by eye, a real colours sketch. Old run folders in `node_modules/.design-explore/generated` stay.
 
 ### 4.68 One change across many parts needs one sketch per part - open
 

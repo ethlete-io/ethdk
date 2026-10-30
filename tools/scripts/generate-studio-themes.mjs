@@ -1,24 +1,34 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { format, resolveConfig } from 'prettier';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const optionOf = (name) => {
+  const index = process.argv.indexOf(name);
+
+  return index === -1 ? null : process.argv[index + 1];
+};
 const partPath = '.ethlete/design/studio/foundations/colors/colors.css';
-const themesPath = 'apps/ethlete-studio/src/themes.ts';
-const surfaceThemesPath = 'apps/ethlete-studio/src/surface-themes.ts';
+const partFile = resolve(root, optionOf('--part') ?? partPath);
+// `--out` writes every output under that folder at its checkout path, for `design-explore` to draw a sketch variant.
+const out = optionOf('--out') ? relative(root, resolve(optionOf('--out'))) : null;
+const outputOf = (path) => (out ? join(out, path) : path);
+const themesPath = outputOf('apps/ethlete-studio/src/themes.ts');
+const surfaceThemesPath = outputOf('apps/ethlete-studio/src/surface-themes.ts');
 const check = process.argv.includes('--check');
 
 const tokens = new Map(
-  [...readFileSync(join(root, partPath), 'utf8').matchAll(/^\s*--([\w-]+):\s*oklch\(([^)]*)\);/gm)].map(
-    ([, name, value]) => [name, value.split(/[\s/]+/).map(Number)],
-  ),
+  [...readFileSync(partFile, 'utf8').matchAll(/^\s*--([\w-]+):\s*oklch\(([^)]*)\);/gm)].map(([, name, value]) => [
+    name,
+    value.split(/[\s/]+/).map(Number),
+  ]),
 );
 
 const oklab = (name) => {
   const value = tokens.get(name);
-  if (!value) throw new Error(`${partPath} has no oklch token --${name}`);
+  if (!value) throw new Error(`${relative(root, partFile)} has no oklch token --${name}`);
   const [l, c, h] = value;
   const rad = (h * Math.PI) / 180;
   return [l, c * Math.cos(rad), c * Math.sin(rad)];
@@ -129,9 +139,11 @@ const stale = [];
 for (const [path, source] of Object.entries(files)) {
   const file = join(root, path);
   const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
-  if (readFileSync(file, 'utf8') === formatted) continue;
+  if (!out && readFileSync(file, 'utf8') === formatted) continue;
   stale.push(path);
-  if (!check) writeFileSync(file, formatted);
+  if (check) continue;
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, formatted);
 }
 
 if (check) {
@@ -143,8 +155,8 @@ if (check) {
 }
 
 for (const [generator, themes, output] of [
-  ['tailwind-4-color-theme', themesPath, 'apps/ethlete-studio/src/styles/themes.css'],
-  ['tailwind-4-surface-theme', surfaceThemesPath, 'apps/ethlete-studio/src/styles/surface-themes.css'],
+  ['tailwind-4-color-theme', themesPath, outputOf('apps/ethlete-studio/src/styles/themes.css')],
+  ['tailwind-4-surface-theme', surfaceThemesPath, outputOf('apps/ethlete-studio/src/styles/surface-themes.css')],
 ]) {
   execFileSync(
     'npx',

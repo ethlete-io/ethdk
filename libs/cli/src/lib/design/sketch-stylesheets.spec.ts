@@ -18,7 +18,16 @@ afterEach(async () => {
 const MERGED = '#e4572e';
 const SKETCHED = '#13579b';
 
-const serveAcme = async () => {
+const GENERATOR = `import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
+const option = (name) => process.argv[process.argv.indexOf(name) + 1];
+const accent = /--acme-accent: (#\\w+)/.exec(readFileSync(option('--part'), 'utf8'))[1];
+const file = join(option('--out'), '${DESIGN_DIR}/acme/generated.css');
+mkdirSync(dirname(file), { recursive: true });
+writeFileSync(file, '.acme-generated { border-color: ' + accent + '; }');
+`;
+
+const serveAcme = async (options: { generated?: boolean } = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-styles-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
@@ -27,8 +36,30 @@ const serveAcme = async () => {
   const config = readConfig(target) ?? {};
   const acme = config.products?.['acme'] ?? {};
 
-  writeFileSync(styles, "@import './foundations/palette/palette.css' layer(tokens);\n.acme-page { margin: 0; }\n");
-  config.products = { ...config.products, acme: { ...acme, styles: [`${DESIGN_DIR}/acme/styles.css`] } };
+  writeFileSync(
+    styles,
+    "@import './foundations/palette/palette.css' layer(tokens);\n@import './generated.css';\n.acme-page { margin: 0; }\n",
+  );
+  writeFileSync(join(target, DESIGN_DIR, 'acme/generated.css'), `.acme-generated { border-color: ${MERGED}; }\n`);
+  writeFileSync(join(target, 'generate.mjs'), GENERATOR);
+  config.products = {
+    ...config.products,
+    acme: {
+      ...acme,
+      styles: [`${DESIGN_DIR}/acme/styles.css`],
+      ...(options.generated
+        ? {
+            generated: [
+              {
+                part: 'foundations/palette',
+                command: ['node', 'generate.mjs'],
+                stylesheets: [`${DESIGN_DIR}/acme/generated.css`],
+              },
+            ],
+          }
+        : {}),
+    },
+  };
   writeFileSync(join(target, DESIGN_DIR, 'config.json'), JSON.stringify(config));
 
   const product = createSystemModules({ target, config }).productOf('acme');
@@ -59,8 +90,10 @@ const serveAcme = async () => {
       )
     )?.code ?? '';
 
-  return { vite, compiled };
+  return { vite, compiled, target };
 };
+
+const cssOf = (code: string) => code.split('__vite__css')[1]?.replace(/\\n|\s/gu, '');
 
 describe('a product stylesheet drawn for a sketch variant', () => {
   it("inlines the variant's file where it imports the merged part stylesheet", async () => {
@@ -70,11 +103,25 @@ describe('a product stylesheet drawn for a sketch variant', () => {
     expect(merged).toContain(MERGED);
     expect(merged).not.toContain(SKETCHED);
     expect(a).toContain(SKETCHED);
-    expect(a).not.toContain(MERGED);
-    const cssOf = (code: string) => code.split('__vite__css')[1]?.replace(/\\n|\s/gu, '');
-
     expect(cssOf(a)).toBe(cssOf(merged)?.replace(MERGED, SKETCHED));
     expect(b).toContain(MERGED);
+  });
+
+  it("draws a stylesheet the product generates from the part from the variant's own part", async () => {
+    const plain = await serveAcme();
+    const generated = await serveAcme({ generated: true });
+    const [plainMerged, merged, a, b] = await Promise.all([
+      plain.compiled(null),
+      generated.compiled(null),
+      generated.compiled('a'),
+      generated.compiled('b'),
+    ]);
+
+    expect(cssOf(merged)).toContain(`.acme-generated{border-color:${MERGED};}`);
+    expect(cssOf(a)).toContain(`.acme-generated{border-color:${SKETCHED};}`);
+    expect(cssOf(a)).not.toContain(MERGED);
+    expect(cssOf(b)).toContain(`.acme-generated{border-color:${MERGED};}`);
+    expect(merged).toBe(plainMerged.replaceAll(plain.target, generated.target));
   });
 
   it('is what a frame of a variant that draws a part stylesheet of its own loads', async () => {

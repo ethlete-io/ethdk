@@ -57,6 +57,16 @@
     },
     "studio": {
       "styles": [".ethlete/design/studio/styles.css"],
+      "generated": [
+        {
+          "part": "foundations/colors",
+          "command": ["node", "tools/scripts/generate-studio-themes.mjs"],
+          "stylesheets": [
+            "apps/ethlete-studio/src/styles/themes.css",
+            "apps/ethlete-studio/src/styles/surface-themes.css"
+          ]
+        }
+      ],
       "base": ".ethlete/design/sdk",
       "hideBaseParts": ["foundations/tokens"],
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],

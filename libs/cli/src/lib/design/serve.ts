@@ -57,6 +57,7 @@ import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
+import { createGeneratedStylesheets } from './generated-stylesheets';
 import { sketchStylesheetsPlugin } from './sketch-stylesheets';
 import { createPartShooter, dependentIdsOf, SHOT_PATH, StylesheetImports, stylesheetImportsPlugin } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
@@ -693,6 +694,7 @@ export const createDesignServer = async (options: {
   const { default: tailwind } = await import('@tailwindcss/postcss');
   const here = assetRoot();
   const system = createSystemModules({ target, config, sketchesRoot });
+  const generatedStylesheetsOf = createGeneratedStylesheets({ target, config, system });
 
   if (listen) {
     for (const name of system.products()) {
@@ -713,9 +715,13 @@ export const createDesignServer = async (options: {
     css: {
       postcss: {
         plugins: [
-          sketchStylesheetsPlugin((id) =>
-            system.replacedStylesheetsOf({ product: productOfModuleId(id) ?? '', sketch: sketchOfModuleId(id) }),
-          ),
+          sketchStylesheetsPlugin((id) => {
+            const drawn = { product: productOfModuleId(id) ?? '', sketch: sketchOfModuleId(id) };
+
+            return generatedStylesheetsOf(drawn).then(
+              (generated) => new Map([...system.replacedStylesheetsOf(drawn), ...generated]),
+            );
+          }),
           tailwind(),
           forceInteractionsPlugin(),
           stylesheetImportsPlugin(stylesheetImports),
