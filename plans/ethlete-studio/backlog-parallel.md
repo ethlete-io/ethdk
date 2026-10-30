@@ -69,9 +69,14 @@ Sketches at `ready`, with the round name and the one-line question for Tom. The 
   macOS WebKit and touch.
 - 1.5: rebuild and restart Studio; the next panic stack lands in `/tmp/ethlete-studio-panics.log`.
 
-## Later, not in this push
+## Stream G - motion runtime (`libs/cli/src/lib/design/motion-*.ts`)
 
-Motion slices 4 (`spring()`, `interrupt`) and 5 (flow lines); 4.47 exceptions and the `handoff` status with CI.
+Pulled into this push (Tom, 2026-10-30): motion slice 4 (`spring()`, `interrupt`), then slice 5 (flow lines).
+Coordinate with stream B on `serve.ts` and with stream C on the timeline.
+
+## Stream A, after its five steps
+
+Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `handoff` status with CI.
 
 ## Nothing to build
 
