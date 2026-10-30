@@ -82,15 +82,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 3. Feedback, rounds and merge
 
-### 3.20 A product switch keeps the entry of the old product - triage
-
-- **Pain:** after a switch from studio-lab to studio, with a sketch of the old product open, the
-  sidebar showed the sketches of studio-lab in the list of studio. The old sketch view stayed. A
-  click on "Merge b" ran against the wrong product, and Studio refused it.
-- **Where:** the product switch in the System view. Seen one time, from a script race. Not
-  reproduced.
-- **Fix option:** reset the selected entry when the product changes.
-
 ### 3.39 A rename across layers needs three merges - open
 
 - **Pain:** moving `comment-pin` hosts from `commentPinStyles` to `commentPin.styles` needs: add

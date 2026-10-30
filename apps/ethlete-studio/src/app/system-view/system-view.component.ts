@@ -92,6 +92,10 @@ const BADGE_ACCENT =
 
 const CHANGED_OUTSIDE_SKETCH = 'changed outside a sketch';
 
+/** A product switch keeps the old read until the new product answers; that read must not show. */
+const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
+  read && read.product === product ? read.items : null;
+
 /** Never a product name: a product is a directory, and a directory name holds no slash. */
 const NEW_PRODUCT = '/new';
 
@@ -597,7 +601,7 @@ export class SystemViewComponent {
 
   protected pickerValue = computed(() => (this.creating() ? NEW_PRODUCT : (this.product()?.name ?? NEW_PRODUCT)));
 
-  private sketchList = toSignal(
+  private sketchRead = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
@@ -613,12 +617,15 @@ export class SystemViewComponent {
           ? listedSketches$(port, product).pipe(
               map(({ sketches }) => sketches),
               catchError(() => of<ListedSketch[]>([])),
+              map((items) => ({ product, items })),
             )
           : of(null),
       ),
     ),
     { initialValue: null },
   );
+
+  private sketchList = computed(() => itemsOf(this.sketchRead(), this.product()?.name));
 
   public sketches = computed(() => this.sketchList() ?? []);
 
@@ -636,7 +643,7 @@ export class SystemViewComponent {
     { initialValue: 0 },
   );
 
-  private flowList = toSignal(
+  private flowRead = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
@@ -652,12 +659,15 @@ export class SystemViewComponent {
           ? listedFlows$({ port, product }).pipe(
               map(({ flows }) => flows),
               catchError(() => of<ListedFlow[]>([])),
+              map((items) => ({ product, items })),
             )
           : of(null),
       ),
     ),
     { initialValue: null },
   );
+
+  private flowList = computed(() => itemsOf(this.flowRead(), this.product()?.name));
 
   private listsRead = computed(
     () => this.callList() !== null && this.sketchList() !== null && this.flowList() !== null,

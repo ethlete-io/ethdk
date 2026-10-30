@@ -265,6 +265,42 @@ describe('SystemViewComponent on a merge', () => {
     localStorage.clear();
   });
 
+  it('drops the sketch of the old product while the sketches of the new product are still being listed', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches?product=web')) return json({ sketches: [sketch], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT, { ...PRODUCT, name: 'lab' }]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const view = fixture.componentInstance;
+
+    expect(view['sketchShown']()?.sketch.product).toBe('web');
+
+    view['pickProduct']('lab');
+    await settle(fixture);
+
+    expect(view['product']()?.name).toBe('lab');
+    expect(view.sketches()).toEqual([]);
+    expect(view['sketchShown']()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-merge]')).toBeNull();
+  });
+
   it('marks the sketch "merging" while the merge runs, then selects the target part', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

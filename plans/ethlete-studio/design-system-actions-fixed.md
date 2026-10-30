@@ -9,3 +9,20 @@
   holds the logos, with `assets/agent-*.svg`. `pages/inbox`, `pages/sketches` and
   `components/comment-pin` all import `agentLogo` from `@system/foundations/agent-logos`. No copy
   is left in the product; the entry was stale.
+
+### 3.20 A product switch keeps the entry of the old product - fixed
+
+- **Pain:** after a switch from studio-lab to studio, with a sketch of the old product open, the
+  sidebar showed the sketches of studio-lab in the list of studio. The old sketch view stayed. A
+  click on "Merge b" ran against the wrong product, and Studio refused it.
+- **Where:** the product switch in the System view. Seen one time, from a script race. Not
+  reproduced.
+- **Fix option:** reset the selected entry when the product changes.
+- **Cause:** the System view kept the sketch list and the flow list of the old product until the
+  list of the new product answered. In that time the view paired the new product with an old sketch,
+  so the tree and "Merge" used the old entry.
+- **Fix:** each list read carries the product it was read for. A read for another product counts as
+  no list yet. The selected entry stays as it was.
+- **Verified 2026-10-30 by `claude-sdk58`:** a new spec in `system-view.component.spec.ts` switches
+  from `web` to `lab` while the `lab` sketches never answer. It failed before the fix (the `web`
+  sketch stayed) and passes after it.
