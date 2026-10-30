@@ -1,6 +1,6 @@
 {
   "target": "components/form-field",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T22:53:53.765Z",
   "baseline": {
     "foundations/tokens": "67c964a1f59e8dc3",
@@ -22,10 +22,5 @@
       "round": "r1",
       "note": "Declares the text input and the textarea as controls of kind field. No pressed look on either (Q61)."
     }
-  },
-  "hold": {
-    "until": "Q66 (grill): Tom confirms the error looks built for Q65 in c5309a6b2",
-    "by": "claude-opus-5-5",
-    "heldAt": "2026-10-30T23:12:57.527Z"
   }
 }
