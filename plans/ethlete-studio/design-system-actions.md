@@ -1019,11 +1019,12 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   grace. Tom checks the sharpness and the pop-in in the real Tauri app; if the steps remain, the builder measures
   there. The 12 s cold wait becomes item 4.81.
 
-### 4.81 A cold sketch shows no frame until `GET /__design/sketches` answers - open
+### 4.81 A cold sketch shows no frame until `GET /__design/sketches` answers - in progress
 
 - **Pain (found in 4.75, 2026-10-30):** a cold sketch showed no frame for about 12 s. Studio waits for
   `GET /__design/sketches` before it asks for any shot or diff.
 - **Decision (Tom, 2026-10-30):** Studio requests the shots without waiting for `/__design/sketches`.
+- **In progress (2026-10-30):** a subagent builds it; 4.78 follows.
 
 ### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - built
 
