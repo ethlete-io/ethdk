@@ -92,8 +92,14 @@ Sketches at `ready`, with the round name and the one-line question for Tom. The 
 - `sdk` `components/select`, round r2 "Final select": merge variant d - Tom's pick b (Q56) with the field frame and
   trigger as `data-et-control-part`. `design complete --variant d` passes and fails without the markers.
 
-`foundations/tokens` r2 g (Q57 e) is held (`sketch hold`) until it is rebuilt as `foundations/colors` with
-`tokenSheet` (Q54/Q55).
+- `sdk` `foundations/colors`, round r1 "Colors" (`bee047389`): merge variant a - the token sheet on `tokenSheet`
+  (Q54/Q55) with the Q57 e values and the on-light themes (Q51); no design choice. Then discard the held
+  `foundations/tokens` sketch; it is superseded.
+
+After that merge the builder runs `part remove foundations/tokens`, moves `generate-sdk-tokens.mjs` and
+`sdk:tokens:check` to `foundations/colors/colors.css`, applies the e values and on-light themes to
+`apps/storybook/src/themes.ts`/`surface-themes.ts`, drops `foundations/tokens` from the sdk `tokens` list in
+`.ethlete/design/config.json` and the studio `hideBaseParts` entry.
 
 Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
 Tom merged `sdk` `foundations/tokens` r1 c, the token sheet (`d40af99ed`).
