@@ -759,9 +759,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   1: `ready` already needs every variant equal. Verified: specs that bite, a scratch `sketch ready` stops with
   "variant a changes accent". Not verified: Studio frames by eye; rejected variants still block an auto-merge.
 
-- **In progress (2026-10-30, builder ethlete-sdk-57):** step B redo as a sketch with two variants that both reach 4.5:1; 4.70 and 4.69 fixes in the CLI at the same time.
-
-### 4.66 `sketch ready` gives a different answer on a re-run - open
+### 4.66 `sketch ready` gives a different answer on a re-run - done
 
 - **Pain (2026-10-30):** in the colour cleanup (`2a4b435da`), `sketch ready` on a CSS-only sketch sometimes
   printed "auto-merge skipped: ... changes pages/merge ...", and a plain re-run then auto-merged. The same
@@ -769,6 +767,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Suspect:** a draw of an affected part (4.63 compare) is not deterministic, for example a font, an image or an
   animation that is not settled when the picture is taken.
 - **Next:** draw `pages/merge` several times on an own server and compare the pictures; find the unstable state.
+- **As built (2026-10-30):** cause: Chromium partial raster. Under load, the anti-aliased rounded corners of the
+  `.mg-shot` clips over the embedded `pages/system` frames drew 2-6 levels apart (about 20 pixels, both states of
+  `pages/merge`; 16 of 60 parallel draws). The draw browser now starts with `--disable-partial-raster`: 0 of 90.
+  Fonts, animations and images were settled every time. Verified: a probe script and a spec on the launch flag.
+  Not verified: a real `sketch ready` under load. Saved pictures from before differ at those corners.
 
 ### 4.67 The design render does not load the generated SDK theme classes - open
 

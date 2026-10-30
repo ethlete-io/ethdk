@@ -177,6 +177,14 @@ describe('createDrawQueue', () => {
     expect(order).toEqual(['running', 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
   });
 
+  it('launches Chromium without partial raster, so the same page draws the same pixels each time', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+
+    await queue.run(async () => 'drawn');
+
+    expect(launch).toHaveBeenCalledWith({ args: expect.arrayContaining(['--disable-partial-raster']) });
+  });
+
   it('keeps drawing after a failed job', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const failed = queue.run(async () => Promise.reject(new Error('broken')), 'low');

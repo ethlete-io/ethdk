@@ -68,6 +68,10 @@ export const finished = `document.getAnimations()
 
 export type DrawPriority = 'high' | 'low';
 
+// Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
+// embedded frame depends on which frame painted first: two draws of the same page differed under load.
+const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
+
 /**
  * One shared headless Chromium, launched on the first ask, that runs one drawing at a time. A waiting
  * `high` drawing runs before every waiting `low` one, each lane in the order asked. A failed launch is
@@ -89,7 +93,7 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
         );
       }
 
-      return resolved.chromium.launch().catch((error: unknown) => {
+      return resolved.chromium.launch({ args: DRAW_BROWSER_ARGS }).catch((error: unknown) => {
         throw new ThumbUnavailableError(
           `design-explore: the Chromium of ${resolved.from} did not start\n${error instanceof Error ? error.message : String(error)}`,
         );
