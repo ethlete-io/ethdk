@@ -8,7 +8,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
 - A1 done (`0c4b8a887`). A2 + Q32 done (`0c307a0c3`); F1 done, auto-merged (`e6fcf97c5`). A3-A5, the `STALE-REPLACE`
   false positive, then exceptions and `handoff` run in one subagent.
 - D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
-  `UTILITY-CSS` in `RULES`). B, C1, E and G slice 5 run; F 5.51 gets an r2 for Q42; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
+  `UTILITY-CSS` in `RULES`). C1 done (`2a90d0cfd`, Inventory toggle on `pages/*` parts; `by` is `designer`). B, E and G slice 5 run; C2
+  waits for B2; C3 (1.2 re-run) not started; F 5.51 gets an r2 for Q42; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
@@ -80,6 +81,8 @@ Sketches at `ready`, with the round name and the one-line question for Tom. The 
 
 ## Waits for Tom in the real Studio
 
+- Look at the Inventory view of a page in the running Studio (C1, `2a90d0cfd`): only specs and a GET on a scratch
+  server checked it.
 - Accept 3.45 (reject and reopen) and 4.43 (toggle and gaps), both built with specs only.
 - Section 7 open checks: Rust status-watch reload, `is_stale` footer, shot size on the HiDPI window, round d on
   macOS WebKit and touch.
