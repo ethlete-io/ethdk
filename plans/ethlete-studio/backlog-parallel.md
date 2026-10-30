@@ -6,7 +6,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
 ## Builder status (2026-10-30)
 
 - A1 done (`0c4b8a887`). A2 and F1 run in one subagent with the Q32 merge-target change; A3-A5 start after it.
-- B, C1, D, F2-F4 and G run. E waits for Tom. Found on the way: `aae2914f3` broke every render of the built CLI
+- D done (`493d1f6f9`: 6.7, 5.60 rule); 6.6 runs. B, C1, E (5.52, 5.55, 5.56), F2-F4 and G run. Queued: A 5.39
+  after A2-A5; F 5.51 and 5.32 after F2-F4. Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
 
 ## Rules for every stream
