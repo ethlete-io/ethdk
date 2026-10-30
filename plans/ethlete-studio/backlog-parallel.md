@@ -198,8 +198,9 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   `aria-activedescendant` names counts when its look differs from an unforced, unselected option. Generic ARIA,
   no SDK names in `libs/cli`. No fake `:focus-visible` rule in drawings. Applies to `components/select` and later
   `tree`.
-- **Token overview decision (Tom, 2026-10-30, Q49):** the sdk token overview draws a matrix of chips, one per
-  theme and state. Pick holds for the round regenerated from the Storybook themes.
+- **Token overview decision (Tom, 2026-10-30, Q49, superseded by the merge):** Tom answered a (matrix of chips),
+  then merged variant c (token sheet with name and value) in Studio, d40af99ed. The merge stands: the sdk token
+  overview is the token sheet. Drift check: `yarn sdk:tokens:check` in CI and pre-push (9f391f97b).
 - **Contrast decision (Tom, 2026-10-30, Q50):** contrast below AA in the base themes gets its own small round
   after the overview; Tom picks the new values. Measured on the first token set: `danger` hover 3.76:1, `brand`
   ink on dark 3.47:1. Re-measure on the Storybook themes first.
