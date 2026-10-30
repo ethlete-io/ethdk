@@ -253,8 +253,16 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   lands (ethlete-sdk-57), replace the select sketch's second `data-et-control` and fake `aria-disabled`. After
   the Q54 helper lands, `foundations/colors`. Storybook is no workspace package, so it needs no changeset.
 
-- **In progress (ethlete-sdk-33, 2026-10-30):** sketch `components/form-field` (input, textarea): declare the
-  controls like select (`data-et-control` root, frame as `data-et-control-part`), pressed look as Q56 b.
+- **As built (ethlete-sdk-33, 2026-10-30):** sketch `components/form-field` round "Form field controls", variant a,
+  input only, on hold (`75bf259ec`): `data-et-control` on `et-form-field`, `data-et-control-part` on the frame and
+  the native input, pressed border as Q56 b, declared as `kind: 'button'` for now. Verified: `design complete
+--variant a` passes. Not verified: frames by eye. `textarea()` design mock in `@ethlete/components/design/form-field`
+  (`7b1011df0`, changeset patch); tsc on a scratch config, not rendered. Hold reasons: (1) `kind: 'field'` in
+  progress at ethlete-sdk-57 (pointer needs hover, not active); (2) textarea rows not drawn yet; (3) `sketch check`
+  contrast: `danger` label and error text 2.77:1 on light - per Q51 the rows use `danger-on-light` after Tom
+  merges `foundations/colors`. Q60 (pending at the grill): drop the pressed look on text fields (recommended).
+- **Next:** when the field kind lands and Q60 is answered: switch the kind, add textarea rows, apply Q60; after the
+  colors merge, `errorColor: 'danger-on-light'`; then `sketch check`, `design complete --variant a`, release, ready.
 
 ### Foundation sheet decisions (2026-10-30)
 
