@@ -4,7 +4,20 @@ import { ESCAPE, hasModifierKey } from '@angular/cdk/keycodes';
 import { GlobalPositionStrategy } from '@angular/cdk/overlay';
 import { ComponentRef, TemplateRef, signal } from '@angular/core';
 import { fromNextFrame } from '@ethlete/core';
-import { Subject, filter, merge, skipUntil, switchMap, take, takeUntil } from 'rxjs';
+import {
+  Subject,
+  asapScheduler,
+  concatMap,
+  filter,
+  map,
+  merge,
+  observeOn,
+  of,
+  skipUntil,
+  switchMap,
+  take,
+  takeUntil,
+} from 'rxjs';
 import { OverlayContainerComponent } from './common';
 import { OverlayConfig } from './overlay-config';
 import { OverlayPosition } from './strategies';
@@ -238,21 +251,33 @@ export class OverlayRef<T = any, R = any> {
   }
 
   private setupCloseHandlers() {
+    const lifecycleState$ = this._containerInstance.animatedLifecycle.state$;
+
     merge(
-      this.backdropClick(),
-      this.keydownEvents().pipe(
-        filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
-      ),
-    )
-      .pipe(
+      this.backdropClick().pipe(
         skipUntil(
-          this._containerInstance.animatedLifecycle.state$.pipe(
+          lifecycleState$.pipe(
             filter((e) => e === 'entering'),
             switchMap(() => fromNextFrame()),
           ),
         ),
-        takeUntil(this.afterClosed()),
-      )
+      ),
+      this.keydownEvents().pipe(
+        filter((event) => event.keyCode === ESCAPE && !this.disableClose && !hasModifierKey(event)),
+        concatMap((event) =>
+          this._containerInstance.animatedLifecycle.state() === 'init'
+            ? lifecycleState$.pipe(
+                filter((state) => state !== 'init'),
+                take(1),
+                // the state emits from inside enter(); a leave() started there is cancelled when enter() resumes
+                observeOn(asapScheduler),
+                map(() => event),
+              )
+            : of(event),
+        ),
+      ),
+    )
+      .pipe(takeUntil(this.afterClosed()))
       .subscribe((event) => {
         const isEscapeKey = event.type === 'keydown';
         const isBackdropClick = !isEscapeKey;

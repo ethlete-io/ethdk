@@ -265,6 +265,13 @@ export class SelectDirective<T extends SelectDirectiveBodyComponentBase> impleme
   }
 
   close() {
+    if (!this._animatedOverlay.canUnmount()) return;
+
+    this._animatedOverlay.unmount();
+  }
+
+  _closeFromOutsideClick() {
+    // the click that opened the select bubbles to the document after the body exists
     if (!this._animatedOverlay.isMounted()) return;
 
     this._animatedOverlay.unmount();

@@ -43,7 +43,7 @@ export class SelectBodyDirective {
   constructor() {
     outputToObservable(this._clickOutside.didClickOutside)
       .pipe(
-        tap(() => this._select.close()),
+        tap(() => this._select._closeFromOutsideClick()),
         takeUntilDestroyed(),
       )
       .subscribe();
