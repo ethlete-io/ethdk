@@ -251,7 +251,7 @@ const acme = () => {
   return target;
 };
 
-const serveAcme = async (target: string) => {
+const serveAcme = async (target: string, moduleOf?: (id: string) => unknown) => {
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
   expect(await serveDesign({ target })).toBe(0);
@@ -285,9 +285,12 @@ const serveAcme = async (target: string) => {
     ssrLoadModule: async (id: string) => {
       loaded.push(id);
 
-      return id.includes('/calls/')
-        ? { default: { eyebrow: '', headline: 'Hero', legacy: true, frameWidth: 640, variants: [] } }
-        : { default: { note: 'n', states: { one: {} } } };
+      return (
+        moduleOf?.(id) ??
+        (id.includes('/calls/')
+          ? { default: { eyebrow: '', headline: 'Hero', legacy: true, frameWidth: 640, variants: [] } }
+          : { default: { note: 'n', states: { one: {} } } })
+      );
     },
   };
 
@@ -635,6 +638,27 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketches', '?product=nope')).status).toBe(404);
     expect((await ask('/__design/sketches', '')).status).toBe(400);
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
+  });
+
+  it('lists the states a variant adds and drops and its changed part note against the product', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target, (id) =>
+      id.includes('design-variant=a') ? { default: { note: 'n, open only on focus', states: { two: {} } } } : undefined,
+    );
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targets: { variant: string; changes?: unknown }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targets).toMatchObject([
+      {
+        variant: 'a',
+        changes: { added: ['two'], dropped: ['one'], note: { before: 'n', after: 'n, open only on focus' } },
+      },
+      { variant: 'b', changes: { added: [], dropped: [], note: null } },
+    ]);
   });
 
   it('registers the parts of each sketch variant, resolved through that variant', async () => {

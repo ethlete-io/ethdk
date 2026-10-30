@@ -61,6 +61,7 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
+import { pixelFreeLinesOf } from './pixel-free';
 import { DiffLine, diffLinesOf, diffOutlineOf, diffSummaryOf, variantDiff$ } from './variant-diff';
 import { AreaRound, ChangedArea, changedArea$, changedAreaViewOf } from './changed-area';
 import {
@@ -468,6 +469,48 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </div>
     }
 
+    @if (showing() === 'matrix' && pixelFreeLines().length > 0) {
+      <div class="flex flex-col items-start gap-1 border-b border-surface-border px-4 py-2 text-small" data-pixel-free>
+        @for (line of pixelFreeLines(); track line.variant) {
+          <button
+            [pressed]="noteDiffOpen() === line.variant"
+            (click)="noteDiffOpen.set(noteDiffOpen() === line.variant ? null : line.variant)"
+            et-button
+            type="button"
+            variant="transparent"
+            color="surface"
+            size="xs"
+            data-pixel-free-line
+          >
+            {{ line.text }}
+          </button>
+          @if (noteDiffOpen() === line.variant) {
+            <div class="grid w-full grid-cols-2 gap-x-6 gap-y-2 px-2 pb-2" data-note-diff>
+              @if (line.note; as note) {
+                <div>
+                  <p class="text-[var(--et-surface-color-subtle-solid)]">Part note now</p>
+                  <p class="whitespace-pre-wrap" data-note-before>{{ note.before ?? 'None' }}</p>
+                </div>
+                <div>
+                  <p class="text-[var(--et-surface-color-subtle-solid)]">Part note in {{ line.variant }}</p>
+                  <p class="whitespace-pre-wrap" data-note-after>{{ note.after ?? 'None' }}</p>
+                </div>
+              }
+              @if (line.variantNote) {
+                <div class="col-span-2">
+                  <p class="text-[var(--et-surface-color-subtle-solid)]">Note on {{ line.variant }}</p>
+                  <p class="whitespace-pre-wrap" data-variant-note>{{ line.variantNote }}</p>
+                </div>
+              }
+              @if (!line.note && !line.variantNote) {
+                <p class="col-span-2 text-[var(--et-surface-color-subtle-solid)]">No note changed.</p>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+
     @if (showing() === 'merge') {
       <div
         class="flex flex-col items-start gap-1 border-b border-surface-border px-4 py-2 text-small"
@@ -734,6 +777,19 @@ export class SketchViewComponent {
   protected showing = computed<Shown>(() =>
     this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
   );
+
+  protected pixelFreeLines = computed(() => {
+    const sketch = this.sketch();
+
+    return pixelFreeLinesOf(
+      sketch,
+      this.matrix()
+        .columns.map((column) => column.key)
+        .filter((key) => sketch.variants.includes(key)),
+    );
+  });
+
+  protected noteDiffOpen = signal<string | null>(null);
 
   protected unchangedHeads = computed(() => (this.showing() === 'merge' ? [] : this.matrix().rowHeads));
 

@@ -464,7 +464,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   all-clear. This supplies the folding evidence that was missing before. No restart was
   performed by this design session.
 
-### 4.51 A round that changes no pixel looks broken in Studio - open
+### 4.51 A round that changes no pixel looks broken in Studio - done
 
 - **Pain (Tom, 2026-10-30):** "was ist mit dem inbox sketch?" The Inbox round r2 showed only
   folded "unchanged in c" row heads, empty dashed cells under Current and c, and the folded
@@ -483,6 +483,12 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** for the Inbox r2, Tom sees at the first view that c changes only the
   part note and drops one state, and can read the new note text without the agent.
 - **Decision (Tom, 2026-10-30):** option 1. Build it.
+- **As built (2026-10-30):** `/__design/sketches` gives each variant target `changes` (`added`, `dropped` states
+  against the product part, `note` before/after or `null`), read without drawing. The sketch canvas shows one
+  line per shown variant whose states are all unchanged, e.g. "a changes no pixel: part note changed, states xs,
+  ... dropped"; a click opens the part note now / in the variant, plus the variant note. Spec bites
+  (`serve.spec.ts`, `pixel-free.spec.ts`); headless check on a scratch copy (`/tmp/451/pixel-free-line.png`).
+  Deviation: the line sits above the grid; the folded rows stay. Not verified: the real Inbox r2, the Tauri window.
 
 ### 4.52 A pick in Studio shows only after a long delay - done
 

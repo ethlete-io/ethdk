@@ -179,6 +179,14 @@ const commentOf = ({
   };
 };
 
+type PartFacts = { states: string[]; note: string | null };
+
+const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartFacts }) => ({
+  added: drawn.states.filter((state) => !current.states.includes(state)),
+  dropped: current.states.filter((state) => !drawn.states.includes(state)),
+  note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
+});
+
 const targetsOf = async ({
   product,
   sketch,
@@ -189,8 +197,18 @@ const targetsOf = async ({
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
-}) =>
-  Promise.all(
+}) => {
+  const currentFile = product.parts.find((part) => partKeyOf(part) === sketch.target)?.file;
+  const current =
+    currentFile && load
+      ? await readPartModule({
+          part: { file: currentFile },
+          product: product.name,
+          load: () => load({ file: currentFile, product: product.name, sketch: null }),
+        })
+      : null;
+
+  return Promise.all(
     sketch.variants.map(async (variant) => {
       const file = overlaySketch({ product, sketch, variant }).parts.find(
         (part) => partKeyOf(part) === sketch.target,
@@ -204,7 +222,7 @@ const targetsOf = async ({
           ...(file ? {} : { error: `variant ${variant} has no part ${sketch.target}` }),
         };
 
-      const { states, interactions, problem, ...widths } = await readPartModule({
+      const { states, interactions, problem, note, ...widths } = await readPartModule({
         part: { file },
         product: product.name,
         load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
@@ -216,15 +234,20 @@ const targetsOf = async ({
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
         unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load, pictureOf }),
+        ...(problem || !current || current.problem
+          ? {}
+          : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
         ...(problem ? { error: problem } : {}),
       };
     }),
   );
+};
 
 /**
  * The open sketches of `?product=`, each with its variants, status, decision, the rule problems of every
  * variant, the states, widths and interactions of the target as each variant draws it (`targets`), with the states it
- * draws the same as the product now (`unchanged`), and the live report
+ * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
+ * from the product's (`changes`), and the live report
  * of the agent (`report`, `null` when none runs).
  */
 export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {

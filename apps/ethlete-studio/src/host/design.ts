@@ -439,7 +439,15 @@ export type SketchTarget = {
   interactions?: string[];
   /** The states this variant draws as the part is now. Missing from an `@ethlete/cli` older than folded states. */
   unchanged?: string[];
+  /** The states this variant adds and drops against the part now, and its part note when that differs. Missing from an `@ethlete/cli` older than this field. */
+  changes?: SketchTargetChanges;
   error?: string;
+};
+
+export type SketchTargetChanges = {
+  added: string[];
+  dropped: string[];
+  note: { before: string | null; after: string | null } | null;
 };
 
 /** `variant` and `author` are `null` or missing in a report written before they were recorded. */
