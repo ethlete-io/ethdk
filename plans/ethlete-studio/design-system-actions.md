@@ -768,6 +768,36 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   animation that is not settled when the picture is taken.
 - **Next:** draw `pages/merge` several times on an own server and compare the pictures; find the unstable state.
 
+### 4.67 The design render does not load the generated SDK theme classes - open
+
+- **Pain (2026-10-30):** `pages/sketches/sketch-data.css` keeps its own `:root, .et-color--default` block to map
+  the SDK default blue to the Studio accent. A sketch that removed it changed `page-sketch` and `zoomed-page`.
+- **Cause:** the design render does not load `apps/ethlete-studio/src/styles/themes.css`, which
+  `yarn studio:themes` generates from `foundations/colors`. A part with SDK components draws other colours than
+  the app.
+- **Fix option:** the product render loads the generated theme classes; then the override goes away (see Q4).
+
+### 4.68 One change across many parts needs one sketch per part - open
+
+- **Pain (2026-10-30):** the removal of the alias `--surface-sunken` touched 10 parts. It took 10 sketches, each
+  with its own `new`, `report`, `ready` and commit. A `shared/` edit through `foundations/spacing` also
+  changed `foundations/colors`, `foundations/motion` and `foundations/type` without a sign in the command.
+- **Fix option:** a sketch with several targets, or `sketch new --each <part,part>` that runs the same
+  edit and one `ready` over all of them. `ready` names every part a `shared/` edit reaches.
+
+### 4.69 A CLI rebuild breaks sketch commands that run at the same time - open
+
+- **Pain (2026-10-30):** two agents ran at once: one rebuilt `dist/libs/cli`, one ran `sketch ready`. The
+  builder had to copy the build to `dist/cli-css-snapshot` for the sketch agent.
+- **Fix option:** `nx build cli` writes to a temp folder and swaps it in at the end, so a running command
+  never sees a half-built `dist`.
+
+### 4.70 A rejected variant still blocks the auto-merge - open
+
+- **Pain (2026-10-30):** `sketchShowsNoChange` counts every variant, also a rejected one. Tom's rule (4.65
+  "Decision") names only live variants. A rejected variant with a change stops a merge that is safe.
+- **Fix option:** skip rejected variants in the "every variant draws the same" check.
+
 ### 4.64 Shared helper code had to be a part - done
 
 - **Pain (Tom, 2026-10-30):** `foundations/sheet` is no design. It only exports the token-sheet layout that
