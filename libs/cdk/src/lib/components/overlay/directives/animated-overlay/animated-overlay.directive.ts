@@ -24,6 +24,7 @@ import {
   OffsetOptions,
   Padding,
   Placement,
+  Platform,
   arrow,
   autoUpdate,
   computePosition,
@@ -31,6 +32,7 @@ import {
   hide,
   limitShift,
   offset,
+  platform,
   shift,
   size,
 } from '@floating-ui/dom';
@@ -42,6 +44,49 @@ import {
   nextFrame,
   signalElementDimensions,
 } from '@ethlete/core';
+
+const FLOATING_MAX_SIZE_PROPERTIES = ['--et-floating-max-width', '--et-floating-max-height'] as const;
+
+/**
+ * `flip` reads the first measurement of the floating element in each `computePosition` run. Against the
+ * cap `size` set in the previous run, the squeezed side always fits, so that measurement lifts the cap.
+ */
+const platformMeasuringUncappedFloatingElFirst = (floatingEl: HTMLElement): Platform => {
+  let measuredUncapped = false;
+
+  return {
+    ...platform,
+    getDimensions: (element) => {
+      if (element !== floatingEl || measuredUncapped) return platform.getDimensions(element);
+
+      measuredUncapped = true;
+
+      const caps = FLOATING_MAX_SIZE_PROPERTIES.map((name) => [name, floatingEl.style.getPropertyValue(name)] as const);
+
+      if (caps.every(([, value]) => !value)) return platform.getDimensions(element);
+
+      // The uncapped layout clamps the scroll offset of every scroller the cap made scrollable.
+      const scrolled = [...floatingEl.querySelectorAll<HTMLElement>('*')]
+        .filter((el) => el.scrollTop || el.scrollLeft)
+        .map((el) => ({ el, top: el.scrollTop, left: el.scrollLeft }));
+
+      for (const [name] of caps) floatingEl.style.removeProperty(name);
+
+      const dimensions = platform.getDimensions(element);
+
+      for (const [name, value] of caps) {
+        if (value) floatingEl.style.setProperty(name, value);
+      }
+
+      for (const { el, top, left } of scrolled) {
+        el.scrollTop = top;
+        el.scrollLeft = left;
+      }
+
+      return dimensions;
+    },
+  };
+};
 
 /**
  * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
@@ -304,11 +349,11 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       const refEl = this.referenceElement();
       const boundary = this.rootBoundary?.value();
 
-      this.floatingElCleanupFn = autoUpdate(refEl, floatingEl, () => {
-        this.updateFloatingPosition(floatingEl, refEl, boundary, floatingElArrow);
-      });
+      const update = () => this.updateFloatingPosition(floatingEl, refEl, boundary, floatingElArrow);
 
-      this.waitForRenderAndAnimate();
+      this.floatingElCleanupFn = autoUpdate(refEl, floatingEl, update);
+
+      this.waitForRenderAndAnimate(update);
     });
   }
 
@@ -331,6 +376,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     computePosition(refEl, floatingEl, {
       placement: this.placement(),
       middleware,
+      platform: this.autoResize() ? platformMeasuringUncappedFloatingElFirst(floatingEl) : platform,
     }).then(({ x, y, placement, middlewareData }) => {
       this.applyFloatingStyles(floatingEl, x, y, placement);
       this.applyArrowStyles(floatingEl, middlewareData, floatingElArrow);
@@ -422,11 +468,13 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
     }
   }
 
-  private waitForRenderAndAnimate() {
+  private waitForRenderAndAnimate(updateFloatingPosition: () => void) {
     nextFrame(() => {
       if (!this.componentRef || this.state() !== 'mounting') {
         return;
       }
+
+      updateFloatingPosition();
 
       const lifecycle = this.componentRef.instance.animatedLifecycle?.();
 
