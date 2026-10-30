@@ -1071,11 +1071,12 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Fix option:** one shared `EventSource` with `share()`, split by event name. Effort S.
 - **As built (2026-10-30, 560731d81):** `host/design-events.ts` holds one `EventSource` per port behind `share()`; `commentChanges$`, `partsChanges$`, `noteChanges$` and `flowChanges$` filter it by event name. A drop arrives as an `error` event and `commentChanges$` still errors on it; a late comment subscriber gets `connected` if the stream is open. Verified: new spec (one source for four subscribers, closes on the last unsubscribe, reopens), studio vitest, both tsc, eslint. The spec bites: with the old four call sites, 2 of its 4 tests fail. Not verified: a live server, WebKitGTK.
 
-### 4.80 The lazy Studio chunk holds every view - open
+### 4.80 The lazy Studio chunk holds every view - in progress
 
 - **Measured:** 887 KB raw, 247 KB gzip: `main` 289 KB, one lazy chunk 539 KB; `libs/components` forms 178 KB of
   it (select 74 KB, form-field 60 KB). Low priority for a desktop app.
 - **Fix option:** lazy-load the agent view and the dialogs. Effort S-M.
+- **In progress (2026-10-30):** a subagent builds it while 4.77 runs.
 
 ## 5. Drawing parts and pages
 
