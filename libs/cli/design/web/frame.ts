@@ -165,7 +165,7 @@ const report = () => {
 // macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
 const drawFrame = async () => {
   parent.postMessage({ type: 'design-explore:loading' }, '*');
-  await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
+  await (product ? loadProductEnv({ product, sketch, variant: sketchVariant }) : loadEnv(slug.split('/')[0] ?? ''));
   const tokenStyles = product ? await tokensOf(product) : null;
   const loaded = await (product ? drawPart(product) : drawCall());
 

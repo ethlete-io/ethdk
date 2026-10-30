@@ -68,6 +68,34 @@ describe('sketchShowsNoChange', () => {
     );
   });
 
+  it('stops when one of two variants changes a token the product stylesheet imports, though the markup is the same', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-no-change-'));
+
+    cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+    writeFileSync(join(target, '.ethlete/design/acme/styles.css'), "@import './foundations/palette/palette.css';\n");
+
+    const config = { ...readConfig(target)?.products?.['acme'], styles: ['.ethlete/design/acme/styles.css'] };
+    const product = resolveProduct({ target, name: 'acme', config });
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'foundations', name: 'palette' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const css = resolve(variantDirOf(sketch, 'a'), 'foundations', 'palette', 'palette.css');
+
+    writeFileSync(css, readFileSync(css, 'utf8').replace('#e4572e', '#13579b'));
+
+    const tokens: SketchPartLoader = async () => ({
+      default: { states: { default: {} }, render: () => ({ body: '<p class="acme-swatch"></p>', styles: '' }) },
+    });
+    const pictureOf: PictureOf = async ({ part, sketch: drawn }) => ({
+      png: Buffer.from([1, 2, part === 'foundations/palette' && drawn?.variant === 'a' ? 1 : 0]),
+      marks: [],
+    });
+
+    expect(await sketchShowsNoChange({ product, sketch, load: tokens, pictureOf })).toBe('variant a changes default');
+  });
+
   it('names the failed shot', async () => {
     const { product, sketch, css } = acme();
 

@@ -57,6 +57,7 @@ import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
+import { sketchStylesheetsPlugin } from './sketch-stylesheets';
 import { createPartShooter, dependentIdsOf, SHOT_PATH, StylesheetImports, stylesheetImportsPlugin } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -66,6 +67,7 @@ import {
   createSystemModules,
   productModuleIdOf,
   productOfModuleId,
+  sketchOfModuleId,
   SketchVariant,
   stylesheetModuleIdOf,
   SystemModules,
@@ -129,17 +131,48 @@ const workspaceAliases = (target: string) => {
 
 // Sequential on purpose: Vite appends a sheet's <style> when its import settles, so parallel
 // imports let the head order, and with it the winning rule, change from load to load.
+const stylesLoaderOf = (options: { target: string; entry: DesignProject; product?: string; sketch?: SketchVariant }) =>
+  `() => Promise.resolve()${(options.entry.styles ?? [])
+    .map((style) => resolve(options.target, style))
+    .map((file) =>
+      options.product ? productModuleIdOf({ file, product: options.product, sketch: options.sketch }) : file,
+    )
+    .map((file) => `.then(() => import(${JSON.stringify(fsUrl(file))}))`)
+    .join('')},`;
+
 const settingsLoaders = (options: { target: string; settings: Record<string, DesignProject>; products?: true }) =>
   `{\n${Object.entries(options.settings)
     .map(
       ([name, entry]) =>
-        `  ${JSON.stringify(name)}: () => Promise.resolve()${(entry.styles ?? [])
-          .map((style) => resolve(options.target, style))
-          .map((file) => (options.products ? productModuleIdOf({ file, product: name }) : file))
-          .map((file) => `.then(() => import(${JSON.stringify(fsUrl(file))}))`)
-          .join('')},`,
+        `  ${JSON.stringify(name)}: ${stylesLoaderOf({ target: options.target, entry, product: options.products ? name : undefined })}`,
     )
     .join('\n')}\n}`;
+
+/** The stylesheets of each product as one sketch variant draws them, for each variant that draws a part stylesheet from a file of its own. */
+const sketchStylesLoaders = (options: { target: string; config: DesignConfig; system: SystemModules }) => {
+  const { target, config, system } = options;
+
+  return `{\n${Object.entries(config.products ?? {})
+    .map(
+      ([product, entry]) =>
+        `  ${JSON.stringify(product)}: {\n${system
+          .sketchesOf(product)
+          .map(
+            ({ target: part, variants }) =>
+              `    ${JSON.stringify(part)}: {\n${variants
+                .filter(
+                  (variant) => system.replacedStylesheetsOf({ product, sketch: { target: part, variant } }).size > 0,
+                )
+                .map(
+                  (variant) =>
+                    `      ${JSON.stringify(variant)}: ${stylesLoaderOf({ target, entry, product, sketch: { target: part, variant } })}`,
+                )
+                .join('\n')}\n    },`,
+          )
+          .join('\n')}\n  },`,
+    )
+    .join('\n')}\n}`;
+};
 
 const themesOfSettings = (settings: Record<string, DesignProject>) =>
   JSON.stringify(
@@ -156,7 +189,8 @@ const themesOfSettings = (settings: Record<string, DesignProject>) =>
  * one it draws for: two projects define the same theme variables, so a frame that loaded both would
  * draw under whichever stylesheet came last.
  */
-const env = (target: string, config: DesignConfig) => {
+const env = (options: { target: string; config: DesignConfig; system: SystemModules }) => {
+  const { target, config, system } = options;
   const projects = config.projects ?? {};
   const products = config.products ?? {};
 
@@ -166,7 +200,8 @@ const env = (target: string, config: DesignConfig) => {
     `const themes = ${themesOfSettings(projects)};\n` +
     `export const themesOf = (project) => themes[project] ?? { surface: [], color: [] };\n` +
     `const productEnvs = ${settingsLoaders({ target, settings: products, products: true })};\n` +
-    `export const loadProductEnv = (product) => (productEnvs[product] ?? (() => Promise.resolve()))();\n`
+    `const sketchProductEnvs = ${sketchStylesLoaders({ target, config, system })};\n` +
+    `export const loadProductEnv = ({ product, sketch, variant }) => (sketchProductEnvs[product]?.[sketch]?.[variant] ?? productEnvs[product] ?? (() => Promise.resolve()))();\n`
   );
 };
 
@@ -335,7 +370,7 @@ const designExplore = ({
     },
     load: (id: string) => {
       if (id === `\0${VIRTUAL}`) return registry(target);
-      if (id === `\0${VIRTUAL}/env`) return env(target, config);
+      if (id === `\0${VIRTUAL}/env`) return env({ target, config, system });
       if (id === `\0${VIRTUAL}/system`) return systemRegistry(system);
 
       return null;
@@ -481,6 +516,7 @@ const designExplore = ({
 
         system.forget();
         unresolveParts();
+        reload(`${VIRTUAL}/env`);
         reload(`${VIRTUAL}/system`);
         redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
       };
@@ -674,7 +710,18 @@ export const createDesignServer = async (options: {
     root: resolve(here, 'web'),
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
     // own pipeline so no checkout's postcss config reaches a drawing.
-    css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin(), stylesheetImportsPlugin(stylesheetImports)] } },
+    css: {
+      postcss: {
+        plugins: [
+          sketchStylesheetsPlugin((id) =>
+            system.replacedStylesheetsOf({ product: productOfModuleId(id) ?? '', sketch: sketchOfModuleId(id) }),
+          ),
+          tailwind(),
+          forceInteractionsPlugin(),
+          stylesheetImportsPlugin(stylesheetImports),
+        ],
+      },
+    },
     cacheDir: viteCacheOf(target, own ? 'vite-check' : 'vite'),
     resolve: {
       alias: [

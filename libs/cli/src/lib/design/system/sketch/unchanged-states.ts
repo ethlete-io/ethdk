@@ -1,5 +1,7 @@
 import { createHash } from 'crypto';
+import { resolve } from 'path';
 import { PictureOf } from '../../merge-compare';
+import { productStylesheetFilesOf } from '../product-stylesheets';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
 import { baselineOf, partHashOf } from './baseline';
@@ -114,8 +116,9 @@ const drawsTheSame = async (options: {
 
 /**
  * The states of the sketch's target that `variant` renders to the same markup and styles as the product
- * does now, with the same widths and interactions, so every frame of them matches. With `pictureOf`, a state
- * whose markup differs, or cannot be rendered outside a browser (`ng()`), is unchanged when every frame draws the
+ * does now, with the same widths and interactions, so every frame of them matches, unless the variant changes a
+ * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
+ * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
  * unchanged. Markup-only comparisons are cached by source hashes; pixel comparisons run again for each screenshot session.
  */
@@ -158,6 +161,12 @@ export const unchangedStatesOf = async (options: {
   if (!now || !after) return [];
   if (now.frames !== after.frames) return pictureOf ? [] : remember(key, []);
 
+  const imported = productStylesheetFilesOf(product);
+  const restyled = overlaid.parts.some((part) => {
+    const own = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part));
+
+    return !!own?.css && imported.has(resolve(own.css)) && part.cssSource !== own.cssSource;
+  });
   const presets = current?.layer === 'pages' ? Object.keys(product.presets) : null;
   const same = await Promise.all(
     [...after.states].map(async ([state, markup]) => {
@@ -165,7 +174,7 @@ export const unchangedStatesOf = async (options: {
 
       const before = now.states.get(state);
 
-      if (markup && before && markup.body === before.body && markup.styles === before.styles) return true;
+      if (!restyled && markup && before && markup.body === before.body && markup.styles === before.styles) return true;
 
       return pictureOf
         ? drawsTheSame({

@@ -120,6 +120,8 @@ Remove or update those imports first.
 `sketch ready` merges a sketch on its own only when no state of the target changes a pixel and
 no state of a part that `sketch preview` lists under `shows` changes either. Otherwise the sketch
 stays ready, and the output names each changed part and state.
+Every variant must draw the same; one changed variant is enough to stop it. A variant draws its
+own part stylesheets, also where the product stylesheet `@import`s the merged file.
 
 `et design sketch check` and `sketch ready` also verify that the merger can write the target's
 note and authors. A variant that delegates to a shared factory keeps a `definePart` object with

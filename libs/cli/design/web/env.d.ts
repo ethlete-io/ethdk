@@ -9,8 +9,12 @@ declare module 'virtual:design-explore/env' {
   export const loadEnv: (project: string) => Promise<unknown>;
   /** The theme names the config declares for the project. The first of each list is the default. */
   export const themesOf: (project: string) => { surface: string[]; color: string[] };
-  /** Loads the stylesheet a product draws under, which its base parts draw under too. */
-  export const loadProductEnv: (product: string) => Promise<unknown>;
+  /** Loads the stylesheet a product, or one variant of one of its sketches, draws under, which its base parts draw under too. */
+  export const loadProductEnv: (options: {
+    product: string;
+    sketch: string | null;
+    variant: string;
+  }) => Promise<unknown>;
 }
 
 declare module 'virtual:design-explore/system' {

@@ -431,6 +431,7 @@ describe('the design server for a design system', () => {
 
     expect(invalidated).toEqual([
       '/w/acme-base/components/card/card.ts?design-product=acme',
+      '\0virtual:design-explore/env',
       '\0virtual:design-explore/system',
     ]);
     expect(sent).toEqual([]);

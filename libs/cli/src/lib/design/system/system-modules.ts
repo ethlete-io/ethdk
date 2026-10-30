@@ -131,6 +131,25 @@ export const createSystemModules = (options: { target: string; config: DesignCon
       : [];
   };
 
+  /** Each part stylesheet of the product that one sketch variant draws from another file, mapped to that file. */
+  const replacedStylesheetsOf = (options: { product: string; sketch: SketchVariant | null }) => {
+    const { product, sketch } = options;
+    const merged = productOf(product);
+    const drawn = sketch ? drawnOf(product, sketch) : null;
+
+    if (!merged || !drawn) return new Map<string, string>();
+
+    return new Map(
+      drawn.parts.flatMap((part) => {
+        const own = merged.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part))?.css;
+
+        return own && part.css && resolve(own) !== resolve(part.css) && existsSync(part.css)
+          ? [[resolve(own), resolve(part.css)] as const]
+          : [];
+      }),
+    );
+  };
+
   const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
     const { product, sketch, path } = options;
     const resolvedProduct = productOf(product);
@@ -231,6 +250,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     drawnOf,
     partOf,
     tokenStylesheetsOf,
+    replacedStylesheetsOf,
     resolveId,
     withAssetUrls,
     forget: () => {
