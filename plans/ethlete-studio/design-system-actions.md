@@ -515,6 +515,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   found: `design complete` cannot take a sketch (checked by a temporary copy over the base part); the base part lives
   under `.ethlete/design/sdk/` while the sketch is under `studio/sketches`, so check the merge target. Q25 (inventory
   sheet UI) is with Tom.
+- **Merged (Tom, 2026-10-30):** the button sketch (`e304eb3d0`). The merge wrote a new product part
+  `.ethlete/design/studio/components/button/button.ts` that overrides the `sdk` base part; the base still declares
+  no controls. `design complete components/button --product studio` passes. Open: should a sketch of a base part
+  merge into the base, or stay a product override?
 - **In progress (2026-10-30):** inventory slice 1 (CLI: inventory data, `inventory.json`, reopen rules,
   `design complete` gap, server endpoints; subagent). Slice 2, the Studio view, follows.
 
@@ -959,6 +963,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   0.59, `warning-active` 0.69, `danger-active` 0.61. Only b keeps `text-subtle` apart from `text-muted` (0.72).
   `danger-active` stays 0.07 below `danger`, not 0.09, so `on-danger` stays the same on every danger fill
   (4.56:1). The merge OK still has to be typed by Tom in the builder session.
+- **Merged (Tom, 2026-10-30):** Tom merged variant a in Studio, not b (`e304eb3d0`). `design check --product studio`
+  passes.
 
 ### 4.66 `sketch ready` gives a different answer on a re-run - done
 
