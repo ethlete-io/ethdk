@@ -729,6 +729,20 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `return null`). Verified: unit specs, spec typecheck, `nx build cli`, lint. Not verified: a live run against a
   render server. Affected parts draw only at the first width, as `compareMerge` does.
 
+### 4.65 A token value change in a sketch auto-merges as "no visible change" - open
+
+- **Pain (2026-10-30):** the colour step B sketch `foundations/colors` had two variants: a (each `*-active`
+  0.05 L darker, `--text-subtle` oklch(0.62 0 0)) and b (0.09 L darker, oklch(0.58 0 0)). `sketch ready`
+  printed "No visible change in any state: merged foundations/colors automatically" and merged variant a.
+  The part draws `.co-fill--active` with `var(--accent-active)` and `.co-subtle-text` with `var(--text-subtle)`,
+  so the change must show. The builder undid the uncommitted merge.
+- **Two defects:** (1) a token value edit in a variant's `.css` does not reach the compared drawings (suspect:
+  the drawing loads the merged product CSS); (2) auto-merge picks one of two variants, which is the designer's
+  choice. With more than one live variant, `ready` must never auto-merge.
+- **Step B values and WCAG 2 contrast** (redo the sketch after the fix): subtle on surface / raised / overlay:
+  a 5.25 / 4.46 / 3.88, b 4.46 / 3.79 / 3.30; `on-*` on `*-active` accent / warning / danger: a 5.75 / 7.42 /
+  4.95, b 4.95 / 6.40 / 4.20.
+
 ### 4.64 Shared helper code had to be a part - done
 
 - **Pain (Tom, 2026-10-30):** `foundations/sheet` is no design. It only exports the token-sheet layout that
