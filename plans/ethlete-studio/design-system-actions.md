@@ -982,7 +982,7 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Decision (Tom, 2026-10-30):** build in this order: 4.76, then 4.75, then 4.77, then 4.78 to 4.80. For 4.75,
   measure the pop-in steps on a real sketch before and after the change.
 
-### 4.75 Variants pop in one by one on a part with many states - in progress (builder, 2026-10-30)
+### 4.75 Variants pop in one by one on a part with many states - built
 
 - **Pain (Tom, 2026-10-30):** on a part like `components/comment-pin`, the variants appear one after another,
   about 300 ms apart. In a sketch this is very slow.
@@ -996,6 +996,25 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   centre); keep a loaded iframe for a grace period after it leaves the view; show the drawn shot `img` elsewhere.
   Effort M. The measure did not prove that this alone explains the 300 ms steps; measure the steps on a real
   sketch before and after.
+- **As built (2026-10-30, `53d7802c6`):** `live-frames.ts` picks the live set; the canvas goes live 250 ms after
+  the camera rests, on at most 6 frames or grid cells nearest the viewport centre (a target without a shot stays
+  live whenever it is in view), and keeps up to 6 left-behind ones live for 5 s. The others show their shot. A
+  grid cell now goes live on its own (`liveCells`), so the cap also holds on a one-frame grid like `comment-pin`.
+  Measured headless (own production Studio build, own design server, scratch copy, Chromium 1600x1000, warm
+  server), before / after:
+  - Part `components/comment-pin`, one zoom-in click (35 % to 53 %): iframes 42 / 6, requests 1,570 / 310,
+    frame documents 42 / 6; first iframe 127 / 331 ms, iframes painted 415-609 ms / 391-474 ms. Pan away and back
+    within 1.5 s: 1,570 repeated requests and 42 reloads / 0 requests and 0 reloads.
+  - Sketch `components/comment-pin` (a, b; 120 state frames), seven zoom-in clicks to 85 %: iframes 39 / 6,
+    requests 1,084 / 210; the visible iframes painted within 44 ms / 0 ms of each other. Pan back: 945 repeated
+    requests and 27 reloads / 1 request and 0 reloads. With 6x CPU throttling: painted 2.0 s / 0.65 s after
+    the iframes mounted.
+  - Not reproduced: the 300 ms steps. In headless Chromium and Playwright WebKit all live frames paint in one
+    burst, before and after; every cell shows its shot first. The cost scales with the live iframe count. A cold
+    design server is a different cause: a cold sketch showed no frame for about 12 s, waiting for
+    `GET /__design/sketches` before it asked for any shot or diff.
+  - Not verified: WebKitGTK in the Tauri window, the dev Studio on :4221, Tom's design server under real load, and
+    a shot redraw after a file save (the stub sends no `design_watch` events).
 
 ### 4.76 `GET /__design/sketches` redraws its pixel comparisons on every call - built
 
