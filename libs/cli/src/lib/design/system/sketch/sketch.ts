@@ -12,7 +12,7 @@ import {
 import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
-import { ASSETS_FOLDER } from '../assets';
+import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -138,6 +138,29 @@ const liftShared = (options: { partDir: string; sketchSharedDir: string }) => {
 
   cpSync(shared, sketchSharedDir, { recursive: true });
   rmSync(shared, { recursive: true });
+};
+
+const sharedClashOf = (parts: ({ layer: string; name: string; file: string } | undefined)[]) => {
+  const seen = new Map<string, { key: string; source: string }>();
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    const shared = resolve(dirname(part.file), SHARED_FOLDER);
+
+    for (const file of filesBelow(shared)) {
+      const path = relative(shared, file).split(sep).join('/');
+      const source = readFileSync(file, 'utf8');
+      const held = seen.get(path);
+
+      if (held && held.source !== source)
+        return `${held.key} and ${partKeyOf(part)} each hold a different ${SHARED_FOLDER}/${path} - rename one, then open the sketch`;
+
+      seen.set(path, { key: partKeyOf(part), source });
+    }
+  }
+
+  return undefined;
 };
 
 /** Reads `<layer>/<name>` as a sketch target, or answers with why it is not one. */
@@ -502,6 +525,12 @@ export const createSketch = (options: {
   if (invalid !== undefined)
     return `"${invalid}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
   if (new Set(variants).size !== variants.length) return 'each variant name must be unique';
+
+  const clash = like
+    ? undefined
+    : sharedClashOf(all.map((target) => product.parts.find((part) => partKeyOf(part) === partKeyOf(target))));
+
+  if (clash) return clash;
 
   for (const variant of variants) {
     mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });

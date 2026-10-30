@@ -128,7 +128,7 @@ they never appear in Studio's tree or `et design list`. Inside a sketch, `@share
 in the variant's `shared/`, then the sketch's, then the product's, then the base's. A part's
 `merged.json` hash covers the shared files it reaches, so editing one marks each importer changed.
 At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
-the rest moves into the target's folder as before.
+the rest moves into the target's folder as before - with several targets, into each target that imports it.
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags

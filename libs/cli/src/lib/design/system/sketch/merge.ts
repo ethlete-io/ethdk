@@ -122,7 +122,7 @@ const mergeOrReason = (options: {
 
   if (problems.length > 0) return problems.map((problem) => `${problem.file}: ${problem.message}`).join('\n');
 
-  const shared = sharedPlanOf({ sketch, parts, product });
+  const shared = sharedPlanOf({ sketch, variant, parts, product });
 
   if (typeof shared === 'string') return shared;
 
@@ -176,7 +176,7 @@ const mergeOrReason = (options: {
 
   for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
-  for (const targetDir of shared.carry) carryShared({ sketch, variant, targetDir, product });
+  for (const { targetDir, paths } of shared.carry) carryShared({ sketch, variant, targetDir, paths, product });
 
   if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
     swapped.restore();

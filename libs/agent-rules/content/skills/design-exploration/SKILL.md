@@ -167,7 +167,9 @@ variant imports it as `@shared/<path>`, and a shared file may import `@system/..
 changed holds its own copy at `<variant>/shared/<path>`; `@shared/<path>` finds that copy first, and a merge
 of that variant takes it. On a merge, `shared/` moves into
 the target's folder as `shared/` with its imports made relative; when no part imports it, it is
-dropped. Only the target may import it: a merge refuses while another part of the picked variant
+dropped. With several targets, each takes only the files it imports, directly or through another
+shared file; a file nobody imports goes back to the target that held it, and the merge refuses one no
+target held. `sketch new` refuses targets whose `shared/` folders hold one path with different contents. Only the target may import it: a merge refuses while another part of the picked variant
 does, so move that code into the part. `sketch new` prints each file it puts in `shared/`, for example
 the `shared/` folder of a merged page: edit it there, as part of the sketch, not in a variant copy.
 

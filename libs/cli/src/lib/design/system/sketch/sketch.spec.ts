@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
-import { resolveProduct } from '../resolve-product';
+import { partKeyOf, resolveProduct } from '../resolve-product';
 import {
   addVariant,
   authorsOf,
@@ -611,6 +611,33 @@ describe('a sketch on a part with a shared folder', () => {
     expect(readFileSync(join(sketch.dir, 'shared/data.ts'), 'utf8')).toContain("from '@shared/more'");
     expect(existsSync(join(sketch.dir, 'shared/more.ts'))).toBe(true);
     expect(existsSync(join(hero, 'shared/data.ts'))).toBe(true);
+  });
+
+  it('refuses several targets whose shared folders hold the same path with different contents', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const folderOf = (key: string) => join(product.parts.find((part) => partKeyOf(part) === key)?.file ?? '', '..');
+    const openOnTwo = () =>
+      createSketch({
+        product: resolveAcme(target),
+        sketch: { layer: 'elements', name: 'hero' },
+        others: [{ layer: 'components', name: 'card' }],
+        variants: ['a'],
+      });
+
+    for (const [key, source] of [
+      ['elements/hero', 'export const data = 1;\n'],
+      ['components/card', 'export const data = 2;\n'],
+    ] as const) {
+      mkdirSync(join(folderOf(key), 'shared'));
+      writeFileSync(join(folderOf(key), 'shared/data.ts'), source);
+    }
+
+    expect(openOnTwo()).toContain('elements/hero and components/card each hold a different shared/data.ts');
+
+    writeFileSync(join(folderOf('components/card'), 'shared/data.ts'), 'export const data = 1;\n');
+
+    expect(typeof openOnTwo()).toBe('object');
   });
 });
 
