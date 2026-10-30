@@ -161,3 +161,16 @@ Each slice gets an "in progress" note here when it starts.
 - **Decision (Tom, 2026-10-30):** every open point as recommended. Build `et design mcp`, then `motion_shots`; token
   names, the `/__design/motion` endpoint in slice 3; clip to the union of the root and the animated boxes over all
   keyframes; `data-et-key` before the selector for `element`; keep the three limits and document them.
+
+## As built: Q29-Q31 (2026-10-30)
+
+- Q29: `motionPicturesOf` runs the motion a third time, collects `etMotion.bounds()` (root plus every animated element, page
+  coordinates) at each keyframe, and clips every shot of the mode to the union (cut at the page origin). A `--preset` run
+  still takes the whole page. Because the clip is shared, a growing part now has the same sheet width in every frame.
+- Q30: `elementOf` returns `[data-et-key="..."]` when the animated element itself has the key; the selector otherwise. An
+  ancestor's key is not used.
+- Q31: the limits are on the `motion shots` paragraph of `apps/docs/cli/index.md`.
+- Bit: the `motionOf` spec (a transform overshoot of 3x gives one equal, wide size per frame and a keyed element), the
+  `bounds` spec (fails without the empty-box filter), the key spec and `unionOfBoxes` (fails without the origin cut).
+- Not verified: an overshoot to the left or top of the page (cut at 0, so lost), WebKit, `nx build cli` (fails on the
+  parallel `complete.ts` `clip` error, not on this change; spec typecheck and eslint pass).
