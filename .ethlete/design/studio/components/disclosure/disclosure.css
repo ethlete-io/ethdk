@@ -13,6 +13,12 @@
     cursor: pointer;
   }
 
+  .st-disclosure:where([data-size='xs']) {
+    align-items: flex-start;
+    text-align: start;
+    font-size: var(--text-xs);
+  }
+
   .st-disclosure:hover {
     color: var(--text);
   }

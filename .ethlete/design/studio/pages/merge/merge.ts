@@ -1,21 +1,23 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
+import { disclosure } from '@system/components/disclosure';
+import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
 import {
   CHANGED,
   TARGET,
   type Row,
-  type UnchangedState,
   picked,
   rowCaption,
   rowStyles,
   shot,
-  unchangedLine,
+  unchangedBody,
+  unchangedLabel,
 } from './merge-data';
 import kit from './merge-kit.css?inline';
 import styles from './merge.css?inline';
 
-type Props = { unchanged: UnchangedState };
+type Props = { unchanged: boolean };
 
 const SCALE = 0.37;
 const CROP_SCALE = 2;
@@ -40,7 +42,7 @@ const crop: Row = {
 const listRow = (row: Row) =>
   html`<li class="mg-c-item" ${row === selected ? ' data-selected' : ''}>${rowCaption(row)}</li>`;
 
-const panelOf = (unchanged: UnchangedState) =>
+const panelOf = (unchanged: boolean) =>
   html`<div class="mg-c-panel">
     <div class="mg-d-back">${back.body}</div>
     <div class="mg-c-target">
@@ -51,7 +53,9 @@ const panelOf = (unchanged: UnchangedState) =>
     <ul class="mg-c-list">
       ${CHANGED.map(listRow).join('')}
     </ul>
-    <div data-et-skip="WRAP">${unchangedLine(unchanged)}</div>
+    <div data-et-skip="WRAP">
+      ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
+    </div>
     <span class="mg-c-gap"></span>
     <div class="mg-c-merge mg-d-merge">${merge.body}</div>
   </div>`;
@@ -61,13 +65,11 @@ export default definePart<Props>({
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
   states: {
-    open: { unchanged: 'rest' },
-    'unchanged-hover': { unchanged: 'hover' },
-    'unchanged-focus': { unchanged: 'focus-visible' },
-    'unchanged-open': { unchanged: 'open' },
+    open: { unchanged: false },
+    'unchanged-open': { unchanged: true },
   },
   controls: {
-    unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'unchanged-open' } },
+    toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } },
   },
   render: async ({ unchanged }) => {
     const row = selected ?? CHANGED[0];
@@ -98,7 +100,7 @@ export default definePart<Props>({
 
     return drawing({
       body: shell.body,
-      styles: shell.styles + back.styles + merge.styles + instance.styles + rowStyles + kit + styles,
+      styles: shell.styles + back.styles + merge.styles + instance.styles + rowStyles + disclosureStyles + kit + styles,
     });
   },
 });

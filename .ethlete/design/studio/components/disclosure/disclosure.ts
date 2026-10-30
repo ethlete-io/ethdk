@@ -3,13 +3,25 @@ import styles from './disclosure.css?inline';
 
 type DisclosureInteraction = 'hover' | 'active' | 'focus-visible';
 
-export type Props = { label: string; body: string; open: boolean; interaction?: DisclosureInteraction };
+export type Props = {
+  label: string;
+  body: string;
+  open: boolean;
+  size?: 'sm' | 'xs';
+  interaction?: DisclosureInteraction;
+};
 
 const CHEVRON =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 
-export const disclosure = ({ label, body, open, interaction }: Props) => {
-  const toggle = html`<button class="st-disclosure" type="button" data-et-control="toggle" aria-expanded="${open}">
+export const disclosure = ({ label, body, open, size = 'sm', interaction }: Props) => {
+  const toggle = html`<button
+    class="st-disclosure"
+    type="button"
+    data-et-control="toggle"
+    data-size="${size}"
+    aria-expanded="${open}"
+  >
     ${CHEVRON}<span>${label}</span>
   </button>`;
   const line = interaction ? forceInteraction(toggle, interaction) : toggle;
@@ -17,7 +29,7 @@ export const disclosure = ({ label, body, open, interaction }: Props) => {
   return open ? line + html`<div data-et-surface="toggle.body">${body}</div>` : line;
 };
 
-const demo = {
+const demo: Omit<Props, 'open'> = {
   label: '2 states of pages/inbox without visible change',
   body: html`<ul class="st-disclosure-body">
     <li><span>pages/inbox</span><span>all</span></li>
@@ -25,8 +37,8 @@ const demo = {
   </ul>`,
 };
 
-export const { states, grid } = interactionRows(
-  { rest: { ...demo, open: false }, open: { ...demo, open: true } },
+export const { states, grid } = interactionRows<Props, 'rest' | 'open' | 'xs', DisclosureInteraction>(
+  { rest: { ...demo, open: false }, open: { ...demo, open: true }, xs: { ...demo, open: false, size: 'xs' } },
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );
 

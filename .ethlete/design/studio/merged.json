@@ -1,6 +1,6 @@
 {
   "components/comment-pin": "1b9a9aa22f9e991f",
-  "components/disclosure": "eca7fb07aac4ebf8",
+  "components/disclosure": "f8e30277a26a2b72",
   "components/tree-row": "02c9ec7e8a3b41a1",
   "elements/canvas-frames": "3cac4c1dfffce8be",
   "elements/part-tree": "bc6764638ee1f7c5",
@@ -13,7 +13,7 @@
   "foundations/type": "9105d20e46cd8ba3",
   "pages/flows": "bb30a7aacfb3bdf8",
   "pages/inbox": "9c8ddab1e07eb5e9",
-  "pages/merge": "362ddb46826e391c",
+  "pages/merge": "c060b60528699e3e",
   "pages/sketches": "85f6fb0759108c7c",
   "pages/start": "edb5ce2bbf44011c",
   "pages/system": "2c2356af2649fc97"

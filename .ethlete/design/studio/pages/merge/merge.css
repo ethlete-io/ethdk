@@ -68,13 +68,6 @@
     background: var(--accent-subtle);
   }
 
-  .mg-c-panel .mg-unchanged {
-    align-items: flex-start;
-    text-align: start;
-    padding-inline: var(--space-2);
-    font-size: var(--text-xs);
-  }
-
   .mg-c-gap {
     flex: 1;
   }
