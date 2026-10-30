@@ -147,6 +147,31 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Status:** missing lifecycle capability confirmed; no rejection API/CLI/UI implemented.
   I/J currently have negative feedback recorded but are not technically rejected. The next
   design round continues separately; the agent must not claim this finding is already fixed.
+- **Proposal (2026-10-30, `claude-sdk58`, for Tom - not built):**
+  - **Data:** a new optional `rejected` map in the sketch file, next to `variantInfo`:
+    `rejected: { [variant]: { reason: string; by: 'designer'; decidedAt: string; reopened?:
+{ reason: string; decidedAt: string }[] } }`. It is separate from `decision`, because
+    `decision` holds one pick or one discard for the whole sketch.
+  - **Write paths:** `decideSketch` gets two more kinds: `reject` (variant, reason) and
+    `reopen` (variant, reason). Studio sends them through `SKETCH_DECISION_PATH`. The CLI gets
+    `et design sketch reject <part> --variant <v> --reason <text>` and `... reopen ...`.
+  - **Who may write:** only Studio writes a `reject` or a `reopen`, from a designer click. The
+    CLI commands exist for the designer at a terminal and print the stored state after the
+    write. An agent never calls them from prose.
+  - **Enforcement:** `decideSketch` refuses a `pick` of a rejected variant. The merge route and
+    `sketch merge` refuse it too, with the reason. `sketch copy --from` a rejected variant is
+    allowed, because a new variant from an old idea is a new idea.
+  - **Studio:** a rejected variant stays in its round, dimmed, with "Rejected: <reason>" and a
+    "Reopen" action. Pick and Merge are hidden for it. `design shot --variants` still draws it,
+    with a "rejected" label.
+  - **Scope:** per variant only. A round rejection is "reject every variant of the round" in
+    the UI, not a second stored kind.
+  - **Open points, with recommendations:**
+    - Reason required? Recommended yes: one line, so the history says why.
+    - May the agent record a rejection the designer said in chat? Recommended no: Studio or
+      the terminal only, so the origin stays true.
+    - Does a rejected variant count for "all variants decided" checks? Recommended yes, as
+      decided.
 
 ## 4. Render checks and shots
 
