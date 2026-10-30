@@ -19,6 +19,7 @@ const script = fileURLToPath(import.meta.url);
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
+const WAKE_GRACE_MS = 1500;
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -236,6 +237,7 @@ if (command === 'send' && sender) {
   prepare();
   appendFileSync(mailbox, '');
   let seen = entries().length;
+  const due = {};
   const wake = (agent) => {
     if (!unreadFor(agent).unread.length) return;
     const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
@@ -250,7 +252,15 @@ if (command === 'send' && sender) {
     const history = entries();
     const fresh = history.slice(seen);
     seen = history.length;
-    new Set(fresh.filter((entry) => entry.to && entry.to !== entry.sender).map((entry) => entry.to)).forEach(wake);
+    fresh
+      .filter((entry) => entry.to && entry.to !== entry.sender)
+      .forEach((entry) => (due[entry.to] ??= Date.now() + WAKE_GRACE_MS));
+    Object.keys(due)
+      .filter((agent) => due[agent] <= Date.now())
+      .forEach((agent) => {
+        delete due[agent];
+        wake(agent);
+      });
   };
   process.stdout.write(`Dispatching for ${resolve(mailbox)}\n`);
   setInterval(poll, 1000);
