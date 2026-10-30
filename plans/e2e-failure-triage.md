@@ -59,6 +59,8 @@ At the end, it prints a summary table: slice, passed, failed, time.
   the slice 1 reporter: add a `detail` field with the first error line past line 6 that holds `http`
   or starts with `+ `. Do not match on fixture messages. Slice 3 must also mark "connection refused on a mock" as
   an infrastructure group, not as a test verdict.
+- Done (0c7d5714b): the reporter `detail` field.
+- Done (0c7d5714b): the `e2e-triage` skill marks connection-refused groups as infrastructure.
 - Changeset: the same `@ethlete/cli` minor.
 
 ## Slice 3: `e2e-triage` skill
