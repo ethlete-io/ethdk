@@ -4,15 +4,16 @@ import codex from '@assets/agent-codex.svg?raw';
 import deepseek from '@assets/agent-deepseek.svg?raw';
 import gemini from '@assets/agent-gemini.svg?raw';
 import generic from '@assets/agent-generic.svg?raw';
+import grok from '@assets/agent-grok.svg?raw';
 import kimi from '@assets/agent-kimi.svg?raw';
 import meta from '@assets/agent-meta.svg?raw';
 import styles from './agent-logos.css?inline';
 
-export type Agent = 'claude' | 'codex' | 'gemini' | 'deepseek' | 'kimi' | 'meta' | 'generic';
+export type Agent = 'claude' | 'codex' | 'gemini' | 'grok' | 'deepseek' | 'kimi' | 'meta' | 'generic';
 
-export const agents: Agent[] = ['claude', 'codex', 'gemini', 'deepseek', 'kimi', 'meta', 'generic'];
+export const agents: Agent[] = ['claude', 'codex', 'gemini', 'grok', 'deepseek', 'kimi', 'meta', 'generic'];
 
-const logos: Record<Agent, string> = { claude, codex, gemini, deepseek, kimi, meta, generic };
+const logos: Record<Agent, string> = { claude, codex, gemini, grok, deepseek, kimi, meta, generic };
 
 /** The brand mark of an agent as inline SVG, 1.2rem by default; `cls` lets a host size it in its own CSS. */
 export const agentLogo = (agent: Agent, cls = '') =>
