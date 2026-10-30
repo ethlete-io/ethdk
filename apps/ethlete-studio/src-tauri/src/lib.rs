@@ -113,6 +113,28 @@ fn widened(shell: &OsStr, inherited: &OsStr) -> Option<OsString> {
     std::env::join_paths(entries).ok()
 }
 
+const PANIC_LOG: &str = "ethlete-studio-panics.log";
+
+fn panic_report(thread: Option<&str>, message: &str, backtrace: &str) -> String {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default();
+
+    format!(
+        "Studio panic at unix {seconds} on thread {}: {message}\n{backtrace}\n",
+        thread.unwrap_or("<unnamed>")
+    )
+}
+
+fn append_panic_report(path: &std::path::Path, report: &str) {
+    use std::io::Write;
+
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = file.write_all(report.as_bytes());
+    }
+}
+
 pub fn run() {
     if let Some(context) = tools::ToolContext::from_arguments(std::env::args().skip(1)) {
         tools::serve(&context);
@@ -123,10 +145,13 @@ pub fn run() {
     let previous_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         previous_hook(info);
-        eprintln!(
-            "Studio panic backtrace:\n{}",
-            std::backtrace::Backtrace::force_capture()
+        let report = panic_report(
+            std::thread::current().name(),
+            &info.to_string(),
+            &std::backtrace::Backtrace::force_capture().to_string(),
         );
+        eprintln!("{report}");
+        append_panic_report(&std::env::temp_dir().join(PANIC_LOG), &report);
     }));
 
     widen_path();
@@ -182,6 +207,22 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_panic_report_is_appended_after_the_earlier_ones() {
+        let path = std::env::temp_dir().join(format!("studio-panic-test-{}.log", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+
+        append_panic_report(&path, &panic_report(Some("tokio-rt-worker"), "first", "frame a"));
+        append_panic_report(&path, &panic_report(None, "second", "frame b"));
+
+        let log = std::fs::read_to_string(&path).unwrap();
+        let _ = std::fs::remove_file(&path);
+
+        assert!(log.contains("on thread tokio-rt-worker: first\nframe a\n"));
+        assert!(log.contains("on thread <unnamed>: second\nframe b\n"));
+        assert!(log.find("first").unwrap() < log.find("second").unwrap());
+    }
 
     #[test]
     fn a_widened_path_keeps_every_entry_whole_once() {

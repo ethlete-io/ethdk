@@ -68,6 +68,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Investigation:** no concrete nested-runtime caller found in Studio commands or the pinned CEF event dispatch. No speculative runtime fix applied.
 - **Diagnostic built:** Studio preserves the existing panic hook and force-captures a backtrace to stderr. Requires a rebuilt/restarted native app. Four focused Rust agent tests and rustfmt pass.
 - **Next:** capture the next panic's full stack plus triggering action, then fix that call path. Root cause remains open.
+- **Static search (2026-10-30, `claude-sdk58`):** no `block_on` caller in the Studio host, the
+  pinned Tauri checkout (`9d1a5b1`, including `tauri-runtime-cef`), the updater, or `fix-path-env`.
+  `tokio-rt-worker` is the Tokio default thread name, so it does not name the runtime. Dead end
+  without a stack.
+- **Panic log:** the hook now also appends each report (time, thread, message, backtrace) to
+  `ethlete-studio-panics.log` in the temp dir (`/tmp` on Linux). On the next panic, read that
+  file and the last Studio action, then fix that call path.
 - **Other reported output:** DevTools remote debugging disallowed by system admin, rejected Blink Widget message, Mesa loader permission denied for `/usr/lib64/gbm/dri_gbm.so`, and CEF browser-info timeouts. Their relation to the panic is unproven; retain them with the next stack.
 
 ## 2. Review on the canvas
