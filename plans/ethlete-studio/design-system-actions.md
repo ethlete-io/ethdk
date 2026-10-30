@@ -787,18 +787,20 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix option:** a sketch with several targets, or `sketch new --each <part,part>` that runs the same
   edit and one `ready` over all of them. `ready` names every part a `shared/` edit reaches.
 
-### 4.69 A CLI rebuild breaks sketch commands that run at the same time - open
+### 4.69 A CLI rebuild breaks sketch commands that run at the same time - done
 
 - **Pain (2026-10-30):** two agents ran at once: one rebuilt `dist/libs/cli`, one ran `sketch ready`. The
   builder had to copy the build to `dist/cli-css-snapshot` for the sketch agent.
 - **Fix option:** `nx build cli` writes to a temp folder and swaps it in at the end, so a running command
   never sees a half-built `dist`.
+- **As built (2026-10-29, b2142f3c1):** `compile` writes to `tmp/cli-build`; `move-into-place.mts` renames file by file into `dist/libs/cli` and never empties it. Found on 2026-10-30; the snapshot copy is no longer needed. Not verified: a rebuild while a `design sketch` command runs.
 
-### 4.70 A rejected variant still blocks the auto-merge - open
+### 4.70 A rejected variant still blocks the auto-merge - done
 
 - **Pain (2026-10-30):** `sketchShowsNoChange` counts every variant, also a rejected one. Tom's rule (4.65
   "Decision") names only live variants. A rejected variant with a change stops a merge that is safe.
 - **Fix option:** skip rejected variants in the "every variant draws the same" check.
+- **As built (2026-10-30):** `sketchShowsNoChange` checks only live variants; with none it answers "the sketch has no live variant". The auto-merge already picks the first live variant. Verified: a spec that fails without the filter; design specs and spec typecheck pass. Not verified: a real `sketch ready` with a rejected variant.
 
 ### 4.64 Shared helper code had to be a part - done
 

@@ -109,4 +109,20 @@ describe('sketchShowsNoChange', () => {
       'variant a changes default - a shot failed: no browser',
     );
   });
+
+  it('ignores a rejected variant that changes the look', async () => {
+    const { product, sketch, css } = acme();
+
+    writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* one pixel */\n`);
+
+    const rejected = {
+      ...sketch,
+      rejections: { a: [{ by: 'designer', decidedAt: '2026-10-30T00:00:00.000Z' }] },
+    } as Sketch;
+    const pictureOf = pictureWith((sketched) => +sketched);
+
+    expect(await sketchShowsNoChange({ product, sketch: rejected, load, pictureOf })).toBe(
+      'the sketch has no live variant',
+    );
+  });
 });

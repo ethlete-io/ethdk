@@ -3,7 +3,7 @@ import { readPartModule } from '../list-system';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from './overlay';
-import { Sketch, variantDirOf } from './sketch';
+import { rejectionOf, Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 
 const affectedChangeOf = async (options: {
@@ -82,7 +82,7 @@ const variantChangeOf = async (options: {
 };
 
 /**
- * `true` when every state of every variant of the sketch draws the same pixels as the product does now, in
+ * `true` when every state of every live variant of the sketch draws the same pixels as the product does now, in
  * every frame, and so does each state of every part that shows the target; otherwise why not. A variant that holds another part than the target, or a state that fails to
  * draw, counts as a change.
  */
@@ -94,9 +94,11 @@ export const sketchShowsNoChange = async (options: {
 }): Promise<true | string> => {
   const { sketch } = options;
 
-  if (sketch.variants.length === 0) return 'the sketch has no variant';
+  const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
 
-  const changes = await Promise.all(sketch.variants.map((variant) => variantChangeOf({ ...options, variant })));
+  if (live.length === 0) return 'the sketch has no live variant';
+
+  const changes = await Promise.all(live.map((variant) => variantChangeOf({ ...options, variant })));
   const found = changes.filter((change) => change !== null);
 
   return found.length === 0 ? true : found.join('; ');
