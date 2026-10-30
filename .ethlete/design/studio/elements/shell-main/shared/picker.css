@@ -1,46 +1,20 @@
 @layer components {
   .st-project-picker {
-    position: absolute;
-    left: var(--space-3);
     bottom: calc(var(--space-3) + var(--control-md) + 3 * var(--space-2));
     width: 248px;
-    box-sizing: border-box;
-    padding: var(--space-1);
     border: 1px solid var(--surface-border);
-    border-radius: var(--radius-control-lg);
-    background: var(--surface-overlay);
     box-shadow: 0 12px 32px var(--surface-shadow);
   }
 
   .st-project-picker[data-placement='beside'] {
     left: calc(var(--space-3) + 248px + var(--space-2));
-    bottom: var(--space-3);
-  }
-
-  .st-project-picker-row {
-    display: flex;
-    align-items: center;
-    min-height: var(--control-md);
-    padding: 0 var(--space-2);
-    border-radius: var(--radius-control-md);
-  }
-
-  .st-project-picker-row[aria-selected='true'] {
-    background: var(--accent-subtle);
-    color: var(--accent-text);
   }
 
   .st-project-picker-action {
-    margin-top: var(--space-1);
-    padding-top: var(--space-1);
     border-top: 1px solid var(--surface-border);
-    border-radius: 0;
   }
 
   .st-project-picker-action .et-button {
-    height: var(--control-md);
-    justify-content: flex-start;
-    padding: 0 var(--space-2);
     font: inherit;
     color: inherit;
   }

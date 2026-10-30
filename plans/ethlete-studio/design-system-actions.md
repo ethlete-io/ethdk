@@ -532,6 +532,15 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (42). Known gaps: a parent-state selector over an SDK element is flagged; inline `style="..."` is not checked.
   Next: the one-page-per-commit move through sketches, then register the rule.
 
+- **Progress (2026-10-30):** `elements/shell-main` moved; `ready` auto-merged it (no visible change). Kept in CSS:
+  px sizes, 1px borders, inset shadows, the dot-grid image, calc offsets. State overrides now pick utilities in
+  the TS (a utility beats the components layer). Class names with no rule left were removed from the markup.
+  Next: `pages/inbox` after its open sketch merges, then the other pages.
+- **Tool notes (2026-10-30):** (1) `sketch check` fails on a baseline finding of another part (inbox contrast),
+  `ready` still merges. (2) `UTILITY-CSS` is not in `RULES`, so the move was checked by hand against the rule's
+  tables. (3) Each move triggers `UNDEFINED-CLASS` for semantic class names with no rule left. (4) The rule does
+  not flag px sizes on the 4px scale (40px = `w-10`); open whether intended.
+
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
 - **Pain (Tom, 2026-10-30):** a design draws each state as a still frame. Nothing says that a
