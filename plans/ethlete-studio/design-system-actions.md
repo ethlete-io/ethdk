@@ -666,6 +666,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix options:** 1. one box per cluster of changed pixels: boxes closer than a margin merge, and Studio
   shows each box as its own crop, before and after side by side (recommended). 2. keep one box, but outline
   each cluster inside it. 3. no change.
+- **Decision (Tom, 2026-10-30):** option 1. Build it.
 
 ## 5. Drawing parts and pages
 
