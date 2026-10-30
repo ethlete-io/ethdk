@@ -298,6 +298,73 @@ ready` merged it. The first shot probably ran against a base that the merges jus
     completeness. Missing declarations, stale state references and new unclassified controls
     produce actionable failures. Existing complete coverage can be reused without creating
     a Cartesian product of page states.
+- **Proposal (for Tom - not built):** a hybrid of declaration and discovery, with its own gate.
+  - **Declaration.** `definePart` gets a `controls` map. The drawing marks each control with
+    `data-et-control="<id>"`, and each open surface with `data-et-surface="<id>.<surface>"`.
+    The check joins rendered DOM to the declaration by these attributes. A control has a
+    `kind`, its `input` modes and its `surfaces`. A surface names the state that draws it.
+    ```ts
+    controls: {
+      unchanged: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'unchanged-open' } },
+    },
+    ```
+  - **Requirements per kind.** `pointer` requires `hover`; `keyboard` requires `focus-visible`.
+    `button` adds `active`. `disclosure` requires its body surface. `select` and `menu` require
+    the open surface, with option hover, focus and selected. `row` requires selected and
+    selected-hover. `tooltip` requires the visible tooltip surface in its host. `disabled`
+    applies only when the control declares it. For 6.8, a control may declare a `lifecycle`
+    with valid states and transitions. The gate then removes unreachable combinations.
+  - **Evidence.** A requirement passes only with a rendered frame. That frame must differ
+    from rest inside the control's box, and the part's accepted hash must include it. A
+    surface passes only when its state renders the surface element visible and non-empty.
+    CSS `:hover` without a visible diff, a `title`, or a state name alone fails.
+  - **Discovery.** After render, the check walks each state's DOM. Native controls
+    (`button`, `a[href]`, `input`, `select`, `textarea`, `summary`, `[tabindex]`), interactive
+    roles and known SDK `et-*` controls count as likely controls. Each one without a
+    `data-et-control` fails as `CONTROL-UNDECLARED`, with part, state and DOM path. An
+    element with `cursor: pointer` or a matched `:hover` rule but no role fails as
+    `CONTROL-UNCLASSIFIED`. For the rest, the report shows a contact sheet of the
+    declared controls per page. Tom approves that inventory once, like an exception.
+    Controls inside `embedPage` belong to the embedded page and are not counted twice.
+  - **Gate.** A new command `design complete <product> [<layer>/<name>]` exits 1 on any gap.
+    It is separate from `sketch ready` (a round is ready for comparison) and `design check`
+    (rule hygiene). It does not run in `sketch ready`, so partial rounds stay reviewable.
+    `design complete --handoff` gives a part the status `handoff` only when it passes. CI
+    re-runs it for every `handoff` part and fails when one regresses. The implementation
+    skill allows app work only on `handoff` parts. `GRID-COVERAGE` stays a warning.
+  - **Inherited coverage.** A control with `sdk: 'et-select'` reuses the SDK part's matrix
+    for states inside the component, such as option hover. The host still draws the open
+    surface once in its own placement and theme, and every host override. A closed select
+    never counts as its open surface.
+  - **Exceptions.** `design complete --request <part>.<control>.<requirement> --reason "..."`
+    writes a pending entry, and a pending entry still fails. Only an approve button in
+    Studio turns it into an approval, with `by`, `at` and the part hash. Studio signs the
+    entry with a key from the OS keychain. A later edit of the part reopens it. The report
+    lists every exception. An agent on Tom's machine can still forge one, so this makes
+    forgery visible, not impossible.
+  - **The eight gaps as failures.** Repo picker: `CONTROL-UNDECLARED` on the trigger, then
+    missing hover, focus, active and the menu surface. Project picker: missing menu surface
+    and selected versus hovered entry. Tree status icons: `title` only, so the `tooltip`
+    surface fails. Inbox rows: `row` kind misses hover, focus, selected-hover. Merge changed
+    list: the same `row` failures. Canvas zoom: `span`s fail as `CONTROL-UNCLASSIFIED` on
+    System; the Sketches buttons fail as undeclared. Preset select: the open surface fails,
+    then option states. Merge unchanged accordion: the `<button>` fails as undeclared, then
+    `body` fails because `pages/merge` has only `open`.
+  - **Open points, with recommendations:**
+    1. Identity in markup only, or also in `definePart`? Recommend both: the attribute
+       for identity, `definePart` for kind and surfaces, so the check types each id.
+    2. Does "reviewed" need an accepted hash, or only a render? Recommend the accepted
+       hash. A frame that Tom never saw is not a reviewed design.
+    3. Is a signed approval enough? Recommend yes, with tamper evidence. A true barrier
+       needs a second person or a server, which costs more than it gains now.
+    4. Where does the gate block? Recommend the `handoff` status plus CI, not pre-push
+       for all parts. Pre-push on every part would block every partial exploration.
+    5. How far does non-semantic discovery go? Recommend `cursor` and `:hover` heuristics
+       plus a per-page inventory approval. Pure DOM inference misses custom overlays.
+    6. Is `lifecycle` (6.8) in the first slice? Recommend no. Add it when the editor is
+       the first control with unreachable combinations.
+  - **Rollout:** `controls` + `design complete` for `disclosure` on `pages/merge`, then
+    discovery, the other kinds, exceptions, SDK reuse, and the `handoff` status with CI.
 - **Status:** requirement and options recorded; no flag, coverage schema, CLI command or
   enforcement has been implemented. Resolve discovery limits, reusable component evidence,
   review authority and the handoff gate in a dedicated tooling design before implementation.
