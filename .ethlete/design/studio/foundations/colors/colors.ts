@@ -1,4 +1,4 @@
-import { definePart, drawing, html } from '@design-system';
+import { contrastRatioOf, definePart, drawing, html } from '@design-system';
 import { tokenSheet, fillTokenValues, tokenSheetStyles } from '@shared/token-sheet';
 import tokens from './colors.css?inline';
 
@@ -20,11 +20,57 @@ const namesOf = (group: Group) => [
 
 const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
 
+const surfaceTokens = surfaces.map((name) => `--${name}`);
+const pairs = [
+  {
+    text: ['--text', '--text-muted', '--text-subtle', '--accent-text', '--warning-text', '--danger-text'],
+    on: surfaceTokens,
+  },
+  { text: ['--on-accent'], on: ['--accent', '--accent-hover', '--accent-active'] },
+  { text: ['--on-warning'], on: ['--warning', '--warning-hover', '--warning-active'] },
+  { text: ['--on-danger'], on: ['--danger', '--danger-hover', '--danger-active'] },
+];
+
+const cell = 'px-(--space-2) py-(--space-1) text-left';
+
+const ratioTable = (group: Group) =>
+  html`<table class="border-collapse text-(length:--text-xs)">
+    <thead>
+      <tr>
+        <th class="${cell}">Text</th>
+        <th class="${cell}">On</th>
+        <th class="${cell}">Ratio</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${pairs
+        .flatMap(({ text, on }) => on.flatMap((surface) => text.map((ink) => ({ ink, surface }))))
+        .filter(({ ink }) => groups[group].owns(ink.slice(2)))
+        .map(
+          ({ ink, surface }) =>
+            html`<tr>
+              <td class="${cell}">${ink}</td>
+              <td class="${cell}">${surface}</td>
+              <td class="${cell}" data-co-ratio="${ink} ${surface}"></td>
+            </tr>`,
+        )
+        .join('')}
+    </tbody>
+  </table>`;
+
+const fillRatios = (root: HTMLElement) => {
+  for (const ratio of root.querySelectorAll<HTMLElement>('[data-co-ratio]')) {
+    const [text = '', on = ''] = (ratio.dataset['coRatio'] ?? '').split(' ');
+    ratio.textContent = `${contrastRatioOf({ text: `var(${text})`, on: `var(${on})`, within: root }).toFixed(2)}:1`;
+  }
+};
+
 const sampleOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="co-shadow"></span>`;
   if (name === 'focus-ring') return html`<span class="co-ring">Focus</span>`;
   const stateFill = /^on-(accent|warning|danger)-disabled$/.exec(name);
-  if (stateFill) return html`<span class="co-fill co-fill--${stateFill[1]} co-fill--disabled">Disabled</span>`;
+  if (stateFill)
+    return html`<span class="co-fill co-fill--${stateFill[1]} co-fill--disabled" aria-disabled="true">Disabled</span>`;
   if (name === 'text-subtle') return html`<span class="co-subtle-text">Subtle text</span>`;
   if (/^(accent|warning|danger)-active$/.test(name))
     return html`<span class="co-swatch" style="background: var(--${name})"></span>`;
@@ -48,7 +94,8 @@ const accentCard = (surface: string) =>
     <span class="co-surface-name">${surface}</span>
     <span class="co-cluster"
       ><span class="co-fill">Merge</span><span class="co-fill co-fill--hover">Hover</span
-      ><span class="co-fill co-fill--active">Active</span><span class="co-fill co-fill--disabled">Disabled</span></span
+      ><span class="co-fill co-fill--active">Active</span
+      ><span class="co-fill co-fill--disabled" aria-disabled="true">Disabled</span></span
     >
     <span class="co-ink">Accent text link</span>
     <span class="co-subtle">Selected row</span>
@@ -92,7 +139,7 @@ const warningCard = (surface: string) =>
     <span class="co-cluster"
       ><span class="co-fill co-fill--warning">Check again</span
       ><span class="co-fill co-fill--warning co-fill--active">Active</span
-      ><span class="co-fill co-fill--warning co-fill--disabled">Disabled</span></span
+      ><span class="co-fill co-fill--warning co-fill--disabled" aria-disabled="true">Disabled</span></span
     >
     <span class="co-warning-ink">Render check: 1 warning</span>
     <span class="co-warning-note"
@@ -108,7 +155,7 @@ const errorCard = (surface: string) =>
     <span class="co-cluster"
       ><span class="co-fill co-fill--danger">Discard sketch</span
       ><span class="co-fill co-fill--danger co-fill--active">Active</span
-      ><span class="co-fill co-fill--danger co-fill--disabled">Disabled</span></span
+      ><span class="co-fill co-fill--danger co-fill--disabled" aria-disabled="true">Disabled</span></span
     >
     <span class="co-danger-ink">Render check: 1 error</span>
     <span class="co-danger-note"
@@ -126,6 +173,7 @@ const cards: Record<Group, (surface: string) => string> = {
 export default definePart<{ group: Group }>({
   note: 'The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5'],
+  contrast: { pairs },
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
@@ -134,14 +182,14 @@ export default definePart<{ group: Group }>({
   },
   render: ({ group }) =>
     drawing({
-      body: tokenSheet({
+      body: `${tokenSheet({
         title: groups[group].title,
         sample: surfaces.map(cards[group]).join(''),
         sampleClass: 'co-grid',
         names: namesOf(group),
         sampleOf,
-      }),
-      setup: (root) => fillTokenValues(root),
+      })}${ratioTable(group)}`,
+      setup: [fillTokenValues, fillRatios],
       styles: `${tokenSheetStyles}
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
         .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }

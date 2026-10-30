@@ -158,3 +158,8 @@ const fillRatios = (root: HTMLElement) => {
 ```
 
 The exception is a recommendation; the alternative is `aria-disabled="true"` on the disabled samples.
+
+As built (2026-10-30): Tom merged the `foundations/colors` sketch. The four disabled samples carry
+`aria-disabled="true"`, the part declares `contrast: { pairs }` (27 pairs, no `exceptions`), and a ratio table follows
+the token sheet. `design check --product studio` exits 0. Not verified: the table values as drawn, against the
+computed ones (lowest 5.68:1).
