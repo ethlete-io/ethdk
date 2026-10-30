@@ -856,7 +856,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   on the real product (variant accent changed `.et-color--brand`; merged compile byte-identical). Not verified:
   Studio by eye, a real colours sketch. Old run folders in `node_modules/.design-explore/generated` stay.
 
-### 4.68 One change across many parts needs one sketch per part - open
+### 4.68 One change across many parts needs one sketch per part - in progress (builder, 2026-10-30)
 
 - **Pain (2026-10-30):** the removal of the alias `--surface-sunken` touched 10 parts. It took 10 sketches, each
   with its own `new`, `report`, `ready` and commit. A `shared/` edit through `foundations/spacing` also
