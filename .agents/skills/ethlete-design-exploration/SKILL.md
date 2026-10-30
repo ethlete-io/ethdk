@@ -244,6 +244,10 @@ in any of them, it merges the sketch itself and logs it as an `auto` entry in th
 A problem the product already had before the merge does not block it (the check prints it as a note); only a problem the merge adds does.
 Run `sketch ready` again on a `ready` sketch to repeat the check and the auto merge.
 
+Mark a sketch `ready` only when no change to it waits on anything: no open decision, no helper still to
+land, no "once X is decided I adapt the sketch". A pending change keeps the sketch in work and out of the
+merge queue: ask first, make the change, then mark it `ready`.
+
 ### Your model id: `--by`
 
 Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `variant`, `report`,
