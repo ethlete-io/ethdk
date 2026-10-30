@@ -17,6 +17,10 @@ import {
   COMMENTS_PATH,
   FLOWS_PATH,
   flowsAnswer,
+  EXCEPTION_APPROVE_PATH,
+  exceptionApproveAnswer,
+  EXCEPTIONS_PATH,
+  exceptionsAnswer,
   INVENTORY_APPROVE_PATH,
   MOTION_PATH,
   INVENTORY_PATH,
@@ -707,6 +711,8 @@ const designExplore = ({
       studio(FLOW_NOTE_DELETE_PATH, flowNoteDeleteAnswer);
       studio(INVENTORY_PATH, inventoryAnswer);
       studio(INVENTORY_APPROVE_PATH, inventoryApproveAnswer);
+      studio(EXCEPTIONS_PATH, exceptionsAnswer);
+      studio(EXCEPTION_APPROVE_PATH, exceptionApproveAnswer);
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
       vite.httpServer?.on('close', () => {
         events.close();

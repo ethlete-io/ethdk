@@ -6,6 +6,7 @@ import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { completenessGapLineOf, completenessGapsOf, completenessOf, FoundControl, SeenFrame } from './complete';
 import { designComplete } from './complete-command';
+import { approveException } from './exceptions';
 import { writeInventoryApproval } from './inventory-approval';
 import { ResolvedProduct, resolveProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
@@ -781,6 +782,57 @@ describe('completenessOf', () => {
 
     expect(corner).toEqual({ gaps: [] });
   }, 60_000);
+
+  it('fails on a pending exception, drops the gap of an approved one, and reopens it on a part change', async (context) => {
+    const { target, config, product } = checkout();
+    const logs: string[] = [];
+    const flat = async () => {
+      const result = await completenessOf({ target, config, product, part: 'components/flat' });
+
+      return 'gaps' in result ? { gaps: result.gaps.map((gap) => gap.target), exceptions: result.exceptions } : result;
+    };
+
+    vi.spyOn(console, 'log').mockImplementation((line: string) => logs.push(line));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const request = ['--request', 'components/flat.more.active', '--reason', 'pressing only opens it', '--product'];
+
+    expect(await designComplete({ target, argv: [...request, 'app-a'], invocation: 'et design' })).toBe(0);
+    expect(
+      await designComplete({ target, argv: ['--request', 'components/flat.more', '--reason', 'x'], invocation: 'et' }),
+    ).toBe(1);
+
+    const requested = await completenessOf({ target, config, product, part: 'components/flat' });
+
+    if ('unavailable' in requested) return context.skip(requested.unavailable);
+
+    expect(
+      'gaps' in requested && requested.gaps.find((gap) => gap.target === 'components/flat.more.active')?.detail,
+    ).toBe(
+      'no state draws it active - draw a state that forces active on the data-et-control element, e.g. with forceInteraction - its exception is pending - approve it in Studio ("pressing only opens it")',
+    );
+    expect(approveException({ product, key: 'components/flat.more.hover', by: 'Tom' })).toEqual({
+      status: 404,
+      error: 'no exception "components/flat.more.hover" was requested',
+    });
+    expect(approveException({ product, key: 'components/flat.more.active', by: ' ' })).toMatchObject({ status: 400 });
+
+    approveException({ product, key: 'components/flat.more.active', by: 'Tom', at: '2026-10-30T00:00:00.000Z' });
+
+    const approved = await flat();
+
+    expect('gaps' in approved && approved.gaps).not.toContain('components/flat.more.active');
+    expect('exceptions' in approved && approved.exceptions?.map(({ key, state }) => `${key} ${state}`)).toEqual([
+      'components/flat.more.active approved',
+    ]);
+
+    writeFileSync(join(product.dir, 'components', 'flat', 'flat.css'), '.aa-flat { color: black; }');
+
+    const reopened = await flat();
+
+    expect('gaps' in reopened && reopened.gaps).toContain('components/flat.more.active');
+    expect('exceptions' in reopened && reopened.exceptions?.map(({ state }) => state)).toEqual(['reopened']);
+  }, 120_000);
 
   it('exits 1 with one line per gap from the command', async (context) => {
     const { target, config, product } = checkout();

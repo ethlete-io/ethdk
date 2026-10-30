@@ -24,6 +24,7 @@ import {
   NoteChange,
   noteProblemOf,
 } from './system/notes/note';
+import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
@@ -75,6 +76,8 @@ export const FLOW_NOTE_CHANGE_PATH = '/__design/flow-note-change';
 export const FLOW_NOTE_DELETE_PATH = '/__design/flow-note-delete';
 export const INVENTORY_PATH = '/__design/inventory';
 export const INVENTORY_APPROVE_PATH = '/__design/inventory-approve';
+export const EXCEPTIONS_PATH = '/__design/exceptions';
+export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
 
 export type Answer = { status: number; body: unknown };
@@ -725,4 +728,18 @@ export const inventoryApproveAnswer = withProduct('POST', async (found) => {
         status: 200,
         body: inventoryBodyOf({ ...inventory, approval: approved, state: { state: 'approved' }, reason: null }),
       };
+});
+
+/** GET `?product=`: every requested `design complete` exception with its state at the part's current hash. */
+export const exceptionsAnswer = withProduct('GET', ({ product }) => ({ status: 200, body: listExceptions(product) }));
+
+/** POST `?product=`, body `{ key, by }`: the user approves a requested exception at the part's current hash. */
+export const exceptionApproveAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const approved = approveException({ product, key: body['key'], by: body['by'] });
+
+  return 'error' in approved ? failure(approved.status, approved.error) : { status: 200, body: approved };
 });

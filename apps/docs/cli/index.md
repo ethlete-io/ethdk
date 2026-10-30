@@ -361,6 +361,14 @@ cannot be approved, and no CLI command approves one. The design server answers
 `GET /__design/inventory?product=&part=` and `POST /__design/inventory-approve?product=` with
 `{ part, hash, by }`.
 
+`et design complete --request <layer>/<name>.<control>.<requirement> --reason <text>` asks for an
+exception to one requirement, for example `components/zoom-chip.fit.active`. It writes a pending
+entry to `.ethlete/design/<product>/exceptions.json`, and a pending entry still fails. Only the
+approve button in Studio (`POST /__design/exception-approve?product=` with `{ key, by }`) records
+`by`, `at` and the part hash; then the gap it names passes. Any later edit of the part reopens it.
+`GET /__design/exceptions?product=` lists every exception with its state, and `design complete`
+prints one `EXCEPTION` line for each exception of the checked parts.
+
 The other codes are `REQUIREMENT-MISSING`, `CONTROL-GRID-MISSING`, `CONTROL-UNDRAWN`,
 `CONTROL-TRANSITION-MISSING`, `CONTROL-UNKNOWN`, `CONTROL-KIND`, `CONTROL-PART-MISSING`, `CONTROL-PART-INCOMPLETE`, `CONTROL-OVERRIDDEN` and
 `PART-UNREVIEWED`. `sketch ready` and `check` do not run

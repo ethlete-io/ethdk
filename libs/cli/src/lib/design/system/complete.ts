@@ -11,6 +11,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
 import { createSystemModules, productModuleIdOf, SystemModules } from './system-modules';
+import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
@@ -1232,7 +1233,8 @@ export const inventoryIdsOf = (frames: SeenFrame[]) =>
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
  * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
  * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it.
- * A page fails until the user approves its control inventory in Studio.
+ * A page fails until the user approves its control inventory in Studio. An exception the user approved in Studio
+ * drops the gap it names until the part changes; a pending one still fails.
  */
 export const completenessOf = async (options: {
   target: string;
@@ -1240,7 +1242,9 @@ export const completenessOf = async (options: {
   product: ResolvedProduct;
   part: string;
   chromiumOf?: typeof chromiumOf;
-}): Promise<{ gaps: CompletenessGap[] } | { unavailable: string } | { problem: string }> => {
+}): Promise<
+  { gaps: CompletenessGap[]; exceptions?: ListedException[] } | { unavailable: string } | { problem: string }
+> => {
   const { target, config, product, part } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
 
@@ -1260,6 +1264,7 @@ export const completenessOf = async (options: {
     const system = createSystemModules({ target, config });
 
     const checked = new Map<string, CompletenessGap[] | string>();
+    const exceptions: ListedException[] = [];
     const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
       const known = checked.get(key);
 
@@ -1299,9 +1304,11 @@ export const completenessOf = async (options: {
       for (const other of used)
         if (other !== null && !(other in referenced)) referenced[other] = await gapsOfPart(other, [...chain, key]);
 
-      return [
-        ...refused.map((detail) => ({ code: 'RENDER', target: key, detail })),
-        ...completenessGapsOf({
+      const excepted = withExceptions({
+        part: key,
+        exceptions: readExceptions(owner.dir),
+        hash,
+        gaps: completenessGapsOf({
           part: key,
           controls: definition?.controls,
           states,
@@ -1314,12 +1321,18 @@ export const completenessOf = async (options: {
               ? inventoryStateOf({ approval: readInventory(owner.dir)[key], ids: inventoryIdsOf(seen), hash })
               : undefined,
         }),
-      ];
+      });
+
+      exceptions.push(...excepted.listed);
+
+      return [...refused.map((detail) => ({ code: 'RENDER', target: key, detail })), ...excepted.gaps];
     };
 
     const gaps = await gapsOfPart(part, []);
 
-    return typeof gaps === 'string' ? { problem: gaps } : { gaps };
+    if (typeof gaps === 'string') return { problem: gaps };
+
+    return exceptions.length > 0 ? { gaps, exceptions } : { gaps };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
 
