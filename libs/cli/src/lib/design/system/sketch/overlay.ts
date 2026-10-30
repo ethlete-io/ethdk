@@ -5,6 +5,7 @@ import { Layer, LAYER_USES, LAYERS } from '../layers';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
+import { changesOnlyImports, importsAnyOf } from './host-edit';
 import { Sketch, sharedDirOf, variantDirOf, variantSharedDirOf } from './sketch';
 
 export type SketchedProduct = ResolvedProduct & {
@@ -47,15 +48,26 @@ export const overlaySketch = (options: {
   const parts = [...product.parts.filter((part) => !keys.has(partKeyOf(part))), ...sketched].sort(
     (a, b) => LAYERS.indexOf(a.layer) - LAYERS.indexOf(b.layer) || a.name.localeCompare(b.name),
   );
+  const isImportOnlyHostEdit = (part: ResolvedPart) => {
+    const before = product.parts.find((candidate) => partKeyOf(candidate) === partKeyOf(part));
+
+    return (
+      before !== undefined &&
+      before.cssSource === part.cssSource &&
+      importsAnyOf(before.source, sketch.targets) &&
+      changesOnlyImports(before.source, part.source)
+    );
+  };
   const outside: Problem[] = sketched
-    .filter((part) => !mayChange(sketch, part))
+    .filter((part) => !mayChange(sketch, part) && !isImportOnlyHostEdit(part))
     .map((part) => ({
       rule: 'SKETCH',
       file: part.file,
-      message:
+      message: `${
         sketch.targets.length > 1
           ? `a sketch on ${sketch.targets.join(', ')} may change their layers and the layers below them, not ${partKeyOf(part)}`
-          : `a sketch on ${sketch.target} may change ${sketch.layer} and the layers below it, not ${partKeyOf(part)}`,
+          : `a sketch on ${sketch.target} may change ${sketch.layer} and the layers below it, not ${partKeyOf(part)}`
+      }${importsAnyOf(part.source, sketch.targets) ? ' - a host of it may change only its imports' : ''}`,
     }));
 
   return {

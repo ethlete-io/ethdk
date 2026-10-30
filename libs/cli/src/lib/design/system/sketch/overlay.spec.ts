@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -99,6 +99,28 @@ describe('overlaySketch', () => {
         file: join(sketch.dir, 'a/pages/home/home.ts'),
         message:
           'a sketch on components/button, elements/hero may change their layers and the layers below them, not pages/home',
+      },
+    ]);
+  });
+
+  it('lets a sketch carry an edit to a host of its target that only changes an import', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = heroSketch(target);
+    const home = readFileSync(join(product.dir, 'pages/home/home.ts'), 'utf8')
+      .replace("import hero from '@system/elements/hero';", "import * as heroPart from '@system/elements/hero';")
+      .replace('await hero.render(', 'await heroPart.default.render(');
+
+    write(sketch, 'a/pages/home/home.ts', home);
+    write(sketch, 'b/pages/home/home.ts', home.replace('<main>', '<main class="home">'));
+
+    expect(overlaySketch({ product, sketch, variant: 'a' }).problems).toEqual([]);
+    expect(overlaySketch({ product, sketch, variant: 'b' }).problems).toEqual([
+      {
+        rule: 'SKETCH',
+        file: join(sketch.dir, 'b/pages/home/home.ts'),
+        message:
+          'a sketch on elements/hero may change elements and the layers below it, not pages/home - a host of it may change only its imports',
       },
     ]);
   });
