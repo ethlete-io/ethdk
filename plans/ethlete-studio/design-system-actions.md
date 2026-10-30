@@ -1443,7 +1443,7 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   around an embedded frame with a `scale` that scales it again (`transform`, `scale` or `zoom`). Spec:
   `render-check.spec.ts`. The skill does not mention it yet.
 
-### 5.60 Merging one candidate keeps all discarded candidate code in shared helpers - open
+### 5.60 Merging one candidate keeps all discarded candidate code in shared helpers - done
 
 - **Evidence (L merge, `4a960f125`):** the accepted Inbox wrapper calls `inbox(true, 'l')`,
   but merged `shared/inbox.ts` still accepts placements A-L, branches over the old editor
@@ -1470,6 +1470,9 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   it: `sketch ready` fails when the picked variant's dependency closure keeps unused imports,
   styles or parameters.
 - **As built (`493d1f6f9`):** the authoring rule is in the `ethlete-design-exploration` skill (variant files hold variant code; `shared/` only common code). The `sketch ready` check is another stream.
+- **As built (`0652fc1df`):** `sketch ready` fails (rule `UNUSED`) when a live variant's files or the `shared/` files
+  they import keep an unused import, an unread parameter of a named function, a `shared/` parameter no call passes, or a
+  class no drawing uses (`et-` SDK classes skipped).
 
 ### Colour foundations and agent logos decisions (2026-10-30)
 
