@@ -162,6 +162,20 @@ Each slice gets an "in progress" note here when it starts.
   names, the `/__design/motion` endpoint in slice 3; clip to the union of the root and the animated boxes over all
   keyframes; `data-et-key` before the selector for `element`; keep the three limits and document them.
 
+## As built: slice 3 endpoint (2026-10-30, `dacf9bd64`)
+
+- `GET /__design/motion?product=&part=&motion=` (`libs/cli/src/lib/design/motion-endpoint.ts`, `MOTION_PATH` in
+  `studio-api.ts`). Optional: `sketch`+`variant`, `mode` (`full|reduced`, default `full`), `preset` or `width`, `scale`,
+  `surface`, `color`. A page without `preset` or `width` draws at its first product preset, as `motion shots` does.
+- JSON answer (`MotionAnswer`): `{ product, part, motion, from, to, mode, preset, width, end, tracks, keyframes: [{ ms, src }] }`.
+  `tracks` are the `motion shots` JSON tracks of that mode. `src` is the request URL plus `frame=<ms>` and answers the keyframe
+  as `image/png`; a `frame` that is no keyframe is 404 and names the keyframes. Errors: 400 bad query, 404 unknown part or
+  motion (lists the motions), 422/503/504 as `/__design/shot`.
+- `createPartShooter().motionOf` keeps each draw per part, motion, mode, size, sketch, theme and scale until a change
+  redraws the part (`forget`, `clear`), so the JSON and every keyframe image come from one draw.
+- Bit: the endpoint spec counts `motionPicturesOf` calls (JSON then a keyframe image = 1 draw); it fails without the cache.
+- Open: token names in tracks (slice 3, Studio side or here), the keyframe strip and timeline in Studio (stream C).
+
 ## As built: Q29-Q31 (2026-10-30)
 
 - Q29: `motionPicturesOf` runs the motion a third time, collects `etMotion.bounds()` (root plus every animated element, page
