@@ -304,9 +304,16 @@ const isFlowFile = (file: string) => file.endsWith('.json') && basename(dirname(
 
 const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file) || isNoteFile(file);
 
+const isSketchFile = (designRoot: string, file: string) => {
+  const [product, folder, ...inside] = relative(designRoot, resolve(file)).split(sep);
+
+  return !!product && product !== '..' && folder === 'sketches' && inside.length > 0;
+};
+
 /**
- * A server-sent event stream for Studio: `comments` when a comment file changed, `notes` when a note file changed,
- * `flows` when a flow file changed, and `parts` with the parts any change redraws and the revision it gave them.
+ * A server-sent event stream for Studio: `comments`, `notes`, `flows`, `calls` and `sketches` when a file of that
+ * kind changed, and `parts` with the parts a design system change redraws and the revision it gave them. A `parts`
+ * event with no parts still tells Studio the system changed.
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
@@ -323,7 +330,7 @@ const createDesignEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: (event: 'comments' | 'notes' | 'flows' | 'parts', data: object = {}) => {
+    signal: (event: 'comments' | 'notes' | 'flows' | 'calls' | 'sketches' | 'parts', data: object = {}) => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
@@ -445,8 +452,12 @@ const designExplore = ({
       const events = createDesignEvents();
       let revision = 0;
 
-      const redraw = (change: PartsChange) => {
-        if (!change.all && change.parts.length === 0 && !change.errored) return;
+      const redraw = (change: PartsChange, listed = false) => {
+        if (!change.all && change.parts.length === 0 && !change.errored) {
+          if (listed) events.signal('parts', { revision, ...change });
+
+          return;
+        }
 
         revision += 1;
         forgetUnchangedStates();
@@ -505,6 +516,16 @@ const designExplore = ({
         events.signal('flows');
       };
 
+      const signalLists = (file: string) => {
+        if (isInside(callsRoot, file)) events.signal('calls');
+        else if (isSketchFile(designRoot, file)) events.signal('sketches');
+      };
+
+      const isSystemFile = (file: string) =>
+        !isInside(callsRoot, file) &&
+        !isSketchFile(designRoot, file) &&
+        [designRoot, ...baseDirs].some((dir) => isInside(dir, file));
+
       const refresh = (file: string) => {
         if (resolve(file) === configPath) return reloadConfig();
         if (isCommentFile(file)) return events.signal('comments');
@@ -512,6 +533,7 @@ const designExplore = ({
         if (isFlowFile(file)) return reloadFlows();
 
         forgetCalls(file);
+        signalLists(file);
 
         if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
         if (isDecisionFile(file)) return;
@@ -531,9 +553,10 @@ const designExplore = ({
         if (isFlowFile(file)) return reloadFlows();
 
         forgetCalls(file);
+        signalLists(file);
         const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? [], stylesheetImports);
 
-        redraw(changedPartsOf({ target, config, system, file, dependents }));
+        redraw(changedPartsOf({ target, config, system, file, dependents }), isSystemFile(file));
       };
 
       const answer =

@@ -282,12 +282,12 @@ describe('the parts event of the design server', () => {
     ]);
   });
 
-  it('sends nothing for a file no frame draws, and leaves a comment to its own event', async () => {
+  it('redraws nothing for a file no frame draws but still reports the change, and leaves a comment to its own event', async () => {
     const { emit, changes } = await serveAcme();
 
     emit('change', 'acme/components/button/button.ts');
     emit('change', 'acme/comments/20260101T000000Z-ab12.json');
 
-    expect(changes()).toEqual([]);
+    expect(changes()).toEqual([{ revision: 0, all: false, parts: [] }]);
   });
 });

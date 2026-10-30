@@ -506,6 +506,7 @@ describe('the design server for a design system', () => {
     expect(written).toEqual([
       ': open\n\n',
       'event: comments\ndata: {}\n\n',
+      'event: parts\ndata: {"revision":0,"all":false,"parts":[]}\n\n',
       'event: notes\ndata: {}\n\n',
       'event: flows\ndata: {}\n\n',
       'event: flows\ndata: {}\n\n',
@@ -513,7 +514,7 @@ describe('the design server for a design system', () => {
     ]);
   });
 
-  it('sends no event of its own for a drawn file outside the design folder', async () => {
+  it('sends no event for a drawn file outside the design folder, and an empty parts event for a system file that redraws nothing', async () => {
     const target = acme();
     const { handlers, watchers, modulesByFile } = await serveAcme(target);
     const written: string[] = [];
@@ -528,10 +529,39 @@ describe('the design server for a design system', () => {
       response as unknown as ServerResponse,
     );
     watchers.get('change')?.(join(target, 'src/unused.ts'));
-    watchers.get('change')?.(inside);
     watchers.get('change')?.(drawn);
 
     expect(written).toEqual([': open\n\n']);
+
+    watchers.get('change')?.(inside);
+
+    expect(written).toEqual([': open\n\n', 'event: parts\ndata: {"revision":0,"all":false,"parts":[]}\n\n']);
+  });
+
+  it('signals a call file change as calls and a sketch file change as sketches, and nothing else for either', async () => {
+    const target = acme();
+    const { handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'calls/app/one/call.ts'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'calls/app/two/call.ts'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'calls/app/two/call.ts'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+
+    expect(written).toEqual([
+      ': open\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: sketches\ndata: {}\n\n',
+      'event: sketches\ndata: {}\n\n',
+    ]);
   });
 });
 
