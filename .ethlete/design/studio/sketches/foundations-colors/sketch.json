@@ -1,6 +1,6 @@
 {
   "target": "foundations/colors",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-30T21:58:34.301Z",
   "baseline": {
     "foundations/agent-logos": "9d16069b875f1e82",
