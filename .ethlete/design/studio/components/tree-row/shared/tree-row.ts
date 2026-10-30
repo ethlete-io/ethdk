@@ -31,23 +31,31 @@ const statusIcon = {
 
 const statusTitle = { 'in-progress': 'Sketch in progress', ready: 'Sketch ready' };
 
-const lead = ({ kind, expanded, inert }: Row) =>
-  kind === 'leaf' ? `<span class="st-trow-dot"${inert ? ' data-inert' : ''}></span>` : chevron(expanded === true);
+const dot = (inert?: boolean) =>
+  `<span class="st-trow-dot box-border${inert ? '' : ' bg-current'}"${inert ? ' data-inert' : ''}></span>`;
 
-const rowMarkup = (r: Row) =>
-  `<div
-        class="st-trow"
+const lead = ({ kind, expanded, inert }: Row) => (kind === 'leaf' ? dot(inert) : chevron(expanded === true));
+
+const statusClass = { 'in-progress': 'text-text-muted', ready: 'text-accent' };
+
+const rowMarkup = (r: Row) => {
+  const accent = r.selected ? 'text-accent-text' : 'text-text-muted';
+  const color = r.selected ? 'text-accent-text' : r.kind === 'group' ? 'text-text-muted' : 'text-text';
+
+  return `<div
+        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"
         ${r.selected ? 'data-selected' : ''}
       >
-        <span class="st-trow-lead">${lead(r)}</span>
-        <span class="st-trow-label">${r.label}</span>
-        ${r.warning ? `<span class="st-trow-warning" title="${r.warning}">${warningIcon}</span>` : ''}
-        ${r.status ? `<span class="st-trow-status" data-status="${r.status}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
-        ${r.comments ? `<span class="st-trow-comments" title="${r.comments} open comments">${bubble}</span>` : ''}
+        <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
+        <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
+        ${r.warning ? `<span class="st-trow-warning flex flex-none" title="${r.warning}">${warningIcon}</span>` : ''}
+        ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
+        ${r.comments ? `<span class="flex flex-none items-center gap-[2px] ${accent} text-[length:var(--text-xs)]" title="${r.comments} open comments">${bubble}</span>` : ''}
       </div>`;
+};
 
 export const row = (r: Row) => (r.interaction ? forceInteraction(rowMarkup(r), r.interaction) : rowMarkup(r));
 

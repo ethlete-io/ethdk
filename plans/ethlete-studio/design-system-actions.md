@@ -540,6 +540,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `ready` still merges. (2) `UTILITY-CSS` is not in `RULES`, so the move was checked by hand against the rule's
   tables. (3) Each move triggers `UNDEFINED-CLASS` for semantic class names with no rule left. (4) The rule does
   not flag px sizes on the 4px scale (40px = `w-10`); open whether intended.
+- **Progress (2026-10-30):** `components/tree-row` moved; `ready` auto-merged it after one fix. `rounded-full`
+  (9999px) antialiases a 1.5px ring on a 6px dot differently from `50%`, so `border-radius: 50%` stays in CSS.
+  `text-ui-xs` also sets a line height; use the plain size where the old CSS set only `font-size`. Tool note
+  (not proven): `rounded-[50%]` in a sketch file drew square dots, so an arbitrary-value class in a sketch may
+  not reach the sketch stylesheet.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 

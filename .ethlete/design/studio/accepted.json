@@ -412,5 +412,13 @@
     "hash": "73947417afcf5e21",
     "at": "2026-10-30T17:17:45.815Z",
     "auto": true
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "e9756693dbe1432e",
+    "at": "2026-10-30T17:50:32.015Z",
+    "auto": true
   }
 ]

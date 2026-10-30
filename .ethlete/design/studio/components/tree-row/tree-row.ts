@@ -33,5 +33,5 @@ export default definePart({
     },
   },
   render: ({ rows }: Props) =>
-    drawing({ body: html`<div class="st-trow-stack">${rows.map(row).join('')}</div>`, styles }),
+    drawing({ body: html`<div class="flex flex-col gap-px">${rows.map(row).join('')}</div>`, styles }),
 });
