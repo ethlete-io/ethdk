@@ -1,4 +1,5 @@
 import { forceInteraction } from '@design-system';
+import { icon } from '@system/foundations/icons';
 
 type RowInteraction = 'hover' | 'focus-visible' | 'active';
 
@@ -17,22 +18,15 @@ export type Row = {
 
 export type Props = { rows: Row[] };
 
-const icon = (paths: string) =>
-  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const chevron = (open: boolean) => icon(open ? 'chevron-down' : 'chevron-right');
 
-const chevron = (open: boolean) =>
-  icon(open ? '<path d="m4.5 6.5 3.5 3.5 3.5-3.5"/>' : '<path d="m6.5 4.5 3.5 3.5-3.5 3.5"/>');
+const bubble = icon('comment', { size: 12 });
 
-const mark = (paths: string) =>
-  `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-
-const bubble = mark('<path d="M3 4.5h10v6H7.5L5 12.5v-2H3z"/>');
-
-const warningIcon = mark('<path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3"/><path d="M8 11.25v.01"/>');
+const warningIcon = icon('warning', { size: 12 });
 
 const statusIcon = {
-  'in-progress': mark('<path d="M10.5 3 13 5.5 6 12.5H3.5V10z"/><path d="m9 4.5 2.5 2.5"/>'),
-  ready: mark('<path d="m3.5 8.5 3 3 6-7"/>'),
+  'in-progress': icon('pencil', { size: 12 }),
+  ready: icon('check', { size: 12 }),
 };
 
 const statusTitle = { 'in-progress': 'Sketch in progress', ready: 'Sketch ready' };

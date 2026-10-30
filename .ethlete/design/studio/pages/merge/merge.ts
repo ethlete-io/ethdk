@@ -3,6 +3,7 @@ import button from '@system/components/button';
 import { disclosure } from '@system/components/disclosure';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
+import { icon } from '@system/foundations/icons';
 import {
   CHANGED,
   TARGET,
@@ -23,8 +24,7 @@ const SCALE = 0.37;
 const CROP_SCALE = 2;
 
 const merge = await button.render({ label: 'Merge', variant: 'filled', size: 'sm' });
-const ARROW =
-  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>';
+const ARROW = icon('arrow-left', { size: 14 });
 const back = await button.render({ label: `${ARROW}<span>Back to sketch</span>`, variant: 'transparent', size: 'sm' });
 const instance = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 

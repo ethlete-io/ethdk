@@ -1,10 +1,14 @@
 import { definePart, drawing, html, svgAsset } from '@design-system';
 import mark from '@assets/studio-mark.svg?raw';
+import markLine from '@assets/studio-mark-line.svg?raw';
 import styles from './logo.css?inline';
 
 type View = 'sizes' | 'sidebar';
 
 export const studioMark = (size: number) => svgAsset(mark, { size });
+
+/** The mark as a single line in `currentColor`, without the tile, for the app rail. */
+export const studioMarkLine = (size: number) => svgAsset(markLine, { size });
 
 const sizes = html`<div class="lg-root">
   <h2 class="lg-title">Mark at app-icon sizes</h2>
@@ -14,6 +18,10 @@ const sizes = html`<div class="lg-root">
       <div class="lg-light">${studioMark(16)}${studioMark(32)}</div>
       <span class="lg-label">on a light bar</span>
     </div>
+  </div>
+  <h2 class="lg-title">Line mark in the rail</h2>
+  <div class="lg-row">
+    ${[16, 24, 32].map((size) => html`<div class="lg-size">${studioMarkLine(size)}<span class="lg-label">${size} px</span></div>`).join('')}
   </div>
 </div>`;
 

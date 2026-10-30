@@ -1,4 +1,5 @@
 import { definePart, drawing, forceInteraction, html, interactionRows } from '@design-system';
+import { icon } from '@system/foundations/icons';
 import styles from './disclosure.css?inline';
 
 type DisclosureInteraction = 'hover' | 'active' | 'focus-visible';
@@ -11,8 +12,7 @@ export type Props = {
   interaction?: DisclosureInteraction;
 };
 
-const CHEVRON =
-  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+const CHEVRON = icon('chevron-right', { size: 14 });
 
 export const disclosure = ({ label, body, open, size = 'sm', interaction }: Props) => {
   const toggle = html`<button
