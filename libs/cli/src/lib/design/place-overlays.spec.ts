@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { placeOverlays } from '../../../design/define-call';
+import { fitOutOfFlow, placeOverlays } from '../../../design/define-call';
 
 const overlay = (inner: string) =>
   `<div class="et-overlay-runtime-root" style="position: fixed"><div class="et-overlay-runtime-entry" style="position: fixed">` +
@@ -143,5 +143,47 @@ describe('placeOverlays', () => {
       '0px',
       '0px',
     ]);
+  });
+});
+
+describe('fitOutOfFlow', () => {
+  const field = '<button aria-expanded="true" aria-controls="panel">Status</button>';
+  const open = () => {
+    const root = mount(
+      `${field}<div class="et-overlay-runtime-root">` +
+        `<div class="et-overlay-runtime-entry" id="panel" style="position: absolute">Panel</div></div>`,
+    );
+
+    rect(root, { top: 10, left: 0, width: 320, height: 40 });
+    rect(root.querySelector('#panel'), { top: 54, left: 0, width: 400, height: 200 });
+
+    return root;
+  };
+
+  it('grows the root of an open state down to the bottom of its positioned panel, not sideways', () => {
+    const root = open();
+
+    fitOutOfFlow(root, { sideways: false });
+
+    expect([root.style.minHeight, root.style.minWidth]).toEqual(['244px', '']);
+  });
+
+  it('grows a fitted root sideways too and keeps its padding below and beside the panel', () => {
+    const root = open();
+
+    root.style.padding = '16px';
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.minHeight, root.style.minWidth]).toEqual(['228px', '384px']);
+  });
+
+  it('leaves the root of a closed state at its own height, also after it was open', () => {
+    const root = open();
+
+    fitOutOfFlow(root, { sideways: true });
+    root.querySelector('.et-overlay-runtime-root')?.remove();
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.minHeight, root.style.minWidth]).toEqual(['', '']);
   });
 });

@@ -1,4 +1,4 @@
-import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-call';
+import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
 import { Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
@@ -342,6 +342,7 @@ const drawFrame = async () => {
   const place = () => {
     applyEmbed(frameElement, root);
     placeOverlays(root);
+    fitOutOfFlow(root, { sideways: fit });
   };
 
   new MutationObserver(place).observe(root, { childList: true, subtree: true });

@@ -46,6 +46,7 @@ const modules = {
       return null;
     },
     placeOverlays: () => undefined,
+    fitOutOfFlow: () => undefined,
   },
   '../embed-page': { applyEmbed: () => undefined, fitEmbed: () => undefined },
   '../motion-runtime': { runRules: () => undefined, stepMotion: () => undefined },

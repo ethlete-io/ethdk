@@ -245,6 +245,44 @@ export const placeOverlays = (root: HTMLElement) => {
   }
 };
 
+/**
+ * Grows `root` to cover every absolutely or fixed positioned element inside it, such as an open
+ * overlay pane, so a frame measured or shot from `root` shows them. Grows sideways too with
+ * `sideways`. Safe to run again.
+ */
+export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) => {
+  const view = root.ownerDocument.defaultView;
+
+  if (!view) return;
+
+  const box = root.getBoundingClientRect();
+  const style = view.getComputedStyle(root);
+  const outOfFlow = [...root.querySelectorAll('*')]
+    .filter((element) => ['absolute', 'fixed'].includes(view.getComputedStyle(element).position))
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const extentOf = ({ side, start, paddings }: { side: 'bottom' | 'right'; start: number; paddings: string[] }) => {
+    const extent = Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
+    const [before, after] = paddings.map((padding) => parseFloat(padding) || 0) as [number, number];
+
+    if (extent === 0) return '';
+
+    return `${style.boxSizing === 'border-box' ? extent + after : extent - before}px`;
+  };
+
+  root.style.minHeight = extentOf({
+    side: 'bottom',
+    start: box.top,
+    paddings: [style.paddingTop, style.paddingBottom],
+  });
+  if (options.sideways)
+    root.style.minWidth = extentOf({
+      side: 'right',
+      start: box.left,
+      paddings: [style.paddingLeft, style.paddingRight],
+    });
+};
+
 /** Types a drawing where it is written, so a mistake reads in its own file and not in `call.ts`. */
 export const drawing = (drawn: Drawing): Drawing => drawn;
 
