@@ -534,6 +534,34 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix option:** for a comment on a sketch variant, write the note into the variant even when
   the merged product does not have the part yet.
 
+### 4.56 An interactive component draws its interactions as flat states, not as a grid - open
+
+- **Pain (Tom, 2026-10-30):** "wieso nutzt du nicht den grid view wie wir ihn schon bei comment
+  pin etc nutzen? das darf nicht vorkommen". `components/disclosure` drew `rest`, `hover`,
+  `focus-visible` and `open` as a flat list, so `open` had no hover, active or focus-visible.
+  The agent added `active` as a fifth flat state in sketch r1 instead of moving to the grid.
+- **Cause:** nothing points to the grid. `interactionRows` exists (`comment-pin`, `tree-row`), but
+  the `design complete` example in `apps/docs/cli/index.md` shows flat `hovered`, `pressed` and
+  `focused` states. `design check` and `design complete` accept flat interaction states.
+- **Now:** sketch r2 variants d and e use `interactionRows` with the rows `rest` and `open`.
+- **Fix options:** 1. `design complete` fails a declared control when its part has no `grid`
+  with a column per required interaction, and the docs example uses `interactionRows`
+  (recommended). 2. a `design check` warning on a state named after an interaction. A warning
+  can be ignored, so it does not meet "das darf nicht vorkommen".
+- **Acceptance:** a disclosure with flat `hover` and `active` states fails `design complete`
+  with a message that names `interactionRows`; the docs show only the grid.
+
+### 4.57 A rest frame can draw a real hover - open
+
+- **Pain (2026-10-30):** in `design shot`, `components/disclosure` e `rest` and `open` show
+  the hover tint, though no state forces hover. The toggle fills the frame from its top-left
+  corner, so the real `:hover` matches where the headless pointer stands.
+- **Risk:** `design complete` compares a forced frame with the rest frame. A rest frame that
+  draws real hover can hide a hover requirement or fail it wrongly.
+- **Fix option:** before each shot, move the pointer out of the frame, or turn off real
+  `:hover` in drawn frames, so only `data-et-force` draws an interaction. Add a spec with a
+  full-width control that bites.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
