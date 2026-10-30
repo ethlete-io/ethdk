@@ -29,7 +29,7 @@ export const inState = (markup: string, state: State) => (state.force ? forceInt
 
 export const COLOR_THEMES = ['brand', 'danger', 'warning'] as const;
 
-export const demoThemesNote = `<p class="sdk-demo-note">brand, danger and warning are demo themes of this fixture (calls/components/themes.ts). The SDK ships no theme names; each app registers its own.</p>`;
+export const demoThemesNote = `<p class="sdk-demo-note">brand, danger and warning are demo themes of the SDK Storybook (apps/storybook/src/themes.ts). The SDK ships no theme names; each app registers its own.</p>`;
 
 export const demoThemeLabel = (theme: string) => `${theme} (demo theme)`;
 

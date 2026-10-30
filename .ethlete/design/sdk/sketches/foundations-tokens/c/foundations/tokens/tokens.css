@@ -1,10 +1,12 @@
+/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */
+
 @layer base {
   .et-surface--default-light,
   .et-surface--light {
     --et-surface-background: 255 255 255;
     --et-surface-color: 23 23 23;
     --et-surface-color-muted: 82 82 82;
-    --et-surface-color-subtle: 163 163 163;
+    --et-surface-color-subtle: 161 161 161;
     --et-surface-border: 229 229 229;
     --et-surface-type: light;
     --et-surface-elevation: 0;
@@ -19,8 +21,8 @@
   .et-surface--default-dark,
   .et-surface--dark {
     --et-surface-background: 23 23 23;
-    --et-surface-color: 245 245 245;
-    --et-surface-color-muted: 163 163 163;
+    --et-surface-color: 250 250 250;
+    --et-surface-color-muted: 161 161 161;
     --et-surface-color-subtle: 115 115 115;
     --et-surface-border: 64 64 64;
     --et-surface-type: dark;
@@ -38,7 +40,7 @@
       --et-surface-background: 255 255 255;
       --et-surface-color: 23 23 23;
       --et-surface-color-muted: 82 82 82;
-      --et-surface-color-subtle: 163 163 163;
+      --et-surface-color-subtle: 161 161 161;
       --et-surface-border: 229 229 229;
       --et-surface-type: light;
       --et-surface-elevation: 0;
@@ -55,8 +57,8 @@
   @media (prefers-color-scheme: dark) {
     :root {
       --et-surface-background: 23 23 23;
-      --et-surface-color: 245 245 245;
-      --et-surface-color-muted: 163 163 163;
+      --et-surface-color: 250 250 250;
+      --et-surface-color-muted: 161 161 161;
       --et-surface-color-subtle: 115 115 115;
       --et-surface-border: 64 64 64;
       --et-surface-type: dark;
@@ -75,7 +77,7 @@
     --et-surface-background: 255 255 255;
     --et-surface-color: 23 23 23;
     --et-surface-color-muted: 82 82 82;
-    --et-surface-color-subtle: 163 163 163;
+    --et-surface-color-subtle: 161 161 161;
     --et-surface-border: 229 229 229;
     --et-surface-type: light;
     --et-surface-elevation: 0;
@@ -90,8 +92,8 @@
 
   :root.et-scheme--dark {
     --et-surface-background: 23 23 23;
-    --et-surface-color: 245 245 245;
-    --et-surface-color-muted: 163 163 163;
+    --et-surface-color: 250 250 250;
+    --et-surface-color-muted: 161 161 161;
     --et-surface-color-subtle: 115 115 115;
     --et-surface-border: 64 64 64;
     --et-surface-type: dark;
@@ -205,23 +207,23 @@
   :root,
   .et-color--default,
   .et-color--brand {
-    --et-color-primary: 37 99 235;
-    --et-color-primary-hover: 29 78 216;
-    --et-color-primary-focus: 29 78 216;
-    --et-color-primary-active: 30 64 175;
-    --et-color-primary-disabled: 100 116 139;
+    --et-color-primary: 0 255 161;
+    --et-color-primary-hover: 76 247 184;
+    --et-color-primary-focus: 76 247 184;
+    --et-color-primary-active: 0 198 126;
+    --et-color-primary-disabled: 0 122 77;
 
-    --et-color-on-primary: 255 255 255;
-    --et-color-on-primary-hover: 255 255 255;
-    --et-color-on-primary-focus: 255 255 255;
-    --et-color-on-primary-active: 255 255 255;
-    --et-color-on-primary-disabled: 226 232 240;
+    --et-color-on-primary: 0 0 0;
+    --et-color-on-primary-hover: 0 0 0;
+    --et-color-on-primary-focus: 0 0 0;
+    --et-color-on-primary-active: 0 0 0;
+    --et-color-on-primary-disabled: 0 36 23;
 
-    --et-color-primary-ink: 37 99 235;
-    --et-color-primary-ink-hover: 37 99 235;
-    --et-color-primary-ink-focus: 37 99 235;
-    --et-color-primary-ink-active: 37 99 235;
-    --et-color-primary-ink-disabled: 37 99 235;
+    --et-color-primary-ink: 0 255 161;
+    --et-color-primary-ink-hover: 0 255 161;
+    --et-color-primary-ink-focus: 0 255 161;
+    --et-color-primary-ink-active: 0 255 161;
+    --et-color-primary-ink-disabled: 0 255 161;
   }
 
   .et-color--danger {
@@ -237,11 +239,11 @@
     --et-color-on-primary-active: 255 255 255;
     --et-color-on-primary-disabled: 255 220 220;
 
-    --et-color-primary-ink: 220 38 38;
-    --et-color-primary-ink-hover: 220 38 38;
-    --et-color-primary-ink-focus: 220 38 38;
-    --et-color-primary-ink-active: 220 38 38;
-    --et-color-primary-ink-disabled: 220 38 38;
+    --et-color-primary-ink: 248 113 113;
+    --et-color-primary-ink-hover: 252 165 165;
+    --et-color-primary-ink-focus: 252 165 165;
+    --et-color-primary-ink-active: 239 68 68;
+    --et-color-primary-ink-disabled: 153 75 75;
   }
 
   .et-color--warning {
@@ -257,11 +259,11 @@
     --et-color-on-primary-active: 23 23 23;
     --et-color-on-primary-disabled: 255 237 213;
 
-    --et-color-primary-ink: 217 119 6;
-    --et-color-primary-ink-hover: 217 119 6;
-    --et-color-primary-ink-focus: 217 119 6;
+    --et-color-primary-ink: 245 158 11;
+    --et-color-primary-ink-hover: 251 191 36;
+    --et-color-primary-ink-focus: 251 191 36;
     --et-color-primary-ink-active: 217 119 6;
-    --et-color-primary-ink-disabled: 217 119 6;
+    --et-color-primary-ink-disabled: 133 77 14;
   }
 }
 
