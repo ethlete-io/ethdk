@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const root = (() => {
@@ -36,6 +37,9 @@ const all = takeFlag(args, '--all', false);
 const force = takeFlag(args, '--force', false);
 const waitSeconds = takeFlag(args, '--wait', true);
 const recipient = takeFlag(args, '--to', true);
+const rcFile = takeFlag(args, '--file', true);
+const remove = takeFlag(args, '--remove', false);
+const dryRun = takeFlag(args, '--dry-run', false);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
@@ -50,6 +54,8 @@ Release: node ${script} release <name> [path...]      (no path: release every cl
 Claims:  node ${script} claims
 Up:      node ${script} up <name>[=<command>]...      (start a tmux session per agent, plus one that runs dispatch)
 Run:     node ${script} run <name> <command...>       (start or attach the agent in its tmux session; starts dispatch)
+Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
+                                                      (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
@@ -179,10 +185,11 @@ if (command === 'send' && sender) {
       spawnSync('tmux', ['new-session', '-A', '-s', session, '-c', process.cwd(), shellCommand], { stdio: 'inherit' })
         .status ?? 1;
   }
-} else if (command === 'shell-init') {
+} else if (command === 'shell-init' || command === 'shell-install') {
   const agents = [sender, ...words].filter(Boolean);
-  (agents.length ? agents : ['claude', 'codex']).forEach((agent) => {
-    process.stdout.write(`${agent}() {
+  const functions = (agents.length ? agents : ['claude', 'codex'])
+    .map(
+      (agent) => `${agent}() {
   local root script
   root=$(git rev-parse --show-toplevel 2>/dev/null) && script="$root/.agents/skills/ethlete-agent-mailbox/agent-mailbox.mjs"
   if [ -n "$script" ] && [ -f "$script" ] && command -v tmux >/dev/null; then
@@ -191,8 +198,35 @@ if (command === 'send' && sender) {
     command ${agent} "$@"
   fi
 }
-`);
-  });
+`,
+    )
+    .join('');
+  if (command === 'shell-init') {
+    process.stdout.write(functions);
+  } else {
+    const shell = basename(process.env.SHELL ?? '');
+    const file = rcFile ?? (shell === 'zsh' ? '.zshrc' : shell === 'bash' ? '.bashrc' : undefined);
+    if (!file) {
+      process.stderr.write('Unknown shell. Pass --file <path> to the startup file.\n');
+      process.exitCode = 1;
+    } else {
+      const path = rcFile ? resolve(rcFile) : join(homedir(), file);
+      const present = existsSync(path) ? readFileSync(path, 'utf8') : '';
+      const start = '# >>> ethlete agent-mailbox >>>';
+      const end = '# <<< ethlete agent-mailbox <<<';
+      const without = present.replace(new RegExp(`\\n?${start}[\\s\\S]*?${end}\\n?`), '\n').replace(/\n+$/, '\n');
+      const block = `${start}\n${functions}${end}\n`;
+      const next = remove ? without : `${without}\n${block}`;
+      if (dryRun) {
+        process.stdout.write(`Would write ${path}:\n${remove ? '(block removed)\n' : block}`);
+      } else {
+        writeFileSync(path, next);
+        process.stdout.write(
+          `${remove ? 'Removed the block from' : 'Wrote the block to'} ${path}. Open a new terminal.\n`,
+        );
+      }
+    }
+  }
 } else if (command === 'down') {
   [DISPATCH_SESSION, ...[sender, ...words].filter(Boolean).map(sessionFor)].forEach((name) => {
     const result = tmux('kill-session', '-t', `=${name}`);

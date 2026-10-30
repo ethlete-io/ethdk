@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -209,5 +209,23 @@ describe('agent-mailbox', () => {
     expect(output).toContain('gemini() {');
     expect(output).toContain('command gemini "$@"');
     expect(spawnSync('bash', ['-n'], { input: output }).status).toBe(0);
+  });
+
+  it('writes the shell functions once, replaces them on a second run and removes them', () => {
+    const rc = join(dir, 'rc');
+    writeFileSync(rc, 'export A=1\n');
+
+    run(['shell-install', 'codex', '--file', rc]);
+    run(['shell-install', 'codex', 'gemini', '--file', rc]);
+
+    const installed = readFileSync(rc, 'utf8');
+
+    expect(installed).toContain('export A=1');
+    expect(installed.match(/>>> ethlete agent-mailbox/g)).toHaveLength(1);
+    expect(installed).toContain('gemini() {');
+
+    run(['shell-install', '--remove', '--file', rc]);
+
+    expect(readFileSync(rc, 'utf8')).toBe('export A=1\n');
   });
 });

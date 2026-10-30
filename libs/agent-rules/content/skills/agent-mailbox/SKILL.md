@@ -22,6 +22,7 @@ node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
 node <skill-dir>/agent-mailbox.mjs up <name>[=<command>]...
 node <skill-dir>/agent-mailbox.mjs run <name> <command...>
+node <skill-dir>/agent-mailbox.mjs shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
 node <skill-dir>/agent-mailbox.mjs shell-init [<agent>...]
 node <skill-dir>/agent-mailbox.mjs down [<name>...]
 node <skill-dir>/agent-mailbox.mjs dispatch
@@ -68,7 +69,9 @@ A background `--wait` also ends after one message, so it is not a lasting watch.
 
 `run <name> <command...>` starts the command in the `tmux` session `<name>@<repo>`, or attaches if it runs already. It also starts the dispatcher when none runs. Session names carry the repo name, so `codex` in two repos never collides. For a second agent of one kind, pick another name: `run claude-2 claude`.
 
-`shell-init` prints one shell function per agent. After the user adds `eval "$(node <skill-dir>/agent-mailbox.mjs shell-init)"` to the shell startup file, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. This command never edits the startup file.
+`shell-install` writes one shell function per agent into `~/.zshrc` or `~/.bashrc`, between two marker lines. A second run replaces the block, and `--remove` deletes it. Use `--file` for another startup file and `--dry-run` to preview. After a new terminal opens, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. Run `shell-install` only when the user asks: it changes a file the user owns.
+
+`shell-init` prints the same functions without writing a file.
 
 ## Rules
 
