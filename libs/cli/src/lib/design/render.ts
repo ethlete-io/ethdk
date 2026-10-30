@@ -85,7 +85,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
     return started;
   };
 
-  return (ask: RenderAsk) => {
+  const render = (ask: RenderAsk) => {
     if (worker && (isStale(watched) || startedWith !== JSON.stringify(workerDataOf()))) {
       void worker.terminate();
       worker = null;
@@ -109,6 +109,16 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
 
     return result;
   };
+
+  const close = async () => {
+    const stopped = worker;
+
+    worker = null;
+    settleAll('design-explore: the renderer closed');
+    await stopped?.terminate();
+  };
+
+  return Object.assign(render, { close });
 };
 
 const readBody = (request: IncomingMessage) =>

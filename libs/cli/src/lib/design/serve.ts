@@ -307,300 +307,300 @@ const withAssetUrls = (system: SystemModules) => {
   return (code: string, id: string) => system.withAssetUrls(code, id) ?? marks(code, id);
 };
 
-const designExplore = ({
-  target,
-  config,
-  system,
-}: {
-  target: string;
-  config: DesignConfig;
-  system: SystemModules;
-}) => ({
-  name: 'design-explore',
-  enforce: 'pre' as const,
-  resolveId: (id: string, importer?: string) => {
-    if (id === VIRTUAL || id === `${VIRTUAL}/env` || id === `${VIRTUAL}/system`) return `\0${id}`;
+const designExplore = ({ target, config, system }: { target: string; config: DesignConfig; system: SystemModules }) => {
+  const renderer = createRenderer({ target, config });
 
-    return (
-      system.resolveId(id, importer) ??
-      mappedSubpathOf({ specifier: id, packages: config.render?.packages ?? {}, target })
-    );
-  },
-  load: (id: string) => {
-    if (id === `\0${VIRTUAL}`) return registry(target);
-    if (id === `\0${VIRTUAL}/env`) return env(target, config);
-    if (id === `\0${VIRTUAL}/system`) return systemRegistry(system);
+  return {
+    name: 'design-explore',
+    enforce: 'pre' as const,
+    resolveId: (id: string, importer?: string) => {
+      if (id === VIRTUAL || id === `${VIRTUAL}/env` || id === `${VIRTUAL}/system`) return `\0${id}`;
 
-    return null;
-  },
-  transform: withAssetUrls(system),
-  transformIndexHtml: {
-    order: 'pre' as const,
-    handler: (html: string, ctx: { path: string; originalUrl?: string }) => {
-      if (!ctx.path.includes('frame')) return html;
-
-      const asked = new URL(ctx.originalUrl ?? ctx.path, 'http://localhost');
-      const product = asked.searchParams.get('product');
-      const head = product
-        ? config.products?.[product]?.head
-        : config.projects?.[projectOf(asked.searchParams.get('call') ?? '')]?.head;
-
-      if (!head) return html;
-
-      return html.replace('<!--head-->', readFileSync(resolve(target, head), 'utf8'));
+      return (
+        system.resolveId(id, importer) ??
+        mappedSubpathOf({ specifier: id, packages: config.render?.packages ?? {}, target })
+      );
     },
-  },
-  /** The registries are built once per load, so a new call or part folder is invisible until it is invalidated. */
-  configureServer: (vite: ViteDevServer) => {
-    const callsRoot = callsRootOf(target);
-    const designRoot = resolve(target, DESIGN_DIR);
-    const stamp = buildStampOf();
-    const base = () => {
-      const address = vite.httpServer?.address();
+    load: (id: string) => {
+      if (id === `\0${VIRTUAL}`) return registry(target);
+      if (id === `\0${VIRTUAL}/env`) return env(target, config);
+      if (id === `\0${VIRTUAL}/system`) return systemRegistry(system);
 
-      return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
-    };
-    const thumbs = createThumbnailer({ target, base });
-    const shots = createPartShooter({
-      target,
-      base,
-      system,
-      statesOf: async ({ product, part, sketch }) => {
-        const file = system.partOf({ product, part, sketch })?.file;
+      return null;
+    },
+    transform: withAssetUrls(system),
+    transformIndexHtml: {
+      order: 'pre' as const,
+      handler: (html: string, ctx: { path: string; originalUrl?: string }) => {
+        if (!ctx.path.includes('frame')) return html;
 
-        if (!file) return null;
+        const asked = new URL(ctx.originalUrl ?? ctx.path, 'http://localhost');
+        const product = asked.searchParams.get('product');
+        const head = product
+          ? config.products?.[product]?.head
+          : config.projects?.[projectOf(asked.searchParams.get('call') ?? '')]?.head;
 
-        const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
-          default?: { states?: unknown };
-        };
-        const states = module.default?.states;
+        if (!head) return html;
 
-        return states && typeof states === 'object' ? Object.keys(states) : [];
+        return html.replace('<!--head-->', readFileSync(resolve(target, head), 'utf8'));
       },
-    });
-    const baseDirs = [...new Set(system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []))].filter(
-      (dir) => !isInside(designRoot, dir),
-    );
+    },
+    /** The registries are built once per load, so a new call or part folder is invisible until it is invalidated. */
+    configureServer: (vite: ViteDevServer) => {
+      const callsRoot = callsRootOf(target);
+      const designRoot = resolve(target, DESIGN_DIR);
+      const stamp = buildStampOf();
+      const base = () => {
+        const address = vite.httpServer?.address();
 
-    const reload = (id: string) => {
-      const module = vite.moduleGraph.getModuleById(`\0${id}`);
-      if (module) vite.moduleGraph.invalidateModule(module);
-    };
+        return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
+      };
+      const thumbs = createThumbnailer({ target, base });
+      const shots = createPartShooter({
+        target,
+        base,
+        system,
+        statesOf: async ({ product, part, sketch }) => {
+          const file = system.partOf({ product, part, sketch })?.file;
 
-    const unresolveParts = () => {
-      for (const module of vite.moduleGraph.idToModuleMap.values()) {
-        if (productOfModuleId(module.id)) vite.moduleGraph.invalidateModule(module);
+          if (!file) return null;
+
+          const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
+            default?: { states?: unknown };
+          };
+          const states = module.default?.states;
+
+          return states && typeof states === 'object' ? Object.keys(states) : [];
+        },
+      });
+      const baseDirs = [
+        ...new Set(system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? [])),
+      ].filter((dir) => !isInside(designRoot, dir));
+
+      const reload = (id: string) => {
+        const module = vite.moduleGraph.getModuleById(`\0${id}`);
+        if (module) vite.moduleGraph.invalidateModule(module);
+      };
+
+      const unresolveParts = () => {
+        for (const module of vite.moduleGraph.idToModuleMap.values()) {
+          if (productOfModuleId(module.id)) vite.moduleGraph.invalidateModule(module);
+        }
+      };
+
+      const forgetCalls = (file: string) => {
+        thumbs.forget(relative(callsRoot, file));
+        shots.forgetCalls(relative(callsRoot, file));
+      };
+
+      const events = createDesignEvents();
+      let revision = 0;
+
+      const redraw = (change: PartsChange) => {
+        if (!change.all && change.parts.length === 0 && !change.errored) return;
+
+        revision += 1;
+        if (change.all) shots.clear();
+        else shots.forget(change);
+        events.signal('parts', { revision, ...change });
+      };
+
+      const hot = vite.environments?.['client']?.hot;
+
+      if (hot) {
+        const send = hot.send.bind(hot);
+
+        hot.send = (
+          payload: import('vite', { with: { 'resolution-mode': 'import' } }).HotPayload | string,
+          data?: unknown,
+        ) => {
+          // HMR is disabled: Studio must replace frames when Vite invalidates optimized dependency URLs.
+          if (typeof payload === 'object' && payload.type === 'full-reload') {
+            thumbs.clear();
+            redraw(ALL_PARTS);
+          }
+
+          return typeof payload === 'string' ? send(payload, data) : send(payload);
+        };
       }
-    };
 
-    const forgetCalls = (file: string) => {
-      thumbs.forget(relative(callsRoot, file));
-      shots.forgetCalls(relative(callsRoot, file));
-    };
+      const configPath = configPathOf(target);
 
-    const events = createDesignEvents();
-    let revision = 0;
+      const reloadConfig = () => {
+        let next: DesignConfig | null;
 
-    const redraw = (change: PartsChange) => {
-      if (!change.all && change.parts.length === 0 && !change.errored) return;
+        try {
+          next = readConfig(target);
+        } catch (error) {
+          console.error(
+            `design-explore: ${configPath} is invalid, keeping the last good config (${error instanceof Error ? error.message : String(error)})`,
+          );
 
-      revision += 1;
-      if (change.all) shots.clear();
-      else shots.forget(change);
-      events.signal('parts', { revision, ...change });
-    };
-
-    const hot = vite.environments?.['client']?.hot;
-
-    if (hot) {
-      const send = hot.send.bind(hot);
-
-      hot.send = (
-        payload: import('vite', { with: { 'resolution-mode': 'import' } }).HotPayload | string,
-        data?: unknown,
-      ) => {
-        // HMR is disabled: Studio must replace frames when Vite invalidates optimized dependency URLs.
-        if (typeof payload === 'object' && payload.type === 'full-reload') {
-          thumbs.clear();
-          redraw(ALL_PARTS);
+          return;
         }
 
-        return typeof payload === 'string' ? send(payload, data) : send(payload);
+        if (!next) return;
+
+        for (const key of Object.keys(config)) delete config[key as keyof DesignConfig];
+        Object.assign(config, next);
+        system.forget();
+        reload(`${VIRTUAL}/env`);
+        reload(`${VIRTUAL}/system`);
+        redraw(ALL_PARTS);
       };
-    }
 
-    const configPath = configPathOf(target);
+      const reloadFlows = () => {
+        thumbs.clear();
+        shots.clear();
+        events.signal('flows');
+      };
 
-    const reloadConfig = () => {
-      let next: DesignConfig | null;
+      const refresh = (file: string) => {
+        if (resolve(file) === configPath) return reloadConfig();
+        if (isCommentFile(file)) return events.signal('comments');
+        if (isNoteFile(file)) return events.signal('notes');
+        if (isFlowFile(file)) return reloadFlows();
 
-      try {
-        next = readConfig(target);
-      } catch (error) {
-        console.error(
-          `design-explore: ${configPath} is invalid, keeping the last good config (${error instanceof Error ? error.message : String(error)})`,
-        );
+        forgetCalls(file);
 
-        return;
-      }
+        if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
+        if (isDecisionFile(file)) return;
+        if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
 
-      if (!next) return;
+        system.forget();
+        unresolveParts();
+        reload(`${VIRTUAL}/system`);
+        redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
+      };
 
-      for (const key of Object.keys(config)) delete config[key as keyof DesignConfig];
-      Object.assign(config, next);
-      system.forget();
-      reload(`${VIRTUAL}/env`);
-      reload(`${VIRTUAL}/system`);
-      redraw(ALL_PARTS);
-    };
+      const change = (file: string) => {
+        if (resolve(file) === configPath) return reloadConfig();
+        if (isCommentFile(file)) return events.signal('comments');
+        if (isNoteFile(file)) return events.signal('notes');
+        if (isFlowFile(file)) return reloadFlows();
 
-    const reloadFlows = () => {
-      thumbs.clear();
-      shots.clear();
-      events.signal('flows');
-    };
+        forgetCalls(file);
+        const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
 
-    const refresh = (file: string) => {
-      if (resolve(file) === configPath) return reloadConfig();
-      if (isCommentFile(file)) return events.signal('comments');
-      if (isNoteFile(file)) return events.signal('notes');
-      if (isFlowFile(file)) return reloadFlows();
+        redraw(changedPartsOf({ target, config, system, file, dependents }));
+      };
 
-      forgetCalls(file);
+      const answer =
+        (handle: (url: URL, request: IncomingMessage) => Promise<{ status: number; body: unknown }>) =>
+        (request: IncomingMessage, response: ServerResponse) =>
+          void handle(new URL(request.url ?? '', 'http://localhost'), request).then(
+            (answered) => sendJson(response, answered),
+            (error: unknown) =>
+              sendJson(response, {
+                status: 500,
+                body: { error: error instanceof Error ? error.message : String(error) },
+              }),
+          );
 
-      if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
-      if (isDecisionFile(file)) return;
-      if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
-
-      system.forget();
-      unresolveParts();
-      reload(`${VIRTUAL}/system`);
-      redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
-    };
-
-    const change = (file: string) => {
-      if (resolve(file) === configPath) return reloadConfig();
-      if (isCommentFile(file)) return events.signal('comments');
-      if (isNoteFile(file)) return events.signal('notes');
-      if (isFlowFile(file)) return reloadFlows();
-
-      forgetCalls(file);
-      const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
-
-      redraw(changedPartsOf({ target, config, system, file, dependents }));
-    };
-
-    const answer =
-      (handle: (url: URL, request: IncomingMessage) => Promise<{ status: number; body: unknown }>) =>
-      (request: IncomingMessage, response: ServerResponse) =>
-        void handle(new URL(request.url ?? '', 'http://localhost'), request).then(
-          (answered) => sendJson(response, answered),
-          (error: unknown) =>
-            sendJson(response, {
-              status: 500,
-              body: { error: error instanceof Error ? error.message : String(error) },
-            }),
-        );
-
-    vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
-      response.setHeader('content-type', 'application/json');
-      response.end(JSON.stringify(stamp));
-    });
-    vite.middlewares.use(RENDER_PATH, renderMiddleware(createRenderer({ target, config })));
-    vite.middlewares.use(FORCE_PATH, forceMiddleware);
-    vite.middlewares.use(THUMB_PATH, thumbs.middleware);
-    vite.middlewares.use(SHOT_PATH, shots.middleware);
-    vite.middlewares.use(
-      SYSTEM_PATH,
-      answer(async (url) => {
-        const asked = url.searchParams.get('product');
-
-        if (asked && !config.products?.[asked]) return { status: 404, body: { error: `no product "${asked}"` } };
-
-        const products = await listSystem({
-          target,
-          system,
-          products: asked ? [asked] : system.products(),
-          load: ({ file, product }) => vite.ssrLoadModule(productModuleIdOf({ file, product })),
-        });
-
-        return { status: 200, body: products };
-      }),
-    );
-    vite.middlewares.use(
-      PRODUCT_PATH,
-      answer(async (_url, request) => {
-        const created = await newProductAnswer({ target, request });
-
-        if (created.status === 201) reloadConfig();
-
-        return created;
-      }),
-    );
-    vite.middlewares.use(
-      CALLS_PATH,
-      answer(async () => ({
-        status: 200,
-        body: await listCalls({ target, load: (file) => vite.ssrLoadModule(file) }),
-      })),
-    );
-    vite.middlewares.use(
-      TRANSFER_PATH,
-      answer(async (url, request) => {
-        if (request.method !== 'POST') return { status: 405, body: { error: 'POST only' } };
-
-        const result = markTransferred({ target, slug: url.searchParams.get('call') ?? '' });
-        const status = result === 'missing' ? 404 : result === 'unreadable' ? 422 : 200;
-
-        return { status, body: { result } };
-      }),
-    );
-    const studio = (path: string, handle: (asked: Parameters<typeof sketchesAnswer>[0]) => Answer | Promise<Answer>) =>
+      vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify(stamp));
+      });
+      vite.middlewares.use(RENDER_PATH, renderMiddleware(renderer));
+      vite.middlewares.use(FORCE_PATH, forceMiddleware);
+      vite.middlewares.use(THUMB_PATH, thumbs.middleware);
+      vite.middlewares.use(SHOT_PATH, shots.middleware);
       vite.middlewares.use(
-        path,
-        answer(async (url, request) =>
-          handle({
-            target,
-            url,
-            request,
-            load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
-            pictureOf: shots.pictureOf,
-            boxOf: shots.changedBoxOf,
-          }),
-        ),
-      );
+        SYSTEM_PATH,
+        answer(async (url) => {
+          const asked = url.searchParams.get('product');
 
-    studio(SKETCHES_PATH, sketchesAnswer);
-    studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
-    studio(SKETCH_COMPARE_PATH, sketchCompareAnswer);
-    studio(SKETCH_DIFF_PATH, sketchDiffAnswer);
-    studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
-    studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
-    studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);
-    studio(COMMENTS_PATH, commentsAnswer);
-    studio(COMMENT_PATH, commentAnswer);
-    studio(COMMENT_DONE_PATH, commentDoneAnswer);
-    studio(COMMENT_WITHDRAW_PATH, commentWithdrawAnswer);
-    studio(COMMENT_REPLY_PATH, commentReplyAnswer);
-    studio(FLOWS_PATH, flowsAnswer);
-    studio(NOTES_PATH, notesAnswer);
-    studio(NOTE_PATH, noteAnswer);
-    studio(NOTE_CHANGE_PATH, noteChangeAnswer);
-    studio(NOTE_DELETE_PATH, noteDeleteAnswer);
-    studio(FLOW_NOTE_PATH, flowNoteAnswer);
-    studio(FLOW_NOTE_CHANGE_PATH, flowNoteChangeAnswer);
-    studio(FLOW_NOTE_DELETE_PATH, flowNoteDeleteAnswer);
-    vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
-    vite.httpServer?.on('close', () => {
-      events.close();
-      void Promise.all([thumbs.close(), shots.close()]);
-    });
-    vite.watcher.add([designRoot, ...baseDirs]);
-    vite.watcher.on('add', refresh);
-    vite.watcher.on('unlink', refresh);
-    vite.watcher.on('change', change);
-  },
-});
+          if (asked && !config.products?.[asked]) return { status: 404, body: { error: `no product "${asked}"` } };
+
+          const products = await listSystem({
+            target,
+            system,
+            products: asked ? [asked] : system.products(),
+            load: ({ file, product }) => vite.ssrLoadModule(productModuleIdOf({ file, product })),
+          });
+
+          return { status: 200, body: products };
+        }),
+      );
+      vite.middlewares.use(
+        PRODUCT_PATH,
+        answer(async (_url, request) => {
+          const created = await newProductAnswer({ target, request });
+
+          if (created.status === 201) reloadConfig();
+
+          return created;
+        }),
+      );
+      vite.middlewares.use(
+        CALLS_PATH,
+        answer(async () => ({
+          status: 200,
+          body: await listCalls({ target, load: (file) => vite.ssrLoadModule(file) }),
+        })),
+      );
+      vite.middlewares.use(
+        TRANSFER_PATH,
+        answer(async (url, request) => {
+          if (request.method !== 'POST') return { status: 405, body: { error: 'POST only' } };
+
+          const result = markTransferred({ target, slug: url.searchParams.get('call') ?? '' });
+          const status = result === 'missing' ? 404 : result === 'unreadable' ? 422 : 200;
+
+          return { status, body: { result } };
+        }),
+      );
+      const studio = (
+        path: string,
+        handle: (asked: Parameters<typeof sketchesAnswer>[0]) => Answer | Promise<Answer>,
+      ) =>
+        vite.middlewares.use(
+          path,
+          answer(async (url, request) =>
+            handle({
+              target,
+              url,
+              request,
+              load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
+              pictureOf: shots.pictureOf,
+              boxOf: shots.changedBoxOf,
+            }),
+          ),
+        );
+
+      studio(SKETCHES_PATH, sketchesAnswer);
+      studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
+      studio(SKETCH_COMPARE_PATH, sketchCompareAnswer);
+      studio(SKETCH_DIFF_PATH, sketchDiffAnswer);
+      studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
+      studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
+      studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);
+      studio(COMMENTS_PATH, commentsAnswer);
+      studio(COMMENT_PATH, commentAnswer);
+      studio(COMMENT_DONE_PATH, commentDoneAnswer);
+      studio(COMMENT_WITHDRAW_PATH, commentWithdrawAnswer);
+      studio(COMMENT_REPLY_PATH, commentReplyAnswer);
+      studio(FLOWS_PATH, flowsAnswer);
+      studio(NOTES_PATH, notesAnswer);
+      studio(NOTE_PATH, noteAnswer);
+      studio(NOTE_CHANGE_PATH, noteChangeAnswer);
+      studio(NOTE_DELETE_PATH, noteDeleteAnswer);
+      studio(FLOW_NOTE_PATH, flowNoteAnswer);
+      studio(FLOW_NOTE_CHANGE_PATH, flowNoteChangeAnswer);
+      studio(FLOW_NOTE_DELETE_PATH, flowNoteDeleteAnswer);
+      vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
+      vite.httpServer?.on('close', () => {
+        events.close();
+        void Promise.all([thumbs.close(), shots.close()]);
+      });
+      vite.watcher.add([designRoot, ...baseDirs]);
+      vite.watcher.on('add', refresh);
+      vite.watcher.on('unlink', refresh);
+      vite.watcher.on('change', change);
+    },
+    closeBundle: () => renderer.close(),
+  };
+};
 
 const freePortOf = () =>
   new Promise<number>((resolvePort, reject) => {

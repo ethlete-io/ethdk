@@ -38,4 +38,16 @@ describe('createRenderer', () => {
     expect(workers).toHaveLength(2);
     expect(workers[1]?.workerData.packages).toEqual({ a: 'two' });
   });
+
+  it('stops its worker and settles open renders on close', async () => {
+    workers.length = 0;
+
+    const render = createRenderer({ target: '/tmp/x', config: {} });
+    const open = render({ call: 'app/one', template: '<p></p>', imports: [] });
+
+    await render.close();
+
+    expect(workers[0]?.terminate).toHaveBeenCalledOnce();
+    await expect(open).resolves.toEqual({ error: 'design-explore: the renderer closed' });
+  });
 });
