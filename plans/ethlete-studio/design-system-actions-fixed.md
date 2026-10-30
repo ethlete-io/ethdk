@@ -1,3 +1,11 @@
+### 5.34 `StateGrid` has no row groups - closed, not built
+
+- **Pain:** variant c of "Many states" groups rows ("States by interaction", "Rest only") by
+  inference; a grouping by kind and end mark cannot be declared.
+- **Fix option:** optional `groups` on `StateGrid`, only if Tom picks a grouped look.
+- **Decision (Tom, 2026-10-30):** not built. Folded unchanged states and the question-first
+  review view (4.48) already give the overview.
+
 ### 5.50 Studio's danger colour fails contrast on its dark surfaces - fixed
 
 - **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on

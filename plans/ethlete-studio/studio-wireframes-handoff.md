@@ -466,6 +466,9 @@ Tom's latest instructions, verbatim: "no more new sketches for you" and "wrap it
 Design work is stopped. Do not create, extend, ready or merge sketches unless Tom explicitly
 authorizes new work. This boundary overrides earlier automatic continuation instructions.
 
+**Lifted (Tom, 2026-10-30):** the stop held only for that evening. It no longer applies, and it
+never applied to plan and docs work. Sketches for the missing designs may go ahead.
+
 Current truth: L is committed as `4a960f125`. The focus sketch is still `in progress`,
 containing A/B and corrective C in round 2. C has all seven baseline states pixel-identical,
 and the author's 23-state check passed. It has NOT received independent final review, been
