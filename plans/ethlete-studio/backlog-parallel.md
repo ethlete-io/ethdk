@@ -327,6 +327,12 @@ generated CSS file.
   `apps/ethlete-studio/src-tauri/src/tools.rs` goes and `cli_entry` moves into `design_server.rs`.
 - Q61 (`components/form-field`): `input` and `textarea` have no pressed look (hover, focus-visible and disabled
   stay); the select keeps Q56 b. Matches `kind: 'field'` (hover, no active).
+- Q65 (`components/form-field`, error field showed no hover or focus change): none of the offered options. Inputs
+  get no focus ring. An error only switches the field's colour theme from the normal one to the error theme
+  (`injectSemanticColorTheme('error')`); hover, focus and the other states then take that theme's colours by
+  themselves. Fix in `libs/components/src/lib/forms/form-field/form-field-text-shell-styles.component.css:245`:
+  the `[data-error]` rule must not pin `border-color` to `--et-theme-color-primary-solid` over every state; it
+  sets the theme, and the normal state rules read it. Changeset patch, docs note.
 
 ### Viewport per state (Tom feedback, 2026-10-30)
 
