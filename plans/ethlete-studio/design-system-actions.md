@@ -110,7 +110,45 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the
   skip line, so the agent sees noise.
 
+- **Reproduction tried (2026-10-30, `claude-sdk58`):** the `sketch ready` comparison
+  (`shotsShowNoChange`) ran from source on `pages/inbox` variant c, the pixel-identical
+  correction: three cold runs one after the other, then three at the same time on an emptied
+  `vite-check-*` cache. All six returned `true`. Not reproduced, so no retry was added. On the
+  next skip, run `design shot <part> --states --variants` at once and record the diff lines.
+
 - **Related fix 3.44:** pixel-comparison results no longer survive into later screenshot requests. Regression reproduces a transient screenshot failure remaining cached, and a stale match hiding a later difference. This removes a confirmed cache hazard; the original first-run visual mismatch is still not independently reproduced.
+
+### 3.45 Recording rejection in prose does not reject a variant in Studio - open
+
+- **Pain (Tom, 2026-10-30):** after the agent said I/J were rejected, Tom corrected it:
+  "abgelhent sind sie btw noch nicht, das hast du nur geschrieben. weiteres findings".
+  The feedback was in the round note and plans, but both variants remained selectable.
+  The agent falsely reported a lifecycle change it had not performed.
+- **Evidence:** `SketchVariantInfo` in `system/sketch/sketch.ts` has authors, round and note,
+  with no variant rejection/withdrawal state. CLI help exposes whole-sketch discard but no
+  per-variant rejection. A round's note or `lost` text does not prevent choosing a variant.
+  Discarding the entire sketch would remove the ongoing exploration, not just exclude I/J.
+- **Required outcome:** a designer's rejection must be represented as a real, inspectable
+  state that affects the permitted actions, rather than merely a sentence in chat or docs.
+  Feedback recorded, variant rejected and whole sketch discarded are distinct operations.
+- **Fix options:** 1. add a persisted per-variant rejection decision, with reason, decision
+  origin and time, exposed in Studio and the CLI (recommended). Keep the drawings in history
+  but prevent pick/merge of rejected variants in the backend as well as the UI. Reopening
+  requires an explicit designer decision and retains the earlier verdict. 2. a round-level
+  rejection that applies explicitly to its variants, with the same enforcement and history.
+  Decide whether both scopes are needed; do not infer rejection merely from a newer round.
+- **Guardrails:** distinguish unfinished, superseded and rejected work; old alternatives are
+  not automatically rejected. An agent must only record a designer's actual decision, with
+  its origin clear. A new round's prose is not a verdict. Do not delete files or discard
+  the entire sketch as a substitute for a missing operation.
+- **Acceptance:** explicitly reject I/J, reload, and see them as rejected history without
+  working pick/merge actions. Direct API/CLI attempts fail with the verdict and reason.
+  Other variants and new rounds remain usable. Reopening is explicit and auditable. Agent
+  completion reports must verify the persisted decision and distinguish unsupported actions
+  from completed ones.
+- **Status:** missing lifecycle capability confirmed; no rejection API/CLI/UI implemented.
+  I/J currently have negative feedback recorded but are not technically rejected. The next
+  design round continues separately; the agent must not claim this finding is already fixed.
 
 ## 4. Render checks and shots
 
@@ -142,6 +180,125 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Now:** manual canvas zoom or the agent's `design shot --crop`. Neither makes the initial comparison self-explanatory for the designer.
 - **Fix options:** 1. derive a shared crop from the union of changed pixel bounds and show an enlarged Current/A/B comparison alongside the full-page context (recommended). Keep identical crop coordinates and scale for all variants. 2. a declared focus rectangle on a sketch, with a visible "Zoom to change" action. 3. zoom only the changed frame; this still makes side-by-side detail comparison difficult.
 - **Acceptance:** for the Inbox switch round, Tom can distinguish both off and on appearances at the initial comparison view without hunting for the changed control. Full-page context remains available.
+
+### 4.47 No enforceable design-completeness check for controls and their surfaces - open
+
+- **Pain (Tom, 2026-10-30):** the agent treated largely static pages as nearly ready for
+  implementation. Tom immediately found missing repo/project picker interactions, tree-icon
+  tooltips, Inbox and Merge changed-list hover states, zoom-control interactions, the open
+  preset select body (`desktop 1440x900`) and the unchanged-list accordion. A manual reminder
+  or a passing render check does not prevent this from happening again (see process 6.5).
+- **Required outcome:** the system must prevent an agent from declaring a design complete
+  for implementation while required interactions or associated surfaces are uncovered.
+  A warning the agent can ignore is insufficient. Completing one exploration round is not
+  evidence that its host page or the product is complete.
+- **Existing mechanisms:** `definePart` already supports part-level `interactions` and grids.
+  `rules/interactions.ts` validates declared interaction names; `GRID-COVERAGE` checks declared
+  grid rows. Neither establishes an inventory of every control and associated surface in a
+  page. Native `title`, CSS `:hover`, a state name, or valid metadata alone is not evidence of
+  a drawn, reviewed tooltip, hover state or select body.
+- **Tom's proposed direction:** explicitly mark an element as interactive, allowing the CLI
+  to require its interaction states. Extend the model to associated surfaces such as a
+  select body, tooltip, picker menu or accordion body. Exact flag/API remains a proposal.
+- **Recommended approach to investigate:**
+  - Give controls stable identities and declare their required states. For pointer controls
+    this includes hover; keyboard-operable controls need focus-visible. Include active,
+    selected, disabled, expanded or other states where the control actually supports them.
+    Apply requirements by control kind and input mode, rather than blindly demanding every
+    combination from every control.
+  - Declare a control's associated surfaces and connect each to a real drawn state: select
+    trigger to open options, tree status icon to visible tooltip, unchanged header to its
+    expanded body. Cover interactions inside those surfaces too, such as hovered/selected
+    options. A declaration without a matching rendered target/state must fail validation.
+  - Detect likely controls in rendered output (native controls, interactive roles and known
+    SDK controls) and report those missing declarations. Otherwise an agent can bypass all
+    requirements by omitting the flag. Non-semantic clickable drawings and overlays need an
+    explicit audit path; DOM detection alone cannot guarantee complete discovery.
+  - Reuse coverage from the real inherited component where applicable, while verifying the
+    host's actual surface/theme/placement and product override. Do not copy every SDK control's
+    entire matrix into every page or count a closed select as proof of its open surface.
+  - Expose unresolved coverage as blocking failures in an explicit completeness check used
+    for implementation handoff/CI. Keep "ready for the designer to compare this round"
+    distinct from "design complete for implementation": partial explorations must remain
+    reviewable. Specify the command/status and its enforcement points before building it.
+  - Exceptions need explicit scope, reason and designer review, visible in the coverage
+    report; an agent-authored `complete: true` or silent opt-out must not satisfy the gate.
+- **Alternative:** infer the entire inventory and state requirements automatically from DOM,
+  accessibility roles and SDK metadata. This reduces annotation but cannot reliably infer
+  all intended overlays, custom clickable regions or task-specific states. Compare a hybrid
+  declaration-plus-discovery approach before choosing the API.
+- **Acceptance examples:**
+  - An interactive repo picker with only a rest drawing blocks implementation completeness
+    and identifies its missing hover/focus evidence.
+  - A select with a drawn trigger but no open body blocks completeness. Drawing its open
+    body while omitting option interactions still reports the missing coverage.
+  - A tree icon with only `title` does not pass as a designed tooltip; the visible tooltip
+    must be drawn in context. The Merge unchanged accordion needs collapsed and expanded
+    coverage, including its header interactions and real body.
+  - A passing render/type check or a `ready` sketch cannot independently claim product
+    completeness. Missing declarations, stale state references and new unclassified controls
+    produce actionable failures. Existing complete coverage can be reused without creating
+    a Cartesian product of page states.
+- **Status:** requirement and options recorded; no flag, coverage schema, CLI command or
+  enforcement has been implemented. Resolve discovery limits, reusable component evidence,
+  review authority and the handoff gate in a dedicated tooling design before implementation.
+
+### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
+
+- **Pain (Tom, 2026-10-30):** "dieser sketch umfasst so viele screens ich weiß gar nicht
+  wonach ich schauen soll". The Inbox sketch asks only where to compose a new comment, but
+  Studio displays the old list/filter states across Current, A, B and C above the relevant
+  `comment-draft` row. The decision is buried under repeated full-page screens at unreadable
+  fit scale. Explaining a state name in chat does not make this a usable review workflow.
+- **Evidence:** Tom's screenshot `/tmp/codex-clipboard-UgNUoD.png` shows `with-resolved`,
+  `active-only`, `active-clear` and `all-clear` repeated across four columns, then the new
+  `comment-draft` row at the bottom. The author comparison reported no pixel changes in the
+  15 pre-existing variant/state drawings. These states must survive merge, but they are not
+  competing answers to the current question.
+- **Existing mechanism and diagnostic limit:** Studio already supports folding unchanged
+  state rows. The server supplies per-variant `unchanged` through `unchangedStatesOf` in
+  `studio-api.ts`; it can compare markup/styles and, when available, pixels. The sketch's
+  existing-state markup changed despite identical pictures. The screenshot proves that the
+  initial review is unfocused; it does not establish whether the live server's comparison,
+  a failed screenshot, an older running server or remembered expanded rows caused it.
+  Inspect the live response and row-open state before claiming a root cause.
+- **Fix options:** 1. a decision-focused initial view that shows the relevant new/changed
+  states, with unchanged states folded behind a clear count and "Show all states" action
+  (recommended). Make the round's question and its comparison scope visible in Studio;
+  optionally declare focus states/regions, validated against actual variants. 2. initially
+  select one relevant state and offer explicit navigation through other changed states.
+  A manual state selector is a temporary workaround, not the systemic fix.
+- **Constraints:** keep every existing state in the sketch and in validation. Separate the
+  retained regression coverage from the designer's initial comparison. A focus declaration
+  must not hide additional changed states or render failures: report them visibly and make
+  them reachable. Keep a full-context view available; use consistent focus geometry across
+  variants for detail comparison (related finding 4.43). Do not solve overload by dropping
+  states or creating a separate sketch per placement.
+- **Acceptance:** opening this round immediately presents the question "Where should I
+  write a point-anchored comment?" and the A/B/C `comment-draft` comparison at a useful scale.
+  The five retained list/filter states remain inspectable and checked but do not consume
+  the initial comparison. New, changed, unchanged, failed and not-yet-compared states are
+  distinguishable; an unknown comparison result must not silently count as unchanged.
+- **Status:** unchanged-row detection is fixed and live-verified below. Composer placement
+  remains undecided. Further focus-region metadata and useful initial detail scale remain
+  proposals, related to 4.43; the live API check does not verify those design requirements.
+- **Live diagnosis (2026-10-30, during round 2):** a read-only request to Tom's
+  `:4402/__design/sketches?product=studio` returned `targets[].unchanged: []` for A/B/C and
+  the newly created D/E/F. The UI therefore receives no evidence to fold the old state rows;
+  remembered expansion alone cannot explain this response. The author had previously
+  verified identical pixels for the five retained states. The reason the live server does
+  not recognize that equality remains unproven. No server restart or tooling change made.
+- **Proven cause and fix (`b78bff197`, reported by `claude-sdk57`):** Inbox renders through
+  `ng()`, which requires browser `location`/fetch. Rendering it for a Node markup comparison
+  threw `location is not defined`; `markupOf` returned null, and equality failed before the
+  pixel comparison. Existing states now reach the pixel comparison when markup differs or
+  cannot be rendered in Node. New states, failed screenshots or absence of a screenshot
+  provider remain changed. Studio adds a folded-state count and "Show all states" action.
+- **Live verified after Tom's rebuild/restart (2026-10-30, `claude-sdk57`):** the same
+  `:4402/__design/sketches?product=studio` now returns all five retained states in `unchanged`
+  for each of the eight Inbox variants: open, with-resolved, active-only, active-clear and
+  all-clear. This supplies the folding evidence that was missing before. No restart was
+  performed by this design session.
 
 ## 5. Drawing parts and pages
 
@@ -261,9 +418,143 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
 
+### 5.60 Merging one candidate keeps all discarded candidate code in shared helpers - open
+
+- **Evidence (L merge, `4a960f125`):** the accepted Inbox wrapper calls `inbox(true, 'l')`,
+  but merged `shared/inbox.ts` still accepts placements A-L, branches over the old editor
+  compositions, imports `svgAsset` for I/J and keeps their optional icon argument. Its CSS
+  also retains placement rules for the earlier candidates. Only L is used by the merged
+  part. The merger correctly copied shared files, but the shared layout mixed common code
+  with mutually exclusive exploration code.
+- **Pain:** the authoritative selected design carries rejected/unfinished alternatives,
+  unused CSS and obsolete parameters. A successful user merge does not produce a focused,
+  maintainable implementation of the chosen result.
+- **Fix options:** 1. keep candidate-specific rendering in variant files/helpers and share
+  only genuinely common data/markup; require a selected-result cleanup check before merge
+  (recommended). 2. tooling reports unused variant-only imports/styles/parameters left in
+  the selected dependency closure. Generic automatic pruning needs a defined contract;
+  do not delete branches just because their names resemble variant letters.
+- **Now:** the next Inbox focus sketch simplifies the helper to L and its new focus choice,
+  with all seven existing drawings required to remain pixel-identical. It does not edit the
+  merged base directly. This addresses the current artifact; prevention remains a proposal.
+- **Checked in the open focus sketch:** the old placement branches/styles and unused icon
+  parameter/import were removed. All seven pre-existing states have no pixel change for
+  either focus candidate. This cleanup is still in the sketch, not merged into the base.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
+
+### 6.5 Completed sketch rounds were mistaken for complete product coverage - open
+
+- **Pain (Tom, 2026-10-30):** after Switch and Project Picker were merged, the agent proposed
+  only remaining page states and then app implementation. Tom corrected that much of Studio
+  remains undesigned and that using Studio must continue to reveal workflow improvements.
+- **Evidence:** `pages/inbox` has five list/filter states but no comment composer or thread
+  reply. The running app already has `comment-draft.component.ts`, `comment-thread.component.ts`
+  and `new-product-form.component.ts`; their workflows have no matching designed state.
+  `pages/merge` has only `open`, while `sketch-view.component.ts` also handles comparison
+  progress, comparison errors and a merge refused after the target changed. The existing
+  start drawing sends product creation to the agent/CLI, while the app offers an in-app form.
+- **Now:** the coverage inventory in `studio-wireframes-handoff.md` distinguishes existing
+  drawings, missing workflows and separately planned capabilities. The next sketch compares
+  three placements for composing a point-anchored comment in `pages/inbox`.
+- **Fix options:** 1. maintain this evidence-based coverage inventory as each workflow is
+  explored; record tool friction here with reproduction and options, then let Tom choose
+  the design (recommended). 2. add workflow coverage metadata to the design tool so a list
+  of parts/states can also reveal uncovered tasks; this needs a separate proposal.
+- **Still open:** the inventory is an initial source audit, not an exhaustive product review.
+  No tool change or missing workflow is complete merely because it has been listed.
+- **Tom's follow-up audit:** repo/project picker hover and menu states, tree-icon tooltips,
+  Inbox and Merge changed-list hover states, canvas zoom controls, the preset select's open
+  body (`desktop 1440x900`) and the Merge unchanged accordion are also missing design coverage.
+  These are recorded individually in the handoff's interaction-detail table. A page's presence,
+  CSS pseudo-state or native `title` must not be counted as a reviewed interaction design.
+- **Required systemic prevention:** finding 4.47 records Tom's demand for an enforceable
+  completeness gate, including interactive-element declarations and associated surfaces.
+  The manual inventory alone does not satisfy this requirement.
+
+### 6.6 Literal attachment variants passed checks but failed visual judgment - open
+
+- **Pain (Tom, 2026-10-30):** "das schaut alles nicht wirklich gut aus" after reviewing the
+  Avatar attachment round D/E/F. All 36 state renders passed; none of these alternatives
+  received design approval. The initial recommendation of D was not supported by Tom's
+  assessment of the overall appearance.
+- **What was drawn:** the same existing composer with a pointer, an overlapping avatar or a
+  narrow bridge. Parent review corrected disconnected geometry but still focused too much
+  on whether endpoints touched. That did not establish a good comment composition.
+- **Interpretation, not a quoted requirement:** the agent treated "more attached to an avatar"
+  too mechanically and retained the cluttered composer structure. The next round should
+  compare coherent avatar/editor compositions rather than more connector decorations.
+- **Now:** round 3 G/H rebuilds the composer composition from the directionally useful A;
+  D/E/F remain visible as rejected history. Scope stays the same point-comment task.
+- **Fix options:** 1. before presenting, critique hierarchy, avatar relationship, spacing,
+  form nesting and host context together, at a readable detail scale and in the whole page
+  (recommended). Reject technically valid but visually weak alternatives before `ready`. 2. add a declared visual review rubric to the exploration brief; it must support human
+  judgment rather than turn subjective design quality into a render-pass boolean.
+- **Acceptance:** future summaries distinguish "renders correctly" from "designer approved";
+  a successful attachment check or a preferred agent variant does not establish either
+  design quality or implementation completeness. Tom still chooses the composition.
+- **Reference review requested by Tom:** before continuing G/H, compare his Figma screenshot
+  (`/tmp/codex-clipboard-ZMjDSV.png`) and other tools. The screenshot shows an empty compact
+  input alongside a pin, with an integrated arrow action and no heading, target breadcrumb
+  or separate footer. This is a different state from our filled multiline editor; it must
+  not be treated as an alternative to that state.
+- **References checked (2026-10-30):**
+  - [Figma's current add-comment guide](https://help.figma.com/hc/en-us/articles/360041068574-Add-comments-to-files):
+    the official animation also shows a filled composer adjacent to its pin, with the send
+    arrow in its own lower action region. It supports distinguishing initial entry from
+    filled composition; it does not justify copying a whole feature set. The
+    [2021 design rationale](https://www.figma.com/blog/stay-in-the-flow-with-redesigned-comments/)
+    explicitly describes reducing composer size to encourage focused feedback; treat this
+    as historical rationale, not proof of today's exact appearance.
+  - [Miro comments](https://help.miro.com/hc/en-us/articles/360017730873-Comments):
+    documents saved drafts when navigating away, Enter to publish and Shift+Enter for a
+    newline. Its official edit screenshot shows a thread with author, editing controls and
+    a separate reply field. That screenshot is an existing-thread edit, not a new comment.
+  - [Penpot workspace comments](https://help.penpot.app/user-guide/designing/workspace-basics/#comments):
+    the official screenshot shows an anchored thread with messages, authors and a reply
+    field. The guide distinguishes adding a point-comment from replying to a thread.
+- **Implication to explore, not an approved design:** compare compact entry compositions
+  first, and show empty, filled/multiline and existing-thread states as separate states of
+  each candidate. Start with pin plus input and integrated send; add chrome only when the
+  task needs it. Cover draft preservation/cancel semantics separately so visual reduction
+  does not introduce text loss. G/H were interrupted before visual review or a passed check;
+  they are unfinished drafts, not reference-backed proposals ready for Tom.
+- **Round 4 review finding:** the first compact I/J drawings recreated the marker at
+  x=610, y=244 while A's actual marker was x=609, y=187. They looked locally aligned with
+  their input but moved the feedback point by 57 px. Parent review requested browser
+  measurement; the author confirmed and corrected both to x=609, y=187. Compare the pin
+  against the original target, not just against its editor. A reusable anchored-composer
+  helper or target-identity/geometry check is a potential tooling improvement; fixed page
+  coordinates currently allow this semantic drift without a render/type error.
+
+### 6.7 A reference was copied instead of informing an independent design - open
+
+- **Feedback (Tom, 2026-10-30):** "das ist nun einfach eine kopie von figma. referenz heißt
+  nicht klauen. feedback aufnehmen." Round 4 I/J is rejected; neither is an accepted
+  direction for Studio or implementation.
+- **What went wrong:** the agent used Figma's pin/input/send composition as the template
+  for both candidates. The main comparison became a gap versus direct contact. That did
+  not provide independent Studio solutions to the underlying comment task. Changing a
+  palette or spacing does not establish a distinct design concept.
+- **Scope of the earlier approval:** "sounds good" approved using the reference analysis
+  to continue exploration. It did not approve copying Figma's visual composition or the
+  resulting I/J drawings. The agent's recommendation and passing checks did not change this.
+- **Required correction:** extract the problem a reference solves and its useful principles
+  (low effort to start, clear point association, different entry/thread states), then derive
+  a composition from Studio's own visual language and designer/agent workflow. Compare
+  actual alternative answers to that problem; do not present minor variations of the
+  reference as design exploration. More elaborate decoration is not a correction either.
+- **Process improvement proposal:** before presenting a reference-led round, state which
+  principle each reference contributes, what is specific to Studio and how the alternatives
+  differ in concept. Review the candidates beside the reference to catch literal imitation.
+  This supports human design judgment; no pixel-difference or render gate proves originality.
+- **Action at that turn:** record the negative feedback in the round note and handoff, leave
+  the product unmerged and do not extend I/J into more states. This did not create a real
+  rejection decision: I/J remained selectable. Tom corrected this false completion report;
+  finding 3.45 records the missing lifecycle capability. Tom then explicitly requested that
+  the design exploration continue with new work.
 
 | Pain                                                                                                                                | Rule                                                                                                                                                | Ref        |
 | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
@@ -293,6 +584,37 @@ section without a page.
 - The head of the "Aktuell" column.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
+
+### 6.8 The agent invented focus variants without establishing the editor lifecycle - open
+
+- **Correction (Tom, 2026-10-30):** "ich denke nicht dass wir das comment fenster ohne
+  focus offen lassen. der bereits gestaltete stand ist der focus stand. kein focus ->
+  comment schließt". The merged L appearance is already the open/focused editor.
+- **Failure:** the agent treated focus as a missing visual decoration and opened a new
+  A/B ring comparison. It assumed an open/unfocused base state instead of deriving valid
+  states from the task. Render checks passed this invented matrix. The bare textarea's
+  suppressed outline did not establish a requirement to redraw the accepted editor.
+- **Agreed behavior:** opening the comment editor means it has focus; leaving its focus
+  scope closes it. Focus moving between controls inside the editor, such as textarea to
+  Send, keeps it open. There is no persistent open-but-unfocused editor state. Losing
+  focus does not submit the comment. Draft retention/discard after closing is a separate
+  policy, not silently decided by this correction.
+- **Current action:** a corrective single-variant round restores L's accepted appearance,
+  removes the speculative extra focus state in that candidate and documents the lifecycle.
+  Existing no-editor drawings cover the closed presentation. No actual focus/blur runtime
+  behavior is implemented by these static drawings, and no formal rejection state for
+  the old A/B candidates is implied (3.45).
+- **System improvement:** extend the proposed completeness model (4.47) with valid
+  lifecycle states, transitions and focus scope. Require reachable states and meaningful
+  transitions before expanding interaction coverage; do not demand every mechanical
+  focus/hover combination for a control that would already be closed. Drawn focus evidence
+  and real behavior verification remain distinct.
+- **Acceptance:** the accepted L appearance is used for the focused editor; focus can move
+  to Send without hiding it prematurely; moving outside closes it without sending. Future
+  implementation must verify those transitions and the separately chosen draft policy.
+- **Stopped at Tom's request:** "no more new sketches for you" / "wrap it up". Corrective C
+  exists with an author check but remains unmerged and not ready. No further sketch work,
+  publication or automatic continuation is authorized. The committed L design stays as is.
 
 ## 7. Open checks
 

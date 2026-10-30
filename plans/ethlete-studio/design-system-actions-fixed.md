@@ -1526,3 +1526,129 @@ check` warns early.
 - **Pain:** unchangedStatesOf cached screenshot equality using source hashes and only a boolean for the screenshot provider. A transient failure or a match from one rendering request could determine a later comparison without taking new screenshots.
 - **Fix:** source-based markup comparisons remain cached; requests that use screenshot comparison bypass that result cache. Failed pictures are retried on the next request, and a later visual difference cannot inherit an earlier match.
 - **Checked:** regressions cover failure then success without source edits, and equal pictures followed by different pictures from a new provider. Existing source-only caching remains covered. Finding 3.41 stays open for its original intermittent first-run mismatch.
+
+### 4.44 Failed comment loading is represented as an empty inbox - fixed
+
+- **Pain:** the designer cannot distinguish no comments from comments that could not be
+  loaded. Continuing a feedback round from an apparently empty inbox can hide pending work.
+- **Evidence (source audit, 2026-10-30):** `CommentStore.reading` in
+  `apps/ethlete-studio/src/app/system-view/comment-store.ts` catches `listedComments$` failures
+  and returns `NO_COMMENTS`. Both open and resolved lists derive from this value. The write
+  path has a separate `error` signal, but the read failure is discarded. The changes stream
+  also stops with `EMPTY` on failure; recovery needs its own check.
+- **Verification limit:** confirmed in source, not reproduced with a failed request in the
+  running native app. Do not claim a tested runtime regression or a completed fix.
+- **Fix options:** 1. preserve the last successful list and expose loading/error state with a
+  retry action; show an empty inbox only after a successful empty response (recommended). 2. show an explicit unavailable state with retry and no cached list. In either case expose
+  an interrupted live connection separately from a genuinely empty result.
+- **Next check:** fail the comments request after a successful list and on initial opening;
+  verify the visible distinction, retry and live-update recovery. Design this in a separate
+  round; it is outside the current comment-composer placement sketch.
+- **Fixed in source (reported by `claude-sdk57`, `99544c74a`):** CommentStore retains the last
+  good list and exposes loaded/loadError/interrupted plus retry. The panel distinguishes
+  loading, initial failure, refresh failure and interrupted live updates, with Retry.
+  A successful empty response is required for an empty inbox. Not checked in the native app.
+
+- **Verified headless (2026-10-30, `claude-sdk57`):** isolated app/server checks passed initial load failure, refresh failure, successful empty list and normal list. Live-update interruption initially failed because EventSource errors never reached the store; `d9bbc3f27` forwards the drop, reconnects after 5 seconds and reloads the list. That startup-failure/recovery path passed headless verification. Limit: dropping an already established stream was not reproduced, and the real native app remains unchecked.
+
+### 4.45 A comparison of a new state paints the absent baseline as a render error - fixed
+
+- **Pain (2026-10-30):** reviewing a deliberately new state starts with a red error, although
+  the three proposed drawings render. This makes expected absence look like a broken part.
+- **Reproduction:** `design shot pages/inbox --states --state comment-draft --variants
+--product studio` while the open Inbox sketch adds `comment-draft` for the first time.
+  The contact sheet's `merged / comment-draft` cell says the merged part has no such state;
+  A, B and C below it render. Observed in `/tmp/inbox-draft-final.png`.
+- **Now:** inspect the variant rows and distinguish this missing baseline manually from a
+  real rendering failure. The merged part intentionally has no composer state yet.
+- **Fix options:** 1. show a neutral "New state — no merged version" baseline cell, and keep
+  real variant rendering errors red (recommended). 2. omit the absent baseline cell and
+  label the comparison as a new-state proposal. Neither should invent fallback state props.
+- **Acceptance:** all variants of a new state can be reviewed without a false error cell;
+  a misspelled requested state absent from every version still reports an actionable error.
+- **Fixed in source (reported by `claude-sdk57`, `f4f6cdd19`):** the single-state variant-shot
+  path now uses a neutral "New state - no merged version" baseline. A state absent from
+  every version still fails. At the source-fix report, CLI dist and live-server verification were still pending.
+
+- **Verified live (2026-10-30, `claude-sdk57`):** `design shot pages/inbox --state comment-draft --variants --product studio` now shows the neutral "New state - no merged version" merged cell; inspected artifact `/tmp/check-4-45.png`. Tom rebuilt/restarted the server; the earlier dist limitation is resolved.
+
+### 4.46 A failed checker process can produce an empty TYPE-ERROR - fixed
+
+- **Pain (2026-10-30):** a sketch check reported `TYPE-ERROR` for each variant with no
+  diagnostic, giving the agent no way to distinguish a TypeScript failure from a checker
+  process that could not run.
+- **Observed:** the sandboxed Inbox check wrote three `TYPE-ERROR` headings without compiler
+  diagnostics. Inspection of `/tmp/inbox-check-sandbox.stderr` confirms these headings;
+  `/tmp/inbox-check-sandbox.stdout` is empty. The same
+  sketch passed all 18 state renders outside the sandbox. A separate sandboxed screenshot
+  request explicitly reported `listen EPERM: operation not permitted 0.0.0.0`.
+- **Cause limit:** the blank check's underlying process failure is not established. The
+  screenshot's listen error does not prove that it caused the typecheck failure too.
+  `libs/cli/src/lib/design/typecheck.ts` does establish a diagnostic gap: `outputOf` reads
+  only stdout/stderr, and the catch returns `kind: 'failed'` even if both are empty.
+- **Fix options:** 1. when there is no compiler output, preserve the process error message,
+  code/signal and executable, and distinguish checker execution failure from compiler
+  diagnostics (recommended). 2. at minimum print a non-empty failure and the rerun command.
+- **Acceptance:** a blocked/missing/crashed checker produces an actionable diagnostic;
+  actual TypeScript errors retain their compiler output. Do not report a source type error
+  solely because the checker process failed.
+- **Fixed in source (reported by `claude-sdk57`, `bca44814a`):** a checker failure with no
+  output is classified as unavailable/NO-TYPE-CHECKER and includes the executable plus
+  exit code, signal or errno in "TYPE CHECKER DID NOT RUN". Compiler output remains
+  TYPE-ERROR. Regression added in `typecheck.spec.ts`; dist had not been rebuilt at that report.
+
+- **Verified in rebuilt dist (2026-10-30):** this session's sandboxed product check now reported "TYPE CHECKER DID NOT RUN" with the executable and spawnSync EPERM instead of a blank TYPE-ERROR. The separate post-ok shutdown issue is tracked in 4.50.
+
+### 4.49 CLI contact sheets cannot focus on the current sketch round - fixed
+
+- **Pain (2026-10-30):** the reference-led I/J comparison includes the earlier A-H rows when
+  captured with `design shot pages/inbox --states --state comment-entry,comment-draft
+--variants --crop ... --scale 2`. The resulting detail sheet is 2048 × 7272 pixels. The
+  image viewer scales the whole sheet down, making the two relevant compositions too small
+  to judge until the final rows are manually isolated. A geometry crop cuts each frame,
+  but does not select the sketch round.
+- **Evidence:** `/tmp/inbox-round4-crop-final.png`; its final I/J rows were isolated solely
+  for parent inspection as `/tmp/inbox-round4-review-detail.png`. Repeated manual sheet
+  cropping is tooling friction, not a reusable review workflow. The live Studio folding
+  fix in 4.48 does not add this capability to the CLI.
+- **Fix options:** 1. add an explicit round/variant filter to `design shot`, for example a
+  proposed `--round r4` or `--variant i,j`, retaining state/crop/scale options (recommended). 2. add an opt-in current-round-only mode. Keep the complete history available explicitly;
+  do not delete older alternatives to simplify a screenshot.
+- **Acceptance:** one supported command captures I/J with both empty and filled states,
+  at identical geometry and useful detail resolution, without A-H or manual image editing.
+  Unknown round/variant selectors fail clearly. This filters review output only, never
+  validation or the states retained for merge.
+- **Fix (`7e145cf5e`, reported by `claude-sdk58`):** `design shot --variants` now accepts `--round` and `--variant` filters. Both without `--variants` are usage errors; unknown selections fail with the known values. Output filtering never reduces checks.
+- **Verified from source:** `design shot pages/inbox --variants --round r1 --variant b` produced only merged and B rows. At this report, the commit was not pushed and dist was not rebuilt; the peer has permission to build, without restarting the user's server.
+
+### 4.50 Product check prints ok but does not exit - fixed
+
+- **Observed (2026-10-30):** after L merged, `NX_NO_CLOUD=true node
+dist/libs/cli/src/index.js design check --product studio` printed Angular development-mode
+  notices followed by `ok`, but its process remained alive. PID 676834 was still sleeping
+  at 1 min 40 sec; the design session terminated only that owned check with SIGTERM (143).
+  The user's server was untouched. The sandbox attempt had already failed with explicit
+  subprocess EPERM; this was the separate escalated run after the checks succeeded.
+- **Pain:** the agent cannot obtain a successful process exit or move reliably to the next
+  command, even though the checker reports success. Killing the process masks whether its
+  renderer, timers, workers or other resources were cleaned up.
+- **Cause limit:** no active-handle/root-cause trace collected. Do not equate the process
+  lifetime failure with a TypeScript or visual failure; the command's check result was ok.
+- **Fix options:** 1. identify retained resources and dispose them on success and failure
+  before returning an exit status (recommended). 2. add bounded shutdown diagnostics. A
+  blind `process.exit(0)` would conceal cleanup problems and is not an established fix.
+- **Acceptance:** product check completes the same work, prints its result and exits with
+  the correct status without manual signals; no owned renderer/listener/worker remains.
+- **Additional observation (focus round):** the sketch author reports that screenshot
+  commands also printed their result/artifact but stayed alive until interrupted. The
+  focused `sketch check --fix` did return successfully. Diagnose the actual resources in
+  each command rather than assuming every CLI path has the same shutdown defect.
+- **Cause:** the render worker thread (`render.ts` `createRenderer`) had no stop. A command
+  that rendered Angular markup closed its Vite server, but the worker kept the event loop
+  alive. The hung processes had no sockets and no child processes, only four event loops.
+- **Fix (`claude-sdk58`):** the renderer has `close()`, which stops the worker and settles
+  open renders. The `design-explore` plugin calls it from `closeBundle`, which Vite runs on
+  `server.close()` in both listen and middleware mode. No `process.exit`.
+- **Verified:** `design check --product studio` from the old dist ran until `timeout 240`
+  (exit 124); from the fixed source it exited 0 after 13 s. `render-restart.spec.ts` covers
+  `close()`.
