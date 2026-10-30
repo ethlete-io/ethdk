@@ -965,6 +965,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (4.56:1). The merge OK still has to be typed by Tom in the builder session.
 - **Merged (Tom, 2026-10-30):** Tom merged variant a in Studio, not b (`e304eb3d0`). `design check --product studio`
   passes.
+- **Merged (Tom, 2026-10-30):** then Tom chose b after all; a new one-variant sketch with the b values replaced a
+  (fix forward, no restore).
 
 ### 4.66 `sketch ready` gives a different answer on a re-run - done
 
