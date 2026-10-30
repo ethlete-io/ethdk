@@ -3,6 +3,7 @@ import { EMPTY, Observable, defer, from, map, merge, of, switchMap, throwError }
 import { fromFetch } from 'rxjs/fetch';
 import { designEvents$, designStreamIsOpen } from './design-events';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
+import { ListedMotion } from './design-motion';
 
 /** What the user ruled about a variant. A variant without one is still open. */
 export type Verdict = 'chosen' | 'rejected';
@@ -228,6 +229,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
+  /** The motions the part declares between its states. Missing without any or from an `@ethlete/cli` older than motions. */
+  motions?: Record<string, ListedMotion>;
   /** The states drawn as one table in rest, a row and a column label for each. Missing without a `grid` or from an `@ethlete/cli` older than grids. */
   grid?: { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
   /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */

@@ -79,6 +79,7 @@ import { NoteFormComponent } from './note-form.component';
 import { partNotesOf } from './note-places';
 import { InventoryViewComponent } from './inventory-view.component';
 import { ExceptionListComponent } from './exception-list.component';
+import { MotionStripComponent } from './motion-strip.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
@@ -476,32 +477,49 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               />
             }
           } @else {
-            <ethlete-design-canvas
-              #partCanvas
-              [frames]="notedFrames()"
-              [cameraKey]="cameraKey()"
-              [restoredCamera]="restoredCamera()"
-              [pins]="partPins()"
-              [pointing]="commentStore.active() || noteStore.active()"
-              [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
-              [draft]="noteStore.draft() ?? commentStore.draft()"
-              [pinPopover]="pinThread"
-              [notes]="notesShown() ? partNotes() : []"
-              [noteTemplate]="noteBody"
-              (cameraChange)="rememberCamera($event)"
-              (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-              class="min-h-0"
-            >
-              @if (noteStore.draft()) {
-                @defer {
-                  <ethlete-note-form canvasDraft />
+            <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
+              <ethlete-design-canvas
+                #partCanvas
+                [frames]="notedFrames()"
+                [cameraKey]="cameraKey()"
+                [restoredCamera]="restoredCamera()"
+                [pins]="partPins()"
+                [pointing]="commentStore.active() || noteStore.active()"
+                [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+                [draft]="noteStore.draft() ?? commentStore.draft()"
+                [pinPopover]="pinThread"
+                [notes]="notesShown() ? partNotes() : []"
+                [noteTemplate]="noteBody"
+                (cameraChange)="rememberCamera($event)"
+                (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
+                class="min-h-0"
+              >
+                @if (noteStore.draft()) {
+                  @defer {
+                    <ethlete-note-form canvasDraft />
+                  }
+                } @else if (commentStore.draft()) {
+                  @defer {
+                    <ethlete-comment-draft canvasDraft />
+                  }
                 }
-              } @else if (commentStore.draft()) {
-                @defer {
-                  <ethlete-comment-draft canvasDraft />
+              </ethlete-design-canvas>
+              @if (partMotions(); as motions) {
+                @if (port(); as port) {
+                  <ethlete-motion-strip
+                    [port]="port"
+                    [product]="product()?.name ?? ''"
+                    [part]="partShown.key"
+                    [motions]="motions"
+                    [presets]="presetNames()"
+                    [surface]="surface()"
+                    [color]="color()"
+                    [revision]="productsRevision()"
+                    class="max-h-[45vh] overflow-y-auto"
+                  />
                 }
               }
-            </ethlete-design-canvas>
+            </div>
           }
         } @else {
           <p [class]="NOTE">This product has no parts yet.</p>
@@ -544,6 +562,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     StudioMarkComponent,
     InventoryViewComponent,
     ExceptionListComponent,
+    MotionStripComponent,
   ],
   providers: [provideCommentStore(), provideNoteStore()],
   host: {
@@ -1057,6 +1076,12 @@ export class SystemViewComponent {
       everyInteraction: true,
     }),
   );
+  protected partMotions = computed(() => {
+    const motions = this.part()?.listed.motions;
+
+    return motions && Object.keys(motions).length > 0 ? motions : null;
+  });
+  protected presetNames = computed(() => Object.keys(this.product()?.presets ?? {}));
   protected shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
   protected commentable = computed(
