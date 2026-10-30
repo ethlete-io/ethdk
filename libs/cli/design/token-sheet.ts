@@ -13,13 +13,13 @@ export type TokenSheetOptions = {
 };
 
 const SHEET_STYLES = `
-  .ts-root { position: relative; display: flex; flex-direction: column; gap: var(--space-4); width: 960px; padding: var(--space-6); box-sizing: border-box; background: var(--surface); color: var(--text); font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-md-line); }
-  .ts-title { margin: 0; font-size: var(--text-xl); line-height: var(--text-xl-line); font-weight: var(--weight-strong); }
-  .ts-panel { margin: 0; padding: var(--space-4); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-control-lg); }
-  .ts-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-1); }
-  .ts-row { display: grid; grid-template-columns: 200px 240px 1fr; align-items: center; gap: var(--space-3); min-height: var(--row); }
-  .ts-name { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); color: var(--text-muted); }
-  .ts-value { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); overflow-wrap: anywhere; }
+  .ts-root { position: relative; display: flex; flex-direction: column; gap: var(--space-4, 1.6rem); width: 960px; padding: var(--space-6, 2.4rem); box-sizing: border-box; background: var(--surface, oklch(0.17 0 0)); color: var(--text, oklch(0.94 0 0)); font-family: var(--font-ui, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif); font-size: var(--text-md, 1.3rem); line-height: var(--text-md-line, 1.8rem); }
+  .ts-title { margin: 0; font-size: var(--text-xl, 1.7rem); line-height: var(--text-xl-line, 2.2rem); font-weight: var(--weight-strong, 600); }
+  .ts-panel { margin: 0; padding: var(--space-4, 1.6rem); background: var(--surface, oklch(0.17 0 0)); border: 1px solid var(--surface-border, oklch(0.34 0 0)); border-radius: var(--radius-control-lg, 1rem); }
+  .ts-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-1, 0.4rem); }
+  .ts-row { display: grid; grid-template-columns: 200px 240px 1fr; align-items: center; gap: var(--space-3, 1.2rem); min-height: var(--row, 2.4rem); }
+  .ts-name { font-family: var(--font-code, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: var(--text-sm, 1.15rem); line-height: var(--text-sm-line, 1.6rem); color: var(--text-muted, oklch(0.72 0 0)); }
+  .ts-value { font-family: var(--font-code, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: var(--text-sm, 1.15rem); line-height: var(--text-sm-line, 1.6rem); overflow-wrap: anywhere; }
   .ts-sample { display: flex; align-items: center; min-width: 0; }
   .ts-probe { position: absolute; left: 0; top: 0; height: 0; visibility: hidden; }
 `;
