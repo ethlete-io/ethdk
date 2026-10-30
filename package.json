@@ -32,6 +32,7 @@
     "release": "yarn prepare:release && yarn changeset publish",
     "release:smoke": "node ./tools/release-smoke/smoke.mjs",
     "sdk:tokens": "node tools/scripts/generate-sdk-tokens.mjs",
+    "sdk:tokens:check": "node tools/scripts/generate-sdk-tokens.mjs --check",
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "nx tauri:dev ethlete-studio",

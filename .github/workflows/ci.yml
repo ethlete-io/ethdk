@@ -64,6 +64,9 @@ jobs:
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
       - run: yarn docs:error-codes:check
 
+      # Fails when the sdk design tokens drift from the Storybook themes they are generated from.
+      - run: yarn sdk:tokens:check
+
       # Every runtime export of @ethlete/query and @ethlete/core must be referenced by a scenario or
       # allowlisted with a reason in tools/export-coverage/<lib>.allowlist.json. Stale entries fail too.
       - run: yarn query:export-coverage
