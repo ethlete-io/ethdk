@@ -496,7 +496,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   rows; then option hover, focus, selected), collapse button and picker action as `button` or
   `part: 'components/button'`. `components/tree-row` 1: `div.st-trow[tabindex]` as `row` (it already draws
   selected, selected-hover, active, focus-visible in its grid). `components/comment-pin` 1: its `button` as
-  `button` (initials hover/active states exist; needs focus-visible and grid). `pages/merge` 5: changed-list
+  `button` (it already draws hover, active and focus-visible). `pages/merge` 5: changed-list
   `li` rows unclassified (need a row part and `part`), `components/button` and `elements/shell-main`
   incomplete, two `.mg-shot` overrides.
 - **Next:** the per-page inventory contact sheet with approval in Studio; sketches for `components/button`
