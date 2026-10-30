@@ -692,6 +692,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   tint that works on any surface, with the disclosure value
   `color-mix(in oklch, var(--text) 10%, transparent)`. `tree-row` and the disclosure use it. The
   `tree-row` press may change slightly; show Tom the before and after, and keep it visible.
+- **`comment-pin` (Tom, 2026-10-30):** the pin moves to the token too. `comment-pin.css:71` and
+  `:108` still mix `--surface-raised` with `--surface-sunken`; the token is a translucent text
+  tint, so the move changes pixels. The pin layers the token over its face:
+  `linear-gradient(var(--surface-pressed), var(--surface-pressed)), var(--surface-raised)`. A
+  sketch shows before and after, with no auto-merge; Tom picks in Studio.
 
 ### 5.32 A page cannot reuse the canvas frame chrome - open
 
