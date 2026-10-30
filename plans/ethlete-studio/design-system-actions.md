@@ -447,6 +447,22 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** for the Inbox r2, Tom sees at the first view that c changes only the
   part note and drops one state, and can read the new note text without the agent.
 
+### 4.52 A pick in Studio is stored but Studio does not show it - open
+
+- **Pain (Tom, 2026-10-30):** in the ready `pages/inbox` sketch, Tom clicked "Pick c". All
+  buttons were disabled for a moment, then enabled again, and nothing showed as picked.
+- **Evidence:** `sketch.json` holds `decision: { kind: 'pick', variant: 'c' }` with
+  `decidedAt` 13:26:27Z, the same second as the file write. The pick reached the disk; the
+  view did not follow it.
+- **Suspects, not checked:** the sketch list that Studio reloads after the pick still
+  returns no `decision`, or the view keeps its own pick state and drops it on the reload.
+  c changes no pixel (4.51), so a view that derives "picked" from a diff may also fail.
+- **Fix options:** 1. after the pick request, Studio reads the decision from the answer of
+  that request and shows it at once, then confirms it from the next list read
+  (recommended). 2. reload the sketch list and fail visibly when it has no decision.
+- **Acceptance:** a click on "Pick c" shows c as picked and enables Merge, also for a variant
+  that changes no pixel; a failed pick shows an error instead of a silent reset.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
