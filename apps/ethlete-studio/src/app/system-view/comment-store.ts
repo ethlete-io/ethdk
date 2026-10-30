@@ -1,7 +1,21 @@
 import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { EMPTY, Observable, catchError, finalize, map, of, scan, startWith, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  filter,
+  finalize,
+  map,
+  of,
+  retry,
+  scan,
+  startWith,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
 import {
   ListedComments,
   ProductAddress,
@@ -23,6 +37,8 @@ const NO_COMMENTS: ListedComments = { comments: [], unreadable: [] };
 type Read = { address: ProductAddress | null; list: ListedComments | null; error: string };
 
 const INITIAL_READ: Read = { address: null, list: NO_COMMENTS, error: '' };
+
+const RECONNECT_DELAY = 5000;
 
 const NO_SOURCE: CommentSource = { address: null, revision: 0 };
 
@@ -52,13 +68,17 @@ export class CommentStore {
 
         return port
           ? commentChanges$(port).pipe(
-              tap(() => this.live.set(true)),
-              scan((count) => count + 1, 0),
-              catchError(() => {
-                this.live.set(false);
+              retry({
+                delay: () => {
+                  this.live.set(false);
 
-                return EMPTY;
+                  return timer(RECONNECT_DELAY);
+                },
               }),
+              map((event) => event === 'changed' || !this.live()),
+              tap(() => this.live.set(true)),
+              filter(Boolean),
+              scan((count) => count + 1, 0),
             )
           : EMPTY;
       }),

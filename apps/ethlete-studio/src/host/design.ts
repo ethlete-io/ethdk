@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, from, fromEvent, map, switchMap } from 'rxjs';
+import { Observable, from, fromEvent, map, merge, switchMap, throwError } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
@@ -580,7 +580,13 @@ export const writeComment$ = (
 ): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
 
 /** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
-export const commentChanges$ = (port: number): Observable<void> =>
+export type CommentEvent = 'connected' | 'changed';
+
+/**
+ * The comment events of the design server: `connected` when the stream opens, `changed` when a comment changes.
+ * Errors when the stream drops, so a subscriber sees the gap instead of the browser's silent reconnect.
+ */
+export const commentChanges$ = (port: number): Observable<CommentEvent> =>
   new Observable<EventSource>((subscriber) => {
     const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
 
@@ -588,8 +594,15 @@ export const commentChanges$ = (port: number): Observable<void> =>
 
     return () => events.close();
   }).pipe(
-    switchMap((events) => fromEvent(events, 'comments')),
-    map(() => undefined),
+    switchMap((events) =>
+      merge(
+        fromEvent(events, 'open').pipe(map((): CommentEvent => 'connected')),
+        fromEvent(events, 'comments').pipe(map((): CommentEvent => 'changed')),
+        fromEvent(events, 'error').pipe(
+          switchMap(() => throwError(() => new Error('The comment events stream dropped.'))),
+        ),
+      ),
+    ),
   );
 
 /** Deletes a comment without a note, through `comment-withdraw`. */

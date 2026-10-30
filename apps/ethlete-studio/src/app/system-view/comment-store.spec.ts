@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Observable, Subject, of, throwError } from 'rxjs';
-import { CommentPlace, ListedComment, ListedComments, ProductAddress } from '../../host/design';
+import { Observable, Subject, Subscriber, of, throwError } from 'rxjs';
+import { CommentEvent, CommentPlace, ListedComment, ListedComments, ProductAddress } from '../../host/design';
 import { rememberedView } from '../studio-view/remembered';
 import { CommentSource, injectCommentStore, provideCommentStore } from './comment-store';
 
@@ -10,7 +10,7 @@ const host = vi.hoisted(() => ({
   write: vi.fn<(address: ProductAddress, comment: CommentPlace & { text: string }) => Observable<unknown>>(),
   done: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
   resolve: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
-  changes: vi.fn<(port: number) => Observable<void>>(),
+  changes: vi.fn<(port: number) => Observable<CommentEvent>>(),
   reply: vi.fn<(address: ProductAddress, reply: { id: string; text: string }) => Observable<unknown>>(),
 }));
 
@@ -51,7 +51,7 @@ const setup = () => {
 };
 
 describe('CommentStore', () => {
-  let changes: Subject<void>;
+  let changes: Subject<CommentEvent>;
   let stored: ListedComment[];
 
   beforeEach(() => {
@@ -80,7 +80,7 @@ describe('CommentStore', () => {
     expect(host.changes).toHaveBeenCalledWith(4492);
 
     stored = [listed('a', '2026-10-27T10:00:01Z')];
-    changes.next();
+    changes.next('changed');
     TestBed.tick();
     expect(store.comments().map((comment) => comment.id)).toEqual(['a']);
 
@@ -203,7 +203,7 @@ describe('CommentStore', () => {
           ? { ...entry, replies: [{ by: 'agent', text: 'Done.', createdAt: '' }], threadState: 'answered' }
           : entry,
     );
-    changes.next();
+    changes.next('changed');
     TestBed.tick();
     expect(store.questions().map((entry) => entry.id)).toEqual(['b']);
   });
@@ -222,7 +222,7 @@ describe('CommentStore', () => {
     const { store } = setup();
 
     host.list.mockReturnValueOnce(throwError(() => new Error('offline')));
-    changes.next();
+    changes.next('changed');
     TestBed.tick();
 
     expect(store.comments().map((comment) => comment.id)).toEqual(['a', 'b']);
@@ -263,5 +263,33 @@ describe('CommentStore', () => {
 
     expect(host.changes).toHaveBeenCalledTimes(2);
     expect(store.interrupted()).toBe(false);
+  });
+
+  it('reports a dropped live connection, reconnects by itself and reloads the list', () => {
+    vi.useFakeTimers();
+
+    const streams: Subscriber<CommentEvent>[] = [];
+
+    host.changes.mockReturnValue(new Observable<CommentEvent>((subscriber) => void streams.push(subscriber)));
+    const { store } = setup();
+
+    streams[0]?.next('connected');
+    TestBed.tick();
+    const loads = host.list.mock.calls.length;
+
+    streams[0]?.error(new Error('dropped'));
+    TestBed.tick();
+
+    expect(store.interrupted()).toBe(true);
+
+    vi.advanceTimersByTime(5000);
+    streams[1]?.next('connected');
+    TestBed.tick();
+
+    expect(streams).toHaveLength(2);
+    expect(store.interrupted()).toBe(false);
+    expect(host.list.mock.calls.length).toBe(loads + 1);
+
+    vi.useRealTimers();
   });
 });
