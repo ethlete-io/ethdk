@@ -490,7 +490,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (`serve.spec.ts`, `pixel-free.spec.ts`); headless check on a scratch copy (`/tmp/451/pixel-free-line.png`).
   Deviation: the line sits above the grid; the folded rows stay. Not verified: the real Inbox r2, the Tauri window.
 - **Decision (Tom, 2026-10-30, on the deviation):** the line replaces the grid, as first decided. The folded rows
-  show only after "Show all states"; the "in pages/merge" embed stays visible. Open until built.
+  show only after "Show all states"; the "in pages/merge" embed stays visible.
+- **As built (2026-10-30):** `14c419a43`: when every shown variant is pixel-free and no state head is open,
+  Studio drops the folded state heads; "Show all states" opens them, "Fold unchanged states" hides them. A sketch
+  where only some variants are pixel-free keeps the grid. Spec failed on the old source. Not checked visually.
 
 ### 4.52 A pick in Studio shows only after a long delay - done
 
