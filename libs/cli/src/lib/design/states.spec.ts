@@ -28,6 +28,23 @@ describe('switchStates', () => {
     expect(root.querySelector('[data-de-states]')?.getAttribute('data-de-states')).toBe('closed');
   });
 
+  it('morphs the state host, so a node both states draw is kept', () => {
+    const root = document.createElement('div');
+
+    root.innerHTML = '<div data-de-states="closed"><nav class="bar">closed</nav></div>';
+    document.body.replaceChildren(root);
+    switchStates<'closed' | 'open'>(
+      { closed: '<nav class="bar">closed</nav>', open: '<nav class="bar bar--open">open</nav>' },
+      [{ click: '.bar', go: 'open' }],
+    )(root);
+
+    const bar = root.querySelector<HTMLElement>('.bar');
+
+    bar?.click();
+    expect(root.querySelector('.bar')).toBe(bar);
+    expect(bar?.className).toBe('bar bar--open');
+  });
+
   it('ignores a click no rule matches', () => {
     const root = mount();
 

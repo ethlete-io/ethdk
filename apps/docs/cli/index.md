@@ -104,8 +104,12 @@ A part declares `motions` next to its `states`: `motions: { fold: { from: 'close
 states, with optional `at` (shot times in ms), `interrupt`, `viewTransition` and `play(ctx)`. A rule in `rules` names its motion:
 `{ on: 'click .open', to: 'open', motion: 'fold' }`. `et design check` fails with `MOTION-STATE` when `from` or `to` is no state of
 the part, with `MOTION-NAME` when a rule names a motion the part does not declare, and with `MOTION` when motion code calls
-`requestAnimationFrame`, `setInterval` or `setTimeout`. `et design list` shows the motions without `play`. Playing them, with
-shots and a timeline, comes in a later release.
+`requestAnimationFrame`, `setInterval` or `setTimeout`. `et design list` shows the motions without `play`.
+
+In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,
+so CSS transitions and `@starting-style` run. The named motion then runs `play(ctx)`, inside a View Transition with
+`viewTransition: true`. `ctx.at(ms, fn)` runs on the tool's clock, `ctx.random()` is seeded and `ctx.rect(selector)` measures in
+the `from` state. Shots and a timeline come in a later release.
 
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a

@@ -92,7 +92,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 ## Slices
 
 1. `motions`, the morph, `ctx` and the check rules. In progress (builder, 2026-10-30): 1a the `motions`
-   declaration and the static check rules (done); 1b the morph and `ctx` (in progress, builder, 2026-10-30).
+   declaration and the static check rules (done); 1b the morph and `ctx` (done).
 2. Shots through the CLI and MCP.
 3. The keyframe strip and the timeline in Studio.
 4. `spring()` and `interrupt`.
@@ -111,3 +111,18 @@ Each slice gets an "in progress" note here when it starts.
 - Limit: check reads literals, so a `motions` value held in a variable is not checked.
 - Next: 1b, the morph and the `ctx` runtime. Comment 6541 (play and replay in `foundations/motion`) waits for
   slice 3.
+
+## As built: slice 1b (2026-10-30)
+
+- `morph(root, markup)` (`libs/cli/design/morph.ts`) keeps a node when its tag, `id` and `data-et-key` match and
+  changes only attributes, text and children. `libs/cli/design/motion-runtime.ts`: `runRules` wires a part's
+  `rules` into its frame (slice 1a never did), `switchState` measures `ctx.rect` in the `from` DOM, morphs
+  (inside `startViewTransition` for `viewTransition: true`), then runs `play(ctx)`. `manualClock()` can be
+  stepped for slice 2; `realTimeClock()` is the default. `ctx.random` is seeded. `switchStates` of `ngStates`
+  calls morphs too, no more fade. `ng()` drawings are static markup, so they morph like any markup.
+- Verified: specs that bite (each checked with a mutation), spec and design typecheck, `nx build cli`, lint,
+  `design check --product studio`, a live headless run on a scratch copy (node identity kept, `ctx.rect` from the
+  `from` state, `ctx.at` fired, `startViewTransition` called once). Not verified: WebKit.
+- Open points: a new state's `setup()` does not run again after a morph (a second run would stack listeners on
+  kept nodes); a toggle needs two rules, since a rule does not see the current state; no switch from outside the
+  frame (Studio, postMessage) yet; kept `<input>`/`<select>` values get no special handling.

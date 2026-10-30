@@ -45,6 +45,7 @@ const modules = {
     placeOverlays: () => undefined,
   },
   '../embed-page': { fitEmbed: () => undefined },
+  '../motion-runtime': { runRules: () => undefined },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },
   'virtual:design-explore/system': {

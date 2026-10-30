@@ -1,3 +1,5 @@
+import { morph } from './morph';
+
 /**
  * A value inside a template. An array joins with nothing between, and `null`, `undefined` and
  * `false` write nothing, so `${rows.map(row)}` and `${isOn && html`…`}` both read as they look.
@@ -81,7 +83,7 @@ export type StateRule<TState extends string> = { click: string; go: TState };
 
 /**
  * Swaps the content of the drawing's state host for `states[rule.go]` when a click matches a rule.
- * The first matching rule wins. The swap runs in a View Transition where the browser has one.
+ * The first matching rule wins. The swap morphs the existing DOM, so CSS transitions run.
  */
 export const switchStates =
   <TState extends string>(states: Record<TState, string>, rules: StateRule<TState>[]) =>
@@ -100,13 +102,8 @@ export const switchStates =
 
       if (!rule) return;
 
-      const swap = () => {
-        host.innerHTML = states[rule.go];
-        host.dataset['deStates'] = rule.go;
-      };
-
-      if (document.startViewTransition) document.startViewTransition(swap);
-      else swap();
+      morph(host, states[rule.go]);
+      host.dataset['deStates'] = rule.go;
     });
   };
 

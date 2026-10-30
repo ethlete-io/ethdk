@@ -18,6 +18,8 @@
     "embed-page.ts",
     "interaction-rows.ts",
     "mark-part.ts",
+    "morph.ts",
+    "motion-runtime.ts",
     "svg-asset.ts",
     "wireframe-kit.ts"
   ]

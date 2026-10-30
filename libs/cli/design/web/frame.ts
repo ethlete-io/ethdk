@@ -1,5 +1,7 @@
 import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-call';
+import { Part } from '../define-part';
 import { fitEmbed } from '../embed-page';
+import { runRules } from '../motion-runtime';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
 import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
@@ -77,6 +79,8 @@ const showSetupError = (message: string) => {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+let drawnPart: { part: Part<unknown>; states: Record<string, unknown> } | null = null;
+
 const drawCall = async (): Promise<Drawing | null> => {
   const call = calls[slug];
   if (!call) return fail(`design-explore: no call "${slug}"`);
@@ -109,6 +113,8 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
     const [{ default: part }, { default: holder }] = await Promise.all([load(), loadProps()]);
 
     if (!(key in holder.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
+
+    drawnPart = { part: part as Part<unknown>, states: holder.states };
 
     return await part.render(holder.states[key]);
   } catch (error) {
@@ -162,6 +168,36 @@ const report = () => {
   );
 };
 
+const runPartRules = ({ part, states }: NonNullable<typeof drawnPart>, styles: string) => {
+  const sheets = new Set([styles]);
+
+  runRules(root, {
+    state: key,
+    rules: part.rules ?? [],
+    motions: part.motions,
+    render: (state) =>
+      Promise.resolve(part.render(states[state])).then((drawn) =>
+        sheets.has(drawn.styles)
+          ? drawn.body
+          : forced(drawn.styles).then((css) => {
+              const style = document.createElement('style');
+
+              sheets.add(drawn.styles);
+              style.textContent = css;
+              document.head.append(style);
+
+              return drawn.body;
+            }),
+      ),
+    switched: () => {
+      const partRoot = partRootOf(root);
+
+      if (interaction && partRoot) force(partRoot, interaction);
+    },
+    failed: (error) => showSetupError(`design-explore: switch of part "${partKey}" failed\n${messageOf(error)}`),
+  });
+};
+
 // macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
 const drawFrame = async () => {
   parent.postMessage({ type: 'design-explore:loading' }, '*');
@@ -188,6 +224,8 @@ const drawFrame = async () => {
 
     if (error)
       showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
+
+    if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
   }
 
   const place = () => placeOverlays(root);
