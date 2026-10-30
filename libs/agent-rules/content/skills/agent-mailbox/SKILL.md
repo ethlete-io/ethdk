@@ -12,6 +12,15 @@ file where each agent announces the paths it edits. Any agent that can run a she
 use it. The wrapper is {%resource:agent-mailbox.mjs%}. Below, `<skill-dir>` is the directory this
 file sits in, and `<name>` is your own sender name.
 
+## Quick start for a person
+
+Nothing runs until you start it, so a person who does not use the mailbox does nothing. To try it:
+
+1. Run `node <skill-dir>/agent-mailbox.mjs shell-install`. It adds one function per agent to your shell file.
+2. Open a new terminal. In the repo, type `claude` or `codex` as usual. The function starts the agent in a `tmux` session and starts the dispatcher.
+3. Ask one agent to message the other. An idle agent wakes when a message carries `--to <agent>`.
+4. Run `node <skill-dir>/agent-mailbox.mjs down` to stop the dispatcher. Run `shell-install --remove` to undo step 1.
+
 ```bash
 node <skill-dir>/agent-mailbox.mjs claim <name> <path...> [--ttl <hours>] [--force]
 node <skill-dir>/agent-mailbox.mjs release <name> [path...]
