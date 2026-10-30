@@ -99,3 +99,15 @@ the model. They are no reference for correct behaviour: some of them are broken.
 5. Flow lines.
 
 Each slice gets an "in progress" note here when it starts.
+
+## As built: slice 1a (2026-10-30, `9c328f48a`)
+
+- `definePart` takes `motions` and `rules`. `from`, `to` and a rule's `to` are typed against the part's state
+  names. `Motion`, `MotionContext` and `PartRule` are exported from `libs/cli/design/define-part.ts`.
+- `et design check`: `MOTION-STATE` (a motion names an unknown state), `MOTION-NAME` (a rule names an unknown
+  motion), and `MOTION` also bans `setTimeout`. `et design list` and the Studio API list motions without `play`.
+- Verified: specs that bite, spec typecheck, `nx build cli`, `design check --product studio` (only the known
+  select finding). Not verified: the type-level cases failing without the types; a project-wide lint.
+- Limit: check reads literals, so a `motions` value held in a variable is not checked.
+- Next: 1b, the morph and the `ctx` runtime. Comment 6541 (play and replay in `foundations/motion`) waits for
+  slice 3.
