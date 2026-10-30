@@ -183,6 +183,35 @@ describe('the parts event of the design server', () => {
     expect(keys.filter((key) => key.endsWith(' b'))).toHaveLength(plain);
   });
 
+  it('redraws only the parts of a file, and their importers, that reaches the product styles as a Tailwind source', async () => {
+    const { target, emit, changes, keysOf, vite, draw } = await serveAcme({
+      styles: [`${DESIGN_DIR}/acme/styles.css`],
+    });
+    const styles = join(target, DESIGN_DIR, 'acme/styles.css');
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/base.css'), '.base { color: red; }\n');
+    writeFileSync(styles, "@import './base.css';\n@source './';\n@tailwind utilities;\n");
+    await draw('acme', 'pages/home');
+    await vite.transformRequest(productModuleIdOf({ file: styles, product: 'acme' }));
+
+    expect(
+      [...(vite.moduleGraph.getModulesByFile(join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts')) ?? [])].some(
+        (module) => [...module.importers].some((importer) => importer.file === styles),
+      ),
+    ).toBe(true);
+
+    emit('change', 'acme/elements/hero/hero.ts');
+    emit('change', 'acme/base.css');
+    emit('change', 'acme/styles.css');
+
+    const plain = (change: PartsChange | undefined) => (keysOf(change) as string[]).filter((key) => key.endsWith(' '));
+    const every = plain(changes()[2]).length;
+
+    expect(plain(changes()[0])).toEqual(['acme elements/hero ', 'acme pages/home ']);
+    expect(plain(changes()[1])).toHaveLength(every);
+    expect(every).toBeGreaterThan(2);
+  });
+
   it('redraws all parts for config.json', async () => {
     const { emit, changes } = await serveAcme();
 

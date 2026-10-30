@@ -1,10 +1,11 @@
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
+import { Plugin } from 'postcss';
 import { chromiumOf } from './browser';
 import { ChangedBox, changedBoxesOf } from './contact-sheet';
 import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
-import { SketchVariant, SystemModules } from './system/system-modules';
+import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import {
   Browser,
   callDrawsFrom,
@@ -65,7 +66,7 @@ type Size = Pick<DesignPreset, 'width' | 'height'>;
 
 type Frame = { search: string; size: Size | null; clip: boolean; scale: number; crop: Crop | null };
 
-type GraphModule = { id: string | null; importers: Set<GraphModule> };
+type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
 
 /** An element a part render marked as its root, in CSS pixels from the top left of the picture. */
 export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
@@ -88,8 +89,41 @@ const marksIn = (clip: boolean) => `(() => {
     }));
 })()`;
 
-/** The ids of the given modules and of every module that imports one of them, directly or not. */
-export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
+/** The files each stylesheet inlines through an `@import`, keyed by the stylesheet's file. */
+export type StylesheetImports = Map<string, Set<string>>;
+
+/** A PostCSS plugin that records into `imports` the files each stylesheet inlines, apart from the Tailwind sources it scans. */
+export const stylesheetImportsPlugin = (imports: StylesheetImports): Plugin => ({
+  postcssPlugin: 'ethlete-stylesheet-imports',
+  OnceExit: (_root, { result }) => {
+    if (!result.opts.from) return;
+
+    imports.set(
+      fileOfModuleId(result.opts.from),
+      new Set(
+        result.messages.flatMap((message) =>
+          message.type === 'dependency' &&
+          message.plugin !== '@tailwindcss/postcss' &&
+          typeof message['file'] === 'string'
+            ? [message['file']]
+            : [],
+        ),
+      ),
+    );
+  },
+});
+
+const isTailwindSourceOf = (options: { imports: StylesheetImports; module: GraphModule; importer: GraphModule }) => {
+  const inlined = options.importer.file ? options.imports.get(options.importer.file) : undefined;
+
+  return !!inlined && !!options.module.file && !inlined.has(options.module.file);
+};
+
+/**
+ * The ids of the given modules and of every module that imports one of them, directly or not. A
+ * stylesheet does not count as importing a file it only scans as a Tailwind source.
+ */
+export const dependentIdsOf = (modules: Iterable<GraphModule>, imports: StylesheetImports = new Map()) => {
   const seen = new Set<GraphModule>();
   const open = [...modules];
 
@@ -97,7 +131,7 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
     if (seen.has(next)) continue;
 
     seen.add(next);
-    open.push(...next.importers);
+    open.push(...[...next.importers].filter((importer) => !isTailwindSourceOf({ imports, module: next, importer })));
   }
 
   return [...seen].flatMap((module) => (module.id ? [module.id] : []));

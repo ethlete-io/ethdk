@@ -57,7 +57,7 @@ import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
-import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
+import { createPartShooter, dependentIdsOf, SHOT_PATH, StylesheetImports, stylesheetImportsPlugin } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
@@ -309,7 +309,17 @@ const withAssetUrls = (system: SystemModules) => {
   return (code: string, id: string) => system.withAssetUrls(code, id) ?? marks(code, id);
 };
 
-const designExplore = ({ target, config, system }: { target: string; config: DesignConfig; system: SystemModules }) => {
+const designExplore = ({
+  target,
+  config,
+  system,
+  stylesheetImports,
+}: {
+  target: string;
+  config: DesignConfig;
+  system: SystemModules;
+  stylesheetImports: StylesheetImports;
+}) => {
   const renderer = createRenderer({ target, config });
 
   return {
@@ -482,7 +492,7 @@ const designExplore = ({ target, config, system }: { target: string; config: Des
         if (isFlowFile(file)) return reloadFlows();
 
         forgetCalls(file);
-        const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
+        const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? [], stylesheetImports);
 
         redraw(changedPartsOf({ target, config, system, file, dependents }));
       };
@@ -657,13 +667,14 @@ export const createDesignServer = async (options: {
   }
 
   const baseDirs = system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []);
+  const stylesheetImports: StylesheetImports = new Map();
 
   const server = await createServer({
     configFile: false,
     root: resolve(here, 'web'),
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
     // own pipeline so no checkout's postcss config reaches a drawing.
-    css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin()] } },
+    css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin(), stylesheetImportsPlugin(stylesheetImports)] } },
     cacheDir: viteCacheOf(target, own ? 'vite-check' : 'vite'),
     resolve: {
       alias: [
@@ -676,7 +687,7 @@ export const createDesignServer = async (options: {
     // A design mock ships as TS that imports CSS with `?inline`, which the dependency pre-bundler
     // can not load.
     optimizeDeps: { exclude: ['@ethlete/components', '@ethlete/core'] },
-    plugins: [designExplore({ target, config, system })],
+    plugins: [designExplore({ target, config, system, stylesheetImports })],
     ...(listen ? {} : { appType: 'custom' as const }),
     ...(listen && !own ? {} : { logLevel: 'error' as const }),
     server: {
