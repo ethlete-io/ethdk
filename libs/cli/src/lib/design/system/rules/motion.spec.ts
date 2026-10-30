@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { hardCodedMotionOf, scriptedMotionOf } from './motion';
+import { badMotionsOf, hardCodedMotionOf, scriptedMotionOf } from './motion';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -39,6 +39,16 @@ describe('scriptedMotionOf', () => {
     expect(scriptedMotionOf(resolveAcme(target)).map((problem) => problem.message)).toEqual([
       'calls requestAnimationFrame - motion must be CSS animation, CSS transition or the Web Animations API',
       'calls setInterval - motion must be CSS animation, CSS transition or the Web Animations API',
+    ]);
+  });
+
+  it('flags setTimeout', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', part('setTimeout(() => undefined, 200);'));
+
+    expect(scriptedMotionOf(resolveAcme(target)).map((problem) => problem.message)).toEqual([
+      'calls setTimeout - motion must be CSS animation, CSS transition or the Web Animations API',
     ]);
   });
 
@@ -96,5 +106,57 @@ describe('hardCodedMotionOf', () => {
     );
 
     expect(hardCodedMotionOf(resolveAcme(target))).toEqual([]);
+  });
+});
+
+describe('badMotionsOf', () => {
+  const withMotions = (extra: string) =>
+    `import { definePart } from '@design-system';\nexport default definePart({ note: '', states: { closed: {}, open: {} }, ${extra}, render: () => ({ body: '', styles: '' }) });\n`;
+
+  it('passes the clean fixture and a motion between two states that a rule names', () => {
+    const target = acme();
+
+    expect(badMotionsOf(resolveAcme(target))).toEqual([]);
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      withMotions(
+        "motions: { fold: { from: 'closed', to: 'open' } }, rules: [{ on: 'click .open', to: 'open', motion: 'fold' }]",
+      ),
+    );
+
+    expect(badMotionsOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('flags a motion from or to a state the part does not have', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      withMotions("motions: { fold: { from: 'shut', to: 'open' }, grow: { from: 'closed', to: 'wide' } }"),
+    );
+
+    expect(badMotionsOf(resolveAcme(target)).map(({ rule, message }) => `${rule} ${message}`)).toEqual([
+      'MOTION-STATE motion "fold" runs to or from "shut", which is no state of the part',
+      'MOTION-STATE motion "grow" runs to or from "wide", which is no state of the part',
+    ]);
+  });
+
+  it('flags a rule that names a motion the part does not declare', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      withMotions(
+        "motions: { fold: { from: 'closed', to: 'open' } }, rules: [{ on: 'click .open', to: 'open', motion: 'unfold' }]",
+      ),
+    );
+
+    expect(badMotionsOf(resolveAcme(target)).map(({ rule, message }) => `${rule} ${message}`)).toEqual([
+      'MOTION-NAME a rule names motion "unfold", which the part does not declare',
+    ]);
   });
 });

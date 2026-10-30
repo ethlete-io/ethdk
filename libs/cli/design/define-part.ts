@@ -25,6 +25,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `grid` draws the states it names as one table in rest, see `StateGrid`.
  * `controls` names each control the part draws, keyed by the id its markup carries in `data-et-control`; `design
  * complete` requires the states and surfaces its `kind` and `input` need, see `Control`.
+ * `motions` names each motion between two of its states, see `Motion`; a rule in `rules` can name one.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
@@ -39,8 +40,33 @@ export type Part<TProps, TState extends string = string> = {
   grid?: StateGrid<TState>;
   controls?: Record<string, Control<TState>>;
   checks?: { skip?: RenderCheck[] };
+  motions?: Record<string, Motion<TState>>;
+  rules?: PartRule<TState>[];
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
 };
+
+/** What `play` of a motion may use, so Studio controls time: `at` schedules `fn` at `ms` into the motion on the tool's clock, `random` is seeded, `rect` measures a selector in the `from` state. */
+export type MotionContext = {
+  at: (ms: number, fn: () => void) => void;
+  random: () => number;
+  rect: (selector: string) => DOMRect;
+};
+
+/**
+ * A motion from the state `from` to the state `to`. `at` adds shot times in ms, `interrupt` starts the reverse motion
+ * at that time, `viewTransition` uses a View Transition, and `play` runs after the morph for what CSS cannot express.
+ */
+export type Motion<TState extends string = string> = {
+  from: TState;
+  to: TState;
+  at?: number[];
+  interrupt?: number;
+  viewTransition?: boolean;
+  play?: (ctx: MotionContext) => void;
+};
+
+/** A rule of a part: `on` an event on a selector, the part switches `to` a state, with the `motion` it names. */
+export type PartRule<TState extends string = string> = { on: string; to: TState; motion?: string };
 
 /** A drawing of a part: its `styles` hold the part's stylesheet and the ones `render` returned, so a host can add them up. */
 export type DrawnPart = Drawing & { styles: string };
@@ -78,8 +104,10 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'controls' | 'render'
+  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render'
 > & {
+  motions?: Record<string, Motion<NoInfer<TState>>>;
+  rules?: PartRule<NoInfer<TState>>[];
   states: Record<TState, NoInfer<TProps>>;
   controls?: Record<string, Control<NoInfer<TState>>>;
   grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };

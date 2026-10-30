@@ -80,6 +80,13 @@ instead of the globally loaded token CSS.
 outside `foundations/` holds a literal duration, delay or easing, for example `120ms` or `ease`.
 Take them from a foundations token instead: `transition: opacity var(--duration-appear) var(--ease-standard)`.
 
+A part declares `motions` next to its `states`: `motions: { fold: { from: 'closed', to: 'open' } }`, each between two of its
+states, with optional `at` (shot times in ms), `interrupt`, `viewTransition` and `play(ctx)`. A rule in `rules` names its motion:
+`{ on: 'click .open', to: 'open', motion: 'fold' }`. `et design check` fails with `MOTION-STATE` when `from` or `to` is no state of
+the part, with `MOTION-NAME` when a rule names a motion the part does not declare, and with `MOTION` when motion code calls
+`requestAnimationFrame`, `setInterval` or `setTimeout`. `et design list` shows the motions without `play`. Playing them, with
+shots and a timeline, comes in a later release.
+
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow

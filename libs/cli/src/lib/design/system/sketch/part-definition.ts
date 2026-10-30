@@ -175,3 +175,47 @@ export const interactionNamesOf = (source: string): string[] => {
     ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element) ? [element.text] : [],
   );
 };
+
+const literalOf = (node: ts.Expression | undefined) =>
+  node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : null;
+
+/**
+ * The motions a part file writes in `definePart({ motions: { … } })` with the `from` and `to` it gives as string
+ * literals, and the `motion` each literal rule in `rules` names, read without running it.
+ */
+export const motionRefsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const motions = definition ? propertyOf(definition, 'motions')?.initializer : undefined;
+  const rules = definition ? propertyOf(definition, 'rules')?.initializer : undefined;
+
+  return {
+    motions:
+      motions && ts.isObjectLiteralExpression(motions)
+        ? motions.properties.flatMap((property) => {
+            if (!ts.isPropertyAssignment(property) || !ts.isObjectLiteralExpression(property.initializer)) return [];
+
+            const name = nameOf(property.name);
+
+            if (name === null) return [];
+
+            const body = property.initializer;
+
+            return [
+              {
+                name,
+                from: literalOf(propertyOf(body, 'from')?.initializer),
+                to: literalOf(propertyOf(body, 'to')?.initializer),
+              },
+            ];
+          })
+        : [],
+    ruleMotions:
+      rules && ts.isArrayLiteralExpression(rules)
+        ? rules.elements.flatMap((rule) => {
+            const name = ts.isObjectLiteralExpression(rule) ? literalOf(propertyOf(rule, 'motion')?.initializer) : null;
+
+            return name === null ? [] : [name];
+          })
+        : [],
+  };
+};

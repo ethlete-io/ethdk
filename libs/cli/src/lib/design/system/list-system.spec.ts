@@ -169,6 +169,26 @@ describe('listSystem', () => {
     expect(partOf('button')).not.toHaveProperty('widths');
   });
 
+  it("lists a part's motions without their play", async () => {
+    const target = acme();
+    const file = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replace(
+        '  states:',
+        "  motions: { fold: { from: 'default', to: 'default', at: [100], play: () => undefined } },\n  states:",
+      ),
+    );
+
+    const [product] = await list(target, ['acme']);
+
+    expect(product?.parts.find((part) => part.name === 'hero')?.motions).toEqual({
+      fold: { from: 'default', to: 'default', at: [100] },
+    });
+    expect(product?.parts.find((part) => part.name === 'palette')).not.toHaveProperty('motions');
+  });
+
   it("lists a part's known interactions once each, and an INTERACTIONS problem for an unknown one", async () => {
     const target = acme();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');

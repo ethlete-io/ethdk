@@ -133,4 +133,26 @@ describe('definePart', () => {
       styles: 's',
     });
   });
+
+  it('types motions and rules against the state names, and keeps them on the part', () => {
+    const moving = definePart({
+      ...source,
+      motions: { fold: { from: 'filled', to: 'outline-wide', at: [50], play: (ctx) => ctx.at(10, () => undefined) } },
+      rules: [{ on: 'click .open', to: 'outline-wide', motion: 'fold' }],
+    });
+
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      motions: { fold: { from: 'filled', to: 'open' } },
+    });
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      rules: [{ on: 'click .open', to: 'open' }],
+    });
+
+    expect(Object.keys(moving.motions ?? {})).toEqual(['fold']);
+    expect(button.motions).toBeUndefined();
+  });
 });

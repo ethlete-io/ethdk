@@ -23,6 +23,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions the part is drawn in besides rest, in the order it declares them. */
   interactions: Interaction[];
+  /** The motions the part declares between its states, without their `play`. */
+  motions?: Record<string, ListedMotion>;
   /** The states the part draws as one table in rest, when it declares a `grid` that places any. */
   grid?: ListedGrid;
   /** The calls of wireframe kit parts in a page's source; a page with any is a wireframe. */
@@ -33,6 +35,8 @@ export type ListedPart = {
   changedOutsideSketch: boolean;
   problems: Problem[];
 };
+
+export type ListedMotion = { from: string; to: string; at?: number[]; interrupt?: number; viewTransition?: boolean };
 
 export type ListedGrid = { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
 
@@ -58,7 +62,33 @@ type PartModule = {
     widths?: unknown;
     interactions?: unknown;
     grid?: unknown;
+    motions?: unknown;
   };
+};
+
+const motionsOf = (motions: unknown): Pick<ListedPart, 'motions'> => {
+  if (!isRecord(motions)) return {};
+
+  const listed = Object.entries(motions).flatMap(([name, motion]): [string, ListedMotion][] => {
+    if (!isRecord(motion) || typeof motion['from'] !== 'string' || typeof motion['to'] !== 'string') return [];
+
+    const { at, interrupt, viewTransition } = motion;
+
+    return [
+      [
+        name,
+        {
+          from: motion['from'],
+          to: motion['to'],
+          ...(Array.isArray(at) ? { at: at.filter((time): time is number => typeof time === 'number') } : {}),
+          ...(typeof interrupt === 'number' ? { interrupt } : {}),
+          ...(typeof viewTransition === 'boolean' ? { viewTransition } : {}),
+        },
+      ],
+    ];
+  });
+
+  return listed.length > 0 ? { motions: Object.fromEntries(listed) } : {};
 };
 
 const madeByOf = (madeBy: unknown) =>
@@ -235,6 +265,8 @@ export const readPartModule = async (options: {
       ...widthsOf(loaded.widths),
       interactions: interactionsOf(loaded.interactions),
       ...gridOf(loaded.grid, names),
+      ...motionsOf(loaded.motions),
+
       problem: null,
     };
   } catch (error) {
