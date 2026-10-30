@@ -304,6 +304,11 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   `foundations/icons`. Cause: the design tool loads the mocks from `dist/libs/components`, which ships only
   `design/**/*.ts` and CSS, so a mock cannot import an icon file today.
 
+- **Queued (Tom, Q71):** after Q68, new part `sdk/components/select-panel` (option grid: rest, hover,
+  keyboard-active, selected, selected+hover, disabled; panel with option groups and select-all). The select part
+  then composes form-field + select-panel; its open states stay only as an example. `et-select-option` is shared
+  with page-size-select and phone-input.
+
 ### Foundation sheet decisions (2026-10-30)
 
 Tom asked why `sdk/foundations/tokens` looks so different from the Studio foundations. Cause: Studio draws its
@@ -392,6 +397,14 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   `libs/components/src/lib/tree/tree.component.css`) uses `--et-theme-color-ink-solid` instead of primary. A light
   primary on a light surface gave about 1.3:1, below the 3:1 for focus indicators; ink gives about 5.5:1. The tree
   uses real DOM focus, so the ring is the only focus sign. Follows the "ink on light" rule.
+
+### Select panel part decision (2026-10-31)
+
+- Q71: the select's open panel gets its own part `sdk/components/select-panel`: a grid for the option (rest, hover,
+  keyboard-active, selected, selected + hover, disabled), plus the panel with option groups and the select-all
+  option. The select part is then form-field + select-panel; its `open` states stay only as an example of the two
+  together. Same pattern as form-field: `et-select-option` is also used by page-size-select and phone-input. Built by
+  `ethlete-sdk-33` after the limit reset and after the icons foundation. The select r2 d merge does not wait for it.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
