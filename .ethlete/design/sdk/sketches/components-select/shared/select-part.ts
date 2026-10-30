@@ -19,15 +19,12 @@ const OPTIONS = [
   { value: 'merged', label: 'Merged' },
 ];
 
-const markControl = (markup: string, { interaction, disabled, pointerActive }: SelectProps) => {
-  const frame = [
-    'data-et-control="select"',
-    interaction && `data-et-force="${interaction}"`,
-    disabled && 'aria-disabled="true"',
-  ].filter(Boolean);
+const markControl = (markup: string, { interaction, pointerActive }: SelectProps) => {
+  const frame = ['data-et-control-part', interaction && `data-et-force="${interaction}"`].filter(Boolean);
   const marked = markup
     .replace('<et-form-field ', '<et-form-field data-et-control="select" ')
     .replace('<div class="et-form-field-control-frame"', `<div class="et-form-field-control-frame" ${frame.join(' ')}`)
+    .replace('class="et-select-trigger"', 'data-et-control-part class="et-select-trigger"')
     .replace('<et-select-panel ', '<et-select-panel data-et-surface="select.open" ');
 
   return pointerActive
