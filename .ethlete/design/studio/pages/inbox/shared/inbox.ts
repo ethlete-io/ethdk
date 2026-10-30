@@ -3,6 +3,7 @@ import commentPin, { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { icon } from '@system/foundations/icons';
 import styles from './inbox.css?inline';
 
 type Props = {
@@ -124,11 +125,8 @@ const COMMENTS: Comment[] = [
 const SELECTED = 'c1';
 const ACTIVE_PART = 'button';
 
-const icon = (paths: string, cls: string) =>
-  `<svg class="${cls}" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-
-const replyIcon = icon('<path d="M6 4 2.5 7.5 6 11"/><path d="M2.5 7.5H9a4.5 4.5 0 0 1 4.5 4.5"/>', 'ib-icon');
-const checkIcon = icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-icon');
+const replyIcon = icon('reply', { size: 14, cls: 'ib-icon' });
+const checkIcon = icon('check', { size: 14, cls: 'ib-icon' });
 
 const row = (c: Comment) =>
   html`<div class="ib-row" ${c.id === SELECTED ? ' data-selected' : ''}${c.resolved ? ' data-resolved' : ''}>
@@ -160,7 +158,7 @@ const activeGroup = (comments: Comment[]) =>
     ? `${groupHead(ACTIVE_PART, 0)}<p class="ib-group-empty">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments);
 
-const empty = `<div class="ib-empty">${icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-empty-icon')}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
+const empty = `<div class="ib-empty">${icon('check', { size: 14, cls: 'ib-empty-icon' })}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
