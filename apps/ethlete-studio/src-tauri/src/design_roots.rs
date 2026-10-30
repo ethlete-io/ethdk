@@ -120,9 +120,11 @@ fn walk(folder: &Path, depth: usize, found: &mut Vec<String>) {
         .map(|entry| entry.path())
         .filter(|path| path.is_dir())
         .filter(|path| {
-            path.file_name()
-                .map(|name| !name.to_string_lossy().starts_with('.'))
-                .unwrap_or(false)
+            path.file_name().is_some_and(|name| {
+                let name = name.to_string_lossy();
+
+                !name.starts_with('.') && name != "node_modules"
+            })
         })
         .collect();
 
@@ -178,8 +180,10 @@ pub fn design_roots_search(app: tauri::AppHandle, folder: String) -> StudioResul
 
 /// Reports every checkout under the folder that carries design work, kept or not.
 #[tauri::command]
-pub fn design_scan(folder: String) -> StudioResult<Vec<String>> {
-    scan(&folder)
+pub async fn design_scan(folder: String) -> StudioResult<Vec<String>> {
+    tauri::async_runtime::spawn_blocking(move || scan(&folder))
+        .await
+        .map_err(|error| StudioError::Rejected(error.to_string()))?
 }
 
 #[cfg(test)]
@@ -328,6 +332,20 @@ mod tests {
         let found = scan(&ground.to_string_lossy()).expect("a scan");
 
         assert_eq!(found, vec![outer]);
+
+        fs::remove_dir_all(ground).expect("a clean ground");
+    }
+
+    #[test]
+    fn a_scan_skips_node_modules() {
+        let ground = a_ground("node-modules");
+        let kept = a_checkout(&ground, "sdk");
+
+        a_checkout(&ground, "node_modules/package");
+
+        let found = scan(&ground.to_string_lossy()).expect("a scan");
+
+        assert_eq!(found, vec![kept]);
 
         fs::remove_dir_all(ground).expect("a clean ground");
     }

@@ -297,9 +297,15 @@ pub fn calls_root(checkout: &str) -> PathBuf {
 }
 
 #[tauri::command]
-pub fn design_project(checkout: String) -> Result<Project, String> {
-    let config = read_config(&checkout)?;
-    let root = calls_root(&checkout);
+pub async fn design_project(checkout: String) -> Result<Project, String> {
+    tauri::async_runtime::spawn_blocking(move || project(&checkout))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+fn project(checkout: &str) -> Result<Project, String> {
+    let config = read_config(checkout)?;
+    let root = calls_root(checkout);
 
     let calls = call_slugs(&root)
         .into_iter()
@@ -590,7 +596,7 @@ export default defineCall({
     #[test]
     fn a_checkout_reports_the_calls_under_its_calls_root() {
         let checkout = a_checkout("read");
-        let project = design_project(checkout.to_string_lossy().into_owned()).unwrap();
+        let project = project(&checkout.to_string_lossy()).unwrap();
 
         assert_eq!(project.port, 4405);
         assert_eq!(project.default_call.as_deref(), Some("timetrack/kerbe/09-gutter"));
@@ -613,7 +619,7 @@ export default defineCall({
         )
         .unwrap();
 
-        let project = design_project(checkout.to_string_lossy().into_owned()).unwrap();
+        let project = project(&checkout.to_string_lossy()).unwrap();
 
         assert!(project.calls[0].handoff);
 
@@ -624,6 +630,6 @@ export default defineCall({
     fn a_checkout_without_a_config_says_so() {
         let missing = std::env::temp_dir().join("ethlete-studio-no-such-checkout");
 
-        assert!(design_project(missing.to_string_lossy().into_owned()).is_err());
+        assert!(project(&missing.to_string_lossy()).is_err());
     }
 }

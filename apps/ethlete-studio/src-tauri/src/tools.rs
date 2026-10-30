@@ -1,6 +1,7 @@
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Value};
 
@@ -228,6 +229,54 @@ pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
     entry_of(checkout, shipped_cli)
 }
 
+const CHECK_TIMEOUT: Duration = Duration::from_secs(120);
+
+fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> std::thread::JoinHandle<Vec<u8>> {
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+
+        if let Some(mut pipe) = pipe {
+            let _ = pipe.read_to_end(&mut bytes);
+        }
+
+        bytes
+    })
+}
+
+/// `None` when the child outlived `limit`; it is killed then.
+fn output_within(command: &mut Command, limit: Duration) -> std::io::Result<Option<Output>> {
+    let mut child = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let stdout = drain(child.stdout.take());
+    let stderr = drain(child.stderr.take());
+    let deadline = Instant::now() + limit;
+
+    let status = loop {
+        if let Some(status) = child.try_wait()? {
+            break status;
+        }
+
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+
+            return Ok(None);
+        }
+
+        std::thread::sleep(Duration::from_millis(50));
+    };
+
+    Ok(Some(Output {
+        status,
+        stdout: stdout.join().unwrap_or_default(),
+        stderr: stderr.join().unwrap_or_default(),
+    }))
+}
+
 fn check_call(context: &ToolContext) -> Result<String, String> {
     let entry = cli_entry(&context.checkout).ok_or_else(|| {
         format!(
@@ -236,7 +285,9 @@ fn check_call(context: &ToolContext) -> Result<String, String> {
         )
     })?;
 
-    let output = Command::new("node")
+    let mut command = Command::new("node");
+
+    command
         .current_dir(&context.checkout)
         .env("DE_URL", format!("http://localhost:{}", context.port))
         .arg(&entry)
@@ -248,9 +299,11 @@ fn check_call(context: &ToolContext) -> Result<String, String> {
         .arg("--call")
         .arg(&context.call)
         .arg("--variant")
-        .arg(&context.variant)
-        .output()
-        .map_err(|error| format!("Unable to run {}: {error}", entry.display()))?;
+        .arg(&context.variant);
+
+    let output = output_within(&mut command, CHECK_TIMEOUT)
+        .map_err(|error| format!("Unable to run {}: {error}", entry.display()))?
+        .ok_or_else(|| format!("design check gave no answer within {} s.", CHECK_TIMEOUT.as_secs()))?;
 
     let said = format!(
         "{}{}",
@@ -387,6 +440,31 @@ pub fn serve(context: &ToolContext) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn a_child_that_outlives_its_limit_is_killed_and_reads_as_none() {
+        let started = Instant::now();
+        let mut slow = Command::new("sleep");
+
+        slow.arg("10");
+
+        assert!(output_within(&mut slow, Duration::from_millis(200))
+            .expect("sleep runs")
+            .is_none());
+        assert!(started.elapsed() < Duration::from_secs(5));
+
+        let mut quick = Command::new("echo");
+
+        quick.arg("said");
+
+        let output = output_within(&mut quick, Duration::from_secs(5))
+            .expect("echo runs")
+            .expect("an answer in time");
+
+        assert!(output.status.success());
+        assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "said");
+    }
 
     fn ground(name: &str) -> PathBuf {
         let ground = std::env::temp_dir().join(format!("ethlete-studio-tools-{}-{name}", std::process::id()));
