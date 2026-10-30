@@ -388,6 +388,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   kind, inputs, surfaces, state count. One "approve inventory" button below. The approval stores the control
   ids and the part hash in `.ethlete/design/<product>/inventory.json`; a new or removed control or a part edit
   reopens it. A page with a red or amber box cannot be approved. No keychain signature.
+- **Decided (Tom, 2026-10-30), base part sketches:** a sketch made from an SDK base part
+  (`.ethlete/design/sdk/...`) merges into the base by default. A product override needs an explicit
+  `sketch new --override`. Next: a new sketch moves the `components/button` controls into the base, and the
+  studio copy `.ethlete/design/studio/components/button/button.ts` from `e304eb3d0` goes away.
 - **Status:** slice 1 built: `definePart({ controls })`, the `data-et-control` and
   `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
