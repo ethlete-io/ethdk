@@ -77,6 +77,7 @@ import { FlowViewComponent } from './flow-view.component';
 import { NoteBodyComponent } from './note-body.component';
 import { NoteFormComponent } from './note-form.component';
 import { partNotesOf } from './note-places';
+import { InventoryViewComponent } from './inventory-view.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
@@ -435,36 +436,64 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 made by {{ AUTHORS_LABEL_OF(madeBy) }}
               </span>
             }
-            <ng-container [ngTemplateOutlet]="themeBar" />
-            <ng-container [ngTemplateOutlet]="noteModeButton" />
-            <ng-container [ngTemplateOutlet]="commentModeButton" />
-          </div>
-          <ethlete-design-canvas
-            #partCanvas
-            [frames]="notedFrames()"
-            [cameraKey]="cameraKey()"
-            [restoredCamera]="restoredCamera()"
-            [pins]="partPins()"
-            [pointing]="commentStore.active() || noteStore.active()"
-            [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
-            [draft]="noteStore.draft() ?? commentStore.draft()"
-            [pinPopover]="pinThread"
-            [notes]="notesShown() ? partNotes() : []"
-            [noteTemplate]="noteBody"
-            (cameraChange)="rememberCamera($event)"
-            (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-            class="min-h-0"
-          >
-            @if (noteStore.draft()) {
-              @defer {
-                <ethlete-note-form canvasDraft />
-              }
-            } @else if (commentStore.draft()) {
-              @defer {
-                <ethlete-comment-draft canvasDraft />
-              }
+            @if (partShown.listed.layer === 'pages') {
+              <button
+                [pressed]="inventoryShown()"
+                (click)="inventoryShown.set(!inventoryShown())"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+                title="Show the controls of this page and approve them"
+                data-inventory-toggle
+              >
+                Inventory
+              </button>
             }
-          </ethlete-design-canvas>
+            @if (!inventoryShown() || partShown.listed.layer !== 'pages') {
+              <ng-container [ngTemplateOutlet]="themeBar" />
+              <ng-container [ngTemplateOutlet]="noteModeButton" />
+              <ng-container [ngTemplateOutlet]="commentModeButton" />
+            }
+          </div>
+          @if (inventoryShown() && partShown.listed.layer === 'pages' && port(); as port) {
+            @defer {
+              <ethlete-inventory-view
+                [port]="port"
+                [product]="product()?.name ?? ''"
+                [part]="partShown.key"
+                class="pt-14"
+              />
+            }
+          } @else {
+            <ethlete-design-canvas
+              #partCanvas
+              [frames]="notedFrames()"
+              [cameraKey]="cameraKey()"
+              [restoredCamera]="restoredCamera()"
+              [pins]="partPins()"
+              [pointing]="commentStore.active() || noteStore.active()"
+              [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+              [draft]="noteStore.draft() ?? commentStore.draft()"
+              [pinPopover]="pinThread"
+              [notes]="notesShown() ? partNotes() : []"
+              [noteTemplate]="noteBody"
+              (cameraChange)="rememberCamera($event)"
+              (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
+              class="min-h-0"
+            >
+              @if (noteStore.draft()) {
+                @defer {
+                  <ethlete-note-form canvasDraft />
+                }
+              } @else if (commentStore.draft()) {
+                @defer {
+                  <ethlete-comment-draft canvasDraft />
+                }
+              }
+            </ethlete-design-canvas>
+          }
         } @else {
           <p [class]="NOTE">This product has no parts yet.</p>
         }
@@ -504,6 +533,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     NoteBodyComponent,
     NoteFormComponent,
     StudioMarkComponent,
+    InventoryViewComponent,
   ],
   providers: [provideCommentStore(), provideNoteStore()],
   host: {
@@ -621,6 +651,8 @@ export class SystemViewComponent {
   protected transferring = signal(false);
 
   protected transferError = signal('');
+
+  protected inventoryShown = signal(false);
 
   protected product = computed(() => {
     const products = this.products();
