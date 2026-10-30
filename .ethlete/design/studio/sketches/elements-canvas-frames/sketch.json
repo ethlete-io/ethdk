@@ -1,0 +1,44 @@
+{
+  "target": "elements/canvas-frames",
+  "status": "ready",
+  "createdAt": "2026-10-30T21:55:12.195Z",
+  "baseline": {
+    "foundations/agent-logos": "9d16069b875f1e82",
+    "foundations/colors": "5c6f3c3f97320488",
+    "foundations/icons": "4c64c092516accf9",
+    "foundations/logo": "ea4d144717cbadfc",
+    "foundations/motion": "00a4dc7f778b5d38",
+    "foundations/spacing": "fafb6399e642b416",
+    "foundations/type": "0d78e0b9b28ef1dc",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/comment-pin": "758700ef5e2d5dac",
+    "components/disclosure": "443b083753ec221e",
+    "components/form-field": "126362df5518a865",
+    "components/select": "164af4eccf857227",
+    "components/tree-row": "26f501621b293428",
+    "elements/canvas-frames": "9337715fff551a31",
+    "elements/part-tree": "bc6764638ee1f7c5",
+    "elements/shell-main": "eeafdea25c3b72ed",
+    "pages/flows": "d5426cf399e75a03",
+    "pages/inbox": "5af40e496401e7dd",
+    "pages/merge": "8dd4fa36943b69d1",
+    "pages/sketches": "c874a2454241b87f",
+    "pages/start": "5be284500a37da1a",
+    "pages/system": "7f898322145e4f51",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "App zoom chip",
+      "note": "2.2: the canvas-frames drawing adopts the app's zoom chip (minus, 100 %, plus, Fit), so the drawing and the app show one chip."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "The app chip: four transparent surface sm buttons in a bordered box. canvasFrameStyles now carries the button styles."
+    }
+  }
+}
