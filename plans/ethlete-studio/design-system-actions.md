@@ -525,8 +525,18 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   merge into the base, or stay a product override?
 - **In progress (2026-10-30):** Q32 (a): base part sketches merge into the base, `--override` for a product copy;
   then the button controls move into the base (subagent). Also: `sketch ready` must refuse a variant that does not load.
-- **In progress (2026-10-30):** inventory slice 1 (CLI: inventory data, `inventory.json`, reopen rules,
-  `design complete` gap, server endpoints; subagent). Slice 2, the Studio view, follows.
+- **Status:** inventory slice 1 built (`0c4b8a887`): `system/inventory.ts`, `inventory-approval.ts`; `seePart` in
+  `complete.ts` draws once for `design complete` and the inventory; discovery records each control's box in shot
+  pixels. `GET /__design/inventory?product=&part=` gives `{ part, hash, ids, findings, approval, state, reason, frames }`
+  (`state` none/approved/reopened with added, removed, changed; a frame is `{ state, preset, width, shot, controls }`,
+  a control `{ number, id, status, kind, inputs, surfaces, states, box }`). `POST /__design/inventory-approve?product=`
+  with `{ part, hash, by }`: 422 with a red or amber control, 409 on a changed hash, 400 without `by` or `hash`; writes
+  `{ ids, hash, by, at }` to `inventory.json` (the base's folder for a base page). Page parts fail
+  `INVENTORY-UNAPPROVED` until approved. Bites: added id, removed id, hash change, refused approval, the gap. Not
+  verified: a real 409 and a real write; Chromium missing throws instead of a 4xx. Elements with one DOM path share
+  one number (two `li`s on `pages/merge`). Found on the way: `aae2914f3` imported the frame runtime into `src`, so
+  `tsc` emitted CommonJS into `dist/libs/cli/design` and every render failed with `exports is not defined`; fixed in
+  `203aa2c35` with a spec. Next: slice 2, the Studio view.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
 
