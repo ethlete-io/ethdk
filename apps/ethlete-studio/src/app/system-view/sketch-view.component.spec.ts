@@ -277,6 +277,59 @@ describe('SketchViewComponent merge preview', () => {
     expect(rows()).toEqual(['empty']);
   });
 
+  it('shows only the changed states first, with the count of folded ones and a Show all states action', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const card: ListedPart = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product',
+      note: null,
+      states: ['default', 'empty', 'draft'],
+      problems: [],
+    };
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: [
+        { variant: 'a', states: ['default', 'empty', 'draft'], unchanged: ['default', 'empty'] },
+        { variant: 'b', states: ['default', 'empty', 'draft'], unchanged: ['default', 'empty'] },
+      ],
+    });
+    fixture.componentRef.setInput('part', card);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const rows = () => [...new Set(fixture.componentInstance.canvas().frames.map((frame) => frame.row))];
+    const count = () => element.querySelector('[data-unchanged-count]')?.textContent?.trim();
+    const showAll = () => element.querySelector<HTMLButtonElement>('[data-show-all-states]');
+
+    expect(rows()).toEqual(['draft']);
+    expect(count()).toBe('2 unchanged states folded');
+    expect(showAll()?.textContent?.trim()).toBe('Show all states');
+
+    showAll()?.click();
+    await settle(fixture);
+
+    expect(rows()).toEqual(['draft', 'default', 'empty']);
+    expect(count()).toBe('2 unchanged states shown');
+    expect(JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').sketchViews).toEqual({
+      'web sketch:components/card': { states: { default: true, empty: true } },
+    });
+
+    showAll()?.click();
+    await settle(fixture);
+
+    expect(rows()).toEqual(['draft']);
+  });
+
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
     vi.stubGlobal('fetch', (url: string) =>
       url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),

@@ -360,6 +360,23 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             }
           </div>
         }
+        @if (unchangedHeads().length > 0) {
+          <span class="text-[var(--et-surface-color-subtle-solid)]" data-unchanged-count>
+            {{ unchangedCountText() }}
+          </span>
+          <button
+            [pressed]="allStatesShown()"
+            (click)="toggleAllStates()"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+            data-show-all-states
+          >
+            {{ allStatesShown() ? 'Fold unchanged states' : 'Show all states' }}
+          </button>
+        }
         @if (picked() && (previewReading()?.preview?.affected?.length ?? 0) > 0) {
           <button
             [pressed]="showing() === 'merge'"
@@ -632,6 +649,17 @@ export class SketchViewComponent {
     this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
   );
 
+  protected unchangedHeads = computed(() => (this.showing() === 'merge' ? [] : this.matrix().rowHeads));
+
+  protected allStatesShown = computed(() => this.unchangedHeads().every((head) => head.open));
+
+  protected unchangedCountText = computed(() => {
+    const count = this.unchangedHeads().length;
+    const states = count === 1 ? 'state' : 'states';
+
+    return this.allStatesShown() ? `${count} unchanged ${states} shown` : `${count} unchanged ${states} folded`;
+  });
+
   public diffLines = toSignal(
     toObservable(
       computed(
@@ -688,6 +716,7 @@ export class SketchViewComponent {
       (this.sketch().status === 'in progress' && !!this.sketch().report) ||
       this.matrix().sizes.length > 1 ||
       this.matrix().interactions.length > 1 ||
+      this.unchangedHeads().length > 0 ||
       (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
   );
 
@@ -763,6 +792,18 @@ export class SketchViewComponent {
     if (!head || state === undefined) return;
 
     const states = { ...this.openStates(), [state]: !head.open };
+
+    this.openStates.set(states);
+    this.remember({ states });
+  }
+
+  protected toggleAllStates() {
+    const open = !this.allStatesShown();
+    const keys = new Set(this.unchangedHeads().map((head) => head.key));
+    const flags = (this.part()?.states ?? [])
+      .filter((state) => keys.has(stateRowKeyOf(state)))
+      .map((state) => [state, open] as const);
+    const states = { ...this.openStates(), ...Object.fromEntries(flags) };
 
     this.openStates.set(states);
     this.remember({ states });

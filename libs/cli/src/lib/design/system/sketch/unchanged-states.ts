@@ -115,9 +115,9 @@ const drawsTheSame = async (options: {
 /**
  * The states of the sketch's target that `variant` renders to the same markup and styles as the product
  * does now, with the same widths and interactions, so every frame of them matches. With `pictureOf`, a state
- * with the same markup but other styles is unchanged when every frame draws the same pixels in the default
- * theme. A state the product lacks, or one that fails to render on either side, is never unchanged. Markup-only
- * comparisons are cached by source hashes; pixel comparisons run again for each screenshot session.
+ * whose markup differs, or cannot be rendered outside a browser (`ng()`), is unchanged when every frame draws the
+ * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
+ * unchanged. Markup-only comparisons are cached by source hashes; pixel comparisons run again for each screenshot session.
  */
 export const unchangedStatesOf = async (options: {
   product: ResolvedProduct;
@@ -161,10 +161,11 @@ export const unchangedStatesOf = async (options: {
   const presets = current?.layer === 'pages' ? Object.keys(product.presets) : null;
   const same = await Promise.all(
     [...after.states].map(async ([state, markup]) => {
+      if (!now.states.has(state)) return false;
+
       const before = now.states.get(state);
 
-      if (!markup || !before) return false;
-      if (markup.body === before.body && markup.styles === before.styles) return true;
+      if (markup && before && markup.body === before.body && markup.styles === before.styles) return true;
 
       return pictureOf
         ? drawsTheSame({

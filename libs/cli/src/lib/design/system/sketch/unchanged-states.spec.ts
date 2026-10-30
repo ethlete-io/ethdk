@@ -169,6 +169,63 @@ describe('unchangedStatesOf', () => {
     });
   });
 
+  describe('when the markup only renders in a browser', () => {
+    const browserOnly: SketchPartLoader = async (options) => {
+      const loaded = (await counting().load(options)) as { default: Record<string, unknown> };
+
+      return {
+        default: {
+          ...loaded.default,
+          render: () => {
+            throw new ReferenceError('location is not defined');
+          },
+        },
+      };
+    };
+    const pictureOf =
+      (pixels: (variant: string | null) => string): PictureOf =>
+      async ({ sketch: on }) => ({ png: Buffer.from(pixels(on?.variant ?? null)), marks: [] });
+
+    it('names a state when every frame draws the same pixels', async () => {
+      const { product, sketch } = acme();
+
+      expect(
+        await unchangedStatesOf({ product, sketch, variant: 'a', load: browserOnly, pictureOf: pictureOf(() => 'x') }),
+      ).toEqual(['default']);
+    });
+
+    it('leaves out a state when a frame draws other pixels', async () => {
+      const { product, sketch } = acme();
+
+      expect(
+        await unchangedStatesOf({
+          product,
+          sketch,
+          variant: 'a',
+          load: browserOnly,
+          pictureOf: pictureOf((variant) => variant ?? 'now'),
+        }),
+      ).toEqual([]);
+    });
+
+    it('leaves out a state without a pixel compare', async () => {
+      const { product, sketch } = acme();
+
+      expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: browserOnly })).toEqual([]);
+    });
+
+    it('leaves out a state that is new in the variant', async () => {
+      const { product, sketch, hero } = acme();
+      const file = resolve(hero, 'hero.ts');
+
+      writeFileSync(file, `${readFileSync(file, 'utf8')}\n// fresh: {}\n`);
+
+      expect(
+        await unchangedStatesOf({ product, sketch, variant: 'a', load: browserOnly, pictureOf: pictureOf(() => 'x') }),
+      ).toEqual(['default']);
+    });
+  });
+
   it('leaves out a state that is new in the variant', async () => {
     const { product, sketch, hero } = acme();
     const file = resolve(hero, 'hero.ts');
