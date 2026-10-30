@@ -27,6 +27,7 @@ const STYLES = [
   '.aa-row[aria-current="true"], .aa-row[aria-selected="true"] { background: navy; color: white; }',
   '.aa-row:hover { background: silver; } .aa-row:focus-visible { outline: 2px solid black; }',
   '.aa-row[aria-current="true"]:hover { background: blue; }',
+  '.aa-row.aa-active { background: teal; }',
 ].join(' ');
 
 const row = (attributes = '', name = 'aa-row') =>
@@ -37,6 +38,9 @@ const pick = '<button class="aa-toggle" type="button" data-et-control="pick">Pic
 const option = (attributes = '', name = 'aa-row') => `<li class="${name}" role="option"${attributes}>Option</li>`;
 
 const OPTIONS = `<ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option()}${option(' data-et-force="hover"')}${option(' data-et-force="focus-visible" tabindex="0"')}</ul>`;
+
+const named = (name: string) =>
+  `<div><button class="aa-toggle" type="button" data-et-control="pick" aria-activedescendant="aa-b">Pick</button><ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option(' id="aa-b"', name)}${option()}${option(' data-et-force="hover"')}</ul></div>`;
 
 const toggle = (attributes = '', name = 'aa-toggle') =>
   `<button class="${name}" type="button" data-et-control="more"${attributes}><span>More</span></button>`;
@@ -152,6 +156,14 @@ const PARTS: Record<string, FixturePart> = {
   },
   'components/picker': {
     states: { rest: `<div>${pick}</div>`, open: `<div>${pick}${OPTIONS}</div>` },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
+  'components/picker-named': {
+    states: { rest: `<div>${pick}</div>`, open: named('aa-row aa-active') },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
+  'components/picker-named-plain': {
+    states: { rest: `<div>${pick}</div>`, open: named('aa-row') },
     extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
   },
   'components/picker-closed': {
@@ -548,8 +560,29 @@ describe('completenessGapsOf', () => {
       gapsOf(select, [frame('rest'), frame('open', { surfaces: shown([{ selected: false, look: 'a', forced: [] }]) })]),
     ).toEqual([
       'REQUIREMENT-MISSING components/a.more.option-hover - no state draws an option in more.open hover - force hover on it, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING components/a.more.option-focus-visible - no state draws an option in more.open focus-visible - force focus-visible on it, e.g. with forceInteraction',
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - no state draws an option in more.open focus-visible - force focus-visible on it, e.g. with forceInteraction; no option is named by aria-activedescendant on the control either',
       'REQUIREMENT-MISSING components/a.more.option-selected - no state draws an option in more.open selected - mark it with aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current in a state',
+    ]);
+
+    const activeOf = (look: string, plain = true) => [
+      frame('rest'),
+      frame('open', {
+        surfaces: shown([
+          { selected: true, look: 'navy', forced: [] },
+          ...(plain ? [{ selected: false, look: 'white', forced: [] }] : []),
+          { selected: false, look, forced: [], named: true },
+          { selected: false, look: 'x', forced: [{ interaction: 'hover', differs: true }] },
+        ]),
+      }),
+    ];
+
+    expect(gapsOf(select, activeOf('teal'))).toEqual([]);
+    expect(gapsOf(select, activeOf('white'))).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look',
+    ]);
+    expect(gapsOf(select, activeOf('teal', false))).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open names an option with aria-activedescendant, but draws no plain option (not selected, named or forced) to compare it with',
+      'REQUIREMENT-MISSING components/a.more.option-selected - every state draws an option in more.open selected - draw it without selected too, to compare',
     ]);
 
     const closed = [frame('rest'), frame('open', { surfaces: [{ id: 'more.open', shown: false, options: [] }] })];
@@ -660,6 +693,14 @@ describe('completenessOf', () => {
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/picker' })).toEqual({ gaps: [] });
+
+    expect(await completenessOf({ target, config, product, part: 'components/picker-named' })).toEqual({ gaps: [] });
+
+    const namedPlain = await completenessOf({ target, config, product, part: 'components/picker-named-plain' });
+
+    expect('gaps' in namedPlain && namedPlain.gaps.map(completenessGapLineOf)).toEqual([
+      'REQUIREMENT-MISSING components/picker-named-plain.pick.option-focus-visible - state open names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look',
+    ]);
 
     const closed = await completenessOf({ target, config, product, part: 'components/picker-closed' });
 

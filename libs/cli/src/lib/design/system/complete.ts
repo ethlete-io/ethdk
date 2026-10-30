@@ -44,9 +44,10 @@ export type SeenForce = { interaction: string; differs: boolean; still?: string[
 
 /**
  * An option or menu item inside a drawn surface. `selected` is its ARIA selected, checked, pressed or current
- * state, `look` its computed colours, so two options can be told apart without their text.
+ * state, `look` its computed colours, so two options can be told apart without their text. `named` is set when an
+ * `aria-activedescendant` in the frame names its id.
  */
-export type SeenOption = { selected: boolean; look: string; forced: SeenForce[] };
+export type SeenOption = { selected: boolean; look: string; forced: SeenForce[]; named?: boolean };
 
 /** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
 export type SeenFrame = {
@@ -368,6 +369,34 @@ const surfaceGapsOf = (options: {
   return gaps;
 };
 
+const isPlain = (option: SeenOption) => !option.selected && !option.named && option.forced.length === 0;
+
+const activeDescendantGapOf = (options: {
+  frames: SeenFrame[];
+  shownIn: (frame: SeenFrame) => SeenOption[];
+  forcedGap: string;
+}) => {
+  const { frames, shownIn, forcedGap } = options;
+  const naming = frames
+    .map((frame) => ({ state: frame.state, options: shownIn(frame) }))
+    .filter((frame) => frame.options.some((option) => option.named));
+  const compared = naming.filter((frame) => frame.options.some(isPlain));
+
+  if (naming.length === 0) return `${forcedGap}; no option is named by aria-activedescendant on the control either`;
+  if (compared.length === 0)
+    return `state ${naming[0]?.state} names an option with aria-activedescendant, but draws no plain option (not selected, named or forced) to compare it with`;
+  if (
+    compared.some((frame) =>
+      frame.options.some(
+        (option) => option.named && frame.options.some((plain) => isPlain(plain) && plain.look !== option.look),
+      ),
+    )
+  )
+    return null;
+
+  return `state ${compared[0]?.state} names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look`;
+};
+
 const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [string, string][] => {
   const { frames, surfaceId } = options;
   const shownIn = (frame: SeenFrame) =>
@@ -384,15 +413,17 @@ const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [str
       ),
     );
     const gap = forcedGapOf({ forced, what, interaction });
+    const missing =
+      gap && interaction === 'focus-visible' ? activeDescendantGapOf({ frames, shownIn, forcedGap: gap }) : gap;
 
-    if (gap) gaps.push([`option-${interaction}`, gap]);
+    if (missing) gaps.push([`option-${interaction}`, missing]);
   }
 
   const seen = frames
     .filter((frame) => frame.interaction === null)
     .flatMap((frame) =>
       shownIn(frame)
-        .filter((option) => option.forced.length === 0)
+        .filter((option) => option.forced.length === 0 && !option.named)
         .map((option) => ({ look: option.look, flag: option.selected })),
     );
   const selected = lookGapOf({ seen, flag: 'selected', what });
@@ -956,6 +987,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
     });
     return JSON.stringify([own, [...new Set(inside)].sort()]);
   };
+  const named = new Set([...root.querySelectorAll('[aria-activedescendant]')].filter((element) => ownerOf(element) === null).map((element) => element.getAttribute('aria-activedescendant')));
   const isSelected = (element) =>
     ['aria-selected', 'aria-checked', 'aria-pressed'].some((name) => element.getAttribute(name) === 'true') ||
     (element.hasAttribute('aria-current') && element.getAttribute('aria-current') !== 'false');
@@ -985,7 +1017,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
   const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
-    options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map(tagged),
+    options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map((option) => ({ ...tagged(option), named: option.id !== '' && named.has(option.id) })),
   }));
   const discover = ${options.discover};
   return {
@@ -1025,7 +1057,7 @@ type Seen =
   | { refused: string }
   | {
       controls: (Tagged & { id: string; disabled: boolean; frameBox: FrameBox | null })[];
-      surfaces: { id: string; shown: boolean; options: Tagged[] }[];
+      surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean })[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
     };
@@ -1117,7 +1149,12 @@ const seeFrames = async (options: {
         const options: SeenOption[] = [];
 
         for (const option of surface.options)
-          options.push({ selected: option.selected, look: option.look, forced: await forcedOf(option) });
+          options.push({
+            selected: option.selected,
+            look: option.look,
+            forced: await forcedOf(option),
+            ...(option.named ? { named: true } : {}),
+          });
 
         surfaces.push({ id: surface.id, shown: surface.shown, options });
       }
