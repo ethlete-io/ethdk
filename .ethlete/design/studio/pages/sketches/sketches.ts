@@ -2,7 +2,7 @@ import { formField } from '@ethlete/components/design/form-field';
 import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
-import commentPin, { commentPinMark } from '@system/components/comment-pin';
+import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
@@ -53,7 +53,7 @@ const roundPicker = formField({
 });
 
 const variantHead = (variant: PageVariant) =>
-  html`<div class="sk-col-head absolute z-2 flex flex-col gap-space-1 overflow-hidden" hidden>
+  html`<div class="absolute z-2 flex -translate-y-full flex-col gap-space-1 overflow-hidden" data-sk-col-head hidden>
     <div class="flex items-center gap-space-2 whitespace-nowrap [&>*]:flex-none [&_.et-button]:ms-space-2">
       ${
         variant.key === 'current'
@@ -66,12 +66,15 @@ const variantHead = (variant: PageVariant) =>
   </div>`;
 
 const frame = (variant: PageVariant, selected: boolean) =>
-  html`<figure class="sk-frame flex m-0" ${selected ? ' data-selected' : ''}>
-    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="sk-pin">${pagePin}</span>` : '')}
+  html`<figure
+    class="sk-frame relative m-0 box-border flex rounded-control-md bg-surface p-space-2"
+    ${selected ? ' data-selected' : ''}
+  >
+    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
   </figure>`;
 
 const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, frames: Rect[]) => {
-  const heads = [...page.querySelectorAll<HTMLElement>('.sk-col-head')];
+  const heads = [...page.querySelectorAll<HTMLElement>('[data-sk-col-head]')];
   const bound = viewport.offsetLeft + HEAD_INSET;
 
   heads.forEach((head, index) => {
@@ -91,8 +94,8 @@ const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, fr
 
 const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
   const page = root.querySelector<HTMLElement>('.sk-page');
-  const viewport = root.querySelector<HTMLElement>('.sk-viewport');
-  const world = root.querySelector<HTMLElement>('.sk-world');
+  const viewport = root.querySelector<HTMLElement>('[data-sk-viewport]');
+  const world = root.querySelector<HTMLElement>('[data-sk-world]');
   const label = root.querySelector('[data-camera-reset] button');
 
   if (!page || !viewport || !world) return;
@@ -131,7 +134,7 @@ export default definePart<Props>({
   },
   render: async ({ camera, selected }) => {
     const content = html`<div
-      class="sk-page relative h-full overflow-hidden isolate"
+      class="sk-page relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
       ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
     >
       <header
@@ -141,11 +144,19 @@ export default definePart<Props>({
         <span class="flex-1"></span>
         ${discard.body}
       </header>
-      <div class="zr-picker absolute z-2 top-[44px] left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
+      <div class="zr-picker absolute z-2 top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
         ${roundPicker}
       </div>
-      <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
-        <section class="sk-world grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]">
+      <div
+        class="absolute top-36.5 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] cursor-grab touch-none active:cursor-grabbing"
+        data-sk-viewport
+        tabindex="0"
+        aria-label="Design Canvas"
+      >
+        <section
+          class="absolute top-0 left-0 w-max origin-top-left select-none grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]"
+          data-sk-world
+        >
           ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
         </section>
       </div>
@@ -168,7 +179,6 @@ export default definePart<Props>({
         discard.styles +
         merge.styles +
         fit.styles +
-        commentPin.styles +
         selectStyles +
         kit +
         styles +

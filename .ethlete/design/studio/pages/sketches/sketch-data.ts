@@ -48,13 +48,16 @@ export const PAGE_PIN: Pin = {
 };
 
 export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
-  html`<div class="sk-shot" data-page="${variant}" title="Doppelklick zum Einpassen">
-    <div class="sk-shot-page">${page}</div>
-    <span class="sk-shot-open">1440 × 900</span>
+  html`<div
+    class="sk-shot relative h-225 w-360 cursor-[inherit] overflow-hidden rounded-control-md"
+    data-page="${variant}"
+    title="Doppelklick zum Einpassen"
+  >
+    <div class="pointer-events-none h-225 w-360 origin-top-left scale-100">${page}</div>
     ${pin}
   </div>`;
 
 export const pageAuthor = (variant: PageVariant) =>
   variant.author
-    ? `<span class="sk-author">${agentLogo(variant.author.agent, 'sk-logo')}${variant.author.name}</span>`
+    ? `<span class="flex min-w-0 items-center gap-space-1 text-(length:--text-sm) text-text-muted">${agentLogo(variant.author.agent, 'size-3 flex-none')}${variant.author.name}</span>`
     : '';
