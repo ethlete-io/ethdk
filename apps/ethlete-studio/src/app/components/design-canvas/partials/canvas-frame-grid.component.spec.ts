@@ -106,6 +106,25 @@ describe('CanvasFrameGridComponent', () => {
     expect(host.querySelector('[data-grid-cell]')?.classList).not.toContain('place-items-center');
   });
 
+  it('marks each empty column of a row that draws a state as not drawn, and no cell of a row that draws none', async () => {
+    const host = await renderGrid({ columns, rows: [...rows, 'unused'], cells, sheet: 'table' });
+
+    expect(host.querySelectorAll('[data-grid-empty]')).toHaveLength(rows.length * columns.length - cells.length);
+    expect(textsOf(host, '[data-grid-empty]').every((text) => text === 'not drawn')).toBe(true);
+  });
+
+  it('marks the empty cells of the interaction table in a groups sheet only', async () => {
+    const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
+
+    expect(host.querySelectorAll('[data-grid-empty]')).toHaveLength(3);
+  });
+
+  it('marks the empty cells of a plain table', async () => {
+    const host = await renderGrid({ columns, rows, cells });
+
+    expect(host.querySelectorAll('[data-grid-empty]')).toHaveLength(rows.length * columns.length - cells.length);
+  });
+
   it('draws a grid without sheet as the plain table', async () => {
     const host = await renderGrid({ columns, rows, cells });
 

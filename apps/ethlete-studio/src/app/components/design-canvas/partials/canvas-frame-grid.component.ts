@@ -132,6 +132,8 @@ export class CanvasFrameCellComponent {
               >
                 @if (cellOf(row, column); as cell) {
                   <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
+                } @else if (drawnRows().has(row)) {
+                  <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
                 }
               </div>
             }
@@ -180,6 +182,8 @@ export class CanvasFrameCellComponent {
           @for (column of grid().columns; track column) {
             @if (cellOf(row, column); as cell) {
               <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
+            } @else if (drawnRows().has(row)) {
+              <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
             } @else {
               <span></span>
             }
@@ -207,6 +211,8 @@ export class CanvasFrameGridComponent {
   private cellAt = computed(
     () => new Map<string, FrameCell>(this.grid().cells.map((cell) => [cellKeyOf(cell.row, cell.column), cell])),
   );
+
+  protected drawnRows = computed(() => new Set(this.grid().cells.map((cell) => cell.row)));
 
   private observed = computed(() => {
     const table = this.table()?.nativeElement;
