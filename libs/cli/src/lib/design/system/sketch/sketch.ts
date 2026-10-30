@@ -36,6 +36,24 @@ export type SketchDecision =
  */
 export type SketchVariantInfo = { authors?: string[]; round?: string; note?: string };
 
+/** Who recorded a verdict on a variant: the designer, in Studio or with `--by designer`, or an agent. */
+export type SketchVerdictBy = 'designer' | 'agent';
+
+/** Ends a rejection: the variant can be picked and merged again. */
+export type SketchReopening = { by: SketchVerdictBy; decidedAt: string; reason?: string };
+
+/**
+ * One rejection of a variant. `by` recorded the rejection and `reasonBy` its reason, which can be set later;
+ * the rejection holds while it has no `reopened`.
+ */
+export type SketchRejection = {
+  by: SketchVerdictBy;
+  decidedAt: string;
+  reason?: string;
+  reasonBy?: SketchVerdictBy;
+  reopened?: SketchReopening;
+};
+
 /** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
 export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
 
@@ -47,6 +65,8 @@ export type SketchFile = {
   baseline?: Record<string, string>;
   decision?: SketchDecision;
   variantInfo?: Record<string, SketchVariantInfo>;
+  /** Per variant, every rejection it had, oldest first. */
+  rejections?: Record<string, SketchRejection[]>;
   rounds?: SketchRound[];
 };
 
@@ -155,6 +175,49 @@ const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInf
       ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note),
   );
 
+const VERDICT_BY: readonly SketchVerdictBy[] = ['designer', 'agent'];
+
+const isVerdictBy = (value: unknown): value is SketchVerdictBy => VERDICT_BY.includes(value as SketchVerdictBy);
+
+const isOptionalText = (value: unknown) => value === undefined || typeof value === 'string';
+
+const isReopening = (value: unknown): value is SketchReopening => {
+  const reopening = value as Partial<Record<keyof SketchReopening, unknown>> | null;
+
+  return (
+    typeof reopening === 'object' &&
+    reopening !== null &&
+    isVerdictBy(reopening.by) &&
+    typeof reopening.decidedAt === 'string' &&
+    isOptionalText(reopening.reason)
+  );
+};
+
+const isRejection = (value: unknown): value is SketchRejection => {
+  const rejection = value as Partial<Record<keyof SketchRejection, unknown>> | null;
+
+  return (
+    typeof rejection === 'object' &&
+    rejection !== null &&
+    isVerdictBy(rejection.by) &&
+    typeof rejection.decidedAt === 'string' &&
+    isOptionalText(rejection.reason) &&
+    (rejection.reasonBy === undefined || isVerdictBy(rejection.reasonBy)) &&
+    (rejection.reopened === undefined || isReopening(rejection.reopened))
+  );
+};
+
+const isRejections = (value: unknown): value is Record<string, SketchRejection[]> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every(
+    (list: unknown) =>
+      Array.isArray(list) &&
+      list.every(isRejection) &&
+      list.slice(0, -1).every((rejection: SketchRejection) => rejection.reopened !== undefined),
+  );
+
 const isRounds = (value: unknown): value is SketchRound[] =>
   Array.isArray(value) &&
   value.length > 0 &&
@@ -179,6 +242,22 @@ const nextRoundKeyOf = (rounds: SketchRound[]) =>
 /** The round new variants join: the last one. */
 export const runningRoundOf = (sketch: Pick<Sketch, 'rounds'>) =>
   sketch.rounds[sketch.rounds.length - 1] as SketchRound;
+
+/** The rejection that holds on a variant now, or `null` when it is live. */
+export const rejectionOf = (sketch: Pick<SketchFile, 'rejections'>, variant: string): SketchRejection | null => {
+  const last = sketch.rejections?.[variant]?.at(-1);
+
+  return last && !last.reopened ? last : null;
+};
+
+/** Why a rejected variant cannot be picked or merged, or `null` when it can. */
+export const rejectedProblemOf = (sketch: Pick<Sketch, 'target' | 'rejections'>, variant: string) => {
+  const rejection = rejectionOf(sketch, variant);
+
+  return rejection
+    ? `${sketch.target} variant ${variant} is rejected by the ${rejection.by}${rejection.reason ? `: ${rejection.reason}` : ''} - reopen it first`
+    : null;
+};
 
 /** The model ids that reported on a variant, in the order of their first report; none for old data. */
 export const authorsOf = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) =>
@@ -205,6 +284,8 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
   if (!isStatus(parsed.status)) return `${file}: status must be one of ${SKETCH_STATUSES.join(', ')}`;
   if (parsed.variantInfo !== undefined && !isVariantInfo(parsed.variantInfo))
     return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string, note?: string } }`;
+  if (parsed.rejections !== undefined && !isRejections(parsed.rejections))
+    return `${file}: rejections must be { <variant>: [{ by: designer | agent, decidedAt, reason?, reasonBy?, reopened?: { by, decidedAt, reason? } }] }, each but the last reopened`;
   if (parsed.rounds !== undefined && !isRounds(parsed.rounds))
     return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
 
@@ -254,6 +335,7 @@ export const writeSketchFile = (sketch: Sketch) => {
     ...(sketch.decision ? { decision: sketch.decision } : {}),
     rounds: sketch.rounds,
     ...(Object.keys(sketch.variantInfo).length > 0 ? { variantInfo: sketch.variantInfo } : {}),
+    ...(sketch.rejections && Object.keys(sketch.rejections).length > 0 ? { rejections: sketch.rejections } : {}),
   };
 
   writeFileSync(resolve(sketch.dir, SKETCH_FILE), jsonLayoutOf(file));
@@ -563,17 +645,74 @@ export const markSketchReady = (options: { checkout: string; sketch: Sketch; aut
   return ready;
 };
 
-/** Records the user's pick or discard on a sketch, the decision Studio writes and the agent acts on. */
-export const decideSketch = (options: {
-  sketch: Sketch;
-  decision: { kind: 'pick'; variant: string; comment?: string } | { kind: 'discard'; comment?: string };
-}): Sketch | string => {
+/** A verdict on one variant: reject it, set the reason of its rejection, or reopen it. */
+export type SketchVariantVerdict =
+  | { kind: 'reject'; variant: string; reason?: string; by: SketchVerdictBy }
+  | { kind: 'reason'; variant: string; reason: string; by: SketchVerdictBy }
+  | { kind: 'reopen'; variant: string; reason?: string; by: SketchVerdictBy };
+
+export type SketchDecisionInput =
+  { kind: 'pick'; variant: string; comment?: string } | { kind: 'discard'; comment?: string } | SketchVariantVerdict;
+
+const withVerdict = (sketch: Sketch, verdict: SketchVariantVerdict): Sketch | string => {
+  const { variant, by } = verdict;
+  const reason = verdict.reason?.trim() || undefined;
+  const decidedAt = new Date().toISOString();
+  const history = sketch.rejections?.[variant] ?? [];
+  const current = rejectionOf(sketch, variant);
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  let next: SketchRejection[];
+
+  if (verdict.kind === 'reject') {
+    if (current) return `${sketch.target} variant ${variant} is already rejected - set its reason instead`;
+
+    next = [...history, { by, decidedAt, ...(reason ? { reason, reasonBy: by } : {}) }];
+  } else if (!current) {
+    return `${sketch.target} variant ${variant} is not rejected`;
+  } else if (verdict.kind === 'reason') {
+    if (!reason) return 'a reason needs text';
+
+    next = [...history.slice(0, -1), { ...current, reason, reasonBy: by }];
+  } else {
+    next = [...history.slice(0, -1), { ...current, reopened: { by, decidedAt, ...(reason ? { reason } : {}) } }];
+  }
+
+  const unpicked = verdict.kind === 'reject' && sketch.decision?.kind === 'pick' && sketch.decision.variant === variant;
+  const { decision, ...rest } = sketch;
+
+  return {
+    ...rest,
+    ...(decision && !unpicked ? { decision } : {}),
+    rejections: { ...sketch.rejections, [variant]: next },
+  };
+};
+
+/**
+ * Records the user's pick or discard on a sketch, the decision Studio writes and the agent acts on, or a verdict on
+ * one variant. A rejected variant cannot be picked; rejecting the picked variant clears the pick.
+ */
+export const decideSketch = (options: { sketch: Sketch; decision: SketchDecisionInput }): Sketch | string => {
   const { sketch, decision } = options;
+
+  if (decision.kind === 'reject' || decision.kind === 'reason' || decision.kind === 'reopen') {
+    const judged = withVerdict(sketch, decision);
+
+    if (typeof judged !== 'string') writeSketchFile(judged);
+
+    return judged;
+  }
 
   if (decision.kind === 'pick') {
     if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - a variant is picked once it is ready`;
     if (!sketch.variants.includes(decision.variant))
       return `${sketch.target} has no variant "${decision.variant}" - it has ${sketch.variants.join(', ')}`;
+
+    const rejected = rejectedProblemOf(sketch, decision.variant);
+
+    if (rejected) return rejected;
   }
 
   const decided: Sketch = { ...sketch, decision: { ...decision, decidedAt: new Date().toISOString() } };

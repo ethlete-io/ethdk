@@ -386,6 +386,17 @@ export type SketchDecision =
   | { kind: 'pick'; variant: string; comment?: string; decidedAt: string }
   | { kind: 'discard'; comment?: string; decidedAt: string };
 
+export type SketchVerdictBy = 'designer' | 'agent';
+
+/** One rejection of a variant; it holds while it has no `reopened`. */
+export type SketchRejection = {
+  by: SketchVerdictBy;
+  decidedAt: string;
+  reason?: string;
+  reasonBy?: SketchVerdictBy;
+  reopened?: { by: SketchVerdictBy; decidedAt: string; reason?: string };
+};
+
 /** An open sketch of a product: `target` is `<layer>/<name>`, and each variant lists the rule problems it has laid over the product. */
 export type ListedSketch = {
   target: string;
@@ -406,6 +417,15 @@ export type ListedSketch = {
   variantInfo?: Record<string, { authors?: string[]; round?: string; note?: string }>;
   /** Oldest first; the last one runs. Missing from an `@ethlete/cli` older than sketch rounds. */
   rounds?: SketchRound[];
+  /** Per variant, every rejection it had, oldest first. Missing from an `@ethlete/cli` without variant rejection. */
+  rejections?: Record<string, SketchRejection[]>;
+};
+
+/** The rejection that holds on a variant now, or `null` when it is live. */
+export const rejectionOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string): SketchRejection | null => {
+  const last = sketch.rejections?.[variant]?.at(-1);
+
+  return last && !last.reopened ? last : null;
 };
 
 /** A round of a sketch: `note` says what it shows, `lost` why its variants lost once a newer round runs. */
@@ -484,9 +504,15 @@ export const sketchPreview$ = (address: SketchAddress & { variant: string }): Ob
   );
 
 export type SketchDecisionWrite =
-  { kind: 'pick'; variant: string; comment?: string } | { kind: 'discard'; comment?: string };
+  | { kind: 'pick'; variant: string; comment?: string }
+  | { kind: 'discard'; comment?: string }
+  | { kind: 'reject' | 'reopen'; variant: string; reason?: string }
+  | { kind: 'reason'; variant: string; reason: string };
 
-/** Writes the user's pick or discard into `sketch.json`. A pick needs a sketch that is ready. */
+/**
+ * Writes the user's pick or discard, or the designer's verdict on one variant, into `sketch.json`. A pick needs a
+ * sketch that is ready and a variant that is not rejected.
+ */
 export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWrite): Observable<void> =>
   designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-decision' }), postJson(decision)).pipe(
     map(() => undefined),

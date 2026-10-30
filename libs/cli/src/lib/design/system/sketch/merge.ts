@@ -11,7 +11,7 @@ import { conflictsOf } from './baseline';
 import { carryShared, sharedPlanOf } from './merge-shared';
 import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
-import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
+import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, variantDirOf } from './sketch';
 
 const swap = (entries: { from: string; to: string }[]) => {
   const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
@@ -74,6 +74,10 @@ const mergeOrReason = (options: {
   if (typeof pick === 'string') return pick;
 
   const { variant } = pick;
+  const rejected = rejectedProblemOf(sketch, variant);
+
+  if (rejected) return rejected;
+
   const dir = variantDirOf(sketch, variant);
   const { parts, problems } = partFilesOf(dir);
 

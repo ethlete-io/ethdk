@@ -299,6 +299,13 @@ describe('rowsOf', () => {
   it('draws only the variants when the part is not merged yet', () => {
     expect(rowsOf({ part: 'pages/a', variants: ['one'], merged: false }).map((row) => row.label)).toEqual(['one']);
   });
+
+  it('still draws a rejected variant, labelled rejected', () => {
+    const rows = rowsOf({ part: 'pages/a', variants: ['one', 'two'], merged: false, rejected: ['two'] });
+
+    expect(rows.map((row) => row.label)).toEqual(['one', 'two rejected']);
+    expect(rows[1]?.sketch).toEqual({ target: 'pages/a', variant: 'two' });
+  });
 });
 
 describe('a state only the variants have', () => {

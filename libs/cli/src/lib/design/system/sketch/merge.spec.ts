@@ -246,6 +246,17 @@ describe('mergeSketch', () => {
     expect(
       reasonOf(mergeSketch({ target, config, product, sketch: { ...picked(ready, 'a'), variants: [] }, note: 'x' })),
     ).toContain('no variant "a", the one picked');
+    expect(
+      reasonOf(
+        mergeSketch({
+          target,
+          config,
+          product,
+          sketch: { ...picked(ready, 'a'), rejections: { a: [{ by: 'agent', decidedAt: 'now', reason: 'flat' }] } },
+          note: 'x',
+        }),
+      ),
+    ).toBe('elements/hero variant a is rejected by the agent: flat - reopen it first');
 
     const card = createSketch({ product, sketch: { layer: 'components', name: 'card' }, variants: ['a'] }) as Sketch;
 

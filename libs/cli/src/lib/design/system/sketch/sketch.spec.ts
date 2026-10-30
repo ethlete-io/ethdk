@@ -17,6 +17,7 @@ import {
   readSketch,
   readSketchReport,
   rebaseSketch,
+  rejectionOf,
   reportSketch,
   Sketch,
   sketchReportPath,
@@ -259,6 +260,124 @@ describe('status', () => {
       comment: 'bolder',
       decidedAt: expect.any(String),
     });
+  });
+});
+
+describe('variant verdicts', () => {
+  const ready = (target: string) =>
+    markSketchReady({ checkout: target, sketch: open(target, 'elements/hero') }) as Sketch;
+
+  it('rejects a variant, refuses its pick, keeps the other variants pickable, and survives a reload', () => {
+    const target = acme();
+    const rejected = decideSketch({
+      sketch: ready(target),
+      decision: { kind: 'reject', variant: 'a', reason: 'too loud', by: 'designer' },
+    }) as Sketch;
+
+    expect(sketchJson(target, 'elements-hero')['rejections']).toEqual({
+      a: [{ by: 'designer', decidedAt: expect.any(String), reason: 'too loud', reasonBy: 'designer' }],
+    });
+
+    const reloaded = readSketch({ product: 'acme', dir: rejected.dir }) as Sketch;
+
+    expect(rejectionOf(reloaded, 'a')).toMatchObject({ reason: 'too loud' });
+    expect(rejectionOf(reloaded, 'b')).toBeNull();
+    expect(decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'a' } })).toBe(
+      'elements/hero variant a is rejected by the designer: too loud - reopen it first',
+    );
+    expect(decideSketch({ sketch: reloaded, decision: { kind: 'pick', variant: 'b' } })).toMatchObject({
+      decision: { kind: 'pick', variant: 'b' },
+    });
+  });
+
+  it('rejects without a reason, then records a reason with its own origin', () => {
+    const target = acme();
+    const rejected = decideSketch({
+      sketch: ready(target),
+      decision: { kind: 'reject', variant: 'a', by: 'agent' },
+    }) as Sketch;
+
+    expect(rejectionOf(rejected, 'a')).toEqual({ by: 'agent', decidedAt: expect.any(String) });
+    expect(decideSketch({ sketch: rejected, decision: { kind: 'reject', variant: 'a', by: 'agent' } })).toContain(
+      'is already rejected',
+    );
+
+    const reasoned = decideSketch({
+      sketch: rejected,
+      decision: { kind: 'reason', variant: 'a', reason: 'off brand', by: 'designer' },
+    }) as Sketch;
+
+    expect(rejectionOf(reasoned, 'a')).toEqual({
+      by: 'agent',
+      decidedAt: expect.any(String),
+      reason: 'off brand',
+      reasonBy: 'designer',
+    });
+  });
+
+  it('reopens with the earlier verdict kept, and rejects again on top of it', () => {
+    const target = acme();
+    const rejected = decideSketch({
+      sketch: ready(target),
+      decision: { kind: 'reject', variant: 'a', reason: 'too loud', by: 'agent' },
+    }) as Sketch;
+    const reopened = decideSketch({
+      sketch: rejected,
+      decision: { kind: 'reopen', variant: 'a', reason: 'worth a second look', by: 'designer' },
+    }) as Sketch;
+
+    expect(rejectionOf(reopened, 'a')).toBeNull();
+    expect(decideSketch({ sketch: reopened, decision: { kind: 'reopen', variant: 'a', by: 'designer' } })).toBe(
+      'elements/hero variant a is not rejected',
+    );
+    expect(decideSketch({ sketch: reopened, decision: { kind: 'pick', variant: 'a' } })).toMatchObject({
+      decision: { kind: 'pick', variant: 'a' },
+    });
+
+    const again = decideSketch({
+      sketch: readSketch({ product: 'acme', dir: reopened.dir }) as Sketch,
+      decision: { kind: 'reject', variant: 'a', by: 'designer' },
+    }) as Sketch;
+
+    expect(again.decision).toBeUndefined();
+    expect(sketchJson(target, 'elements-hero')['rejections']).toEqual({
+      a: [
+        {
+          by: 'agent',
+          decidedAt: expect.any(String),
+          reason: 'too loud',
+          reasonBy: 'agent',
+          reopened: { by: 'designer', decidedAt: expect.any(String), reason: 'worth a second look' },
+        },
+        { by: 'designer', decidedAt: expect.any(String) },
+      ],
+    });
+  });
+
+  it('refuses a verdict on an unknown variant', () => {
+    expect(
+      decideSketch({ sketch: ready(acme()), decision: { kind: 'reject', variant: 'z', by: 'designer' } }),
+    ).toContain('has no variant "z"');
+  });
+
+  it('refuses a sketch.json with malformed rejections', () => {
+    const target = acme();
+    const sketch = ready(target);
+    const file = join(sketch.dir, 'sketch.json');
+    const write = (rejections: unknown) =>
+      writeFileSync(file, JSON.stringify({ ...sketchJson(target, 'elements-hero'), rejections }));
+
+    write({ a: [{ by: 'someone', decidedAt: 'now' }] });
+    expect(readSketch({ product: 'acme', dir: sketch.dir })).toContain('rejections must be');
+    write({
+      a: [
+        { by: 'agent', decidedAt: 'now' },
+        { by: 'agent', decidedAt: 'later' },
+      ],
+    });
+    expect(readSketch({ product: 'acme', dir: sketch.dir })).toContain('each but the last reopened');
+    write({ a: [{ by: 'agent', decidedAt: 'now', reopened: { by: 'designer', decidedAt: 'later' } }] });
+    expect(readSketch({ product: 'acme', dir: sketch.dir })).toMatchObject({ variants: ['a', 'b'] });
   });
 });
 

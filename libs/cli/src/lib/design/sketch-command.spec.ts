@@ -202,6 +202,8 @@ describe('designSketch', () => {
       ['rebase', 'components/button'],
       ['merge', 'components/button', '--note', 'x'],
       ['discard', 'components/button'],
+      ['reject', 'components/button', '--variant', 'a'],
+      ['reopen', 'components/button', '--variant', 'a'],
     ]) {
       expect(run(target, ...argv, '--product', 'acme')).toBe(2);
       expect(lines).toContain(
@@ -210,6 +212,100 @@ describe('designSketch', () => {
     }
 
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
+  });
+
+  it('rejects and reopens a variant, keeps the history and prints the stored state', () => {
+    const target = acme();
+    const lines = output();
+    const sketchOf = () =>
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }) as Sketch;
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+
+    expect(write(target, 'reject', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toContain('usage: sketch reject <layer>/<name> --variant <key>');
+    expect(write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(0);
+    expect(lines.splice(-2)).toEqual([
+      'components/button variant a: rejected',
+      `  rejected by the agent at ${sketchOf().rejections?.['a']?.[0]?.decidedAt}`,
+    ]);
+    expect(
+      run(
+        target,
+        'reject',
+        'components/button',
+        '--variant',
+        'a',
+        '--reason',
+        'too loud',
+        '--by',
+        'designer',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    expect(lines.pop()).toContain('(reason by the designer): too loud');
+    expect(run(target, 'list')).toBe(0);
+    expect(lines.slice(-2)[0]).toBe('acme  components/button  in progress  a, b, rejected a');
+    expect(
+      run(
+        target,
+        'reopen',
+        'components/button',
+        '--variant',
+        'a',
+        '--reason',
+        'worth a look',
+        '--by',
+        'designer',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    expect(lines.splice(-3).map((line) => line.replace(/ at \d\S+?Z/u, ''))).toEqual([
+      'components/button variant a: live',
+      '  rejected by the agent (reason by the designer): too loud',
+      '  reopened by the designer: worth a look',
+    ]);
+    expect(write(target, 'reopen', 'components/button', '--variant', 'a', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe('components/button variant a is not rejected');
+    expect(sketchOf().rejections?.['a']).toEqual([
+      {
+        by: 'agent',
+        decidedAt: expect.any(String),
+        reason: 'too loud',
+        reasonBy: 'designer',
+        reopened: { by: 'designer', decidedAt: expect.any(String), reason: 'worth a look' },
+      },
+    ]);
+  });
+
+  it('refuses to merge a rejected variant', () => {
+    const target = acme();
+    const lines = output();
+    const dir = join(target, DESIGN_DIR, 'acme/sketches/components-button');
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+
+    const file = JSON.parse(readFileSync(join(dir, 'sketch.json'), 'utf8')) as Record<string, unknown>;
+
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({
+        ...file,
+        status: 'ready',
+        decision: { kind: 'pick', variant: 'a', decidedAt: 'now' },
+        rejections: { a: [{ by: 'designer', decidedAt: 'now', reason: 'too loud' }] },
+      }),
+    );
+
+    expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe('components/button variant a is rejected by the designer: too loud - reopen it first');
+    expect(existsSync(dir)).toBe(true);
   });
 
   it('reports on the variant --variant names and records the author', () => {

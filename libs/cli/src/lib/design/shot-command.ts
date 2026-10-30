@@ -9,7 +9,7 @@ import { INTERACTIONS } from './force-interactions';
 import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
-import { findSketch, parseTarget, Sketch } from './system/sketch/sketch';
+import { findSketch, parseTarget, rejectionOf, Sketch } from './system/sketch/sketch';
 import { createPartShooter, cropOf, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
@@ -164,14 +164,22 @@ export const gridRowsOf = (row: Plan[], grid: ListedGrid): Plan[][] => {
   return [rest, ...rows].filter((cells) => cells.length > 0);
 };
 
-export const rowsOf = (options: { part: string; variants: string[] | null; merged: boolean }): Axis[] => {
-  const { part, variants, merged } = options;
+export const rowsOf = (options: {
+  part: string;
+  variants: string[] | null;
+  merged: boolean;
+  rejected?: string[];
+}): Axis[] => {
+  const { part, variants, merged, rejected = [] } = options;
 
   if (!variants) return [{ label: '', sketch: null }];
 
   return [
     ...(merged ? [{ label: 'merged', sketch: null }] : []),
-    ...variants.map((variant) => ({ label: variant, sketch: { target: part, variant } })),
+    ...variants.map((variant) => ({
+      label: rejected.includes(variant) ? `${variant} rejected` : variant,
+      sketch: { target: part, variant },
+    })),
   ];
 };
 
@@ -410,7 +418,12 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 1;
   }
 
-  const rows = rowsOf({ part, variants: shownVariants, merged: Boolean(system.partOf({ product, part })) });
+  const rows = rowsOf({
+    part,
+    variants: shownVariants,
+    merged: Boolean(system.partOf({ product, part })),
+    rejected: sketch?.variants.filter((variant) => rejectionOf(sketch, variant)),
+  });
 
   if (!system.partOf({ product, part }) && !sketch) {
     console.error(`design-explore: product "${product}" has no part "${part}"`);

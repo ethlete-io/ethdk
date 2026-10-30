@@ -118,6 +118,8 @@ et design sketch report <layer>/<name> --variant b --by <model id> "phone"      
 et design sketch report <layer>/<name> --variant b --by <model id> --done         # you stopped drawing b; Studio shows its frames
 et design sketch check [<layer>/<name>] [--fix]                                    # each variant laid over the product
 et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
+et design sketch reject <layer>/<name> --variant b [--reason <text>] --by <model id> # only when the user rejected b; no pick or merge until reopened
+et design sketch reopen <layer>/<name> --variant b [--reason <text>] --by <model id> # only when the user takes b back; the rejection stays in the history
 ```
 
 Variants are alternatives. A variant never stands for a state of another variant: a hidden or

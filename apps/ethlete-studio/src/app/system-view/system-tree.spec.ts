@@ -1075,4 +1075,23 @@ describe('picking a variant', () => {
     expect(pickedVariantOf(sketch({ decision: { kind: 'discard', decidedAt } }))).toBeNull();
     expect(pickedVariantOf(sketch())).toBeNull();
   });
+
+  it('takes a rejected variant out of the pick until it is reopened', () => {
+    const decidedAt = '2026-10-30T11:00:00.000Z';
+    const rejected = sketch({
+      status: 'ready',
+      decision: { kind: 'pick', variant: 'a', decidedAt },
+      rejections: { a: [{ by: 'designer', decidedAt }] },
+    });
+    const reopened = sketch({
+      status: 'ready',
+      decision: { kind: 'pick', variant: 'a', decidedAt },
+      rejections: { a: [{ by: 'designer', decidedAt, reopened: { by: 'agent', decidedAt } }] },
+    });
+
+    expect(canPick(rejected, 'a')).toBe(false);
+    expect(pickedVariantOf(rejected)).toBeNull();
+    expect(canPick(reopened, 'a')).toBe(true);
+    expect(pickedVariantOf(reopened)).toBe('a');
+  });
 });

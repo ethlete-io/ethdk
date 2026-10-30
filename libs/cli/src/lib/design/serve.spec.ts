@@ -756,6 +756,40 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
   });
 
+  it('records a designer rejection, refuses its pick and merge with the reason, and reopens it', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const decide = (body: Record<string, unknown>) => ask('/__design/sketch-decision', sketchQuery, 'POST', body);
+
+    expect((await decide({ kind: 'reject' })).status).toBe(400);
+    expect((await decide({ kind: 'reason', variant: 'b' })).status).toBe(400);
+    expect((await decide({ kind: 'pick', variant: 'b' })).status).toBe(200);
+    expect(await decide({ kind: 'reject', variant: 'b' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ by: 'designer', decidedAt: expect.any(String) }] } },
+    });
+    expect(await decide({ kind: 'reason', variant: 'b', reason: 'too flat' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ by: 'designer', reason: 'too flat', reasonBy: 'designer' }] } },
+    });
+    expect(await decide({ kind: 'pick', variant: 'b' })).toMatchObject({
+      status: 422,
+      body: { error: 'components/card variant b is rejected by the designer: too flat - reopen it first' },
+    });
+    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', {})).toMatchObject({
+      status: 422,
+      body: { error: expect.stringContaining('has no pick') },
+    });
+    expect(await decide({ kind: 'reopen', variant: 'b', reason: 'second look' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ reopened: { by: 'designer', reason: 'second look' } }] } },
+    });
+    expect((await decide({ kind: 'pick', variant: 'b' })).status).toBe(200);
+  });
+
   it('discards a sketch, and refuses a merge without a pick', async () => {
     const target = acme();
 

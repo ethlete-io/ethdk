@@ -177,6 +177,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Each rejection and each reason stores who wrote it (`by: 'designer' | 'agent'`), each on its
   own. A rejected variant counts as decided and drops out of the pick and merge choice, but
   stays visible.
+- **Built (2026-10-30, `claude-sdk58`):** `rejections` in the sketch file (a list per variant,
+  so a reject after a reopen keeps the history). `et design sketch reject|reopen <part> --variant
+<v> [--reason <text>] --by <model id | designer>`. Pick, merge and the auto-merge refuse a
+  rejected variant; Studio dims it with Reject, Reopen and "Note as reason". Specs only: not yet
+  seen in a real browser, and I/J are not rejected yet. Stays open until Tom accepts it in Studio.
 
 ## 4. Render checks and shots
 

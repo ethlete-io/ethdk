@@ -158,11 +158,12 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent],
   host: {
     class:
-      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
+      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',
     '[attr.data-pending]': 'frame().pending !== undefined || null',
+    '[attr.data-rejected]': 'frame().rejected || null',
     '[attr.data-fitted]': 'frame().width === undefined || null',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',

@@ -11,6 +11,7 @@ import {
   frameUrl,
   partFrameUrl,
   partShotUrl,
+  rejectionOf,
 } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
@@ -746,8 +747,13 @@ export const sketchMatrixOf = ({
     const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
 
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
-    const named = [variant, authorsLabelOf(authors)].filter(Boolean).join(' · ');
-    const note = [sketch.variantInfo?.[variant]?.note, silent && variant === reported && 'No report for 30 min']
+    const rejected = rejectedLabelOf(sketch, variant);
+    const named = [variant, authorsLabelOf(authors), rejected && 'rejected'].filter(Boolean).join(' · ');
+    const note = [
+      rejected && `${rejected.text} (${rejected.by})`,
+      sketch.variantInfo?.[variant]?.note,
+      silent && variant === reported && 'No report for 30 min',
+    ]
       .filter(Boolean)
       .join('\n\n');
 
@@ -872,6 +878,7 @@ export const sketchMatrixOf = ({
       ...rowOf(row, column.key),
       column: column.key,
       ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
+      ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
       screenshot: partShotUrl({
         ...address,
         preset: cell.preset,
@@ -978,6 +985,7 @@ export const sketchMatrixOf = ({
               rowLabel: `in ${key}`,
               column: contextColumnKeyOf(column.key),
               ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
+              ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
             },
           ]
         : [];
@@ -1111,15 +1119,36 @@ export const mergePreviewOf = ({
   };
 };
 
-/** Whether the user may pick a variant: the sketch is ready and the variant breaks no rule. */
+/** Whether the user may pick a variant: the sketch is ready, and the variant is not rejected and breaks no rule. */
 export const canPick = (sketch: ListedSketch, variant: string) =>
-  sketch.status === 'ready' && (sketch.problems.find((entry) => entry.variant === variant)?.problems.length ?? 0) === 0;
+  sketch.status === 'ready' &&
+  !rejectionOf(sketch, variant) &&
+  (sketch.problems.find((entry) => entry.variant === variant)?.problems.length ?? 0) === 0;
 
-/** The variant the user picked, or `null` before a pick or after a discard decision. */
+/** The variant the user picked, or `null` before a pick, after a discard decision, or once it is rejected. */
 export const pickedVariantOf = (sketch: ListedSketch) =>
-  sketch.decision?.kind === 'pick' && sketch.variants.includes(sketch.decision.variant)
+  sketch.decision?.kind === 'pick' &&
+  sketch.variants.includes(sketch.decision.variant) &&
+  !rejectionOf(sketch, sketch.decision.variant)
     ? sketch.decision.variant
     : null;
+
+/** "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; `null` while it is live. */
+export const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string) => {
+  const rejection = rejectionOf(sketch, variant);
+
+  if (!rejection) return null;
+
+  const reasonBy =
+    rejection.reason && rejection.reasonBy && rejection.reasonBy !== rejection.by
+      ? `, reason by the ${rejection.reasonBy}`
+      : '';
+
+  return {
+    text: rejection.reason ? `Rejected: ${rejection.reason}` : 'Rejected',
+    by: `by the ${rejection.by}${reasonBy}`,
+  };
+};
 
 /** The width a call frame takes when its call declares none. */
 export const DEFAULT_CALL_WIDTH = 1280;

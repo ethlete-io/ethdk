@@ -35,7 +35,15 @@ import { compareMerge, PictureOf } from './merge-compare';
 import { BoxOf, diffVariant } from './variant-diff';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
-import { decideSketch, findSketch, listSketches, parseTarget, readSketchReport, Sketch } from './system/sketch/sketch';
+import {
+  decideSketch,
+  findSketch,
+  SketchDecisionInput,
+  listSketches,
+  parseTarget,
+  readSketchReport,
+  Sketch,
+} from './system/sketch/sketch';
 import { partKeyOf } from './system/resolve-product';
 import { unchangedStatesOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
@@ -46,6 +54,8 @@ export const SKETCH_COMPARE_PATH = '/__design/sketch-compare';
 export const SKETCH_DIFF_PATH = '/__design/sketch-diff';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
+
+const SKETCH_DECISION_KINDS: readonly SketchDecisionInput['kind'][] = ['pick', 'discard', 'reject', 'reason', 'reopen'];
 export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
 export const COMMENTS_PATH = '/__design/comments';
 export const COMMENT_PATH = '/__design/comment';
@@ -305,22 +315,30 @@ export const sketchDiffAnswer = withSketch('GET', async ({ asked, product, sketc
   };
 });
 
-/** POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }` or `{ kind: 'discard', comment? }`: writes the decision into sketch.json. */
+/**
+ * POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }`, `{ kind: 'discard', comment? }`, or a verdict
+ * by the designer on one variant: `{ kind: 'reject' | 'reopen', variant, reason? }` or `{ kind: 'reason', variant, reason }`.
+ * Writes it into sketch.json.
+ */
 export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch }) => {
   const body = await bodyOf(asked.request);
+  const kind = body?.['kind'] as SketchDecisionInput['kind'];
   const comment = textOf(body?.['comment']);
-  const variant = textOf(body?.['variant']);
+  const reason = textOf(body?.['reason']);
+  const variant = textOf(body?.['variant']) ?? '';
 
-  if (body?.['kind'] !== 'pick' && body?.['kind'] !== 'discard') return failure(400, 'kind must be pick or discard');
-  if (body['kind'] === 'pick' && !variant) return failure(400, 'a pick needs a variant');
+  if (!SKETCH_DECISION_KINDS.includes(kind))
+    return failure(400, `kind must be one of ${SKETCH_DECISION_KINDS.join(', ')}`);
+  if (kind !== 'discard' && !variant) return failure(400, `a ${kind} needs a variant`);
+  if (kind === 'reason' && !reason) return failure(400, 'a reason needs text');
 
-  const decided = decideSketch({
-    sketch,
-    decision:
-      body['kind'] === 'pick' && variant
-        ? { kind: 'pick', variant, ...(comment ? { comment } : {}) }
-        : { kind: 'discard', ...(comment ? { comment } : {}) },
-  });
+  const decision: SketchDecisionInput =
+    kind === 'discard'
+      ? { kind, ...(comment ? { comment } : {}) }
+      : kind === 'pick'
+        ? { kind, variant, ...(comment ? { comment } : {}) }
+        : { kind, variant, reason: reason ?? '', by: 'designer' };
+  const decided = decideSketch({ sketch, decision });
 
   return typeof decided === 'string'
     ? failure(422, decided)

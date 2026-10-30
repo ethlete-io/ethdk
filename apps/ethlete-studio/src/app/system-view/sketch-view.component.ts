@@ -74,6 +74,7 @@ import {
   canPick,
   mergePreviewOf,
   pickedVariantOf,
+  rejectedLabelOf,
   reportExpiryOf,
   roundColumnKeyOf,
   sketchMatrixOf,
@@ -84,7 +85,7 @@ import {
   usingPagesOf,
 } from './system-tree';
 
-type Busy = 'pick' | 'merge' | 'discard';
+type Busy = 'pick' | 'merge' | 'discard' | 'verdict';
 
 type Shown = 'matrix' | 'merge';
 
@@ -125,21 +126,76 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     <section class="flex flex-col gap-2 border-b border-surface-border px-4 py-3 text-small" aria-label="Decision">
       <div class="flex flex-wrap gap-3" role="group" aria-label="Variants">
         @for (variant of shown.variants; track variant) {
-          <div class="flex max-w-80 flex-col gap-1">
-            <button
-              [pressed]="variant === picked()"
-              [disabled]="busy() !== null || !pickable(variant)"
-              [title]="pickTitle(variant)"
-              (click)="pick(variant)"
-              et-button
-              type="button"
-              variant="outline"
-              color="surface"
-              pressedColor="inherit"
-              size="sm"
-            >
-              {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
-            </button>
+          @let rejected = rejectedLabels()[variant];
+          <div
+            [class.opacity-60]="rejected"
+            [attr.data-rejected-variant]="rejected ? variant : null"
+            class="flex max-w-80 flex-col gap-1"
+          >
+            @if (rejected) {
+              <span class="font-semibold" data-rejected-reason>{{ variant }} · {{ rejected.text }}</span>
+              <span class="text-[var(--et-surface-color-subtle-solid)]" data-rejected-by>{{ rejected.by }}</span>
+              <div class="flex gap-1">
+                <button
+                  [disabled]="busy() !== null"
+                  [title]="'Make ' + variant + ' pickable again; the note, if any, is the reason'"
+                  (click)="judge('reopen', variant)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  color="surface"
+                  size="sm"
+                  data-reopen
+                >
+                  Reopen {{ variant }}
+                </button>
+                @if (note().trim()) {
+                  <button
+                    [disabled]="busy() !== null"
+                    (click)="judge('reason', variant)"
+                    et-button
+                    type="button"
+                    variant="transparent"
+                    color="surface"
+                    size="sm"
+                    data-reject-reason
+                  >
+                    Note as reason
+                  </button>
+                }
+              </div>
+            } @else {
+              <div class="flex gap-1">
+                <button
+                  [pressed]="variant === picked()"
+                  [disabled]="busy() !== null || !pickable(variant)"
+                  [title]="pickTitle(variant)"
+                  (click)="pick(variant)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  color="surface"
+                  pressedColor="inherit"
+                  size="sm"
+                  data-pick
+                >
+                  {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
+                </button>
+                <button
+                  [disabled]="busy() !== null"
+                  [title]="'Reject ' + variant + '; the note, if any, is the reason'"
+                  (click)="judge('reject', variant)"
+                  et-button
+                  type="button"
+                  variant="transparent"
+                  color="surface"
+                  size="sm"
+                  data-reject
+                >
+                  Reject
+                </button>
+              </div>
+            }
             @if (diffSummaries()[variant]; as summary) {
               @if (summary.listed.length === 0) {
                 <span class="text-[var(--et-surface-color-subtle-solid)]" data-variant-diff-summary>{{
@@ -517,6 +573,11 @@ export class SketchViewComponent {
   protected confirmingDiscard = signal(false);
 
   protected picked = computed(() => pickedVariantOf(this.sketch()));
+  protected rejectedLabels = computed(() => {
+    const sketch = this.sketch();
+
+    return Object.fromEntries(sketch.variants.map((variant) => [variant, rejectedLabelOf(sketch, variant)]));
+  });
 
   private address = computed<SketchAddress>(() => ({
     port: this.port(),
@@ -880,6 +941,20 @@ export class SketchViewComponent {
     const comment = this.note().trim();
 
     this.run('pick', decideSketch$(this.address(), { kind: 'pick', variant, ...(comment ? { comment } : {}) }));
+  }
+
+  protected judge(kind: 'reject' | 'reopen' | 'reason', variant: string) {
+    const reason = this.note().trim();
+
+    if (kind === 'reason' && !reason) return;
+
+    this.run(
+      'verdict',
+      decideSketch$(
+        this.address(),
+        kind === 'reason' ? { kind, variant, reason } : { kind, variant, ...(reason ? { reason } : {}) },
+      ),
+    );
   }
 
   protected merge() {

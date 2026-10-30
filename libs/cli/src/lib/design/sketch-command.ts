@@ -30,11 +30,14 @@ import {
   markSketchReady,
   parseTarget,
   rebaseSketch,
+  rejectionOf,
   reportSketch,
   runningRoundOf,
   sharedDirOf,
   Sketch,
   sketchSourceOf,
+  SketchVariantVerdict,
+  SketchVerdictBy,
   sourceFilesIn,
 } from './system/sketch/sketch';
 
@@ -50,6 +53,8 @@ export const SKETCH_USAGE = [
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
+  'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
+  'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -63,12 +68,17 @@ const FLAG_HELP: Record<string, string> = {
   '--from': 'the variant to copy',
   '--title': 'the new title of the round',
   '--drops': 'the states the round drops on purpose, a comma list',
-  '--variant': 'the variant the report is about',
+  '--variant': 'the variant the command is about',
+  '--reason':
+    'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
   '--done': 'end the live report of the variant',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--fix': "write the variants in the checkout's Prettier format first",
 };
+
+const VERDICT_BY_HELP =
+  "a model id records the verdict as the agent's; --by designer records it as the designer's - only when the designer said it at this terminal";
 
 const NOTE_HELP: Record<string, string> = {
   new: 'what the first round shows',
@@ -79,14 +89,21 @@ const NOTE_HELP: Record<string, string> = {
 
 /** One line per flag the usage line names, for `sketch <command> --help`. */
 export const sketchFlagHelpOf = (usage: string) => {
-  const help: Record<string, string | undefined> = { ...FLAG_HELP, '--note': NOTE_HELP[usage.split(' ')[1] ?? ''] };
+  const command = usage.split(' ')[1] ?? '';
+  const help: Record<string, string | undefined> = {
+    ...FLAG_HELP,
+    '--note': NOTE_HELP[command],
+    ...(VERDICTS.has(command) ? { '--by': VERDICT_BY_HELP } : {}),
+  };
 
   return [...new Set(usage.match(/--[a-z-]+/gu) ?? [])].flatMap((flag) =>
     help[flag] === undefined ? [] : [`  ${flag.padEnd(16)}${help[flag]}`],
   );
 };
 
-const WRITES = new Set(['new', 'variant', 'round', 'report', 'ready', 'rebase', 'merge', 'discard']);
+const VERDICTS = new Set(['reject', 'reopen']);
+
+const WRITES = new Set(['new', 'variant', 'round', 'report', 'ready', 'rebase', 'merge', 'discard', ...VERDICTS]);
 
 type Context = { target: string; config: DesignConfig; args: Args; noSketchHint?: string };
 
@@ -387,8 +404,11 @@ const listed = (context: Context) => {
           ? `, picked ${sketch.decision.variant}`
           : ', discard asked'
         : '';
+      const rejected = sketch.variants.filter((variant) => rejectionOf(sketch, variant));
 
-      console.log(`${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}`);
+      console.log(
+        `${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}`,
+      );
 
       for (const round of sketch.rounds) {
         const variants = sketch.variants.filter((variant) => sketch.variantInfo[variant]?.round === round.key);
@@ -497,7 +517,7 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
   }
 
   const author = authorOf(context.args) ?? undefined;
-  const variant = sketch.variants[0] ?? '';
+  const variant = sketch.variants.find((candidate) => !rejectionOf(sketch, candidate)) ?? '';
   const decided = decideSketch({ sketch, decision: { kind: 'pick', variant } });
 
   if (typeof decided === 'string') return fail(decided);
@@ -731,6 +751,49 @@ const discarded = (context: Context) =>
     return 0;
   });
 
+const verdictOriginOf = (by: SketchVerdictBy, of: SketchVerdictBy | undefined) =>
+  of && of !== by ? ` (reason by the ${of})` : '';
+
+/** The verdicts a variant had, oldest first, and whether it is rejected now. */
+export const verdictLinesOf = (sketch: Sketch, variant: string) => {
+  const history = sketch.rejections?.[variant] ?? [];
+  const lines = history.flatMap((rejection) => [
+    `  rejected by the ${rejection.by} at ${rejection.decidedAt}${verdictOriginOf(rejection.by, rejection.reasonBy)}${rejection.reason ? `: ${rejection.reason}` : ''}`,
+    ...(rejection.reopened
+      ? [
+          `  reopened by the ${rejection.reopened.by} at ${rejection.reopened.decidedAt}${rejection.reopened.reason ? `: ${rejection.reopened.reason}` : ''}`,
+        ]
+      : []),
+  ]);
+
+  return [`${sketch.target} variant ${variant}: ${rejectionOf(sketch, variant) ? 'rejected' : 'live'}`, ...lines];
+};
+
+const judged = (kind: 'reject' | 'reopen') => (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const { positional, values } = context.args;
+    const variant = values['--variant'];
+    const reason = values['--reason']?.trim() || undefined;
+    const by: SketchVerdictBy = authorOf(context.args) === 'designer' ? 'designer' : 'agent';
+
+    if (positional.length !== 1 || !variant)
+      return fail(
+        `usage: sketch ${kind} <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]`,
+      );
+
+    const decision: SketchVariantVerdict =
+      kind === 'reject' && reason && rejectionOf(sketch, variant)
+        ? { kind: 'reason', variant, reason, by }
+        : { kind, variant, ...(reason ? { reason } : {}), by };
+    const decided = decideSketch({ sketch, decision });
+
+    if (typeof decided === 'string') return fail(decided);
+
+    verdictLinesOf(decided, variant).forEach((line) => console.log(line));
+
+    return 0;
+  });
+
 const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
   variant: varied,
@@ -743,9 +806,14 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   rebase: rebased,
   merge: merged,
   discard: discarded,
+  reject: judged('reject'),
+  reopen: judged('reopen'),
 };
 
-/** `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and discards sketches. */
+/**
+ * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and
+ * discards sketches, and rejects and reopens their variants.
+ */
 export const designSketch = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
@@ -763,6 +831,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
     '--like',
     '--drops',
     '--variant-note',
+    '--reason',
   ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 

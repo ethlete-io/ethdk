@@ -417,6 +417,73 @@ describe('SketchViewComponent merge without a note', () => {
     expect(completed).toEqual(['components/card']);
   });
 
+  it('shows a rejected variant dimmed with its reason and origin, without Pick, and reopens or rejects with the note', async () => {
+    const bodies: unknown[] = [];
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) {
+        bodies.push(JSON.parse(String(init?.body ?? '{}')));
+
+        return json({});
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      variants: ['a', 'b', 'c'],
+      rejections: {
+        a: [{ by: 'agent', decidedAt: '2026-10-30T10:00:00Z', reason: 'too loud', reasonBy: 'designer' }],
+        c: [
+          {
+            by: 'designer',
+            decidedAt: '2026-10-30T10:00:00Z',
+            reopened: { by: 'designer', decidedAt: '2026-10-30T11:00:00Z' },
+          },
+        ],
+      },
+    } satisfies ListedSketch);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+    const rejected = root.querySelector<HTMLElement>('[data-rejected-variant="a"]');
+
+    expect(root.querySelectorAll('[data-rejected-variant]').length).toBe(1);
+    expect(rejected?.classList).toContain('opacity-60');
+    expect(rejected?.querySelector('[data-rejected-reason]')?.textContent?.trim()).toBe('a · Rejected: too loud');
+    expect(rejected?.querySelector('[data-rejected-by]')?.textContent?.trim()).toBe(
+      'by the agent, reason by the designer',
+    );
+    expect(rejected?.querySelector('[data-pick]')).toBeNull();
+    expect([...root.querySelectorAll('[data-pick]')].map((button) => button.textContent?.trim())).toEqual([
+      'Picked b',
+      'Pick c',
+    ]);
+    expect(root.querySelector<HTMLElement>('[data-frame-id][data-rejected]')).not.toBeNull();
+
+    rejected?.querySelector<HTMLButtonElement>('[data-reopen]')?.click();
+    await settle(fixture);
+    fixture.componentInstance['note'].set('off brand');
+    await settle(fixture);
+    root.querySelectorAll<HTMLButtonElement>('[data-reject]')[1]?.click();
+    await settle(fixture);
+    root.querySelector<HTMLButtonElement>('[data-reject-reason]')?.click();
+    await settle(fixture);
+
+    expect(bodies).toEqual([
+      { kind: 'reopen', variant: 'a' },
+      { kind: 'reject', variant: 'c', reason: 'off brand' },
+      { kind: 'reason', variant: 'a', reason: 'off brand' },
+    ]);
+  });
+
   it('lets the user merge and discard while the sketch has open comments', async () => {
     const comment = {
       part: 'components/card',
