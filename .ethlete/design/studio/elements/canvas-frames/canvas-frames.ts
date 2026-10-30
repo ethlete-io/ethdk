@@ -1,4 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
+import { buttonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
 import styles from './canvas-frames.css?inline';
 
@@ -7,7 +8,7 @@ export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 export type StateGridOptions = { cellWidth?: string; place?: 'fill' | 'center' };
 
 /** The CSS for `stateGrid`, `canvasFrame` and `canvasView`; add it once to the drawing's styles. */
-export const canvasFrameStyles = styles;
+export const canvasFrameStyles = styles + buttonStyles;
 
 const perLine = 4;
 
@@ -86,11 +87,23 @@ export const canvasZoomClass =
 
 export const canvasZoomValueClass = 'text-text font-code';
 
-/** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
+const chipButton = (label: string, extra = '') =>
+  button.render({ label, variant: 'transparent', color: 'surface', size: 'sm', class: extra || undefined });
+
+const [zoomOut, zoomValue, zoomIn, zoomFit] = await Promise.all([
+  chipButton('−'),
+  chipButton('ZOOM', 'tabular-nums'),
+  chipButton('+'),
+  chipButton('Fit'),
+]);
+
+/** The canvas: the frames from the top left at the given zoom, and the app's zoom chip in the corner. */
 export const canvasView = (frames: string[], zoom: string) =>
   html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
-    <div class="${canvasZoomClass}"><span>Fit</span><span class="${canvasZoomValueClass}">${zoom}</span></div>
+    <div class="absolute right-space-3 bottom-space-3 flex rounded-control-md border border-surface-border bg-surface">
+      ${zoomOut.body}${zoomValue.body.replace('ZOOM', `${parseFloat(zoom)} %`)}${zoomIn.body}${zoomFit.body}
+    </div>
   </div>`;
 
 type Props = { part: string; states: string[]; zoom: string };
@@ -140,7 +153,7 @@ export default definePart({
     );
     return drawing({
       body: canvasView([canvasFrame(part, grid)], zoom),
-      styles: (rows[0]?.cells[0]?.styles ?? '') + styles,
+      styles: canvasFrameStyles,
     });
   },
 });
