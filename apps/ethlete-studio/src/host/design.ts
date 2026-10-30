@@ -1,6 +1,7 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, from, fromEvent, map, merge, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, defer, from, map, merge, of, switchMap, throwError } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
+import { designEvents$, designStreamIsOpen } from './design-events';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
 /** What the user ruled about a variant. A variant without one is still open. */
@@ -636,20 +637,13 @@ export type CommentEvent = 'connected' | 'changed';
  * Errors when the stream drops, so a subscriber sees the gap instead of the browser's silent reconnect.
  */
 export const commentChanges$ = (port: number): Observable<CommentEvent> =>
-  new Observable<EventSource>((subscriber) => {
-    const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
-
-    subscriber.next(events);
-
-    return () => events.close();
-  }).pipe(
-    switchMap((events) =>
-      merge(
-        fromEvent(events, 'open').pipe(map((): CommentEvent => 'connected')),
-        fromEvent(events, 'comments').pipe(map((): CommentEvent => 'changed')),
-        fromEvent(events, 'error').pipe(
-          switchMap(() => throwError(() => new Error('The comment events stream dropped.'))),
-        ),
+  defer(() =>
+    merge(
+      designStreamIsOpen(port) ? of<CommentEvent>('connected') : EMPTY,
+      designEvents$(port, 'open').pipe(map((): CommentEvent => 'connected')),
+      designEvents$(port, 'comments').pipe(map((): CommentEvent => 'changed')),
+      designEvents$(port, 'error').pipe(
+        switchMap(() => throwError(() => new Error('The comment events stream dropped.'))),
       ),
     ),
   );

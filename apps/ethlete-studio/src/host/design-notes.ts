@@ -1,4 +1,5 @@
-import { Observable, fromEvent, map, switchMap } from 'rxjs';
+import { Observable, map } from 'rxjs';
+import { designEvents$ } from './design-events';
 import { ProductAddress, designAnswer$ } from './design';
 
 type Point = { x: number; y: number };
@@ -66,14 +67,4 @@ export const deleteFlowNote$ = (address: FlowAddress, id: string): Observable<vo
   designAnswer$<unknown>(noteUrl(address, 'flow-note-delete'), post({ id })).pipe(done);
 
 /** Emits whenever a note file of the checkout changes, from the design server's own event stream. */
-export const noteChanges$ = (port: number): Observable<void> =>
-  new Observable<EventSource>((subscriber) => {
-    const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
-
-    subscriber.next(events);
-
-    return () => events.close();
-  }).pipe(
-    switchMap((events) => fromEvent(events, 'notes')),
-    map(() => undefined),
-  );
+export const noteChanges$ = (port: number): Observable<void> => designEvents$(port, 'notes').pipe(map(() => undefined));

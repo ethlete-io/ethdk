@@ -1,4 +1,5 @@
-import { Observable, fromEvent, map, switchMap } from 'rxjs';
+import { Observable, map } from 'rxjs';
+import { designEvents$ } from './design-events';
 import { ProductAddress, SystemProblem, designAnswer$ } from './design';
 import { FlowNote } from './design-notes';
 
@@ -20,14 +21,4 @@ export const listedFlows$ = ({ port, product }: ProductAddress): Observable<List
   designAnswer$<ListedFlows>(`http://localhost:${port}/__design/flows?product=${encodeURIComponent(product)}`);
 
 /** Emits whenever a flow file of the checkout changes, from the design server's own event stream. */
-export const flowChanges$ = (port: number): Observable<void> =>
-  new Observable<EventSource>((subscriber) => {
-    const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
-
-    subscriber.next(events);
-
-    return () => events.close();
-  }).pipe(
-    switchMap((events) => fromEvent(events, 'flows')),
-    map(() => undefined),
-  );
+export const flowChanges$ = (port: number): Observable<void> => designEvents$(port, 'flows').pipe(map(() => undefined));

@@ -1,4 +1,5 @@
-import { Observable, filter, fromEvent, map, switchMap } from 'rxjs';
+import { Observable, filter, map } from 'rxjs';
+import { designEvents$ } from './design-events';
 
 /** One part as a frame draws it: in a product, or in one variant of one of the product's sketches. */
 export type DrawnPart = { product: string; part: string; sketch: { target: string; variant: string } | null };
@@ -28,14 +29,7 @@ const partsChangeOf = (data: unknown): PartsChange | null => {
 
 /** Emits each `parts` event of the design server: which drawn parts a file change redraws. */
 export const partsChanges$ = (port: number): Observable<PartsChange> =>
-  new Observable<EventSource>((subscriber) => {
-    const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
-
-    subscriber.next(events);
-
-    return () => events.close();
-  }).pipe(
-    switchMap((events) => fromEvent<MessageEvent>(events, 'parts')),
+  designEvents$(port, 'parts').pipe(
     map((event) => partsChangeOf(event.data)),
     filter((change): change is PartsChange => change !== null),
   );
