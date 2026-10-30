@@ -134,7 +134,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
       outline-offset: -2px;
     }
 
@@ -205,7 +205,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
       outline-offset: -2px;
     }
   }
