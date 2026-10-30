@@ -79,6 +79,8 @@ const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
 const ROW_HEAD_HEIGHT = 48;
 const ROW_HEAD_GAP = 24;
+/** A row head label stops growing here: at about 32px high it still fits the head height plus its gap, so heads never overlap. */
+const ROW_HEAD_MAX_SCALE = 2;
 const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
@@ -262,6 +264,8 @@ export class DesignCanvasComponent {
   });
 
   protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
+
+  protected rowHeadScale = computed(() => Math.min(this.labelScale(), ROW_HEAD_MAX_SCALE));
 
   /** The scale of the note column below a frame; it stops growing at `NOTE_MAX_SCALE`, the room the layout keeps for it. */
   private noteScale = computed(() => Math.min(this.labelScale(), NOTE_MAX_SCALE));

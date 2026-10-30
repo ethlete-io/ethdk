@@ -32,7 +32,7 @@
     </div>
     <button
       [style.top.px]="head.y"
-      [style.transform]="'translateX(-4rem) scale(' + labelScale() + ')'"
+      [style.transform]="'translateX(-4rem) scale(' + rowHeadScale() + ')'"
       [title]="head.title ?? head.label"
       [attr.aria-expanded]="head.open"
       (click)="toggleRow(head.key, $event)"

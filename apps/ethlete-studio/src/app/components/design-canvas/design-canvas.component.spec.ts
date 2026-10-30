@@ -391,6 +391,11 @@ describe('DesignCanvasComponent', () => {
     expect(topOf(inbox) - topOf(heads[0])).toBe(48 + 24);
     expect(topOf(heads[1])).toBeGreaterThan(topOf(inbox));
 
+    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.16 });
+    await fixture.whenStable();
+
+    expect(heads[1]?.style.transform).toBe('translateX(-4rem) scale(2)');
+
     heads[1]?.click();
 
     expect(toggled).toEqual(['unchanged system']);
