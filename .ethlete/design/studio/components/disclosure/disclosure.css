@@ -1,0 +1,50 @@
+@layer components {
+  .st-disclosure {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .st-disclosure:hover {
+    color: var(--text);
+  }
+
+  .st-disclosure:focus-visible {
+    color: var(--text);
+    border-radius: var(--radius-control-sm);
+    outline: none;
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+
+  .st-disclosure svg {
+    flex: none;
+    transition: rotate 120ms;
+  }
+
+  .st-disclosure[aria-expanded='true'] svg {
+    rotate: 90deg;
+  }
+
+  .st-disclosure-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-1) 0 0 calc(var(--space-2) + 14px + var(--space-2));
+    list-style: none;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .st-disclosure-body li {
+    display: flex;
+    gap: var(--space-2);
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "part": "components/disclosure",
+  "state": "focus-visible",
+  "size": 320,
+  "text": "sieht komsch aus",
+  "point": {
+    "x": 78,
+    "y": 8
+  },
+  "sketch": {
+    "target": "components/disclosure",
+    "variant": "a",
+    "createdAt": "2026-10-30T13:49:46.555Z"
+  },
+  "createdAt": "2026-10-30T13:50:29.540Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Der Fokus-Ring lag direkt auf Chevron und Text. Die Zeile hat jetzt seitlich Innenabstand (--space-2), wie vorher in pages/merge.",
+      "createdAt": "2026-10-30T13:50:59.613Z"
+    }
+  ],
+  "addressed": {
+    "by": "user",
+    "reason": "merge",
+    "addressedAt": "2026-10-30T13:51:20.648Z"
+  }
+}
