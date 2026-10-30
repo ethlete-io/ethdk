@@ -1,0 +1,303 @@
+import { spawn } from 'child_process';
+import { existsSync, readFileSync } from 'fs';
+import { isAbsolute, resolve } from 'path';
+import { createInterface } from 'readline';
+import { buildStampOf } from './stamp';
+
+export const MCP_USAGE = 'mcp';
+
+export const MCP_PROTOCOL_VERSION = '2025-06-18';
+
+type ToolInput = { name: string; flag?: string; description: string; required?: boolean; type?: 'string' | 'integer' };
+
+type ToolSpec = {
+  name: string;
+  description: string;
+  command: string[];
+  positional?: ToolInput[];
+  values?: ToolInput[];
+  switches?: ToolInput[];
+};
+
+export type ToolRun = { code: number; stdout: string; stderr: string };
+
+export type ToolRunner = (argv: string[]) => Promise<ToolRun>;
+
+const BY: ToolInput = {
+  name: 'by',
+  flag: '--by',
+  description: 'The exact model id of the agent that writes, e.g. claude-opus-5-5.',
+  required: true,
+};
+
+const PART: ToolInput = { name: 'part', description: 'The part, as <layer>/<name>.', required: true };
+
+const PRODUCT: ToolInput = {
+  name: 'product',
+  flag: '--product',
+  description: 'The product. Optional when the workspace has only one.',
+};
+
+const SIZE: ToolInput[] = [
+  { name: 'preset', flag: '--preset', description: 'A preset of the product, e.g. phone.' },
+  { name: 'width', flag: '--width', description: 'A width in px instead of a preset.', type: 'integer' },
+  { name: 'scale', flag: '--scale', description: 'The device scale, 1 to 4.', type: 'integer' },
+  { name: 'surface', flag: '--surface', description: 'The surface theme to draw on.' },
+  { name: 'color', flag: '--color', description: 'The colour theme to draw with.' },
+];
+
+/** The tools of `et design mcp`: each runs the `et design` command of the same name. */
+export const MCP_TOOLS: ToolSpec[] = [
+  {
+    name: 'parts',
+    description: "List each product's parts as JSON: origin, note, states, widths, presets and problems.",
+    command: ['system', '--json'],
+  },
+  {
+    name: 'check',
+    description: "Check a product's design system, or every product without one. Exits with an error on findings.",
+    command: ['check'],
+  },
+  {
+    name: 'shot',
+    description:
+      'Draw the states of a part, the same way as the Studio screenshots, and return the contact sheet image.',
+    command: ['shot'],
+    positional: [PART],
+    values: [
+      { name: 'state', flag: '--state', description: 'The states to draw, a comma list. All states without it.' },
+      { name: 'interaction', flag: '--interaction', description: 'An interaction to force, e.g. hover.' },
+      ...SIZE,
+    ],
+    switches: [{ name: 'variants', flag: '--variants', description: "Draw every variant of the part's open sketch." }],
+  },
+  {
+    name: 'motion_shots',
+    description:
+      'Draw a motion of a part at each keyframe time, in full and reduced motion. Returns the contact sheet image and the JSON of its tracks.',
+    command: ['motion', 'shots'],
+    positional: [PART, { name: 'motion', description: 'The motion name of the part.', required: true }],
+    values: [
+      { name: 'variant', flag: '--variant', description: 'A variant of the open sketch on the part.' },
+      { name: 'mode', flag: '--mode', description: 'full or reduced. Both without it.' },
+      ...SIZE,
+    ],
+  },
+  {
+    name: 'sketch_new',
+    description: 'Open a sketch on a part, new or existing. Each variant starts as a copy of the part.',
+    command: ['sketch', 'new'],
+    positional: [PART],
+    values: [
+      { name: 'variants', flag: '--variants', description: 'The variant keys, a comma list: a,b.', required: true },
+      { name: 'like', flag: '--like', description: 'Start each variant as a copy of this part instead.' },
+      { name: 'round', flag: '--round', description: 'The title of the first round.' },
+      { name: 'note', flag: '--note', description: 'What the sketch tries.' },
+      BY,
+    ],
+  },
+  {
+    name: 'sketch_report',
+    description: 'Tell Studio what you build on a variant now, e.g. "phone, outline state".',
+    command: ['sketch', 'report'],
+    positional: [PART, { name: 'text', description: 'What you build now.', required: true }],
+    values: [{ name: 'variant', flag: '--variant', description: 'The variant key.', required: true }, BY],
+  },
+  {
+    name: 'sketch_ready',
+    description: 'Mark a sketch ready for the user to pick.',
+    command: ['sketch', 'ready'],
+    positional: [PART],
+    values: [BY],
+  },
+  {
+    name: 'sketch_merge',
+    description: 'Merge the variant the user picked. Studio runs it on the click of the user.',
+    command: ['sketch', 'merge'],
+    positional: [PART],
+    values: [{ name: 'note', flag: '--note', description: 'The reason, the note of the part.' }, BY],
+  },
+  {
+    name: 'sketch_discard',
+    description: 'Drop a sketch. Studio runs it on the click of the user.',
+    command: ['sketch', 'discard'],
+    positional: [PART],
+    values: [BY],
+  },
+  {
+    name: 'inbox',
+    description: 'List the comment threads and sketches that wait for the agent, then those that wait for the user.',
+    command: ['inbox', '--json'],
+  },
+  {
+    name: 'inbox_done',
+    description: 'Set the note of the part a comment thread is about, then mark the thread addressed.',
+    command: ['inbox', 'done'],
+    positional: [{ name: 'id', description: 'The comment id.', required: true }],
+    values: [{ name: 'note', flag: '--note', description: 'The new note of the part.', required: true }, BY],
+  },
+];
+
+const inputsOf = (tool: ToolSpec) => [
+  ...(tool.positional ?? []),
+  ...(tool.values ?? []),
+  ...(tool.switches ?? []).map((input) => ({ ...input, type: 'boolean' as const })),
+  PRODUCT,
+];
+
+const inputSchemaOf = (tool: ToolSpec) => {
+  const inputs = inputsOf(tool);
+
+  return {
+    type: 'object',
+    properties: Object.fromEntries(
+      inputs.map((input) => [input.name, { type: input.type ?? 'string', description: input.description }]),
+    ),
+    required: inputs.filter((input) => input.required).map((input) => input.name),
+  };
+};
+
+/** The `et design` arguments a tool call runs, or why it cannot run. */
+export const toolArgvOf = (tool: ToolSpec, args: Record<string, unknown>): string[] | string => {
+  const missing = inputsOf(tool).filter((input) => input.required && (args[input.name] ?? '') === '');
+
+  if (missing.length > 0) return `${tool.name} needs ${missing.map((input) => input.name).join(', ')}`;
+
+  const valueOf = (input: ToolInput) => args[input.name];
+
+  return [
+    ...tool.command,
+    ...(tool.positional ?? []).flatMap((input) => (valueOf(input) === undefined ? [] : [String(valueOf(input))])),
+    ...[...(tool.values ?? []), PRODUCT].flatMap((input) =>
+      valueOf(input) === undefined || valueOf(input) === '' ? [] : [input.flag ?? '', String(valueOf(input))],
+    ),
+    ...(tool.name === 'shot' ? ['--states'] : []),
+    ...(tool.switches ?? []).flatMap((input) => (valueOf(input) === true ? [input.flag ?? ''] : [])),
+  ];
+};
+
+const filesOf = (options: { target: string; stdout: string; extension: string }) =>
+  options.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.endsWith(options.extension))
+    .map((line) => (isAbsolute(line) ? line : resolve(options.target, line)))
+    .filter((file) => existsSync(file));
+
+const resultOf = (target: string, run: ToolRun) => ({
+  content: [
+    { type: 'text', text: [run.stdout.trim(), run.stderr.trim()].filter(Boolean).join('\n') || `exit ${run.code}` },
+    ...filesOf({ target, stdout: run.stdout, extension: '.png' }).map((file) => ({
+      type: 'image',
+      data: readFileSync(file).toString('base64'),
+      mimeType: 'image/png',
+    })),
+    ...filesOf({ target, stdout: run.stdout, extension: '.json' }).map((file) => ({
+      type: 'text',
+      text: readFileSync(file, 'utf8'),
+    })),
+  ],
+  isError: run.code !== 0,
+});
+
+type Request = { id?: unknown; method?: string; params?: Record<string, unknown> };
+
+/** The answer to one JSON-RPC request of an MCP client; `null` for a notification. */
+export const mcpAnswerOf = async (options: { target: string; request: Request; run: ToolRunner }) => {
+  const { target, request, run } = options;
+
+  if (request.id === undefined || request.id === null) return null;
+
+  const answer = (result: unknown) => ({ jsonrpc: '2.0', id: request.id, result });
+
+  if (request.method === 'initialize') {
+    const asked = request.params?.['protocolVersion'];
+
+    return answer({
+      protocolVersion: typeof asked === 'string' ? asked : MCP_PROTOCOL_VERSION,
+      capabilities: { tools: {} },
+      serverInfo: { name: 'ethlete-design', version: buildStampOf().version },
+    });
+  }
+
+  if (request.method === 'ping') return answer({});
+
+  if (request.method === 'tools/list') {
+    return answer({
+      tools: MCP_TOOLS.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: inputSchemaOf(tool),
+      })),
+    });
+  }
+
+  if (request.method === 'tools/call') {
+    const name = request.params?.['name'];
+    const tool = MCP_TOOLS.find((candidate) => candidate.name === name);
+
+    if (!tool) return { jsonrpc: '2.0', id: request.id, error: { code: -32602, message: `unknown tool "${name}"` } };
+
+    const argv = toolArgvOf(tool, (request.params?.['arguments'] as Record<string, unknown> | undefined) ?? {});
+
+    if (typeof argv === 'string') return answer({ content: [{ type: 'text', text: argv }], isError: true });
+
+    return answer(resultOf(target, await run(argv)));
+  }
+
+  return {
+    jsonrpc: '2.0',
+    id: request.id,
+    error: { code: -32601, message: `${request.method} is not a method of this server` },
+  };
+};
+
+/** Runs `et design <argv>` of this same CLI in the workspace, in its own process so its output stays off the protocol. */
+export const cliRunnerOf =
+  (target: string): ToolRunner =>
+  (argv) =>
+    new Promise((done) => {
+      const child = spawn(process.execPath, [process.argv[1] ?? '', 'design', ...argv], {
+        cwd: target,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const stdout: Buffer[] = [];
+      const stderr: Buffer[] = [];
+
+      child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
+      child.stderr.on('data', (chunk: Buffer) => stderr.push(chunk));
+      child.on('error', (error) => done({ code: 1, stdout: '', stderr: error.message }));
+      child.on('close', (code) =>
+        done({ code: code ?? 1, stdout: Buffer.concat(stdout).toString(), stderr: Buffer.concat(stderr).toString() }),
+      );
+    });
+
+/**
+ * `et design mcp` serves the design tools to an MCP client over stdio. The workspace is the working directory;
+ * each tool runs the `et design` command of the same name there.
+ */
+export const designMcp = (options: { target: string; run?: ToolRunner }) => {
+  const { target } = options;
+  const run = options.run ?? cliRunnerOf(target);
+  const lines = createInterface({ input: process.stdin });
+  const pending = new Set<Promise<void>>();
+
+  lines.on('line', (line) => {
+    let request: Request;
+
+    try {
+      request = JSON.parse(line) as Request;
+    } catch {
+      return;
+    }
+
+    const answered = mcpAnswerOf({ target, request, run }).then((answer) => {
+      if (answer) process.stdout.write(`${JSON.stringify(answer)}\n`);
+    });
+
+    pending.add(answered);
+    void answered.finally(() => pending.delete(answered));
+  });
+
+  return new Promise<number>((done) => lines.on('close', () => void Promise.all([...pending]).then(() => done(0))));
+};

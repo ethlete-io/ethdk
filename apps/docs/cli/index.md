@@ -121,6 +121,13 @@ shot is cut to the union of the part and the animated elements over all keyframe
 up. Limits: an animation or step that starts after 30 s is not drawn, an infinite animation does not count towards `end`, and
 `interrupt` is not supported yet. The timeline in Studio comes in a later release.
 
+`et design mcp` serves the design tools to an MCP client over stdio, in the working directory of the session: `parts`,
+`check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `inbox` and
+`inbox_done`. Each runs the `et design` command of the same name and takes its flags as arguments; `product` may be left out
+when the workspace has one product, and every write takes `by`. `shot` returns the contact sheet image, drawn the same way as
+the Studio screenshots; `motion_shots` returns the sheet image and the JSON of its tracks. Part files are written with the
+agent's own file tools. Register it in `.mcp.json` as `{ "command": "npx", "args": ["et", "design", "mcp"] }`.
+
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
@@ -150,6 +157,14 @@ in the variant's `shared/`, then the sketch's, then the product's, then the base
 `merged.json` hash covers the shared files it reaches, so editing one marks each importer changed.
 At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
 the rest moves into the target's folder as before - with several targets, into each target that imports it.
+
+A sketch of a part the product takes from its base (`et design sketch new components/button --product studio`)
+merges into the base: the part folder in the base, and the base's `merged.json`. `sketch new … --override` opens it as a
+product override instead, and the merge writes a product copy. When the product overrides the part already, `sketch new`
+refuses without one of two flags: `--override` sketches the product copy, and `--into-base` starts from the copy, merges
+into the base and removes the copy with its `merged.json` entry. A part of a built-in base takes `--override` only.
+
+`sketch ready` refuses while a target of a live variant does not load.
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags

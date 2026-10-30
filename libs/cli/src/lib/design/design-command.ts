@@ -11,6 +11,7 @@ import { designProduct } from './product-command';
 import { serveDesign } from './serve';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
+import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
@@ -149,6 +150,11 @@ const helpOf = (invocation: string) =>
     '  inbox without --product covers every product.',
     '  --by is the exact model id of the agent that writes, e.g. claude-opus-5-5; every agent write needs it.',
     '',
+    `${invocation} ${MCP_USAGE}`,
+    '  Serve the design tools to an MCP client over stdio: parts, check, shot, motion_shots, sketch_new, sketch_report,',
+    '  sketch_ready, sketch_merge, sketch_discard, inbox and inbox_done. Each runs the command of the same name in the',
+    '  working directory and returns its output, its images and its JSON.',
+    '',
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
     '',
@@ -282,6 +288,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designMotion({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'mcp') {
+    const { target } = splitCheckout(argv.slice(1), root);
+
+    return designMcp({ target });
   }
 
   if (argv[0] === 'token') {
