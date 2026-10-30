@@ -600,6 +600,23 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   box-shadow, as `libs/components/src/lib/button/button.component.css`) and whether the disclosure
   body fades in when it opens (proposal: no, a body fade is a 4.54 transition).
 
+### 4.59 Icons are inline SVG in each part, not a catalogue - open
+
+- **Pain (Tom, 2026-10-30):** "ist das chevron nicht eig ein icon was wir als asset extrahieren
+  sollten in eine art icon catalouge?"
+- **Evidence:** 7 merged parts hold an inline `<svg>` (`components/disclosure`,
+  `components/tree-row`, `elements/shell-main`, `pages/inbox`, `pages/merge`, `pages/flows`,
+  `foundations/colors`). The check mark path `m3.5 8.5 3 3 6-7` is copied 4 times, the warning
+  triangle 2 times. Stroke width and viewBox differ between parts (16 and 24).
+- **Existing mechanism:** `svgAsset` and a product `assets/` folder. `foundations/logo` and
+  `foundations/agent-logos` already draw their SVGs this way and export a helper.
+- **Fix options:** 1. a `foundations/icons` part: one `.svg` per icon in `assets/icons/`, its
+  drawing is the catalogue (each icon with its name, at each size), and it exports
+  `icon(name, { size })`. `design check` fails an inline `<svg>` outside `foundations/`
+  (recommended). 2. the part only, without the check. An agent then draws inline again.
+- **Open for Tom:** one stroke width and one grid for all icons (proposal: 16 px viewBox,
+  1.5 stroke), and whether the Studio app later takes the same files through the SDK icon system.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked
