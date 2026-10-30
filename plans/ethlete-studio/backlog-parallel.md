@@ -290,6 +290,25 @@ generated CSS file.
   lightens, accepted), surface `subtle` light `112` (4.95:1), dark `135` (4.99:1). Apply to
   `apps/storybook/src/themes.ts` and `surface-themes.ts`, regenerate the Storybook CSS, then `yarn sdk:tokens`.
 
+### Motion, MCP and field decisions (Tom, 2026-10-30)
+
+- Q58 (motion slice 3, `4b57f37af`): the keyframe strip stays a panel below the canvas, not a row inside it.
+- Q59: the timeline driving the live frame (needs an outside switch into the frame) and token names on the
+  tracks go into a later motion slice.
+- Q60 (Stream B, Studio chat on `et design mcp`): one MCP server. The MCP `check` tool gets `call` and `variant`
+  args, `et design check` gets `--receipt <path>` (the CLI writes the receipt `call_status.rs` reads), and a new
+  MCP tool `call` returns call.ts, fixture.ts, the variant path and the frame URL. Then
+  `apps/ethlete-studio/src-tauri/src/tools.rs` goes and `cli_entry` moves into `design_server.rs`.
+- Q61 (`components/form-field`): `input` and `textarea` have no pressed look (hover, focus-visible and disabled
+  stay); the select keeps Q56 b. Matches `kind: 'field'` (hover, no active).
+
+### Viewport per state (Tom feedback, 2026-10-30)
+
+Each state is drawn in a viewport that fits that state, not one size per part. Seen on sdk `components/select`
+at 320 px: the open panel is cut off at the closed trigger's height. The same holds for a field with a hint or
+error versus one without, and for each size and variant of a part. Content outside the normal flow, for example an
+open overlay panel, counts towards the state's size. Fix it in the tool and Studio, not per sketch.
+
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
 The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
