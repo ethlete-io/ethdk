@@ -97,6 +97,15 @@ an exception.
 The six `foundations/colors` findings are the drawn disabled samples (`co-fill--disabled`, no `disabled`
 attribute). The `form-field` one is the label of a disabled field: the field is exempt, its label is not.
 
+Decisions (Tom, 2026-10-30):
+
+- **`foundations/colors` disabled samples:** mark them `aria-disabled="true"`, so the rule exempts them. No
+  part exception. The same sketch adds the `pairs` list and the ratio table below.
+- **`components/form-field` label:** the rule also exempts the label of a disabled control.
+- **`pages/inbox` resolved rows:** `.ib-when` and `.ib-where` use `--text-muted` with no reduced opacity; the
+  resolved row looks paler through colour, not transparency.
+- **`components/comment-pin` initials:** use `--on-accent`.
+
 Token pairs: none declared yet. The proposed list below gives, with the current `colors.css`: text, muted and
 subtle 7.71 / 6.54 / 5.69 on surface / raised / overlay; accent-, warning- and danger-text 6.98 or more;
 `on-accent` 6.95, `on-warning` 8.88, `on-danger` 6.03 on their fills, hover and active. All pass.

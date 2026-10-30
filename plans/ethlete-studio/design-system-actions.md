@@ -778,6 +778,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `yarn studio:themes` generates from `foundations/colors`. A part with SDK components draws other colours than
   the app.
 - **Fix option:** the product render loads the generated theme classes; then the override goes away (see Q4).
+- **Decision (Tom, 2026-10-30):** discard the `pages/sketches` sketch that removes the override; the block stays
+  until this fix lands. Also for the colour cleanup: a separate sketch drops the `surface-sunken` cell from
+  `foundations/agent-logos` (`surfaces` list); the builder may merge it and then the `foundations/colors`
+  sketch that removes the alias itself.
 
 ### 4.68 One change across many parts needs one sketch per part - open
 
