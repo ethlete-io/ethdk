@@ -950,4 +950,77 @@ export class MyComponent {
       expect(report.review).toEqual([]);
     });
   });
+
+  describe('synchronous observable consumers', () => {
+    it('should flag a piped observable that toSignal reads with requireSync', async () => {
+      tree.write(
+        'test.ts',
+        `import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterStateService } from '@ethlete/core';
+import { distinctUntilChanged, map } from 'rxjs';
+
+export class GameScopeService {
+  private _routerStateService = inject(RouterStateService);
+
+  scope$ = this._routerStateService.selectPathParam('gameScope').pipe(
+    map((p) => p ?? null),
+    distinctUntilChanged(),
+  );
+
+  scope = toSignal(this.scope$, { requireSync: true });
+}`,
+      );
+
+      const report = await migrateRouterStateService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toContain("scope$ = toObservable(injectPathParam('gameScope')).pipe(");
+      expect(report.review).toEqual([
+        'test.ts:12: toSignal(this.scope$, { requireSync: true }) reads an observable made by toObservable(), which emits only after its first effect run. Read the signal directly or use computed().',
+      ]);
+    });
+
+    it('should flag take(1) and withLatestFrom consumers', async () => {
+      tree.write(
+        'test.ts',
+        `import { RouterStateService } from '@ethlete/core';
+import { of, take, withLatestFrom } from 'rxjs';
+
+export class MyComponent {
+  private _routerStateService = inject(RouterStateService);
+
+  ngOnInit(): void {
+    this._routerStateService.route$.pipe(take(1)).subscribe();
+    of(1).pipe(withLatestFrom(this._routerStateService.route$)).subscribe();
+  }
+}`,
+      );
+
+      const report = await migrateRouterStateService(tree);
+
+      expect(report.review).toEqual([
+        'test.ts:9: take(1) reads an observable made by toObservable(), which emits only after its first effect run. Read the signal directly or use computed().',
+        'test.ts:10: withLatestFrom(this.route$) reads an observable made by toObservable(), which emits only after its first effect run. Read the signal directly or use computed().',
+      ]);
+    });
+
+    it('should not flag an asynchronous subscriber', async () => {
+      tree.write(
+        'test.ts',
+        `import { RouterStateService } from '@ethlete/core';
+import { map } from 'rxjs';
+
+export class MyComponent {
+  private _routerStateService = inject(RouterStateService);
+
+  ngOnInit(): void {
+    this._routerStateService.route$.pipe(map((url) => url.length)).subscribe();
+  }
+}`,
+      );
+
+      const report = await migrateRouterStateService(tree);
+
+      expect(report.review).toEqual([]);
+    });
+  });
 });

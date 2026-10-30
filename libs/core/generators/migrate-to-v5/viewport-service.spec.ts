@@ -2310,4 +2310,30 @@ class Dummy {
       expect(report.review).toEqual([]);
     });
   });
+
+  describe('synchronous observable consumers', () => {
+    it('should flag a piped breakpoint observable that toSignal reads with requireSync', async () => {
+      tree.write(
+        'test.ts',
+        `import { toSignal } from '@angular/core/rxjs-interop';
+import { ViewportService } from '@ethlete/core';
+import { map } from 'rxjs';
+
+class Dummy {
+  private viewportService = inject(ViewportService);
+
+  columns$ = this.viewportService.isXs$.pipe(map((isXs) => (isXs ? 1 : 3)));
+
+  columns = toSignal(this.columns$, { requireSync: true });
+}`,
+      );
+
+      const report = await migrateViewportService(tree);
+
+      expect(tree.read('test.ts', 'utf-8')).toContain('toObservable(injectIsXs())');
+      expect(report.review).toEqual([
+        'test.ts:9: toSignal(this.columns$, { requireSync: true }) reads an observable made by toObservable(), which emits only after its first effect run. Read the signal directly or use computed().',
+      ]);
+    });
+  });
 });

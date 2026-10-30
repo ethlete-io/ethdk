@@ -2,6 +2,7 @@ import { Tree, logger } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from '../migrate-provider-shape/migration-scope.js';
 import { collectFiles, TransformReport } from './migration-files.js';
+import { findSyncObservableConsumers } from './sync-observable-consumers.js';
 import {
   applyReplacementsInClass,
   collectClasses,
@@ -132,6 +133,7 @@ export default async function migrateViewportService(tree: Tree, scope?: Migrati
 
     const sourceFileAfterCleanup = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
     updatedContent = removeUnusedImports(sourceFileAfterCleanup, updatedContent);
+    review.push(...findSyncObservableConsumers(filePath, content, updatedContent));
 
     const sourceFileForTemplates = ts.createSourceFile(filePath, updatedContent, ts.ScriptTarget.Latest, true);
     const originalClasses = collectClasses(sourceFile);
