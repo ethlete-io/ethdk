@@ -61,6 +61,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Recommendation:** close as not reproduced; no workaround and no upstream repro without a
   reproducing case. Reopen with a `sample` of WebContent if Studio hangs again. A hang plus a
   manual WebContent kill during a pinch can also cause finding 1.1.
+- **Decision (Tom, 2026-10-30):** close as not reproduced. Reopen with a WebContent `sample` at
+  the next hang.
 
 ### 1.5 Studio logs a nested Tokio runtime panic - open
 
@@ -441,6 +443,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Status:** unchanged-row detection is fixed and live-verified below. Composer placement
   remains undecided. Further focus-region metadata and useful initial detail scale remain
   proposals, related to 4.43; the live API check does not verify those design requirements.
+- **Decision (Tom, 2026-10-30):** option 1. A sketch round opens with its question shown in
+  Studio and only the states it changes open at a readable scale; unchanged states fold behind a
+  count with "Show all states".
 - **Live diagnosis (2026-10-30, during round 2):** a read-only request to Tom's
   `:4402/__design/sketches?product=studio` returned `targets[].unchanged: []` for A/B/C and
   the newly created D/E/F. The UI therefore receives no evidence to fold the old state rows;
@@ -590,6 +595,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Fix options:** 1. a part frame gets the product's dark surface context, so SDK surface tokens
   resolve as in the app (recommended, check first why it does not). 2. `design check` warns on an
   SDK surface token in a product without that context.
+- **Decision (Tom, 2026-10-30):** neither now. Treat it as a likely design issue in the SDK, not a
+  Studio defect. Once Studio is ready, it is the tool that finds such SDK issues, this case
+  included. No Studio workaround and no `design check` warning.
 
 ### 5.24 A component sketch does not see what its hosts draw - open
 
@@ -618,6 +626,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `7441190de`) with `color-mix(in oklch, var(--text) 10%, transparent)`. The `tree-row` value was
   nearly invisible on the toggle, which has no background at rest. Tom chooses between one
   text-tint token for any surface and two tokens.
+- **Decision (Tom, 2026-10-30), replaces the first one:** one token `--surface-pressed` as a text
+  tint that works on any surface, with the disclosure value
+  `color-mix(in oklch, var(--text) 10%, transparent)`. `tree-row` and the disclosure use it. The
+  `tree-row` press may change slightly; show Tom the before and after, and keep it visible.
 
 ### 5.32 A page cannot reuse the canvas frame chrome - open
 
@@ -810,6 +822,10 @@ These pains came from how the agent worked, not from the tool. Each one has a ru
   principle each reference contributes, what is specific to Studio and how the alternatives
   differ in concept. Review the candidates beside the reference to catch literal imitation.
   This supports human design judgment; no pixel-difference or render gate proves originality.
+- **Decision (Tom, 2026-10-30):** option 1, as a rule in the `ethlete-design-exploration` skill:
+  before a reference-led round is shown, the agent states the problem each reference solves, the
+  principle it takes from it, and how each variant differs in concept, then reviews the variants
+  beside the reference for literal copies. No fixed visual rubric.
 - **Action at that turn:** record the negative feedback in the round note and handoff, leave
   the product unmerged and do not extend I/J into more states. This did not create a real
   rejection decision: I/J remained selectable. Tom corrected this false completion report;
