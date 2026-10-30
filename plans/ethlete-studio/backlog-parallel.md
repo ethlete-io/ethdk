@@ -169,8 +169,10 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   of old Storybook CSS: themes `accent`/`danger` where the mocks and `calls/components/themes.ts` use `brand`,
   `danger`, `warning`; no `--et-shadow-color-rgb` or `--et-font-family`; a dead Tailwind `--color-et-*` layer.
   Q47 (token source: hand fix or generated from the real themes) is with the grill session.
-- **Token source decision (Tom, 2026-10-30, Q47):** generate `foundations/tokens` from
-  `.ethlete/design/calls/components/themes.ts` with the real SDK theme generators, through the product
+- **Token source decision (Tom, 2026-10-30, Q47, source corrected by Tom):** generate `foundations/tokens` from
+  `apps/storybook/src/themes.ts` (the existing SDK brand theme, green `0 255 161`, plus `danger` and `warning`)
+  and `apps/storybook/src/surface-themes.ts` (`light`, `dark`), not from `calls/components/themes.ts`. Use the
+  real SDK theme generators (`libs/core/design/theme-css.ts`), through the product
   `generated` hook Studio already uses; the part only draws, no hand-kept colour CSS. Drop the Tailwind
   `--color-et-*` layer. Include `--et-shadow-color-rgb` and `--et-font-family`. Label `brand`, `danger` and
   `warning` as demo themes of this fixture: the SDK ships no theme names, the app registers them.
@@ -181,6 +183,12 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   `aria-activedescendant` names counts when its look differs from an unforced, unselected option. Generic ARIA,
   no SDK names in `libs/cli`. No fake `:focus-visible` rule in drawings. Applies to `components/select` and later
   `tree`.
+- **Token overview decision (Tom, 2026-10-30, Q49):** the sdk token overview draws a matrix of chips, one per
+  theme and state. Pick holds for the round regenerated from the Storybook themes.
+- **Contrast decision (Tom, 2026-10-30, Q50):** contrast below AA in the base themes gets its own small round
+  after the overview; Tom picks the new values. Measured on the first token set: `danger` hover 3.76:1, `brand`
+  ink on dark 3.47:1. Re-measure on the Storybook themes first.
+- **Open point (later, not asked):** Storybook has `brand-on-light` for light surfaces; the sdk set lacks it.
 
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
