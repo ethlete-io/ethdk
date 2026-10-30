@@ -18,6 +18,8 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   (`a0ba7dd81`). A: 5.60 (`0652fc1df`), 3.39 (`a9ad0200c`), 5.39 (`c3ad43bcf`) and the `STALE-REPLACE` fix (`1704a6dda`) done.
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing) - as built (`1704a6dda`): a replace on markup a package draws is skipped. Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
+- Open, not urgent (SDK session): a sketch cannot add a target, and `sketch new` with two targets is refused while one
+  has an open sketch, so splitting a part forces a new sketch plus a discard of the old one.
 
 ## Rules for every stream
 
