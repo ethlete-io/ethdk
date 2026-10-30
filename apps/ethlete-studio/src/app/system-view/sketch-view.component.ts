@@ -568,7 +568,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [pointing]="commentStore.active()"
       [draft]="commentStore.draft()"
       [pinPopover]="pinThread"
-      [rowHeads]="showing() === 'merge' ? [] : matrix().rowHeads"
+      [rowHeads]="shownRowHeads()"
       [sections]="showing() === 'merge' ? [] : matrix().sections"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
@@ -794,6 +794,23 @@ export class SketchViewComponent {
   protected noteDiffOpen = signal<string | null>(null);
 
   protected unchangedHeads = computed(() => (this.showing() === 'merge' ? [] : this.matrix().rowHeads));
+
+  public pixelFreeReplacesStates = computed(() => {
+    const shown = this.matrix().columns.filter((column) => this.sketch().variants.includes(column.key));
+
+    return (
+      this.showing() === 'matrix' &&
+      shown.length > 0 &&
+      this.pixelFreeLines().length === shown.length &&
+      !this.unchangedHeads().some((head) => head.open)
+    );
+  });
+
+  protected shownRowHeads = computed(() =>
+    this.pixelFreeReplacesStates()
+      ? this.matrix().rowHeads.filter((head) => stateOfRowKey(head.key) === null)
+      : this.unchangedHeads(),
+  );
 
   protected allStatesShown = computed(() => this.unchangedHeads().every((head) => head.open));
 

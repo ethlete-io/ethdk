@@ -331,6 +331,54 @@ describe('SketchViewComponent merge preview', () => {
     expect(rows()).toEqual(['draft']);
   });
 
+  it('replaces the folded state heads with the pixel-free line until Show all states is clicked', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const card: ListedPart = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product',
+      note: null,
+      states: ['default', 'empty'],
+      problems: [],
+    };
+    const changes = { note: false, dropped: [] as string[] };
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: [
+        { variant: 'a', states: ['default', 'empty'], unchanged: ['default', 'empty'], changes },
+        { variant: 'b', states: ['default', 'empty'], unchanged: ['default', 'empty'], changes },
+      ],
+    });
+    fixture.componentRef.setInput('part', card);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const heads = () => fixture.debugElement.query(By.directive(DesignCanvasComponent)).componentInstance.rowHeads();
+    const showAll = () => element.querySelector<HTMLButtonElement>('[data-show-all-states]');
+
+    expect(element.querySelector('[data-pixel-free]')).not.toBeNull();
+    expect(heads()).toEqual([]);
+
+    showAll()?.click();
+    await settle(fixture);
+
+    expect(heads().map((head: { open: boolean }) => head.open)).toEqual([true, true]);
+
+    showAll()?.click();
+    await settle(fixture);
+
+    expect(heads()).toEqual([]);
+  });
+
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
     vi.stubGlobal('fetch', (url: string) =>
       url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
