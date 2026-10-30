@@ -238,6 +238,16 @@ generated CSS file.
 - Q55: the sdk follows the Studio split: `foundations/colors` now, `type`, `spacing` and `motion` once the SDK
   has real values for them. Labels come from the generated CSS through the helper, never hand-typed values.
 
+### Select and contrast value decisions (2026-10-30)
+
+- Q56 (`components/select`, round "Select controls", 276187bd7): variant b. The pressed trigger darkens the
+  field border to `--et-surface-interaction-active-solid`; it differs from focus and needs no exception. Drop the
+  `components/select.select.active` exception request.
+- Q57 (`foundations/tokens`, round "Contrast values", a4ef82110): variant e. `danger` hover fill `185 28 28`
+  (6.47:1), `danger` active fill `153 27 27` (8.31:1), `warning` active fill `251 191 36` (10.74:1; press
+  lightens, accepted), surface `subtle` light `112` (4.95:1), dark `135` (4.99:1). Apply to
+  `apps/storybook/src/themes.ts` and `surface-themes.ts`, regenerate the Storybook CSS, then `yarn sdk:tokens`.
+
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
 The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
