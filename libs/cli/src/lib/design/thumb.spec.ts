@@ -15,6 +15,7 @@ const closeBrowser = vi.fn(async () => undefined);
 const newContext = vi.fn(async () => ({
   newPage: async () => ({
     goto,
+    mouse: { move: async () => undefined },
     evaluate,
     locator: () => ({ first: () => ({ waitFor: async () => undefined }) }),
   }),

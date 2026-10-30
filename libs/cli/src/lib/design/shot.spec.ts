@@ -34,6 +34,7 @@ const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
     goto,
+    mouse: { move: async () => undefined },
     screenshot,
     evaluate,
     locator: (selector: string) => ({

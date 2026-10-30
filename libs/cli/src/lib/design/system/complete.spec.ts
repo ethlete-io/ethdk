@@ -15,6 +15,8 @@ const STYLES =
 const toggle = (attributes = '') =>
   `<button class="aa-toggle" type="button" data-et-control="more"${attributes}>More</button>`;
 
+const CORNER = ' style="position: fixed; top: 0; left: 0; width: 100%"';
+
 const body = '<div data-et-surface="more.body">The rest</div>';
 
 const DISCLOSURE =
@@ -53,6 +55,16 @@ const PARTS: Record<string, { states: Record<string, string>; extra?: string }> 
   'components/always-open': {
     states: { rest: `<div>${toggle()}${body}</div>`, open: `<div>${toggle()}${body}</div>` },
     extra: "controls: { more: { kind: 'disclosure', input: [], surfaces: { body: 'open' } } },",
+  },
+  'components/corner': {
+    states: {
+      hovered: `<div>${toggle(`${CORNER} data-et-force="hover"`)}</div>`,
+      rest: `<div>${toggle(CORNER)}</div>`,
+      focused: `<div>${toggle(`${CORNER} data-et-force="focus-visible"`)}</div>`,
+      pressed: `<div>${toggle(`${CORNER} data-et-force="active"`)}</div>`,
+      open: `<div>${toggle(CORNER)}${body}</div>`,
+    },
+    extra: DISCLOSURE,
   },
   'components/bare': { states: { rest: `<div>${toggle()}</div>` } },
   'pages/uses': {
@@ -281,6 +293,15 @@ describe('completenessOf', () => {
 
     expect('gaps' in bare && bare.gaps.map((gap) => gap.code)).toEqual(['CONTROLS-MISSING']);
   }, 120_000);
+
+  it('passes a full-width toggle at the top-left corner of its frame, which the headless pointer must not hover', async (context) => {
+    const { target, config, product } = checkout();
+    const corner = await completenessOf({ target, config, product, part: 'components/corner' });
+
+    if ('unavailable' in corner) return context.skip(corner.unavailable);
+
+    expect(corner).toEqual({ gaps: [] });
+  }, 60_000);
 
   it('exits 1 with one line per gap from the command', async (context) => {
     const { target, config, product } = checkout();

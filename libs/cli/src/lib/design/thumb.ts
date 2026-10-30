@@ -44,6 +44,9 @@ type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPa
 /** Opens a frame and waits until it drew its content or its error, then for fonts and two frames. */
 export const openFrame = async (page: Page, url: string) => {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
+  // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
+  // frame's corner. A move before the first navigation does not stick.
+  await page.mouse.move(-1, -1);
   await page
     .locator('#root > :not(style)')
     .first()

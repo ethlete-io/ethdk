@@ -562,8 +562,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Acceptance:** a disclosure with flat `hover` and `active` states fails `design complete`
   with a message that names `interactionRows`; the docs show only the grid.
 
-### 4.57 A rest frame can draw a real hover - open
+### 4.57 A rest frame can draw a real hover - fixed
 
+- **Status:** fixed - headless Chromium's pointer starts at 0,0 on a new page, so the first frame of a page hovered a control in its top-left corner; `openFrame` now moves the pointer to -1,-1 after each load, which covers `design shot`, thumbs, `render-check` and `design complete`.
 - **Pain (2026-10-30):** in `design shot`, `components/disclosure` e `rest` and `open` show
   the hover tint, though no state forces hover. The toggle fills the frame from its top-left
   corner, so the real `:hover` matches where the headless pointer stands.
