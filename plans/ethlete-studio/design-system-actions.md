@@ -489,6 +489,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   ... dropped"; a click opens the part note now / in the variant, plus the variant note. Spec bites
   (`serve.spec.ts`, `pixel-free.spec.ts`); headless check on a scratch copy (`/tmp/451/pixel-free-line.png`).
   Deviation: the line sits above the grid; the folded rows stay. Not verified: the real Inbox r2, the Tauri window.
+- **Decision (Tom, 2026-10-30, on the deviation):** the line replaces the grid, as first decided. The folded rows
+  show only after "Show all states"; the "in pages/merge" embed stays visible. Open until built.
 
 ### 4.52 A pick in Studio shows only after a long delay - done
 
