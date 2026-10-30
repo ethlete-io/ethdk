@@ -31,6 +31,18 @@ export const outputOf = (error: unknown) => {
   return trim(`${shape.stdout ?? ''}${shape.stderr ?? ''}`);
 };
 
+/** Why a child process failed when it printed nothing: its error, exit code or signal. */
+export const processFailureOf = (error: unknown) => {
+  const shape = error as { message?: string; code?: string; status?: number | null; signal?: string | null };
+  const exit = shape.signal
+    ? `signal ${shape.signal}`
+    : typeof shape.status === 'number'
+      ? `exit code ${shape.status}`
+      : shape.code;
+
+  return [exit, shape.message ? trim(shape.message) : null].filter(Boolean).join(' - ') || 'no output';
+};
+
 export type TypecheckResult =
   { kind: 'ok' } | { kind: 'unavailable'; message: string } | { kind: 'failed'; output: string };
 
@@ -57,7 +69,14 @@ export const typecheck = (options: { target: string; tsconfig: string }): Typech
   try {
     execFileSync(command.file, command.args, { cwd: target, encoding: 'utf8', stdio: 'pipe' });
   } catch (error) {
-    return { kind: 'failed', output: outputOf(error) };
+    const output = outputOf(error);
+
+    if (output) return { kind: 'failed', output };
+
+    return {
+      kind: 'unavailable',
+      message: `TYPE CHECKER DID NOT RUN - ${[command.file, ...command.args].join(' ')} printed nothing (${processFailureOf(error)}).`,
+    };
   }
 
   return { kind: 'ok' };

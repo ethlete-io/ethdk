@@ -607,7 +607,7 @@ const checked = async (context: Context) => {
       ...problems,
       ...formatProblemsOf({ target, sketch, variant }),
       ...(typed.kind === 'failed' ? [{ rule: 'TYPE-ERROR', file: sketch.dir, message: `\n${typed.output}` }] : []),
-      ...(typed.kind === 'unavailable' ? [{ rule: 'TYPE-ERROR', file: sketch.dir, message: typed.message }] : []),
+      ...(typed.kind === 'unavailable' ? [{ rule: 'NO-TYPE-CHECKER', file: sketch.dir, message: typed.message }] : []),
     ];
 
     for (const problem of all) {

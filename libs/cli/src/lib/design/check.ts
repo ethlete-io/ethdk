@@ -9,7 +9,7 @@ import { resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
-import { binaryOf, outputOf, trim, typecheck } from './typecheck';
+import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
 
 type Flags = Record<string, string[]>;
 
@@ -259,7 +259,7 @@ const runChecks = async (options: {
     try {
       execFileSync(process.execPath, [eslint, ...lintFiles], { cwd: target, encoding: 'utf8', stdio: 'pipe' });
     } catch (error) {
-      return fail(`LINT\n${outputOf(error)}`);
+      return fail(`LINT\n${outputOf(error) || processFailureOf(error)}`);
     }
   }
 
