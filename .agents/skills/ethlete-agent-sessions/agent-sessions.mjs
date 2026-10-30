@@ -98,18 +98,19 @@ const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status ===
  * prompt's placeholder, so it does not count. A menu cursor (`❯ 1. Yes`) also counts, which keeps a
  * wake-up line from answering a permission dialog.
  */
+const SGR = `${String.fromCharCode(27)}\\[([0-9;]*)m`;
 const hasDraft = (session) => {
   const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
   const prompt = pane
     .split('\n')
     .reverse()
-    .find((line) => /^\s*[❯›]/.test(line.replace(/\x1b\[[0-9;]*m/g, '')));
+    .find((line) => /^\s*[❯›]/.test(line.replace(new RegExp(SGR, 'g'), '')));
   if (!prompt) return false;
   let dim = false;
   const visible = prompt
-    .split(/(\x1b\[[0-9;]*m)/)
+    .split(new RegExp(`(${SGR.replace('(', '(?:')})`))
     .map((part) => {
-      const codes = part.match(/^\x1b\[([0-9;]*)m$/)?.[1].split(';');
+      const codes = part.match(new RegExp(`^${SGR}$`))?.[1].split(';');
       if (!codes) return dim ? '' : part;
       codes.forEach((code) => {
         if (code === '2') dim = true;
