@@ -3,7 +3,8 @@ import { dirname, resolve } from 'path';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 
-const ICON_SVG = /<svg\b[^>]*\bviewBox\s*=/u;
+const SVG_TAG = /<svg\b[^>]*>/gu;
+const DRAWING = /\sdata-et-drawing\b/u;
 
 const tsFilesIn = (dir: string) =>
   existsSync(dir)
@@ -14,8 +15,8 @@ const tsFilesIn = (dir: string) =>
     : [];
 
 /**
- * An `<svg>` with its own `viewBox` written in the TS of a part outside foundations, or in a TS file below the part's
- * folder. An `<svg>` without a `viewBox` draws in the pixels the code computes, as a flow diagram does, and passes.
+ * An `<svg>` written in the TS of a part outside foundations, or in a TS file below the part's folder. An `<svg>` that
+ * the code computes, for example the edges of a flow diagram, passes with a `data-et-drawing` attribute.
  */
 export const inlineSvgsOf = (product: ResolvedProduct): Problem[] =>
   [
@@ -23,9 +24,10 @@ export const inlineSvgsOf = (product: ResolvedProduct): Problem[] =>
       product.parts.filter((part) => part.layer !== 'foundations').flatMap((part) => tsFilesIn(dirname(part.file))),
     ),
   ]
-    .filter((file) => ICON_SVG.test(readFileSync(file, 'utf8')))
+    .filter((file) => [...readFileSync(file, 'utf8').matchAll(SVG_TAG)].some(([tag]) => !DRAWING.test(tag)))
     .map((file) => ({
       rule: 'INLINE-SVG',
       file,
-      message: 'draws an <svg> icon inline - put it in assets/ and draw it with a helper of a foundations part',
+      message:
+        'draws an <svg> inline - put it in assets/ and draw it with a helper of a foundations part, or mark a computed drawing with data-et-drawing',
     }));
