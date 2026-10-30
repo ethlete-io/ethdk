@@ -372,7 +372,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `data-et-surface` markers, and `design complete <layer>/<name>` for `disclosure` (hover,
   focus-visible, collapsed, visible body; a forced frame must differ from rest in the control's
   box; the part must match its `merged.json` hash). Until discovery lands, a part without
-  `controls` fails as `CONTROLS-MISSING`; `pages/merge` fails that way today. Next: discovery
+  `controls` fails as `CONTROLS-MISSING`. `pages/merge` declares its unchanged line as a
+  disclosure and passes (Tom merged variant a, 2026-10-30). Next: discovery
   (`CONTROL-UNDECLARED`, `CONTROL-UNCLASSIFIED`), then the other kinds.
 
 ### 4.48 A focused sketch opens as an overwhelming matrix of unrelated screens - folding fixed, focus review open
