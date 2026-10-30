@@ -59,16 +59,16 @@ export const icon = (name: IconName, { size = 16, cls = '' }: { size?: number; c
 
 const sizes = [12, 14, 16, 20];
 
-const catalogue = html`<div class="ic-root">
-  <h2 class="ic-title">Icons: a 16 px grid with a 1.5 stroke, at each size the parts draw</h2>
-  <div class="ic-grid">
+const catalogue = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+  <h2 class="m-0 text-ui-xl font-ui-strong">Icons: a 16 px grid with a 1.5 stroke, at each size the parts draw</h2>
+  <div class="ic-grid grid items-center justify-items-center gap-x-space-4 gap-y-space-2">
     <span></span>
-    ${sizes.map((size) => html`<span class="ic-label">${size} px</span>`).join('')}
+    ${sizes.map((size) => html`<span class="ic-label text-text-muted">${size} px</span>`).join('')}
     ${iconNames
       .map(
         (name) =>
-          html`<span class="ic-name">${name}</span>${sizes
-              .map((size) => html`<span class="ic-cell">${icon(name, { size })}</span>`)
+          html`<span class="justify-self-start font-code text-text-muted">${name}</span>${sizes
+              .map((size) => html`<span class="flex">${icon(name, { size })}</span>`)
               .join('')}`,
       )
       .join('')}
@@ -78,21 +78,28 @@ const catalogue = html`<div class="ic-root">
 const units = Array.from({ length: 15 }, (_, index) => index + 1);
 
 const guide = (cls: string, paths: string) =>
-  `<svg class="ic-guides ${cls}" viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">${paths}</svg>`;
+  `<svg class="ic-guides absolute inset-0 w-full h-full text-accent pointer-events-none ${cls}" viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">${paths}</svg>`;
 
 const pixelGrid = guide('ic-guides-pixel', units.map((unit) => `<path d="M${unit} 0V16M0 ${unit}H16"/>`).join(''));
 
-const keyLines = guide('ic-guides-key', '<path d="M8 0V16M0 8H16"/><rect x="2" y="2" width="12" height="12"/>');
+const keyLines = guide(
+  'ic-guides-key opacity-70',
+  '<path d="M8 0V16M0 8H16"/><rect x="2" y="2" width="12" height="12"/>',
+);
 
-const construction = html`<div class="ic-root">
-  <h2 class="ic-title">Icons on the 16 px grid: pixel lines, centre lines, and the 2 px padding</h2>
-  <div class="ic-sheet">
+const construction = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+  <h2 class="m-0 text-ui-xl font-ui-strong">
+    Icons on the 16 px grid: pixel lines, centre lines, and the 2 px padding
+  </h2>
+  <div class="ic-sheet grid gap-space-5">
     ${iconNames
       .map(
         (name) =>
-          html`<div class="ic-plate">
-            <span class="ic-frame">${pixelGrid}${icon(name, { size: 96, cls: 'ic-glyph' })}${keyLines}</span>
-            <span class="ic-name">${name}</span>
+          html`<div class="flex flex-col items-center gap-space-2">
+            <span class="relative flex border border-surface-border bg-surface"
+              >${pixelGrid}${icon(name, { size: 96, cls: 'relative' })}${keyLines}</span
+            >
+            <span class="justify-self-start font-code text-text-muted">${name}</span>
           </div>`,
       )
       .join('')}

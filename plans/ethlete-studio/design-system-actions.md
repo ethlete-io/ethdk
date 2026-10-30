@@ -553,6 +553,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
+- **Progress (2026-10-30):** `components/disclosure`, `foundations/icons` and `foundations/logo` moved, all
+  auto-merged; `logo.css` is gone. `.st-disclosure-body` stays in CSS: `pages/merge/merge-data.ts` builds its own
+  `<ul class="st-disclosure-body">`. Left: `inbox`, `comment-pin`, `pages/sketches`, `foundations/agent-logos`
+  after their open sketches merge; `shell-main/shared/picker.css`; then register `UTILITY-CSS` in `RULES`.
 - **Pain (Tom, 2026-10-30):** a design draws each state as a still frame. Nothing says that a
   change between two states moves. Examples in Studio: the active bar in the rail could move
   between items with a FLIP animation, and the Inbox sidebar opens and closes.

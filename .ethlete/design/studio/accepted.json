@@ -436,5 +436,29 @@
     "hash": "b6874aa34da88659",
     "at": "2026-10-30T17:53:47.105Z",
     "auto": true
+  },
+  {
+    "part": "components/disclosure",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "20878ff171fae0f2",
+    "at": "2026-10-30T17:55:44.146Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/icons",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "4c64c092516accf9",
+    "at": "2026-10-30T17:56:09.003Z",
+    "auto": true
+  },
+  {
+    "part": "foundations/logo",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "ea4d144717cbadfc",
+    "at": "2026-10-30T17:56:30.597Z",
+    "auto": true
   }
 ]

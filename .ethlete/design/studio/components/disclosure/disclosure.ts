@@ -16,7 +16,7 @@ const CHEVRON = icon('chevron-right', { size: 14 });
 
 export const disclosure = ({ label, body, open, size = 'sm', interaction }: Props) => {
   const toggle = html`<button
-    class="st-disclosure"
+    class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 cursor-pointer ${size === 'xs' ? 'items-start text-start' : 'items-center'}"
     type="button"
     data-et-control="toggle"
     data-size="${size}"
