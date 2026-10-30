@@ -4,8 +4,11 @@ Source: the fifagg session `fifagg-frontend-d4`, `/home/tom/dev/fifagg/fifagg-fr
 `chore/post-angular-22-cleanup`, commit `4114f85b9e`. The files there are `apps/e2e/tools/failure-reporter.ts`
 and `apps/e2e/tools/run-slices.mjs`.
 
-Status on 2026-10-30: slices 1 (`9b7617fc5`), 3 (`1ad54cb6c`), 4 and 5 are done. Slice 4: the mod (0.1.2, not a git repo) reads the file named in the `[failure-reporter] Writing failures to` log line, and falls back to the log parser. It needs a `/plugin` reinstall. The slice runner
-did not finish a live run. Slice 2 waits for a confirmation from `fifagg-frontend-d4`.
+Status on 2026-10-30: slices 1 (`9b7617fc5`), 3 (`1ad54cb6c`), 4 and 5 are done. Slice 4: the mod (0.1.2, not a git repo) reads the file named in the `[failure-reporter] Writing failures to` log line, and falls back to the log parser. It needs a `/plugin` reinstall. Slice 2 is
+unblocked: `fifagg-frontend-d4` ran `yarn e2e:slices web-components` live on the dist servers 4300-4304
+(exit 0, 1 passed, 0 failed). The runner printed `[e2e-slices] web-components: exit 0, 0 failed ->
+apps/e2e/e2e-failures-web-components.jsonl` and a `console.table`. Only one slice ran. Log:
+`fifagg-frontend/.claude/handoffs/post-angular-22/slices-real-run.log`.
 
 Done already: the Angular 22 `?.` note in the `sdk-update` skill (`9f86816bf`).
 
