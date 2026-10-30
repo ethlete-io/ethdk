@@ -9,7 +9,7 @@ import { flowProblemsOf } from './rules/flow';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
-import { scriptedMotionOf } from './rules/motion';
+import { hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { tokenSelectorsOf } from './rules/token-selectors';
@@ -30,6 +30,7 @@ const RULES = [
   undefinedTokensOf,
   componentCopiesOf,
   scriptedMotionOf,
+  hardCodedMotionOf,
   staleCommentsOf,
   staleNotesOf,
   badWidthsOf,

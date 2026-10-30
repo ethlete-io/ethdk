@@ -76,6 +76,10 @@ every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
 outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
 instead of the globally loaded token CSS.
 
+`et design check` fails with `HARD-CODED-MOTION` when a `transition` or `animation` declaration
+outside `foundations/` holds a literal duration, delay or easing, for example `120ms` or `ease`.
+Take them from a foundations token instead: `transition: opacity var(--duration-appear) var(--ease-standard)`.
+
 Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS
 imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
 token definitions. Pixel comparisons for sketches use fresh rendering results on each request,

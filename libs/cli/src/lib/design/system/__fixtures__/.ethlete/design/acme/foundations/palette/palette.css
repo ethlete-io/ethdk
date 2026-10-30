@@ -1,5 +1,6 @@
 :root {
   --acme-accent: #e4572e;
+  --acme-fade: 200ms;
 }
 
 .acme-swatch {

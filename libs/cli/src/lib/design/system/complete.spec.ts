@@ -11,7 +11,8 @@ import { recordMerged } from './sketch/merged-parts';
 
 const STYLES = [
   '.aa-toggle, .aa-still { display: block; border: 1px solid; background: white; }',
-  '.aa-toggle { transition: background-color 120ms ease, color 120ms ease; }',
+  ':root { --aa-fade: 120ms; }',
+  '.aa-toggle { transition: background-color var(--aa-fade), color var(--aa-fade); }',
   '.aa-toggle:hover, .aa-still:hover { background: black; color: white; }',
   '.aa-toggle:focus-visible, .aa-still:focus-visible { outline: 2px solid black; }',
   '.aa-toggle:active, .aa-still:active { background: gray; }',
