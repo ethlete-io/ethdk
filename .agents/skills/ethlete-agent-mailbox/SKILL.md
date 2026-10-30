@@ -21,6 +21,8 @@ node <skill-dir>/agent-mailbox.mjs inbox <name> [--wait <seconds>]
 node <skill-dir>/agent-mailbox.mjs read [--last <n>] [--all]
 node <skill-dir>/agent-mailbox.mjs watch <name>
 node <skill-dir>/agent-mailbox.mjs up <name>[=<command>]...
+node <skill-dir>/agent-mailbox.mjs run <name> <command...>
+node <skill-dir>/agent-mailbox.mjs shell-init [<agent>...]
 node <skill-dir>/agent-mailbox.mjs down [<name>...]
 node <skill-dir>/agent-mailbox.mjs dispatch
 ```
@@ -53,7 +55,7 @@ holder agreed. Silence is not approval. Acknowledge each handoff in words.
 
 ## Wake an idle agent
 
-An idle agent cannot read the mailbox. One `dispatch` process outside every agent fixes this. It polls the mailbox for free. When a message carries `--to <agent>`, it types a wake-up line into the `tmux` session that has the same name as the agent. The agent then runs `inbox` and acts.
+An idle agent cannot read the mailbox. One `dispatch` process outside every agent fixes this. It polls the mailbox for free. When a message carries `--to <agent>`, it types a wake-up line into the `tmux` session `<agent>@<repo>`, or a session named only `<agent>`. The agent then runs `inbox` and acts.
 
 1. Run `up` once. `up codex=codex gemini=gemini` starts a detached `tmux` session per agent, named like its sender name, and runs the command in it. It also starts a session named `mailbox-dispatch` that runs `dispatch`. A running session is left alone.
 2. Attach to a session with `tmux attach -t <name>`. Detach with `Ctrl-b`, then `d`. The session and its agent keep running.
@@ -61,6 +63,12 @@ An idle agent cannot read the mailbox. One `dispatch` process outside every agen
 
 If the agent is in the middle of a turn, the wake-up line waits as its next prompt. An agent in a `tmux` session does not need the `--wait` loop, which costs a turn at every timeout.
 A background `--wait` also ends after one message, so it is not a lasting watch. Use `down` to stop the sessions.
+
+## Start agents with the plain command
+
+`run <name> <command...>` starts the command in the `tmux` session `<name>@<repo>`, or attaches if it runs already. It also starts the dispatcher when none runs. Session names carry the repo name, so `codex` in two repos never collides. For a second agent of one kind, pick another name: `run claude-2 claude`.
+
+`shell-init` prints one shell function per agent. After the user adds `eval "$(node <skill-dir>/agent-mailbox.mjs shell-init)"` to the shell startup file, typing `claude` or `codex` in a repo with this skill runs the agent through `run`. Elsewhere the function starts the plain command. This command never edits the startup file.
 
 ## Rules
 

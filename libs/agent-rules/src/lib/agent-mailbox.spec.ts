@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const SCRIPT = join(__dirname, '../../content/skills/agent-mailbox/agent-mailbox.mjs');
@@ -153,30 +153,61 @@ describe('agent-mailbox', () => {
     const suffix = process.pid;
     const dispatchSession = `mailbox-dispatch-${suffix}`;
     const agent = `mailbox-agent-${suffix}`;
+    const scoped = `${agent}@${basename(dir)}`;
     const env = {
       ...process.env,
       AGENT_MAILBOX: join(dir, 'mailbox.jsonl'),
       AGENT_MAILBOX_DISPATCH_SESSION: dispatchSession,
     };
     const has = (name: string) => spawnSync('tmux', ['has-session', '-t', `=${name}`]).status === 0;
+    const mailbox = (...args: string[]) => spawnSync('node', [SCRIPT, ...args], { cwd: dir, env, encoding: 'utf8' });
 
     try {
-      const up = spawnSync('node', [SCRIPT, 'up', `${agent}=cat`], { cwd: dir, env, encoding: 'utf8' });
-
-      expect(up.stdout).toContain(`Started ${agent}`);
-      expect(has(agent)).toBe(true);
+      expect(mailbox('up', `${agent}=cat`).stdout).toContain(`Started ${scoped}`);
+      expect(has(scoped)).toBe(true);
       expect(has(dispatchSession)).toBe(true);
-      expect(spawnSync('node', [SCRIPT, 'up', `${agent}=cat`], { cwd: dir, env, encoding: 'utf8' }).stdout).toContain(
-        `Session ${agent} already runs.`,
-      );
+      expect(mailbox('up', `${agent}=cat`).stdout).toContain(`Session ${scoped} already runs.`);
 
-      spawnSync('node', [SCRIPT, 'down', agent], { cwd: dir, env });
+      mailbox('down', agent);
 
-      expect(has(agent)).toBe(false);
+      expect(has(scoped)).toBe(false);
       expect(has(dispatchSession)).toBe(false);
     } finally {
-      spawnSync('tmux', ['kill-session', '-t', `=${agent}`]);
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
       spawnSync('tmux', ['kill-session', '-t', `=${dispatchSession}`]);
     }
+  });
+
+  it.skipIf(!hasTmux)('wakes the repo-scoped session before a plain one', async () => {
+    const agent = `mailbox-scoped-${process.pid}`;
+    const scoped = `${agent}@${basename(dir)}`;
+    const log = join(dir, 'pane.log');
+
+    spawnSync('tmux', ['new-session', '-d', '-s', scoped, `cat > ${log}`]);
+
+    const dispatch = spawn('node', [SCRIPT, 'dispatch'], {
+      cwd: dir,
+      env: { ...process.env, AGENT_MAILBOX: join(dir, 'mailbox.jsonl') },
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      run(['send', 'codex', '--to', agent, 'hello']);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      expect(readFileSync(log, 'utf8')).toContain(`inbox ${agent}`);
+    } finally {
+      dispatch.kill();
+      spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+    }
+  });
+
+  it('prints a shell function for each agent that falls back to the plain command', () => {
+    const output = run(['shell-init', 'codex', 'gemini']).stdout;
+
+    expect(output).toContain('codex() {');
+    expect(output).toContain('gemini() {');
+    expect(output).toContain('command gemini "$@"');
+    expect(spawnSync('bash', ['-n'], { input: output }).status).toBe(0);
   });
 });

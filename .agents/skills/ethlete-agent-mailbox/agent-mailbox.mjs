@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = (() => {
@@ -18,7 +18,9 @@ const script = fileURLToPath(import.meta.url);
 const DEFAULT_TTL_HOURS = 4;
 const DEFAULT_LAST = 20;
 const ENTER_DELAY_MS = 400;
-const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? 'mailbox-dispatch';
+const repoSlug = basename(root).replace(/[.:]/g, '-');
+const sessionFor = (agent) => `${agent}@${repoSlug}`;
+const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
 
 const takeFlag = (args, name, hasValue) => {
   const index = args.indexOf(name);
@@ -47,6 +49,8 @@ Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
 Release: node ${script} release <name> [path...]      (no path: release every claim of <name>)
 Claims:  node ${script} claims
 Up:      node ${script} up <name>[=<command>]...      (start a tmux session per agent, plus one that runs dispatch)
+Run:     node ${script} run <name> <command...>       (start or attach the agent in its tmux session; starts dispatch)
+Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
 Down:    node ${script} down [<name>...]              (stop dispatch; stop the named sessions too)
 Dispatch: node ${script} dispatch                      (wake the tmux session named <agent> for each message sent --to <agent>)
 
@@ -58,6 +62,16 @@ Silence is not approval. Acknowledge handoffs explicitly.
 Watch prints existing messages and then new messages from other senders every second.
 Keep credentials and personal data out of the mailbox. No agent is started automatically.
 `;
+
+const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
+const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
+const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
+const startSession = (name, shellCommand, quiet = false) => {
+  if (sessionExists(name)) return quiet ? undefined : process.stdout.write(`Session ${name} already runs.\n`);
+  const result = tmux('new-session', '-d', '-s', name, '-c', root, ...(shellCommand ? [shellCommand] : []));
+  if (result.status !== 0) return process.stderr.write(`Could not start ${name}: ${result.stderr.trim()}\n`);
+  if (!quiet) process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
+};
 
 const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*'];
 
@@ -145,24 +159,43 @@ if (command === 'send' && sender) {
     process.stdout.write(`Sent as ${sender}.\n`);
   }
 } else if (command === 'up') {
-  const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
-  const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
-  const exists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
-  const start = (name, shellCommand) => {
-    if (exists(name)) return process.stdout.write(`Session ${name} already runs.\n`);
-    const result = tmux('new-session', '-d', '-s', name, '-c', root, ...(shellCommand ? [shellCommand] : []));
-    if (result.status !== 0) return process.stderr.write(`Could not start ${name}: ${result.stderr.trim()}\n`);
-    process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
-  };
   const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
-  start(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`);
+  startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`);
   [sender, ...words].filter(Boolean).forEach((spec) => {
     const [name, ...rest] = spec.split('=');
-    start(name, rest.join('=') || undefined);
+    startSession(sessionFor(name), rest.join('=') || undefined);
+  });
+} else if (command === 'run' && sender && words.length) {
+  const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
+  if (!sessionExists(DISPATCH_SESSION))
+    startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
+  const session = sessionFor(sender);
+  const shellCommand = words.map(quote).join(' ');
+  if (process.env.TMUX) {
+    if (!sessionExists(session)) tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
+    process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;
+  } else {
+    process.exitCode =
+      spawnSync('tmux', ['new-session', '-A', '-s', session, '-c', process.cwd(), shellCommand], { stdio: 'inherit' })
+        .status ?? 1;
+  }
+} else if (command === 'shell-init') {
+  const agents = [sender, ...words].filter(Boolean);
+  (agents.length ? agents : ['claude', 'codex']).forEach((agent) => {
+    process.stdout.write(`${agent}() {
+  local root script
+  root=$(git rev-parse --show-toplevel 2>/dev/null) && script="$root/.agents/skills/ethlete-agent-mailbox/agent-mailbox.mjs"
+  if [ -n "$script" ] && [ -f "$script" ] && command -v tmux >/dev/null; then
+    node "$script" run ${agent} ${agent} "$@"
+  else
+    command ${agent} "$@"
+  fi
+}
+`);
   });
 } else if (command === 'down') {
-  [DISPATCH_SESSION, sender, ...words].filter(Boolean).forEach((name) => {
-    const result = spawnSync('tmux', ['kill-session', '-t', `=${name}`], { encoding: 'utf8' });
+  [DISPATCH_SESSION, ...[sender, ...words].filter(Boolean).map(sessionFor)].forEach((name) => {
+    const result = tmux('kill-session', '-t', `=${name}`);
     process.stdout.write(result.status === 0 ? `Stopped ${name}.\n` : `No session ${name}.\n`);
   });
 } else if (command === 'dispatch') {
@@ -171,14 +204,12 @@ if (command === 'send' && sender) {
   let seen = entries().length;
   const wake = (agent) => {
     const text = `New mailbox message for ${agent}. Run: node ${script} inbox ${agent} and act on it.`;
-    try {
-      execFileSync('tmux', ['send-keys', '-t', agent, '-l', text], { stdio: 'ignore' });
-      sleep(ENTER_DELAY_MS);
-      execFileSync('tmux', ['send-keys', '-t', agent, 'Enter'], { stdio: 'ignore' });
-      process.stdout.write(`Woke ${agent}.\n`);
-    } catch {
-      process.stderr.write(`No tmux session named ${agent}.\n`);
-    }
+    const session = [sessionFor(agent), agent].find(sessionExists);
+    if (!session) return process.stderr.write(`No tmux session for ${agent}.\n`);
+    spawnSync('tmux', ['send-keys', '-t', `=${session}:`, '-l', text]);
+    sleep(ENTER_DELAY_MS);
+    spawnSync('tmux', ['send-keys', '-t', `=${session}:`, 'Enter']);
+    process.stdout.write(`Woke ${session}.\n`);
   };
   const poll = () => {
     const history = entries();
