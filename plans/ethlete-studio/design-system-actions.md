@@ -474,6 +474,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   new variant. 3. a note-only change opens the merge preview directly.
 - **Acceptance:** for the Inbox r2, Tom sees at the first view that c changes only the
   part note and drops one state, and can read the new note text without the agent.
+- **Decision (Tom, 2026-10-30):** option 1. Build it.
 
 ### 4.52 A pick in Studio shows only after a long delay - open
 
@@ -491,6 +492,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   (recommended). 2. reload the sketch list and fail visibly when it has no decision.
 - **Acceptance:** a click on "Pick c" shows c as picked at once and enables Merge, also for a variant
   that changes no pixel; a failed pick shows an error instead of a silent reset.
+- **Decision (Tom, 2026-10-30):** option 1. Build it.
 
 - **Migration (Tom, 2026-10-30):** once the 4.47 and 4.53 rules stand, every existing Studio
   design gets one pass: declare its interactive controls, draw the missing states and
@@ -512,6 +514,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   pixel change. 2. only a one-time manual move, without a rule; new CSS comes back.
 - **Acceptance:** `design check` fails on a new utility-expressible declaration, and the
   existing pages draw the same pictures with their CSS cut to what utilities cannot do.
+- **Decision (Tom, 2026-10-30):** option 1, the `design check` rule, then the one-page-per-commit
+  move. `foundations/colors` stays CSS.
 
 ### 4.54 A design cannot say that a change between states animates - open
 
@@ -523,7 +527,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   and the drawing marks the moving element. `design complete` then requires the declaration
   for a control kind that changes layout, for example a disclosure or a selection indicator.
 - **Open:** whether a still pair of states is enough evidence, or whether Studio must play the
-  transition; and which kinds need one. Not decided, no proposal yet.
+  transition; and which kinds need one.
+- **Decision (Tom, 2026-10-30):** a still pair of states plus a `transitions` declaration is
+  enough evidence for now; Studio plays the transition in a later slice. The declaration is
+  optional: `design complete` requires it for no control kind until a concrete kind needs it.
 
 ### 4.55 A comment on a new part in a sketch cannot be marked done - open
 
@@ -532,6 +539,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   the note has nowhere to go". The part exists only in the sketch, but the variant holds its note.
 - **Fix option:** for a comment on a sketch variant, write the note into the variant even when
   the merged product does not have the part yet.
+- **Decision (Tom, 2026-10-30):** this fix. No design question left.
 
 ### 4.56 An interactive component draws its interactions as flat states, not as a grid - open
 
