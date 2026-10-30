@@ -1,5 +1,5 @@
 import { definePart, html, tokenSheet, type Drawing } from '@design-system';
-import { contrastSheet, contrastStyles } from '@shared/contrast';
+import { contrastSheet, contrastStyles } from './shared/contrast';
 import css from './colors.css?inline';
 
 type Surface = 'light' | 'dark';
