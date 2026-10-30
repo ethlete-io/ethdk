@@ -1,5 +1,53 @@
 # @ethlete/cli
 
+## 3.0.0-next.24
+
+### Minor Changes
+
+- A sketch's changed area gives one box per cluster of changed pixels; `et design shot --crop changed` writes one sheet per cluster, and Studio shows one enlarged crop per cluster.
+- `et design check` now fails with `CANONICAL-CLASS` when a Tailwind class in a design part has a shorter canonical form, for example `w-[420px]` that can be written as `w-2xl`.
+- `et design sketch merge` takes `--variant <key> --allowed-by <plan ref>`: it merges a sketch with no pick when that variant is its only live one, and logs the plan in `accepted.json`.
+- `et update` adds the packages a codemod requires, such as `ts-morph`, as dev dependencies before it runs the codemod, in a commit of its own. A migration declares them in its new `requires` field.
+- A design product can list stylesheets a command generates from a part (`generated`). A frame of a sketch variant that changes that part runs the command against the variant's part and loads its output.
+- `et design check` now fails a literal duration, delay or easing in a transition or animation outside `foundations/`, with `HARD-CODED-MOTION`.
+- `et design check` now fails an inline `<svg>` outside `foundations/`, with `INLINE-SVG`. A computed drawing passes with `data-et-drawing`.
+- `et design sketch merge` and `sketch discard` now resolve the addressed comments of the sketch, and a merge those of its parts without a sketch. New `et design comment resolve-ended` resolves the addressed comments of ended sketches.
+- `et design complete <layer>/<name>` fails while a part's declared `controls` lack drawn, reviewed evidence; it checks the `disclosure` kind first.
+- `et design complete` now discovers drawn controls: an unmarked native, ARIA or SDK control fails as `CONTROL-UNDECLARED`, a pointer or `:hover` element outside a control as `CONTROL-UNCLASSIFIED`, and `CONTROLS-MISSING` is gone.
+- `et design complete` now fails a control whose part draws its interactions as flat states instead of an `interactionRows` grid.
+- A page control in `definePart({ controls })` names the part that draws it in `part`; `et design complete` takes its interactions from that part and fails while that part is not design complete.
+- `et design complete` now requires a state that forces `active` on a control with `pointer` input, next to the state that forces `hover`.
+- `et design complete` now fails a control whose forced interaction changes a colour, background, border or shadow without a transition.
+- `et design check` fails with `CONTRAST` when drawn text is below WCAG 2 AA against its composited background. Parts declare token `pairs` to compute and `exceptions` with a reason; `contrastRatioOf` draws a ratio table.
+- A part's rules now run in its design frame. A switch morphs the existing DOM, so CSS transitions run, then plays the motion the rule names, with a controlled clock, seeded random and `from`-state measurements.
+- A design part can declare `motions` between its states, and a rule can name one. `et design check` fails on a motion between unknown states, a rule naming an undeclared motion, and `setTimeout` in motion code.
+- `et design check` now fails with `UTILITY-CSS` when a design part's CSS holds a declaration that a Tailwind utility of the product draws, for example `display: flex`.
+- `et design`: a product's `shared/` folder holds helper modules that are no part; any part imports them as `@shared/<path>`, and editing one marks each importing part changed.
+- The design server lists per sketch variant the states it adds and drops and its changed part note. Studio says on the canvas when a variant changes no pixel, and a click shows the old and new note.
+- `et design sketch new` takes several parts: one sketch, one variant folder holding them all, one `ready`, one merge; `ready` and `preview` name every part a `shared/` edit reaches; Studio shows every target part.
+
+### Patch Changes
+
+- `et update --continue` no longer commits what you changed after the stopped run, such as a package you installed by hand, into its own commits.
+- `et design check` no longer reports contrast for the label of a disabled control: a `label[for]`, a wrapping label, or an `aria-labelledby` target.
+- The design server's Studio event stream now also sends `calls` and `sketches` when a call or sketch file changes, and a `parts` event for a design system change that redraws no frame.
+- The design server draws up to four pictures at once instead of one, so cold shots, sketch lists and merge views render about three times faster. High-priority drawings still start before waiting low ones.
+- `et design` draws with partial raster off, so two draws of a page with embedded frames give the same picture under load, and `sketch ready` gives the same answer on a re-run.
+- The design auto-merge check now skips rejected variants, so only live variants can block a merge that is safe.
+- `et design` now fails with the frame URL when a frame or an embedded frame never draws, instead of saving a blank picture. `sketch ready` draws a changed state once more before it counts as a change.
+- Drawn design frames no longer show a real hover on a control at the frame's top-left corner, so `design shot` and `design complete` see only the interactions a state forces.
+- `et design` `CANONICAL-CLASS` and `UTILITY-CSS` now check the files of a `shared/` folder that a part imports, also in a sketch, so `sketch check` and `sketch ready` catch them before a merge.
+- Design screenshots now show the end of every finite CSS animation and transition, so an element that fades in with `@starting-style` is drawn fully visible.
+- The design server draws each shot on a warm browser page per viewport and scale instead of opening a new browser context, so a warm shot is about 12 % faster and a batch uses about 20 % less CPU.
+- The `et design` server now keeps the pixel compare of each sketch's unchanged states until a product file changes, so the sketch list loads in a fraction of the time after the first call.
+- `et design` redraws only the affected parts, not every part, when a file that a product stylesheet scans as a Tailwind `@source` changes.
+- `et design inbox done` now writes the note into the sketch variant for a comment on a part that exists only in the sketch, instead of failing with "is no part of".
+- A multi-target sketch merge gives each target only the `shared/` files it imports, directly or transitively; an unimported file returns to the target that held it. `sketch new` refuses targets whose `shared/` files clash.
+- `et design sketch ready` now also draws the parts that show the sketched part before it merges on its own. When one of them changes, the sketch stays ready and the output names the part and state.
+- A sketch with several targets shows the diff marks and the pages that use any target part. Studio names the parts a `shared/` edit reaches. The sketch-diff endpoint takes `part=`.
+- `et design` draws a sketch variant with its own part stylesheet where the product stylesheet `@import`s the merged one, so `sketch ready` no longer auto-merges a token value change as "no visible change".
+- A cold sketch shows its first frame sooner: Studio lists the sketches without the slow unchanged-state comparison first (`?unchanged=no`), asks for shots and diffs at once, then lists them in full.
+
 ## 3.0.0-next.23
 
 ### Minor Changes
