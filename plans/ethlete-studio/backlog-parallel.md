@@ -285,10 +285,11 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   `danger-on-light` (`86788394d`); `sketch check` and `design complete --variant a` pass. After 57's per-state
   viewport fix (`e9a7ba58c`) the select open panel shows all options; select r2 d is ready again (`bbcef9574`).
   Verified by eye: both shots at 320px.
-- **Open:** form-field error rows show no hover and no focus-visible change (SDK rule
-  `form-field-text-shell-styles.component.css:245`); question at the grill, recommendation: keep the danger border,
-  add the focus ring, hover in the danger hover colour. Form-field stays on hold until that lib change lands.
-  `part remove foundations/tokens` and its config entries wait on Tom's discard of the held tokens sketch.
+- **As built (ethlete-sdk-33, 2026-10-31):** Q65 built in `c5309a6b2` (`libs/components`, changeset, docs): an
+  error only remaps the text shell's colour variables to the error theme; Q67 accepted the result. Form-field r1 a
+  is ready (`27fa0a925`). Waits on Tom: merge select and form-field; discard the held `foundations/tokens` sketch,
+  then `part remove foundations/tokens` and drop it from the sdk `tokens` list and studio `hideBaseParts`.
+- **Next:** `components/tree`, then `switch`, then the tooltip.
 
 ### Foundation sheet decisions (2026-10-30)
 
