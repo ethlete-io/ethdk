@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -37,6 +37,20 @@ describe('editor tsconfigs', () => {
 
     expect(config.compilerOptions.paths['@shared/*']).toEqual([join(sharedDir, '*')]);
     expect(config.include).toContain(join(sharedDir, '**/*.ts'));
+  });
+
+  it("maps @shared/* to the product's shared folder after a sketch's, once the folder exists", () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const productShared = join(product.dir, 'shared');
+    const sharedDir = join(target, 'sketch/shared');
+    const pathsOf = () =>
+      JSON.parse(readFileSync(writeSystemTsconfig({ target, product: { ...product, sharedDir } }), 'utf8'))
+        .compilerOptions.paths['@shared/*'];
+
+    expect(pathsOf()).toEqual([join(sharedDir, '*')]);
+    mkdirSync(productShared);
+    expect(pathsOf()).toEqual([join(sharedDir, '*'), join(productShared, '*')]);
   });
 
   it('writes the calls tsconfig into the design folder', () => {

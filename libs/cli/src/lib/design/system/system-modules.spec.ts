@@ -10,6 +10,7 @@ import {
   productModuleIdOf,
   productOfModuleId,
   sketchOfModuleId,
+  stylesheetModuleIdOf,
 } from './system-modules';
 
 const acme = () => {
@@ -133,6 +134,51 @@ describe('createSystemModules', () => {
     expect(system.resolveId('./helper.ts?raw', hero)).toBeNull();
     expect(system.resolveId('./hero.css', hero)).toBe(
       productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/hero.css'), product: 'acme', sketch }),
+    );
+  });
+
+  it("resolves @shared/ inside a merged part to the product's shared folder, and a sketch's own file first", () => {
+    const { target, system } = acme();
+    const product = system.productOf('acme');
+    const parsed = parseTarget('elements/hero');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const design = join(target, DESIGN_DIR);
+    const hero = productModuleIdOf({ file: join(design, 'acme/elements/hero/hero.ts'), product: 'acme' });
+
+    mkdirSync(join(design, 'acme/shared'), { recursive: true });
+    writeFileSync(join(design, 'acme/shared/sheet.ts'), 'export const sheet = 1;\n');
+    writeFileSync(join(design, 'acme/shared/sheet.css'), '.sheet {}\n');
+
+    expect(system.resolveId('@shared/sheet', hero)).toBe(
+      productModuleIdOf({ file: join(design, 'acme/shared/sheet.ts'), product: 'acme' }),
+    );
+    expect(system.resolveId('@shared/sheet.css?inline', hero)).toBe(
+      stylesheetModuleIdOf({
+        file: join(design, 'acme/shared/sheet.css'),
+        query: 'inline',
+        product: 'acme',
+        sketch: null,
+      }),
+    );
+    expect(system.resolveId('@shared/missing', hero)).toBeNull();
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const sketchDir = join(design, 'acme/sketches/elements-hero');
+    const sketch = { target: 'elements/hero', variant: 'a' };
+    const sketched = productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/hero.ts'), product: 'acme', sketch });
+
+    expect(system.resolveId('@shared/sheet', sketched)).toBe(
+      productModuleIdOf({ file: join(design, 'acme/shared/sheet.ts'), product: 'acme', sketch }),
+    );
+
+    mkdirSync(join(sketchDir, 'shared'), { recursive: true });
+    writeFileSync(join(sketchDir, 'shared/sheet.ts'), 'export const sheet = 2;\n');
+
+    expect(system.resolveId('@shared/sheet', sketched)).toBe(
+      productModuleIdOf({ file: join(sketchDir, 'shared/sheet.ts'), product: 'acme', sketch }),
     );
   });
 

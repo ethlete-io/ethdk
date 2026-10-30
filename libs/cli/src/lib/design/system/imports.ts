@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
-import { dirname, isAbsolute, relative, resolve } from 'path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { sourceFileOf } from '../vite-paths';
+import { ProductSource } from './base';
 import { assetFileOf, assetPathOf, ASSETS_PREFIX, cssAssetPathsOf } from './assets';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -9,6 +10,9 @@ import { importsOf } from './ts-source';
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
 export const SHARED_PREFIX = '@shared/';
+
+/** The folder of helper code that is no part: a product's own, a sketch's, or a sketch variant's, imported as `@shared/<path>`. */
+export const SHARED_FOLDER = 'shared';
 
 export type PartImport =
   | { kind: 'part'; layer: string; name: string; specifier: string; stylesheet?: true }
@@ -99,9 +103,19 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
 
 export type SharedDirs = { sharedDir?: string; variantSharedDir?: string };
 
-/** The folders `@shared/<path>` looks in, the variant's own `shared/` first. */
-export const sharedDirsOf = (product: SharedDirs) =>
-  [product.variantSharedDir, product.sharedDir].filter((dir): dir is string => dir !== undefined);
+type SharedSource = Pick<ProductSource, 'dir'> & { base: Pick<ProductSource, 'dir'> | null };
+
+/** The `shared/` folders of a product and of its base, in that order. */
+export const productSharedDirsOf = (product: SharedSource) => [
+  resolve(product.dir, SHARED_FOLDER),
+  ...(product.base ? [resolve(product.base.dir, SHARED_FOLDER)] : []),
+];
+
+/** The folders `@shared/<path>` looks in, first match wins: the variant's own `shared/`, the sketch's, the product's, its base's. */
+export const sharedDirsOf = (product: SharedDirs & SharedSource) => [
+  ...[product.variantSharedDir, product.sharedDir].filter((dir): dir is string => dir !== undefined),
+  ...productSharedDirsOf(product),
+];
 
 /** The file `@shared/<path>` resolves to, the variant's own copy first; `null` when no folder holds it. */
 export const sharedFileOf = (options: { dirs: string[]; path: string }) => {
@@ -117,8 +131,42 @@ export const sharedFileOf = (options: { dirs: string[]; path: string }) => {
   return null;
 };
 
+const SOURCE_FILE = /\.(?:ts|js|mjs)$/u;
+
 /**
- * Imports and stylesheet `url(@assets/...)` that name no part, fixture set or asset file, `@shared/` imports outside a sketch variant (`sharedDir` is the
+ * The files of the product's and its base's `shared/` folders that `files` import as `@shared/<path>`, and the
+ * files those reach in turn, each with its path inside its `shared/` folder, sorted by that path.
+ */
+export const importedSharedOf = (options: { product: SharedSource; files: string[] }) => {
+  const dirs = productSharedDirsOf(options.product);
+  const reached = new Map<string, string>();
+  const queue = options.files.filter((file) => SOURCE_FILE.test(file));
+
+  for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
+    for (const specifier of importsOf(readFileSync(file, 'utf8'))) {
+      const imported = classifyImport(specifier);
+      const path = specifier.split('?')[0] ?? specifier;
+      const found =
+        imported.kind === 'shared'
+          ? sharedFileOf({ dirs, path: imported.path })
+          : imported.kind === 'relative' && reached.has(file)
+            ? sharedFileOf({ dirs: [dirname(file)], path })
+            : null;
+      const dir = found ? dirs.find((candidate) => found.startsWith(`${candidate}${sep}`)) : undefined;
+
+      if (!found || !dir || reached.has(found)) continue;
+
+      reached.set(found, relative(dir, found).split(sep).join('/'));
+
+      if (SOURCE_FILE.test(found)) queue.push(found);
+    }
+  }
+
+  return [...reached].map(([file, path]) => ({ path, file })).sort((a, b) => a.path.localeCompare(b.path));
+};
+
+/**
+ * Imports and stylesheet `url(@assets/...)` that name no part, fixture set, asset file or `shared/` file (`sharedDir` is the
  * sketch's `shared/` folder, `assetsDir` the variant's `assets/`), and relative imports that reach into another part.
  */
 export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { assetsDir?: string }): Problem[] => {
@@ -144,12 +192,12 @@ export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { asset
         return problem(`${imported.specifier} resolves to a part without ${imported.name}.css`);
       if (imported.kind === 'fixtures' && !product.fixtures)
         return problem(`${FIXTURES_SPECIFIER} resolves to no fixtures.ts`);
-      if (imported.kind === 'shared' && !product.sharedDir)
-        return problem(
-          `${imported.specifier} - only a part in a sketch variant may import the sketch's ${SHARED_PREFIX}`,
-        );
       if (imported.kind === 'shared' && !sharedFileOf({ dirs: sharedDirsOf(product), path: imported.path }))
-        return problem(`${imported.specifier} resolves to no file in the variant's or the sketch's shared/ folder`);
+        return problem(
+          product.sharedDir
+            ? `${imported.specifier} resolves to no file in the variant's, the sketch's or the product's shared/ folder`
+            : `${imported.specifier} resolves to no file in the product's shared/ folder`,
+        );
       if (imported.kind === 'asset' && !assetFileOf({ product, path: imported.path }))
         return problem(`${imported.specifier} resolves to no file in an assets/ folder`);
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))

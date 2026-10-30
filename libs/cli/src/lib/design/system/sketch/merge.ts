@@ -8,7 +8,7 @@ import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
-import { carryShared, sharedPlanOf } from './merge-shared';
+import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, rejectedProblemOf, Sketch, variantDirOf } from './sketch';
@@ -83,7 +83,7 @@ const mergeOrReason = (options: {
 
   if (problems.length > 0) return problems.map((problem) => `${problem.file}: ${problem.message}`).join('\n');
 
-  const shared = sharedPlanOf({ sketch, parts });
+  const shared = sharedPlanOf({ sketch, parts, product });
 
   if (shared !== 'carry' && shared !== 'drop') return shared;
 
@@ -124,7 +124,9 @@ const mergeOrReason = (options: {
 
   const mergedKeys = [...new Set([sketch.target, ...parts.map(partKeyOf)])];
   const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
-  const untouched = assetFiles.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
+  const sharedChanges = productSharedChangesOf({ sketch, variant, product });
+  const untouched =
+    assetFiles.length > 0 || sharedChanges.length > 0 ? unchangedMergedOf({ product, except: mergedKeys }) : [];
 
   const known = ruleLinesOf(target, product);
 
@@ -136,11 +138,12 @@ const mergeOrReason = (options: {
       from: file,
       to: resolve(product.dir, ASSETS_FOLDER, relative(resolve(dir, ASSETS_FOLDER), file)),
     })),
+    ...sharedChanges,
   ]);
 
   writeFileSync(noteFile, noted);
 
-  if (shared === 'carry') carryShared({ sketch, variant, targetDir });
+  if (shared === 'carry') carryShared({ sketch, variant, targetDir, product });
 
   if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
     swapped.restore();
@@ -153,7 +156,7 @@ const mergeOrReason = (options: {
 
   const alsoChanged = rerecordChangedMerged({ product, before: untouched });
 
-  if (alsoChanged.length > 0) console.log(`Asset change also updates: ${alsoChanged.join(', ')}`);
+  if (alsoChanged.length > 0) console.log(`Asset or shared/ change also updates: ${alsoChanged.join(', ')}`);
 
   addressSketchComments({ sketch, reason: 'merge', author, note });
   rmSync(sketch.dir, { recursive: true, force: true });
@@ -166,8 +169,8 @@ const mergeOrReason = (options: {
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
  * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
  * records each merged part's hash in `merged.json` and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
- * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. The sketch's `shared/` folder goes into the target's folder when the
- * target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the open comments on its variants are addressed, by `author` or the user. Refuses without a
+ * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
+ * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the open comments on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
  * would let it, the parts that changed (`[]` without a baseline).
  */

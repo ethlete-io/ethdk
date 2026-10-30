@@ -63,6 +63,7 @@ const helpOf = (invocation: string) =>
     '  Open a sketch on a part, new or existing, in progress. Each variant starts as a copy of the part, or of the part',
     "  --like names (a variant of its open sketch after the colon, with that sketch's shared/ folder).",
     "  Variants import code from the sketch's shared/ folder as @shared/<path>; a merge moves it into the target.",
+    "  Any part imports the product's own shared/ folder as @shared/<path>; a sketch's file of the same path replaces it at merge.",
     '',
     `${invocation} sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>]`,
     '  Add a variant to the open sketch, as a copy of another, in the running round or a new one.',

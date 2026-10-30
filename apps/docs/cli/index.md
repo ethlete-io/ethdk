@@ -85,6 +85,14 @@ folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a h
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
 diagram, passes with a `data-et-drawing` attribute.
 
+A product's `shared/` folder (`.ethlete/design/<product>/shared/`) holds helper modules that are
+no part, such as a layout several parts draw with. Any part imports them as `@shared/<path>`;
+they never appear in Studio's tree or `et design list`. Inside a sketch, `@shared/<path>` looks
+in the variant's `shared/`, then the sketch's, then the product's, then the base's. A part's
+`merged.json` hash covers the shared files it reaches, so editing one marks each importer changed.
+At a merge, a sketch `shared/` file with the path of a product shared file replaces that file;
+the rest moves into the target's folder as before.
+
 Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS
 imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
 token definitions. Pixel comparisons for sketches use fresh rendering results on each request,

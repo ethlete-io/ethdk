@@ -3,7 +3,7 @@ import { dirname, resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
-import { classifyImport, sharedFileOf as sharedFileIn } from './imports';
+import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';
 import { partKeyOf, resolveProduct, ResolvedProduct, tokenPartsOf } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
@@ -59,7 +59,7 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
 /**
  * The products of a workspace, resolved on first use and kept until `forget`, and the resolution
  * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet),
- * `@system/fixtures`, a sketch's `@shared/<path>` and `@assets/<file>` (a URL, or the text with `?raw`)
+ * `@system/fixtures`, `@shared/<path>` (a sketch's, then the product's) and `@assets/<file>` (a URL, or the text with `?raw`)
  * inside a module of one product. A relative import of a source file stays in the importer's product
  * and sketch, so a helper file next to a part resolves `@system/...` as the part does.
  */
@@ -133,16 +133,21 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
   const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
     const { product, sketch, path } = options;
+    const resolvedProduct = productOf(product);
+
+    if (!resolvedProduct) return null;
+
     const target = sketch ? parseTarget(sketch.target) : null;
-    const productDir = sketchesRoot ?? productOf(product)?.dir;
+    const found =
+      sketch && target && typeof target !== 'string'
+        ? findSketch({ productDir: sketchesRoot ?? resolvedProduct.dir, product, sketch: target })
+        : null;
+    const sketchDirs =
+      found && typeof found !== 'string' && sketch
+        ? [variantSharedDirOf(found, sketch.variant), sharedDirOf(found)]
+        : [];
 
-    if (!target || typeof target === 'string' || !productDir) return null;
-
-    const found = findSketch({ productDir, product, sketch: target });
-
-    return found && typeof found !== 'string' && sketch
-      ? sharedFileIn({ dirs: [variantSharedDirOf(found, sketch.variant), sharedDirOf(found)], path })
-      : null;
+    return sharedFileIn({ dirs: [...sketchDirs, ...productSharedDirsOf(resolvedProduct)], path });
   };
 
   const resolveId = (specifier: string, importer: string | undefined) => {

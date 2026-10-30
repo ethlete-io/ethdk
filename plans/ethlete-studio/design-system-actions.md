@@ -696,6 +696,16 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   open plan to adopt the needed SDK components cleanly. Until then the `UNKNOWN-THEME` finding on
   `components/select` stays.
 
+### 4.64 Shared helper code had to be a part - done
+
+- **Pain (Tom, 2026-10-30):** `foundations/sheet` is no design. It only exports the token-sheet layout that
+  colors, type, spacing and motion import, and its canvas state duplicates `foundations/spacing`.
+- **Cause:** `@shared/<path>` resolved only inside sketches, so a merged product had no place for helper code.
+- **Decision (Tom, 2026-10-30):** build the missing capability.
+- **Done (2026-10-30):** a product `shared/` folder, imported as `@shared/<path>` by any part (sketch lookup:
+  variant, sketch, product). Part hashes cover the shared files they reach. A sketch file with a product
+  shared path replaces it at merge. The sheet is `shared/token-sheet.ts`; `foundations/sheet` is removed.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - parked

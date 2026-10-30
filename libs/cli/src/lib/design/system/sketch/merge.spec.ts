@@ -418,14 +418,14 @@ describe('mergeSketch with an asset another part uses', () => {
     const { target, log } = withDependents({ foreignEdit: false });
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
-    expect(log).toHaveBeenCalledWith('Asset change also updates: pages/home');
+    expect(log).toHaveBeenCalledWith('Asset or shared/ change also updates: pages/home');
   }, 120_000);
 
   it('keeps a part with a foreign edit before the merge showing as changed outside a sketch', () => {
     const { target, log } = withDependents({ foreignEdit: true });
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['pages/home']);
-    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('Asset change also updates'));
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('change also updates'));
   }, 120_000);
 });
 

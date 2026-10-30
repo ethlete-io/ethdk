@@ -1,5 +1,6 @@
 import { relative, resolve, sep } from 'path';
 import { DesignConfig } from './paths';
+import { SHARED_FOLDER } from './system/imports';
 import { isLayer } from './system/layers';
 import { partKeyOf } from './system/resolve-product';
 import {
@@ -106,10 +107,10 @@ const partFolderOf = (segments: string[]) => {
 };
 
 /**
- * The frames a file that came or went redraws: every part of the product whose part folder holds it,
- * since an `@system/...` import anywhere in the product may now resolve to another file, or the parts
- * of the variant whose folder holds it. A file in no part folder redraws no part, only the frames
- * that show an error.
+ * The frames a file that came or went redraws: every part of the product whose part folder or `shared/`
+ * holds it, since an `@system/...` or `@shared/...` import anywhere in the product may now resolve to
+ * another file, or the parts of the variant whose folder holds it. A file in no part folder redraws no
+ * part, only the frames that show an error.
  */
 export const addedPartsOf = (options: {
   designRoot: string;
@@ -137,12 +138,16 @@ export const addedPartsOf = (options: {
       return parts.length > 0 ? ({ all: false, parts } satisfies PartsChange) : none;
     }
 
-    return partFolderOf(rest) ? ({ all: false, parts: everyPartOf(system, product) } satisfies PartsChange) : none;
+    return partFolderOf(rest) || rest[0] === SHARED_FOLDER
+      ? ({ all: false, parts: everyPartOf(system, product) } satisfies PartsChange)
+      : none;
   }
 
   const baseDir = baseDirs.find((dir) => file.startsWith(`${dir}${sep}`));
 
-  if (!baseDir || !partFolderOf(relative(baseDir, file).split(sep))) return none;
+  const inBase = baseDir ? relative(baseDir, file).split(sep) : [];
+
+  if (!baseDir || (!partFolderOf(inBase) && inBase[0] !== SHARED_FOLDER)) return none;
 
   return {
     all: false,

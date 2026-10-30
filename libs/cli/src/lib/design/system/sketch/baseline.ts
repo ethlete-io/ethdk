@@ -2,29 +2,37 @@ import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
 import { ASSETS_PREFIX, filesBelow, importedAssetsOf } from '../assets';
+import { importedSharedOf, SHARED_PREFIX } from '../imports';
 import { fixturesOf, PartFile, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 
 export const FIXTURES_KEY = 'fixtures.ts';
 
-const hashOf = (paths: { root: string; files: string[]; assets?: { path: string; file: string }[] }) => {
+type Imported = { path: string; file: string }[];
+
+const hashOf = (paths: { root: string; files: string[]; assets?: Imported; shared?: Imported }) => {
   const hash = createHash('sha256');
 
   for (const file of paths.files) hash.update(`${relative(paths.root, file)}\0`).update(readFileSync(file));
   for (const asset of paths.assets ?? [])
     hash.update(`${ASSETS_PREFIX}${asset.path}\0`).update(readFileSync(asset.file));
+  for (const shared of paths.shared ?? [])
+    hash.update(`${SHARED_PREFIX}${shared.path}\0`).update(readFileSync(shared.file));
 
   return hash.digest('hex').slice(0, 16);
 };
 
 /**
- * The content hash of a part folder together with the bytes of each `@assets/` file it imports, as `product` resolves
- * them. A part that imports no asset hashes as its folder alone.
+ * The content hash of a part folder together with the bytes of each product `shared/` file it reaches through
+ * `@shared/` and each `@assets/` file it or those files import, as `product` resolves them. A part that imports
+ * neither hashes as its folder alone.
  */
 export const partHashOf = (options: { product: Pick<ResolvedProduct, 'dir' | 'base'>; dir: string }) => {
   const files = filesBelow(options.dir);
+  const shared = importedSharedOf({ product: options.product, files });
+  const assets = importedAssetsOf({ product: options.product, files: [...files, ...shared.map(({ file }) => file)] });
 
-  return hashOf({ root: options.dir, files, assets: importedAssetsOf({ product: options.product, files }) });
+  return hashOf({ root: options.dir, files, assets, shared });
 };
 
 /**

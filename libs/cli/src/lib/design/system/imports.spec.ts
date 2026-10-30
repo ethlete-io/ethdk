@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -51,14 +51,20 @@ describe('importProblemsOf', () => {
     expect(importProblemsOf(resolveAcme(acme()))).toEqual([]);
   });
 
-  it('flags @shared/ outside a sketch variant and passes it inside one', () => {
+  it("resolves @shared/ outside a sketch variant to the product's shared folder, and inside one to the sketch's too", () => {
     const target = acme();
 
     write(target, 'acme/elements/hero/hero.ts', part("import { data } from '@shared/data';"));
 
     expect(importProblemsOf(resolveAcme(target))).toEqual([
-      expect.objectContaining({ rule: 'IMPORT', message: expect.stringContaining('only a part in a sketch variant') }),
+      expect.objectContaining({
+        rule: 'IMPORT',
+        message: "@shared/data resolves to no file in the product's shared/ folder",
+      }),
     ]);
+    write(target, 'acme/shared/data.ts', 'export const data = 1;\n');
+    expect(importProblemsOf(resolveAcme(target))).toEqual([]);
+    rmSync(join(target, DESIGN_DIR, 'acme/shared'), { recursive: true });
     mkdirSync(join(target, 'shared'));
     writeFileSync(join(target, 'shared/data.ts'), 'export const data = 1;\n');
     expect(importProblemsOf({ ...resolveAcme(target), sharedDir: join(target, 'shared') })).toEqual([]);
@@ -98,8 +104,8 @@ describe('importProblemsOf', () => {
     );
 
     expect(importProblemsOf({ ...resolveAcme(target), sharedDir: shared }).map(({ message }) => message)).toEqual([
-      "@shared/agent-logos resolves to no file in the variant's or the sketch's shared/ folder",
-      "@shared/gone.css?inline resolves to no file in the variant's or the sketch's shared/ folder",
+      "@shared/agent-logos resolves to no file in the variant's, the sketch's or the product's shared/ folder",
+      "@shared/gone.css?inline resolves to no file in the variant's, the sketch's or the product's shared/ folder",
     ]);
   });
 

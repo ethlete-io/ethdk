@@ -65,6 +65,28 @@ describe('baselineOf', () => {
   });
 });
 
+describe('partHashOf with a product shared/ folder', () => {
+  it('changes the hash of a part that imports a shared file, through another shared file too, and no other part', () => {
+    const target = acme();
+    const dir = productDir(target);
+
+    mkdirSync(join(dir, 'shared'), { recursive: true });
+    writeFileSync(join(dir, 'shared/sheet.ts'), "export { rows } from './rows';\n");
+    writeFileSync(join(dir, 'shared/rows.ts'), 'export const rows = 1;\n');
+    writeFileSync(join(dir, 'elements/hero/hero.ts'), "import { rows } from '@shared/sheet';\nexport default rows;\n");
+
+    const before = baselineOf(resolveAcme(target));
+
+    writeFileSync(join(dir, 'shared/rows.ts'), 'export const rows = 2;\n');
+
+    const after = baselineOf(resolveAcme(target));
+
+    expect(after['elements/hero']).not.toBe(before['elements/hero']);
+    expect(after['pages/home']).toBe(before['pages/home']);
+    expect(after['foundations/tokens']).toBe(before['foundations/tokens']);
+  });
+});
+
 describe('conflictsOf', () => {
   it('names the parts a variant replaces that changed, came or went in the product', () => {
     const target = acme();

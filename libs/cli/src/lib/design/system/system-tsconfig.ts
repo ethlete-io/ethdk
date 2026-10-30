@@ -4,7 +4,14 @@ import { typecheck, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS } from '../calls-tsconfig';
 import { installedAssetRoot, readConfig, workRootOf } from '../paths';
 import { typePathsOf } from '../render-packages';
-import { FIXTURES_SPECIFIER, partSpecifierOf, SHARED_PREFIX, SharedDirs, sharedDirsOf } from './imports';
+import {
+  FIXTURES_SPECIFIER,
+  partSpecifierOf,
+  productSharedDirsOf,
+  SHARED_PREFIX,
+  SharedDirs,
+  sharedDirsOf,
+} from './imports';
 import { KIT_SPECIFIER } from './kit';
 import { ResolvedProduct } from './resolve-product';
 
@@ -50,7 +57,8 @@ const systemTsconfigText = (options: { target: string; product: ResolvedProduct 
   const typePaths = typePathsOf({ packages: readConfig(target)?.render?.packages ?? {}, target });
   const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [part.file]]));
   const fixtures = product.fixtures ? [product.fixtures] : [];
-  const sharedDirs = sharedDirsOf(product);
+  const productShared = productSharedDirsOf(product);
+  const sharedDirs = sharedDirsOf(product).filter((dir) => !productShared.includes(dir) || existsSync(dir));
   const shared = sharedDirs.map((dir) => resolve(dir, '**/*.ts'));
 
   const config = {

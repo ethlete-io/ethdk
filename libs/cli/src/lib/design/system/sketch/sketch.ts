@@ -13,7 +13,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { jsonLayoutOf } from '../../json-layout';
 import { statusPath } from '../../status';
 import { ASSETS_FOLDER } from '../assets';
-import { SHARED_PREFIX } from '../imports';
+import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
@@ -94,8 +94,7 @@ export const sketchDirOf = (options: { productDir: string; sketch: SketchTarget 
 
 export const variantDirOf = (sketch: Sketch, variant: string) => resolve(sketch.dir, variant);
 
-/** The folder of a sketch that holds no variant: code every variant imports as `@shared/<path>`. */
-export const SHARED_FOLDER = 'shared';
+export { SHARED_FOLDER };
 
 export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, SHARED_FOLDER);
 
