@@ -220,6 +220,19 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   and the `components/select` sketch (controls, option states, trigger `active` as variants). Storybook is no
   workspace package, so it needs no changeset.
 
+### Foundation sheet decisions (2026-10-30)
+
+Tom asked why `sdk/foundations/tokens` looks so different from the Studio foundations. Cause: Studio draws its
+five foundation parts with `studio/shared/token-sheet.ts`, reachable only through Studio's `@shared` alias; the
+sdk part has its own drawing code and hand-typed value labels in `sdk/foundations/tokens/tokens.ts` next to a
+generated CSS file.
+
+- Q54: the foundation sheet helper moves into the design tool (`@design-system`, `libs/cli/design`), so every
+  product (studio, sdk, studio-lab) draws its foundations with it and they look the same. Not the wireframe kit
+  (`@design-system/kit`, on hold). Studio's parts switch to it; `studio/shared/token-sheet.ts` goes away.
+- Q55: the sdk follows the Studio split: `foundations/colors` now, `type`, `spacing` and `motion` once the SDK
+  has real values for them. Labels come from the generated CSS through the helper, never hand-typed values.
+
 ## Zoom chip tier (Tom, 2026-10-30, Q45)
 
 The zoom chip is `components/zoom-chip`, not `elements/zoom-chip`: an element may not import another element
