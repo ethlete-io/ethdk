@@ -106,7 +106,11 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
   writes a pending entry to `<product>/exceptions.json` (the owner's for a base part); the gap still fails, marked
   pending. `POST /__design/exception-approve?product=` `{ key, by }` records `by`, `at` and the part hash; then the gap
   drops. A later part edit reopens it. `GET /__design/exceptions?product=` lists them; `design complete` prints an
-  `EXCEPTION` line each. Studio has no approve button yet (stream C). Remaining: the `handoff` status with CI.
+  `EXCEPTION` line each. Studio has no approve button yet (stream C).
+- **Built (`acc020fd0`): the `handoff` status with CI.** `design complete <part> --handoff` writes a passing part to
+  `<product>/handoff.json`; `design complete --handoff --product studio` re-checks each one and exits 1 on a
+  regression. The CI Build job runs it. No studio part has the status yet: granting it is the user's call. Passing
+  today: `components/disclosure`, `components/zoom-chip`, `elements/canvas-frames`, `foundations/logo`, `foundations/icons`.
 - **Built (`c7c9a0be9`): `design complete <layer>/<name> --variant <key>`** (SDK base session request). Chose the flag
   over a `sketch check` section: it reuses `completenessOf` whole, only threading the variant into `seePart`. Every
   part is drawn as the variant draws it; a part the variant changes skips `PART-UNREVIEWED`. Approved exceptions and
