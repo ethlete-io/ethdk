@@ -773,7 +773,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   Fonts, animations and images were settled every time. Verified: a probe script and a spec on the launch flag.
   Not verified: a real `sketch ready` under load. Saved pictures from before differ at those corners.
 
-### 4.67 The design render does not load the generated SDK theme classes - open
+### 4.67 The design render does not load the generated SDK theme classes - premise wrong
 
 - **Pain (2026-10-30):** `pages/sketches/sketch-data.css` keeps its own `:root, .et-color--default` block to map
   the SDK default blue to the Studio accent. A sketch that removed it changed `page-sketch` and `zoomed-page`.
@@ -785,6 +785,23 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   until this fix lands. Also for the colour cleanup: a separate sketch drops the `surface-sunken` cell from
   `foundations/agent-logos` (`surfaces` list); the builder may merge it and then the `foundations/colors`
   sketch that removes the alias itself.
+
+- **Finding (2026-10-30):** the render already loads the theme classes: `.ethlete/design/config.json` gives `studio`
+  `styles: [".ethlete/design/studio/styles.css"]`, which imports `apps/ethlete-studio/src/styles.css` and so
+  `styles/themes.css`. The `sketch-data.css` override is redundant: without it `page-sketch` and `zoomed-page`
+  differ by at most 2/255 per channel (oklch `--accent` vs the generated rgb), which is why the removal sketch
+  showed a change. UNKNOWN-THEME has another cause: the inherited SDK part `components/select` passes
+  `panelColor: 'accent'`, a theme only the SDK product defines; Studio registers `brand`.
+- **Open for Tom:** remove the override through a sketch (the strict check shows the rounding change); fix
+  `select` with a Studio `components/select` that uses `brand` or no `panelColor`, or drop the theme name from
+  the SDK base part.
+
+### 4.72 A `foundations/colors` variant does not reach the SDK components in its frame - open
+
+- **Pain (2026-10-30, found in 4.67):** `themes.css` is generated from the merged `foundations/colors`. A colours
+  sketch variant changes `--accent` and the other part tokens, but SDK components in that frame keep the merged
+  theme colours until `yarn studio:themes` runs. Not tested with a real colours sketch.
+- **Fix option:** the render generates the theme classes from the variant's `foundations/colors` for a variant frame.
 
 ### 4.68 One change across many parts needs one sketch per part - open
 
