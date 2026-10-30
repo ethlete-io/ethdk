@@ -247,7 +247,9 @@ Run `sketch ready` again on a `ready` sketch to repeat the check and the auto me
 
 Mark a sketch `ready` only when no change to it waits on anything: no open decision, no helper still to
 land, no "once X is decided I adapt the sketch". A pending change keeps the sketch in work and out of the
-merge queue: ask first, make the change, then mark it `ready`.
+merge queue: ask first, make the change, then mark it `ready`. Record the wait with
+`et design sketch hold <layer>/<name> --until "<what it waits on>" --by <model id>` (a `ready` sketch goes back
+in progress) and `sketch release` it once the change is in.
 
 ### Your model id: `--by`
 
