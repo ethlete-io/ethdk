@@ -15,7 +15,7 @@ const namesOf = (group: Group) => [
   ...new Set([...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '').filter(groups[group].owns)),
 ];
 
-const surfaces = ['surface-sunken', 'surface', 'surface-raised', 'surface-overlay'];
+const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
 
 const sampleOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="co-shadow"></span>`;
@@ -102,7 +102,7 @@ const cards: Record<Group, (surface: string) => string> = {
 };
 
 export default definePart<{ group: Group }>({
-  note: 'The Studio surfaces, accent, warning and error colours on their own sheet, split from foundations/tokens.',
+  note: 'The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: {
     surfaces: { group: 'surfaces' },
@@ -124,7 +124,7 @@ export default definePart<{ group: Group }>({
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
         .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
         .co-cluster { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-        .co-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+        .co-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
         .co-surface { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); }
         .co-surface-name { font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .co-muted { color: var(--text-muted); }
