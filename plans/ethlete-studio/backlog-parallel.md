@@ -439,6 +439,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   `studio/foundations/icons`: pixel grid, centre lines, padding box), with the grid size as an input; the SDK icons
   use three grids (24 px: 25 icons, 16 px: 15, Font Awesome 512 units: 10). Studio and sdk `foundations/icons` both
   use it; sdk `foundations/icons` stays on hold until it lands. Built by `ethlete-sdk-57` after the reset.
+- Q80: all SDK icons move onto one grid. After `iconSheet` lands, `ethlete-sdk-33` opens a sketch round on sdk
+  `foundations/icons` with the construction view on candidate grids, and Tom picks the grid. Then the icons not on it
+  are redrawn in `libs/components` (for example the Font Awesome chevron, check and times), with a changeset.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
