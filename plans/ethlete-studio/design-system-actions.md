@@ -863,6 +863,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   changed `foundations/colors`, `foundations/motion` and `foundations/type` without a sign in the command.
 - **Fix option:** a sketch with several targets, or `sketch new --each <part,part>` that runs the same
   edit and one `ready` over all of them. `ready` names every part a `shared/` edit reaches.
+- **Decision (Tom, 2026-10-30):** one sketch with several targets: `sketch new <part> <part>... --variants a`. One
+  variant folder holds all target parts; one `ready` compares every target and every part the edit reaches; one
+  merge, one commit. `ready` and `preview` name every part a `shared/` edit reaches.
 
 ### 4.69 A CLI rebuild breaks sketch commands that run at the same time - done
 
