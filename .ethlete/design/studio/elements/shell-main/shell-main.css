@@ -31,8 +31,21 @@
   }
 
   .st-shell-logo {
+    --accent: var(--surface-raised);
+    --on-accent: var(--text);
     width: 40px;
     height: 40px;
+  }
+
+  .st-shell-logo > svg {
+    width: inherit;
+    height: inherit;
+  }
+
+  .st-shell-logo path {
+    transform: scale(0.72);
+    transform-origin: center;
+    transform-box: view-box;
   }
 
   .st-shell-bubble {

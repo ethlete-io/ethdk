@@ -2,7 +2,7 @@ import pickerStyles from './picker.css?inline';
 import { drawing, html } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { icon, type IconName } from '@system/foundations/icons';
-import { studioMarkLine } from '@system/foundations/logo';
+import { studioMark } from '@system/foundations/logo';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -48,7 +48,7 @@ const sep = '<div class="st-shell-sep my-space-2 bg-surface-border"></div>';
 const rail = (section: Section, product: string, panelHidden: boolean) =>
   html`<nav class="st-shell-rail flex flex-col items-center gap-space-1 py-space-3 bg-surface">
     <div class="st-shell-slot relative flex justify-center w-full" data-kind="logo">
-      <span class="st-shell-logo flex items-center justify-center text-text">${studioMarkLine(24)}</span>
+      <span class="st-shell-logo flex items-center justify-center text-text">${studioMark(24)}</span>
     </div>
     ${sep} ${SECTIONS.map((s) => slot(icon(ICONS[s], { size: 20 }), s, s === section, 'section', panelHidden)).join('')}
     <div class="flex-1"></div>
