@@ -545,6 +545,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `text-ui-xs` also sets a line height; use the plain size where the old CSS set only `font-size`. Tool note
   (not proven): `rounded-[50%]` in a sketch file drew square dots, so an arbitrary-value class in a sketch may
   not reach the sketch stylesheet.
+- **Progress (2026-10-30):** `elements/canvas-frames` moved; `ready` auto-merged it. Kept in CSS: ring shadows,
+  off-scale text sizes, calc grid columns, `nth-child` padding, `.st-sgrid-cell` (`inbox.ts` rewrites its exact
+  markup with a regex) and `.st-canvas-zoom*` (`pages/sketches` selects them). Next: `pages/merge`, then
+  `components/disclosure`, `foundations/*` (except colors); `inbox`, `comment-pin`, `pages/sketches` after their
+  open sketches merge.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 

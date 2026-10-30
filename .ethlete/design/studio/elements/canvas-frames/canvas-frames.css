@@ -1,87 +1,31 @@
 @layer components {
   .st-canvas {
-    position: relative;
-    height: 100%;
-    min-height: 480px;
-    overflow: hidden;
     padding-left: var(--st-shell-inset-left, 0px);
   }
 
-  .st-canvas-frames {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 120px;
-    padding: 48px 40px;
-  }
-
   .st-cframe {
-    position: relative;
-    margin: 0;
-    background: var(--surface);
     box-shadow: 0 0 0 1px var(--surface-border);
   }
 
   .st-cframe-head {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    display: flex;
     gap: 0.6em;
-    padding-bottom: var(--space-2);
-    color: var(--text);
     font-size: 1.2rem;
     line-height: 1.6rem;
-    white-space: nowrap;
-  }
-
-  .st-cframe-head-width {
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
   }
 
   .st-sgrid {
-    display: flex;
-    flex-direction: column;
-    gap: 2.4rem;
-    width: max-content;
-    padding: 1.6rem 2.4rem 2.4rem;
-    background: var(--surface);
-    color: var(--text-muted);
     font-size: 1.1rem;
     line-height: 1.4rem;
   }
 
   .st-sgrid-group {
-    display: grid;
     grid-template-columns: 12rem repeat(var(--st-cols), calc(var(--st-cell-w) + 2 * var(--space-1)));
-    align-items: stretch;
-    gap: 1px;
   }
 
   .st-sgrid-head {
-    grid-column: 1 / -1;
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--surface-border);
     color: var(--text-subtle, var(--text-muted));
     font-size: 1rem;
     letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .st-sgrid-label,
-  .st-sgrid-row {
-    font-family: var(--font-code);
-  }
-
-  .st-sgrid-label {
-    align-self: end;
-    padding-bottom: 0.4rem;
-  }
-
-  .st-sgrid-row {
-    align-self: center;
   }
 
   .st-sgrid-packed > .st-sgrid-label {

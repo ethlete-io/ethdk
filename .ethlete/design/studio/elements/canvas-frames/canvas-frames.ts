@@ -13,11 +13,11 @@ const perLine = 4;
 
 const restOnly = (row: GridRow) => row.cells.every((cell, index) => index === 0 || cell === undefined);
 
-const label = (text: string) => `<span class="st-sgrid-label">${text}</span>`;
+const label = (text: string) => `<span class="st-sgrid-label self-end pb-1 font-code">${text}</span>`;
 const cell = (body: string | undefined) => `<div class="st-sgrid-cell">${body ?? ''}</div>`;
 
 const tableRow = ({ label: text, cells }: GridRow) =>
-  `<span class="st-sgrid-row">${text}</span>` + cells.map(cell).join('');
+  `<span class="self-center font-code">${text}</span>` + cells.map(cell).join('');
 
 const packedLine = (rows: GridRow[]) => {
   const blanks = '<span></span>'.repeat(perLine - rows.length);
@@ -44,20 +44,20 @@ export const stateGrid = (
   const interactive = rows.filter((row) => !restOnly(row));
   const rest = rows.filter(restOnly);
   const interactionGroup = interactive.length
-    ? `<div class="st-sgrid-group">
-        <span class="st-sgrid-head">States by interaction</span>
+    ? `<div class="st-sgrid-group grid items-stretch gap-px">
+        <span class="st-sgrid-head col-span-full mb-2 border-b border-surface-border pb-1 uppercase">States by interaction</span>
         <span></span>
         ${columns.map(label).join('')} ${interactive.map(tableRow).join('')}
       </div>`
     : '';
   const restGroup = rest.length
-    ? `<div class="st-sgrid-group st-sgrid-packed">
-        <span class="st-sgrid-head">Rest only</span>
+    ? `<div class="st-sgrid-group st-sgrid-packed grid items-stretch gap-px">
+        <span class="st-sgrid-head col-span-full mb-2 border-b border-surface-border pb-1 uppercase">Rest only</span>
         ${lines(rest).map(packedLine).join('')}
       </div>`
     : '';
   return html`<div
-    class="st-sgrid"
+    class="st-sgrid flex flex-col gap-6 w-max bg-surface text-text-muted pt-4 px-6 pb-6"
     data-place="${place}"
     style="--st-cols: ${columns.length}; --st-cell-w: ${cellWidth}"
   >
@@ -67,17 +67,17 @@ export const stateGrid = (
 
 /** One frame on the canvas: its name and optional width above the box, the body inside. */
 export const canvasFrame = (name: string, body: string, width = '') =>
-  html`<figure class="st-cframe">
-    <figcaption class="st-cframe-head">
-      ${name}${width ? `<span class="st-cframe-head-width">${width}</span>` : ''}
+  html`<figure class="st-cframe relative m-0 bg-surface">
+    <figcaption class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-text whitespace-nowrap">
+      ${name}${width ? `<span class="text-text-muted tabular-nums">${width}</span>` : ''}
     </figcaption>
     ${body}
   </figure>`;
 
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
 export const canvasView = (frames: string[], zoom: string) =>
-  html`<div class="st-canvas">
-    <div class="st-canvas-frames" style="zoom: ${zoom}">${frames.join('')}</div>
+  html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
+    <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
     <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">${zoom}</span></div>
   </div>`;
 
