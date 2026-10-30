@@ -683,6 +683,30 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Next:** measure before a fix. Time each shot request of the merge view (server log or the
   network panel of a headless run on an own server): render queue wait, page render, pixel diff,
   changed box. Compare with a small part to see if the time grows with the part count or the state count.
+- **Measured (2026-10-30):** own server on a scratch copy, 3 open sketches (`components/tree-row` 20 states,
+  `components/comment-pin` 40, `foundations/logo` 2; variant `a` a copy, `b` a CSS change). Cold / warm:
+
+  | Request                                              | Cold          | Warm     | Dominant                                  |
+  | ---------------------------------------------------- | ------------- | -------- | ----------------------------------------- |
+  | `sketches` (list)                                    | 17.5 s        | 0.23 s   | 124 draws: every state of each `b`, twice |
+  | `sketch-diff` tree-row `a` / `b`                     | 5.6 s / 3.1 s | 1-300 ms | 40 / 20 draws; 20 boxes cost ~0.3 s       |
+  | `sketch-crop`                                        | 2 ms          | 2 ms     | reuses the diff pictures                  |
+  | `sketch-compare` tree-row / logo                     | 3.8 s / 4.7 s | 2 ms     | 20 / 33 draws of 5 / 7 affected parts     |
+  | 4 merge requests at once, comment-pin                | 9.2 s wall    | -        | queue busy all the time                   |
+  | `sketches` after a one-line CSS edit in tree-row `b` | 17.0 s        | -        | all 124 drawn again                       |
+
+- **Per draw:** ~140 ms (part) to ~190 ms (page), one at a time; the pixel diff and box are cheap. Time is linear in
+  draws: 2 x target states (diff), 2 x states of each affected part (compare), 2 x states x frames per variant (list).
+- **Cause:** any edit of a file under `.ethlete/design/studio/` drops every cached picture of the product: 154
+  parts (22 product, 66 per variant name over all sketches). `studio/styles.css` has `@source './'`, so Tailwind
+  makes each part file a dependency of it; `dependentIdsOf` (`serve.ts:485`) finds it and `styled` in
+  `changed-parts.ts:87-93` redraws `everyPartOf` the product. Each Studio revision then pays the full cold cost
+  again, on the one-page-at-a-time `createDrawQueue` (`thumb.ts:76-115`). It grows with parts x states x sketches.
+- **Fix (recommended):** a change that reaches the product styles only as a Tailwind source redraws only the parts
+  of its own file (and their importers), not `everyPartOf`. A new utility only styles the elements that use it.
+  Gain: a sketch edit redraws one variant (tree-row `b`: ~20 draws, ~3 s) instead of 124-154 (~17 s + merge view).
+- **Alternative:** let the draw queue run 4 pages at once. Measured with a patched dist: list 17.5 s -> 5.7 s
+  (same answer), compare 3.8 s -> 1.7 s, diff `a` 5.6 s -> 0.9 s. About 3x on every cold path, no cache change.
 
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
