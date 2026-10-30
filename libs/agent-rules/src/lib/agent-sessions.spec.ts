@@ -4,11 +4,11 @@ import { tmpdir } from 'os';
 import { basename, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-const SCRIPT = join(__dirname, '../../content/skills/agent-mailbox/agent-mailbox.mjs');
+const SCRIPT = join(__dirname, '../../content/skills/agent-sessions/agent-sessions.mjs');
 
 const hasTmux = spawnSync('tmux', ['-V']).status === 0;
 
-describe('agent-mailbox', () => {
+describe('agent-sessions', () => {
   let dir: string;
 
   const run = (args: string[], input?: string) =>
@@ -275,6 +275,18 @@ describe('agent-mailbox', () => {
     expect(spawnSync('bash', ['-n'], { input: output }).status).toBe(0);
   });
 
+  it('replaces a block written under the old agent-mailbox marker', () => {
+    const file = join(dir, 'rc');
+    writeFileSync(file, 'export A=1\n# >>> ethlete agent-mailbox >>>\nold() {}\n# <<< ethlete agent-mailbox <<<\n');
+
+    run(['shell-install', 'claude', '--file', file]);
+
+    const installed = readFileSync(file, 'utf8');
+    expect(installed).not.toContain('agent-mailbox >>>');
+    expect(installed).not.toContain('old() {}');
+    expect(installed.match(/>>> ethlete agent-sessions/g)).toHaveLength(1);
+  });
+
   it('writes the shell functions once, replaces them on a second run and removes them', () => {
     const rc = join(dir, 'rc');
     writeFileSync(rc, 'export A=1\n');
@@ -285,7 +297,7 @@ describe('agent-mailbox', () => {
     const installed = readFileSync(rc, 'utf8');
 
     expect(installed).toContain('export A=1');
-    expect(installed.match(/>>> ethlete agent-mailbox/g)).toHaveLength(1);
+    expect(installed.match(/>>> ethlete agent-sessions/g)).toHaveLength(1);
     expect(installed).toContain('gemini() {');
 
     run(['shell-install', '--remove', '--file', rc]);

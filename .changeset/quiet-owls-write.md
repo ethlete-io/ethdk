@@ -2,4 +2,4 @@
 '@ethlete/agent-rules': minor
 ---
 
-Add the `agent-mailbox` skill and `ethlete-agents mailbox`: agents of any kind in one checkout claim paths, message each other, and wake idle agents through tmux.
+Add the `agent-sessions` skill and `ethlete-agents sessions`: agents in one checkout run in `tmux`, message each other, claim paths, and restart a session with a prompt. The `handoff` skill uses it to clear and resume.

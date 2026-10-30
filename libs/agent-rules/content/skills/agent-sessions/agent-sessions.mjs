@@ -198,7 +198,7 @@ if (command === 'send' && sender) {
     .map(
       (agent) => `${agent}() {
   local root script
-  root=$(git rev-parse --show-toplevel 2>/dev/null) && script="$root/.agents/skills/ethlete-agent-mailbox/agent-mailbox.mjs"
+  root=$(git rev-parse --show-toplevel 2>/dev/null) && script="$root/.agents/skills/ethlete-agent-sessions/agent-sessions.mjs"
   if [ -n "$script" ] && [ -f "$script" ] && command -v tmux >/dev/null; then
     node "$script" run ${agent} ${agent} "$@"
   else
@@ -219,9 +219,15 @@ if (command === 'send' && sender) {
     } else {
       const path = rcFile ? resolve(rcFile) : join(homedir(), file);
       const present = existsSync(path) ? readFileSync(path, 'utf8') : '';
-      const start = '# >>> ethlete agent-mailbox >>>';
-      const end = '# <<< ethlete agent-mailbox <<<';
-      const without = present.replace(new RegExp(`\\n?${start}[\\s\\S]*?${end}\\n?`), '\n').replace(/\n+$/, '\n');
+      const start = '# >>> ethlete agent-sessions >>>';
+      const end = '# <<< ethlete agent-sessions <<<';
+      const without = ['agent-mailbox', 'agent-sessions']
+        .reduce(
+          (text, name) =>
+            text.replace(new RegExp(`\\n?# >>> ethlete ${name} >>>[\\s\\S]*?# <<< ethlete ${name} <<<\\n?`), '\n'),
+          present,
+        )
+        .replace(/\n+$/, '\n');
       const block = `${start}\n${functions}${end}\n`;
       const next = remove ? without : `${without}\n${block}`;
       if (dryRun) {

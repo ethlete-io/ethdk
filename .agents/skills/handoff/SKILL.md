@@ -155,8 +155,8 @@ In a `tmux` session you can clear and resume yourself: see the next section.
 
 ## Clear and resume on your own
 
-Run inside a `tmux` session started with the mailbox `run` command or the shell functions from `shell-install` (`echo $TMUX` is not empty and
-the mailbox script `restart` finds the session)? Then you may clear and
+Run inside a `tmux` session started with the agent-sessions `run` command or the shell functions from `shell-install` (`echo $TMUX` is not empty and
+the agent-sessions script `restart` finds the session)? Then you may clear and
 resume yourself after the save, instead of asking the user to. You decide. Do it only if every line
 is true:
 
@@ -170,7 +170,7 @@ If one line is false, finish or collect that first. If you cannot, hand the prom
 before. Then run, with the slug of the file you saved:
 
 ```bash
-node .agents/skills/ethlete-agent-mailbox/agent-mailbox.mjs restart <name> '/handoff resume <slug>'
+node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs restart <name> '/handoff resume <slug>'
 ```
 
 `<name>` is the sender name of your session (`claude`, `codex`). The command returns at once. It
