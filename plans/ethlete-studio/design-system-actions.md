@@ -613,6 +613,10 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `--surface-pressed` foundation token with the `tree-row` value
   (`color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%)`); `tree-row` and the
   disclosure use it. It lands with the disclosure merge.
+- **Reopened (2026-10-30), do not build yet:** the disclosure is already merged (`31a6708e1`,
+  `7441190de`) with `color-mix(in oklch, var(--text) 10%, transparent)`. The `tree-row` value was
+  nearly invisible on the toggle, which has no background at rest. Tom chooses between one
+  text-tint token for any surface and two tokens.
 
 ### 5.32 A page cannot reuse the canvas frame chrome - open
 
