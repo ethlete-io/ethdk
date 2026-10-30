@@ -6,6 +6,7 @@
 @import '../../../.ethlete/design/studio/foundations/colors/colors.css' layer(studio-tokens);
 @import '../../../.ethlete/design/studio/foundations/type/type.css' layer(studio-tokens);
 @import '../../../.ethlete/design/studio/foundations/spacing/spacing.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/motion/motion.css' layer(studio-tokens);
 
 @import './styles/themes.css';
 @import './styles/surface-themes.css';

@@ -101,13 +101,11 @@
   }
 
   .st-trow:active {
-    background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+    background: var(--surface-pressed);
   }
 
   .st-trow[data-selected]:active {
-    background:
-      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
-      color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+    background: linear-gradient(var(--accent-subtle), var(--accent-subtle)), var(--surface-pressed);
   }
 
   .st-trow:focus-visible {
