@@ -265,6 +265,29 @@ describe('agent-sessions', () => {
     30_000,
   );
 
+  it.skipIf(!hasTmux)(
+    'saves the prompt and logs why when the pane stays busy after the clear',
+    async () => {
+      const agent = `claude-busy-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line; echo "esc to interrupt"; cat']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, busy: esc to interrupt/);
+        expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe('resume slug\n');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
   it.skipIf(!hasTmux)('refuses to restart a session the caller does not run in', () => {
     const target = `claude-target-${process.pid}`;
     const caller = `claude-caller-${process.pid}`;

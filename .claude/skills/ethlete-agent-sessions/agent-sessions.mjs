@@ -37,6 +37,7 @@ const RESTART_AFTER_SECONDS = 5;
 const RESTART_CLEAR_MS = 2500;
 const RESTART_POLL_MS = 2000;
 const RESTART_WAIT_MS = 30 * 60 * 1000;
+const RESTART_CLEAR_WAIT_MS = Number(process.env.AGENT_RESTART_CLEAR_WAIT_MS ?? 60 * 1000);
 const repoSlug = basename(root).replace(/[.:]/g, '-');
 const sessionFor = (agent) => `${agent}@${repoSlug}`;
 const DISPATCH_SESSION = process.env.AGENT_MAILBOX_DISPATCH_SESSION ?? `mailbox-dispatch@${repoSlug}`;
@@ -104,27 +105,43 @@ const runsInSession = (agentArgs) =>
  * wake-up line from answering a permission dialog.
  */
 const SGR = `${String.fromCharCode(27)}\\[([0-9;]*)m`;
-const isBusy = (session) => /esc to inte/i.test(tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '');
+const busyLine = (session) =>
+  (tmux('capture-pane', '-p', '-t', `=${session}:`).stdout ?? '')
+    .split('\n')
+    .find((line) => /esc to inte/i.test(line)) ?? null;
+const restartLog = (message) => {
+  mkdirSync(dirname(mailbox), { recursive: true });
+  appendFileSync(join(dirname(mailbox), 'restart.log'), `${new Date().toISOString()} ${message}\n`);
+};
 
-/** Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit. */
-const waitForQuiet = (session) => {
-  const end = Date.now() + RESTART_WAIT_MS;
+/**
+ * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit.
+ * Each change of the reason it waits is logged to `restart.log` next to the mailbox.
+ */
+const waitForQuiet = (session, limitMs = RESTART_WAIT_MS) => {
+  const end = Date.now() + limitMs;
   let quiet = 0;
+  let reason = '';
   while (Date.now() < end) {
-    quiet = isBusy(session) || hasDraft(session) ? 0 : quiet + 1;
+    const busy = busyLine(session);
+    const draft = busy === null ? draftLine(session) : null;
+    const next = busy !== null ? `busy: ${busy.trim()}` : draft !== null ? `draft: ${draft}` : '';
+    if (next !== reason) restartLog(`${session} ${next ? `waits, ${next}` : 'is quiet'}`);
+    reason = next;
+    quiet = next ? 0 : quiet + 1;
     if (quiet === 2) return true;
     sleep(RESTART_POLL_MS);
   }
   return false;
 };
 
-const hasDraft = (session) => {
+const draftLine = (session) => {
   const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
   const prompt = pane
     .split('\n')
     .reverse()
     .find((line) => /^\s*[❯›]/.test(line.replace(new RegExp(SGR, 'g'), '')));
-  if (!prompt) return false;
+  if (!prompt) return null;
   let dim = false;
   const visible = prompt
     .split(new RegExp(`(${SGR.replace('(', '(?:')})`))
@@ -138,8 +155,10 @@ const hasDraft = (session) => {
       return '';
     })
     .join('');
-  return visible.replace(/^\s*[❯›]/, '').trim().length > 0;
+  const text = visible.replace(/^\s*[❯›]/, '').trim();
+  return text.length > 0 ? text : null;
 };
+const hasDraft = (session) => draftLine(session) !== null;
 const isAttached = (name) => tmux('list-clients', '-t', `=${name}`).stdout.trim() !== '';
 const freeSessionFor = (agent) => {
   for (let number = 1; ; number++) {
@@ -154,7 +173,7 @@ const startSession = (name, shellCommand, quiet = false) => {
   if (!quiet) process.stdout.write(`Started ${name}. Attach with: tmux attach -t ${name}\n`);
 };
 
-const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*'];
+const IGNORED = ['mailbox.jsonl', 'mailbox.cursor.*', 'restart.log', 'restart.prompt.*'];
 
 const prepare = () => {
   mkdirSync(dirname(mailbox), { recursive: true });
@@ -334,10 +353,23 @@ if (command === 'send' && sender) {
       sleep(ENTER_DELAY_MS);
       type('Enter');
       sleep(RESTART_CLEAR_MS);
-      if (waitForQuiet(session)) {
+      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS)) {
         type('-l', words.join(' '));
         sleep(ENTER_DELAY_MS);
         type('Enter');
+      } else {
+        const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
+        writeFileSync(saved, `${words.join(' ')}\n`);
+        restartLog(
+          `${session} not quiet ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
+        );
+        tmux(
+          'display-message',
+          '-t',
+          `=${session}:`,
+          `restart: pane not quiet after the clear, prompt not typed. Saved to ${saved}`,
+        );
+        process.exitCode = 1;
       }
     }
   } else {
