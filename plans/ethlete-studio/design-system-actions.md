@@ -1133,7 +1133,7 @@ belong to 4.78, which replaces the `tick` with design server events.
 
 - **Decision (Tom, 2026-10-30):** build 4.82, 4.83 and 4.84 right after 4.78, then 4.47 discovery.
 
-### 4.82 `design_server_state` spawns `node` on every 3 s poll - open
+### 4.82 `design_server_state` spawns `node` on every 3 s poll - in progress
 
 - **From the code:** while a foreign server listens, Studio polls `design_server_state` every 3 s
   (`studio-view.component.ts:421`). Each call runs the `stale` check (`design_server.rs:172-236`): a walk of up to
@@ -1143,7 +1143,7 @@ belong to 4.78, which replaces the `tick` with design server events.
 - **Fix option:** compute `stale` once per start or restart and cache the stamp per checkout and port; send the log
   only on change. Effort S-M.
 
-### 4.83 Sync Tauri commands block the window - open
+### 4.83 Sync Tauri commands block the window - in progress
 
 - **From the code:** non-async Tauri v2 commands run on the main thread. `design_project` (`design.rs:299-330`)
   rescans every call and parses each `call.ts` without a cache, after each watcher burst. `workspace_root`,
@@ -1155,7 +1155,7 @@ belong to 4.78, which replaces the `tick` with design server events.
 - **Fix option:** `#[tauri::command(async)]` or `spawn_blocking`; cache the repository root in a `OnceLock`; skip
   `node_modules`; a timeout for `check_call`; optional mtime cache for parsed calls. Effort S (M with the cache).
 
-### 4.84 Small Rust hygiene - open
+### 4.84 Small Rust hygiene - in progress
 
 - `agent.rs`: the stderr buffer `complaints` grows without a cap until the end of the run. Cap it.
 - `design_server.rs:74-78`: `listening()` blocks a tokio worker with `connect_timeout` inside async loops. Use a
