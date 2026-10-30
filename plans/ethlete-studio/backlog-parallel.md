@@ -20,6 +20,21 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   (`exports is not defined`); fixed in `203aa2c35`.
 - Open, not urgent (SDK session): a sketch cannot add a target, and `sketch new` with two targets is refused while one
   has an open sketch, so splitting a part forces a new sketch plus a discard of the old one.
+- Paused for the usage limit (2026-10-31). Pushed up to `de9070776`. Landed: MCP registration (`0d81f2066`,
+  `2c0d2ad4c`), MCP sketch and `comment reply` tools (`1d05b8789`), `kind: 'field'` (`855f4c06e`, Q61), sketch spec
+  timeout (`ab444e8c6`), `.mcp.json` in `.prettierignore` (`de9070776`). Next, in order:
+  1. Wait for CI on `de9070776`. CI on `0b239880c` failed in two places: the sketch spec timeout (now fixed) and a
+     Timetrack Rust test, `peer.rs:2146` (`last_seen_ms >= started_ms`). Nobody changed `peer.rs` for 3 weeks, so
+     the Rust failure is probably flaky; if it fails again, fix it. Then merge version PR #3162 (base `next`), wait for
+     the publish, and send `fifagg-frontend-a5` the new `@ethlete/cdk` version (backdrop click during enter closes; the
+     second click of a double-click does not).
+  2. Viewport per state (Tom): each state gets its own viewport that fits it, out-of-flow content (open overlay
+     panel) included. Example: sdk `components/select` at 320 px cuts the open panel at the closed trigger height.
+     Find the cause in the tool, not per sketch. `ethlete-sdk-33` holds select and form-field until the sha lands.
+  3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
+     (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
+     `design_server.rs`. One MCP server.
+  4. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
 
 ## Rules for every stream
 
