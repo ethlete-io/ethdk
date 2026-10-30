@@ -236,7 +236,9 @@ const partTargetsOf = async ({
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
-        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, part }),
+        unchanged: problem
+          ? []
+          : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
         ...(problem || !current || current.problem
           ? {}
           : { changes: variantChangesOf({ current, drawn: { states, note } }) }),

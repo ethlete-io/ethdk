@@ -29,6 +29,9 @@ const CACHE_LIMIT = 200;
 
 const cache = new Map<string, string[]>();
 
+/** Drops every kept result, so the next call compares again. Call it when a product file changes. */
+export const forgetUnchangedStates = () => cache.clear();
+
 const hashOf = (value: string) => createHash('sha256').update(value).digest('hex');
 
 const markupOf = async (part: LoadedPart, props: unknown): Promise<Markup | null> => {
@@ -116,9 +119,9 @@ const drawsTheSame = async (options: {
       }),
     );
 
-    return same.every(Boolean);
+    return same.every(Boolean) ? 'same' : 'different';
   } catch {
-    return false;
+    return 'failed';
   }
 };
 
@@ -128,7 +131,8 @@ const drawsTheSame = async (options: {
  * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
- * unchanged. Markup-only comparisons are cached by source hashes; pixel comparisons run again for each screenshot session.
+ * unchanged. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
+ * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them all.
  */
 export const unchangedStatesOf = async (options: {
   product: ResolvedProduct;
@@ -136,9 +140,10 @@ export const unchangedStatesOf = async (options: {
   variant: string;
   load: SketchPartLoader;
   pictureOf?: PictureOf;
+  keepPictures?: boolean;
   part?: string;
 }): Promise<string[]> => {
-  const { product, sketch, variant, load, pictureOf, part: compared = sketch.target } = options;
+  const { product, sketch, variant, load, pictureOf, keepPictures = false, part: compared = sketch.target } = options;
   const current = product.parts.find((part) => partKeyOf(part) === compared);
   const merged = current?.file;
   const overlaid = overlaySketch({ product, sketch, variant });
@@ -158,7 +163,8 @@ export const unchangedStatesOf = async (options: {
       !!pictureOf,
     ]),
   );
-  const known = pictureOf ? undefined : cache.get(key);
+  const keeps = !pictureOf || keepPictures;
+  const known = keeps ? cache.get(key) : undefined;
 
   if (known) return known;
 
@@ -168,7 +174,7 @@ export const unchangedStatesOf = async (options: {
   ]);
 
   if (!now || !after) return [];
-  if (now.frames !== after.frames) return pictureOf ? [] : remember(key, []);
+  if (now.frames !== after.frames) return keeps ? remember(key, []) : [];
 
   const imported = productStylesheetFilesOf(product);
   const restyled = overlaid.parts.some((part) => {
@@ -179,11 +185,12 @@ export const unchangedStatesOf = async (options: {
   const presets = current?.layer === 'pages' ? Object.keys(product.presets) : null;
   const same = await Promise.all(
     [...after.states].map(async ([state, markup]) => {
-      if (!now.states.has(state)) return false;
+      if (!now.states.has(state)) return 'different';
 
       const before = now.states.get(state);
 
-      if (!restyled && markup && before && markup.body === before.body && markup.styles === before.styles) return true;
+      if (!restyled && markup && before && markup.body === before.body && markup.styles === before.styles)
+        return 'same';
 
       return pictureOf
         ? drawsTheSame({
@@ -195,11 +202,11 @@ export const unchangedStatesOf = async (options: {
             state,
             sketch: { target: sketch.target, variant },
           })
-        : false;
+        : 'different';
     }),
   );
 
-  const unchanged = [...after.states.keys()].filter((_, index) => same[index]);
+  const unchanged = [...after.states.keys()].filter((_, index) => same[index] === 'same');
 
-  return pictureOf ? unchanged : remember(key, unchanged);
+  return keeps && !same.includes('failed') ? remember(key, unchanged) : unchanged;
 };

@@ -76,6 +76,7 @@ import {
 import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
+import { forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
 import {
   assetRoot,
@@ -448,6 +449,7 @@ const designExplore = ({
         if (!change.all && change.parts.length === 0 && !change.errored) return;
 
         revision += 1;
+        forgetUnchangedStates();
         if (change.all) shots.clear();
         else shots.forget(change);
         events.signal('parts', { revision, ...change });

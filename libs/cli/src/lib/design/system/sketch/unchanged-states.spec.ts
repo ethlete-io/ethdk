@@ -6,7 +6,7 @@ import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, sharedDirOf, Sketch, variantDirOf } from './sketch';
 import { PictureOf } from '../../merge-compare';
-import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
+import { forgetUnchangedStates, SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-unchanged-'));
@@ -166,6 +166,50 @@ describe('unchangedStatesOf', () => {
 
       expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
       expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual([]);
+    });
+
+    describe('with keepPictures', () => {
+      it('reuses the pixel compare until a source changes', async () => {
+        const { product, sketch, hero } = spaced();
+        const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual([
+          'default',
+        ]);
+
+        writeFileSync(resolve(hero, 'hero.css'), 'h1 { color: red; }\n');
+
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual(
+          [],
+        );
+      });
+
+      it('compares again after forgetUnchangedStates', async () => {
+        const { product, sketch } = spaced();
+        const options = { product, sketch, variant: 'a', load: counting().load, keepPictures: true };
+
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+        forgetUnchangedStates();
+        expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual(
+          [],
+        );
+      });
+
+      it('does not keep a result whose draw failed', async () => {
+        const { product, sketch } = spaced();
+        let failed = true;
+        const flaky: PictureOf = async () => {
+          if (failed) throw new Error('temporary screenshot failure');
+
+          return { png: Buffer.from('same'), marks: [] };
+        };
+        const options = { product, sketch, variant: 'a', load: counting().load, pictureOf: flaky, keepPictures: true };
+
+        expect(await unchangedStatesOf(options)).toEqual([]);
+        failed = false;
+        expect(await unchangedStatesOf(options)).toEqual(['default']);
+      });
     });
   });
 
