@@ -86,6 +86,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done:** the shared canvas element (2.1). No check for repeated markup.
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
+- **Decision (Tom, 2026-10-30):** both use the app chip `− | 100 % | + | Fit`; the
+  `canvas-frames` drawing adopts it.
 
 ## 3. Feedback, rounds and merge
 
@@ -96,6 +98,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   page, and a page sketch reads the merged component.
 - **Fix options:** 1. let a component sketch carry host edits that only change an import
   (recommended). 2. a page variant resolves a part from another open sketch (5.21).
+- **Decision (Tom, 2026-10-30):** option 1. A component sketch may carry edits to its hosts
+  that only change an import.
 
 ### 3.41 A `sketch ready` run skipped the auto-merge on a markup-only change - open
 
@@ -604,6 +608,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `--surface-sunken`, written in the component.
 - **Fix option:** a `foundations/tokens` sketch that adds a pressed surface, once a second control
   needs a pressed state.
+- **Decision (Tom, 2026-10-30):** the condition is met: `design complete` now requires an active
+  state for pointer input (`e52f43d59`), and `components/disclosure` needs one. Add a
+  `--surface-pressed` foundation token with the `tree-row` value
+  (`color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%)`); `tree-row` and the
+  disclosure use it. It lands with the disclosure merge.
 
 ### 5.32 A page cannot reuse the canvas frame chrome - open
 
@@ -682,6 +691,10 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Checked in the open focus sketch:** the old placement branches/styles and unused icon
   parameter/import were removed. All seven pre-existing states have no pixel change for
   either focus candidate. This cleanup is still in the sketch, not merged into the base.
+- **Decision (Tom, 2026-10-30):** both options. Option 1 is the authoring rule: rendering for one
+  candidate lives in that variant's files, shared files hold only common code. Option 2 enforces
+  it: `sketch ready` fails when the picked variant's dependency closure keeps unused imports,
+  styles or parameters.
 
 ## 6. Agent process
 
@@ -854,6 +867,9 @@ section without a page.
 - **Acceptance:** the accepted L appearance is used for the focused editor; focus can move
   to Send without hiding it prematurely; moving outside closes it without sending. Future
   implementation must verify those transitions and the separately chosen draft policy.
+- **Draft policy (Tom, 2026-10-30):** a closed editor keeps its draft. The pin shows a draft
+  mark, and the editor shows the text again when it opens. Only Send or an explicit discard
+  drops the draft.
 - **Stopped at Tom's request:** "no more new sketches for you" / "wrap it up". Corrective C
   exists with an author check but remains unmerged and not ready. No further sketch work,
   publication or automatic continuation is authorized. The committed L design stays as is.
