@@ -89,13 +89,8 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-- `sdk` `components/select`, round "Select controls" (`276187bd7`): how does the select trigger look when
-  pressed - no pressed look (a, needs the exception `components/select.select.active` in Studio), the border
-  darkens (b), or the focus colour at once (c)? Builder pick: b. b and c pass `design complete --variant`.
-- `sdk` `foundations/tokens`, round "Contrast values" (`a4ef82110`, Q51/Q52): which values lift the three AA
-  fails - the smallest step to 4.5:1 (d, danger hover barely differs from rest), a clearer step (e, warning
-  press lightens), or a changed ink instead of the fill (f, the label colour flips on interaction)? Builder pick:
-  e. After the merge, the builder moves the values into `apps/storybook/src/themes.ts`/`surface-themes.ts`.
+No sdk sketch is ready. `components/select` r2 d (Q56 b) waits on `data-et-control-part`, `foundations/tokens` r2 g
+(Q57 e) waits on the Q54 sheet helper; both are `in progress`.
 
 Tom merged `components/zoom-chip` r2 b (`6fef28d85`); `design complete components/zoom-chip` passes.
 Tom merged `sdk` `foundations/tokens` r1 c, the token sheet (`d40af99ed`).

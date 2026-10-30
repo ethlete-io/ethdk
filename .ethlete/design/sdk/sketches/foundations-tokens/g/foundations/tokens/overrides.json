@@ -1,0 +1,19 @@
+{
+  "extraColorThemes": ["brand-on-light", "danger-on-light", "warning-on-light"],
+  "values": {
+    "danger": {
+      "primary.color.hover": "185 28 28",
+      "primary.color.focus": "185 28 28",
+      "primary.color.active": "153 27 27"
+    },
+    "danger-on-light": {
+      "primary.color.hover": "185 28 28",
+      "primary.color.focus": "185 28 28",
+      "primary.color.active": "153 27 27"
+    },
+    "warning": { "primary.color.active": "251 191 36" },
+    "warning-on-light": { "primary.color.active": "251 191 36" },
+    "light": { "colorSubtle": "112 112 112" },
+    "dark": { "colorSubtle": "135 135 135" }
+  }
+}

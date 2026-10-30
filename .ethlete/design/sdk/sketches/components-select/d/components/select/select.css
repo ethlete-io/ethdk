@@ -1,0 +1,5 @@
+@layer components {
+  et-form-field:where(:not([data-readonly]):not([data-disabled])) .et-form-field-control-frame:active {
+    border-color: var(--et-surface-interaction-active-solid, currentColor);
+  }
+}

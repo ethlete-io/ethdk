@@ -1,6 +1,6 @@
 {
   "target": "foundations/tokens",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-10-30T22:32:10.134Z",
   "baseline": {
     "foundations/tokens": "67c964a1f59e8dc3",
@@ -13,7 +13,13 @@
     {
       "key": "r1",
       "title": "Contrast values",
-      "note": "Q51 adds the on-light themes for ink on a light surface; Q52 draws three value strategies for the three AA fails, ratios measured per pair"
+      "note": "Q51 adds the on-light themes for ink on a light surface; Q52 draws three value strategies for the three AA fails, ratios measured per pair",
+      "lost": "Tom picked e (Q57)"
+    },
+    {
+      "key": "r2",
+      "title": "Final values",
+      "note": "e rebuilt as foundations/colors with the shared sheet helper (Q54/Q55); waits on that helper"
     }
   ],
   "variantInfo": {
@@ -31,6 +37,10 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "Change the ink, not the fill: danger hover/focus on-primary 23 23 23 (4.76:1), warning active on-primary 255 255 255 (5.02:1); subtle light 118 (4.54:1), dark 128 (4.54:1) with muted raised to 64 64 64 (10.37:1) and 200 200 200 (10.72:1) to keep the step. Cost: label colour flips on interaction."
+    },
+    "g": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2"
     }
   }
 }

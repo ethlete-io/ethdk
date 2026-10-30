@@ -1,6 +1,6 @@
 {
   "target": "components/select",
-  "status": "ready",
+  "status": "in progress",
   "createdAt": "2026-10-30T22:32:10.456Z",
   "baseline": {
     "foundations/tokens": "67c964a1f59e8dc3",
@@ -13,7 +13,13 @@
     {
       "key": "r1",
       "title": "Select controls",
-      "note": "Declares the select's controls so design complete can check it: field hover, press and focus, the open panel, option hover, selected and keyboard-active options. The variants differ only in the trigger's pressed look, which the SDK does not have yet."
+      "note": "Declares the select's controls so design complete can check it: field hover, press and focus, the open panel, option hover, selected and keyboard-active options. The variants differ only in the trigger's pressed look, which the SDK does not have yet.",
+      "lost": "Tom picked b (Q56)"
+    },
+    {
+      "key": "r2",
+      "title": "Final select",
+      "note": "b with the control frame as a data-et-control-part; waits on that CLI marker"
     }
   ],
   "variantInfo": {
@@ -31,6 +37,10 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "The focus colour shows on the field border at once on press, before focus lands. A small CSS rule; previews the focus look the press leads to."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2"
     }
   }
 }
