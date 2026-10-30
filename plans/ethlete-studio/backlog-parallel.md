@@ -117,3 +117,16 @@ Pulled into this push (Tom, 2026-10-30): 4.47 approved exceptions, then the `han
 - 5.32 / Q43: the zoom chip becomes its own part (for example `elements/zoom-chip`) with its own states, so it
   carries `data-et-part` and `design complete` checks it wherever it is drawn. Frame head and frame box stay named
   exports of `elements/canvas-frames` (layout pieces without states). Redo r1 (b907cf29d) before Tom merges.
+
+## New finding 4.85 (Tom, 2026-10-30): a failed module import stays in the frame
+
+- **Pain (screenshot):** on `components/tree-row` most state frames show `design-explore: state "<state>" of
+  "components/tree-row" failed / Failed to fetch dynamically imported module:
+  http://localhost:4402/@fs/.../.ethlete/design/studio/components/tree-row/tree-row.ts?design-product=studio`.
+  The first states rendered, the rest failed. Tom sees this often, after parts change.
+- **Likely cause (not verified):** the part file changed while the frames loaded (for example the auto-merged
+  `34f73f3e2`), Vite invalidated the module, and each frame that imported it during the change failed. Nothing
+  retries the import once the file settles, so the error stays until a manual reload.
+- **Fix option:** reproduce first (edit a part while its grid loads). Then the frame retries a failed dynamic
+  import after the next `parts` event for that part, or after a short back-off; only a repeated failure shows the
+  error. A spec that bites. Stream A or C, whichever owns `libs/cli/design/web/frame.ts` now.
