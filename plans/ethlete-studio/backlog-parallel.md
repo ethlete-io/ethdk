@@ -359,6 +359,16 @@ Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's 
   ink. No focus ring. Hover and focus-visible are close, which is fine: a keyboard user sees rest to focus-visible.
   The sdk form-field sketch goes to ready.
 
+### SDK icons foundation decision (2026-10-31)
+
+Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Select already builds on form-field
+(`formField(...)` from `libs/components/design/form-field.ts`), so it takes form-field changes.
+
+- Q68: new part `sdk/foundations/icons` shows every icon the SDK ships, read directly from
+  `libs/components/src/lib/icon/headless/*-icon.ts`. The design drawings take their icons from the same source; the
+  inline SVG copies (for example `CHEVRON_ICON_SVG` in `libs/components/design/select.ts`) go away. One source per
+  icon. Built by `ethlete-sdk-33`.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
