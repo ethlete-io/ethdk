@@ -21,6 +21,7 @@ CHANGELOG.md
 
 /.claude
 /.agents
+/.mcp.json
 
 # Design-tool exports, written by the tool.
 *.dc.html
