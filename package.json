@@ -25,6 +25,7 @@
     "e2e:affected": "node apps/storybook-e2e/affected.mjs origin/next --run",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js && node ./tools/scripts/check-changeset-coverage.js",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
+    "mailbox": "node .agents/skills/ethlete-agent-mailbox/agent-mailbox.mjs",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
     "query:export-coverage": "node ./tools/export-coverage/check.mjs query",
