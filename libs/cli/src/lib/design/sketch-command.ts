@@ -1,3 +1,4 @@
+import { unusedInVariantOf } from './system/sketch/unused-closure';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
@@ -591,9 +592,11 @@ const readyRefusalOf = (
   );
 
   const problems = found.flatMap(({ variant, problems }) =>
-    [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map((problem) =>
-      lineOf(variant, problem),
-    ),
+    [
+      ...problems,
+      ...formatProblemsOf({ target: context.target, sketch, variant }),
+      ...(rejectionOf(sketch, variant) ? [] : unusedInVariantOf({ product, sketch, variant })),
+    ].map((problem) => lineOf(variant, problem)),
   );
 
   sketch.variants.forEach((variant) =>

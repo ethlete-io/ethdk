@@ -522,7 +522,10 @@ describe('designSketch', () => {
 
     writeFileSync(join(folder, 'extra.css'), '.acme-button { color: red; }');
     writeFileSync(join(folder, 'button.css'), '.acme-button { color: blue; }');
-    writeFileSync(ts, `import extra from './extra.css?inline';\n${readFileSync(ts, 'utf8')}`);
+    writeFileSync(
+      ts,
+      `import extra from './extra.css?inline';\n${readFileSync(ts, 'utf8')}\nexport const extraStyles = extra;\n`,
+    );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(warn).toHaveBeenCalledWith(
@@ -541,6 +544,20 @@ describe('designSketch', () => {
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       'components/button b: STATES .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: drops the state long that components/button has in acme - a variant keeps every state of the part\ncomponents/button has problems - fix them before ready',
+    );
+  });
+
+  it('refuses ready while the closure of a variant keeps an unused import', () => {
+    const target = acme();
+    const lines = output();
+    const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
+
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    writeFileSync(button, `import { readFileSync } from 'fs';\n${readFileSync(button, 'utf8')}`);
+
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      'components/button b: UNUSED .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: imports readFileSync but never uses it - remove the import\ncomponents/button has problems - fix them before ready',
     );
   });
 
