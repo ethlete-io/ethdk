@@ -9,7 +9,6 @@ type RunHookOptions = {
   model: string;
   prompt?: string;
   sessionId?: string;
-  setup?: (root: string) => Record<string, string>;
   threadId?: string;
   threadSource?: 'subagent' | 'user';
   tokens: number;
@@ -62,6 +61,7 @@ type RunClaudeHookOptions = {
   permissionMode?: string;
   prompt?: string;
   sessionId?: string;
+  setup?: (root: string) => Record<string, string>;
   tokens: number;
   turn?: object[];
   withTranscript?: boolean;
