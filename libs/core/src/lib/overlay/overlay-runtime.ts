@@ -438,7 +438,13 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             return;
           }
 
-          if (!interactiveCloseReady && target !== backdropElement()) {
+          if (target === backdropElement() && overlayRef.state() === 'mounting') {
+            armBackdropClickClose();
+
+            return;
+          }
+
+          if (!interactiveCloseReady) {
             animationDebugLog(`runtime ${config.id}`, 'outside pointer ignored (enter transition has not started yet)');
 
             return;
@@ -471,8 +477,31 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           }
         };
 
+        // pointerdown carries no click count, so a backdrop press during enter decides on its click:
+        // the second click of a double-click that opened the overlay must not close it again.
+        const onBackdropClick = (event: MouseEvent) => {
+          disarmBackdropClickClose();
+
+          if (event.target === backdropElement() && event.detail <= 1) {
+            overlayRef.close(undefined, 'outside-pointer');
+          }
+        };
+
+        const disarmBackdropClickClose = () => {
+          targetDocument.removeEventListener('click', onBackdropClick, true);
+          targetDocument.removeEventListener('pointerdown', disarmBackdropClickClose, true);
+        };
+
+        const armBackdropClickClose = () => {
+          targetDocument.addEventListener('click', onBackdropClick, true);
+          targetDocument.addEventListener('pointerdown', disarmBackdropClickClose, true);
+        };
+
         targetDocument.addEventListener('pointerdown', onPointerDown, true);
-        cleanupFns.push(() => targetDocument.removeEventListener('pointerdown', onPointerDown, true));
+        cleanupFns.push(() => {
+          targetDocument.removeEventListener('pointerdown', onPointerDown, true);
+          disarmBackdropClickClose();
+        });
       }
 
       cleanupFns.push(

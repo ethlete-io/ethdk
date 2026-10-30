@@ -124,6 +124,7 @@ export const createOverlayDriver = <T>(
       }
 
       pointerEvent(element, 'pointerdown');
+      element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
       await settle();
     },
     // jsdom fires no transition events, so a leaving pane would linger and shadow the next open

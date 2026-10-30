@@ -37,6 +37,13 @@ const track = (ref: OverlayRuntimeRef) => {
   return { events, closed };
 };
 
+const pressBackdrop = (ref: OverlayRuntimeRef, clickCount: number) => {
+  const backdrop = ref.elements.backdropElement();
+
+  backdrop?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  backdrop?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: clickCount }));
+};
+
 const mountDialog = (s: Scenario, id: string, run: <T>(fn: () => T) => T = s.run) =>
   run(() => injectOverlayRuntime().mount({ id, component: ScenarioDialogComponent, autoFocus: false }));
 
@@ -142,12 +149,36 @@ describe('overlay runtime scenarios', () => {
     const { closed } = track(ref);
 
     s.frame(frames);
-    ref.elements.backdropElement()?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    pressBackdrop(ref, 1);
     s.flush();
 
     expect(ref.state()).toBe('closed');
     expect(closed.map((event) => event.source)).toEqual(['outside-pointer']);
     expect(rootsInDocument()).toEqual([]);
+  });
+
+  it.each([
+    ['before the enter frame', 0],
+    ['while the enter animation runs', 2],
+  ])('ignores the second click of a double-click on the backdrop %s', (_, frames) => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayRuntime().mount({
+        id: 'dialog',
+        component: ScenarioDialogComponent,
+        autoFocus: false,
+        closeOnOutsidePointer: true,
+      }),
+    );
+
+    s.frame(frames);
+    pressBackdrop(ref, 2);
+    s.flush();
+
+    expect(ref.state()).toBe('mounted');
+
+    ref.close();
+    s.flush();
   });
 
   it('ignores an outside pointer press that lands before the enter animation starts', () => {
