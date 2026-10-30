@@ -370,7 +370,15 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q68: new part `sdk/foundations/icons` shows every icon the SDK ships, read directly from
   `libs/components/src/lib/icon/headless/*-icon.ts`. The design drawings take their icons from the same source; the
   inline SVG copies (for example `CHEVRON_ICON_SVG` in `libs/components/design/select.ts`) go away. One source per
-  icon. Built by `ethlete-sdk-33`.
+  icon. Built by `ethlete-sdk-33`. Drawings cannot import the headless icon files yet, because the package ships only
+  `design/**/*.ts`; the packaging is fixed first.
+
+### Tree focus ring decision (2026-10-31)
+
+- Q70: the tree focus ring (`.et-tree-node:focus-visible`, `.et-tree-status:focus-visible` in
+  `libs/components/src/lib/tree/tree.component.css`) uses `--et-theme-color-ink-solid` instead of primary. A light
+  primary on a light surface gave about 1.3:1, below the 3:1 for focus indicators; ink gives about 5.5:1. The tree
+  uses real DOM focus, so the ring is the only focus sign. Follows the "ink on light" rule.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
