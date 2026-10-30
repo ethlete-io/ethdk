@@ -25,7 +25,7 @@
 
   .st-disclosure:active {
     border-radius: var(--radius-control-sm);
-    background: color-mix(in oklch, var(--text) 10%, transparent);
+    background: var(--surface-pressed);
     color: var(--text);
   }
 
