@@ -1062,6 +1062,10 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Plan (builder):** `src-tauri` is off-limits, so the design server also sends `calls` and `sketches` events;
   Studio reloads each list on its own event, and `parts` with `all`, a reconnect or an unknown change reload
   everything. Build after 4.77 (both touch `libs/cli`), then 4.81.
+- **Decision (Tom, 2026-10-30):** `src-tauri` is not off-limits; that rule had no source. Build the proper fix,
+  not a workaround around the Rust watcher: each change names what changed, and Studio reloads only that list.
+  If the watcher and the design server events then overlap, keep one source. A reconnect or an unknown change
+  still reloads everything.
 
 ### 4.79 Four SSE streams to the same host - built
 
