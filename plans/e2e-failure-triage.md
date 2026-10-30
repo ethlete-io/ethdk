@@ -55,9 +55,9 @@ in this repo. Change it to read the JSONL lines and stop parsing the `list` repo
 parser as a fallback while a repo has no reporter. This slice is outside the SDK. Do it in the
 `tom-mods` source repository.
 
-## Open points
+## Decisions
 
-- Slice 1 home: `@ethlete/cli/playwright` is the recommendation. The alternative is a new small
-  package. That costs a new publish target for one file.
-- Slice 3: a script for the grouping (`et e2e triage`) or only skill prose. The recommendation is the
-  skill first, and the script only if agents group badly by hand.
+Tom agreed on 2026-10-30:
+
+- Slice 1 home: `@ethlete/cli/playwright`, not a new package.
+- Slice 3: skill prose first. Add `et e2e triage` only if agents group badly by hand.
