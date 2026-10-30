@@ -93,7 +93,13 @@ noise, and it costs the next session the tokens to read it.
 
 Then give a prompt the user can copy into the fresh session, in a code block: the next task, the
 plan file or finding it lives in, and any rule of this session that the repo does not record. Keep
-it to a few lines. When no next task is known, say so instead.
+it to a few lines.
+
+An open item counts as the next task: a known gap, an open finding, or an unbuilt step in the plan,
+in the task, or in your own report of this session. "Everything waits for the user" is true only
+when every open item needs a decision of the user. Then name each decision; do not stop silently.
+In a `tmux` session, restart yourself with the next task as the prompt (see the next section) instead
+of handing the prompt to the user.
 
 Write `{%handoffDir%}/<slug>.md` where `<slug>` is a short kebab-case name for
 the task (use the user-provided slug if they gave one). If the file exists,
