@@ -9,7 +9,7 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   false positive, then exceptions and `handoff` run in one subagent.
 - D done (`493d1f6f9` 6.7 and 5.60 rule, `c94f3e095` 6.6). F3 and F4 were already built (token in `colors.css`,
   `UTILITY-CSS` in `RULES`). C1 done (`2a90d0cfd`, Inventory toggle on `pages/*` parts; `by` is `designer`). B, E and G slice 5 run; C2
-  waits for B2; C3 (1.2 re-run) not started; F 5.51 gets an r2 for Q42; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
+  waits for B2; C3 (1.2 re-run) not started; F 5.51 r2 at ready; F 5.32 at ready. G slice 4 done (`eebccd5f6`); slice 5 waits for Q41 (how flow lines
   animate). Queued: A 5.39 after A2-A5; F 5.32 (F2 merged by Tom).
 - `design check` warns `STALE-REPLACE` on `components/button/button.ts` (`replace(/^<(button|a) /)` matches nothing). Found on the way: `aae2914f3` broke every render of the built CLI
   (`exports is not defined`); fixed in `203aa2c35`.
@@ -75,9 +75,8 @@ Sketches at `ready`, with the round name and the one-line question for Tom. The 
 
 - `elements/canvas-frames` + `pages/sketches` r1 "Named frame parts" (`b907cf29d`, 5.32): merge the named exports
   `canvasFrameHead`, `canvasFrameBox`, `canvasZoomChip`, with the app chip on `pages/sketches`? Q43 with the grill.
-- `foundations/colors` r1 "Contrast next to each token" (`fdb770514`, 5.51): merge the contrast chips (each token on
-  surface, raised and overlay, with its bar)? Also Q42: `--surface-border` is 1.2-1.6:1; hold it to 3:1 or mark it
-  exempt as decorative?
+- `foundations/colors` r2 "Surface border exempt" (`40157a02b`, 5.51 + Q42): merge variant b, the contrast chips
+  per token on surface, raised and overlay, with `--surface-border` shown exempt?
 
 ## Waits for Tom in the real Studio
 
