@@ -12,7 +12,7 @@
   --color-et-surface-dark-bg: rgb(15 15 15);
   --color-et-surface-dark: rgb(235 235 235);
   --color-et-surface-dark-muted: rgb(164 164 164);
-  --color-et-surface-dark-subtle: rgb(164 164 164);
+  --color-et-surface-dark-subtle: rgb(146 146 146);
   --color-et-surface-dark-border: rgb(56 56 56);
   --color-et-surface-dark-interaction: rgb(164 164 164);
   --color-et-surface-dark-interaction-hover: rgb(235 235 235);
@@ -24,7 +24,7 @@
   --color-et-surface-dark-elevated-bg: rgb(32 32 32);
   --color-et-surface-dark-elevated: rgb(235 235 235);
   --color-et-surface-dark-elevated-muted: rgb(164 164 164);
-  --color-et-surface-dark-elevated-subtle: rgb(164 164 164);
+  --color-et-surface-dark-elevated-subtle: rgb(146 146 146);
   --color-et-surface-dark-elevated-border: rgb(56 56 56);
   --color-et-surface-dark-elevated-interaction: rgb(164 164 164);
   --color-et-surface-dark-elevated-interaction-hover: rgb(235 235 235);
@@ -36,7 +36,7 @@
   --color-et-surface-dark-elevated-2-bg: rgb(43 43 43);
   --color-et-surface-dark-elevated-2: rgb(235 235 235);
   --color-et-surface-dark-elevated-2-muted: rgb(164 164 164);
-  --color-et-surface-dark-elevated-2-subtle: rgb(164 164 164);
+  --color-et-surface-dark-elevated-2-subtle: rgb(146 146 146);
   --color-et-surface-dark-elevated-2-border: rgb(56 56 56);
   --color-et-surface-dark-elevated-2-interaction: rgb(164 164 164);
   --color-et-surface-dark-elevated-2-interaction-hover: rgb(235 235 235);
@@ -75,7 +75,7 @@
     --et-surface-background: 15 15 15;
     --et-surface-color: 235 235 235;
     --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 164 164 164;
+    --et-surface-color-subtle: 146 146 146;
     --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 0;
@@ -90,7 +90,7 @@
     --et-surface-background: 32 32 32;
     --et-surface-color: 235 235 235;
     --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 164 164 164;
+    --et-surface-color-subtle: 146 146 146;
     --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 1;
@@ -105,7 +105,7 @@
     --et-surface-background: 43 43 43;
     --et-surface-color: 235 235 235;
     --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 164 164 164;
+    --et-surface-color-subtle: 146 146 146;
     --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 2;
@@ -120,7 +120,7 @@
     --et-surface-background: 15 15 15;
     --et-surface-color: 235 235 235;
     --et-surface-color-muted: 164 164 164;
-    --et-surface-color-subtle: 164 164 164;
+    --et-surface-color-subtle: 146 146 146;
     --et-surface-border: 56 56 56;
     --et-surface-type: dark;
     --et-surface-elevation: 0;

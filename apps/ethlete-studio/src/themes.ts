@@ -9,7 +9,7 @@ export const BRAND_THEME: ColorTheme = {
       default: '37 174 167',
       hover: '65 193 186',
       focus: '73 199 192',
-      active: '37 174 167',
+      active: '0 145 140',
       disabled: '34 72 70',
     },
     onColor: {
@@ -34,7 +34,7 @@ export const DANGER_THEME: ColorTheme = {
       default: '247 93 89',
       hover: '252 122 115',
       focus: '252 122 115',
-      active: '247 93 89',
+      active: '222 69 68',
       disabled: '99 47 44',
     },
     onColor: {
@@ -59,7 +59,7 @@ export const WARNING_THEME: ColorTheme = {
       default: '239 168 49',
       hover: '255 184 70',
       focus: '255 184 70',
-      active: '239 168 49',
+      active: '208 139 0',
       disabled: '95 71 36',
     },
     onColor: {

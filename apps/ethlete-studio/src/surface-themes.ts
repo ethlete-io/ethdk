@@ -20,7 +20,7 @@ export const DARK_SURFACE: SurfaceTheme = {
   background: '15 15 15',
   color: '235 235 235',
   colorMuted: '164 164 164',
-  colorSubtle: '164 164 164',
+  colorSubtle: '146 146 146',
   border: '56 56 56',
 };
 
@@ -32,7 +32,7 @@ export const DARK_ELEVATED_SURFACE: SurfaceTheme = {
   background: '32 32 32',
   color: '235 235 235',
   colorMuted: '164 164 164',
-  colorSubtle: '164 164 164',
+  colorSubtle: '146 146 146',
   border: '56 56 56',
 };
 
@@ -44,7 +44,7 @@ export const DARK_ELEVATED_2_SURFACE: SurfaceTheme = {
   background: '43 43 43',
   color: '235 235 235',
   colorMuted: '164 164 164',
-  colorSubtle: '164 164 164',
+  colorSubtle: '146 146 146',
   border: '56 56 56',
 };
 
