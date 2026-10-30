@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
+import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
 import { canonicalClassesOf } from './canonical-class';
 
@@ -58,6 +59,18 @@ describe('canonicalClassesOf', () => {
       'home.ts: The class `hover:mt-[16px]` can be written as `hover:mt-4`',
       'row.ts: The class `grid-cols-[repeat(3,minmax(0,1fr))]` can be written as `grid-cols-3`',
     ]);
+  });
+
+  it('runs as part of design check', () => {
+    const target = acme('');
+
+    write(target, 'acme/pages/home/home.ts', part('<div class="w-[420px]"></div>'));
+
+    expect(
+      ruleProblemsOf(
+        resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} }),
+      ).filter((problem) => problem.rule === 'CANONICAL-CLASS').length,
+    ).toBe(1);
   });
 
   it('takes the rem base from the root font size of the product stylesheets', () => {

@@ -3,6 +3,7 @@ import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
 import { Problem } from './problem';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
+import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
@@ -41,6 +42,7 @@ const RULES = [
   flowProblemsOf,
   badSvgAssetsOf,
   inlineSvgsOf,
+  canonicalClassesOf,
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>

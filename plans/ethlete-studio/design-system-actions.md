@@ -582,6 +582,9 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   on a merged part changes its hash, so `design check` says "changed outside a sketch"; format in the sketch.
   CANONICAL-CLASS findings to fix via sketch: `w-[420px]` in pages/start and pages/system, `min-h-[900px]` in
   pages/start. Left: pages/sketches (after the frame bug), then register `UTILITY-CSS`.
+- **Progress (2026-10-30):** `CANONICAL-CLASS` is in `RULES`; spec through `ruleProblemsOf`, docs in
+  `apps/docs/cli/index.md`. Studio findings in pages/start and pages/system wait for a sketch. `pages/sketches` move
+  running.
 
 ### 4.54 A design cannot say that a change between states animates - in progress (builder, 2026-10-30)
 
