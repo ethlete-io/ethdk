@@ -1,9 +1,10 @@
-import { MotionBox } from '../../../design/motion-runtime';
 import { Browser, DRAW_TIMEOUT_MS, finished, openFrame, settled, ShotUnprocessableError } from './thumb';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
 export type MotionMode = 'full' | 'reduced';
+
+type MotionBox = { left: number; top: number; right: number; bottom: number };
 
 export const MOTION_MODES: readonly MotionMode[] = ['full', 'reduced'];
 
