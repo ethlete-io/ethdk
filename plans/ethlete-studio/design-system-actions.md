@@ -734,7 +734,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   `return null`). Verified: unit specs, spec typecheck, `nx build cli`, lint. Not verified: a live run against a
   render server. Affected parts draw only at the first width, as `compareMerge` does.
 
-### 4.65 A token value change in a sketch auto-merges as "no visible change" - open
+### 4.65 A token value change in a sketch auto-merges as "no visible change" - in progress (builder, 2026-10-30)
 
 - **Pain (2026-10-30):** the colour step B sketch `foundations/colors` had two variants: a (each `*-active`
   0.05 L darker, `--text-subtle` oklch(0.62 0 0)) and b (0.09 L darker, oklch(0.58 0 0)). `sketch ready`
