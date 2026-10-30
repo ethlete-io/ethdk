@@ -197,3 +197,10 @@ Each slice gets an "in progress" note here when it starts.
   with `"transition": "view"`; the frame draws the `from` page, loads the `to` page's styles and morphs to its markup inside a
   same-document View Transition, stepped like a motion; `et design motion flow <flow> <n>` addresses the line by index (label
   shown in the output); the shots take the full preset viewport.
+
+## Slice 5 decision (Tom, 2026-10-30)
+
+- A flow line animates only when it has `"transition": "view"`. The frame draws the `from` page, loads the `to`
+  page's styles and morphs to its markup inside a same-document View Transition, stepped like a motion.
+- `et design motion flow <flow> <line>` addresses the line by its `id` if it has one, else by `from→to`; never
+  by index, which shifts when a line is added. Shots use the full preset viewport.
