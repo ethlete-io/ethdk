@@ -96,7 +96,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 2. Shots through the CLI and MCP. Done (2026-10-30): CLI `40087e0a9`, the `motion_shots` tool of `et design mcp` `90724234f`.
 3. The keyframe strip and the timeline in Studio.
 4. `spring()` and `interrupt`. Done (2026-10-30), see "As built: slice 4".
-5. Flow lines. Waits for a decision, see "As built: slice 4".
+5. Flow lines. Done (2026-10-30), see "As built: slice 5".
 
 Each slice gets an "in progress" note here when it starts.
 
@@ -218,3 +218,22 @@ Each slice gets an "in progress" note here when it starts.
   page's styles and morphs to its markup inside a same-document View Transition, stepped like a motion.
 - `et design motion flow <flow> <line>` addresses the line by its `id` if it has one, else by `from→to`; never
   by index, which shifts when a line is added. Shots use the full preset viewport.
+
+## As built: slice 5 (2026-10-30, `a0ba7dd81`)
+
+- A flow line takes `id?` and `transition?: "view"` (`system/flows/flow.ts` validates and keeps both). `et design motion flow <flow>
+<line>` (`motion-command.ts`, resolver `motion-flow.ts`) names a line by `id`, else `part#state→part#state` (`->` too); a line
+  with an id named by its ends, two matching lines, and a line without `"transition": "view"` are errors that list the animated lines.
+- `motionOf` takes `flowTo`: the frame gets `flow-to=<part>#<state>` instead of `motion`, loads the `to` part from the product
+  (never a sketch) and runs `stepMotion` with `viewTransition: true`. The `to` styles ride inside the morphed markup as a
+  `<style>`, so the View Transition captures the `from` page before they apply; the `from` styles stay loaded. Shots are not
+  clipped and take the viewport, not the full page; the preset is `--preset` or the product's first, and a product without one fails.
+- Bit (`motion-flow.spec.ts`, real Chromium): end 800 fails without the View Transition (0) and without the `to` styles (250);
+  the 400x300 size fails with full-page shots (400x600); keyframe 0 differing from 800 fails with the `to` styles in `<head>`
+  (both pages share `.page`). `designMotion` reads the line by id only when `flowOf` keeps `id`.
+- Verified: specs, spec typecheck, eslint, a scratch checkout with the CLI compiled by `tsc` (the `nx build cli` compile failed on
+  another stream's uncommitted `sketch/unused-closure.ts`): a hero with `view-transition-name` flies from 80 px to the full
+  width in 600 ms, the reverse line without `transition` is refused, `0` is refused.
+- Not verified: WebKit; a flow line in Studio or MCP (neither exposes it yet); `play(ctx)` on a line (not supported, as decided);
+  reduced motion runs the same View Transition unless the page's CSS changes it. `frame-bootstrap.spec.ts` fails on the
+  uncommitted embed-page work of stream E, not on this change.
