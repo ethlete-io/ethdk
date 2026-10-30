@@ -66,6 +66,41 @@ describe('designSketch', () => {
     ]);
   });
 
+  it('opens one sketch on several targets and merges them all by itself when no state shows a change', async () => {
+    const target = acme();
+    const lines = output();
+    const product = join(target, DESIGN_DIR, 'acme');
+
+    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+
+    expect(
+      write(
+        target,
+        'new',
+        'components/button',
+        'elements/hero',
+        '--variants',
+        'a',
+        '--round',
+        'Same',
+        '--note',
+        'no change',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    expect(lines).toContain(
+      `  a: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts')}, ${join(DESIGN_DIR, 'acme/sketches/components-button/a/elements/hero/hero.ts')}  assets: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/assets')}/`,
+    );
+    expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('No visible change in any state: merged components/button, elements/hero automatically.');
+    expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
+    expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
+      { part: 'components/button', auto: true },
+      { part: 'elements/hero', auto: true },
+    ]);
+  });
+
   it('runs the check and the auto merge again on a sketch that is already ready', async () => {
     const target = acme();
     const lines = output();
@@ -147,7 +182,7 @@ describe('designSketch', () => {
 
     expect(run(acme(), 'nope')).toBe(2);
     expect(lines[0]).toBe('unknown sketch command "nope"');
-    expect(lines[1]).toContain('usage: et design sketch new <layer>/<name> --variants a,b');
+    expect(lines[1]).toContain('usage: et design sketch new <layer>/<name> [<layer>/<name>…] --variants a,b');
   });
 
   it('edits the title and note of a round and lists the rounds', () => {

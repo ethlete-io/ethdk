@@ -79,4 +79,26 @@ describe('overlaySketch', () => {
       },
     ]);
   });
+
+  it('lets each target of a sketch with several targets open its own layer', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'components', name: 'button' },
+      others: [{ layer: 'elements', name: 'hero' }],
+      variants: ['a'],
+    }) as Sketch;
+
+    write(sketch, 'a/pages/home/home.ts', 'export default 1;');
+
+    expect(overlaySketch({ product, sketch, variant: 'a' }).problems).toEqual([
+      {
+        rule: 'SKETCH',
+        file: join(sketch.dir, 'a/pages/home/home.ts'),
+        message:
+          'a sketch on components/button, elements/hero may change their layers and the layers below them, not pages/home',
+      },
+    ]);
+  });
 });

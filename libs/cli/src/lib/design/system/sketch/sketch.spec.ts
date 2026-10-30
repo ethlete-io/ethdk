@@ -138,6 +138,75 @@ describe('createSketch', () => {
   });
 });
 
+describe('a sketch with several targets', () => {
+  const several = (target: string) =>
+    createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'components', name: 'button' },
+      others: [
+        { layer: 'elements', name: 'hero' },
+        { layer: 'components', name: 'card' },
+      ],
+      variants: ['a'],
+    });
+
+  it('copies every target into each variant and records them in sketch.json, the first as the target', () => {
+    const target = acme();
+    const created = several(target) as Sketch;
+    const variant = join(target, DESIGN_DIR, 'acme/sketches/components-button/a');
+
+    expect(created.targets).toEqual(['components/button', 'elements/hero', 'components/card']);
+    expect(existsSync(join(variant, 'components/button/button.ts'))).toBe(true);
+    expect(existsSync(join(variant, 'elements/hero/hero.ts'))).toBe(true);
+    expect(existsSync(join(variant, 'components/card/card.ts'))).toBe(true);
+    expect(sketchJson(target, 'components-button')).toEqual(
+      expect.objectContaining({
+        target: 'components/button',
+        targets: ['components/button', 'elements/hero', 'components/card'],
+      }),
+    );
+  });
+
+  it('is found by any of its targets, and holds them against a second sketch', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+
+    several(target);
+
+    expect(
+      (findSketch({ productDir, product: 'acme', sketch: { layer: 'elements', name: 'hero' } }) as Sketch).target,
+    ).toBe('components/button');
+    expect(
+      createSketch({ product: resolveAcme(target), sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] }),
+    ).toBe('elements/hero already has an open sketch - merge or discard it first');
+  });
+
+  it('reads a one-target sketch.json without targets as one target, and writes none back', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    expect(sketch.targets).toEqual(['elements/hero']);
+    expect(sketchJson(target, 'elements-hero')).not.toHaveProperty('targets');
+  });
+
+  it('refuses a target named twice, and --like with several targets', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const hero = { layer: 'elements' as const, name: 'hero' };
+
+    expect(createSketch({ product, sketch: hero, others: [hero], variants: ['a'] })).toBe('name each target once');
+    expect(
+      createSketch({
+        product,
+        sketch: hero,
+        others: [{ layer: 'components', name: 'card' }],
+        variants: ['a'],
+        like: { folder: '', name: 'hero', shared: null },
+      }),
+    ).toContain('--like starts one target');
+  });
+});
+
 describe('listSketches and findSketch', () => {
   it('reads every sketch folder and reports one without sketch.json', () => {
     const target = acme();

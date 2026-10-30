@@ -512,6 +512,61 @@ describe('mergeSketch with a shared folder', () => {
   });
 });
 
+describe('mergeSketch with several targets', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const readyOnTwo = (target: string) => {
+    const product = resolveAcme(target);
+    const created = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      others: [{ layer: 'components', name: 'card' }],
+      variants: ['a', 'b'],
+      author: 'claude-opus-5-5',
+    }) as Sketch;
+
+    return { product, sketch: picked(markSketchReady({ checkout: target, sketch: created }) as Sketch) };
+  };
+
+  it('merges every target in one go, each with the note and the authors', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const card = join(target, DESIGN_DIR, 'acme/components/card/card.ts');
+
+    expect(merge(target, readyOnTwo(target))).toEqual(['components/card', 'elements/hero']);
+
+    for (const file of [join(heroOf(target), 'hero.ts'), card]) {
+      expect(readFileSync(file, 'utf8')).toContain("note: 'Variant b, because it is calmer.'");
+      expect(readFileSync(file, 'utf8')).toContain("madeBy: ['claude-opus-5-5']");
+    }
+  }, 120_000);
+
+  it("carries the sketch's shared folder into each target that imports it", () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const found = readyOnTwo(target);
+    const cardDir = join(target, DESIGN_DIR, 'acme/components/card');
+
+    mkdirSync(join(found.sketch.dir, 'shared'));
+    writeFileSync(join(found.sketch.dir, 'shared/more.ts'), 'export const more = 1;\n');
+
+    for (const file of ['b/elements/hero/hero.ts', 'b/components/card/card.ts'].map((path) =>
+      join(found.sketch.dir, path),
+    ))
+      writeFileSync(
+        file,
+        `import { more } from '@shared/more';\n${readFileSync(file, 'utf8')}\nexport const shared = more;\n`,
+      );
+
+    expect(merge(target, found)).toEqual(['components/card', 'elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain("from './shared/more'");
+    expect(readFileSync(join(cardDir, 'card.ts'), 'utf8')).toContain("from './shared/more'");
+    expect(existsSync(join(cardDir, 'shared/more.ts'))).toBe(true);
+  }, 120_000);
+});
+
 describe('discardSketch', () => {
   it('deletes the sketch with its variants', () => {
     const target = acme();

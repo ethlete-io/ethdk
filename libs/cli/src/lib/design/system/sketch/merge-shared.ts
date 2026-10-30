@@ -33,27 +33,28 @@ const sketchSharedFilesOf = (sketch: Sketch, variant: string) => {
 };
 
 /**
- * What a merge does with the sketch's `shared/` folder: `carry` when the target imports a file of it the product's
- * `shared/` does not hold, `drop` when no part does, or why the merge must stop - a part other than the target
- * imports one, or the target holds a `shared/` folder of its own.
+ * What a merge does with the sketch's `shared/` folder: `carry` names the folder of each target that imports a file of
+ * it the product's `shared/` does not hold, empty when no part does; or why the merge must stop - a part other than a
+ * target imports one, or such a target holds a `shared/` folder of its own.
  */
 export const sharedPlanOf = (options: {
-  sketch: Sketch;
+  sketch: Pick<Sketch, 'targets'>;
   parts: PartFile[];
   product: SharedProduct;
-}): 'carry' | 'drop' | string => {
+}): { carry: string[] } | string => {
   const { sketch, parts, product } = options;
   const importers = sharedImportersOf(product, parts);
-  const others = importers.filter((part) => partKeyOf(part) !== sketch.target);
-  const target = importers.find((part) => partKeyOf(part) === sketch.target);
+  const others = importers.filter((part) => !sketch.targets.includes(partKeyOf(part)));
+  const targets = importers.filter((part) => sketch.targets.includes(partKeyOf(part)));
+  const owning = targets.find((part) => existsSync(resolve(dirname(part.file), SHARED_FOLDER)));
+  const takers = sketch.targets.join(', ');
 
   if (others.length > 0)
-    return `${others.map(partKeyOf).join(', ')} import ${SHARED_PREFIX} - only ${sketch.target} takes the sketch's ${SHARED_FOLDER}/ into the product; move that code into the part`;
-  if (!target) return 'drop';
-  if (existsSync(resolve(dirname(target.file), SHARED_FOLDER)))
-    return `${sketch.target} holds a ${SHARED_FOLDER}/ folder of its own and imports ${SHARED_PREFIX} - rename the folder`;
+    return `${others.map(partKeyOf).join(', ')} import ${SHARED_PREFIX} - only ${takers} take${sketch.targets.length > 1 ? '' : 's'} the sketch's ${SHARED_FOLDER}/ into the product; move that code into the part`;
+  if (owning)
+    return `${partKeyOf(owning)} holds a ${SHARED_FOLDER}/ folder of its own and imports ${SHARED_PREFIX} - rename the folder`;
 
-  return 'carry';
+  return { carry: targets.map((part) => resolve(product.dir, part.layer, part.name)) };
 };
 
 /**

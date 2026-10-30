@@ -6,7 +6,7 @@ import { checkSystem, ruleLinesOf } from '../check-system';
 import { addressSketchComments, resolveSketchEndComments } from '../comments/comment';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { fixturesOf, partFilesOf } from '../product';
-import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
@@ -54,6 +54,45 @@ const pickOf = (sketch: Sketch) => {
   return { variant: decision.variant };
 };
 
+type NotedTarget = {
+  key: string;
+  targetDir: string;
+  noteFile: string;
+  inherited: ResolvedPart | null;
+  noted: string;
+};
+
+const notedTargetOf = (options: {
+  sketch: Sketch;
+  variant: string;
+  parts: { layer: string; name: string; file: string }[];
+  product: ResolvedProduct;
+  key: string;
+  note?: string;
+}): NotedTarget | string => {
+  const { sketch, variant, parts, product, key, note } = options;
+  const name = key.split('/')[1] ?? '';
+  const targetDir = resolve(product.dir, key);
+  const noteFile = resolve(targetDir, `${name}.ts`);
+  const carried = parts.find((part) => partKeyOf(part) === key)?.file;
+  const inherited =
+    carried || existsSync(noteFile) ? null : (product.parts.find((part) => partKeyOf(part) === key) ?? null);
+  const held = carried ?? (inherited ? inherited.file : noteFile);
+
+  if (!existsSync(held)) return `variant "${variant}" holds no ${key}, and the product has no ${key} to carry the note`;
+
+  const source = readFileSync(held, 'utf8');
+  const variantNote = sketch.variantInfo[variant]?.note;
+  const newNote = note?.trim() || (noteOf(source)?.trim() === '' ? variantNote : undefined);
+  const withNewNote = newNote ? withNote(source, newNote) : source;
+  const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
+  const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
+
+  if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
+
+  return { key, targetDir, noteFile, inherited, noted };
+};
+
 /** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
 export type MergeRefusal = { reason: string; changed?: string[] };
 
@@ -85,7 +124,7 @@ const mergeOrReason = (options: {
 
   const shared = sharedPlanOf({ sketch, parts, product });
 
-  if (shared !== 'carry' && shared !== 'drop') return shared;
+  if (typeof shared === 'string') return shared;
 
   const fixtures = fixturesOf(dir);
 
@@ -103,26 +142,18 @@ const mergeOrReason = (options: {
       changed: conflicts,
     };
 
-  const targetDir = resolve(product.dir, sketch.layer, sketch.name);
-  const noteFile = resolve(targetDir, `${sketch.name}.ts`);
-  const carried = parts.find((part) => partKeyOf(part) === sketch.target)?.file;
-  const inherited =
-    carried || existsSync(noteFile) ? null : product.parts.find((part) => partKeyOf(part) === sketch.target);
-  const held = carried ?? (inherited ? inherited.file : noteFile);
+  const notedTargets: NotedTarget[] = [];
 
-  if (!existsSync(held))
-    return `variant "${variant}" holds no ${sketch.target}, and the product has no ${sketch.target} to carry the note`;
+  for (const key of sketch.targets) {
+    const noted = notedTargetOf({ sketch, variant, parts, product, key, note });
 
-  const source = readFileSync(held, 'utf8');
-  const variantNote = sketch.variantInfo[variant]?.note;
-  const newNote = note?.trim() || (noteOf(source)?.trim() === '' ? variantNote : undefined);
-  const withNewNote = newNote ? withNote(source, newNote) : source;
-  const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
-  const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
+    if (typeof noted === 'string') return noted;
 
-  if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
+    notedTargets.push(noted);
+  }
 
-  const mergedKeys = [...new Set([sketch.target, ...parts.map(partKeyOf)])];
+  const inheritedKeys = notedTargets.flatMap((entry) => (entry.inherited ? [entry.key] : []));
+  const mergedKeys = [...new Set([...sketch.targets, ...parts.map(partKeyOf)])];
   const assetFiles = filesBelow(resolve(dir, ASSETS_FOLDER));
   const sharedChanges = productSharedChangesOf({ sketch, variant, product });
   const untouched =
@@ -131,7 +162,9 @@ const mergeOrReason = (options: {
   const known = ruleLinesOf(target, product);
 
   const swapped = swap([
-    ...(inherited ? [{ from: dirname(inherited.file), to: targetDir }] : []),
+    ...notedTargets.flatMap(({ inherited, targetDir }) =>
+      inherited ? [{ from: dirname(inherited.file), to: targetDir }] : [],
+    ),
     ...parts.map((part) => ({ from: dirname(part.file), to: resolve(product.dir, part.layer, part.name) })),
     ...(fixtures ? [{ from: fixtures, to: resolve(product.dir, 'fixtures.ts') }] : []),
     ...assetFiles.map((file) => ({
@@ -141,9 +174,9 @@ const mergeOrReason = (options: {
     ...sharedChanges,
   ]);
 
-  writeFileSync(noteFile, noted);
+  for (const { noteFile, noted } of notedTargets) writeFileSync(noteFile, noted);
 
-  if (shared === 'carry') carryShared({ sketch, variant, targetDir, product });
+  for (const targetDir of shared.carry) carryShared({ sketch, variant, targetDir, product });
 
   if (checkSystem({ target, config, products: [product.name], known }) !== 0) {
     swapped.restore();
@@ -167,7 +200,7 @@ const mergeOrReason = (options: {
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
 
-  return [...(inherited ? [sketch.target] : []), ...parts.map(partKeyOf)];
+  return [...new Set([...inheritedKeys, ...parts.map(partKeyOf)])];
 };
 
 /**

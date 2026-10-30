@@ -59,6 +59,8 @@ export type SketchRound = { key: string; title: string; note: string; lost?: str
 
 export type SketchFile = {
   target: string;
+  /** Every part the sketch targets, `target` first; absent on a sketch with one target. */
+  targets?: string[];
   status: SketchStatus;
   createdAt: string;
   /** The content hash of each part and of the fixtures in the product when the sketch was created or rebased. */
@@ -72,6 +74,7 @@ export type SketchFile = {
 
 /** A sketch as read: `rounds` holds at least one round, and `variantInfo` names the round of every variant. */
 export type Sketch = SketchFile & {
+  targets: string[];
   rounds: SketchRound[];
   variantInfo: Record<string, SketchVariantInfo>;
   product: string;
@@ -281,6 +284,16 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
   const target = parseTarget(parsed.target);
 
   if (typeof target === 'string') return `${file}: ${target}`;
+
+  const targets = parsed.targets ?? [partKeyOf(target)];
+
+  if (
+    !Array.isArray(targets) ||
+    targets[0] !== partKeyOf(target) ||
+    new Set(targets).size !== targets.length ||
+    targets.some((entry) => typeof parseTarget(entry) === 'string')
+  )
+    return `${file}: targets must list unique <layer>/<name> keys, the target first`;
   if (!isStatus(parsed.status)) return `${file}: status must be one of ${SKETCH_STATUSES.join(', ')}`;
   if (parsed.variantInfo !== undefined && !isVariantInfo(parsed.variantInfo))
     return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string, note?: string } }`;
@@ -304,6 +317,7 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
 
   return {
     ...(parsed as SketchFile),
+    targets,
     rounds,
     variantInfo,
     product,
@@ -320,15 +334,25 @@ export const listSketches = (options: { productDir: string; product: string }) =
     readSketch({ product: options.product, dir: resolve(sketchesDirOf(options.productDir), folder) }),
   );
 
+/** The open sketch that targets `sketch`, found by its first target or by any other it names; `null` when none does. */
 export const findSketch = (options: { productDir: string; product: string; sketch: SketchTarget }) => {
   const dir = sketchDirOf(options);
 
-  return existsSync(dir) ? readSketch({ product: options.product, dir }) : null;
+  if (existsSync(dir)) return readSketch({ product: options.product, dir });
+
+  const key = partKeyOf(options.sketch);
+
+  return (
+    listSketches(options).find(
+      (sketch): sketch is Sketch => typeof sketch !== 'string' && sketch.targets.includes(key),
+    ) ?? null
+  );
 };
 
 export const writeSketchFile = (sketch: Sketch) => {
   const file: SketchFile = {
     target: partKeyOf(sketch),
+    ...(sketch.targets.length > 1 ? { targets: sketch.targets } : {}),
     status: sketch.status,
     createdAt: sketch.createdAt,
     ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
@@ -443,11 +467,12 @@ const variantInfoOf = (options: { round: string; author?: string; note?: string 
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
  * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
  * target is new. A part's own `shared/` folder becomes the sketch's, imported as `@shared/`. A target holds one open
- * sketch at a time.
+ * sketch at a time. Each of `others` joins every variant the same way, as a further target; `like` takes one target only.
  */
 export const createSketch = (options: {
   product: ResolvedProduct;
   sketch: SketchTarget;
+  others?: SketchTarget[];
   variants: string[];
   roundTitle?: string;
   roundNote?: string;
@@ -458,8 +483,18 @@ export const createSketch = (options: {
   const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
+  const all = [sketch, ...(options.others ?? [])];
+  const targets = all.map(partKeyOf);
 
-  if (existsSync(dir)) return `${key} already has an open sketch - merge or discard it first`;
+  if (new Set(targets).size !== targets.length) return 'name each target once';
+  if (like && all.length > 1) return '--like starts one target - open a sketch with several targets without it';
+
+  const taken = all.find(
+    (target) => findSketch({ productDir: product.dir, product: product.name, sketch: target }) !== null,
+  );
+
+  if (existsSync(dir) || taken)
+    return `${partKeyOf(taken ?? sketch)} already has an open sketch - merge or discard it first`;
   if (variants.length === 0) return 'name at least one variant';
 
   const invalid = variants.find((variant) => !isVariantName(variant));
@@ -468,27 +503,27 @@ export const createSketch = (options: {
     return `"${invalid}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
   if (new Set(variants).size !== variants.length) return 'each variant name must be unique';
 
-  const existing = product.parts.find((part) => partKeyOf(part) === key);
-
   for (const variant of variants) {
-    const folder = resolve(dir, variant, sketch.layer, sketch.name);
-
-    mkdirSync(folder, { recursive: true });
     mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });
 
-    if (like) {
-      copyPartAs({ from: like, to: folder, name: sketch.name });
-      liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
-    } else if (existing) {
-      cpSync(resolve(existing.file, '..'), folder, { recursive: true });
-      liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
-    } else {
-      if (sketch.layer === 'pages') {
+    for (const target of all) {
+      const folder = resolve(dir, variant, target.layer, target.name);
+      const existing = product.parts.find((part) => partKeyOf(part) === partKeyOf(target));
+
+      mkdirSync(folder, { recursive: true });
+
+      if (like) {
+        copyPartAs({ from: like, to: folder, name: target.name });
+        liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+      } else if (existing) {
+        cpSync(resolve(existing.file, '..'), folder, { recursive: true });
+        liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+      } else if (target.layer === 'pages') {
         const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
-        writeFileSync(resolve(folder, `${sketch.name}.ts`), pageStubOf({ name: sketch.name, madeBy: author, widths }));
+        writeFileSync(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
       } else {
-        writeFileSync(resolve(folder, `${sketch.name}.ts`), stubOf(sketch.name));
-        writeFileSync(resolve(folder, `${sketch.name}.css`), '');
+        writeFileSync(resolve(folder, `${target.name}.ts`), stubOf(target.name));
+        writeFileSync(resolve(folder, `${target.name}.css`), '');
       }
     }
   }
@@ -497,6 +532,7 @@ export const createSketch = (options: {
 
   const created: Sketch = {
     target: key,
+    targets,
     status: 'in progress',
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),

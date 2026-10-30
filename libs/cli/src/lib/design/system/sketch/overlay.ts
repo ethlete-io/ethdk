@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { ASSETS_FOLDER } from '../assets';
-import { LAYER_USES, LAYERS } from '../layers';
+import { Layer, LAYER_USES, LAYERS } from '../layers';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
@@ -15,7 +15,11 @@ export type SketchedProduct = ResolvedProduct & {
 };
 
 const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name: string }) =>
-  partKeyOf(part) === sketch.target || part.layer === sketch.layer || LAYER_USES[sketch.layer].includes(part.layer);
+  sketch.targets.some((key) => {
+    const layer = key.split('/')[0] as Layer;
+
+    return key === partKeyOf(part) || part.layer === layer || LAYER_USES[layer].includes(part.layer);
+  });
 
 /**
  * The product as one variant of a sketch draws it: each part the variant holds replaces the part the
@@ -48,7 +52,10 @@ export const overlaySketch = (options: {
     .map((part) => ({
       rule: 'SKETCH',
       file: part.file,
-      message: `a sketch on ${sketch.target} may change ${sketch.layer} and the layers below it, not ${partKeyOf(part)}`,
+      message:
+        sketch.targets.length > 1
+          ? `a sketch on ${sketch.targets.join(', ')} may change their layers and the layers below them, not ${partKeyOf(part)}`
+          : `a sketch on ${sketch.target} may change ${sketch.layer} and the layers below it, not ${partKeyOf(part)}`,
     }));
 
   return {

@@ -42,7 +42,7 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--product <name>]',
+  'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -171,17 +171,18 @@ const withSketch = (context: Context, run: (found: { product: ResolvedProduct; s
   return typeof found === 'string' ? fail(found) : run(found);
 };
 
-const partFileOf = (options: { root: string; sketch: Sketch; variant: string }) => {
-  const { root, sketch, variant } = options;
-  const name = sketch.target.split('/').pop() ?? '';
+const partFileOf = (options: { root: string; sketch: Sketch; variant: string; part: string }) => {
+  const { root, sketch, variant, part } = options;
+  const name = part.split('/').pop() ?? '';
 
-  return relative(root, resolve(sketch.dir, variant, sketch.target, `${name}.ts`));
+  return relative(root, resolve(sketch.dir, variant, part, `${name}.ts`));
 };
 
 const variantLineOf = (options: { root: string; sketch: Sketch; variant: string }) => {
   const { root, sketch, variant } = options;
+  const files = sketch.targets.map((part) => partFileOf({ ...options, part })).join(', ');
 
-  return `  ${variant}: ${partFileOf(options)}  assets: ${relative(root, resolve(sketch.dir, variant, ASSETS_FOLDER))}/`;
+  return `  ${variant}: ${files}  assets: ${relative(root, resolve(sketch.dir, variant, ASSETS_FOLDER))}/`;
 };
 
 const created = (context: Context) => {
@@ -190,9 +191,11 @@ const created = (context: Context) => {
 
   if (typeof product === 'string') return fail(product);
 
-  const parsed = parseTarget(args.positional[0]);
+  const [parsed, ...others] = (args.positional.length > 0 ? args.positional : [undefined]).map(parseTarget);
+  const unknown = [parsed, ...others].find((entry) => typeof entry === 'string');
 
-  if (typeof parsed === 'string') return fail(parsed);
+  if (typeof unknown === 'string') return fail(unknown);
+  if (parsed === undefined || typeof parsed === 'string') return fail(SKETCH_USAGE[0] ?? '');
 
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
   const notes = variantNotesOf(args.repeated['--variant-note'] ?? [], variants);
@@ -210,6 +213,7 @@ const created = (context: Context) => {
   const sketch = createSketch({
     product,
     sketch: parsed,
+    others: others.filter((entry) => typeof entry !== 'string'),
     variants,
     roundTitle: args.values['--round'],
     roundNote: args.values['--note'],
@@ -221,7 +225,9 @@ const created = (context: Context) => {
   if (typeof sketch === 'string') return fail(sketch);
 
   formatSketch({ target, sketch, variants: sketch.variants });
-  console.log(`${sketch.target} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`);
+  console.log(
+    `${sketch.targets.join(', ')} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`,
+  );
 
   for (const variant of sketch.variants) console.log(variantLineOf({ root: target, sketch, variant }));
 
@@ -504,7 +510,7 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   if (!again) console.log(`${sketch.target} is ready`);
 
-  if (!product.parts.some((part) => partKeyOf(part) === sketch.target)) {
+  if (!sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))) {
     console.log('auto-merge skipped: new part, the user merges');
 
     return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
@@ -532,8 +538,8 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
     return 0;
   }
 
-  recordAutoMerge({ product, part: sketch.target, by: author ?? 'user' });
-  console.log(`No visible change in any state: merged ${sketch.target} automatically.`);
+  for (const part of sketch.targets) recordAutoMerge({ product, part, by: author ?? 'user' });
+  console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
 
   return 0;
 };
@@ -755,12 +761,8 @@ const merged = (context: Context) =>
     if (!Array.isArray(result)) return fail(result.reason);
 
     if (allowed)
-      recordAllowedMerge({
-        product,
-        part: sketch.target,
-        by: authorOf(context.args) ?? 'user',
-        planRef: planRef.trim(),
-      });
+      for (const part of sketch.targets)
+        recordAllowedMerge({ product, part, by: authorOf(context.args) ?? 'user', planRef: planRef.trim() });
 
     const variant = decidedSketch.decision?.kind === 'pick' ? decidedSketch.decision.variant : '';
 
