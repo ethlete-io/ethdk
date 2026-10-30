@@ -684,7 +684,7 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   network panel of a headless run on an own server): render queue wait, page render, pixel diff,
   changed box. Compare with a small part to see if the time grows with the part count or the state count.
 
-### 4.63 Auto-merge ignores the parts that use the changed part - open
+### 4.63 Auto-merge ignores the parts that use the changed part - in progress (builder, 2026-10-30)
 
 - **Pain (2026-10-30):** the `foundations/colors` sketch that removed the copied generator output auto-merged
   as "no visible change", but it removed `.et-color--accent`, which the inherited sdk part `components/select`
