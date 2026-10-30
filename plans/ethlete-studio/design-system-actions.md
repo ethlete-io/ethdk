@@ -1071,12 +1071,12 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
 - **Fix option:** one shared `EventSource` with `share()`, split by event name. Effort S.
 - **As built (2026-10-30, 560731d81):** `host/design-events.ts` holds one `EventSource` per port behind `share()`; `commentChanges$`, `partsChanges$`, `noteChanges$` and `flowChanges$` filter it by event name. A drop arrives as an `error` event and `commentChanges$` still errors on it; a late comment subscriber gets `connected` if the stream is open. Verified: new spec (one source for four subscribers, closes on the last unsubscribe, reopens), studio vitest, both tsc, eslint. The spec bites: with the old four call sites, 2 of its 4 tests fail. Not verified: a live server, WebKitGTK.
 
-### 4.80 The lazy Studio chunk holds every view - in progress
+### 4.80 The lazy Studio chunk holds every view - built
 
 - **Measured:** 887 KB raw, 247 KB gzip: `main` 289 KB, one lazy chunk 539 KB; `libs/components` forms 178 KB of
   it (select 74 KB, form-field 60 KB). Low priority for a desktop app.
 - **Fix option:** lazy-load the agent view and the dialogs. Effort S-M.
-- **In progress (2026-10-30):** a subagent builds it while 4.77 runs.
+- **As built (2026-10-30, e5d007cdf):** the agent view was already its own route. `@defer` now wraps the new-product form, note form, comment draft, comment thread and comment panel in `system-view`. Before: main 289 KB + one chunk 540 KB (146 KB gzip). After: main 301 KB (93 KB gzip) + view chunk 417 KB (118 KB gzip) + a 102 KB deferred chunk (24 KB gzip) loaded on demand. First view loads about 122 KB raw / 28 KB gzip less. Select stays in the first view (product picker, checkouts footer). Verified: 321 specs, tsc, headless Chromium on the static build starts without errors and the agent view renders. Not verified: the deferred panels in a browser (need the design server). No spec: the chunk measurement is the evidence.
 
 ## 5. Drawing parts and pages
 
