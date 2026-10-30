@@ -155,8 +155,9 @@ const problemOf = ({ target, problem }: { target: string; problem: Problem }) =>
   message: problem.message,
 });
 
-const sketchOf = ({ sketch: { dir, ...sketch }, target }: { sketch: Sketch; target: string }) => ({
+const sketchOf = ({ sketch: { dir, targets, ...sketch }, target }: { sketch: Sketch; target: string }) => ({
   ...sketch,
+  targetParts: targets,
   dir: relative(target, dir),
 });
 
@@ -187,18 +188,20 @@ const variantChangesOf = ({ current, drawn }: { current: PartFacts; drawn: PartF
   note: drawn.note === current.note ? null : { before: current.note, after: drawn.note },
 });
 
-const targetsOf = async ({
+const partTargetsOf = async ({
   product,
   sketch,
+  part,
   load,
   pictureOf,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
+  part: string;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
 }) => {
-  const currentFile = product.parts.find((part) => partKeyOf(part) === sketch.target)?.file;
+  const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
   const current =
     currentFile && load
       ? await readPartModule({
@@ -210,16 +213,15 @@ const targetsOf = async ({
 
   return Promise.all(
     sketch.variants.map(async (variant) => {
-      const file = overlaySketch({ product, sketch, variant }).parts.find(
-        (part) => partKeyOf(part) === sketch.target,
-      )?.file;
+      const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
 
       if (!file || !load)
         return {
+          part,
           variant,
           states: [],
           interactions: [],
-          ...(file ? {} : { error: `variant ${variant} has no part ${sketch.target}` }),
+          ...(file ? {} : { error: `variant ${variant} has no part ${part}` }),
         };
 
       const { states, interactions, problem, note, ...widths } = await readPartModule({
@@ -229,11 +231,12 @@ const targetsOf = async ({
       });
 
       return {
+        part,
         variant,
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
-        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load, pictureOf }),
+        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, part }),
         ...(problem || !current || current.problem
           ? {}
           : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
@@ -243,9 +246,17 @@ const targetsOf = async ({
   );
 };
 
+const targetsOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  load?: VariantPartLoader;
+  pictureOf?: PictureOf;
+}) => (await Promise.all(options.sketch.targets.map((part) => partTargetsOf({ ...options, part })))).flat();
+
 /**
- * The open sketches of `?product=`, each with its variants, status, decision, the rule problems of every
- * variant, the states, widths and interactions of the target as each variant draws it (`targets`), with the states it
+ * The open sketches of `?product=`, each with its target parts (`targetParts`, the first one first), variants, status,
+ * decision, the rule problems of every variant, the states, widths and interactions of each target part as each variant
+ * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
  * of the agent (`report`, `null` when none runs).

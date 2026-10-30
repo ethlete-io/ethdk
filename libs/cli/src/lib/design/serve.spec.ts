@@ -640,6 +640,43 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
   });
 
+  it('lists the states of every target part of a sketch, the first target first', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const [card, hero] = [parseTarget('components/card'), parseTarget('elements/hero')];
+
+    if (typeof card === 'string' || typeof hero === 'string') throw new Error('unparsed');
+
+    const created = createSketch({ product, sketch: card, others: [hero], variants: ['a'] });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const { ask } = await serveAcme(target);
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targetParts: string[]; targets: { part: string; variant: string }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targetParts).toEqual(['components/card', 'elements/hero']);
+    expect(listed.sketches[0]?.targets.map(({ part, variant }) => `${part}:${variant}`)).toEqual([
+      'components/card:a',
+      'elements/hero:a',
+    ]);
+  });
+
+  it('lists the one target part of a one-target sketch', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targetParts: string[]; targets: { part: string }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targetParts).toEqual(['components/card']);
+    expect(listed.sketches[0]?.targets.map(({ part }) => part)).toEqual(['components/card', 'components/card']);
+  });
+
   it('lists the states a variant adds and drops and its changed part note against the product', async () => {
     const target = acme();
 
