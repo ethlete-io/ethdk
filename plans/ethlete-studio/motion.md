@@ -130,7 +130,7 @@ Each slice gets an "in progress" note here when it starts.
 ## As built: slice 2 (2026-10-30, `40087e0a9`)
 
 - `et design motion shots <layer>/<name> <motion> [--variant <key>] [--mode full|reduced] [--preset | --width] [--scale]
-  [--surface] [--color] [--out]` (`libs/cli/src/lib/design/motion-command.ts`). A contact sheet with a row per mode, and a JSON
+[--surface] [--color] [--out]` (`libs/cli/src/lib/design/motion-command.ts`). A contact sheet with a row per mode, and a JSON
   file next to it: per mode `end`, the keyframe times and one track per animation (`element`, `kind`
   transition/animation/script, `name`, `properties`, `start`, `delay`, `duration`, `iterations`, `easing`, `end`).
 - The frame takes `motion=<name>` at the `from` state and exposes `window.etMotion` (`start`, `seek`, `timeline`).
