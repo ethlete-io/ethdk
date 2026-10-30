@@ -217,4 +217,51 @@ describe('CommentStore', () => {
     expect(store.repliesSent()).toBe(0);
     expect(store.error()).toBe('gone');
   });
+
+  it('keeps the last list and sets the error when a later list request fails, then recovers on retry', () => {
+    const { store } = setup();
+
+    host.list.mockReturnValueOnce(throwError(() => new Error('offline')));
+    changes.next();
+    TestBed.tick();
+
+    expect(store.comments().map((comment) => comment.id)).toEqual(['a', 'b']);
+    expect(store.loaded()).toBe(true);
+    expect(store.loadError()).toBe('offline');
+
+    store.retry();
+    TestBed.tick();
+
+    expect(store.loadError()).toBe('');
+    expect(store.comments()).toHaveLength(2);
+  });
+
+  it('shows the error instead of an empty inbox when the first load fails', () => {
+    host.list.mockReturnValue(throwError(() => new Error('offline')));
+    const { store } = setup();
+
+    expect(store.comments()).toEqual([]);
+    expect(store.loaded()).toBe(false);
+    expect(store.loadError()).toBe('offline');
+
+    host.list.mockImplementation(() => of({ comments: [], unreadable: [] }));
+    store.retry();
+    TestBed.tick();
+
+    expect(store.loaded()).toBe(true);
+    expect(store.loadError()).toBe('');
+  });
+
+  it('reports an interrupted live connection and reconnects on retry', () => {
+    host.changes.mockReturnValueOnce(throwError(() => new Error('closed')));
+    const { store } = setup();
+
+    expect(store.interrupted()).toBe(true);
+
+    store.retry();
+    TestBed.tick();
+
+    expect(host.changes).toHaveBeenCalledTimes(2);
+    expect(store.interrupted()).toBe(false);
+  });
 });

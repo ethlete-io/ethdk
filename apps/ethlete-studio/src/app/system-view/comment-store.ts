@@ -1,7 +1,7 @@
 import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import { EMPTY, Observable, catchError, finalize, of, scan, startWith, switchMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, finalize, map, of, scan, startWith, switchMap, tap } from 'rxjs';
 import {
   ListedComments,
   ProductAddress,
@@ -20,6 +20,10 @@ export type CommentSource = { address: ProductAddress | null; revision: number }
 
 const NO_COMMENTS: ListedComments = { comments: [], unreadable: [] };
 
+type Read = { address: ProductAddress | null; list: ListedComments | null; error: string };
+
+const INITIAL_READ: Read = { address: null, list: NO_COMMENTS, error: '' };
+
 const NO_SOURCE: CommentSource = { address: null, revision: 0 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -37,16 +41,27 @@ export class CommentStore {
 
   private reloads = signal(0);
 
+  private reconnects = signal(0);
+
+  private live = signal(true);
+
   private changes = toSignal(
-    toObservable(computed(() => this.address()?.port ?? null)).pipe(
-      switchMap((port) =>
-        port
+    toObservable(computed(() => ({ port: this.address()?.port ?? null, reconnects: this.reconnects() }))).pipe(
+      switchMap(({ port }) => {
+        this.live.set(true);
+
+        return port
           ? commentChanges$(port).pipe(
+              tap(() => this.live.set(true)),
               scan((count) => count + 1, 0),
-              catchError(() => EMPTY),
+              catchError(() => {
+                this.live.set(false);
+
+                return EMPTY;
+              }),
             )
-          : EMPTY,
-      ),
+          : EMPTY;
+      }),
       startWith(0),
     ),
     { initialValue: 0 },
@@ -61,20 +76,42 @@ export class CommentStore {
         reloads: this.reloads(),
       })),
     ).pipe(
-      switchMap(({ address }) =>
-        address
-          ? listedComments$(address).pipe(catchError((): Observable<ListedComments> => of(NO_COMMENTS)))
-          : of(NO_COMMENTS),
+      switchMap(({ address }): Observable<Read> => {
+        if (!address) return of({ address, list: NO_COMMENTS, error: '' });
+
+        return listedComments$(address).pipe(
+          map((list): Read => ({ address, list, error: '' })),
+          catchError((error: unknown) => of<Read>({ address, list: null, error: messageOf(error) })),
+          startWith<Read>({ address, list: null, error: '' }),
+        );
+      }),
+      scan(
+        (previous, next): Read =>
+          next.list || !sameAddress(previous.address, next.address)
+            ? next
+            : { address: next.address, list: previous.list, error: next.error },
+        INITIAL_READ,
       ),
     ),
-    { initialValue: NO_COMMENTS },
+    { initialValue: INITIAL_READ },
   );
 
+  private listed = computed(() => this.reading().list ?? NO_COMMENTS);
+
+  /** Whether the list of the product loaded at least once; an empty inbox is only real after that. */
+  public loaded = computed(() => this.reading().list !== null);
+
+  /** The reason the latest list request failed, empty after a successful one. The last good list stays shown. */
+  public loadError = computed(() => this.reading().error);
+
+  /** Whether the live update connection dropped, so the list may be behind until `retry`. */
+  public interrupted = computed(() => !this.live());
+
   /** The open comments of the product, numbered oldest first. */
-  public comments = computed(() => numberedCommentsOf(this.reading().comments.filter((comment) => !comment.resolved)));
+  public comments = computed(() => numberedCommentsOf(this.listed().comments.filter((comment) => !comment.resolved)));
 
   /** The resolved threads of the product, the latest resolved first. */
-  public resolved = computed(() => resolvedCommentsOf(this.reading().comments));
+  public resolved = computed(() => resolvedCommentsOf(this.listed().comments));
 
   /** Whether the comment sidebar lists the resolved threads too. */
   public resolvedShown = signal(rememberedView().resolvedShown ?? false);
@@ -98,6 +135,12 @@ export class CommentStore {
   /** Reads the comments of the product `source` names, again whenever its revision changes. */
   public connect(source: Signal<CommentSource>) {
     this.source.set(source);
+  }
+
+  /** Loads the list again and reconnects the live updates. */
+  public retry() {
+    this.reloads.update((count) => count + 1);
+    this.reconnects.update((count) => count + 1);
   }
 
   public toggle() {

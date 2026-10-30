@@ -84,6 +84,36 @@ import {
       </button>
     </ng-template>
     <div class="min-h-0 overflow-y-auto">
+      @if (loadError() || interrupted()) {
+        <div
+          class="m-2 flex items-center gap-2 rounded border border-surface-border p-2"
+          role="alert"
+          data-comment-problem
+        >
+          <span class="min-w-0 flex-1 text-[1.2rem]">
+            @if (loadError()) {
+              {{
+                loaded()
+                  ? 'The comments could not be refreshed; this list may be out of date.'
+                  : 'The comments could not be loaded.'
+              }}
+            } @else {
+              Live updates are interrupted; this list may be out of date.
+            }
+          </span>
+          <button
+            (click)="retry.emit()"
+            et-button
+            type="button"
+            variant="transparent"
+            color="surface"
+            size="xs"
+            data-comment-retry
+          >
+            Retry
+          </button>
+        </div>
+      }
       @if (questions().length) {
         <section class="flex flex-col gap-0.5 p-2" aria-label="Questions for you" data-comment-questions-group>
           <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-accent">Questions for you</h3>
@@ -105,7 +135,11 @@ import {
           }
         </section>
       } @empty {
-        @if (!questions().length) {
+        @if (!loaded() && !loadError()) {
+          <p class="m-0 p-4 text-small text-[var(--et-surface-color-subtle-solid)]" data-comment-loading>
+            Loading comments…
+          </p>
+        } @else if (loaded() && !questions().length) {
           <p class="m-0 p-4 text-small text-[var(--et-surface-color-subtle-solid)]">No open comments.</p>
         }
       }
@@ -157,9 +191,14 @@ export class CommentPanelComponent {
   /** The resolved threads, listed read-only below the open ones while `resolvedShown`. */
   public resolved = input<ResolvedComment[]>([]);
   public resolvedShown = input(false);
+  /** Whether the list loaded at least once; before that, an empty list is not an empty inbox. */
+  public loaded = input(true);
+  public loadError = input('');
+  public interrupted = input(false);
   /** The part the canvas shows; its group comes first. */
   public selected = input<string | null>(null);
 
+  public retry = output();
   public jump = output<NumberedComment>();
   public dismiss = output();
   public resolvedToggle = output<boolean>();
