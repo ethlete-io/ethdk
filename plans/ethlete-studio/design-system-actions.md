@@ -710,6 +710,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 - **Decision (Tom, 2026-10-30):** build both, as two slices. First the targeted redraw, then the draw queue with
   4 pages at once. Each slice gets a spec that fails without the fix, a changeset for `@ethlete/cli` and a docs
   line.
+- **As built (slice 1, `2cd0ec45a`):** a PostCSS plugin records the files each stylesheet `@import`s; `dependentIdsOf`
+  no longer climbs from a file to a stylesheet that only scans it as a Tailwind source. Spec in `changed-parts.spec.ts`
+  bites (6 parts instead of 2 without the fix). Measured on a scratch copy: a part `.ts`/`.css` edit redraws 1 part
+  instead of 22; an untouched part's next shot stays cached (0.7 ms vs 0.22 s); `styles.css` and the `@import`ed
+  `colors.css` still redraw all 22. Not measured: the sketch list (no open sketch in the copy).
 
 ### 4.63 Auto-merge ignores the parts that use the changed part - done
 
