@@ -1393,7 +1393,7 @@ belong to 4.78, which replaces the `tick` with design server events.
 
 Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.30 (shot path).
 
-### 5.39 A combo of two forced states was never drawn, and its bug slipped through - open
+### 5.39 A combo of two forced states was never drawn, and its bug slipped through - done
 
 - **Pain:** the "Pressed state" sketch claimed a pressed selected row keeps its tint. There was no
   `selected-active` state, so nobody saw that `.st-trow:active` replaced the accent with grey.
@@ -1402,6 +1402,10 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   `sketch check` lists empty cells (recommended; the grid made the gap visible). 2. `sketch check`
   draws every row x column combination of a grid in a scratch pass and flags cells that look like
   another row.
+- **Decision (Tom, 2026-10-30):** option 1.
+- **As built (`c3ad43bcf`):** the shot sheet draws a "not drawn" cell for each empty column of a grid row that draws a
+  state elsewhere, and `sketch check` prints them on the grid line (`draws no selected active`). The Studio grid view
+  is stream C. The 3.39 docs hunk went in with this commit.
 
 ### 5.51 No contrast numbers next to colour tokens - open
 
