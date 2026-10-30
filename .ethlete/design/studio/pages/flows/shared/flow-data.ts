@@ -127,7 +127,7 @@ export const flowGraph = (scale: number, colGap: number, rowGap = 56) => {
     return [{ path, label }];
   });
 
-  const svg = `<svg class="absolute inset-0 overflow-visible text-text-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
+  const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-text-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
 
   return html`<div class="relative flex-none" style="width:${width}px;height:${height}px">
     ${svg}${frames}${edges.map((edge) => edge.label).join('')}
