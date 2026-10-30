@@ -759,6 +759,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   1: `ready` already needs every variant equal. Verified: specs that bite, a scratch `sketch ready` stops with
   "variant a changes accent". Not verified: Studio frames by eye; rejected variants still block an auto-merge.
 
+- **In progress (2026-10-30, builder ethlete-sdk-57):** step B redo as a sketch with two variants that both reach 4.5:1; 4.70 and 4.69 fixes in the CLI at the same time.
+
 ### 4.66 `sketch ready` gives a different answer on a re-run - open
 
 - **Pain (2026-10-30):** in the colour cleanup (`2a4b435da`), `sketch ready` on a CSS-only sketch sometimes
