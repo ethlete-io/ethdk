@@ -1,5 +1,19 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.30
+
+### Minor Changes
+
+- `sync` registers `et design mcp` as the `ethlete-design` MCP server in `.mcp.json` (Claude Code) and `.codex/config.toml` (Codex) when `@ethlete/cli` is installed.
+
+### Patch Changes
+
+- Design exploration skill: before `sketch ready`, critique each variant's hierarchy, spacing, nesting and host context, and drop visually weak ones.
+- Design exploration skill: a reference informs a design and is never copied, and variant-only code stays out of a sketch's `shared/` folder.
+- Design exploration: mark a sketch `ready` only when no change to it waits on an open decision or a helper still to land.
+- `restart` logs why it waits (`restart.log` next to the mailbox) and gives up 60 s after the clear: it tells the pane via tmux and saves the prompt to `restart.prompt.<session>.txt` instead of waiting silently.
+- Add `et design motion shots <part> <motion>`: it draws a motion at its keyframes in full and reduced motion into one sheet and writes its tracks as JSON.
+
 ## 0.1.0-next.29
 
 ### Patch Changes

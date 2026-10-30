@@ -1,5 +1,19 @@
 # ethlete-studio
 
+## 0.2.0-next.13
+
+### Minor Changes
+
+- A page part shows an Inventory view: its rest frames with numbered, status-coloured control boxes, the control list, the approval state, and an approve button that stays off while a control is undeclared or unclassified.
+
+### Patch Changes
+
+- Use canonical Tailwind theme colour classes (`text-(--et-theme-color-primary-solid)`) across Studio and drop a redundant optional chain.
+- A part with pending or reopened `design complete` exceptions shows an Exceptions button: it lists each key and reason, and approves one as the designer.
+- A state grid marks each empty column of a row that draws a state as "not drawn", the same cells the CLI shot sheet and `sketch check` show.
+- A part with motions shows a strip of each motion's keyframes; a click on one opens a read-only timeline with play, speed and one track per animation.
+- Regenerate the Studio theme files from the merged colours part.
+
 ## 0.2.0-next.12
 
 ### Minor Changes

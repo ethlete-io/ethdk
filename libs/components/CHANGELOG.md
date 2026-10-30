@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.78
+
+### Patch Changes
+
+- Design: add a `textarea()` control mock to `@ethlete/components/design/form-field`, drawn like `input()`.
+
 ## 1.0.0-next.77
 
 ### Patch Changes
