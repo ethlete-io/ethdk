@@ -78,9 +78,10 @@ onto the merge queue. A sketch that builds on an unmerged sketch waits.
 
 Sketches at `ready`, with the round name and the one-line question for Tom. The builder keeps this list current.
 
-- `components/zoom-chip` r1 "Zoom chip as its own part" (`3d00519df`), with `elements/canvas-frames`,
-  `pages/sketches`, `pages/system`: Q43 as `components/zoom-chip`, since an element may not import an element; one
-  variant. Question: merge it as a component, or keep it an element that canvas-frames stops drawing?
+- `components/zoom-chip` r2 "Chip controls with interactions" (`1534846c9`), with `elements/canvas-frames`,
+  `pages/sketches`, `pages/system`: variant b declares −, reset, + and Fit as button controls, each drawn at rest,
+  hover, active and focus-visible; `design complete` passes once merged (checked in a scratch copy). Question: merge
+  b, now that the buttons are controls?
 
 ## Waits for Tom in the real Studio
 
