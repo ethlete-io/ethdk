@@ -576,6 +576,51 @@ describe('DesignCanvasComponent', () => {
     expect(outlines[0]?.style.height).toBe('78px');
   });
 
+  it('goes live once the camera rests, on the frames nearest the centre, and keeps them for a while after', async () => {
+    const frames = Array.from({ length: 12 }, (_, index) => ({
+      ...FITTED,
+      id: `f${index}`,
+      label: `f${index}`,
+      screenshot: `shot-${index}.png`,
+      width: 40,
+      height: 40,
+    }));
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    const fixture = await render(frames);
+    const canvas = fixture.componentInstance;
+    const liveIds = () =>
+      fixture.debugElement
+        .queryAll(By.directive(CanvasFrameComponent))
+        .filter((frame) => (frame.nativeElement as HTMLElement).getAttribute('data-live') === 'true')
+        .map((frame) => (frame.componentInstance as CanvasFrameComponent).frame().id);
+
+    const wait = async (ms: number) => {
+      TestBed.tick();
+      await vi.advanceTimersByTimeAsync(ms);
+      TestBed.tick();
+      TestBed.tick();
+    };
+
+    canvas.camera.set({ x: 0, y: 0, zoom: 0.5 });
+    await wait(200);
+
+    expect(liveIds()).toEqual([]);
+
+    await wait(100);
+
+    expect(liveIds()).toEqual(['f0', 'f1', 'f2', 'f3', 'f4', 'f5']);
+
+    canvas.camera.set({ x: 100000, y: 0, zoom: 0.5 });
+    await wait(300);
+
+    expect(liveIds()).toHaveLength(6);
+
+    await wait(5000);
+
+    expect(liveIds()).toEqual([]);
+  });
+
   it('makes a double-clicked frame live, marks it, and ends it on Esc from the frame or on comment mode', async () => {
     const frames = [
       { ...FITTED, width: 320, height: 200 },

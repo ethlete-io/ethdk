@@ -107,6 +107,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       <ethlete-canvas-frame-grid
         [grid]="grid"
         [live]="live()"
+        [liveCells]="liveCells()"
         (sizeChange)="readGridSize($event)"
         (cellsChange)="cellsChange.emit($event)"
       />
@@ -239,6 +240,8 @@ export class CanvasFrameComponent {
   public frame = input.required<CanvasFrame>();
   public width = input.required<number>();
   public live = input(false);
+  /** The grid cells that go live while `live`; `null` makes every cell live. */
+  public liveCells = input<ReadonlySet<string> | null>(null);
   public active = input(false);
   public selected = input(false);
   public captionBelow = input(false);

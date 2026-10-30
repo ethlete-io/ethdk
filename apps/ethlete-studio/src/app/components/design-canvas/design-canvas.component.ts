@@ -15,10 +15,10 @@ import {
   viewChildren,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
+import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame, FrameCrop, cropPointOf, cropRectOf, pagePointOfCrop, placeableFramesOf } from './canvas-frame';
 import {
@@ -52,12 +52,11 @@ import {
   layoutMatrixSections,
   layoutSheet,
   panCamera,
-  rectsIntersect,
   screenToWorld,
-  visibleWorldRect,
   zoomAtPoint,
 } from './canvas-math';
 import { CanvasLine, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
+import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
@@ -84,6 +83,9 @@ const ROW_HEAD_MAX_SCALE = 2;
 const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
+const LIVE_REST_MS = 250;
+const LIVE_GRACE_MS = 5000;
+const MAX_LIVE_FRAMES = 6;
 const LABEL_MIN_ZOOM = 0.25;
 const NOTE_MAX_SCALE = 2;
 const LABEL_MAX_SCALE = 1 / LABEL_MIN_ZOOM;
@@ -131,7 +133,14 @@ export type CanvasRowHead = {
 
 type ColumnGroupHead = CanvasColumnGroup & { x: number; y: number; width: number };
 
-type PlacedFrame = Rect & { frame: CanvasFrame; unsized: boolean; live: boolean; active: boolean; selected: boolean };
+type PlacedFrame = Rect & {
+  frame: CanvasFrame;
+  unsized: boolean;
+  live: boolean;
+  liveCells: ReadonlySet<string> | null;
+  active: boolean;
+  selected: boolean;
+};
 
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
@@ -454,12 +463,12 @@ export class DesignCanvasComponent {
     );
   });
 
+  private restedCamera = toSignal(toObservable(this.camera).pipe(debounceTime(LIVE_REST_MS)), { initialValue: null });
+
+  private liveIds = signal<ReadonlySet<string>>(new Set(), { equal: sameIds });
+
   protected placedFrames = computed<PlacedFrame[]>(() => {
-    const camera = this.camera();
-    const visible =
-      camera.zoom >= LIVE_MIN_ZOOM
-        ? visibleWorldRect({ camera, viewport: this.viewport(), margin: LIVE_MARGIN })
-        : null;
+    const liveIds = this.liveIds();
     const activeId = this.activeId();
     const selectedId = this.selectedId();
 
@@ -472,7 +481,8 @@ export class DesignCanvasComponent {
       unsized,
       active: frame.id === activeId,
       selected: frame.id === selectedId,
-      live: frame.id === activeId || (!!visible && rectsIntersect({ x, y, width, height }, visible)),
+      live: frame.id === activeId || liveIds.has(frame.id) || !!frame.grid?.cells.some((cell) => liveIds.has(cell.id)),
+      liveCells: frame.id === activeId ? null : liveIds,
     }));
   });
 
@@ -492,6 +502,30 @@ export class DesignCanvasComponent {
       });
     });
   });
+
+  private wantedLiveIds = computed<ReadonlySet<string>>(
+    () => {
+      const camera = this.restedCamera();
+
+      if (!camera || camera.zoom < LIVE_MIN_ZOOM) return new Set();
+
+      return liveIdsOf({
+        candidates: this.targets().map(({ x, y, width, height, frame }) => ({
+          x,
+          y,
+          width,
+          height,
+          id: frame.id,
+          drawn: !!frame.screenshot,
+        })),
+        camera,
+        viewport: this.viewport(),
+        margin: LIVE_MARGIN,
+        max: MAX_LIVE_FRAMES,
+      });
+    },
+    { equal: sameIds },
+  );
 
   private framesById = computed(() => new Map(this.targets().map((placed) => [placed.frame.id, placed])));
 
@@ -630,6 +664,19 @@ export class DesignCanvasComponent {
         this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: 'start' }));
       });
     });
+
+    toObservable(this.wantedLiveIds)
+      .pipe(
+        switchMap((wanted) => {
+          const kept = keptLiveIds({ wanted, live: this.liveIds(), max: MAX_LIVE_FRAMES });
+
+          this.liveIds.set(kept);
+
+          return kept.size > wanted.size ? timer(LIVE_GRACE_MS).pipe(tap(() => this.liveIds.set(wanted))) : EMPTY;
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     this.userCamera$
       .pipe(

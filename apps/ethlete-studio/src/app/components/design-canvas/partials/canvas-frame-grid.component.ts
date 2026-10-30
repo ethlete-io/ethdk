@@ -131,7 +131,7 @@ export class CanvasFrameCellComponent {
                 data-grid-cell
               >
                 @if (cellOf(row, column); as cell) {
-                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
                 }
               </div>
             }
@@ -155,7 +155,7 @@ export class CanvasFrameCellComponent {
             @for (row of line; track row) {
               <div class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border" data-grid-cell>
                 @if (cellOf(row, sheet.first); as cell) {
-                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
                 }
               </div>
             }
@@ -179,7 +179,7 @@ export class CanvasFrameCellComponent {
           <span class="pr-[0.8rem]" data-grid-row>{{ row }}</span>
           @for (column of grid().columns; track column) {
             @if (cellOf(row, column); as cell) {
-              <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
+              <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
             } @else {
               <span></span>
             }
@@ -194,6 +194,8 @@ export class CanvasFrameCellComponent {
 export class CanvasFrameGridComponent {
   public grid = input.required<FrameGrid>();
   public live = input(false);
+  /** The cells that go live while `live`; `null` makes every cell live. */
+  public liveCells = input<ReadonlySet<string> | null>(null);
 
   public sizeChange = output<Size>();
   /** Each cell's box in CSS pixels from the grid's top left corner, by cell id. */
@@ -241,6 +243,12 @@ export class CanvasFrameGridComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  protected cellLive(id: string) {
+    const liveCells = this.liveCells();
+
+    return this.live() && (liveCells === null || liveCells.has(id));
   }
 
   protected blanksOf(line: string[]) {
