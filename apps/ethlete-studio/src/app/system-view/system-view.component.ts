@@ -87,10 +87,10 @@ import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 type Reading = { products: ListedProduct[]; error: string | null };
 
 const BADGE =
-  'shrink-0 whitespace-nowrap rounded-full border border-surface-border px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
+  'shrink-0 whitespace-nowrap rounded-full border border-surface-border px-1.5 py-px text-[1rem] text-(--et-surface-color-subtle-solid)';
 
 const BADGE_ACCENT =
-  'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
+  'shrink-0 whitespace-nowrap rounded-full border border-(--et-theme-color-primary-solid) px-1.5 py-px text-[1rem] text-(--et-theme-color-primary-solid)';
 
 const CHANGED_OUTSIDE_SKETCH = 'changed outside a sketch';
 
@@ -104,7 +104,7 @@ const NEW_PRODUCT = '/new';
 export const baseLabelOf = (base: string) =>
   base.startsWith('@') ? base : (base.split('/').filter(Boolean).at(-1) ?? base);
 
-const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
+const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
@@ -139,7 +139,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               <span class="flex flex-col">
                 {{ listed.name }}
                 @if (listed.base) {
-                  <span class="text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]"
+                  <span class="text-[1.1rem] text-(--et-surface-color-subtle-solid)"
                     >inherits from {{ BASE_LABEL_OF(listed.base) }}</span
                   >
                 }
@@ -299,7 +299,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     </ng-template>
 
     <ng-template #newProductScreen let-heading>
-      <div class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]">
+      <div class="max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)">
         <h2 class="mb-2 text-h4 text-text">{{ heading }}</h2>
         @if (port(); as port) {
           @defer {
@@ -331,7 +331,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
           <header class="flex items-center gap-3 border-b border-surface-border px-4 py-3">
             <div class="min-w-0 flex-1">
-              <span class="font-mono text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]">{{ shown.slug }}</span>
+              <span class="font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)">{{ shown.slug }}</span>
               @if ('headline' in shown) {
                 <h2 class="m-0 mt-0.5 overflow-hidden text-[1.5rem] font-semibold text-ellipsis whitespace-nowrap">
                   {{ shown.headline }}
@@ -355,7 +355,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </button>
             }
             @if (transferError(); as message) {
-              <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-[var(--et-theme-color-primary-solid)]">{{
+              <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-(--et-theme-color-primary-solid)">{{
                 message
               }}</span>
             }
@@ -430,7 +430,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             @if (madeBy.length > 0) {
               <span
                 [title]="'made by ' + madeBy.join(', ')"
-                class="self-center font-mono text-small whitespace-nowrap text-[var(--et-surface-color-subtle-solid)]"
+                class="self-center font-mono text-small whitespace-nowrap text-(--et-surface-color-subtle-solid)"
                 data-made-by
               >
                 made by {{ AUTHORS_LABEL_OF(madeBy) }}

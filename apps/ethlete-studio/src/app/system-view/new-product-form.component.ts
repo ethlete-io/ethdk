@@ -27,7 +27,7 @@ const BUILT_IN_BASE = '@ethlete/components';
         </et-select>
       </et-form-field>
       @if (error(); as message) {
-        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
+        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-(--et-theme-color-primary-solid)">
           {{ message }}
         </p>
       }

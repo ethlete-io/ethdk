@@ -96,7 +96,7 @@ type Row = {
                 <button
                   [title]="row.path"
                   (click)="choose(row.path)"
-                  class="min-w-0 flex-1 cursor-pointer overflow-hidden border-0 bg-transparent p-0 text-left font-mono text-[1.1rem] text-ellipsis whitespace-nowrap text-[var(--et-surface-color-subtle-solid)] group-hover:text-text"
+                  class="min-w-0 flex-1 cursor-pointer overflow-hidden border-0 bg-transparent p-0 text-left font-mono text-[1.1rem] text-ellipsis whitespace-nowrap text-(--et-surface-color-subtle-solid) group-hover:text-text"
                   type="button"
                 >
                   {{ row.path }}
@@ -154,7 +154,7 @@ type Row = {
           </div>
 
           @if (trouble(); as message) {
-            <p [etProvideColor]="errorTheme()" class="m-0 text-[1.1rem] text-[var(--et-theme-color-ink-solid)]">
+            <p [etProvideColor]="errorTheme()" class="m-0 text-[1.1rem] text-(--et-theme-color-ink-solid)">
               {{ message }}
             </p>
           }

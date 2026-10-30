@@ -112,9 +112,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     @let shown = current();
     <header class="flex items-center gap-3 border-b border-surface-border px-4 py-3">
       <div class="min-w-0 flex-1">
-        <span class="font-mono text-small text-[var(--et-surface-color-subtle-solid)]">
-          Sketch · {{ shown.product }}
-        </span>
+        <span class="font-mono text-small text-(--et-surface-color-subtle-solid)"> Sketch · {{ shown.product }} </span>
         <h2 class="truncate text-h4">{{ shown.target }}</h2>
       </div>
       <ng-content />
@@ -122,7 +120,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         [class]="
           shown.status === 'in progress'
             ? 'border-accent text-accent'
-            : 'border-surface-border text-[var(--et-surface-color-subtle-solid)]'
+            : 'border-surface-border text-(--et-surface-color-subtle-solid)'
         "
         class="whitespace-nowrap rounded-full border px-2 font-mono text-small"
       >
@@ -141,7 +139,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           >
             @if (rejected) {
               <span class="font-semibold" data-rejected-reason>{{ variant }} · {{ rejected.text }}</span>
-              <span class="text-[var(--et-surface-color-subtle-solid)]" data-rejected-by>{{ rejected.by }}</span>
+              <span class="text-(--et-surface-color-subtle-solid)" data-rejected-by>{{ rejected.by }}</span>
               <div class="flex gap-1">
                 <button
                   [disabled]="busy() !== null"
@@ -205,9 +203,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             }
             @if (diffSummaries()[variant]; as summary) {
               @if (summary.listed.length === 0) {
-                <span class="text-[var(--et-surface-color-subtle-solid)]" data-variant-diff-summary>{{
-                  summary.text
-                }}</span>
+                <span class="text-(--et-surface-color-subtle-solid)" data-variant-diff-summary>{{ summary.text }}</span>
               } @else {
                 <button
                   [attr.aria-expanded]="openDiffs()[variant] === true"
@@ -244,7 +240,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                       } @else {
                         <span
                           [title]="line.title ?? ''"
-                          class="font-mono text-[var(--et-surface-color-subtle-solid)]"
+                          class="font-mono text-(--et-surface-color-subtle-solid)"
                           data-variant-diff
                           >{{ line.text }}</span
                         >
@@ -258,7 +254,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               <span
                 [title]="problem.file"
                 [etProvideColor]="errorTheme()"
-                class="text-[var(--et-theme-color-primary-solid)]"
+                class="text-(--et-theme-color-primary-solid)"
               >
                 {{ problem.rule }}: {{ problem.message }}
               </span>
@@ -268,7 +264,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </div>
 
       @if (shown.status === 'in progress') {
-        <p class="text-[var(--et-surface-color-subtle-solid)]">
+        <p class="text-(--et-surface-color-subtle-solid)">
           Not ready yet. You can pick once the agent marks the sketch ready.
         </p>
       }
@@ -276,19 +272,19 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       @if (picked(); as variant) {
         @if (previewReading(); as reading) {
           @if (reading.error) {
-            <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">
+            <p [etProvideColor]="errorTheme()" class="text-(--et-theme-color-primary-solid)">
               {{ reading.error }}
             </p>
           } @else if (reading.preview; as preview) {
             <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
-              <dt class="text-[var(--et-surface-color-subtle-solid)]">Merging {{ variant }} changes</dt>
+              <dt class="text-(--et-surface-color-subtle-solid)">Merging {{ variant }} changes</dt>
               <dd class="font-mono">{{ preview.changed.join(', ') || 'nothing' }}</dd>
-              <dt class="text-[var(--et-surface-color-subtle-solid)]">Shown in</dt>
+              <dt class="text-(--et-surface-color-subtle-solid)">Shown in</dt>
               <dd class="font-mono">{{ preview.affected.join(', ') || 'no element or page' }}</dd>
             </dl>
             @if (preview.shared?.length) {
-              <p class="text-[var(--et-surface-color-subtle-solid)]" data-merge-shared>
-                A shared/ edit reaches: <span class="font-mono">{{ preview.shared?.join(', ') }}</span>
+              <p class="text-(--et-surface-color-subtle-solid)" data-merge-shared>
+                A shared/ edit reaches: <span class="font-mono">{{ preview.shared.join(', ') }}</span>
               </p>
             }
           }
@@ -345,20 +341,20 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </div>
 
       @if (error(); as message) {
-        <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">{{ message }}</p>
+        <p [etProvideColor]="errorTheme()" class="text-(--et-theme-color-primary-solid)">{{ message }}</p>
       }
       @if (refusal(); as refused) {
         <div class="flex flex-col gap-1.5" data-merge-refusal>
-          <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">
+          <p [etProvideColor]="errorTheme()" class="text-(--et-theme-color-primary-solid)">
             {{ refused.message }}
           </p>
           <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3">
-            <dt class="text-[var(--et-surface-color-subtle-solid)]">Changed in the product</dt>
+            <dt class="text-(--et-surface-color-subtle-solid)">Changed in the product</dt>
             <dd class="font-mono" data-merge-refusal-changed>
               {{ refused.changed.join(', ') || 'unknown - the sketch records no baseline' }}
             </dd>
           </dl>
-          <p class="text-[var(--et-surface-color-subtle-solid)]">
+          <p class="text-(--et-surface-color-subtle-solid)">
             The agent brings the variant up to date with the product, then records it with:
           </p>
           <div class="flex items-center gap-2">
@@ -385,10 +381,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     @if (hasToolbar()) {
       <div class="flex flex-wrap items-center gap-2 border-b border-surface-border px-4 py-2 text-small">
         @if (shown.status === 'in progress' && shown.report; as report) {
-          <span
-            [title]="reportTitleOf(report)"
-            class="min-w-0 flex-1 truncate text-[var(--et-surface-color-subtle-solid)]"
-          >
+          <span [title]="reportTitleOf(report)" class="min-w-0 flex-1 truncate text-(--et-surface-color-subtle-solid)">
             Agent: {{ report.message }}
           </span>
         } @else {
@@ -444,7 +437,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           </button>
         }
         @if (unchangedHeads().length > 0) {
-          <span class="text-[var(--et-surface-color-subtle-solid)]" data-unchanged-count>
+          <span class="text-(--et-surface-color-subtle-solid)" data-unchanged-count>
             {{ unchangedCountText() }}
           </span>
           <button
@@ -495,22 +488,22 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             <div class="grid w-full grid-cols-2 gap-x-6 gap-y-2 px-2 pb-2" data-note-diff>
               @if (line.note; as note) {
                 <div>
-                  <p class="text-[var(--et-surface-color-subtle-solid)]">Part note now</p>
+                  <p class="text-(--et-surface-color-subtle-solid)">Part note now</p>
                   <p class="whitespace-pre-wrap" data-note-before>{{ note.before ?? 'None' }}</p>
                 </div>
                 <div>
-                  <p class="text-[var(--et-surface-color-subtle-solid)]">Part note in {{ line.variant }}</p>
+                  <p class="text-(--et-surface-color-subtle-solid)">Part note in {{ line.variant }}</p>
                   <p class="whitespace-pre-wrap" data-note-after>{{ note.after ?? 'None' }}</p>
                 </div>
               }
               @if (line.variantNote) {
                 <div class="col-span-2">
-                  <p class="text-[var(--et-surface-color-subtle-solid)]">Note on {{ line.variant }}</p>
+                  <p class="text-(--et-surface-color-subtle-solid)">Note on {{ line.variant }}</p>
                   <p class="whitespace-pre-wrap" data-variant-note>{{ line.variantNote }}</p>
                 </div>
               }
               @if (!line.note && !line.variantNote) {
-                <p class="col-span-2 text-[var(--et-surface-color-subtle-solid)]">No note changed.</p>
+                <p class="col-span-2 text-(--et-surface-color-subtle-solid)">No note changed.</p>
               }
             </div>
           }
@@ -526,12 +519,12 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         <p>{{ shown.target }} appears in these parts. Left: now. Right: after merging {{ picked() }}.</p>
         @if (compareReading(); as reading) {
           @if (reading.error) {
-            <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]" role="alert">
+            <p [etProvideColor]="errorTheme()" class="text-(--et-theme-color-primary-solid)" role="alert">
               {{ reading.error }}
             </p>
           } @else if (reading.compare; as compare) {
             @if (compare.changed.length === 0) {
-              <p class="text-[var(--et-surface-color-subtle-solid)]">No part changes visibly.</p>
+              <p class="text-(--et-surface-color-subtle-solid)">No part changes visibly.</p>
             }
             @for (line of unchangedLines(); track line.part) {
               <button
@@ -548,7 +541,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               </button>
             }
           } @else {
-            <p class="flex items-center gap-2 text-[var(--et-surface-color-subtle-solid)]">
+            <p class="flex items-center gap-2 text-(--et-surface-color-subtle-solid)">
               <span
                 class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-accent"
                 data-merge-compare-rendering

@@ -58,12 +58,12 @@ import {
         data-comment-entry
       >
         <span
-          class="mt-0.5 min-w-6 shrink-0 rounded-full bg-[var(--et-theme-color-primary-solid)] px-1.5 text-center text-[1.1rem] text-[var(--et-theme-color-on-primary-solid)]"
+          class="mt-0.5 min-w-6 shrink-0 rounded-full bg-(--et-theme-color-primary-solid) px-1.5 text-center text-[1.1rem] text-(--et-theme-color-on-primary-solid)"
           >{{ comment.number }}</span
         >
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
           <span [textContent]="comment.text" class="line-clamp-3 text-[1.3rem] whitespace-pre-wrap"></span>
-          <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]" data-comment-meta>
+          <span class="flex gap-2 text-[1.1rem] text-(--et-surface-color-subtle-solid)" data-comment-meta>
             <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
             <span class="shrink-0">{{ SENDER_LABELS[LAST_SENDER_OF(comment)] }}</span>
             @if (comment.addressed; as addressed) {
@@ -126,7 +126,7 @@ import {
         <section [attr.aria-label]="group.part" class="flex flex-col gap-0.5 p-2" data-comment-group>
           <h3
             [class.text-accent]="group.part === selected()"
-            class="m-0 px-2 py-1 font-mono text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]"
+            class="m-0 px-2 py-1 font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)"
           >
             {{ group.part }}
           </h3>
@@ -136,18 +136,16 @@ import {
         </section>
       } @empty {
         @if (!loaded() && !loadError()) {
-          <p class="m-0 p-4 text-small text-[var(--et-surface-color-subtle-solid)]" data-comment-loading>
+          <p class="m-0 p-4 text-small text-(--et-surface-color-subtle-solid)" data-comment-loading>
             Loading comments…
           </p>
         } @else if (loaded() && !questions().length) {
-          <p class="m-0 p-4 text-small text-[var(--et-surface-color-subtle-solid)]">No open comments.</p>
+          <p class="m-0 p-4 text-small text-(--et-surface-color-subtle-solid)">No open comments.</p>
         }
       }
       @if (resolvedShown() && resolved().length) {
         <section class="flex flex-col gap-2 p-2 opacity-60" aria-label="Resolved" data-comment-resolved-group>
-          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-[var(--et-surface-color-subtle-solid)]">
-            Resolved
-          </h3>
+          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-(--et-surface-color-subtle-solid)">Resolved</h3>
           @for (comment of resolved(); track comment.id) {
             <article class="flex flex-col gap-0.5 px-2 py-1" data-comment-resolved>
               <span [textContent]="comment.text" class="line-clamp-3 text-[1.3rem] whitespace-pre-wrap"></span>
@@ -164,7 +162,7 @@ import {
                   data-comment-resolved-note
                 ></span>
               }
-              <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]" data-comment-meta>
+              <span class="flex gap-2 text-[1.1rem] text-(--et-surface-color-subtle-solid)" data-comment-meta>
                 <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
                 <span class="shrink-0" data-comment-resolved-by>{{ RESOLVED_BY_OF(comment) }}</span>
                 <time

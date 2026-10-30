@@ -98,7 +98,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     } @else if (frame().error) {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-[1.6rem] font-[family-name:var(--font-mono)] text-[1.3rem] whitespace-pre-wrap text-[var(--et-theme-color-primary-solid)]"
+        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-[1.6rem] font-[family-name:var(--font-mono)] text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
         role="alert"
       >
         {{ frame().error }}
@@ -177,7 +177,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             alt=""
           />
         } @else {
-          <div class="absolute inset-0 size-full border-0 bg-[var(--et-surface-interaction-solid)]"></div>
+          <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction-solid)"></div>
         }
       }
       @if (live()) {

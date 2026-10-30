@@ -43,7 +43,7 @@ const SETTLE_MS = 300;
 const FOREIGN_SERVER_POLL_MS = 3000;
 
 const STATUS_ITEM =
-  'flex min-w-0 items-center gap-1.5 whitespace-nowrap font-mono text-[1.1rem] tracking-[0.02em] text-[var(--et-surface-color-subtle-solid)]';
+  'flex min-w-0 items-center gap-1.5 whitespace-nowrap font-mono text-[1.1rem] tracking-[0.02em] text-(--et-surface-color-subtle-solid)';
 
 @Component({
   selector: 'ethlete-studio-view',
@@ -90,7 +90,7 @@ const STATUS_ITEM =
 
       @if (trouble(); as message) {
         <span [title]="message" [class]="STATUS_ITEM" [etProvideColor]="errorTheme()">
-          <span class="overflow-hidden text-ellipsis text-[var(--et-theme-color-ink-solid)]">{{ message }}</span>
+          <span class="overflow-hidden text-ellipsis text-(--et-theme-color-ink-solid)">{{ message }}</span>
         </span>
       }
 

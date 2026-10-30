@@ -12,7 +12,7 @@ import { injectCommentStore } from './comment-store';
       <ol class="m-0 flex max-h-80 w-full list-none flex-col gap-3 overflow-y-auto p-0" data-comment-thread>
         @for (entry of entries(); track $index) {
           <li [attr.data-comment-by]="entry.by" class="flex flex-col gap-0.5">
-            <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]">
+            <span class="flex gap-2 text-[1.1rem] text-(--et-surface-color-subtle-solid)">
               <span [class.text-accent]="entry.by === 'agent'" class="font-semibold">{{
                 entry.author ? SENDER_LABELS[entry.by] + ' · ' + entry.author : SENDER_LABELS[entry.by]
               }}</span>
@@ -43,7 +43,7 @@ import { injectCommentStore } from './comment-store';
         />
       </et-form-field>
       @if (store.error(); as message) {
-        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
+        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-(--et-theme-color-primary-solid)">
           {{ message }}
         </p>
       }

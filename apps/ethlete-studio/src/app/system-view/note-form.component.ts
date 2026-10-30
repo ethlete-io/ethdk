@@ -30,7 +30,7 @@ import { injectNoteStore } from './note-store';
         />
       </et-form-field>
       @if (store.error(); as message) {
-        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
+        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-(--et-theme-color-primary-solid)">
           {{ message }}
         </p>
       }

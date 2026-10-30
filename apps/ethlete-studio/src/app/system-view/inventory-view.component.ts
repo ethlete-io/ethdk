@@ -58,7 +58,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
     @if (error(); as message) {
       <p
         [etProvideColor]="errorTheme()"
-        class="m-0 border-b border-surface-border px-4 py-2 text-small text-[var(--et-theme-color-primary-solid)]"
+        class="m-0 border-b border-surface-border px-4 py-2 text-small text-(--et-theme-color-primary-solid)"
         data-inventory-error
       >
         {{ message }}
@@ -81,10 +81,10 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
                         [attr.data-inventory-box]="control.number"
                         [attr.data-status]="control.status"
                         [title]="control.id"
-                        class="pointer-events-none absolute border-2 border-[var(--et-theme-color-primary-solid)]"
+                        class="pointer-events-none absolute border-2 border-(--et-theme-color-primary-solid)"
                       >
                         <span
-                          class="absolute -top-2 -left-2 rounded-full bg-[var(--et-theme-color-primary-solid)] px-1 font-mono text-[1rem] leading-4 text-[var(--et-theme-color-on-primary-solid)]"
+                          class="absolute -top-2 -left-2 rounded-full bg-(--et-theme-color-primary-solid) px-1 font-mono text-[1rem] leading-4 text-(--et-theme-color-on-primary-solid)"
                         >
                           {{ control.number }}
                         </span>
@@ -107,7 +107,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
               class="flex gap-2 text-small"
             >
               <span
-                class="h-fit shrink-0 rounded-full bg-[var(--et-theme-color-primary-solid)] px-1.5 font-mono text-[var(--et-theme-color-on-primary-solid)]"
+                class="h-fit shrink-0 rounded-full bg-(--et-theme-color-primary-solid) px-1.5 font-mono text-(--et-theme-color-on-primary-solid)"
               >
                 {{ control.number }}
               </span>
