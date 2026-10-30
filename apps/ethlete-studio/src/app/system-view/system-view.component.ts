@@ -110,7 +110,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   selector: 'ethlete-system-view',
   template: `
     <ng-template #pinThread let-pin>
-      <ethlete-comment-thread [commentId]="pin.id" />
+      @defer {
+        <ethlete-comment-thread [commentId]="pin.id" />
+      }
     </ng-template>
 
     <aside
@@ -298,7 +300,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       <div class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]">
         <h2 class="mb-2 text-h4 text-text">{{ heading }}</h2>
         @if (port(); as port) {
-          <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
+          @defer {
+            <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
+          }
         }
         <p>Or run this in the checkout:</p>
         <div class="my-3 flex items-center gap-2">
@@ -451,9 +455,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             class="min-h-0"
           >
             @if (noteStore.draft()) {
-              <ethlete-note-form canvasDraft />
+              @defer {
+                <ethlete-note-form canvasDraft />
+              }
             } @else if (commentStore.draft()) {
-              <ethlete-comment-draft canvasDraft />
+              @defer {
+                <ethlete-comment-draft canvasDraft />
+              }
             }
           </ethlete-design-canvas>
         } @else {
