@@ -1057,13 +1057,13 @@ measured the items 4.75 to 4.80. Frontend change detection is cheap (40 pan even
   (`system-view.component.ts:542,564,610,652,991`, `studio-view.component.ts:372-375`). Warm `system` 44-55 ms.
 - **Fix option:** reload only what the `parts` event names. Effort M.
 
-### 4.79 Four SSE streams to the same host - in progress
+### 4.79 Four SSE streams to the same host - built
 
 - **Measured:** `comment-events` opens 4 times (`host/design.ts:640`, `host/design-parts.ts:32`,
   `host/design-notes.ts:71`, `host/design-flows.ts:25`), which leaves 2 of 6 per-host connections. No effect in
   headless Chromium; WebKitGTK not measured.
 - **Fix option:** one shared `EventSource` with `share()`, split by event name. Effort S.
-- **In progress (2026-10-30):** a subagent builds the shared stream, in parallel with 4.77.
+- **As built (2026-10-30, 560731d81):** `host/design-events.ts` holds one `EventSource` per port behind `share()`; `commentChanges$`, `partsChanges$`, `noteChanges$` and `flowChanges$` filter it by event name. A drop arrives as an `error` event and `commentChanges$` still errors on it; a late comment subscriber gets `connected` if the stream is open. Verified: new spec (one source for four subscribers, closes on the last unsubscribe, reopens), studio vitest, both tsc, eslint. Not verified: a live server, WebKitGTK.
 
 ### 4.80 The lazy Studio chunk holds every view - open
 
