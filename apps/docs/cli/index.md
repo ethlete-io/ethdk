@@ -110,6 +110,10 @@ contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.
 
+`sketch ready` merges a sketch on its own only when no state of the target changes a pixel and
+no state of a part that `sketch preview` lists under `shows` changes either. Otherwise the sketch
+stays ready, and the output names each changed part and state.
+
 `et design sketch check` and `sketch ready` also verify that the merger can write the target's
 note and authors. A variant that delegates to a shared factory keeps a `definePart` object with
 a literal `note` in its own target file:

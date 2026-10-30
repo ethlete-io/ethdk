@@ -1,10 +1,37 @@
-import { PictureOf } from '../../merge-compare';
+import { compareMerge, PictureOf } from '../../merge-compare';
 import { readPartModule } from '../list-system';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from './overlay';
 import { Sketch, variantDirOf } from './sketch';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
+
+const affectedChangeOf = async (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  load: SketchPartLoader;
+  pictureOf: PictureOf;
+}): Promise<string | null> => {
+  const { product, sketch, variant, load, pictureOf } = options;
+  const { changed } = await compareMerge({
+    product,
+    sketch,
+    variant,
+    size: null,
+    params: new URLSearchParams(),
+    pictureOf,
+    load: (part) => load({ ...part, sketch: null }),
+  });
+
+  if (changed.length === 0) return null;
+
+  const rows = changed.map((row) =>
+    [row.part, row.state, row.error ? `(${row.error})` : ''].filter((entry) => entry !== '').join(' '),
+  );
+
+  return `variant ${variant} changes ${rows.join(', ')}`;
+};
 
 const variantChangeOf = async (options: {
   product: ResolvedProduct;
@@ -47,7 +74,7 @@ const variantChangeOf = async (options: {
   const unchanged = await unchangedStatesOf({ product, sketch, variant, load, pictureOf: recording });
   const changed = read.states.filter((state) => !unchanged.includes(state));
 
-  if (changed.length === 0) return null;
+  if (changed.length === 0) return affectedChangeOf({ product, sketch, variant, load, pictureOf });
 
   const failed = failures.size > 0 ? ` - a shot failed: ${[...failures].join('; ')}` : '';
 
@@ -56,7 +83,7 @@ const variantChangeOf = async (options: {
 
 /**
  * `true` when every state of every variant of the sketch draws the same pixels as the product does now, in
- * every frame; otherwise why not. A variant that holds another part than the target, or a state that fails to
+ * every frame, and so does each state of every part that shows the target; otherwise why not. A variant that holds another part than the target, or a state that fails to
  * draw, counts as a change.
  */
 export const sketchShowsNoChange = async (options: {

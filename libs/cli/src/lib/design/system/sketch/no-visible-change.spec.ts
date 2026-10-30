@@ -53,6 +53,21 @@ describe('sketchShowsNoChange', () => {
     );
   });
 
+  it('names the state of a part that shows the target when only that part changes', async () => {
+    const { product, sketch, css } = acme();
+
+    writeFileSync(css, `${readFileSync(css, 'utf8')}\n/* the page breaks */\n`);
+
+    const pictureOf: PictureOf = async ({ part, sketch: drawn }) => ({
+      png: Buffer.from([1, 2, part === 'pages/home' && drawn !== null ? 1 : 0]),
+      marks: [],
+    });
+
+    expect(await sketchShowsNoChange({ product, sketch, load, pictureOf })).toBe(
+      'variant a changes pages/home default',
+    );
+  });
+
   it('names the failed shot', async () => {
     const { product, sketch, css } = acme();
 
