@@ -74,6 +74,7 @@
       font-size: var(--et-banner-heading-size);
       font-weight: var(--et-banner-heading-weight);
       color: var(--et-surface-color-solid, currentColor);
+      overflow-wrap: anywhere;
     }
 
     .et-banner-description,
@@ -81,6 +82,7 @@
       margin: 0;
       font-size: var(--et-banner-description-size);
       color: var(--et-surface-color-muted-solid, currentColor);
+      overflow-wrap: anywhere;
     }
 
     [etBannerAction] {
