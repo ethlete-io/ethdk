@@ -312,6 +312,19 @@ for 4.47, goes to `ready` and waits on the merge queue for Tom. The session foll
   keyboard-active, selected, selected+hover, disabled; panel with option groups and select-all). The select part
   then composes form-field + select-panel; its open states stay only as an example. `et-select-option` is shared
   with page-size-select and phone-input.
+- **As built (2026-10-31):** Tom merged `select` r2, `form-field` b and the Q86 fill round c (light filled
+  field 240). Q83/Q86: `LIGHT_ELEVATED_SURFACE` background is 240; `generate-sdk-tokens.mjs` adds the light and
+  dark elevated surfaces and a `[data-et-surface-fill]` rule that takes the elevated surface of the scheme, so the
+  form-field part has no variant CSS. Q71 select-panel mocks and sketch r1 a; Q87/Q88: option check and
+  keyboard-active outline in ink, selected option check only (patch changeset, docs, e2e). Icons: Q68 shipped
+  the icon files to dist; `foundations/icons` r1 a draws with `iconSheet` (Q77/Q79). Q85: the components build
+  stages `.ethlete/design/sdk` (no tsconfig, sketches, comments, accepted/merged.json) plus a `design/config.json`
+  with `products.sdk` through `tools/scripts/stage-design-base.mjs`; a consumer outside the repo extends
+  `node_modules/@ethlete/components/design/sdk` and passes `design check` (with the CLI fix `0126f0950`).
+- **Next:** Tom merges `tree`, `select-panel` and `foundations/icons`. Then Q80: a grid round for the icons
+  (the set mixes 16 px, 24 px and 512/576/640-unit grids), Tom picks, redraw the off-grid icons in
+  `libs/components/src/lib/icon/headless/` with a changeset. Then `components/switch` and the tooltip. No
+  Storybook or `dist/libs/components` rebuild while Tom reviews in Studio: a rebuild breaks his live canvas.
 
 ### Foundation sheet decisions (2026-10-30)
 
