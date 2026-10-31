@@ -770,6 +770,13 @@ machen".
   and the tooling should say so. Open plan (grill next): the system that turns a design into Angular components,
   updates them, and checks that they match the current design. "Das System muss machen was geht, der Agent hat
   sonst zu viel Freiraum."
+- Lead calls on the chat brief (Q96, 2026-10-31; plain fixes so Q145/Q146 work, after 57's real agent_run run
+  `5ce4e9e4f`): (1) the brief and the allowlist use Studio's `cli_entry(checkout)` (`node <entry> design check|shot`),
+  not `npx et`, which does not resolve in ethlete-sdk; (2) the brief says a change to a merged part goes through a
+  sketch (`design sketch new`), the existing rule for every agent; (3) "fix the problems in the parts you changed",
+  not every old check problem; (4) the brief names the `font-ui-*` / `text-ui-*` utilities and says the product
+  stylesheet defines them; (5) chat runs get `--setting-sources project`, so Tom's global CLAUDE.md (ListAgents,
+  peer messaging) does not load; (6) the Stop label fix.
 - Q163 Storybook danger ink (Tom, 2026-10-31, option a, now): `apps/storybook/src/themes.ts` gets the light-scheme
   danger ink tones of the SDK foundation (`.ethlete/design/sdk/foundations/colors/colors.css`: ink 185,28,28,
   hover 153,27,27, active 127,29,29). Today Storybook uses one ink set for both schemes (light danger text 2.77).
