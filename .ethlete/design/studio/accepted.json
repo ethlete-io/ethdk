@@ -1077,5 +1077,82 @@
     "note": "Q198 semantic colour",
     "hash": "63a1d0a00ecf8842",
     "at": "2026-10-31T18:37:28.725Z"
+  },
+  {
+    "part": "components/comment-pin",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "2bae479df05ab8aa",
+    "at": "2026-10-31T18:51:33.281Z"
+  },
+  {
+    "part": "components/shell-project-option",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "7d8721ae6008d603",
+    "at": "2026-10-31T18:51:33.466Z"
+  },
+  {
+    "part": "components/shell-project-switch",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "b3d993513d257855",
+    "at": "2026-10-31T18:51:33.660Z"
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "cb0a96fc51aeb389",
+    "at": "2026-10-31T18:51:33.863Z"
+  },
+  {
+    "part": "elements/canvas-frames",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "a23fc35c73ad6c32",
+    "at": "2026-10-31T18:51:34.053Z"
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "a9ff19582b6be9c8",
+    "at": "2026-10-31T18:51:34.250Z"
+  },
+  {
+    "part": "pages/flows",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "a33a984fc34f0a9b",
+    "at": "2026-10-31T18:51:34.436Z"
+  },
+  {
+    "part": "pages/inbox",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "968e88ece2d8d5ff",
+    "at": "2026-10-31T18:51:34.626Z"
+  },
+  {
+    "part": "pages/merge",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "a0cda304d5cc54d9",
+    "at": "2026-10-31T18:51:34.821Z"
+  },
+  {
+    "part": "pages/sketches",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "4c571d07b1660c6b",
+    "at": "2026-10-31T18:51:35.022Z"
+  },
+  {
+    "part": "pages/system",
+    "by": "claude-opus-5-5",
+    "note": "Q203 Tom's call (Q207)",
+    "hash": "0499fc9182b5f91b",
+    "at": "2026-10-31T18:51:35.206Z"
   }
 ]
