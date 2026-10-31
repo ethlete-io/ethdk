@@ -600,6 +600,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   proposes one rule with variants instead of one round per part. For Tom as Q99.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
+- Q92 non-grid frames built (`aa6165ad5`). Lead decisions under Q96: keep the 1024 px side-by-side threshold;
+  merge-preview frames also draw Light + Dark (they show what lands); the sketch matrix stays one copy (a variant
+  comparison, already wide).
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
