@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { callsRootOf, DESIGN_DIR, installedAssetRoot, readConfig, workRootOf } from './paths';
 import { renderPackagesOf, typePathsOf } from './render-packages';
@@ -22,6 +22,13 @@ export const DRAWING_COMPILER_OPTIONS = {
  * this config for itself. The same config goes to `.ethlete/design/tsconfig.json`, the nearest
  * tsconfig an editor finds for a call file.
  */
+/** Writes `text` unless the file already holds it: Vite reloads every frame on any write to a tsconfig it watches. */
+export const writeTsconfigText = (path: string, text: string) => {
+  if (existsSync(path) && readFileSync(path, 'utf8') === text) return;
+
+  writeFileSync(path, text);
+};
+
 export const writeCallsTsconfig = (target: string) => {
   const work = workRootOf(target);
   const path = resolve(work, 'tsconfig.json');
@@ -41,9 +48,9 @@ export const writeCallsTsconfig = (target: string) => {
   const editorPath = resolve(target, DESIGN_DIR, 'tsconfig.json');
 
   mkdirSync(work, { recursive: true });
-  writeFileSync(path, text);
+  writeTsconfigText(path, text);
   mkdirSync(dirname(editorPath), { recursive: true });
-  writeFileSync(editorPath, text);
+  writeTsconfigText(editorPath, text);
 
   return path;
 };

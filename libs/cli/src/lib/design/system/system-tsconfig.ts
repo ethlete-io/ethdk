@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
-import { DRAWING_COMPILER_OPTIONS } from '../calls-tsconfig';
+import { DRAWING_COMPILER_OPTIONS, writeTsconfigText } from '../calls-tsconfig';
 import { installedAssetRoot, readConfig, workRootOf } from '../paths';
 import { renderPackagesOf, typePathsOf } from '../render-packages';
 import {
@@ -28,7 +28,7 @@ export const writeSystemTsconfig = (options: { target: string; product: Resolved
   const path = resolve(work, `system-${product.name}.tsconfig.json`);
 
   mkdirSync(work, { recursive: true });
-  writeFileSync(path, systemTsconfigText({ target, product }));
+  writeTsconfigText(path, systemTsconfigText({ target, product }));
 
   return path;
 };
@@ -49,7 +49,7 @@ export const writeEditorTsconfig = (options: { target: string; product: Resolved
   if (!existsSync(product.dir) || inside.startsWith('..') || isAbsolute(inside)) return;
   if (inside.split(sep).includes('node_modules')) return;
 
-  writeFileSync(resolve(product.dir, 'tsconfig.json'), systemTsconfigText(options));
+  writeTsconfigText(resolve(product.dir, 'tsconfig.json'), systemTsconfigText(options));
 };
 
 const systemTsconfigText = (options: { target: string; product: ResolvedProduct & SharedDirs }) => {

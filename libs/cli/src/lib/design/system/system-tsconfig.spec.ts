@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, utimesSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -25,6 +25,23 @@ describe('editor tsconfigs', () => {
     const config = JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/tsconfig.json'), 'utf8'));
 
     expect(Object.keys(config.compilerOptions.paths)).toContain('@design-system');
+  });
+
+  it('leaves an unchanged editor tsconfig untouched, so the server does not reload every frame', () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const productConfig = join(target, DESIGN_DIR, 'acme/tsconfig.json');
+    const callsConfig = join(target, DESIGN_DIR, 'tsconfig.json');
+
+    writeEditorTsconfig({ target, product });
+    writeCallsTsconfig(target);
+    utimesSync(productConfig, 0, 0);
+    utimesSync(callsConfig, 0, 0);
+    writeEditorTsconfig({ target, product });
+    writeCallsTsconfig(target);
+
+    expect(statSync(productConfig).mtimeMs).toBe(0);
+    expect(statSync(callsConfig).mtimeMs).toBe(0);
   });
 
   it("maps @shared/* to a sketch's shared folder and includes its files", () => {
