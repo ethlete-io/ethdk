@@ -5,7 +5,8 @@
   "components/zoom-chip": "3e20147c9058f52f",
   "elements/canvas-frames": "4e2197518faf24ed",
   "elements/part-tree": "bc6764638ee1f7c5",
-  "elements/shell-main": "94c1339dcafa5ced",
+  "elements/shell-main": "2879308e2552e67f",
+  "elements/studio-menu": "c871f8dc627822c7",
   "foundations/agent-logos": "9d16069b875f1e82",
   "foundations/colors": "2f3cc4b7428ce3b7",
   "foundations/icons": "cd091fce4b125934",
@@ -13,10 +14,10 @@
   "foundations/motion": "796429fd3514f1b5",
   "foundations/spacing": "13bb41596aea7827",
   "foundations/type": "55cbe2495f74530a",
-  "pages/flows": "d5426cf399e75a03",
-  "pages/inbox": "5af40e496401e7dd",
-  "pages/merge": "8dd4fa36943b69d1",
-  "pages/sketches": "d24d8635533108d1",
+  "pages/flows": "9dcfa44c2d61beac",
+  "pages/inbox": "5f19863c6d4eb1bf",
+  "pages/merge": "064c2738f55ead80",
+  "pages/sketches": "276a63f4d7359694",
   "pages/start": "5be284500a37da1a",
-  "pages/system": "55b9bb39b9a0154f"
+  "pages/system": "6360b19a1d00b070"
 }

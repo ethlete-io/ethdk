@@ -6,6 +6,7 @@ import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
+import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
 import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
@@ -23,14 +24,16 @@ const ZOOM_STEP = 1.5;
 const systemPage = async (panel?: 'hidden') => {
   const tree = await partTree.render(partTree.states['components-open']);
   const frames = await canvasFrames.render(canvasFrames.states.default);
+  const menu = await studioMenu({ open: false });
   const shell = await shellMain.render({
+    studio: menu.body,
     section: 'System',
     product: 'studio',
     side: tree.body,
     content: frames.body,
     ...(panel ? { panel } : {}),
   });
-  return { body: shell.body, styles: frames.styles };
+  return { body: shell.body, styles: frames.styles + menu.styles };
 };
 
 const side = await partTree.render({
@@ -179,11 +182,19 @@ export default definePart<Props>({
       ${PAGE_VARIANTS.map(variantHead).join('')} ${chip.body}
     </div>`;
 
-    const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
+    const menu = await studioMenu({ open: false });
+
+    const shell = await shellMain.render({
+      studio: menu.body,
+      section: 'Sketches',
+      product: 'studio',
+      side: side.body,
+      content,
+    });
 
     return drawing({
       body: shell.body,
-      setup: setupFor(camera),
+      setup: [menu.setup, setupFor(camera)],
       styles:
         shell.styles + side.styles + open.styles + discard.styles + merge.styles + selectStyles + kit + styles + below,
     });

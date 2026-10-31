@@ -3,6 +3,7 @@ import button from '@system/components/button';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
+import { studioMenu } from '@system/elements/studio-menu';
 import { manyStatesView, treeRowGrid } from './shared/many-states';
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
@@ -28,7 +29,7 @@ const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-s
 
 export default definePart<{ empty?: boolean; manyStates?: boolean }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   states: { part: {}, empty: { empty: true }, 'many-states': { manyStates: true } },
   render: async ({ empty, manyStates }) => {
     if (manyStates) {
@@ -36,25 +37,33 @@ export default definePart<{ empty?: boolean; manyStates?: boolean }>({
     }
 
     if (empty) {
+      const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
+        studio: menu.body,
         section: 'System',
         product: 'studio',
         side: emptySide,
         content: emptyCanvas,
       });
 
-      return drawing({ body: shell.body, styles: shell.styles + copy.styles });
+      return drawing({ body: shell.body, setup: menu.setup, styles: shell.styles + menu.styles + copy.styles });
     }
 
     const tree = await partTree.render(partTree.states['components-open']);
     const frames = await canvasFrames.render(canvasFrames.states.default);
+    const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
+      studio: menu.body,
       section: 'System',
       product: 'studio',
       side: tree.body,
       content: frames.body,
     });
 
-    return drawing({ body: shell.body, styles: shell.styles + tree.styles + frames.styles });
+    return drawing({
+      body: shell.body,
+      setup: menu.setup,
+      styles: shell.styles + menu.styles + tree.styles + frames.styles,
+    });
   },
 });

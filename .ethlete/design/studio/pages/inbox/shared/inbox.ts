@@ -2,6 +2,7 @@ import { definePart, drawing, html, ng } from '@design-system';
 import { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
+import { studioMenu } from '@system/elements/studio-menu';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 import { icon } from '@system/foundations/icons';
 import styles from './inbox.css?inline';
@@ -252,7 +253,9 @@ export const inbox = () =>
           )}
         </div>
       </div>`;
+      const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
+        studio: menu.body,
         section: 'Inbox',
         product: 'studio',
         side,
@@ -279,7 +282,8 @@ export const inbox = () =>
 
       return drawing({
         body: shell.body,
-        styles: shell.styles + frames.styles + styles,
+        setup: menu.setup,
+        styles: shell.styles + menu.styles + frames.styles + styles,
       });
     },
   });

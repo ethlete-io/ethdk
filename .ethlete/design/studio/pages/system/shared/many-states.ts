@@ -4,6 +4,7 @@ import partTree from '@system/elements/part-tree';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import type { StateGridDrawing } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
+import { studioMenu } from '@system/elements/studio-menu';
 
 type StateName = keyof typeof treeRow.states;
 
@@ -54,6 +55,17 @@ export const manyStatesView = async (grid: StateGridDrawing) => {
     ],
     '75%',
   );
-  const shell = await shellMain.render({ section: 'System', product: 'studio', side: tree.body, content: canvas });
-  return drawing({ body: shell.body, styles: shell.styles + tree.styles + rowDrawing.styles + canvasFrameStyles });
+  const menu = await studioMenu({ open: false });
+  const shell = await shellMain.render({
+    studio: menu.body,
+    section: 'System',
+    product: 'studio',
+    side: tree.body,
+    content: canvas,
+  });
+  return drawing({
+    body: shell.body,
+    setup: menu.setup,
+    styles: shell.styles + menu.styles + tree.styles + rowDrawing.styles + canvasFrameStyles,
+  });
 };

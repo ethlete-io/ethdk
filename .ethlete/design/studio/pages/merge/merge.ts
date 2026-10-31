@@ -3,6 +3,7 @@ import button from '@system/components/button';
 import { disclosure } from '@system/components/disclosure';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
+import { studioMenu } from '@system/elements/studio-menu';
 import { icon } from '@system/foundations/icons';
 import {
   CHANGED,
@@ -69,7 +70,7 @@ const panelOf = (unchanged: boolean) =>
 
 export default definePart<Props>({
   note: 'focus-visible nimmt --text wie hover',
-  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   widths: [1440],
   states: {
     open: { unchanged: false },
@@ -105,11 +106,29 @@ export default definePart<Props>({
         </div>`
       : '';
 
-    const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: panelOf(unchanged), content });
+    const menu = await studioMenu({ open: false });
+
+    const shell = await shellMain.render({
+      studio: menu.body,
+      section: 'Sketches',
+      product: 'studio',
+      side: panelOf(unchanged),
+      content,
+    });
 
     return drawing({
       body: shell.body,
-      styles: shell.styles + back.styles + merge.styles + instance.styles + rowStyles + disclosureStyles + kit + styles,
+      setup: menu.setup,
+      styles:
+        shell.styles +
+        menu.styles +
+        back.styles +
+        merge.styles +
+        instance.styles +
+        rowStyles +
+        disclosureStyles +
+        kit +
+        styles,
     });
   },
 });
