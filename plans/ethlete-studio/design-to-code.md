@@ -158,7 +158,14 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Verified: specs that fail without each change, tsc, lint; sketch agent ethlete-sdk-33 used shot and list.
     Not verified: the render-queue priority and the checkouts toggle (`b85f0e33f`) in the running Studio.
     `shot-store.spec.ts` and `sketch-stylesheets.spec.ts` flake in the full design run (temp dirs in the source tree).
-- In progress: Q185 (merged interaction states on a non-control part are an open point), then Q182.
+  - Q185 (`41e463a5a`, `4594ab65d`): merged interaction states on a non-control part are hints under `--complete`;
+    a sketch check blocks only added or changed ones (pixel compare when its CSS changed). Plain `check` shows none.
+  - Q182 (`574342778`, `35707ec97`): `OPTION-VALUE-MISSING` (`system/rules/option-values.ts`,
+    `definePart({ omits })`); merged gaps are hints, a sketch blocks on a newly missed value. 18 merged sdk parts
+    miss values. Also: `sketch merge` runs the target repo's Prettier (`89fdc42c7`), `variant --from` keeps
+    relative symlinks (`c9bafb453`).
+- In progress: friction slice B: Q176, Q177, Q179, then the CONTROL-PART-INPUT rule, the `control()` helper and
+  `data-can-animate` in the design mocks.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
