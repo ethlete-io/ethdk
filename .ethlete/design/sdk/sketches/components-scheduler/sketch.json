@@ -34,6 +34,11 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "b with every inset ink edge in light-dark(ink, transparent) (Q102): light equals b (edges 5.48 vs page, 4.13 vs fill; time line 5.32; rings 5.48). Dark: no edge on the selected appointment, the today circles or the filled button, as today; rings stay ink (Q88), the time line stays primary as in a. Under the brand theme dark renders the same as b. It keys on color-scheme, not on the surface; my reading of rule a, not a decided rule (Q102)."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "a plus the wrap layout the lead asked to draw for Tom (not in the lib, a new look). Time grid blocks wrap: the title takes its own line, the time range, location and chain count wrap under it; a block under 36px tall (a 30 minute block) hides the wrapped pieces, so no half line shows. Month cell lists under 120px wide hide the time range (the location is already hidden there). In a, narrow blocks cut the time range to '9.' next to the title; in d the title shows in full on its line and the time range shows whole once the block is an hour or taller. Week blocks still clip vertically on purpose, so data-et-skip CLIPPED stays on them; the month view passes without a skip."
     }
   }
 }
