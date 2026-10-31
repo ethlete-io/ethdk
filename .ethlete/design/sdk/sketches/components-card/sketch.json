@@ -1,0 +1,39 @@
+{
+  "target": "components/card",
+  "status": "ready",
+  "createdAt": "2026-10-31T02:07:23.664Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Card baseline",
+      "note": "First drawing of the SDK card (et-card), drawn by its mock from @ethlete/components/design on the page: the outlined (default), elevated and filled variants; a card with media; a plain metric card; focus-visible on both actions. The card owns only its chrome (16px padding, 12px gap, 8px radius, the surface background); the lib has no header, media, footer or link-card parts, so title, subtitle, text, media and the outline Cancel and filled Open buttons are consumer content drawn by the mock, and the card has no hover, active or focus state of its own (Q101, filled hover, does not apply). Fixed numbers: title and body 17.93:1 light, 17.18:1 dark; muted subtitle 7.81:1 light, 6.94:1 dark; Cancel label and border in ink 5.48:1 light, 13.50:1 dark; Open label on the mint fill 15.30:1. Card edge, numbers only (a card edge is a pane edge, Q98 open): the card background equals the page in both schemes (1.00:1); the outlined 1px border is 1.26:1 against the page light, 1.73:1 dark; the elevated shadow is at most 1.18:1 light and 1.02:1 dark, so in dark the elevated card has no visible edge; the filled card has no edge at all and is invisible against the page in both schemes (it only separates on another surface). Today on light the actions fail: every focus ring is the focused mint, 1.37:1 against the card (dark 13.06:1), and the filled Open is a bare mint fill, 1.33:1 (dark 13.50:1). Not this round's question: the card border, shadow and filled look (Q98); the surface input (the SDK Storybook demo uses a scheme-fixed dark-elevated surface, not drawn here); the card default of outlined. Variants b and c apply decided rules to the consumer actions, not a new call: focus rings in --et-theme-color-ink-solid (Q88) and mint on light rule a (Q99), the filled button gets a 1px inset ink edge. Variant a shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: every focus ring on the actions is the focused mint, 1.37:1 against the light card (dark 13.06:1), under the 3:1 of WCAG 1.4.11 in light. The filled Open is a bare mint fill, 1.33:1 against the light card (dark 13.50:1); its label carries it. Card edges as in the round note."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Decided rules Q88 and Q99 rule a, not a new call: every focus ring inside the card in --et-theme-color-ink-solid, 7.68:1 against the light card (the focused ink), 13.50:1 dark. The filled Open keeps the mint fill with a 1px inset ink edge: light 5.48:1 against the card and 4.13:1 against the fill (5.60:1 focused); in dark the ink is the mint, so the edge merges with the fill (1.00:1) and the fill carries it at 13.50:1. Q102 (does the ink edge also show in dark?) is open; picked to match the avatar and dialog picks; if dark should stay as today, take c, which differs from b in dark only by a 1.03:1 ring on the focused fill. Card chrome as in a."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with the inset ink edge on light only: light-dark(ink, transparent). Light equal to b (focus rings 7.68:1, edge 5.48:1 against the card, 4.13:1 against the fill); dark as today on the fill, but the focus rings stay ink (13.50:1), which in dark is the mint anyway. It keys on color-scheme, not on the surface; that mechanism is my reading of rule a, not a decided rule (Q102)."
+    }
+  }
+}
