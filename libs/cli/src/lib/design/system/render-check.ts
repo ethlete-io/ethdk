@@ -480,6 +480,8 @@ export const renderIssuesOf = async (options: {
       if (!drawn) continue;
 
       const optionValuesOf = optionValuesChecker({ target, config, parts: drawn.parts });
+      const merged = sketch ? system.productOf(product) : null;
+      const mergedOptionValuesOf = optionValuesChecker({ target, config, parts: merged?.parts ?? [] });
 
       const namespaces = namespacesOf(drawn.parts.map((part) => part.cssSource));
       const schemes = schemesOf(drawn.parts.map((part) => part.cssSource));
@@ -517,8 +519,18 @@ export const renderIssuesOf = async (options: {
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
         const grid = gridReportOf(definition?.grid, states);
 
-        for (const problem of optionValuesOf(part, definition ?? {}))
-          issues.push({
+        const mergedPart = merged?.parts.find((candidate) => partKeyOf(candidate) === key);
+        const mergedDefinition = mergedPart
+          ? (await server.ssrLoadModule(productModuleIdOf({ file: mergedPart.file, product })))['default']
+          : null;
+        const existing = new Set(
+          mergedPart
+            ? mergedOptionValuesOf(mergedPart, mergedDefinition ?? {}).flatMap((gap) => gap.missing ?? [])
+            : [],
+        );
+        for (const problem of optionValuesOf(part, { ...definition, existing: sketch ? existing : undefined })) {
+          const destination = problem.code === 'OPTION-VALUE-MISSING' && !sketch ? gridWarnings : issues;
+          destination.push({
             rule: problem.code,
             product,
             part: key,
@@ -528,6 +540,7 @@ export const renderIssuesOf = async (options: {
             detail: problem.detail,
             sketch,
           });
+        }
 
         const compare =
           sketch && states.some(isInteractionState) && !isControlPart({ part: key, controls: definition?.controls });

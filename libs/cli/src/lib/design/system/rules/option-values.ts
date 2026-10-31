@@ -25,7 +25,7 @@ export const optionValuesChecker = (options: { target: string; config: DesignCon
   );
   const checker = program.getTypeChecker();
 
-  return (part: ResolvedPart, definition: { states?: unknown; grid?: unknown }) => {
+  return (part: ResolvedPart, definition: { states?: unknown; grid?: unknown; existing?: Set<string> }) => {
     const source = program.getSourceFile(part.file);
     if (!source) return [];
     const values = new Map<string, Set<string>>();
@@ -66,7 +66,7 @@ export const optionValuesChecker = (options: { target: string; config: DesignCon
     const omits = definitionNode?.properties.find(
       (property) => property.name && property.name.getText(source) === 'omits',
     );
-    const problems: { code: string; detail: string }[] = [];
+    const problems: { code: string; detail: string; missing?: string[] }[] = [];
     const ignored = new Set<string>();
     if (omits) {
       if (!ts.isPropertyAssignment(omits) || !ts.isArrayLiteralExpression(omits.initializer))
@@ -129,12 +129,16 @@ export const optionValuesChecker = (options: { target: string; config: DesignCon
         ),
       );
       const missing = [...variants].filter(
-        (value) => !displayed.has(value) && !ignored.has(JSON.stringify([option, value])),
+        (value) =>
+          !displayed.has(value) &&
+          !ignored.has(JSON.stringify([option, value])) &&
+          !definition.existing?.has(JSON.stringify([option, value])),
       );
       if (missing.length)
         problems.push({
           code: 'OPTION-VALUE-MISSING',
           detail: `${option} is missing ${missing.join(', ')} on the grid - add a state, or an omits entry with a reason`,
+          missing: missing.map((value) => JSON.stringify([option, value])),
         });
     }
     return problems;

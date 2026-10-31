@@ -2,4 +2,4 @@
 '@ethlete/cli': minor
 ---
 
-New `OPTION-VALUE-MISSING` check: each value of a string-literal mock option must appear in a state on the part's grid. Leave a value out with `omits: [{ option, value, reason }]` in `definePart`.
+Design checks report missing mock option values as hints for merged parts and block newly introduced gaps in sketches; use `omits` to record intentional omissions.

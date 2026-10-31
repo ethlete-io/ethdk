@@ -1563,10 +1563,14 @@ export const partsCompletenessOf = async (options: {
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
       const { definition, states, seen, refused, changes, owner, hash } = sight;
+      const optionProblems = optionValuesOf(resolved, definition ?? {});
 
       hints.set(key, [
         ...smallChangeHintsOf({ part: key, controls: definition?.controls, changes }),
         ...controlStateGapsOf({ part: key, controls: definition?.controls, states }).map(completenessGapLineOf),
+        ...optionProblems
+          .filter((gap) => gap.code === 'OPTION-VALUE-MISSING')
+          .map((gap) => completenessGapLineOf({ ...gap, target: key })),
       ]);
       const sketched = product.parts.find((candidate) => partKeyOf(candidate) === key)?.file !== resolved.file;
       const reviewed = sketched || readMerged(owner.dir)[key] === hash;
@@ -1602,7 +1606,7 @@ export const partsCompletenessOf = async (options: {
 
       return [
         ...refused.map((detail) => ({ code: 'RENDER', target: key, detail })),
-        ...optionValuesOf(resolved, definition ?? {}).map((gap) => ({ ...gap, target: key })),
+        ...optionProblems.filter((gap) => gap.code !== 'OPTION-VALUE-MISSING').map((gap) => ({ ...gap, target: key })),
         ...excepted.gaps,
       ];
     };

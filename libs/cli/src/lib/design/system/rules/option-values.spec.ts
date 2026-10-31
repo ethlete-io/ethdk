@@ -23,7 +23,10 @@ const fixture = (omits = '') => {
 describe('mock option coverage', () => {
   it('reports values absent from the grid', () => {
     expect(fixture()).toEqual([
-      { code: 'OPTION-VALUE-MISSING', detail: expect.stringContaining('size is missing md, lg') },
+      expect.objectContaining({
+        code: 'OPTION-VALUE-MISSING',
+        detail: expect.stringContaining('size is missing md, lg'),
+      }),
     ]);
   });
   it('accepts omissions with reasons', () => {

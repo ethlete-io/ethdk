@@ -109,27 +109,66 @@ afterEach(() => {
 });
 
 describe('renderIssuesOf', () => {
-  it('blocks rendering and completeness when mock values are missing from the grid', async (context) => {
+  it('hints merged gaps and blocks only newly missing values in sketches', async (context) => {
     const target = checkout({
       'components/example': {
         body: '<div>Example</div>',
-        states: "small: { size: 'sm' }",
-        extra: "grid: { columns: ['rest'], rows: { small: { rest: 'small' } } },",
+        states: "small: { size: 'sm' }, medium: { size: 'md' }",
+        extra: "grid: { columns: ['rest'], rows: { small: { rest: 'small' }, medium: { rest: 'medium' } } },",
       },
     });
     const dir = join(target, DESIGN_DIR, 'shop/components/example');
     const path = join(dir, 'example.ts');
     writeFileSync(join(dir, 'mock.ts'), "export type ButtonMockOptions = { size: 'sm' | 'md' | 'lg' };\n");
     writeFileSync(path, `import type { ButtonMockOptions } from './mock';\n${readFileSync(path, 'utf8')}`);
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const sketches = join(shop, 'sketches/components-example');
+    const source = readFileSync(path, 'utf8');
+    mkdirSync(sketches, { recursive: true });
+    writeFileSync(join(sketches, 'sketch.json'), JSON.stringify({ target: 'components/example', status: 'ready' }));
+    for (const variant of ['same', 'dropped', 'added']) {
+      const part = join(sketches, variant, 'components/example');
+      mkdirSync(part, { recursive: true });
+      writeFileSync(
+        join(part, 'example.ts'),
+        variant === 'dropped' ? source.replace("medium: { rest: 'medium' }", '') : source,
+      );
+      writeFileSync(
+        join(part, 'mock.ts'),
+        `export type ButtonMockOptions = { size: 'sm' | 'md' | 'lg'${variant === 'added' ? " | 'xl'" : ''} };`,
+      );
+    }
+    const newPart = join(sketches, 'added/components/new');
+    mkdirSync(newPart, { recursive: true });
+    writeFileSync(join(newPart, 'new.ts'), source);
+    writeFileSync(join(newPart, 'mock.ts'), "export type ButtonMockOptions = { size: 'sm' | 'md' | 'lg' };");
     const config = readConfig(target) ?? {};
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+    const rendered = await renderIssuesOf({
+      target,
+      config,
+      jobs: [null, ...['same', 'dropped', 'added'].map((variant) => ({ target: 'components/example', variant }))].map(
+        (sketch) => ({ product: 'shop', sketch, parts: null }),
+      ),
+    });
 
     if ('unavailable' in rendered) return context.skip(rendered.unavailable);
 
-    expect(rendered.issues.find((issue) => issue.rule === 'OPTION-VALUE-MISSING')?.detail).toContain('md, lg');
+    expect(
+      rendered.warnings.filter((issue) => issue.rule === 'OPTION-VALUE-MISSING').map((issue) => issue.detail),
+    ).toEqual([expect.stringContaining('lg')]);
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'OPTION-VALUE-MISSING')
+        .map((issue) => [issue.sketch?.variant, issue.detail]),
+    ).toEqual([
+      ['dropped', expect.stringContaining('md')],
+      ['added', expect.stringContaining('xl')],
+      ['added', expect.stringContaining('lg')],
+    ]);
     const product = resolveProduct({ target, name: 'shop', config: config.products?.['shop'] ?? {} });
     const complete = await completenessOf({ target, config, product, part: 'components/example' });
-    expect('gaps' in complete && complete.gaps.some((gap) => gap.code === 'OPTION-VALUE-MISSING')).toBe(true);
+    expect('gaps' in complete && complete.gaps.some((gap) => gap.code === 'OPTION-VALUE-MISSING')).toBe(false);
+    expect('hints' in complete && complete.hints?.some((hint) => hint.includes('OPTION-VALUE-MISSING'))).toBe(true);
   }, 120_000);
 
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
