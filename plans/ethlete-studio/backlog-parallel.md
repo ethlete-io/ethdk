@@ -939,3 +939,9 @@ Builder: `ethlete-sdk-57`, a small slice after the running ones. Built in 6300da
   (`selection-card-styles.component.css:47`) and the unchecked checkbox and radio boxes. Studio:
   `border-et-surface-interaction` on the project picker (`shell-main.ts:74`), the comment textarea box (inbox b, c,
   d) and the inbox c segmented. Then shell-main and pages/inbox can be marked ready. Builder: `ethlete-sdk-33`.
+
+### Open point: Codex through the wrapper or the agent-sessions inbox (Tom, 2026-10-31)
+
+Builders now start Codex through `codex-agent.mjs` (a blocking background command that returns only the final
+message). The alternative is a Codex tmux session reached through the `ethlete-agent-sessions` mailbox. Tom wants to
+weigh which makes more sense later; keep the wrapper until then. Needs its own grill round, no build now.
