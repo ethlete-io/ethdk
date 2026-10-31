@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -9,6 +9,7 @@ import { inventoryAnswer, inventoryApproveAnswer } from '../studio-api';
 import { SeenFrame } from './complete';
 import { Inventory, inventoryFramesOf } from './inventory';
 import { inventoryStateOf, readInventory } from './inventory-approval';
+import { formattedTextOf } from './prettier';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-inventory-'));
@@ -295,5 +296,24 @@ describe('inventory endpoints', () => {
     expect(readInventory(dir)).toEqual({
       'pages/home': { ids: ['more'], hash: 'h1', by: 'tom', at: expect.any(String) },
     });
+  });
+
+  it('writes inventory.json the way Prettier formats it', async () => {
+    const { target, dir } = checkout();
+
+    await inventoryApproveAnswer(
+      ask({
+        target,
+        method: 'POST',
+        path: '/?product=app-a',
+        body: { part: 'pages/home', hash: 'h1', by: 'tom' },
+        inventory: inventoryOf(dir, 0),
+      }),
+    );
+
+    const file = join(dir, 'inventory.json');
+    const written = readFileSync(file, 'utf8');
+
+    expect(formattedTextOf({ target, file, text: written })).toBe(written);
   });
 });
