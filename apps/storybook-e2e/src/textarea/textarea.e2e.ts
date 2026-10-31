@@ -20,9 +20,11 @@ const frameMetrics = (root: Locator) =>
     const labelText = document.createRange();
     labelText.selectNodeContents(part('.et-form-field-label-area--inline'));
 
+    const control = part('input, textarea');
+
     return {
       frameHeight: frame.height,
-      textTop: part('input, textarea').getBoundingClientRect().top - frame.top,
+      textTop: control.getBoundingClientRect().top + parseFloat(getComputedStyle(control).paddingTop) - frame.top,
       labelTop: labelText.getBoundingClientRect().top - frame.top,
     };
   });
@@ -113,6 +115,26 @@ test.describe('textarea / layout', () => {
     const two = await frameMetrics(root);
 
     expect(two).toEqual({ ...one, frameHeight: one.frameHeight + lineHeight });
+  });
+});
+
+test.describe('textarea / resize grip', () => {
+  test('the textarea reaches the frame corner, so its grip sits there and text scrolls to the frame edge', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_ID);
+    const inset = await root.locator('et-form-field').evaluate((field) => {
+      const frame = field.querySelector('.et-form-field-control-frame');
+      const textarea = field.querySelector('textarea');
+      if (!frame || !textarea) throw new Error('frame or textarea is missing');
+
+      const border = parseFloat(getComputedStyle(frame).borderTopWidth);
+      const [outer, inner] = [frame.getBoundingClientRect(), textarea.getBoundingClientRect()];
+
+      return { end: outer.right - border - inner.right, bottom: outer.bottom - border - inner.bottom };
+    });
+
+    expect(inset).toEqual({ end: 0, bottom: 0 });
   });
 });
 

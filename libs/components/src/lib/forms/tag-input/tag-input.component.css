@@ -35,7 +35,7 @@
       caret-color: var(--et-theme-color-primary-solid, currentColor);
 
       &::placeholder {
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: color-mix(in srgb, currentColor 60%, transparent);
       }
 
       &:disabled {
@@ -44,7 +44,7 @@
     }
 
     /* an unresolved bulk-edit value reads as provisional — the mixedLabel placeholder sits
-       between committed text (full strength) and the regular placeholder (46%). Consumers
+       between committed text (full strength) and the regular placeholder (60%). Consumers
        restyle via [data-mixed]. */
     &[data-mixed] .et-tag-input-field::placeholder {
       font-style: italic;

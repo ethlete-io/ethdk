@@ -32,7 +32,9 @@ import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 
 The form field renders the shell (label, prefix/suffix affixes via
 `etInputPrefix` / `etInputSuffix`, hint/error support region); the control
-registers itself into it via DI - no manual wiring:
+registers itself into it via DI - no manual wiring. A text prefix (`@`, `€`,
+`https://`) sits 4px from the value; a prefix that holds an icon keeps the full
+affix gap:
 
 ```html
 <et-form-field appearance="box" labelMode="floating-inside">
@@ -53,10 +55,10 @@ registers itself into it via DI - no manual wiring:
 [rich text editor](/components/rich-text-editor). A `search` input hides the
 browser's native clear button.
 
-A **read-only** text field (set `readonly` in the field schema) keeps its normal
-box but drops every interactive affordance - no hover/focus border change,
-default cursor, full-contrast value - so it reads as view-only content. This is
-distinct from **disabled**, which stays dimmed.
+A **read-only** text field (set `readonly` in the field schema) draws its frame
+dashed and drops the hover change - default cursor, full-contrast value - so it
+reads as view-only content. It stays focusable, and focus draws a 2px dashed
+frame. This is distinct from **disabled**, which stays dimmed.
 
 ## Number input
 
@@ -210,7 +212,8 @@ content and shrinks back, clamped by `minRows` (defaults to `rows`, default 3)
 and `maxRows` (unbounded when unset). Beyond `maxRows` the content scrolls. With
 `autosize` off the native resize handle takes over, controlled by
 `resize: 'none' | 'vertical'` (an autosizing textarea is never manually
-resizable, and a manual resize stops at one line).
+resizable, and a manual resize stops at one line). In a box field the resize
+grip sits in the frame's corner, and scrolled text runs to the frame's edge.
 
 ```html
 <et-form-field>
@@ -221,9 +224,9 @@ resizable, and a manual resize stops at one line).
 
 Autosizing is the browser's own `field-sizing: content` where that exists, and a
 measured fallback everywhere else - the result is the same either way. The row
-bounds resolve from the textarea's line height, so keep the frame's padding on
-the frame: padding set directly on `.et-textarea-native` is counted against
-`minRows`/`maxRows` rather than added to them.
+bounds resolve from the textarea's line height. In a box field the block padding
+sits on `.et-textarea-native` and the bounds add it; other padding set directly
+on the textarea is counted against `minRows`/`maxRows` rather than added to them.
 
 A textarea is the usual home for an [`<et-counter />`](/components/forms#character-counter) - it picks its limit up from the schema's `maxLength()`.
 

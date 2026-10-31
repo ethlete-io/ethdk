@@ -4,9 +4,8 @@
      run at once - the directive skips measuring exactly when this `@supports` condition holds.
      Delete the fallback once Firefox ESR and iOS Safari 26 both support `field-sizing`.
 
-     The row bounds hold only while the native textarea has no block padding: it is a border box,
-     so any padding on it eats into the clamp, and CSS cannot add the padding back. Pad the form
-     field's frame instead. */
+     The row bounds count only the content: the native textarea is a border box, so a rule that
+     pads it must add its block padding to both bounds, as form-field-textarea-styles does. */
   @supports (field-sizing: content) {
     textarea[data-et-textarea-autosize] {
       field-sizing: content;

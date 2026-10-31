@@ -14,7 +14,7 @@
 
   .et-label-required-marker {
     display: inline-block;
-    color: var(--et-theme-color-primary-solid);
+    color: var(--et-theme-color-ink-solid);
     margin-inline-start: 0.45ch;
     transition: color 150ms ease;
   }

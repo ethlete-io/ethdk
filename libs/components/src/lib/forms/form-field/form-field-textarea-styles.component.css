@@ -16,11 +16,43 @@
       );
 
       .et-form-field-control-frame {
+        padding-block: 0;
+      }
+
+      .et-form-field-affix {
         padding-block: var(--_et-form-field-textarea-padding-block);
       }
 
+      .et-textarea-native {
+        box-sizing: border-box;
+        padding-block: var(--_et-form-field-textarea-padding-block);
+      }
+
+      .et-form-field-control-frame:not(:has(> .et-form-field-suffix:not(:empty))) {
+        padding-inline-end: 0;
+
+        .et-textarea-native {
+          padding-inline-end: var(--et-form-field-control-padding-inline);
+        }
+      }
+
+      :where(.et-textarea-native[data-resize='vertical']) {
+        min-block-size: calc(1lh + 2 * var(--_et-form-field-textarea-padding-block));
+      }
+
+      textarea[data-et-textarea-autosize] {
+        min-block-size: calc(var(--et-textarea-min-rows, 1) * 1lh + 2 * var(--_et-form-field-textarea-padding-block));
+        max-block-size: calc(
+          var(--et-textarea-max-block-size, 1000lh) + 2 * var(--_et-form-field-textarea-padding-block)
+        );
+      }
+
+      &[data-label-mode='floating-outside'] .et-form-field-label-area--floating {
+        margin-block-start: var(--_et-form-field-textarea-padding-block);
+      }
+
       &[data-label-mode='inline'] .et-form-field-label-area--inline {
-        margin-block: calc(var(--_et-form-field-textarea-padding-block) * -1);
+        margin-block: 0;
         padding-block-start: calc(
           var(--_et-form-field-textarea-padding-block) +
             (var(--_et-form-field-textarea-font-size) - var(--et-form-field-control-font-size)) *

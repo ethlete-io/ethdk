@@ -42,3 +42,46 @@ export function themeErrorHoverMixIn(scope: Locator, scheme: ColorScheme, percen
 
   return resolveBorderColorIn(scope, `color-mix(in srgb, ${tone} ${percent}%, transparent)`);
 }
+
+/** Resolves a colour expression (e.g. `var(--et-surface-color-solid)`) inside `scope` to the colour a border would compute to. */
+export function colorIn(scope: Locator, value: string): Promise<string> {
+  return resolveBorderColorIn(scope, value);
+}
+
+/**
+ * The WCAG contrast ratio of a computed colour of `locator` (optionally of a pseudo-element)
+ * against the page background, with any alpha composited onto that background first.
+ */
+export function contrastAgainstPage(
+  locator: Locator,
+  property: 'color' | 'borderTopColor' | 'outlineColor',
+  pseudo?: string,
+): Promise<number> {
+  return locator.evaluate(
+    (el, { property, pseudo }) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) throw new Error('no 2d canvas context');
+
+      const paint = (fill: string) => {
+        context.fillStyle = fill;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const luminance = (rgb: number[]) => {
+        const [r = 0, g = 0, b = 0] = rgb.map((v) => {
+          const c = v / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+
+      const page = luminance(paint(getComputedStyle(document.documentElement).backgroundColor));
+      const ink = luminance(paint(getComputedStyle(el, pseudo)[property]));
+
+      return (Math.max(page, ink) + 0.05) / (Math.min(page, ink) + 0.05);
+    },
+    { property, pseudo },
+  );
+}

@@ -47,8 +47,13 @@
        injected by the control, so a control instantiated before any form-field would inject it
        *before* the base sheet and lose every source-order tie against the base frame/label rules. */
     &[data-text-shell] {
-      --_et-form-field-frame-border: var(--et-surface-border-solid, currentColor);
-      --_et-form-field-frame-border-hover: var(--et-surface-interaction-hover-solid, currentColor);
+      --_et-form-field-frame-border: var(--et-surface-interaction-solid, currentColor);
+      --_et-form-field-frame-border-hover: color-mix(
+        in srgb,
+        var(--et-surface-interaction-solid, currentColor) 75%,
+        var(--et-surface-color-solid, currentColor)
+      );
+      --_et-form-field-frame-focus: var(--et-surface-color-solid, currentColor);
       --_et-form-field-label-color: var(--et-surface-color-muted-solid, currentColor);
       --_et-form-field-label-color-active: var(--et-surface-color-solid, currentColor);
 
@@ -75,12 +80,24 @@
             )
           )
         );
+        --_et-form-field-frame-focus: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color-active: var(--et-theme-color-ink-solid);
       }
 
+      &:not(:has(> .et-form-field-shell > .et-form-field-control-frame > .et-form-field-prefix svg)) {
+        --_et-form-field-prefix-gap: 4px;
+      }
+
       .et-form-field-control-frame {
         border-color: var(--_et-form-field-frame-border);
+      }
+
+      .et-form-field-prefix {
+        margin-inline-end: calc(
+          var(--_et-form-field-prefix-gap, var(--et-form-field-control-affix-gap)) -
+            var(--et-form-field-control-affix-gap)
+        );
       }
 
       .et-form-field-affix {
@@ -249,7 +266,8 @@
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame,
       &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
       &:where([data-focused]:not([data-readonly])) .et-form-field-control-frame {
-        border-color: var(--et-theme-color-primary-solid);
+        border-color: var(--_et-form-field-frame-focus);
+        box-shadow: inset 0 0 0 var(--et-form-field-control-border-width) var(--_et-form-field-frame-focus);
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,
@@ -268,7 +286,18 @@
         }
 
         .et-form-field-control-frame {
+          border-style: dashed;
           cursor: default;
+        }
+
+        &:is([data-focused], :has(:focus-visible)) .et-form-field-control-frame {
+          border-color: var(--_et-form-field-frame-focus);
+        }
+
+        &:not([data-appearance='underline']):is([data-focused], :has(:focus-visible)) .et-form-field-control-frame {
+          border-color: transparent;
+          outline: calc(2 * var(--et-form-field-control-border-width)) dashed var(--_et-form-field-frame-focus);
+          outline-offset: calc(-2 * var(--et-form-field-control-border-width));
         }
 
         .et-form-field-label-area {

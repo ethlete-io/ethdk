@@ -177,7 +177,7 @@ export class FormFieldComponent {
       return null;
     }
 
-    return `calc(${width}px + var(--et-form-field-control-affix-gap))`;
+    return `calc(${width}px + var(--_et-form-field-prefix-gap, var(--et-form-field-control-affix-gap)))`;
   });
 
   constructor() {

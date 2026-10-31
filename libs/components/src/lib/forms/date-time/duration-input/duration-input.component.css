@@ -20,7 +20,7 @@
       font-variant-numeric: tabular-nums;
 
       &::placeholder {
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: color-mix(in srgb, currentColor 60%, transparent);
       }
 
       &:disabled {

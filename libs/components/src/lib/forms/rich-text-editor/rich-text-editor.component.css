@@ -167,7 +167,7 @@
 
       &:empty::before {
         content: attr(data-placeholder);
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: color-mix(in srgb, currentColor 60%, transparent);
         pointer-events: none;
       }
     }

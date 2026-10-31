@@ -1,11 +1,22 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, setColorScheme, tap, themeErrorHoverIn, themePrimaryIn } from '../support';
+import {
+  boxOf,
+  colorIn,
+  contrastAgainstPage,
+  openStory,
+  pressKey,
+  setColorScheme,
+  tap,
+  themeErrorHoverIn,
+  themePrimaryIn,
+} from '../support';
 
 const INPUT_STORY_ID = 'components-forms-input--default';
 const DESCRIPTION_STORY_ID = 'components-forms-input--description';
 const WARNING_STORY_ID = 'components-forms-warning--default';
 const COUNTER_STORY_ID = 'components-forms-counter--default';
 const SELECT_IN_TABS_STORY_ID = 'components-forms-select--in-tabs';
+const READONLY_STORY_ID = 'components-forms-control-states--readonly';
 
 interface FieldParts {
   field: Locator;
@@ -400,4 +411,82 @@ test.describe('form-field / touch', () => {
     await expect(parts.control).toBeFocused();
     await expectLabelFloatedInside(parts);
   });
+});
+
+test.describe('form-field / frame states', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus and hover');
+
+  async function invalidField(page: Page): Promise<FieldParts> {
+    const parts = fieldParts(await openStory(page, INPUT_STORY_ID, { args: { required: true } }));
+
+    await parts.control.focus();
+    await parts.control.blur();
+    await expect(parts.field).toHaveAttribute('data-error');
+
+    return parts;
+  }
+
+  test('the rest frame keeps 3:1 against the page, also in error', async ({ page }) => {
+    const { frame } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    expect(await contrastAgainstPage(frame, 'borderTopColor')).toBeGreaterThanOrEqual(3);
+
+    const invalid = await invalidField(page);
+    expect(await contrastAgainstPage(invalid.frame, 'borderTopColor')).toBeGreaterThanOrEqual(3);
+  });
+
+  test('the placeholder keeps 4.5:1 against the page and stays lighter than the value', async ({ page }) => {
+    const { control } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    const placeholder = await contrastAgainstPage(control, 'color', '::placeholder');
+
+    expect(placeholder).toBeGreaterThanOrEqual(4.5);
+    expect(placeholder).toBeLessThan(await contrastAgainstPage(control, 'color'));
+  });
+
+  test('the required marker keeps 4.5:1 against the page in error', async ({ page }) => {
+    const { field } = await invalidField(page);
+    const marker = field.locator('.et-label-required-marker');
+
+    await expect(marker).toHaveCSS('color', await colorIn(field, 'var(--et-theme-color-ink-solid)'));
+    expect(await contrastAgainstPage(marker, 'color')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('focus draws a 2px frame in the surface text colour that hover does not change', async ({ page }) => {
+    const { field, frame, control } = fieldParts(await openStory(page, INPUT_STORY_ID));
+    const ink = await colorIn(field, 'var(--et-surface-color-solid)');
+
+    await pressKey(page, 'Tab');
+    await expect(control).toBeFocused();
+    await expect(frame).toHaveCSS('border-top-color', ink);
+    await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
+
+    await frame.hover();
+    await expect(frame).toHaveCSS('border-top-color', ink);
+  });
+
+  test('an invalid field draws its focus frame in the error ink', async ({ page }) => {
+    const { field, frame, control } = await invalidField(page);
+    const ink = await colorIn(field, 'var(--et-theme-color-ink-solid)');
+
+    await control.focus();
+    await expect(frame).toHaveCSS('border-top-color', ink);
+    await expect(frame).toHaveCSS('box-shadow', `${ink} 0px 0px 0px 1px inset`);
+  });
+
+  for (const control of ['input', 'textarea'] as const) {
+    test(`a readonly ${control} draws a dashed frame, and a 2px dashed focus frame`, async ({ page }) => {
+      const root = await openStory(page, READONLY_STORY_ID);
+      const field = root.locator(`et-form-field:has(.et-${control}-native)`).first();
+      const frame = field.locator('.et-form-field-control-frame');
+      const native = field.locator(`.et-${control}-native`);
+
+      await expect(field).toHaveAttribute('data-readonly');
+      await expect(frame).toHaveCSS('border-top-style', 'dashed');
+      await expect(frame).toHaveCSS('outline-style', 'none');
+
+      await native.focus();
+      await expect(frame).toHaveCSS('outline-style', 'dashed');
+      await expect(frame).toHaveCSS('outline-width', '2px');
+      await expect(frame).toHaveCSS('outline-color', await colorIn(field, 'var(--et-surface-color-solid)'));
+    });
+  }
 });

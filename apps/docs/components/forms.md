@@ -205,10 +205,16 @@ activate the control - not to the whole field. The field's box also spans the
 label band, the gap and the hint/counter row, so a pointer resting next to the
 counter leaves the frame at rest.
 
+A text field's frame keeps at least 3:1 against its surface at rest, also in
+error. Hover steps it a little stronger. Focus draws a 2px frame in the surface
+text colour (the error theme's ink while erroring) that hover leaves alone, with
+no halo. The placeholder keeps 4.5:1 and stays lighter than the value.
+
 Every value control distinguishes **read-only** from **disabled**: a read-only
 control (from a `readonly(...)` schema) keeps its normal box and stays focusable
-but drops every interactive affordance - no hover/focus change, full-contrast
-value - so it reads as view-only content; **disabled** stays dimmed. The choice
+but drops every interactive affordance - no hover change, full-contrast value - so
+it reads as view-only content; **disabled** stays dimmed. A read-only text field
+also draws its frame dashed, and its focus as a 2px dashed frame. The choice
 controls use `et-choice-field` instead of `et-form-field` - see
 [Choice & rating](/components/choice-inputs).
 
@@ -395,7 +401,8 @@ The field chrome handles error display and aria wiring uniformly:
 - `aria-describedby` on the control automatically points at the active error
   (else a [warning](#warnings-valid-but-worth-a-look), else the hint),
   `aria-labelledby` at the `et-label`; the label renders a `*` marker when the
-  control is `required`.
+  control is `required`, in the theme's ink tone (the error ink while erroring).
+  The same marker shows on every form field, checkboxes and radios included.
 - An `et-description` projected into `et-form-field` renders between the control
   and the support row, indented to the label and value, and the control's `aria-describedby` names it ahead of the
   error, warning or hint.
