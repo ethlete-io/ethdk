@@ -1,5 +1,35 @@
 # ethlete-studio
 
+## 0.2.0-next.14
+
+### Minor Changes
+
+- The Studio motion timeline makes the motion's start frame live and drives it: the slider pauses its animations at that time, play and speed run them, closing resumes them at 1x.
+- Motion timeline tracks name the foundations duration and easing tokens they use.
+- Studio draws every page, declared-width part and flow frame in the light and the dark scheme, side by side under a Light and a Dark label, stacked when the frame is wider than 1024px. Legacy call shots stay single.
+- Studio marks a failed shot as "Render failed", a slow shot as rendering, and says the design server is starting until it first answers.
+- Studio draws every merge-preview frame in the light and the dark scheme, like pages and flow frames. The sketch matrix stays one copy.
+
+### Patch Changes
+
+- The motion timeline now drives a part drawn as a state grid: it makes the `from` state's cell live and posts to it. Keyframe images load from the design server.
+- Changing the motion strip's preset or reduced motion while the timeline is open makes the new frame live. Opening or retargeting the timeline moves the camera to the driven frame and keeps it in view as the canvas resizes.
+- A static shot draws in the colour scheme Studio prefers, like the live frames next to it, so a dark Studio no longer mixes light shots into a grid.
+- A chat run on a call reaches the design tools through `et design mcp` instead of Studio's own tool server.
+- The agent bridge takes a call and a variant: a chat run with both starts `et design mcp` and its prompt names them, so the agent passes them to the design tools.
+- A debug start of Studio builds only the CLI before the design server starts, not the bundled runtime with its `npm install`, which the dev server never used.
+- A frame caption in a narrow frame ends the frame label in an ellipsis. The scheme label, the width, the note and the Live badge keep their full width.
+- A frame grid goes live in one step: the cells keep their shots until every live cell painted.
+- A part grid shows its cells in one reveal once all of its shots have loaded, with a loading dot until then, instead of cell by cell.
+- A part's state grid now reveals once each shot is loaded, failed or slow (over 2 s), so a shot that never answers shows its "Rendering" mark instead of keeping the whole grid hidden.
+- A part grid stays visible while the shots of an edited part load, instead of hiding behind its loading dot; only a new cell or scheme hides it again.
+- A live canvas frame that follows its content now draws its page in the 800 px viewport of a shot, so an open select panel shows in full and no longer shrinks to the frame.
+- After a sketch is merged or removed, the system view shows the part it targeted instead of the first part.
+- The motion timeline shows token names for duration and easing in the mono font, so `--` stays two hyphens.
+- Studio draws every part grid twice, under a Light and a Dark head, and `frame.html?scheme=` pins a live frame to one scheme.
+- The footer shows the design server's render queue, the age of its oldest draw, and the shots and frames that failed, so a slow or blank frame reads as slow or failed.
+- Swap a canvas frame between its shot and its live page without a blank frame: the frame page reports when it painted, and Studio keeps the old view until the new one is ready.
+
 ## 0.2.0-next.13
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.31
+
+### Minor Changes
+
+- The design-exploration skill now describes the `ethlete-design` MCP server: its tools by job, when to use them instead of the `et design` CLI, and the `sketch_report` and `sketch_ready` rules.
+
 ## 0.1.0-next.30
 
 ### Minor Changes
