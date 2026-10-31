@@ -953,6 +953,22 @@ const withDrops = (round: SketchRound, drops: string[] | undefined): SketchRound
 };
 
 /** Changes the title, the note and the dropped states of the round with key `round`; a field left out stays as it is. */
+export const editVariantNote = (options: { sketch: Sketch; variant: string; note: string }): Sketch | string => {
+  const { sketch, variant, note } = options;
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  const edited: Sketch = {
+    ...sketch,
+    variantInfo: { ...sketch.variantInfo, [variant]: { ...sketch.variantInfo[variant], note: note.trim() } },
+  };
+
+  writeSketchFile(edited);
+
+  return edited;
+};
+
 export const editRound = (options: {
   sketch: Sketch;
   round: string;

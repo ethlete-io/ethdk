@@ -414,6 +414,31 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
   });
 
+  it('sets the note of one variant, and refuses an unknown sketch or variant', () => {
+    const target = acme();
+    const lines = output();
+    const note = (...argv: string[]) => write(target, 'note', ...argv, '--product', 'acme');
+
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+
+    expect(note('elements/hero', 'b', 'tighter', 'header')).toBe(0);
+    expect(lines.pop()).toBe('elements/hero variant b: tighter header');
+    expect(
+      (
+        findSketch({
+          productDir: join(target, DESIGN_DIR, 'acme'),
+          product: 'acme',
+          sketch: { layer: 'elements', name: 'hero' },
+        }) as Sketch
+      ).variantInfo['b']?.note,
+    ).toBe('tighter header');
+    expect(note('elements/hero', 'z', 'x')).toBe(1);
+    expect(lines.pop()).toBe('elements/hero has no variant "z" - it has a, b');
+    expect(note('elements/nope', 'a', 'x')).toBe(1);
+    expect(note('elements/hero', 'a')).toBe(1);
+    expect(lines.pop()).toContain('usage: sketch note <layer>/<name> <variant> <text>');
+  });
+
   it('rejects and reopens a variant, keeps the history and prints the stored state', () => {
     const target = acme();
     const lines = output();

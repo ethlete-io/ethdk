@@ -24,6 +24,7 @@ import {
   createSketch,
   decideSketch,
   editRound,
+  editVariantNote,
   findSketch,
   finishSketchReport,
   heldProblemOf,
@@ -49,6 +50,7 @@ export const SKETCH_USAGE = [
   'sketch new <layer>/<name> [<layer>/<name>…] --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--variant-note <variant>=<text>]… [--override | --into-base] [--product <name>]',
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
+  'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -120,6 +122,7 @@ const WRITES = new Set([
   'new',
   'variant',
   'round',
+  'note',
   'report',
   'ready',
   'hold',
@@ -520,6 +523,22 @@ const roundEdited = (context: Context) =>
     console.log(
       `${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}${entry?.lost ? ` - lost: ${entry.lost}` : ''}${entry?.drops ? ` - drops ${entry.drops.join(', ')}` : ''}`,
     );
+
+    return 0;
+  });
+
+const noteEdited = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const [, variant, ...words] = context.args.positional;
+    const note = words.join(' ').trim();
+
+    if (!variant || note === '') return fail(`usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch note '))}`);
+
+    const edited = editVariantNote({ sketch, variant, note });
+
+    if (typeof edited === 'string') return fail(edited);
+
+    console.log(`${edited.target} variant ${variant}: ${note}`);
 
     return 0;
   });
@@ -965,6 +984,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   new: created,
   variant: varied,
   round: roundEdited,
+  note: noteEdited,
   list: listed,
   report: reported,
   ready: readied,
