@@ -526,6 +526,8 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Grill decision (inside Q51): the switch focus ring uses the ink token, like the tree focus ring. It is part of
   the switch round `f49f5ab8a` (all variants). The light on-track fill (primary, 1.33:1 on the light panel) gets
   its own round later.
+- Tom: the swap between the live iframe and the shot image (both ways) flickers. Optimise it: keep the old view
+  until the new one has painted, then switch in one step. Queued for `ethlete-sdk-57`.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
