@@ -1113,3 +1113,9 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   Q212 covers floating panels only; the comment-pin is a canvas marker and keeps its Q211 ring.
 - **Q214 (Tom, 2026-10-31):** Tom accepts the Q211 pin round (`64d664072`): hover face grey 44 to 50, active 52 to 62,
   the count badge beside the button, the brighter active ink on the unselected pin for contrast.
+- **Q215 (Tom, 2026-10-31):** Tom accepts 57's round: the project picker is the SDK `menu()` (radio dot for the
+  selected project), the inbox comment popover the SDK `anchoredDialog()`, the zoom chip takes the SDK overlay
+  border (Q212), and the project-switch chevron sits at the row end.
+- **Q216 (Tom, 2026-10-31, option A):** the CONTRAST rule does not check the outer border of a floating panel (an
+  overlay pane, or an element with its own surface step and shadow). The SDK overlay border stays at 1.63:1; such a
+  panel is identified by its surface step and shadow (WCAG 1.4.11). A tool fix, no per-part exceptions.
