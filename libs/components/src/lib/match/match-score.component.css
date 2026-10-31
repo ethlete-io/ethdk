@@ -6,9 +6,12 @@
     flex: none;
     place-items: center end;
     min-inline-size: 1ch;
-    overflow: hidden;
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
+  }
+
+  .et-match-score:has(.et-match-score-digit:not([data-state='static']), .et-match-score-flash) {
+    overflow: hidden;
   }
 
   /* Both values occupy the same cell — that is what lets one leave while the other arrives. */

@@ -397,7 +397,10 @@
     --_et-match-card-side-color: var(--et-surface-color-solid, currentColor);
     --_et-match-card-side-marker-color: var(--et-theme-color-primary-solid, currentColor);
     --_et-match-card-side-marker-display: block;
-    font-weight: 600;
+
+    .et-match-participant-name {
+      font-weight: 600;
+    }
   }
 
   .et-match-card-games {
