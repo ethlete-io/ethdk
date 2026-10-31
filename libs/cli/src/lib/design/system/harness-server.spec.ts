@@ -1,19 +1,19 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import {
+  BuildCommandOf,
   freePortOf,
   HarnessServer,
   RESERVED_PORTS,
-  ServeCommandOf,
   startHarnessServer,
   withHarnessUrl,
 } from './harness-server';
 import { resolveProduct } from './resolve-product';
 
-const checkout = (project: object = { name: 'app-a', targets: { serve: {} } }) => {
+const checkout = (project: object = { name: 'app-a', targets: { build: {} } }) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-harness-server-'));
   const write = (path: string, source: string) => {
     mkdirSync(dirname(join(target, path)), { recursive: true });
@@ -28,16 +28,19 @@ const checkout = (project: object = { name: 'app-a', targets: { serve: {} } }) =
   return { target, product: resolveProduct({ target, name: 'app-a', config: { harness } }) };
 };
 
-const nodeServing =
-  (source: string): ServeCommandOf =>
-  ({ port }) => ({
+const nodeBuilding =
+  (source: string): BuildCommandOf =>
+  ({ outputPath }) => ({
     command: process.execPath,
-    args: ['-e', source.replace('PORT', String(port))],
+    args: ['-e', source, outputPath],
   });
 
-const HARNESS_APP = nodeServing(
-  "require('http').createServer((q, r) => { r.statusCode = q.url.startsWith('/__design-harness') ? 200 : 404; r.end(String(process.pid)); }).listen(PORT, '127.0.0.1')",
+const HARNESS_BUILD = nodeBuilding(
+  "const fs = require('fs'); const out = process.argv[1] + '/browser'; fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(out + '/index.html', '<script src=\"main.js\"></script>'); fs.writeFileSync(out + '/main.js', 'boot()');",
 );
+
+const outputOf = (commandOf: { mock: { calls: Parameters<BuildCommandOf>[] } }) =>
+  commandOf.mock.calls[0]?.[0].outputPath ?? '';
 
 const alive = (pid: number) => {
   try {
@@ -72,42 +75,65 @@ describe('freePortOf', () => {
 });
 
 describe('startHarnessServer', () => {
-  it('starts the serve command on a free port, waits for the harness route, and stops the process', async () => {
+  it('builds the app into a temp folder, serves it with a fallback to index.html, and removes the folder on stop', async () => {
     const { target, product } = checkout();
-    const commandOf = vi.fn(HARNESS_APP);
+    const commandOf = vi.fn(HARNESS_BUILD);
     const listeners = process.listeners('SIGINT').length;
     const server = await startHarnessServer({ target, product, commandOf });
 
     if (typeof server === 'string') throw new Error(server);
 
-    const port = Number(new URL(server.url).port);
+    const outputPath = outputOf(commandOf);
 
-    expect(commandOf).toHaveBeenCalledWith({ target, project: 'app-a', port });
-    expect(RESERVED_PORTS).not.toContain(port);
+    expect(commandOf).toHaveBeenCalledWith({ target, project: 'app-a', outputPath: expect.any(String) });
+    expect(outputPath.startsWith(tmpdir())).toBe(true);
+    expect(RESERVED_PORTS).not.toContain(Number(new URL(server.url).port));
 
-    const pid = Number(await (await fetch(`${server.url}/__design-harness`)).text());
+    const page = await fetch(`${server.url}/__design-harness`);
 
-    expect(alive(pid)).toBe(true);
+    expect(page.headers.get('content-type')).toMatch(/^text\/html/);
+    expect(await page.text()).toBe('<script src="main.js"></script>');
+    expect(await (await fetch(`${server.url}/main.js`)).text()).toBe('boot()');
+    expect(await (await fetch(`${server.url}/..%2F..%2Fetc%2Fpasswd`)).text()).toBe('<script src="main.js"></script>');
     expect(process.listeners('SIGINT')).toHaveLength(listeners + 1);
+
     await server.stop();
-    expect(alive(pid)).toBe(false);
+
+    expect(existsSync(dirname(outputPath))).toBe(false);
     expect(process.listeners('SIGINT')).toHaveLength(listeners);
     await expect(fetch(`${server.url}/__design-harness`)).rejects.toThrow();
   });
 
-  it('reports a serve command that exits before it serves', async () => {
+  it('fails at once when Nx waits for the same task in another process, and stops it', async () => {
     const { target, product } = checkout();
-    const server = await startHarnessServer({
-      target,
-      product,
-      commandOf: nodeServing("console.error('boom PORT'); process.exit(3)"),
-    });
+    const commandOf = vi.fn(
+      nodeBuilding(
+        "console.log('pid ' + process.pid); console.log('Waiting for app-a:build:development in another nx process'); setInterval(() => undefined, 1000)",
+      ),
+    );
+    const started = Date.now();
+    const server = await startHarnessServer({ target, product, commandOf, timeout: 60_000 });
 
-    expect(server).toMatch(/^app-a:serve exited on http:\/\/127\.0\.0\.1:\d+:\nboom \d+$/);
+    expect(Date.now() - started).toBeLessThan(10_000);
+    expect(server).toMatch(/^app-a:build:development waits for another nx process running the same task/);
+
+    const pid = Number(/pid (\d+)/.exec(String(server))?.[1]);
+
+    expect(alive(pid)).toBe(false);
+    expect(existsSync(dirname(outputOf(commandOf)))).toBe(false);
   });
 
-  it('refuses a product without a harness or an app without a serve target', async () => {
-    const { target } = checkout({ name: 'app-a', targets: {} });
+  it('reports a build that fails and removes its temp folder', async () => {
+    const { target, product } = checkout();
+    const commandOf = vi.fn(nodeBuilding("console.error('boom'); process.exit(3)"));
+    const server = await startHarnessServer({ target, product, commandOf });
+
+    expect(server).toBe('app-a:build:development failed:\nboom');
+    expect(existsSync(dirname(outputOf(commandOf)))).toBe(false);
+  });
+
+  it('refuses a product without a harness or an app without a build target', async () => {
+    const { target } = checkout({ name: 'app-a', targets: { serve: {} } });
     const harness = { app: 'apps/app-a', map: 'apps/app-a/src/harness/parts.ts' };
 
     expect(await startHarnessServer({ target, product: resolveProduct({ target, name: 'app-a', config: {} }) })).toBe(
@@ -115,8 +141,28 @@ describe('startHarnessServer', () => {
     );
     expect(
       await startHarnessServer({ target, product: resolveProduct({ target, name: 'app-a', config: { harness } }) }),
-    ).toBe('apps/app-a/project.json has no serve target');
+    ).toBe('apps/app-a/project.json has no build target');
   });
+
+  it.runIf(process.env['ET_DESIGN_REAL_HARNESS'])(
+    'builds and serves the real docs-examples harness next to a running dev server',
+    { timeout: 600_000 },
+    async () => {
+      const target = resolve(__dirname, '../../../../../..');
+      const config = JSON.parse(readFileSync(join(target, DESIGN_DIR, 'config.json'), 'utf8'));
+      const product = resolveProduct({ target, name: 'sdk', config: config.products.sdk });
+      const server = await startHarnessServer({ target, product });
+
+      if (typeof server === 'string') throw new Error(server);
+
+      try {
+        expect(await (await fetch(`${server.url}/__design-harness`)).text()).toContain('src="main.js"');
+        expect((await fetch(`${server.url}/main.js`)).headers.get('content-type')).toMatch(/^text\/javascript/);
+      } finally {
+        await server.stop();
+      }
+    },
+  );
 });
 
 describe('withHarnessUrl', () => {
