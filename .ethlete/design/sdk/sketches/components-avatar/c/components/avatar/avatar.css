@@ -1,0 +1,14 @@
+.avatar-frame {
+  display: flex;
+  align-items: center;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+@layer components {
+  .et-avatar:not(:has(> .et-avatar-image)) {
+    outline: 1px solid light-dark(var(--et-theme-color-ink-solid), transparent);
+    outline-offset: -1px;
+  }
+}
