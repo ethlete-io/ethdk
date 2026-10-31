@@ -277,6 +277,8 @@ export const isFindingOf = (declared: Record<string, DeclaredControl>) => (found
 
 export const findingKeyOf = (found: FoundControl) => `${found.kind} ${found.what} ${found.path}`;
 
+const NATIVE_CONTROLS = ['button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', 'summary'];
+
 const discoveryGapsOf = (options: {
   part: string;
   declared: Record<string, DeclaredControl>;
@@ -311,7 +313,11 @@ const discoveryGapsOf = (options: {
         ? {
             code: 'CONTROL-UNDECLARED',
             target: part,
-            detail: `${where} - mark it with data-et-control and declare it in controls`,
+            detail: `${where} - ${
+              NATIVE_CONTROLS.includes(found.what)
+                ? 'mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls'
+                : 'mark it with data-et-control and declare it in controls'
+            }`,
           }
         : {
             code: 'CONTROL-UNCLASSIFIED',
@@ -320,6 +326,8 @@ const discoveryGapsOf = (options: {
           };
     });
 };
+
+const isUndeclaredControlGap = (gap: CompletenessGap) => gap.code === 'CONTROL-UNDECLARED';
 
 const statesShownOf = (states: string[]) =>
   states.length > 4 ? `${states.slice(0, 3).join(', ')} and ${states.length - 3} more` : states.join(', ');
@@ -745,7 +753,7 @@ export const completenessGapsOf = (options: {
 
   return [
     ...gaps,
-    ...discoveryGapsOf({ part, declared, frames }),
+    ...discoveryGapsOf({ part, declared, frames }).filter((gap) => !isUndeclaredControlGap(gap)),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
     ...inventoryGapsOf({ part, inventory }),
@@ -933,12 +941,7 @@ export const SDK_CONTROLS = [
 
 const LIKELY_CONTROLS = [
   ...SDK_CONTROLS,
-  'button',
-  'a[href]',
-  'input:not([type="hidden"])',
-  'select',
-  'textarea',
-  'summary',
+  ...NATIVE_CONTROLS,
   '[tabindex]',
   ...INTERACTIVE_ROLES.map((role) => `[role="${role}"]`),
 ];
@@ -1523,6 +1526,7 @@ export const inventoryIdsOf = (frames: SeenFrame[]) =>
  * A page fails until the user approves its control inventory in Studio. An exception the user approved in Studio
  * drops the gap it names until the part changes; a pending one still fails. With `sketch`, every part is drawn as
  * that variant draws it, and a part the variant changes is not merged yet, so it never fails as unreviewed.
+ * A drawn control that no `controls` entry declares is a hint; the sketch check fails on one a sketch adds.
  */
 export const completenessOf = async (options: {
   target: string;
@@ -1634,6 +1638,9 @@ export const partsCompletenessOf = async (options: {
       hints.set(key, [
         ...smallChangeHintsOf({ part: key, controls: definition?.controls, changes }),
         ...controlStateGapsOf({ part: key, controls: definition?.controls, states }).map(completenessGapLineOf),
+        ...discoveryGapsOf({ part: key, declared: declaredControlsOf(definition?.controls) ?? {}, frames: seen })
+          .filter(isUndeclaredControlGap)
+          .map(completenessGapLineOf),
         ...optionProblems
           .filter((gap) => gap.code === 'OPTION-VALUE-MISSING')
           .map((gap) => completenessGapLineOf({ ...gap, target: key })),

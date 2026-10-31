@@ -470,7 +470,9 @@ A part inherited from the product's base is checked against the `merged.json` of
 The check also discovers controls in each state's rendered DOM, so leaving out a declaration does
 not pass. A native control (`button`, `a[href]`, `input`, `select`, `textarea`, `summary`,
 `[tabindex]`), an interactive ARIA role or a known SDK control (`et-select`, `[et-button]`, ...)
-without a `data-et-control` fails as `CONTROL-UNDECLARED`. The focus container of a composite
+without a `data-et-control` is a `CONTROL-UNDECLARED` hint: it does not fail `et design complete`, and the sketch
+check fails on one a sketch adds as `CONTROL-PART-INPUT`. Mark a native control with `control(markup, name)` from
+`@ethlete/components/design/control` and declare the name in `controls`. The focus container of a composite
 widget (role `menu`, `menubar`, `listbox`, `tree`, `treegrid`, `grid`, `tablist` or `radiogroup`
 with `tabindex="-1"` or `aria-activedescendant`) is not a control: it needs no declaration, and
 the items inside it are checked as controls. A marker on a wrapper that is not a

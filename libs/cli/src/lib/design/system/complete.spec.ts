@@ -424,7 +424,7 @@ describe('smallChangeHintsOf', () => {
 });
 
 describe('completenessGapsOf', () => {
-  it('passes a part without controls that draws none, and fails each undeclared control it draws once', () => {
+  it('passes a part without controls that draws none, and leaves each undeclared control it draws to the hints', () => {
     const button: FoundControl = { kind: 'control', what: 'button', path: 'div > button', marked: null, within: [] };
     const gapsOf = (found: FoundControl[], controls?: unknown) =>
       completenessGapsOf({
@@ -440,15 +440,7 @@ describe('completenessGapsOf', () => {
       }).map(completenessGapLineOf);
 
     expect(gapsOf([])).toEqual([]);
-    expect(gapsOf([button, button])).toEqual([
-      'CONTROL-UNDECLARED components/a - button at div > button in rest, open (2 of them) - mark it with data-et-control and declare it in controls',
-    ]);
-    expect(gapsOf([{ ...button, marked: 'more' }], {})).toEqual([]);
-    expect(
-      gapsOf([{ ...button, within: ['more'] }], {
-        more: { kind: 'disclosure', part: 'components/b', surfaces: {} },
-      }).filter((line) => line.startsWith('CONTROL-UNDECLARED')),
-    ).toEqual([]);
+    expect(gapsOf([button, button])).toEqual([]);
     expect(
       gapsOf([{ kind: 'unclassified', what: 'div with cursor: pointer', path: 'div > div', marked: null, within: [] }]),
     ).toEqual([
@@ -1043,7 +1035,6 @@ export default definePart({
       'INVENTORY-UNAPPROVED pages/uses-flat - its control inventory is not approved - check and approve it in Studio',
     ]);
     expect(await lines('pages/slotted')).toEqual([
-      'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with data-et-control and declare it in controls',
       'INVENTORY-UNAPPROVED pages/slotted - its control inventory is not approved - check and approve it in Studio',
     ]);
     expect(await lines('components/flat')).not.toEqual([]);
@@ -1054,18 +1045,21 @@ export default definePart({
     const lines = async (part: string) => {
       const result = await completenessOf({ target, config, product, part });
 
-      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
+      return 'gaps' in result ? [...result.gaps.map(completenessGapLineOf), ...(result.hints ?? [])] : result;
     };
     const plain = await completenessOf({ target, config, product, part: 'components/plain' });
 
     if ('unavailable' in plain) return context.skip(plain.unavailable);
 
     expect(plain).toEqual({ gaps: [] });
-    expect(await lines('components/undeclared')).toEqual([
-      'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with data-et-control and declare it in controls',
-    ]);
+    expect(await completenessOf({ target, config, product, part: 'components/undeclared' })).toEqual({
+      gaps: [],
+      hints: [
+        'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+      ],
+    });
     expect(await lines('components/focus-containers')).toEqual([
-      'CONTROL-UNDECLARED components/focus-containers - button at div > div > button in rest - mark it with data-et-control and declare it in controls',
+      'CONTROL-UNDECLARED components/focus-containers - button at div > div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
       'CONTROL-UNDECLARED components/focus-containers - li[role="option"] at div > ul > li in rest - mark it with data-et-control and declare it in controls',
     ]);
     expect(await lines('components/focusable-box')).toEqual([
@@ -1076,8 +1070,8 @@ export default definePart({
       'CONTROL-UNCLASSIFIED components/pointer - div.aa-card with :hover rule at div > div.aa-card in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
     ]);
     expect(await lines('pages/inner')).toEqual([
-      'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with data-et-control and declare it in controls',
       'INVENTORY-UNAPPROVED pages/inner - its control inventory is not approved - check and approve it in Studio',
+      'CONTROL-UNDECLARED pages/inner - button at main > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
     ]);
     approve({ product, part: 'pages/host', ids: [] });
     expect(await lines('pages/host')).toEqual([]);
@@ -1097,11 +1091,20 @@ export default definePart({
     if (!Array.isArray(owns)) return context.skip(JSON.stringify(owns));
 
     expect(owns).toEqual([]);
-    expect(await lines('pages/slotted')).toEqual([
-      'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with data-et-control and declare it in controls',
-      'CONTROL-PART-INCOMPLETE pages/slotted - elements/slot draws 1 control(s) here and is not design complete: 1 gap(s) - run design complete elements/slot',
-      'INVENTORY-UNAPPROVED pages/slotted - its control inventory is not approved - check and approve it in Studio',
-    ]);
+    expect(await completenessOf({ target, config, product, part: 'pages/slotted' })).toEqual({
+      gaps: [expect.objectContaining({ code: 'INVENTORY-UNAPPROVED' })],
+      hints: [
+        'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
+      ],
+    });
+    expect(await completenessOf({ target, config, product, part: 'elements/slot' })).toEqual({
+      gaps: [],
+      hints: [
+        expect.stringMatching(
+          /^CONTROL-UNDECLARED elements\/slot - button at div\.aa-slot > button\.aa-menu in rest - /,
+        ),
+      ],
+    });
     expect(await lines('pages/recolours')).toEqual([
       'CONTROL-OVERRIDDEN pages/recolours - ".aa-page > div" sets padding on main.aa-page > div, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
       'CONTROL-OVERRIDDEN pages/recolours - ":is(.aa-page) .aa-toggle:hover" sets color on main.aa-page > div > button.aa-toggle, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
