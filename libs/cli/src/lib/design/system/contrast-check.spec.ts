@@ -35,6 +35,15 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   composited: {
     body: '<div style="background: #000"><p style="margin: 0; background: rgb(255 255 255 / 0.5); color: #fff">Half</p></div>',
   },
+  underlay: {
+    body: '<div style="position: relative; isolation: isolate; background: #fff"><span style="position: absolute; inset: 0; z-index: -1; background: #000"></span><span style="color: #fff">On fill</span></div>',
+  },
+  'pseudo-underlay': {
+    body: '<div class="fill" style="background: #fff"><span style="color: #fff">On pseudo</span></div><style>.fill { position: relative; isolation: isolate; } .fill::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #000; }</style>',
+  },
+  'underlay-low': {
+    body: '<div style="position: relative; isolation: isolate; background: #fff"><span style="position: absolute; inset: 0; z-index: -1; background: #000"></span><span style="color: #333">Dim</span></div>',
+  },
   fading: {
     body: '<p class="fade" style="margin: 0">Fading in</p><style>.fade { transition: opacity 10s; } @starting-style { .fade { opacity: 0; } }</style>',
   },
@@ -103,6 +112,8 @@ describe('contrast check', () => {
       'components/no-reason default div[data-et-part=components/no-reason] > span.mark - "Mark" 1.61:1, needs 4.50:1',
       'components/no-reason other div[data-et-part=components/no-reason] > span.mark - "Mark" 1.61:1, needs 4.50:1',
       'components/pairs default --ink on --paper - token pair 2.85:1, needs 4.50:1',
+      'components/underlay-low default div[data-et-part=components/underlay-low] > span:nth-of-type(2) - "Dim" 1.66:1, needs 4.50:1',
+      'components/underlay-low other div[data-et-part=components/underlay-low] > span:nth-of-type(2) - "Dim" 1.66:1, needs 4.50:1',
     ]);
   }, 120_000);
 });

@@ -82,21 +82,72 @@ export const CONTRAST_STATEMENTS = `
       for (let at = element; at; at = at.parentElement) chain.unshift(at);
       return chain;
     };
-    const pixelOf = (chain, index, behind, text) => {
+    const createsContext = (element) => {
+      if (element === document.documentElement) return true;
+      const style = getComputedStyle(element);
+      const flexed = /flex|grid/.test(getComputedStyle(element.parentElement).display);
+      return (style.zIndex !== 'auto' && (style.position !== 'static' || flexed)) || style.position === 'fixed' || style.position === 'sticky' ||
+        parseFloat(style.opacity) < 1 || style.isolation === 'isolate' || style.transform !== 'none' || style.filter !== 'none' || style.mixBlendMode !== 'normal';
+    };
+    const contextOf = (element) => {
+      let at = element;
+      while (!createsContext(at)) at = at.parentElement;
+      return at;
+    };
+    let layers = null;
+    const layerOf = (style, self, start, rect) => {
+      const context = contextOf(start);
+      let opacity = parseFloat(style.opacity);
+      for (let at = start; at !== context; at = at.parentElement) opacity *= parseFloat(getComputedStyle(at).opacity);
+      return { self, context, rect, opacity, z: parseInt(style.zIndex, 10), color: rgbaOf(style.backgroundColor), image: style.backgroundImage !== 'none' };
+    };
+    const layersOf = () => {
+      if (layers) return layers;
+      layers = [];
+      for (const element of document.querySelectorAll('*')) {
+        const style = getComputedStyle(element);
+        if (element.parentElement && style.position !== 'static' && parseInt(style.zIndex, 10) < 0 && style.visibility === 'visible')
+          layers.push(layerOf(style, element, element.parentElement, element.getBoundingClientRect()));
+        if (style.position === 'static') continue;
+        for (const pseudo of ['::before', '::after']) {
+          const at = getComputedStyle(element, pseudo);
+          if (at.content === 'none' || at.content === 'normal' || at.position !== 'absolute' || !(parseInt(at.zIndex, 10) < 0) || at.visibility !== 'visible') continue;
+          const px = (name) => parseFloat(at[name]) || 0;
+          const content = at.boxSizing !== 'border-box';
+          const box = element.getBoundingClientRect();
+          const left = box.left + element.clientLeft - element.scrollLeft + px('left');
+          const top = box.top + element.clientTop - element.scrollTop + px('top');
+          const width = px('width') + (content ? px('paddingLeft') + px('paddingRight') + px('borderLeftWidth') + px('borderRightWidth') : 0);
+          const height = px('height') + (content ? px('paddingTop') + px('paddingBottom') + px('borderTopWidth') + px('borderBottomWidth') : 0);
+          layers.push(layerOf(at, null, element, { left, top, right: left + width, bottom: top + height }));
+        }
+      }
+      layers.sort((a, b) => a.z - b.z);
+      return layers;
+    };
+    const pixelOf = (chain, index, behind, text, under) => {
       const style = getComputedStyle(chain[index]);
-      const filled = over(rgbaOf(style.backgroundColor), behind);
-      const inner = index + 1 < chain.length ? pixelOf(chain, index + 1, filled, text) : text ? over(rgbaOf(style.color), filled) : filled;
+      const filled = under[index].reduce((at, layer) => fade(over(layer.color, at), at, layer.opacity), over(rgbaOf(style.backgroundColor), behind));
+      const inner = index + 1 < chain.length ? pixelOf(chain, index + 1, filled, text, under) : text ? over(rgbaOf(style.color), filled) : filled;
       return fade(inner, behind, parseFloat(style.opacity));
     };
     const luminanceOf = (rgb) => {
       const [r, g, b] = rgb.map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
       return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
-    const ratioOf = (element) => {
+    const ratioOf = (element, point) => {
       const chain = chainOf(element);
       if (chain.some((at) => getComputedStyle(at).backgroundImage !== 'none')) return null;
+      const under = chain.map(() => []);
+      for (const layer of layersOf()) {
+        const index = chain.indexOf(layer.context);
+        const { left, top, right, bottom } = layer.rect;
+        if (index < 0 || layer.self?.contains(element) || point.x < left || point.x > right || point.y < top || point.y > bottom) continue;
+        if (layer.image) return null;
+        under[index].push(layer);
+      }
       const white = [1, 1, 1];
-      const [light, dark] = [luminanceOf(pixelOf(chain, 0, white, true)), luminanceOf(pixelOf(chain, 0, white, false))].sort((a, b) => b - a);
+      const [light, dark] = [luminanceOf(pixelOf(chain, 0, white, true, under)), luminanceOf(pixelOf(chain, 0, white, false, under))].sort((a, b) => b - a);
       return (light + 0.05) / (dark + 0.05);
     };
     const shown = (ratio) => ratio.toFixed(2) + ':1';
@@ -136,8 +187,9 @@ export const CONTRAST_STATEMENTS = `
       if (style.visibility !== 'visible') continue;
       const range = document.createRange();
       range.selectNodeContents(node);
-      if (![...range.getClientRects()].some((rect) => rect.width > 1 && rect.height > 1)) continue;
-      const ratio = ratioOf(element);
+      const box = [...range.getClientRects()].find((rect) => rect.width > 1 && rect.height > 1);
+      if (!box) continue;
+      const ratio = ratioOf(element, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
       if (ratio === null) continue;
       const size = parseFloat(style.fontSize) || 0;
       const large = size >= 24 || (size >= 18.66 && parseInt(style.fontWeight, 10) >= 700);
@@ -167,7 +219,8 @@ export const CONTRAST_STATEMENTS = `
       sample.textContent = 'Aa';
       surface.append(sample);
       root.append(surface);
-      const ratio = ratioOf(sample);
+      const box = sample.getBoundingClientRect();
+      const ratio = ratioOf(sample, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
       surface.remove();
       if (ratio !== null && ratio < ${CONTRAST_NORMAL})
         found.push({ rule: 'CONTRAST', path: pair.text + ' on ' + pair.on, detail: 'token pair ' + shown(ratio) + (options.contrast.scheme ? ' in the ' + options.contrast.scheme + ' scheme' : '') + ', needs ' + shown(${CONTRAST_NORMAL}) });
