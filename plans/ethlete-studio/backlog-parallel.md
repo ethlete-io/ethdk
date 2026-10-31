@@ -770,6 +770,10 @@ machen".
   and the tooling should say so. Open plan (grill next): the system that turns a design into Angular components,
   updates them, and checks that they match the current design. "Das System muss machen was geht, der Agent hat
   sonst zu viel Freiraum."
+- Q163 Storybook danger ink (Tom, 2026-10-31, option a, now): `apps/storybook/src/themes.ts` gets the light-scheme
+  danger ink tones of the SDK foundation (`.ethlete/design/sdk/foundations/colors/colors.css`: ink 185,28,28,
+  hover 153,27,27, active 127,29,29). Today Storybook uses one ink set for both schemes (light danger text 2.77).
+  App theme data, no lib change.
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
