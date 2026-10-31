@@ -193,8 +193,13 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     STALE-REPLACE read an anchored regex against the whole source (`1e5ff0c72`); Q190 `surface-hover` (`a52b0d7bf`).
   - Verified: specs that fail without each change, tsc, lint, design folder 968/969 (`list-system.spec.ts` passes
     alone). Not verified: a real draw through the endpoints or `et design ready`.
-- Queued: frictions from the Q191 sketch (raw `<button>` in a page, CLIPPED canvas beside a side panel, a shared
-  export only some variants import), then step 3 (go/task/compare pilot).
+- Built, Q191 frictions: a shared export of a sketch warns only when no variant imports it (Q96, `2676c44a9`);
+  `control(markup, name)` renames an already marked control (`fc4258a3a`). CLIPPED on the narrowed canvas: no tool
+  change, the canvas part marks its pan viewport itself (33). CI fix: cli specs run without a browser (`923da26db`).
+- In progress, step 3 (go/task/compare), in slices:
+  - 3a go: `go.json` `{ [part]: { hash, by, at } }` beside `ready.json`, stale on a design change;
+    `et design go`, `POST /__design/part-go`, MCP `part_go`; open point 7 "no go" and "go is stale".
+  - 3b task, 3c compare: wait for the lead's call on how the real component renders per state.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
