@@ -56,7 +56,7 @@ export type CarouselMockOptions = {
 
 const PER_VIEW = { full: 1, half: 2, third: 3 };
 
-/** The stylesheets `carousel()` draws with: the real carousel, autoplay, scrollable and icon-button CSS, plus the rules that hold the countdown at one frame. */
+/** The stylesheets `carousel()` draws with: the real carousel, autoplay, scrollable and icon-button CSS, plus the rules that draw the countdown at one point without its animation. */
 export const carouselStyles = /* @__PURE__ */ [
   buttonStyles,
   iconBase,
@@ -65,11 +65,14 @@ export const carouselStyles = /* @__PURE__ */ [
   carouselBase,
   autoplayBase,
   `.et-carousel .et-carousel-dot[data-et-frozen-at] .et-carousel-dot-progress-half::before {
-  animation-play-state: paused;
-  animation-delay: calc(var(--et-carousel-frozen-at) * -1 * var(--_et-carousel-autoplay-duration));
+  --_sweep: clamp(0, var(--et-carousel-frozen-at) * 2, 1);
+  animation: none;
+  opacity: 1;
+  rotate: calc(-180deg + var(--_sweep) * 180deg);
 }
 .et-carousel .et-carousel-dot[data-et-frozen-at] .et-carousel-dot-progress-half:last-child::before {
-  animation-delay: calc((0.5 - var(--et-carousel-frozen-at)) * var(--_et-carousel-autoplay-duration));
+  --_sweep: clamp(0, var(--et-carousel-frozen-at) * 2 - 1, 1);
+  opacity: clamp(0, var(--_sweep) * 1000, 1);
 }`,
 ].join('\n');
 
