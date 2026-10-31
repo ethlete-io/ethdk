@@ -39,6 +39,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
  * `contrast` feeds the contrast check of `design check`, see `PartContrast`.
+ * `implements` links the part to the code that builds it, see `PartLink`.
  */
 export type Part<TProps, TState extends string = string> = {
   note: string;
@@ -53,8 +54,15 @@ export type Part<TProps, TState extends string = string> = {
   contrast?: PartContrast;
   motions?: Record<string, Motion<TState>>;
   rules?: PartRule<TState>[];
+  implements?: PartLink;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
 };
+
+/**
+ * The code a part is built in: a component or element names the repo-relative path of its `.component.ts`, a page
+ * names its route. `design check` fails on a path that does not exist, and lists a part without a link as open.
+ */
+export type PartLink = `${string}.component.ts` | { route: `/${string}` };
 
 /** What `play` of a motion may use, so Studio controls time: `at` schedules `fn` at `ms` into the motion on the tool's clock, `random` is seeded, `rect` measures a selector in the `from` state. */
 export type MotionContext = {

@@ -27,6 +27,9 @@ const output = () => {
   return lines;
 };
 
+const withoutOpenPoints = (lines: string[]) =>
+  lines.filter((line) => !line.startsWith('OPEN POINTS ') && !line.startsWith('  '));
+
 const check = (target: string, products: string[]) =>
   checkSystem({ target, config: readConfig(target) ?? {}, products });
 
@@ -160,7 +163,7 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
-    expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
+    expect(withoutOpenPoints(lines)).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
   }, 60_000);
 
   it('warns of a merged part that changed outside a sketch, and passes', async () => {
@@ -213,13 +216,68 @@ describe('checkDesign', () => {
     );
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(lines).toEqual([expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/)]);
+    expect(withoutOpenPoints(lines)).toEqual([
+      expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/),
+    ]);
   }, 60_000);
 
   it('checks one product with --product', async () => {
     const lines = output();
 
     expect(await checkDesign({ target: acme(), argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(lines.filter((line) => !line.startsWith('RENDER CHECK SKIPPED'))).toEqual(['ok']);
+    expect(withoutOpenPoints(lines).filter((line) => !line.startsWith('RENDER CHECK SKIPPED'))).toEqual(['ok']);
+  }, 60_000);
+
+  it('lists the open points of each part before ok, and still passes', async () => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    mkdirSync(join(target, 'src'));
+    writeFileSync(join(target, 'src/hero.component.ts'), '');
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace(
+        'definePart<HeroProps>({',
+        "definePart<HeroProps>({ implements: 'src/hero.component.ts',",
+      ),
+    );
+    mkdirSync(join(target, DESIGN_DIR, 'acme/comments'));
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme/comments/c-1.json'),
+      JSON.stringify({
+        part: 'components/button',
+        state: 'default',
+        size: 'fitted',
+        text: 'x',
+        createdAt: '2026-10-31',
+      }),
+    );
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('  '))).toEqual([
+      'OPEN POINTS acme: 4 in 3 parts',
+      '  components/button: 1 open comment (c-1); no implements',
+      '  components/card: no implements',
+      '  pages/home: no implements',
+    ]);
+    expect(lines.at(-1)).toBe('ok');
+  }, 60_000);
+
+  it('fails on an implements path that does not exist', async () => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace(
+        'definePart<HeroProps>({',
+        "definePart<HeroProps>({ implements: 'src/gone.component.ts',",
+      ),
+    );
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(withoutOpenPoints(lines)).toEqual([expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/)]);
   }, 60_000);
 });

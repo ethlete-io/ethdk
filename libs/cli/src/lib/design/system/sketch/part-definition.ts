@@ -219,3 +219,25 @@ export const motionRefsOf = (source: string) => {
         : [],
   };
 };
+
+/**
+ * What a part file writes in `definePart({ implements })`, read without running it: `none` without one, `unreadable`
+ * when it is not a string literal or a `{ route: '…' }` literal.
+ */
+export type PartLinkSource =
+  { kind: 'none' } | { kind: 'component'; path: string } | { kind: 'route'; route: string } | { kind: 'unreadable' };
+
+export const partLinkOf = (source: string): PartLinkSource => {
+  const { definition } = definitionOf(source);
+  const link = definition ? propertyOf(definition, 'implements')?.initializer : undefined;
+
+  if (!link) return { kind: 'none' };
+
+  const path = literalOf(link);
+
+  if (path !== null) return { kind: 'component', path };
+
+  const route = ts.isObjectLiteralExpression(link) ? literalOf(propertyOf(link, 'route')?.initializer) : null;
+
+  return route === null ? { kind: 'unreadable' } : { kind: 'route', route };
+};

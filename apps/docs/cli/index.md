@@ -275,6 +275,16 @@ drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for lar
 `contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
 `contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
 
+A part names the code that builds it in `implements`: a component or element names the path of its
+`.component.ts` from the repository root, `implements: 'apps/app/src/app/tree-row.component.ts'`, and a page
+names its route, `implements: { route: '/system' }`. `et design check` fails with `IMPLEMENTS-MISSING` when the
+path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal or not the shape of its layer.
+
+After the checks, `et design check` lists the open points of each product: one line per part, with the total,
+for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged; no implements`. A point is a
+comment the user has not resolved (an answered one too), a sketch on the part that is not merged yet, or a part
+outside `foundations/` without `implements`. The list does not change the exit code.
+
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
 names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.

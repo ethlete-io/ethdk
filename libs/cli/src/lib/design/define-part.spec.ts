@@ -13,6 +13,16 @@ const source = {
 const button = definePart(source);
 
 describe('definePart', () => {
+  it('takes a component path or a route as implements, and keeps it on the part', () => {
+    expect(definePart({ ...source, implements: 'src/app/x.component.ts' }).implements).toBe('src/app/x.component.ts');
+    expect(definePart({ ...source, implements: { route: '/system' } }).implements).toEqual({ route: '/system' });
+
+    // @ts-expect-error a file that is no component
+    definePart({ ...source, implements: 'src/app/x.ts' });
+    // @ts-expect-error a route that does not start with a slash
+    definePart({ ...source, implements: { route: 'system' } });
+  });
+
   it('keeps the state names in the type of states', () => {
     const outline: Props = button.states['outline-wide'];
 

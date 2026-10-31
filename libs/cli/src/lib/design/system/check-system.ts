@@ -1,12 +1,15 @@
 import { relative } from 'path';
 import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
+import { openPointsText } from './open-points';
 import { Problem } from './problem';
+import { readOpenPoints } from './read-open-points';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
+import { badLinksOf } from './rules/implements';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
@@ -38,6 +41,7 @@ const RULES = [
   staleCommentsOf,
   staleNotesOf,
   badWidthsOf,
+  badLinksOf,
   unknownInteractionsOf,
   kitOutsidePagesOf,
   flowProblemsOf,
@@ -154,11 +158,19 @@ export const checkSystem = (options: CheckOptions) => {
   return code;
 };
 
-/**
- * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
- * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
- */
-export const checkSystemRendered = async (options: CheckOptions) => {
+const printOpenPoints = ({ target, config, products }: CheckOptions) => {
+  for (const name of products) {
+    const entry = config.products?.[name];
+
+    if (!entry) continue;
+
+    openPointsText(name, readOpenPoints(resolveProduct({ target, name, config: entry }))).forEach((line) =>
+      console.log(line),
+    );
+  }
+};
+
+const renderSystem = async (options: CheckOptions) => {
   const code = reportSystem({ ...options, warn: true });
 
   if (code !== 0) return code;
@@ -174,9 +186,20 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
   }
 
-  if ('issues' in rendered && rendered.issues.length > 0) return 1;
+  return 'issues' in rendered && rendered.issues.length > 0 ? 1 : 0;
+};
 
-  console.log('ok');
+/**
+ * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
+ * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
+ * It then lists the open points of each product's parts; they do not change the exit code.
+ */
+export const checkSystemRendered = async (options: CheckOptions) => {
+  const code = await renderSystem(options);
 
-  return 0;
+  printOpenPoints(options);
+
+  if (code === 0) console.log('ok');
+
+  return code;
 };
