@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { partFilesOf } from '../product';
 import { resolveProduct } from '../resolve-product';
-import { baselineOf, conflictsOf } from './baseline';
+import { baselineOf, conflictsOf, partHashOf } from './baseline';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-baseline-'));
@@ -84,6 +84,31 @@ describe('partHashOf with a product shared/ folder', () => {
     expect(after['elements/hero']).not.toBe(before['elements/hero']);
     expect(after['pages/home']).toBe(before['pages/home']);
     expect(after['foundations/tokens']).toBe(before['foundations/tokens']);
+  });
+});
+
+describe('partHashOf with generated files', () => {
+  it('skips a listed file and still hashes the others of the part', () => {
+    const target = acme();
+    const dir = productDir(target);
+    const part = join(dir, 'foundations/palette');
+    const generated = 'foundations/palette/palette.css';
+    const resolveWith = () => {
+      const product = resolveAcme(target);
+
+      return { ...product, config: { ...product.config, generatedFiles: [generated] } };
+    };
+
+    writeFileSync(join(part, 'palette.css'), ':root { --a: 1; }\n');
+
+    const before = partHashOf({ product: resolveWith(), dir: part });
+
+    writeFileSync(join(part, 'palette.css'), ':root { --a: 2; }\n');
+    expect(partHashOf({ product: resolveWith(), dir: part })).toBe(before);
+    expect(partHashOf({ product: resolveAcme(target), dir: part })).not.toBe(before);
+
+    writeFileSync(join(part, 'other.css'), ':root { --b: 1; }\n');
+    expect(partHashOf({ product: resolveWith(), dir: part })).not.toBe(before);
   });
 });
 

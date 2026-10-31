@@ -28,7 +28,7 @@ export const readMerged = (productDir: string): Record<string, string> => {
   }
 };
 
-type HashedProduct = Pick<ResolvedProduct, 'dir' | 'base'>;
+type HashedProduct = Pick<ResolvedProduct, 'dir' | 'base'> & Partial<Pick<ResolvedProduct, 'config'>>;
 
 /** Records the current content hash of each named part of the product as merged. */
 export const recordMerged = (options: { product: HashedProduct; parts: string[] }) => {
@@ -60,7 +60,7 @@ export const holderOf = (options: { product: HashedProduct; part: string }): Has
   const { product, part } = options;
 
   return !existsSync(resolve(product.dir, part)) && product.base && existsSync(resolve(product.base.dir, part))
-    ? { dir: product.base.dir, base: null }
+    ? { dir: product.base.dir, config: product.base.config, base: null }
     : product;
 };
 

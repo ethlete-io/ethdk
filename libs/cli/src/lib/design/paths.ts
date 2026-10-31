@@ -49,6 +49,8 @@ export type DesignProduct = DesignProject & {
   /** Inherited parts to omit; a product's own part with the same key remains visible. */
   hideBaseParts?: string[];
   generated?: DesignGeneratedStylesheets[];
+  /** Files, relative to the product folder, that a generator owns; a part hash skips them. */
+  generatedFiles?: string[];
 };
 
 /**

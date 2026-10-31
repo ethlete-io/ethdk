@@ -73,6 +73,10 @@ a product's own part with the same key remains available. `tokens` lists the par
 every frame loads, in order; omitted, it comes from the base, and without a base value it defaults
 to `["foundations/tokens"]`.
 
+`generatedFiles` lists files of the product folder that a generator writes, for example
+`["foundations/colors/colors.css"]`. The part hash skips them, so regenerating one does not make
+`design check` warn that the part changed outside a sketch. An edit to any other file of the part still does.
+
 `base` can also point into `node_modules`, at a design product an installed package ships:
 
 ```json
