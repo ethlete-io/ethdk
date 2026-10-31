@@ -244,3 +244,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   - render-check compared only one rule with the merged part, so old issues blocked unrelated sketches.
   - A multi-part sketch shows only its first target as its title (Q244).
   - The go exists only in the CLI; an agent cannot give it for Tom, and Studio has no action for it.
+  - App views build parts inline that should be their own components (tree-row, part-tree, zoom-chip, comment-pin,
+    canvas-viewport, the merge view; Q247), and some designed parts have no app code at all. The system must make a
+    part map to one component from the start, so a design part and its implementation cannot drift apart.
