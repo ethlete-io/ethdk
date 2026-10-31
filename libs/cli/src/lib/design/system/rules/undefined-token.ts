@@ -10,9 +10,12 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { importsOf } from '../ts-source';
 
 const RUNTIME_PREFIX = '--et-';
+const SDK_DESIGN_MODULE = /^@ethlete\/([\w-]+)\/design((?:\/[\w-]+)*)$/u;
+
+const repoRootOf = (source: ProductSource) => resolve(dirname(source.configFile), '../..');
 
 const stylesTextsOf = (source: ProductSource) => {
-  const root = resolve(dirname(source.configFile), '../..');
+  const root = repoRootOf(source);
 
   return (source.config.styles ?? [])
     .map((style) => resolve(root, style))
@@ -37,9 +40,43 @@ const stylesheetImportsOf = (css: string) => {
   return imports;
 };
 
+const relativeFileOf = (file: string, specifier: string) => {
+  const path = resolve(dirname(file), specifier.split('?')[0] ?? specifier);
+
+  return path.endsWith('.css') ? (existsSync(path) ? path : null) : sourceFileOf(path);
+};
+
+const sdkDesignFileOf = (root: string, specifier: string) => {
+  const match = SDK_DESIGN_MODULE.exec(specifier);
+
+  return match ? sourceFileOf(resolve(root, 'libs', match[1] ?? '', `design${match[2] ?? ''}`)) : null;
+};
+
+const sdkDesignFilesOf = (root: string, specifiers: string[]) => {
+  const files = new Map<string, string>();
+  const queue = specifiers.flatMap((specifier) => sdkDesignFileOf(root, specifier) ?? []);
+
+  for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
+    if (files.has(file) || !existsSync(file)) continue;
+
+    const source = readFileSync(file, 'utf8');
+    files.set(file, source);
+    const imports = file.endsWith('.css') ? stylesheetImportsOf(source) : importsOf(source);
+
+    for (const specifier of imports) {
+      const found = specifier.startsWith('.') ? relativeFileOf(file, specifier) : sdkDesignFileOf(root, specifier);
+
+      if (found && !files.has(found)) queue.push(found);
+    }
+  }
+
+  return files;
+};
+
 const reachableFilesOf = (product: ResolvedProduct & SharedDirs) => {
   const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
   const files = new Map<string, string>();
+  const packages = new Set<string>();
   const queue = product.parts.flatMap((part) => [part.file, ...(part.css ? [part.css] : [])]);
 
   for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
@@ -54,9 +91,9 @@ const reachableFilesOf = (product: ResolvedProduct & SharedDirs) => {
       let found: string | null = null;
 
       if (imported.kind === 'relative') {
-        const path = resolve(dirname(file), specifier.split('?')[0] ?? specifier);
-
-        found = path.endsWith('.css') ? (existsSync(path) ? path : null) : sourceFileOf(path);
+        found = relativeFileOf(file, specifier);
+      } else if (imported.kind === 'other') {
+        packages.add(specifier);
       } else if (imported.kind === 'shared') {
         found = sharedFileOf({ dirs: sharedDirsOf(product), path: imported.path });
       } else if (imported.kind === 'part') {
@@ -68,7 +105,7 @@ const reachableFilesOf = (product: ResolvedProduct & SharedDirs) => {
     }
   }
 
-  return files;
+  return { files, sdkDesign: sdkDesignFilesOf(repoRootOf(product), [...packages]) };
 };
 
 const folderTextsOf = (dir: string) =>
@@ -78,10 +115,10 @@ const folderTextsOf = (dir: string) =>
         .map((path) => readFileSync(resolve(dir, path), 'utf8'))
     : [];
 
-const definedTokensOf = (product: ResolvedProduct, files: Map<string, string>) => {
+const definedTokensOf = (product: ResolvedProduct, sources: string[]) => {
   const texts = [
     ...product.parts.flatMap((part) => [part.source, ...folderTextsOf(dirname(part.file))]),
-    ...files.values(),
+    ...sources,
     ...stylesTextsOf(product),
     ...(product.base ? stylesTextsOf(product.base) : []),
   ];
@@ -105,11 +142,11 @@ const stylesheetProblemsOf = (options: { file: string; css: string; defined: Set
 
 /**
  * Finds undefined tokens in part stylesheets and their reachable relative, shared and system imports.
- * Fallbacks and SDK runtime `--et-*` tokens are permitted.
+ * Fallbacks, SDK runtime `--et-*` tokens and the tokens of imported `@ethlete/<lib>/design` modules are permitted.
  */
 export const undefinedTokensOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
-  const files = reachableFilesOf(product);
-  const defined = definedTokensOf(product, files);
+  const { files, sdkDesign } = reachableFilesOf(product);
+  const defined = definedTokensOf(product, [...files.values(), ...sdkDesign.values()]);
 
   return [...files].flatMap(([file, source]) =>
     file.endsWith('.css') ? stylesheetProblemsOf({ file, css: source, defined }) : [],

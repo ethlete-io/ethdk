@@ -141,4 +141,34 @@ describe('undefinedTokensOf', () => {
       undefinedTokensOf({ ...product, sharedDir: join(target, 'shared') }).map((problem) => problem.message),
     ).toEqual(['var(--not-loaded) has no fallback, and no stylesheet of the product or its base defines --not-loaded']);
   });
+
+  it('reads the tokens an SDK design module defines in the stylesheets it imports, without checking them', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import { buttonStyles } from '@ethlete/components/design/button';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+    write(
+      target,
+      `${hero}/hero.css`,
+      '.hero { outline: var(--_et-focus-ring-width) solid var(--_et-focus-ring-color); gap: var(--missing); }',
+    );
+    write(
+      target,
+      'libs/components/design/button.ts',
+      "import focusRing from '../src/lib/focus-ring/focus-ring.css?inline';\nexport const buttonStyles = focusRing;\n",
+    );
+    write(
+      target,
+      'libs/components/src/lib/focus-ring/focus-ring.css',
+      '.et-focus-ring { --_et-focus-ring-width: 2px; --_et-focus-ring-color: red; margin: var(--lib-only); }',
+    );
+
+    expect(messagesOf(target)).toEqual([
+      'hero.css: var(--missing) has no fallback, and no stylesheet of the product or its base defines --missing',
+    ]);
+  });
 });
