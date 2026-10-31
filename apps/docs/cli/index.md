@@ -289,7 +289,9 @@ comment the user has not resolved (an answered one too), a sketch on the part th
 outside `foundations/` without `implements`. Outside `foundations/`, every ordered pair of a part's states needs a
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
-motion: `no looping motion in loading`. The list does not change the exit code.
+motion: `no looping motion in loading`. The list does not change the exit code. When a check fails, the render step does not run and
+`RENDER CHECK NOT RUN` names the rules that stopped it and how many of the problems are in the base, so the list has no
+contrasts and no missing states.
 
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding

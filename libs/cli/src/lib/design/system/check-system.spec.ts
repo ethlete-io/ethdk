@@ -163,7 +163,23 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
+    expect(withoutOpenPoints(lines)).toEqual([
+      expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
+      'RENDER CHECK NOT RUN - 1 problem above stop it (HARD-CODED-COLOUR 1); the open points list no contrasts or missing states until they are fixed',
+    ]);
+  }, 60_000);
+
+  it('says which problems stop the render, and how many of them are in the base', async () => {
+    const target = acme();
+    const lines = output();
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { color: #000; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines.filter((line) => line.startsWith('RENDER CHECK'))).toEqual([
+      'RENDER CHECK NOT RUN - 2 problems above stop it (HARD-CODED-COLOUR 2, 1 of them in base acme-base); the open points list no contrasts or missing states until they are fixed',
+    ]);
   }, 60_000);
 
   it('warns of a merged part that changed outside a sketch, and passes', async () => {
@@ -218,6 +234,7 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(withoutOpenPoints(lines)).toEqual([
       expect.stringMatching(/^TYPE-ERROR .*sketches\/elements-hero\/b: \n[^]*TS2322/),
+      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(TYPE-ERROR 1\)/),
     ]);
   }, 60_000);
 
@@ -336,6 +353,9 @@ describe('checkDesign', () => {
     );
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(withoutOpenPoints(lines)).toEqual([expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/)]);
+    expect(withoutOpenPoints(lines)).toEqual([
+      expect.stringMatching(/^IMPLEMENTS-MISSING .*hero\.ts: "src\/gone/),
+      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(IMPLEMENTS-MISSING 1\)/),
+    ]);
   }, 60_000);
 });

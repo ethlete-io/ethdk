@@ -1,5 +1,6 @@
 import { relative } from 'path';
 import { DesignConfig } from '../paths';
+import { ProductSource } from './base';
 import { importProblemsOf } from './imports';
 import { isMissingStateGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput, openPointsText } from './open-points';
@@ -93,10 +94,13 @@ const warnChangedOutsideSketch = (product: ResolvedProduct) => {
     );
 };
 
-const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
+type Blocking = { rule: string; base: string | null };
+
+const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: Blocking[] }) => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
+  let base: ProductSource | null = null;
   const report = (problem: Problem) => {
     const line = lineOf(target, problem);
 
@@ -108,6 +112,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
 
     console.error(line);
     failed = true;
+    options.blocking?.push({
+      rule: problem.rule,
+      base: base && !relative(base.dir, problem.file).startsWith('..') ? base.name : null,
+    });
   };
 
   for (const name of products) {
@@ -120,6 +128,8 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
     }
 
     const product = resolveProduct({ target, name, config: entry });
+
+    base = product.base;
 
     if (options.warn) warnChangedOutsideSketch(product);
 
@@ -219,10 +229,25 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
   }
 };
 
-const renderSystem = async (options: CheckOptions): Promise<{ code: number; rendered: RenderIssue[] | null }> => {
-  const code = reportSystem({ ...options, warn: true });
+const countsOf = (values: string[]) =>
+  [...new Set(values)].map((value) => `${value} ${values.filter((other) => other === value).length}`).join(', ');
 
-  if (code !== 0) return { code, rendered: null };
+const blockedRenderLineOf = (blocking: Blocking[]) => {
+  const inBase = blocking.flatMap((problem) => (problem.base ? [problem.base] : []));
+  const where = inBase.length > 0 ? `, ${inBase.length} of them in base ${[...new Set(inBase)].join(', ')}` : '';
+
+  return `RENDER CHECK NOT RUN - ${blocking.length} problem${blocking.length === 1 ? '' : 's'} above stop it (${countsOf(blocking.map((problem) => problem.rule))}${where}); the open points list no contrasts or missing states until they are fixed`;
+};
+
+const renderSystem = async (options: CheckOptions): Promise<{ code: number; rendered: RenderIssue[] | null }> => {
+  const blocking: Blocking[] = [];
+  const code = reportSystem({ ...options, warn: true, blocking });
+
+  if (code !== 0) {
+    if (blocking.length > 0) console.error(blockedRenderLineOf(blocking));
+
+    return { code, rendered: null };
+  }
 
   const rendered = await renderIssuesOf({
     ...options,
