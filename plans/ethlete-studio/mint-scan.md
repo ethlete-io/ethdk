@@ -43,11 +43,11 @@ Carets in 8 inputs: not a WCAG 1.4.11 boundary, low priority.
   1.4.11.
 
 Cost of a or b: mostly a token swap in lib CSS, a patch changeset for `@ethlete/components`, and docs, per part
-after the rule. An overview sketch (choice-field card, switch, checkbox, radio) shows a, b and c.
+after the rule. The overview sketch is sdk `components/accent-on-light` (a new part: checkbox, switch, radio
+group, segmented group, choice-field card; variants a, b, c = the three rules, builder pick a, dark identical). A
+merge records the rule as a part; a discard after Tom's answer is fine too.
 
 ## Separate (Q100)
 
 Hover and error borders drawn in primary: error must resolve through the semantic error theme. Recommendation: fix
 as a lib bug with a changeset, independent of the mint rule.
-
-The overview sketch is sdk `components/accent-on-light` (a new part; variants a, b, c = the three rules, builder pick a, dark identical). A merge records the rule as a part; a discard after Tom's answer is fine too.
