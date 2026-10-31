@@ -53,7 +53,7 @@ const withValues = (theme) => {
 
 const surfaceThemes = [
   ...[LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: true })),
-  ...[LIGHT_ELEVATED_SURFACE, DARK_ELEVATED_SURFACE].map(withValues),
+  ...[LIGHT_ELEVATED_SURFACE, DARK_ELEVATED_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: false })),
 ];
 const defaultColorThemes = [
   BRAND_THEME,

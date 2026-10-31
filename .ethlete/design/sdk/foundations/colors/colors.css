@@ -51,7 +51,6 @@
     --et-surface-interaction-disabled: 180 180 180;
   }
 
-  .et-surface--default-dark,
   .et-surface--dark-elevated {
     --et-surface-background: 38 38 38;
     --et-surface-color: 250 250 250;
