@@ -24,10 +24,14 @@ const PRIMARY_HOVER = 'rgb(var(--et-color-primary-hover, var(--et-color-primary)
 
 export type ColorScheme = 'light' | 'dark';
 
-/** Forces the page's `color-scheme`, so `light-dark()` resolves to the given side. */
+/** Forces the page's `color-scheme` and its `et-scheme--*` class, so `light-dark()` and the scheme's ink tones resolve to the given side. */
 export function setColorScheme(scope: Locator, scheme: ColorScheme): Promise<void> {
   return scope.evaluate((_, value) => {
-    document.documentElement.style.colorScheme = value;
+    const root = document.documentElement;
+
+    root.style.colorScheme = value;
+    root.classList.toggle('et-scheme--light', value === 'light');
+    root.classList.toggle('et-scheme--dark', value === 'dark');
   }, scheme);
 }
 

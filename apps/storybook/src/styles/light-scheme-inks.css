@@ -1,0 +1,9 @@
+@layer base {
+  :where(:root.et-scheme--light) .et-color--danger {
+    --et-color-primary-ink: 185 28 28;
+    --et-color-primary-ink-hover: 153 27 27;
+    --et-color-primary-ink-focus: 153 27 27;
+    --et-color-primary-ink-active: 127 29 29;
+    --et-color-primary-ink-disabled: 220 150 150;
+  }
+}

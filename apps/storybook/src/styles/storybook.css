@@ -6,6 +6,7 @@
 @import './tokens.css';
 @import './themes.css';
 @import './surface-themes.css';
+@import './light-scheme-inks.css';
 
 @source '../';
 
