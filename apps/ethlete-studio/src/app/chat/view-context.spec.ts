@@ -165,4 +165,18 @@ describe('the context line', () => {
     expect(chipOf(full)).toBe('Kit › components/button · state filled · hover');
     expect(preambleOf(full)).toBe('Studio view: product Kit, part components/button, selected state filled · hover.');
   });
+
+  it('leaves the frame out when it is the matrix of the part itself, and keeps another one', () => {
+    const own = { ...full, selection: 'components/button' };
+
+    expect(chipOf(own)).toBe('Kit › components/button · state filled · hover');
+    expect(preambleOf(own)).toBe('Studio view: product Kit, part components/button, selected state filled · hover.');
+
+    const other = { ...full, selection: 'pages/system · desktop (context)' };
+
+    expect(chipOf(other)).toBe(
+      'Kit › components/button · frame pages/system · desktop (context) · state filled · hover',
+    );
+    expect(preambleOf(other)).toContain('selected frame pages/system · desktop (context), selected state');
+  });
 });

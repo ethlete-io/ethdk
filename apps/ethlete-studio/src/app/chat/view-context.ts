@@ -127,6 +127,16 @@ export const lookedAtVariantOf = (options: {
 const pickedOf = (context: ViewContext) =>
   context.picked !== null && context.picked !== context.variant ? `picked ${context.picked}` : null;
 
+const framePartOf = (context: ViewContext) => {
+  const { selection, part } = context;
+
+  if (selection === null) return null;
+  if (part !== null && (selection === part || selection.startsWith(`${part} ·`) || selection.startsWith(`${part} (`)))
+    return null;
+
+  return selection;
+};
+
 /** The chip line: `Kit › components/button › sketch · variant b · frame hover`. */
 export const chipOf = (context: ViewContext) => {
   const path = [context.product, context.part, context.sketch !== null ? 'sketch' : null].filter(
@@ -135,7 +145,7 @@ export const chipOf = (context: ViewContext) => {
   const rest = [
     context.variant !== null ? `variant ${context.variant}` : null,
     pickedOf(context),
-    context.selection !== null ? `frame ${context.selection}` : null,
+    framePartOf(context) !== null ? `frame ${framePartOf(context)}` : null,
     context.state !== null ? `state ${context.state}` : null,
   ].filter((item) => item !== null);
 
@@ -154,7 +164,7 @@ export const preambleOf = (context: ViewContext) => {
       : null,
     context.variant !== null ? `variant ${context.variant}` : null,
     pickedOf(context),
-    context.selection !== null ? `selected frame ${context.selection}` : null,
+    framePartOf(context) !== null ? `selected frame ${framePartOf(context)}` : null,
     context.state !== null ? `selected state ${context.state}` : null,
   ].filter((item) => item !== null);
 
