@@ -19,24 +19,27 @@ import {
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
-const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-surface-border bg-surface"></span>';
+const ghostBox =
+  '<span class="block w-15 h-10 rounded-sm outline outline-(--et-surface-border-solid) et-surface--dark bg-(--et-surface-background-solid)"></span>';
 
 const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
   <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
     <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
-    <p class="m-0 text-text font-ui-strong text-ui-md">Noch keine Teile</p>
-    <p class="m-0 text-text-muted">
+    <p class="m-0 text-(--et-surface-color-solid) font-ui-strong text-ui-md">Noch keine Teile</p>
+    <p class="m-0 text-(--et-surface-color-muted-solid)">
       Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
       zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
     </p>
-    <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-surface-sunken text-text text-ui-sm">
+    <p
+      class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-(--et-surface-background-solid) text-(--et-surface-color-solid) text-ui-sm"
+    >
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
     ${copy.body}
   </div>
 </div>`;
 
-const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-text-muted' });
+const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
 
 type Filter = 'all' | PointGroup['kind'];
 
@@ -50,13 +53,18 @@ const groupRows = ({ short, icon, lines }: PointGroup, max: number) => {
       .map(
         ({ text, detail }) =>
           html`<div class="contents">
-            <span class="flex items-center gap-space-2 text-text-muted">${kindIcon(icon)}${short}</span>
-            <span class="truncate text-text">${text}</span>
-            <span class="font-code text-text-muted text-ui-xs">${detail}</span>
+            <span class="flex items-center gap-space-2 text-(--et-surface-color-muted-solid)"
+              >${kindIcon(icon)}${short}</span
+            >
+            <span class="truncate text-(--et-surface-color-solid)">${text}</span>
+            <span class="font-code text-(--et-surface-color-muted-solid) text-ui-xs">${detail}</span>
           </div>`,
       )
       .join('') +
-    (more > 0 ? html`<span></span><span class="col-span-2 text-text-muted">+${more} weitere ${short}</span>` : '')
+    (more > 0
+      ? html`<span></span
+          ><span class="col-span-2 text-(--et-surface-color-muted-solid)">+${more} weitere ${short}</span>`
+      : '')
   );
 };
 
@@ -73,22 +81,24 @@ const drawer = (open: PartOpenPoints, filter: Filter) => {
       >
         ${shown.map((group) => groupRows(group, filter === 'all' ? 3 : 8)).join('')}
       </div>`
-    : html`<div class="flex-1 flex items-center justify-center gap-space-2 text-text-muted">
+    : html`<div class="flex-1 flex items-center justify-center gap-space-2 text-(--et-surface-color-muted-solid)">
         ${checkIcon()}<span>Nichts offen. Jeder Zustand ist gezeichnet, verknüpft und besprochen.</span>
       </div>`;
   return html`<section
-    class="absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left)+var(--space-3))] h-72 flex flex-col overflow-hidden rounded-control-lg border border-surface-border bg-surface text-ui-sm"
+    class="absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left)+var(--space-3))] h-72 flex flex-col overflow-hidden rounded-control-lg border border-(--et-surface-border-solid) et-surface--dark bg-(--et-surface-background-solid) text-ui-sm"
   >
-    <header class="flex items-center gap-space-3 h-12 flex-none px-space-4 border-b border-surface-border">
-      <span class="text-text font-ui-strong">Offen</span>
+    <header class="flex items-center gap-space-3 h-12 flex-none px-space-4 border-b border-(--et-surface-border-solid)">
+      <span class="text-(--et-surface-color-solid) font-ui-strong">Offen</span>
       ${groups.length ? chips : ''}
-      <span class="ms-auto font-code text-text-muted text-ui-xs">${open.part}</span>
+      <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
     </header>
     ${body}
   </section>`;
 };
 
-const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-sm">Noch keine Teile.</p>`;
+const emptySide = html`<p class="px-space-3 py-space-2 text-(--et-surface-color-muted-solid) text-ui-sm">
+  Noch keine Teile.
+</p>`;
 
 export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?: boolean; filter?: Filter }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
