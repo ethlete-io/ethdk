@@ -230,3 +230,17 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   part; Tom sees each in Studio and merges. The MVP measure is `design check --product studio --complete` from now on.
 - **Go in advance (Tom, 2026-11-01):** Tom gave the go for the six Q247-linked parts in advance in chat; the grill
   session ran `design go ... --by tom` for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, pages/merge.
+- **System lessons from the MVP push (Tom, 2026-11-01), after the MVP:** Tom wants the system fixed so that these
+  cannot happen again. Findings from 2026-10-31/11-01:
+  - Plain `design check` hid missing states and contrast findings that only `design ready` draws; one measure must
+    show every blocker.
+  - Button colours live twice: in the SDK design part (`.ethlete/design/sdk/components/button`) and in
+    `libs/components`. A sketch merge changed one, the lib port the other, and Studio still drew the old colour.
+  - Forced interactions (hover, active) were applied to disabled states ("disabled-active").
+  - A design server started before a `@ethlete/cli` update kept the old routes; Studio showed "has no system view"
+    instead of "restart the server".
+  - Studio wrote `inventory.json` in a format Prettier rejects, which broke the next push.
+  - Browser-backed cli specs were skipped in CI without a signal.
+  - render-check compared only one rule with the merged part, so old issues blocked unrelated sketches.
+  - A multi-part sketch shows only its first target as its title (Q244).
+  - The go exists only in the CLI; an agent cannot give it for Tom, and Studio has no action for it.
