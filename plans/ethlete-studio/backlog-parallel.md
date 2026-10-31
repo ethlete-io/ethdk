@@ -982,3 +982,13 @@ The agent does not resolve these alone: a missed design or an invention becomes 
 the lead), a workaround becomes a friction fix to the tool or the SDK, and a too-big component becomes a split in
 the design first. Where the system can detect one of these (for example a compare diff, or a class or element with
 no counterpart in the design), the go/task/compare flow reports it itself.
+
+### Surface hover and open-point list decisions (Tom, 2026-10-31, Q190-Q191)
+
+- **Q190 surface hover token:** add `--surface-hover` to `.ethlete/design/studio/foundations/colors/colors.css` as
+  `color-mix(in oklch, var(--text) 6%, transparent)`, plus the Tailwind token `--color-surface-hover`. Pressed stays
+  at 10 %. Hover of a plain surface uses `hover:bg-surface-hover`, not `hover:bg-surface-raised` (raised means
+  height, not interaction).
+- **Q191 open-point list in Studio:** 33 sketches where Studio shows the open-point list; Tom merges the sketch. It
+  is built after the pilot, through go/task/compare. Until then the CLI and `GET /__design/open-points` show the
+  list. No UI for it before the merged sketch.
