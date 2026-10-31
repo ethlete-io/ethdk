@@ -137,7 +137,10 @@ const row = (c: Comment) => {
   const selected = c.id === SELECTED;
   const strong = c.resolved ? 'text-et-surface-muted' : 'text-et-surface';
 
-  return html`<div class="flex gap-space-2 p-space-2 rounded-control-md ${selected ? 'bg-et-theme/20' : ''}">
+  return html`<div
+    class="flex gap-space-2 p-space-2 rounded-control-md cursor-pointer ${selected ? 'bg-et-theme/20' : ''}"
+    data-et-control="row"
+  >
     <span
       class="ib-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
       data-et-auto-surface
@@ -208,6 +211,7 @@ export const inbox = () =>
       comment: { kind: 'field' as const, part: 'components/textarea' },
       send: { kind: 'button' as const, part: 'components/button' },
       resolved: { kind: 'button' as const, part: 'components/switch' },
+      row: { kind: 'row' as const, input: ['pointer' as const] },
     },
     render: async ({ showResolved, openOn, draft, entry }) => {
       const controls = await ng(
