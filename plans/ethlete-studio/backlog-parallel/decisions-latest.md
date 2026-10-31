@@ -240,6 +240,10 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
     show every blocker.
   - Button colours live twice: in the SDK design part (`.ethlete/design/sdk/components/button`) and in
     `libs/components`. A sketch merge changed one, the lib port the other, and Studio still drew the old colour.
+  - The design renderer loads `@ethlete/*` from `dist/libs` and never says when that build is older than the lib
+    sources: the canvas-frames "Save" contrast finding (3.81:1) came from a `dist/libs/components` built before the
+    lib fix 7385e470f. `design check` and `design ready` should warn on a stale dist. The part's filled-active rule
+    also lacks the lib's `:not([disabled],[aria-disabled='true'])`, one more case of the button colours living twice.
   - Forced interactions (hover, active) were applied to disabled states ("disabled-active").
   - A design server started before a `@ethlete/cli` update kept the old routes; Studio showed "has no system view"
     instead of "restart the server".
