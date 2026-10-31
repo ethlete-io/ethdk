@@ -4,8 +4,28 @@ import { expectFieldFocusVisible, openStory, pressKey, tap } from '../support';
 const DEFAULT_ID = 'components-forms-textarea--default';
 const FIXED_MAX_ROWS_ID = 'components-forms-textarea--fixed-with-max-rows';
 const MANUAL_RESIZE_ID = 'components-forms-textarea--manual-resize';
+const INPUT_DEFAULT_ID = 'components-forms-input--default';
+const INLINE_BOX = { appearance: 'box', labelMode: 'inline' };
 
 const clientHeight = (field: Locator): Promise<number> => field.evaluate((el) => el.clientHeight);
+
+const frameMetrics = (root: Locator) =>
+  root.locator('et-form-field').evaluate((field) => {
+    const part = (selector: string) => {
+      const el = field.querySelector(selector);
+      if (!el) throw new Error(`${selector} is missing`);
+      return el;
+    };
+    const frame = part('.et-form-field-control-frame').getBoundingClientRect();
+    const labelText = document.createRange();
+    labelText.selectNodeContents(part('.et-form-field-label-area--inline'));
+
+    return {
+      frameHeight: frame.height,
+      textTop: part('input, textarea').getBoundingClientRect().top - frame.top,
+      labelTop: labelText.getBoundingClientRect().top - frame.top,
+    };
+  });
 
 test.describe('textarea / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
@@ -68,6 +88,31 @@ test.describe('textarea / keyboard', () => {
     await field.pressSequentially('line two');
 
     await expect(field).toHaveValue('line one\nline two');
+  });
+});
+
+test.describe('textarea / layout', () => {
+  test('a one-row box textarea with an inline label lines up with the input, empty and filled', async ({ page }) => {
+    const input = await openStory(page, INPUT_DEFAULT_ID, { args: INLINE_BOX });
+    const inputEmpty = await frameMetrics(input);
+    await input.locator('.et-input-native').fill('Hello');
+    const inputFilled = await frameMetrics(input);
+
+    const textarea = await openStory(page, DEFAULT_ID, { args: { ...INLINE_BOX, rows: 1 } });
+    expect(await frameMetrics(textarea)).toEqual(inputEmpty);
+    await textarea.locator('.et-textarea-native').fill('Hello');
+    expect(await frameMetrics(textarea)).toEqual(inputFilled);
+  });
+
+  test('a box textarea with an inline label keeps its first line beside the label as it grows', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_ID, { args: { ...INLINE_BOX, rows: 1 } });
+    const field = root.locator('.et-textarea-native');
+    const lineHeight = await field.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+    const one = await frameMetrics(root);
+    await field.fill('one\ntwo');
+    const two = await frameMetrics(root);
+
+    expect(two).toEqual({ ...one, frameHeight: one.frameHeight + lineHeight });
   });
 });
 

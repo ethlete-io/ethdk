@@ -21,6 +21,10 @@
         color: color-mix(in srgb, currentColor 46%, transparent);
       }
 
+      &[rows='1']::placeholder {
+        white-space: pre;
+      }
+
       &[data-resize='none'] {
         resize: none;
       }

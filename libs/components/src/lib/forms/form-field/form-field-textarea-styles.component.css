@@ -4,15 +4,34 @@
       align-items: stretch;
     }
 
-    &[data-appearance='box']:not([data-label-mode='inline'], [data-label-mode='floating-inside'])
-      .et-form-field-control-frame {
-      padding-block: calc(
+    &[data-appearance='box']:not([data-label-mode='floating-inside']) {
+      --_et-form-field-textarea-font-size: var(--et-form-field-control-font-size);
+      --_et-form-field-textarea-padding-block: max(
+        var(--et-form-field-control-padding-block),
         (
-            var(--et-form-field-control-min-height) - var(--et-form-field-control-font-size) *
+            var(--et-form-field-control-min-height) - var(--_et-form-field-textarea-font-size) *
               var(--et-form-field-control-line-height) - 2 * var(--et-form-field-control-border-width)
           ) /
           2
       );
+
+      .et-form-field-control-frame {
+        padding-block: var(--_et-form-field-textarea-padding-block);
+      }
+
+      &[data-label-mode='inline'] .et-form-field-label-area--inline {
+        margin-block: calc(var(--_et-form-field-textarea-padding-block) * -1);
+        padding-block-start: calc(
+          var(--_et-form-field-textarea-padding-block) +
+            (var(--_et-form-field-textarea-font-size) - var(--et-form-field-control-font-size)) *
+            var(--et-form-field-control-line-height) / 2
+        );
+      }
+
+      /* Mirrors the 16px floor form-field.component.css puts on a coarse-pointer textarea. */
+      @media (pointer: coarse) {
+        --_et-form-field-textarea-font-size: max(var(--et-form-field-control-font-size), 16px);
+      }
     }
 
     .et-form-field-control-area,
