@@ -71,4 +71,4 @@ export const collapsed = (lines: PointLine[], max: number): { shown: PointLine[]
   more: Math.max(0, lines.length - max),
 });
 
-export const checkIcon = (size = 16) => icon('check', { size, cls: 'flex-none text-accent-text' });
+export const checkIcon = (size = 16) => icon('check', { size, cls: 'flex-none text-et-theme-ink' });
