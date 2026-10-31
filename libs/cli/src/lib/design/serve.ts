@@ -1,9 +1,9 @@
 import { createHash } from 'crypto';
-import { existsSync, readFileSync } from 'fs';
+import { Dirent, existsSync, readdirSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
-import { basename, dirname, relative, resolve, sep } from 'path';
+import { basename, dirname, join, relative, resolve, sep } from 'path';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { markTransferred, TRANSFER_PATH } from './legacy';
@@ -71,7 +71,17 @@ import { partMarksTransform } from './part-marks';
 import { createGeneratedStylesheets } from './generated-stylesheets';
 import { sketchStylesheetsPlugin } from './sketch-stylesheets';
 import { createDrawLedger, QUEUE_PATH } from './draw-ledger';
-import { createPartShooter, dependentIdsOf, SHOT_PATH, StylesheetImports, stylesheetImportsPlugin } from './shot';
+import {
+  createPartShooter,
+  dependencyFilesOf,
+  dependentIdsOf,
+  ImportingModule,
+  SHOT_PATH,
+  StylesheetImports,
+  stylesheetImportsPlugin,
+} from './shot';
+import { createShotStore, StoredAddress } from './shot-store';
+import { sharedDirsOf } from './system/imports';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
@@ -370,16 +380,95 @@ const withAssetUrls = (system: SystemModules) => {
   return (code: string, id: string) => system.withAssetUrls(code, id) ?? marks(code, id);
 };
 
+const filesUnder = (dir: string) =>
+  existsSync(dir)
+    ? (readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[])
+        .filter((entry) => entry.isFile())
+        .map((entry) => relative(dir, join(entry.parentPath, entry.name)))
+        .sort()
+    : [];
+
+const shotStoreOf = (options: {
+  target: string;
+  config: DesignConfig;
+  system: SystemModules;
+  stylesheetImports: StylesheetImports;
+  dir: string;
+  salt: string;
+  moduleById: (id: string) => ImportingModule | undefined;
+}) => {
+  const { target, config, system, stylesheetImports, dir, salt, moduleById } = options;
+  const drawnSystemsOf = (address: StoredAddress) => [
+    ...new Map(
+      [address.sketch, address.props].map((sketch) => [JSON.stringify(sketch ?? null), sketch ?? null]),
+    ).values(),
+  ];
+
+  return createShotStore({
+    dir,
+    salt,
+    inputsOf: (address) => {
+      const { product, part } = address;
+      const entry = config.products?.[product];
+      const sketches = drawnSystemsOf(address);
+      const roots = sketches.map((sketch) => {
+        const file = system.partOf({ product, part, sketch })?.file;
+
+        return file ? moduleById(productModuleIdOf({ file, product, sketch })) : undefined;
+      });
+
+      if (!entry || roots.some((root) => !root)) return null;
+
+      const styles = (entry.styles ?? []).flatMap((style) =>
+        [null, ...sketches].flatMap(
+          (sketch) => moduleById(productModuleIdOf({ file: resolve(target, style), product, sketch })) ?? [],
+        ),
+      );
+      const read = sketches.flatMap((sketch) => [
+        ...system.tokenStylesheetsOf({ product, sketch }),
+        ...system.replacedStylesheetsOf({ product, sketch }).values(),
+        ...(entry.generated ?? []).flatMap(
+          (generated) => system.partOf({ product, part: generated.part, sketch })?.css ?? [],
+        ),
+      ]);
+
+      return [
+        ...dependencyFilesOf([...roots.flatMap((root) => root ?? []), ...styles], stylesheetImports),
+        ...read,
+        configPathOf(target),
+        resolve(target, 'tsconfig.base.json'),
+        ...(entry.head ? [resolve(target, entry.head)] : []),
+      ];
+    },
+    scopeOf: (address) =>
+      JSON.stringify(
+        drawnSystemsOf(address).map((sketch) => {
+          const drawn = system.drawnOf(address.product, sketch);
+
+          return (
+            drawn && {
+              parts: drawn.parts.map((part) => [partKeyOf(part), part.file, part.css]),
+              fixtures: drawn.fixtures,
+              shared: sharedDirsOf(drawn).map((shared) => [shared, filesUnder(shared)]),
+            }
+          );
+        }),
+      ),
+  });
+};
+
 const designExplore = ({
   target,
   config,
   system,
   stylesheetImports,
+  shotCacheDir,
 }: {
   target: string;
   config: DesignConfig;
   system: SystemModules;
   stylesheetImports: StylesheetImports;
+  shotCacheDir: string | null;
 }) => {
   const renderer = createRenderer({ target, config });
   const transform = withAssetUrls(system);
@@ -457,6 +546,19 @@ const designExplore = ({
         base,
         ledger,
         system,
+        ...(shotCacheDir
+          ? {
+              store: shotStoreOf({
+                target,
+                config,
+                system,
+                stylesheetImports,
+                dir: shotCacheDir,
+                salt: `${stamp.version} ${stamp.build}`,
+                moduleById: (id) => vite.moduleGraph.getModuleById(id),
+              }),
+            }
+          : {}),
         statesOf: async ({ product, part, sketch }) => {
           const file = system.partOf({ product, part, sketch })?.file;
 
@@ -883,7 +985,15 @@ export const createDesignServer = async (options: {
     optimizeDeps: {
       exclude: ['@ethlete/components', '@ethlete/core', '@design-explore', DESIGN_SYSTEM_SPECIFIER, KIT_SPECIFIER],
     },
-    plugins: [designExplore({ target, config, system, stylesheetImports })],
+    plugins: [
+      designExplore({
+        target,
+        config,
+        system,
+        stylesheetImports,
+        shotCacheDir: listen && !own ? viteCacheOf(target, 'shots') : null,
+      }),
+    ],
     ...(listen ? {} : { appType: 'custom' as const }),
     ...(listen && !own ? {} : { logLevel: 'error' as const }),
     server: {

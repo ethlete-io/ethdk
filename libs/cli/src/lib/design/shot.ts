@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
+import { isAbsolute } from 'path';
 import { Plugin } from 'postcss';
 import { chromiumOf } from './browser';
 import { ChangedBox, changedBoxesOf } from './contact-sheet';
@@ -26,6 +27,7 @@ import {
 } from './thumb';
 import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
 import { createWarmPages } from './warm-pages';
+import { ShotStore, StoredAddress } from './shot-store';
 
 export const SHOT_PATH = '/__design/shot';
 
@@ -101,6 +103,8 @@ type Frame = {
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
 
+export type ImportingModule = { file?: string | null; importedModules: Set<ImportingModule> };
+
 /** An element a part render marked as its root, in CSS pixels from the top left of the picture. */
 export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
 
@@ -146,7 +150,11 @@ export const stylesheetImportsPlugin = (imports: StylesheetImports): Plugin => (
   },
 });
 
-const isTailwindSourceOf = (options: { imports: StylesheetImports; module: GraphModule; importer: GraphModule }) => {
+const isTailwindSourceOf = (options: {
+  imports: StylesheetImports;
+  module: { file?: string | null };
+  importer: { file?: string | null };
+}) => {
   const inlined = options.importer.file ? options.imports.get(options.importer.file) : undefined;
 
   return !!inlined && !!options.module.file && !inlined.has(options.module.file);
@@ -168,6 +176,27 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>, imports: Styleshe
   }
 
   return [...seen].flatMap((module) => (module.id ? [module.id] : []));
+};
+
+/**
+ * The files of the given modules and of every module they import, directly or not: the reverse of
+ * `dependentIdsOf`, so a Tailwind source a stylesheet only scans is not among them.
+ */
+export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: StylesheetImports = new Map()) => {
+  const seen = new Set<ImportingModule>();
+  const open = [...modules];
+
+  for (let next = open.pop(); next; next = open.pop()) {
+    if (seen.has(next)) continue;
+
+    seen.add(next);
+
+    const importer = next;
+
+    open.push(...[...next.importedModules].filter((module) => !isTailwindSourceOf({ imports, module, importer })));
+  }
+
+  return [...seen].flatMap((module) => (module.file && isAbsolute(module.file) ? [module.file] : []));
 };
 
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
@@ -239,8 +268,9 @@ export const createPartShooter = (options: {
   chromiumOf?: typeof chromiumOf;
   ledger?: DrawLedger;
   statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
+  store?: ShotStore;
 }) => {
-  const { system, statesOf } = options;
+  const { system, statesOf, store } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
   const warmPages = createWarmPages();
@@ -345,6 +375,7 @@ export const createPartShooter = (options: {
     priority: DrawPriority;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
+    address?: StoredAddress;
   }) => {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
@@ -357,6 +388,16 @@ export const createPartShooter = (options: {
       if (options.priority === 'high') drawQueue.hurry(kept.shot);
 
       return kept.shot;
+    }
+
+    const stored = !options.fresh && options.address ? store?.read(key, options.address) : null;
+
+    if (stored) {
+      const shot = Promise.resolve(stored);
+
+      cache.set(key, { drawn: options.drawn, shot });
+
+      return shot;
     }
 
     if (theme.surface) options.search.set('surface', theme.surface);
@@ -372,8 +413,13 @@ export const createPartShooter = (options: {
         : draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme });
     }, options.priority);
 
+    const { address } = options;
+
     cache.set(key, { drawn: options.drawn, shot });
-    shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
+    shot.then(
+      (picture) => address && cache.get(key)?.shot === shot && store?.write(key, { address, picture }),
+      () => cache.get(key)?.shot === shot && cache.delete(key),
+    );
 
     return shot;
   };
@@ -388,18 +434,20 @@ export const createPartShooter = (options: {
 
       return now instanceof ThumbMissingError ? now : null;
     };
+    const { product, part, sketch, props } = options;
+    const address = { product, part, sketch, props: props ?? null };
     const draw = () =>
-      cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh, gone });
+      cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh, gone, address });
 
     if (!statesOf) return draw();
 
-    const { product, part, state } = options;
-    const sketch = options.props ?? options.sketch;
+    const { state } = options;
+    const statesFrom = props ?? sketch;
 
-    return statesOf({ product, part, sketch }).then((names) => {
+    return statesOf({ product, part, sketch: statesFrom }).then((names) => {
       if (!names || names.includes(state)) return draw();
 
-      const holder = sketch ? `variant "${sketch.variant}" of ${sketch.target}` : `the merged part ${part}`;
+      const holder = statesFrom ? `variant "${statesFrom.variant}" of ${statesFrom.target}` : `the merged part ${part}`;
 
       throw new ThumbMissingError(
         `design-explore: state "${state}" is not in ${holder} - it has: ${names.join(', ') || 'no states'}`,
@@ -644,7 +692,10 @@ export const createPartShooter = (options: {
     /** Drops the pictures of the parts `change` redraws. */
     forget: (change: PartsChange) => {
       for (const [key, { drawn }] of cache) {
-        if ('part' in drawn && redraws(change, drawn.part)) cache.delete(key);
+        if ('part' in drawn && redraws(change, drawn.part)) {
+          cache.delete(key);
+          store?.drop(key);
+        }
       }
       for (const [key, { drawn }] of motions) {
         if ('part' in drawn && redraws(change, drawn.part)) motions.delete(key);
@@ -657,6 +708,9 @@ export const createPartShooter = (options: {
       }
     },
     clear: () => {
+      for (const [key, { drawn }] of cache) {
+        if ('part' in drawn) store?.drop(key);
+      }
       cache.clear();
       motions.clear();
     },
