@@ -433,5 +433,19 @@
     "note": "Q88 (Tom, global ring rule) wins over the merged tab-group ring: light-dark(ink, primary); lead call Q96 (ethlete-sdk-76)",
     "hash": "965ae70a1a173a15",
     "at": "2026-10-31T15:30:23.013Z"
+  },
+  {
+    "part": "components/button",
+    "by": "claude-opus-5-5",
+    "note": "Q88 ring light-dark(ink, primary) and Q99a (filled .et-button edge only inside card, dialog, empty-state, pagination current page, query-error, stream); lead call Q96 (ethlete-sdk-76)",
+    "hash": "a4ba2b7256062235",
+    "at": "2026-10-31T15:36:20.052Z"
+  },
+  {
+    "part": "components/switch",
+    "by": "claude-opus-5-5",
+    "note": "Q88 ring light-dark(ink, primary); lead call Q96 (ethlete-sdk-76)",
+    "hash": "c3640b8f0e66c93c",
+    "at": "2026-10-31T15:36:20.256Z"
   }
 ]

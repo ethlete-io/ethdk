@@ -1,9 +1,8 @@
 @layer components {
   .et-button {
-    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+    --_et-focus-ring-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
   }
 
-  .et-button:where([data-variant='filled']),
   .et-icon-button:where([data-variant='filled']) {
     --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
 

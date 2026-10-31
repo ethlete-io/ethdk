@@ -16,7 +16,7 @@
   }
 
   et-switch:focus-visible .et-switch-track {
-    outline-color: var(--et-theme-color-ink-solid);
+    outline-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
   }
 
   et-switch[aria-checked='true'] .et-switch-track {
