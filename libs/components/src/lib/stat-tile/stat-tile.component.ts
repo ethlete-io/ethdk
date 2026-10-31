@@ -1,6 +1,6 @@
-import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, isDevMode, ViewEncapsulation } from '@angular/core';
 import { injectLocale, mountVisuallyHidden, ProvideColorDirective } from '@ethlete/core';
-import { injectSemanticThemes } from '../internals/semantic-theme';
+import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import { SkeletonComponent, SkeletonItemComponent } from '../skeleton';
 import { formatStatTileNumber, statTileDirection, statTileSentiment } from './stat-tile-format';
 import { injectStatTileLabels } from './stat-tile-labels';
@@ -27,9 +27,9 @@ import { StatTileFormat, StatTileGoodDirection } from './stat-tile.types';
   },
 })
 export class StatTileComponent {
-  private semanticThemes = injectSemanticThemes();
+  private successTheme = injectOptionalSemanticTheme('success');
+  private errorTheme = injectOptionalSemanticTheme('error');
   private locale = injectLocale();
-
   protected labels = injectStatTileLabels();
 
   public label = input.required<string>();
@@ -57,6 +57,8 @@ export class StatTileComponent {
 
   /** Replaces the value and delta with a skeleton. The label stays. */
   public loading = input(false, { transform: booleanAttribute });
+
+  private hasWarnedMissingTheme = false;
 
   protected formattedValue = computed(() => {
     const value = this.value();
@@ -88,7 +90,17 @@ export class StatTileComponent {
 
     if (!sentiment || sentiment === 'neutral') return undefined;
 
-    return this.semanticThemes[sentiment === 'good' ? 'success' : 'error']();
+    const type = sentiment === 'good' ? 'success' : 'error';
+    const theme = (type === 'success' ? this.successTheme : this.errorTheme)();
+
+    if (!theme && isDevMode() && !this.hasWarnedMissingTheme) {
+      this.hasWarnedMissingTheme = true;
+      console.warn(
+        `[et-stat-tile] The app registers no color theme of type "${type}", so the delta keeps the inherited theme.`,
+      );
+    }
+
+    return theme ?? undefined;
   });
 
   protected directionLabel = computed(() => {

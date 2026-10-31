@@ -136,4 +136,26 @@ describe('StatTileComponent', () => {
     expect(host.hasAttribute('aria-busy')).toBe(false);
     expect(text(host.querySelector('.et-stat-tile-value'))).toBe('1,284');
   });
+
+  it('keeps the inherited theme and warns once when the app registers no theme for the delta sentiment', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    TestBed.configureTestingModule({
+      providers: [provideColorThemesWithTailwind4(COLOR_THEMES.filter((t) => t.type !== 'success'))],
+    });
+
+    const fixture = TestBed.createComponent(StatTileHostComponent);
+    fixture.componentInstance.delta.set(0.124);
+    fixture.detectChanges();
+    fixture.componentInstance.delta.set(0.2);
+    fixture.detectChanges();
+
+    const delta = fixture.nativeElement.querySelector('.et-stat-tile-delta') as HTMLElement;
+
+    expect(delta.dataset['sentiment']).toBe('good');
+    expect(delta.style.getPropertyValue('--et-theme-color-default')).toBe('');
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    warn.mockRestore();
+  });
 });
