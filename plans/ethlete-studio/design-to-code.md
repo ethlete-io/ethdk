@@ -57,6 +57,12 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   user. A state that shows ongoing work (loading, pending, indeterminate progress, a spinner) needs a looping motion
   inside that state, plus the motions into it and out of it (Tom). How a part declares a looping motion is a builder
   call.
+- Q168 every state change is a motion (Tom, 2026-10-31), replaces the pair list of Q167: every ordered pair of a
+  part's states needs a motion, including combined states (hover -> hover + disabled while the pointer stays), an
+  element that mounts or unmounts (select body, dialog open and close), and a move inside the part (a tab underline
+  that follows the active tab by FLIP, a sidebar that morphs into a detailed state on hover and back on exit). A part
+  may mark a pair as unreachable, with a reason; only such a pair gives no open point. Focus stays optional. The
+  looping motion for ongoing work and "a colour change is enough" from Q167 stay.
 
 ## Not decided
 
