@@ -175,3 +175,5 @@
 - Gap: `design ready` also counts missing states, plain `design check` does not. Still open after Tom's go for the
   six linked parts: tree-row (3 states), part-tree (1), shell-project-option (1), shell-main (12), canvas-frames
   (4 states + 1 contrast). Sent to the grill with the go command for Tom and a recommendation.
+- In progress (Q249): one sketch round per part for the missing states, parallel subagents: tree-row, part-tree,
+  shell-project-option, shell-main, canvas-frames (+ default contrast "Save" 3.81:1). Not merged; Tom picks.
