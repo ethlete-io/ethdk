@@ -109,6 +109,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-breadcrumb-item',
   'et-breadcrumb-list',
   'et-breadcrumb-loading',
+  'et-breadcrumb-outlet',
   'et-breadcrumb-overflow',
   'et-breadcrumb-overflow-list',
   'et-breadcrumb-overflow-trigger',
