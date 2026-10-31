@@ -781,6 +781,10 @@ goes. Gaps: no part source path (`ListedPart` has none); the variant is the pick
 Verified: 425 app tests, tsc, lint; the specs fail without the behaviour; a headless check with a faked design
 server showed the chip, the remove, and the preamble. Not verified with a real design server.
 
+5. Q127 gaps, in progress: the context line names the part source file, and the variant Tom looks at (the
+   selected frame's variant, else the one most in view), not the picked one.
+6. Then: dogfood the chat loop on own ports and list each friction (grill, 2026-10-31).
+
 As built, slice 1 (`d3003cfc3`): `injectChatStore()` in `apps/ethlete-studio/src/app/chat/chat-store.ts` (root
 provider) holds the CLI, the model, the entries, the session and the open flag. `ChatPanelComponent` sits beside
 the router outlet in `app.component.ts`, 420px wide when open. A follow-up message resumes the session; a CLI change
