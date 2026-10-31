@@ -130,7 +130,9 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
      Not verified: a full `check --complete` run on a real product, and its run time.
    - Known: about 3,750 motion points per product, because `states` holds showcase variants. Q173 moves them out.
      `changed-parts.spec.ts` has a timing test that fails sometimes under load.
+
 - In progress: Q181 control-state check (error on non-control parts, <10 % pixel hint), with two freeze follow-ups
   (`foldersOf` ENOENT, unchanged `<product>/tsconfig.json` rewrite).
+
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
