@@ -1,3 +1,4 @@
+import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import canvasFrames from '@system/elements/canvas-frames';
@@ -45,7 +46,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean) => {
     pressed,
   });
   return {
-    body: drawn.body.replace('data-et-control="button"', 'data-et-control="open-points"'),
+    body: control(drawn.body, 'open-points'),
     styles: drawn.styles,
   };
 };
