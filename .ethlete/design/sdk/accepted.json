@@ -447,5 +447,12 @@
     "note": "Q88 ring light-dark(ink, primary); lead call Q96 (ethlete-sdk-76)",
     "hash": "c3640b8f0e66c93c",
     "at": "2026-10-31T15:36:20.256Z"
+  },
+  {
+    "part": "components/select",
+    "by": "claude-sonnet-5-5",
+    "note": "Q230 select label and options props",
+    "hash": "92e0bbc37540e54b",
+    "at": "2026-10-31T21:38:58.201Z"
   }
 ]

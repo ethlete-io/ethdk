@@ -14,15 +14,14 @@ const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
 const shot = (step: Step, scale: number) =>
   embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
 
-const picker = await select.render({ value: 'review', size: 'sm' });
+const picker = await select.render({
+  label: '',
+  size: 'sm',
+  value: 'desktop',
+  options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
+});
 
-export const presetPicker = picker.body
-  .replace(/<et-label [^]*?<\/et-label>/, '')
-  .replace(' data-has-label=""', '')
-  .replace(
-    '<span class="et-select-value">In review</span>',
-    '<span class="et-select-value">Desktop · 1440 × 900</span>',
-  );
+export const presetPicker = picker.body;
 
 export const presetPickerStyles = picker.styles;
 

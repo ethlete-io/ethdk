@@ -1,7 +1,6 @@
-import { formField } from '@ethlete/components/design/form-field';
-import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
+import select from '@system/components/select';
 import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
@@ -51,11 +50,13 @@ const open = await systemPage();
 const hidden = await systemPage('hidden');
 const pages: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
 
-const roundPicker = formField({
-  id: 'zoomed-round-picker',
+const picker = await select.render({
+  label: '',
   size: 'sm',
-  control: select({ options: [{ value: 'r1', label: 'Runde 1 · Mehr Platz für die Leinwand' }], value: 'r1' }),
+  value: 'round-1',
+  options: [{ value: 'round-1', label: 'Runde 1 · Mehr Platz für die Leinwand' }],
 });
+const roundPicker = picker.body;
 
 const variantHead = (variant: PageVariant) =>
   html`<div class="absolute z-2 flex -translate-y-full flex-col gap-space-1 overflow-hidden" data-sk-col-head hidden>
@@ -202,7 +203,7 @@ export default definePart<Props>({
         open.styles +
         discard.styles +
         merge.styles +
-        selectStyles +
+        picker.styles +
         canvasViewportStyles +
         kit +
         styles +

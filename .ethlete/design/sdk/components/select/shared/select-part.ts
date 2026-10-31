@@ -5,6 +5,8 @@ import { interactionRows } from '@design-system';
 type FieldInteraction = 'hover' | 'active' | 'focus-visible';
 
 export type SelectProps = {
+  label?: string;
+  options?: { value: string; label: string }[];
   value?: string;
   open?: boolean;
   active?: string;
@@ -64,12 +66,17 @@ export const selectBody = (props: SelectProps) =>
   markControl(
     formField({
       id: 'status',
-      label: 'Status',
+      label: props.label ?? 'Status',
       errorColor: 'danger',
       open: props.open,
       disabled: props.disabled,
       size: props.size,
-      control: select({ options: OPTIONS, value: props.value, active: props.active, placeholder: 'Pick a status' }),
+      control: select({
+        options: props.options ?? OPTIONS,
+        value: props.value,
+        active: props.active,
+        placeholder: 'Pick a status',
+      }),
     }),
     props,
   );
