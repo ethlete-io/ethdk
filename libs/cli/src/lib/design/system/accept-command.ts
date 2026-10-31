@@ -1,10 +1,24 @@
-import { partKeyOf } from './resolve-product';
+import { dirname, relative } from 'path';
+import { ruleProblemsOf } from './check-system';
+import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
 import { acceptPart } from './sketch/merged-parts';
 import { parseTarget } from './sketch/sketch';
 
 export const ACCEPT_USAGE =
   'accept <layer>/<name> --product <name> --by <model id> --note <why the user approved the direct edit>';
+
+const findingsOfPart = (options: { target: string; product: ResolvedProduct; part: string }) => {
+  const found = options.product.parts.find((candidate) => partKeyOf(candidate) === options.part);
+
+  if (!found) return [];
+
+  const dir = dirname(found.file);
+
+  return ruleProblemsOf(options.product)
+    .filter((problem) => !relative(dir, problem.file).startsWith('..'))
+    .map((problem) => `${problem.rule} ${relative(options.target, problem.file)}: ${problem.message}`);
+};
 
 /** `et design accept <layer>/<name> …` records a direct edit of a merged part the user approved, so check stops warning of it. */
 export const designAccept = (options: { target: string; argv: string[]; invocation: string }) => {
@@ -56,6 +70,14 @@ export const designAccept = (options: { target: string; argv: string[]; invocati
   }
 
   const part = partKeyOf(parsed);
+  const findings = findingsOfPart({ target, product, part });
+
+  if (findings.length > 0) {
+    console.error(`${findings.join('\n')}\n${part} has problems - fix them before accept`);
+
+    return 1;
+  }
+
   const problem = acceptPart({ product, part, by, note });
 
   if (problem) {

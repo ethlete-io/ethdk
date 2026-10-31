@@ -1,12 +1,16 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, DesignDeniedClass, readConfig } from '../../paths';
 import { checkDesign } from '../../check';
+import { designSketch } from '../../sketch-command';
+import { designAccept } from '../accept-command';
 import { resolveProduct } from '../resolve-product';
 import { openSketchProblemsOf } from '../sketch/check-sketches';
-import { createSketch, Sketch } from '../sketch/sketch';
+import { mergeSketch } from '../sketch/merge';
+import { recordMerged } from '../sketch/merged-parts';
+import { createSketch, decideSketch, markSketchReady, Sketch } from '../sketch/sketch';
 import { deniedClassesOf } from './denied-class';
 
 const DENIED: DesignDeniedClass[] = [
@@ -119,16 +123,16 @@ describe('deniedClassesOf', () => {
     ]);
   });
 
-  it('warns in design check but does not fail it', async () => {
+  it('fails design check', async () => {
     const target = acme();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     write(target, 'acme/pages/home/home.ts', part('<div class="bg-surface"></div>'));
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(warn.mock.calls.flat().some((line) => /^WARNING .*DENIED-CLASS /.test(String(line)))).toBe(true);
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(error.mock.calls.flat().some((line) => /^DENIED-CLASS /.test(String(line)))).toBe(true);
 
-    warn.mockRestore();
+    error.mockRestore();
   });
 
   it('blocks a sketch variant only on a denied class it adds', () => {
@@ -156,5 +160,81 @@ describe('deniedClassesOf', () => {
       ['a', []],
       ['b', ['`text-surface` is denied in this product - use the et-surface tokens of a data-et-surface scope']],
     ]);
+  });
+});
+
+describe('a denied class in the flows', () => {
+  const heroSketch = (target: string) => {
+    const sketch = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const added = join(sketch.dir, 'b/elements/hero/hero.ts');
+
+    writeFileSync(added, readFileSync(added, 'utf8').replace('class="acme-hero"', 'class="acme-hero bg-surface"'));
+
+    return sketch;
+  };
+
+  const errorsOf = () => {
+    const lines: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    return lines;
+  };
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('refuses sketch ready', async () => {
+    const target = acme();
+    const errors = errorsOf();
+
+    heroSketch(target);
+
+    expect(
+      await designSketch({
+        target,
+        argv: ['ready', 'elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    expect(errors.join('\n')).toMatch(/elements\/hero b: DENIED-CLASS .*`bg-surface` is denied/u);
+  });
+
+  it('refuses sketch merge and keeps the product', () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+    const before = readFileSync(hero, 'utf8');
+    const errors = errorsOf();
+    const ready = markSketchReady({ checkout: target, sketch: heroSketch(target) }) as Sketch;
+    const sketch = decideSketch({ sketch: ready, decision: { kind: 'pick', variant: 'b' } }) as Sketch;
+    const merged = mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch });
+
+    expect(Array.isArray(merged) ? merged : merged.reason).toContain('the check failed');
+    expect(errors.join('\n')).toMatch(/^DENIED-CLASS .*`bg-surface` is denied/mu);
+    expect(readFileSync(hero, 'utf8')).toBe(before);
+  });
+
+  it('refuses accept', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+    const hero = join(productDir, 'elements/hero/hero.ts');
+    const errors = errorsOf();
+
+    recordMerged({ product: { dir: productDir, base: null }, parts: ['elements/hero'] });
+    writeFileSync(hero, readFileSync(hero, 'utf8').replace('class="acme-hero"', 'class="acme-hero bg-surface"'));
+
+    expect(
+      designAccept({
+        target,
+        argv: ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', 'Tom approved it'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    expect(errors.join('\n')).toMatch(/^DENIED-CLASS .*`bg-surface` is denied/mu);
   });
 });

@@ -103,16 +103,16 @@ describe('undefinedClassesOf', { timeout: 30_000 }, () => {
     expect(ruleProblemsOf(resolveAcme(target)).filter((problem) => problem.rule === 'CLASS-UNDEFINED')).toHaveLength(1);
   });
 
-  it('warns in design check but does not fail it', async () => {
+  it('fails design check', async () => {
     const target = acme();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     write(target, 'acme/pages/home/home.ts', part('<div class="bg-surface-sunken"></div>'));
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(warn.mock.calls.flat().some((line) => /^WARNING .*CLASS-UNDEFINED/.test(String(line)))).toBe(true);
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(error.mock.calls.flat().some((line) => /^CLASS-UNDEFINED/.test(String(line)))).toBe(true);
 
-    warn.mockRestore();
+    error.mockRestore();
   });
 
   it('blocks a sketch variant only on a class it adds', () => {
