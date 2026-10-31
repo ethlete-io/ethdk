@@ -39,7 +39,8 @@ const world = html`<div class="absolute top-space-4 left-space-4 flex gap-space-
 </div>`;
 
 export default definePart({
-  note: 'The pannable design canvas of the Sketches page: arrow keys pan it, so it takes keyboard focus. Focus-visible fades in four 24px corner marks in the SDK focus ring colour inside the viewport corners instead of a closed ring: quiet on a canvas that fills the page, and never clips at the page edge.',
+  note: 'The pannable design canvas of the Sketches page: arrow keys pan it, so it takes keyboard focus. Focus-visible draws the SDK focus ring inset 2px inside the viewport edge, so the ring never clips at the page edge and needs no free space around the canvas.',
+  madeBy: ['claude-opus-5-5'],
   ...interactionRows<Props, 'canvas', 'focus-visible'>(
     { canvas: {} },
     { interactions: ['focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },

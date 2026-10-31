@@ -1,4 +1,5 @@
 {
+  "components/canvas-viewport": "fe506983e1f12952",
   "components/comment-pin": "e43999adaafeef86",
   "components/disclosure": "92834053fa3147f5",
   "components/shell-collapse": "44e549b320e25b4a",
@@ -20,7 +21,7 @@
   "pages/flows": "a33a984fc34f0a9b",
   "pages/inbox": "03b18b95c56928de",
   "pages/merge": "2e67dc264c81d2c8",
-  "pages/sketches": "4c571d07b1660c6b",
+  "pages/sketches": "b0a99043b9c4dab2",
   "pages/start": "28fd542da5c7fc82",
   "pages/system": "049aed35eafdb5fb"
 }

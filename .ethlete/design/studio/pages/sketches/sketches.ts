@@ -8,6 +8,7 @@ import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
+import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
@@ -148,6 +149,7 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
 export default definePart<Props>({
   note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. The zoom chip (components/zoom-chip, − | 100 % | + | Fit) zooms out, resets to 100 %, zooms in and fits.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
+  controls: { canvas: { kind: 'field', part: 'components/canvas-viewport' } },
   states: {
     'page-sketch': { camera: 'fit' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
@@ -168,19 +170,16 @@ export default definePart<Props>({
       <div class="zr-picker absolute z-2 top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
         ${roundPicker}
       </div>
-      <div
-        class="absolute top-36.5 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] cursor-grab touch-none active:cursor-grabbing"
-        data-sk-viewport
-        tabindex="0"
-        aria-label="Design Canvas"
-      >
-        <section
+      ${canvasViewport({
+        class: 'absolute top-36.5 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]',
+        attrs: 'data-sk-viewport',
+        body: html`<section
           class="absolute top-0 left-0 w-max origin-top-left select-none grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]"
           data-sk-world
         >
           ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
-        </section>
-      </div>
+        </section>`,
+      })}
       ${PAGE_VARIANTS.map(variantHead).join('')} ${chip.body}
     </div>`;
 
@@ -198,7 +197,16 @@ export default definePart<Props>({
       body: shell.body,
       setup: [menu.setup, setupFor(camera)],
       styles:
-        shell.styles + side.styles + open.styles + discard.styles + merge.styles + selectStyles + kit + styles + below,
+        shell.styles +
+        side.styles +
+        open.styles +
+        discard.styles +
+        merge.styles +
+        selectStyles +
+        canvasViewportStyles +
+        kit +
+        styles +
+        below,
     });
   },
 });
