@@ -1,0 +1,25 @@
+{
+  "target": "components/select-panel",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:05:59.859Z",
+  "baseline": {
+    "foundations/colors": "1d06df1d878ee2e2",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "be6b5409e860cdad",
+    "components/select": "3915f5657c75ef8b",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Option states and open panel",
+      "note": "Q71: et-select-option and the panel get their own part, shared by select, page-size-select and phone-input"
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1"
+    }
+  }
+}
