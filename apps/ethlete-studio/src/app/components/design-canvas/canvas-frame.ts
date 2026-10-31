@@ -214,7 +214,7 @@ export const withScheme = (url: string, scheme: ColorScheme) => {
 };
 
 /** The frames that take comments: each cell of a grid in place of its frame. */
-export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>
+export const placeableFramesOf = (frames: readonly CanvasFrame[]): CanvasFrame[] =>
   frames.flatMap((frame) =>
     frame.grid
       ? frame.grid.cells.map(({ id, label, src, screenshot, place }) => ({

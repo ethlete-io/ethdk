@@ -30,7 +30,11 @@ const answerOf = (motion: string, url: string): MotionAnswer => ({
       end: 400,
     },
   ],
-  keyframes: [0, 100, 200, 300, 400].map((ms) => ({ ms, src: `${url}&frame=${ms}` })),
+  keyframes: [0, 100, 200, 300, 400].map((ms) => {
+    const { pathname, search } = new URL(url);
+
+    return { ms, src: `${pathname}${search}&frame=${ms}` };
+  }),
 });
 
 const json = (body: unknown, status = 200) => Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -99,7 +103,9 @@ describe('MotionStripComponent', () => {
     expect([...(open?.querySelectorAll('[data-motion-keyframe]') ?? [])].map((key) => key.textContent?.trim())).toEqual(
       ['0 ms', '100 ms', '200 ms', '300 ms', '400 ms'],
     );
-    expect(open?.querySelector('img')?.getAttribute('src')).toContain('motion=open');
+    expect(open?.querySelector('img')?.getAttribute('src')).toMatch(
+      /^http:\/\/localhost:4999\/__design\/motion\?.*motion=open.*&frame=0$/,
+    );
   });
 
   it('shows the refusal of a motion the server cannot draw in its row', async () => {
@@ -155,6 +161,26 @@ describe('motionFrameIdOf', () => {
     expect(motionFrameIdOf(FRAMES, { state: 'closed', preset: 'phone' })).toBe('closed phone');
     expect(motionFrameIdOf(FRAMES, { state: 'closed', preset: 'tablet' })).toBe('closed desktop');
     expect(motionFrameIdOf(FRAMES, { state: 'open', preset: 'phone' })).toBeNull();
+  });
+
+  it('picks the resting cell of the from state in a grid frame', () => {
+    const cellOf = (state: string, interaction?: string) => {
+      const { id, src, label, place } = frameOf(state, 'fitted', interaction);
+
+      return { id, src, label, place, row: state, column: interaction ?? 'rest' };
+    };
+    const grid: CanvasFrame = {
+      id: 'components/drawer',
+      src: '',
+      label: 'drawer',
+      grid: {
+        columns: ['rest', 'hover'],
+        rows: ['closed', 'open'],
+        cells: [cellOf('closed', 'hover'), cellOf('closed'), cellOf('open')],
+      },
+    };
+
+    expect(motionFrameIdOf([grid], { state: 'closed', preset: null })).toBe('closed fitted');
   });
 });
 

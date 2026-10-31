@@ -339,6 +339,7 @@ export class CanvasFrameComponent {
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+  private gridView = viewChild(CanvasFrameGridComponent);
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
 
@@ -507,6 +508,11 @@ export class CanvasFrameComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  /** The window of the grid cell `id` once its live page painted; `null` before or without that cell. */
+  public liveCellWindowOf(id: string) {
+    return this.gridView()?.liveWindowOf(id) ?? null;
   }
 
   protected labelOf(scheme: ColorScheme) {

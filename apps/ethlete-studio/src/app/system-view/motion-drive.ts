@@ -1,5 +1,5 @@
 import { Observable, filter, fromEvent, map, startWith, take } from 'rxjs';
-import { CanvasFrame } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 
 /** What the motion timeline posts into a live frame; `libs/cli/design/motion-drive.ts` reads it. */
 export type MotionDriveMessage =
@@ -15,9 +15,14 @@ export type MotionCanvas = {
   liveWindowOf: (id: string) => Window | null;
 };
 
-/** The frame a motion plays in: its `from` state at rest, at `preset` when one of them has it, else the first. */
+/**
+ * The frame or grid cell a motion plays in: its `from` state at rest, at `preset` when one of them has it, else the
+ * first.
+ */
 export const motionFrameIdOf = (frames: readonly CanvasFrame[], options: { state: string; preset: string | null }) => {
-  const resting = frames.filter((frame) => frame.place?.state === options.state && !frame.place.interaction);
+  const resting = placeableFramesOf(frames).filter(
+    (frame) => frame.place?.state === options.state && !frame.place.interaction,
+  );
 
   return (resting.find((frame) => frame.place?.size === options.preset) ?? resting[0])?.id ?? null;
 };

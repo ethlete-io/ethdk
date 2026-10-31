@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { designAnswer$ } from './design';
 
 /** A motion a part declares between two of its states, as the system list has it. */
@@ -63,8 +63,17 @@ export const motionUrl = ({ port, product, part, motion, preset, mode, surface, 
   (color ? `&color=${encodeURIComponent(color)}` : '') +
   (revision ? `&revision=${revision}` : '');
 
-export const motionAnswer$ = (address: MotionAddress): Observable<MotionAnswer> =>
-  designAnswer$<MotionAnswer>(motionUrl(address));
+/** The motion at `address`, with each keyframe's `src` on the design server, as an `img` outside it needs. */
+export const motionAnswer$ = (address: MotionAddress): Observable<MotionAnswer> => {
+  const url = motionUrl(address);
+
+  return designAnswer$<MotionAnswer>(url).pipe(
+    map((answer) => ({
+      ...answer,
+      keyframes: answer.keyframes.map((keyframe) => ({ ...keyframe, src: new URL(keyframe.src, url).href })),
+    })),
+  );
+};
 
 /** The last keyframe at or before `ms`; the first one before any. */
 export const keyframeAt = (keyframes: readonly MotionKeyframe[], ms: number) =>

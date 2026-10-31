@@ -121,6 +121,11 @@ export class CanvasFrameCellComponent {
 
   protected failed = computed(() => this.shotState()?.state() === 'failed');
 
+  /** The window of the cell's live page once it painted; `null` while the cell shows a shot. */
+  public liveWindow = computed(() =>
+    this.live() && this.painted() ? (this.iframe()?.nativeElement.contentWindow ?? null) : null,
+  );
+
   private page = computed(() => ({ iframe: this.iframe()?.nativeElement ?? null, src: this.src() }));
 
   constructor() {
@@ -397,6 +402,7 @@ export class CanvasFrameGridComponent {
 
   private table = viewChild<ElementRef<HTMLElement>>('table');
   private cells = viewChildren('cell', { read: ElementRef<HTMLElement> });
+  private cellViews = viewChildren(CanvasFrameCellComponent);
 
   private cellAt = computed(
     () => new Map<string, FrameCell>(this.grid().cells.map((cell) => [cellKeyOf(cell.row, cell.column), cell])),
@@ -496,6 +502,16 @@ export class CanvasFrameGridComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  /** The window of the cell `id` once its live page painted, in the first colour scheme that painted; `null` before. */
+  public liveWindowOf(id: string) {
+    return (
+      this.cellViews()
+        .filter((view) => view.cell().id === id)
+        .map((view) => view.liveWindow())
+        .find(Boolean) ?? null
+    );
   }
 
   protected cellLive(id: string) {

@@ -791,13 +791,14 @@ export class DesignCanvasComponent {
   }
 
   /** Opens a pin's text and moves the camera to its frame. */
-  /** The window of the frame `id` once its live page painted; `null` before. */
+  /** The window of the frame or grid cell `id` once its live page painted; `null` before. */
   public liveWindowOf(id: string) {
-    return (
-      this.frameViews()
-        .find((view) => view.frame().id === id)
-        ?.liveWindow() ?? null
-    );
+    const views = this.frameViews();
+    const own = views.find((view) => view.frame().id === id);
+
+    if (own) return own.liveWindow();
+
+    return views.find((view) => view.frame().grid?.cells.some((cell) => cell.id === id))?.liveCellWindowOf(id) ?? null;
   }
 
   public openPin(id: string) {
@@ -830,13 +831,18 @@ export class DesignCanvasComponent {
     this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING }), true);
   }
 
-  /** Makes the frame `id` live and active, as a double click on it does. */
+  /** Makes the frame `id` live and active, as a double click on it does; a grid cell's `id` makes its grid frame live. */
   public activate(id: string) {
     if (this.pointing()) return;
-    if (this.frames().find((frame) => frame.id === id)?.empty !== undefined) return;
 
-    this.selectedId.set(id);
-    this.activeId.set(id);
+    const frame = this.frames().find(
+      (candidate) => candidate.id === id || candidate.grid?.cells.some((cell) => cell.id === id),
+    );
+
+    if (!frame || frame.empty !== undefined) return;
+
+    this.selectedId.set(frame.id);
+    this.activeId.set(frame.id);
   }
 
   protected leaveActiveFrame() {
