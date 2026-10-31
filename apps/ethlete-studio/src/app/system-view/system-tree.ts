@@ -1210,6 +1210,7 @@ export const mergePreviewOf = ({
             width: cell.preset ? undefined : cell.width,
             revision,
           }),
+          schemes: SCHEMES,
           error: rowError ?? (column === 'now' ? error : undefined),
         };
       }),

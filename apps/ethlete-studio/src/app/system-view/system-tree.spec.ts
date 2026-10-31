@@ -608,6 +608,7 @@ describe('sketchMatrixOf', () => {
     expect(rest.interactions).toEqual(['rest', 'hover', 'active']);
     expect(rest.interaction).toBe('rest');
     expect(rest.frames.map((frame) => frame.id)).toEqual(['current solid', 'a solid', 'b solid']);
+    expect(rest.frames.every((frame) => frame.schemes === undefined)).toBe(true);
     expect(rest.frames.every((frame) => !frame.src.includes('interaction='))).toBe(true);
     expect(sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'focus-visible' }).interaction).toBe('all');
     expect(hover.frames.map((frame) => [frame.id, frame.place?.interaction, frame.empty])).toEqual([
@@ -1102,6 +1103,7 @@ describe('mergePreviewOf', () => {
     expect(preview.frames[1]?.src).toContain(
       '&part=elements%2Fheader&state=default&sketch=components%2Fbutton&variant=b',
     );
+    expect(preview.frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
   });
 });
 
