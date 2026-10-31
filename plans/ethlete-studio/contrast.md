@@ -1,7 +1,7 @@
 # Ethlete Studio: contrast checks
 
 A contrast rule in `design check` and a contrast view in Studio. Context: the colour step B sketch
-(`design-system-actions.md` 4.65) had `--text-subtle` below 4.5:1 on `--surface-raised` and
+(`archive/design-system-actions/render-checks.md` 4.65) had `--text-subtle` below 4.5:1 on `--surface-raised` and
 `--surface-overlay`, and only a manual measurement found it.
 
 ## Decisions (2026-10-30)
@@ -44,11 +44,11 @@ A contrast rule in `design check` and a contrast view in Studio. Context: the co
 
 ## Order
 
-The builder's queue (Tom, 2026-10-30), with `design-system-actions.md` numbers:
+The builder's queue (Tom, 2026-10-30), with `design-system-actions.md` numbers (entries in `design-system-actions/` and `archive/design-system-actions/`):
 
 1. 4.61 slice 1, the targeted redraw.
 2. 4.65, the two auto-merge defects.
-3. The comment cleanup ("Comment cleanup decisions" in `design-system-actions.md`), with the one-time
+3. The comment cleanup ("Comment cleanup decisions" in `design-system-actions/decisions.md`), with the one-time
    cleanup run on the new code.
 4. In parallel: slice 1 of this plan (CLI code), and the CSS work (part sketches). The CSS work is the
    colour cleanup (`--surface-sunken` references, the `sketch-data.css` overrides) and the 4.53
