@@ -21,6 +21,7 @@ export const disclosure = ({ label, body, open, size = 'sm', interaction }: Prop
   const toggle = html`<button
     class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 text-et-surface-muted hover:text-et-surface active:bg-et-surface-interaction/15 active:text-et-surface active:rounded-control-sm focus-visible:text-et-surface focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
     type="button"
+    data-et-surface-interactive
     data-et-control="toggle"
     aria-expanded="${open}"
   >
