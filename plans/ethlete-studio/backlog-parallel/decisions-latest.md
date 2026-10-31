@@ -172,3 +172,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   already shows (same rule and same detail, element path normalised for the frame move of Q241) does not block, for
   every rule, not only CONTROL-PART-INPUT. New issues still block. The old issues stay visible in `design check` and
   still need a fix; this is not an exception. Unblocks the Q241 sketch `sdk/sketches/components-accordion`.
+- **Live iframe limit (Tom, 2026-10-31), after the MVP:** the cap on live iframes in a Studio grid is not a good
+  idea. In the sketch view of `sdk/sketches/components-button` (r1) a viewer sees exactly which cells are shot images
+  and which are live iframes, because the images are clearly blurry. Rework after the MVP: every visible cell must
+  look the same, either by sharp shots (device pixel ratio, zoom) or by no cap. Measure the cost first.
