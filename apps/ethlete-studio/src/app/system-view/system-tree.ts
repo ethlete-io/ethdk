@@ -13,7 +13,7 @@ import {
   partShotUrl,
   rejectionOf,
 } from '../../host/design';
-import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
@@ -373,6 +373,8 @@ const GRID = 'grid';
 
 const SHEET_FILL = 'surface';
 
+const SCHEMES: ColorScheme[] = ['light', 'dark'];
+
 /** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
 const gridFrameOf = (options: {
   grid: NonNullable<ListedPart['grid']>;
@@ -390,6 +392,7 @@ const gridFrameOf = (options: {
     label: GRID,
     grid: {
       sheet: 'groups',
+      schemes: SCHEMES,
       columns: grid.columns,
       rows: grid.rows,
       cells: grid.cells.map(({ row, column, state }) => {
@@ -491,6 +494,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
       label: key,
       grid: {
         sheet: 'table',
+        schemes: SCHEMES,
         columns: interactions,
         rows: states.filter((state) => state !== undefined),
         cells: cells.map((cell) => ({

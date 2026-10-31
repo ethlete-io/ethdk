@@ -7,6 +7,7 @@ import {
   followedSizes,
   frameMessageOf,
   pagePointOfCrop,
+  withScheme,
 } from './canvas-frame';
 
 const followAPage = (contentAt: (viewport: number) => number, viewport: number) => {
@@ -156,5 +157,19 @@ describe('a crop of two areas', () => {
       height: 10,
     });
     expect(cropRectOf(crop, { x: 1000, y: 10, width: 10, height: 5 })).toBeNull();
+  });
+});
+
+describe('withScheme', () => {
+  it('asks for the scheme in place of the one asked before, wherever it stood', () => {
+    expect(withScheme('http://h/__design/shot?part=p&scheme=dark&priority=low', 'light')).toBe(
+      'http://h/__design/shot?part=p&priority=low&scheme=light',
+    );
+    expect(withScheme('http://h/shot?scheme=light&part=p', 'dark')).toBe('http://h/shot?part=p&scheme=dark');
+    expect(withScheme('http://h/frame.html?part=p&scheme=light', 'dark')).toBe(
+      'http://h/frame.html?part=p&scheme=dark',
+    );
+    expect(withScheme('/shot.png', 'dark')).toBe('/shot.png?scheme=dark');
+    expect(withScheme('', 'dark')).toBe('');
   });
 });

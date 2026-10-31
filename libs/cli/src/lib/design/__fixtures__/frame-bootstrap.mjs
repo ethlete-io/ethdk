@@ -50,6 +50,7 @@ const modules = {
   },
   '../embed-page': { applyEmbed: () => undefined, fitEmbed: () => undefined },
   '../motion-runtime': { runRules: () => undefined, stepMotion: () => undefined },
+  './frame-scheme': { pinScheme: () => undefined },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },
   'virtual:design-explore/system': {

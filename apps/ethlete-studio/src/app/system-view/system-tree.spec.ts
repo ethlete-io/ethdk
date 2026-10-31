@@ -242,6 +242,7 @@ describe('framesOf', () => {
       ['components/button', 'components/button', undefined, undefined, undefined],
     ]);
     expect(frames[0]?.grid?.sheet).toBe('table');
+    expect(frames[0]?.grid?.schemes).toEqual(['light', 'dark']);
     expect(frames[0]?.grid?.columns).toEqual(['rest']);
     expect(frames[0]?.grid?.rows).toEqual(['default', 'disabled']);
     expect(frames[0]?.grid?.cells[0]?.src).toBe(
@@ -363,6 +364,7 @@ describe('a part with a grid', () => {
       ['grid', undefined],
     ]);
     expect(gridFrame?.grid?.sheet).toBe('groups');
+    expect(gridFrame?.grid?.schemes).toEqual(['light', 'dark']);
     expect(gridFrame?.grid?.columns).toEqual(['rest', 'hover']);
     expect(gridFrame?.grid?.rows).toEqual(['leaf', 'selected']);
     expect(gridFrame?.grid?.cells.map((cell) => [cell.id, cell.row, cell.column, cell.label, cell.width])).toEqual([

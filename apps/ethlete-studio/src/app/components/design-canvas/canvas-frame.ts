@@ -158,11 +158,27 @@ export type FrameCell = {
   place?: FramePlace;
 };
 
+export type ColorScheme = 'light' | 'dark';
+
 /**
  * `sheet` draws the cells as one sheet: `table` every row in the interaction table, `groups` the rows that use only
- * the first column packed apart from it.
+ * the first column packed apart from it. `schemes` draws every column once per colour scheme, side by side.
  */
-export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[]; sheet?: 'table' | 'groups' };
+export type FrameGrid = {
+  columns: string[];
+  rows: string[];
+  cells: FrameCell[];
+  sheet?: 'table' | 'groups';
+  schemes?: ColorScheme[];
+};
+
+export const withScheme = (url: string, scheme: ColorScheme) => {
+  if (!url) return url;
+
+  const bare = url.replace(/([?&])scheme=[^&]*&?/u, '$1').replace(/[?&]$/u, '');
+
+  return `${bare}${bare.includes('?') ? '&' : '?'}scheme=${scheme}`;
+};
 
 /** The frames that take comments: each cell of a grid in place of its frame. */
 export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>

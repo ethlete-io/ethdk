@@ -1,6 +1,7 @@
 import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
 import { Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
+import { pinScheme } from './frame-scheme';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
@@ -41,6 +42,10 @@ const fill = params.get('fill');
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
 if (fill) document.body.style.background = `var(--${fill})`;
+
+const scheme = params.get('scheme');
+
+if (scheme === 'light' || scheme === 'dark') pinScheme(document, scheme);
 if (fit) {
   document.documentElement.style.overflow = 'hidden';
   root.style.width = 'max-content';

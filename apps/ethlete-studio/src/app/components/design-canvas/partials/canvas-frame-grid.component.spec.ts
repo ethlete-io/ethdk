@@ -133,6 +133,86 @@ describe('CanvasFrameGridComponent', () => {
     expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
   });
 
+  describe('colour schemes', () => {
+    const port = 'http://localhost:1';
+    const schemed = (cell: FrameCell): FrameCell => ({
+      ...cell,
+      src: `${port}/frame.html?part=p&state=${cell.row}`,
+      screenshot: `${port}/__design/shot?part=p&state=${cell.row}&scheme=dark&priority=low`,
+    });
+    const grid = (sheet?: FrameGrid['sheet']): FrameGrid => ({
+      columns,
+      rows,
+      cells: cells.map(schemed),
+      schemes: ['light', 'dark'],
+      ...(sheet ? { sheet } : {}),
+    });
+    const urlsOf = (host: HTMLElement, selector: string, attribute: string) =>
+      [...host.querySelectorAll(selector)].map((element) => element.getAttribute(attribute) ?? '');
+
+    it.each([undefined, 'groups', 'table'] as const)(
+      'draws every column once per scheme under a Light and a Dark head (sheet %s)',
+      async (sheet) => {
+        const host = await renderGrid(grid(sheet));
+
+        expect(textsOf(host, '[data-grid-scheme]').slice(0, 2)).toEqual(['Light', 'Dark']);
+        expect(textsOf(host, '[data-grid-column]')).toEqual([...columns, ...columns]);
+        expect(host.querySelectorAll('[data-cell-scheme="light"]')).toHaveLength(cells.length);
+        expect(host.querySelectorAll('[data-cell-scheme="dark"]')).toHaveLength(cells.length);
+      },
+    );
+
+    it('asks each group for the shots of its own scheme', async () => {
+      const host = await renderGrid(grid());
+      const shots = urlsOf(host, 'img', 'src');
+
+      expect(shots.filter((url) => url.includes('scheme=light'))).toHaveLength(cells.length);
+      expect(shots.filter((url) => url.includes('scheme=dark'))).toHaveLength(cells.length);
+      expect(shots.every((url) => url.split('scheme=').length === 2)).toBe(true);
+    });
+
+    it('draws each live cell in the scheme of its group', async () => {
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+      const fixture = TestBed.createComponent(CanvasFrameGridComponent);
+
+      fixture.componentRef.setInput('grid', grid());
+      fixture.componentRef.setInput('live', true);
+      await fixture.whenStable();
+
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(urlsOf(host, '[data-cell-scheme="light"] iframe', 'src')).toEqual(
+        cells.map((cell) => `${port}/frame.html?part=p&state=${cell.row}&scheme=light`),
+      );
+      expect(urlsOf(host, '[data-cell-scheme="dark"] iframe', 'src')).toEqual(
+        cells.map((cell) => `${port}/frame.html?part=p&state=${cell.row}&scheme=dark`),
+      );
+    });
+
+    it('waits for the shots of both schemes before it reveals', async () => {
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+      const fixture = TestBed.createComponent(CanvasFrameGridComponent);
+
+      fixture.componentRef.setInput('grid', grid());
+      await fixture.whenStable();
+
+      const host = fixture.nativeElement as HTMLElement;
+      const images = [...host.querySelectorAll<HTMLImageElement>('[data-cell-scheme="light"] img')];
+
+      images.forEach((image) => image.dispatchEvent(new Event('load')));
+      await fixture.whenStable();
+
+      expect(host.querySelector('[data-grid-loading]')).not.toBeNull();
+
+      host.querySelectorAll('[data-cell-scheme="dark"] img').forEach((image) => image.dispatchEvent(new Event('load')));
+      await fixture.whenStable();
+
+      expect(host.querySelector('[data-grid-loading]')).toBeNull();
+    });
+  });
+
   describe('reveal', () => {
     const shots = cells.slice(0, 3).map((cell) => ({ ...cell, screenshot: `/shot/${cell.id}.png` }));
 
