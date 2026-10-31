@@ -4,12 +4,12 @@ import { control } from '../../../design/control';
 describe('control', () => {
   it('marks only the root element', () => {
     expect(control('<div class="a"><span></span></div>', 'box')).toBe(
-      '<div data-et-control="box" data-can-animate class="a"><span></span></div>',
+      '<div data-et-control="box" data-can-animate="true" class="a"><span></span></div>',
     );
   });
 
   it('marks a root without attributes', () => {
-    expect(control('<button>x</button>', 'b')).toBe('<button data-et-control="b" data-can-animate>x</button>');
+    expect(control('<button>x</button>', 'b')).toBe('<button data-et-control="b" data-can-animate="true">x</button>');
   });
 
   it('throws without a root element', () => {

@@ -6,5 +6,5 @@ export const control = (markup: string, name: string) => {
     throw new Error(`control("${name}"): the markup has no root element.`);
   }
 
-  return `${rootTag} data-et-control="${name}" data-can-animate${markup.slice(rootTag.length)}`;
+  return `${rootTag} data-et-control="${name}" data-can-animate="true"${markup.slice(rootTag.length)}`;
 };
