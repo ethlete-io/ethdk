@@ -1070,5 +1070,12 @@
     "note": "Q203 auto-surface: root-level surface scope dropped, trigger resolves to parent + 1; shot byte-identical",
     "hash": "28fd542da5c7fc82",
     "at": "2026-10-31T18:30:41.603Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-opus-5-5",
+    "note": "Q198 semantic colour",
+    "hash": "63a1d0a00ecf8842",
+    "at": "2026-10-31T18:37:28.725Z"
   }
 ]
