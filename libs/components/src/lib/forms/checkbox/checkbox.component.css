@@ -80,9 +80,11 @@
     }
 
     @media (hover: hover) {
-      :where(et-choice-field[data-error]) &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
+      :where(et-choice-field[data-error])
+        &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
+        .et-checkbox-box,
       :where(et-choice-field[data-error]:has(.et-choice-field-label-area:hover))
-        &:not([aria-disabled='true']):not([data-readonly])
+        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
         .et-checkbox-box {
         border-color: var(--et-theme-color-primary-solid);
       }

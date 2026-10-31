@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap } from '../support';
+import { expectFocusVisible, openStory, pressKey, tap, themePrimaryIn } from '../support';
 
 const CHECKBOX_DEFAULT = 'components-forms-checkbox--default';
 const CHECKBOX_READONLY = 'components-forms-checkbox--readonly';
@@ -491,6 +491,52 @@ test.describe('choice-inputs / support region', () => {
     const hint = root.locator('.et-form-support-hint');
 
     await expect(hint).toHaveCSS('transition-duration', '0.001s');
+  });
+});
+
+function settledBorderColor(element: Locator): Promise<string> {
+  return element.evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+
+    return getComputedStyle(el).borderTopColor;
+  });
+}
+
+test.describe('choice-inputs / error state', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: the error border is checked under hover');
+
+  test('an invalid checkbox keeps an error theme border while hovered', async ({ page }) => {
+    const root = await openStory(page, CHECKBOX_DEFAULT, { args: { required: true } });
+    const field = root.locator('et-choice-field').first();
+    const checkbox = field.getByRole('checkbox');
+    const box = field.locator('.et-checkbox-box');
+
+    await checkbox.focus();
+    await checkbox.blur();
+    await expect(field).toHaveAttribute('data-error');
+
+    const errorTone = await themePrimaryIn(field);
+
+    await expect(box).toHaveCSS('border-top-color', errorTone);
+    await box.hover();
+    expect(await settledBorderColor(box)).toBe(await themePrimaryIn(box));
+  });
+
+  test('an invalid radio group draws its circles in the error theme, at rest and hovered', async ({ page }) => {
+    const root = await openStory(page, RADIO_GROUP_DEFAULT, { args: { required: true } });
+    const group = root.locator('et-radio-group');
+    const option = root.getByRole('radio').first();
+    const circle = group.locator('.et-radio-circle').first();
+
+    await option.focus();
+    await option.blur();
+    await expect(group).toHaveAttribute('data-error');
+
+    const errorTone = await themePrimaryIn(group);
+
+    await expect(circle).toHaveCSS('border-top-color', errorTone);
+    await circle.hover();
+    expect(await settledBorderColor(circle)).toBe(errorTone);
   });
 });
 

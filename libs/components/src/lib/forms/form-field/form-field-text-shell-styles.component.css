@@ -53,7 +53,7 @@
       --_et-form-field-label-color-active: var(--et-surface-color-solid, currentColor);
 
       &[data-error] {
-        --_et-form-field-frame-border: color-mix(in srgb, var(--et-theme-color-primary-solid) 50%, transparent);
+        --_et-form-field-frame-border: var(--et-theme-color-primary-solid);
         --_et-form-field-frame-border-hover: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color: var(--et-theme-color-ink-solid);
         --_et-form-field-label-color-active: var(--et-theme-color-ink-solid);

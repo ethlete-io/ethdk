@@ -7,3 +7,4 @@ export * from './events';
 export * from './wait';
 export * from './list';
 export * from './time-ring';
+export * from './theme';

@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tap } from '../support';
+import { boxOf, openStory, pressKey, tap, themePrimaryIn } from '../support';
 
 const INPUT_STORY_ID = 'components-forms-input--default';
 const DESCRIPTION_STORY_ID = 'components-forms-input--description';
@@ -268,6 +268,17 @@ test.describe('form-field / support region', () => {
     await expect(field.locator('.et-form-field-warnings[data-active]')).toHaveCount(0);
     await expect(control).toHaveAttribute('aria-describedby', (await errors.getAttribute('id')) ?? '');
     await expectSupportFitsActiveMessage(field);
+  });
+
+  test('an invalid field draws its frame in the full tone of the error theme', async ({ page }) => {
+    const root = await openStory(page, INPUT_STORY_ID, { args: { required: true } });
+    const { field, frame, control } = fieldParts(root);
+
+    await control.focus();
+    await control.blur();
+
+    await expect(field).toHaveAttribute('data-error');
+    await expect(frame).toHaveCSS('border-top-color', await themePrimaryIn(field));
   });
 
   test('the hint returns once neither an error nor a warning applies', async ({ page }) => {
