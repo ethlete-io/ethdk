@@ -141,3 +141,12 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   open-points popover in `pages/system`) stays in the inventory list, marked "covered", but gets no outline or
   number badge in the frame. Discovery checks with `elementFromPoint` whether the control is on top; a partly covered
   control counts as visible.
+- **Q237 (Tom, 2026-10-31):** the SDK part `components/anchored-dialog` gets a `content` slot; each page passes its
+  own pane content (`pages/system` open-points list, `pages/inbox` comment editor with `et-textarea`). The fixed kinds
+  `open-points` and `filter` stay only as demo states; no new kind per use.
+- **Q238 (Tom, 2026-10-31):** in the anchored-dialog `filter` demo state, "Apply" becomes the SDK
+  `components/button` part. The checkbox stays native for now; an SDK `checkbox` part follows after the MVP (the SDK
+  system has `switch` but no `checkbox`).
+- **Q239 (Tom, 2026-10-31), after the MVP:** the inventory lists every open overlay (popover, dialog, menu) as its own
+  entry: "owned by components/<part>" when an SDK part draws it, a finding when it is an inline mock without a part
+  (for example a direct `anchoredDialog()` call).
