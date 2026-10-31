@@ -143,8 +143,22 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
    - Known: about 3,750 motion points per product, because `states` holds showcase variants. Q173 moves them out.
      `changed-parts.spec.ts` has a timing test that fails sometimes under load.
 
-- In progress: Q181 control-state check (error on non-control parts, <10 % pixel hint), with two freeze follow-ups
-  (`foldersOf` ENOENT, unchanged `<product>/tsconfig.json` rewrite).
+- Built, tool frictions between slice 2 and 3:
+  - Q181 (`cba45653d`, `d2c5f7f30`): `CONTROL-STATE` error from `controlStateGapsOf` (`system/complete.ts`) in the
+    render check and in `completenessGapsOf`; the <10 % change is a HINT in `complete` and `check --complete`. The
+    element name is the state's last word. A `components/` part with no `controls` gets "declare its controls (Q164)".
+    `sketch report` is not gated. Freeze follow-ups: `0cdb62d6d`, `8b35a636f`.
+  - Contrast (`348654b93`, `bb2aa68a8`, `1711ebc68`, `c97762e35`, `53b5e7543`): UNUSED `shared/` rule; a frame is a
+    wrapper bordered on 4 sides that its controls together fill to at least half (Q175, Q96), toolbars excluded; an
+    `aria-hidden` svg outside a control is skipped; a gradient frame fill reads as a colour; repeated findings print
+    once with "(N times)".
+  - Studio: grid LIGHT cells on dark (`cb8663fd9`); extra targets in `shot`, `sketch list` and
+    `sketch target add` (`f7b2ac56b`); render-queue priority with `view` and `rank` on `GET /__design/shot`
+    (`7ad3413ae`, `74fa36038`, `41b34d2a5`). Q186 Codex model names (`6300dac7e`).
+  - Verified: specs that fail without each change, tsc, lint; sketch agent ethlete-sdk-33 used shot and list.
+    Not verified: the render-queue priority and the checkouts toggle (`b85f0e33f`) in the running Studio.
+    `shot-store.spec.ts` and `sketch-stylesheets.spec.ts` flake in the full design run (temp dirs in the source tree).
+- In progress: Q185 (merged interaction states on a non-control part are an open point), then Q182.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
