@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
@@ -78,6 +79,7 @@ import { partKeyOf, ResolvedPart } from './system/resolve-product';
 import {
   createSystemModules,
   productModuleIdOf,
+  fileOfModuleId,
   productOfModuleId,
   sketchOfModuleId,
   SketchVariant,
@@ -380,6 +382,18 @@ const designExplore = ({
   stylesheetImports: StylesheetImports;
 }) => {
   const renderer = createRenderer({ target, config });
+  const transform = withAssetUrls(system);
+  const packageDirs = () => renderPackageDirsOf({ target, packages: renderPackagesOf({ target, config }) });
+  const isPackageFile = (file: string) => packageDirs().some((dir) => isInside(dir, resolve(file)));
+  const loadedPackageCode = new Map<string, string>();
+  const hashOf = (code: string) => createHash('sha1').update(code).digest('hex');
+  const isAsLoaded = (file: string) => {
+    try {
+      return loadedPackageCode.get(file) === hashOf(readFileSync(file, 'utf8'));
+    } catch {
+      return false;
+    }
+  };
 
   return {
     name: 'design-explore',
@@ -399,7 +413,13 @@ const designExplore = ({
 
       return null;
     },
-    transform: withAssetUrls(system),
+    transform: (code: string, id: string) => {
+      const file = resolve(fileOfModuleId(id));
+
+      if (isPackageFile(file)) loadedPackageCode.set(file, hashOf(code));
+
+      return transform(code, id);
+    },
     transformIndexHtml: {
       order: 'pre' as const,
       handler: (html: string, ctx: { path: string; originalUrl?: string }) => {
@@ -547,15 +567,14 @@ const designExplore = ({
         !isSketchFile(designRoot, file) &&
         [designRoot, ...baseDirs].some((dir) => isInside(dir, file));
 
-      const packageDirs = () => renderPackageDirsOf({ target, packages: renderPackagesOf({ target, config }) });
-      const isPackageFile = (file: string) => packageDirs().some((dir) => isInside(dir, resolve(file)));
       const modulesOf = (file: string) => [...(vite.moduleGraph.getModulesByFile(resolve(file)) ?? [])];
       const rebuilt = new Set<string>();
       let settling: AbortController | undefined;
 
       const redrawRebuilt = () => {
-        const modules = [...rebuilt].flatMap(modulesOf);
-        const [file] = rebuilt;
+        const changed = [...rebuilt].filter((rewritten) => !isAsLoaded(rewritten));
+        const modules = changed.flatMap(modulesOf);
+        const [file] = changed;
 
         rebuilt.clear();
         if (!file || modules.length === 0) return;

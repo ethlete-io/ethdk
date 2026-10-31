@@ -643,6 +643,52 @@ describe('the design server for a design system', () => {
     });
   });
 
+  it('keeps the shots of a package file a rebuild writes again unchanged, and redraws them once it changes', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+
+    writeFileSync(configPath, JSON.stringify({ ...config, render: { packages: { '@kit/*': 'dist/libs/*' } } }));
+
+    const { plugin, handlers, watchers, modulesByFile, invalidated } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const built = join(target, 'dist/libs/kit/design/button.mjs');
+    const source = 'export const button = 1;\n';
+    const part = productModuleIdOf({
+      file: join(target, DESIGN_DIR, 'acme/components/button/button.ts'),
+      product: 'acme',
+    });
+
+    mkdirSync(dirname(built), { recursive: true });
+    writeFileSync(built, source);
+    plugin?.transform(source, built);
+    modulesByFile.set(built, [{ id: built, importers: new Set([{ id: part, importers: new Set() }]) as Set<never> }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+
+    watchers.get('unlink')?.(built);
+    writeFileSync(built, source);
+    watchers.get('add')?.(built);
+    watchers.get('change')?.(built);
+    watchers.get('change')?.(join(target, 'apps/studio/src/app/chat/chat-panel.component.ts'));
+    await new Promise((settled) => setTimeout(settled, 600));
+
+    expect(invalidated).toEqual([]);
+    expect(written).toEqual([': open\n\n']);
+
+    writeFileSync(built, 'export const button = 2;\n');
+    watchers.get('change')?.(built);
+
+    await vi.waitFor(() => expect(invalidated).toEqual([built]));
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({
+      all: false,
+      parts: [{ product: 'acme', part: 'components/button' }],
+    });
+  });
+
   it('signals a call file change as calls and a sketch file change as sketches, and nothing else for either', async () => {
     const target = acme();
     const { handlers, watchers } = await serveAcme(target);

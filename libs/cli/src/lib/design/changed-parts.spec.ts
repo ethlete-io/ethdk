@@ -1,7 +1,7 @@
 import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PartsChange } from './changed-parts';
 import { DESIGN_DIR, DesignConfig, readConfig } from './paths';
@@ -210,6 +210,28 @@ describe('the parts event of the design server', () => {
     expect(plain(changes()[0])).toEqual(['acme elements/hero ', 'acme pages/home ']);
     expect(plain(changes()[1])).toHaveLength(every);
     expect(every).toBeGreaterThan(2);
+  });
+
+  it('redraws nothing for an app file the product styles scan as a Tailwind source, and every part for an app stylesheet they import', async () => {
+    const { target, vite, changes, keysOf } = await serveAcme({ styles: [`${DESIGN_DIR}/acme/styles.css`] });
+    const app = join(target, 'apps/studio/src');
+    const panel = join(app, 'app/chat/chat-panel.component.ts');
+
+    mkdirSync(dirname(panel), { recursive: true });
+    writeFileSync(panel, "export const panel = 'flex';\n");
+    writeFileSync(join(app, 'styles.css'), ".app { color: red; }\n@source '../';\n@tailwind utilities;\n");
+    writeFileSync(join(target, DESIGN_DIR, 'acme/styles.css'), "@import '../../../apps/studio/src/styles.css';\n");
+    await vite.transformRequest(
+      productModuleIdOf({ file: join(target, DESIGN_DIR, 'acme/styles.css'), product: 'acme' }),
+    );
+
+    expect(vite.moduleGraph.getModulesByFile(panel)?.size).toBeGreaterThan(0);
+
+    vite.watcher.emit('change', panel);
+    vite.watcher.emit('change', join(app, 'styles.css'));
+
+    expect(changes()).toHaveLength(1);
+    expect((keysOf(changes()[0]) as string[]).length).toBeGreaterThan(2);
   });
 
   it('redraws all parts for config.json', async () => {
