@@ -181,7 +181,20 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     switch track need lib CSS, with 33).
   - Verified: specs that fail without each change, tsc, lint, read-only `check` on sdk and studio. Studio's check
     still stops on 3 findings in its own design files (with 33).
-- In progress: step 2: `GET /__design/open-points`, the part ready mark (`ready.json`), and the `sketch ready` gate.
+- Built, step 2 (slice 3 without the Studio UI; Q191: 33 sketches the list UI, built after the pilot):
+  - `GET /__design/open-points?product=&part=&draw=` (`6cceea5a3`): no draw by default; `draw=true` with a `part`
+    adds contrasts and control states (`system/drawn-open-points.ts`).
+  - Part ready (`0b326145d`): `ready.json` `{ [part]: { hash, by, at } }` in the owner's folder;
+    `et design ready <part> --product --by`, `POST /__design/part-ready` (400, 404, 409 stale hash, 422 with the
+    points), MCP `part_ready`. The mark drops on a hash change; `check` prints `READY`.
+  - `sketch ready` gate (`d7929629a`, `d495e30ce`): refuses on missing-state, contrast and missing-motion points
+    the variant ADDS against the merged part; inherited ones print as NOTE. A new part blocks on all.
+  - Fixes on the way: CONTROL-PART-INPUT matched nothing after `beb4c70db` (import cycle, `911aa3e24`);
+    STALE-REPLACE read an anchored regex against the whole source (`1e5ff0c72`); Q190 `surface-hover` (`a52b0d7bf`).
+  - Verified: specs that fail without each change, tsc, lint, design folder 968/969 (`list-system.spec.ts` passes
+    alone). Not verified: a real draw through the endpoints or `et design ready`.
+- Queued: frictions from the Q191 sketch (raw `<button>` in a page, CLIPPED canvas beside a side panel, a shared
+  export only some variants import), then step 3 (go/task/compare pilot).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
