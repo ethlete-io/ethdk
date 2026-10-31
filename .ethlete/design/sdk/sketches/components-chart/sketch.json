@@ -1,0 +1,39 @@
+{
+  "target": "components/chart",
+  "status": "ready",
+  "createdAt": "2026-10-31T05:44:33.676Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Chart baseline",
+      "note": "The SDK charts (et-bar-chart, et-line-chart, et-pie-chart), first drawing, drawn by their mocks from @ethlete/components/design/chart with the real markup and CSS: bar, line and pie chart sheets plus the axis, grid, legend, chart tooltip and line chart tooltip sheets, and the et-tooltip pane for the open tooltip. Framed as a 480px page with 16px padding; bar and line plots 410px wide, 240px high (the default); pie 200px (the default), donut innerRadius 0.6 with its total. Single series draw in the accent; two or more in accent mix steps (100 / 40 %, pie 100 / 80 / 60 / 40 %). States: bar (Jan to Jun), bar-series (2025 and 2026, legend), bar-hover and bar-focus-visible (Apr), bar-tooltip (Mar 2025, hover with its tooltip), bar-empty (projected etBarChartEmpty text), bar-long-label (January 2026 ... June 2026: the auto label spacing thins to every second label); line, line-series (Visits and Sign-ups, legend), line-points, line-hover and line-focus-visible (Thu: crosshair, slice dots, focus box), line-tooltip (Wed, active slice with the multi-series tooltip); pie, donut, pie-hover and pie-focus-visible (Search), pie-tooltip (Direct), pie-empty (all zero: the empty ring), pie-long-label (a long legend label, ellipsed). Static snapshot: the bar grow, line reveal and slice fade are drawn at rest. The lib has no loading state. Numbers (light / dark), from shot pixels at scale 2, brand mint, a: mint marks (bars, line 1, dots, legend and tooltip keys) 1.33 / 13.50; 40 % series (bar 2026, line 2) 1.13 / 2.79; axis and legend text (muted) 7.81 / 6.94; crosshair (subtle) 4.95 / 4.99; hover and focus tint 1.07 / 1.08; focus rings: bar and line (2px, series colour / primary) 1.33 / 13.50, pie (2px, text colour) 17.93 / 17.18. Q98 numbers only: grid lines vs page 1.26 / 1.73 (as the table's edges). Decided rules that arise: Q88 (bar, line and pie focus rings), Q99a (on light the line strokes, slice dots, line legend swatches and tooltip keys take ink in their mix steps; bars, pie slices and the square legend swatches are mint fills and get a 1px ink edge). Series colours otherwise stay data colours: the mix steps are kept. Q101 does not arise: no filled button. An ink edge arises, so Q102 arises: under the brand theme the dark ink is the mint, so the edge is invisible on the full mint fill but shows as a bright outline around the 40 % series in dark (b), while c drops it there. Findings for later, not render refusals: the thinned first category label (January 2026) is centred on its own bar, so it starts a few px left of the plot, under the value axis gutter; the pie focus ring in b is the same ink as its new 1px edge, only 1px wider, so a focused slice reads close to rest (a used the text colour); the pie tooltip opens over the legend. Later rounds, left out here: horizontal and stacked bars, negative values, area and stacked area, the time scale, sankey, per-series colour themes, the title and note slots, touch tap."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. On light every mint mark is 1.33 vs page: bars, line 1, slice dots, legend and tooltip keys, and the bar and line focus rings; the 40 % series 1.13. The pie ring is the text colour, 17.93. Dark: mint 13.50, 40 % series 2.79, pie ring 17.18."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q88 and Q99a, the edge in both schemes (Q102 yes). Every focus ring takes the theme ink: bar and line 5.48 on light (was 1.33), pie 5.48 (was 17.93, text colour); dark 13.50. Line strokes, slice dots, line legend swatches and tooltip keys take ink on light in their mix steps: line 1 5.48, the 40 % line 1.81 (was 1.13); dark unchanged. Bars, pie slices and square legend swatches get a 1px ink edge (an SVG stroke, centred on the outline, so 0.5px sits outside the fill): 5.48 vs page, 4.13 vs the full mint, 4.85 vs the 40 % fill. In dark the brand ink is the mint, so the edge vanishes on the full mint but outlines the 40 % series (13.50 vs page, 4.83 vs its fill). Picked because it follows the decided rules with the fewest new parts, keeps the data mix steps, and matches the calendar, table and tree picks; the dark outline also lifts the dim 40 % series off the page."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with dark as today (Q102 no): the edge is light-dark(ink, transparent). Light equals b (rings 5.48, edge 5.48 vs page, 4.13 / 4.85 vs the fills, line 1 5.48). Dark: no edge, the 40 % series stays 2.79 vs page; rings stay ink (Q88), 13.50."
+    }
+  }
+}
