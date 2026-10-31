@@ -101,11 +101,7 @@ const popover = async (open: PartOpenPoints) => {
     </div>`,
   });
   return {
-    body: html`<div
-      class="absolute top-14 right-space-3 [&_.anchored-dialog-frame]:bg-transparent! [&_.anchored-dialog-frame]:p-0! [&_.et-anchored-dialog-mock]:mt-0!"
-    >
-      ${dialog.body}
-    </div>`,
+    body: html`<div class="absolute top-14 right-space-3">${dialog.body}</div>`,
     styles: dialog.styles,
   };
 };
