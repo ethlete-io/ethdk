@@ -1121,7 +1121,13 @@ const controlPartsOf = `((control) => [
   ...[...control.querySelectorAll('[data-et-control-part]')].filter((part) => part.parentElement.closest('[data-et-control]') === control),
 ])`;
 
-const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; clip: boolean }) => `(() => {
+const seeFrame = (options: {
+  discover: boolean;
+  part: string;
+  ownCss: string[];
+  controlParts: Record<string, string>;
+  clip: boolean;
+}) => `(() => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
   if (refused.startsWith('design-explore:')) return { refused: refused.split('\\n')[0] };
@@ -1133,6 +1139,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
       : null;
   };
   const OWN = ${JSON.stringify(options.part)};
+  const CONTROL_PARTS = ${JSON.stringify(options.controlParts)};
   const tokensOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
   const ownerOf = (element) => {
     const slotted = tokensOf(element, 'data-et-slot');
@@ -1219,7 +1226,11 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
       look: lookOf(element),
     };
   };
-  const controls = [...root.querySelectorAll('[data-et-control]')].filter((element) => ownerOf(element) === null).map((element) => {
+  const isOwnControl = (element) => {
+    const owner = ownerOf(element);
+    return owner === null || (owner.at === element && CONTROL_PARTS[element.getAttribute('data-et-control')] === owner.key);
+  };
+  const controls = [...root.querySelectorAll('[data-et-control]')].filter(isOwnControl).map((element) => {
     const parts = ${controlPartsOf}(element);
     const forced = new Set(parts.flatMap((part) => tokensOf(part, 'data-et-force')));
     for (const part of parts) if (forced.size > 0) part.setAttribute('data-et-force', [...forced].join(' '));
@@ -1297,8 +1308,9 @@ const seeFrames = async (options: {
   frames: CompleteFrame[];
   part: string;
   ownCss: string[];
+  controlParts: Record<string, string>;
 }) => {
-  const { browser, base, frames, part, ownCss } = options;
+  const { browser, base, frames, part, ownCss, controlParts } = options;
   const context = await browser.newContext();
   const seen: SeenFrame[] = [];
   const refused: string[] = [];
@@ -1314,7 +1326,7 @@ const seeFrames = async (options: {
       await page.evaluate(settled);
 
       const found = (await page.evaluate(
-        seeFrame({ discover: frame.interaction === null, part, ownCss, clip: frame.clip }),
+        seeFrame({ discover: frame.interaction === null, part, ownCss, controlParts, clip: frame.clip }),
       )) as Seen;
 
       if ('refused' in found) {
@@ -1496,7 +1508,14 @@ export const seePart = async (options: {
     .filter((file) => file.endsWith('.css'))
     .sort()
     .map((file) => readFileSync(join(dir, file), 'utf8'));
-  const { seen, refused, changes } = await draw((browser) => seeFrames({ browser, base, frames, part: key, ownCss }));
+  const controlParts = Object.fromEntries(
+    Object.entries(declaredControlsOf(definition?.controls) ?? {}).flatMap(([id, control]) =>
+      control.part === null ? [] : [[id, control.part]],
+    ),
+  );
+  const { seen, refused, changes } = await draw((browser) =>
+    seeFrames({ browser, base, frames, part: key, ownCss, controlParts }),
+  );
   const owner = partOwnerOf({ product, part });
 
   return {

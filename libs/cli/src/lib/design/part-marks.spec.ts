@@ -1,6 +1,6 @@
-import { cpSync, mkdtempSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { markPartSource } from './part-marks';
 import { readConfig } from './paths';
@@ -18,10 +18,15 @@ afterEach(async () => {
 
 type Drawn = { default: { states: Record<string, unknown>; render: (props: unknown) => Promise<{ body: string }> } };
 
-const acme = async () => {
+const acme = async (files: Record<string, string> = {}) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-marks-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+  for (const [file, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(target, '.ethlete/design/acme', file)), { recursive: true });
+    writeFileSync(join(target, '.ethlete/design/acme', file), text);
+  }
 
   const config = readConfig(target) ?? {};
   const system = createSystemModules({ target, config });
@@ -45,7 +50,28 @@ describe('markPartSource', () => {
       markPartSource({ code: "import x from 'x';\nexport default definePart({});\n", key: 'a/b', marker: '/m.ts' }),
     ).toBe(
       "import x from 'x';\nconst __etPart = definePart({});\n\n" +
-        'import { markPart as __etMarkPart } from "/m.ts";\nexport default __etMarkPart(__etPart, "a/b");\n',
+        'import { markNamed as __etMarkNamed, markPart as __etMarkPart } from "/m.ts";\n' +
+        'export default __etMarkPart(__etPart, "a/b");\n',
+    );
+  });
+
+  it('re-exports each exported const and function through the marker, not a class, a let or a const enum', () => {
+    const code = [
+      'export const a = () => 1;',
+      'export async function b() {}',
+      'export class C {}',
+      'export let d = 1;',
+      'export const enum E { X }',
+      'export default definePart({});',
+    ].join('\n');
+
+    expect(markPartSource({ code, key: 'a/b', marker: '/m.ts' })).toBe(
+      'const a = () => 1;\nasync function b() {}\nexport class C {}\nexport let d = 1;\nexport const enum E { X }\n' +
+        'const __etPart = definePart({});\n' +
+        'import { markNamed as __etMarkNamed, markPart as __etMarkPart } from "/m.ts";\n' +
+        'export default __etMarkPart(__etPart, "a/b");\n' +
+        'const __etNamed_a = __etMarkNamed(a, "a/b");\nconst __etNamed_b = __etMarkNamed(b, "a/b");\n' +
+        'export { __etNamed_a as a, __etNamed_b as b };\n',
     );
   });
 
@@ -56,6 +82,53 @@ describe('markPartSource', () => {
 });
 
 describe('the design server marks part roots', () => {
+  it('marks the markup of the named function exports of a part and slots their arguments, once inside its own render', async () => {
+    const { bodyOf } = await acme({
+      'components/tag/tag.ts': [
+        "import { definePart, drawing, html } from '@design-system';",
+        '',
+        'export class TagModel {}',
+        "export const tagLabels = ['New'];",
+        'export const tagMark = (label: string) => html`<span class="acme-tag">${label}</span>`;',
+        'export const tagBox = ({ body }: { body: string }) => html`<div class="acme-tag-box">${body}</div>`;',
+        'export async function tagDrawing(label: string) {',
+        '  return { body: html`<em class="acme-tag-drawing">${label}</em>`, styles: \'\' };',
+        '}',
+        '',
+        'export default definePart<{ label: string }>({',
+        "  note: 'A tag.',",
+        "  states: { default: { label: 'New' } },",
+        '  render: ({ label }) => drawing({ body: tagMark(label) }),',
+        '});',
+        '',
+      ].join('\n'),
+      'pages/tags/tags.ts': [
+        "import { definePart, drawing, html } from '@design-system';",
+        "import { TagModel, tagBox, tagDrawing, tagLabels, tagMark } from '@system/components/tag';",
+        '',
+        'export default definePart({',
+        "  note: 'Tags.',",
+        '  states: { default: {} },',
+        '  render: async () =>',
+        '    drawing({',
+        "      body: html`<main data-model=\"${typeof TagModel}\">${tagLabels.map(tagMark).join('')}${(await tagDrawing('Hot')).body}${tagBox({ body: '<b>1</b>' })}</main>`,",
+        '    }),',
+        '});',
+        '',
+      ].join('\n'),
+    });
+
+    expect(await bodyOf('pages/tags', 'default')).toBe(
+      '<main data-et-part="pages/tags" data-model="function">' +
+        '<span data-et-part="components/tag" class="acme-tag">New</span>' +
+        '<em data-et-part="components/tag" class="acme-tag-drawing">Hot</em>' +
+        '<div data-et-part="components/tag" class="acme-tag-box"><b data-et-slot="components/tag">1</b></div></main>',
+    );
+    expect(await bodyOf('components/tag', 'default')).toBe(
+      '<span data-et-part="components/tag" class="acme-tag">New</span>',
+    );
+  });
+
   it('marks the root of every part a page draws, also inside another part', async () => {
     const { bodyOf } = await acme();
     const body = await bodyOf('pages/home', 'default');

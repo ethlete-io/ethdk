@@ -141,3 +141,24 @@ export const markPart = <TProps, TState extends string>(
     },
   };
 };
+
+const markOutput = (output: unknown, key: string) =>
+  typeof output === 'string' ? markBody(output, key) : markDrawing(output as Drawing, key);
+
+/**
+ * `value` as a named export of the part `key`: a function whose markup, or drawing body, comes back with its first
+ * element marked as the root of `key`, and the markup of its arguments as slotted into `key`. Any other value, a
+ * class included, stays as it is.
+ */
+export const markNamed = <T>(value: T, key: string): T => {
+  if (typeof value !== 'function' || /^class\b/u.test(Function.prototype.toString.call(value))) return value;
+
+  return function (this: unknown, ...args: unknown[]) {
+    const output = value.apply(
+      this,
+      args.map((arg) => slotProps(arg, { key })),
+    );
+
+    return output instanceof Promise ? output.then((done) => markOutput(done, key)) : markOutput(output, key);
+  } as T;
+};
