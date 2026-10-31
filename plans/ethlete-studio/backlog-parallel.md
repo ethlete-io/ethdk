@@ -1062,3 +1062,22 @@ did not follow the surface system. It is rendered through `ng(...)` as the real 
 `elements/studio-menu` renders the real `et-menu`, so surface, border (`--et-overlay-surface-border-color`), radius and
 shadow come from the SDK. The list inside stays. It reaches Tom as a one-variant sketch, because the look changes, and
 he merges it.
+
+### Surfaces follow the elevation system, not picked names (Tom, 2026-10-31, Q203-Q206)
+
+The Q197 migration swapped token names but hand-picked the elevation: parts carry fixed `et-surface--<name>` classes
+(`dark` x22, `dark-elevated` x3, `dark-elevated-2` x8) and use no auto surface and no interactive surface. Tom: an auto
+surface picks the next higher surface, so everything that floats without a backdrop (popover, menu, tooltip, dropdown)
+takes its surface and its colours dynamically from the theme. No part names a theme.
+
+1. **Kit attributes (57).** `data-et-auto-surface`: the design frame walks up to the nearest surface scope and sets
+   the theme of elevation + 1 of the same type from the registered surface themes, like `etAutoSurface`.
+   `data-et-surface-interactive`: the frame loads the SDK interactive surface CSS once, like `etSurfaceInteractive`.
+   `et design task` maps them 1:1 to the directives; `compare` shows a difference in the app. Only the root surface
+   is fixed, and the frame or the app root provides it, not a part class.
+2. **Migration (33)** of every Studio part and of the open-points popover sketch to the attributes, after (1).
+3. **Error (57).** `DENIED-CLASS` denies `et-surface--*` in parts outside foundations, as an error with the Q198
+   switch, after (2). No per-part opt-out.
+
+Order (lead, Q96): the running Q198 colour subagent stops after its finished commits; nothing more is built on fixed
+surface classes. The implementation pilot waits for (2).
