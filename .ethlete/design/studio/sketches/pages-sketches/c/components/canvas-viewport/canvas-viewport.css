@@ -1,0 +1,34 @@
+@layer components {
+  .st-canvas-viewport.et-focus-ring {
+    --_et-focus-ring-offset: -2px;
+    --st-canvas-mark: 2.4rem;
+
+    &:focus-visible {
+      outline-color: transparent;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(var(--_et-focus-ring-color) 0 0) left top / var(--st-canvas-mark) 2px,
+        linear-gradient(var(--_et-focus-ring-color) 0 0) left top / 2px var(--st-canvas-mark),
+        linear-gradient(var(--_et-focus-ring-color) 0 0) right top / var(--st-canvas-mark) 2px,
+        linear-gradient(var(--_et-focus-ring-color) 0 0) right top / 2px var(--st-canvas-mark),
+        linear-gradient(var(--_et-focus-ring-color) 0 0) left bottom / var(--st-canvas-mark) 2px,
+        linear-gradient(var(--_et-focus-ring-color) 0 0) left bottom / 2px var(--st-canvas-mark),
+        linear-gradient(var(--_et-focus-ring-color) 0 0) right bottom / var(--st-canvas-mark) 2px,
+        linear-gradient(var(--_et-focus-ring-color) 0 0) right bottom / 2px var(--st-canvas-mark);
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity var(--duration-state) var(--ease-standard);
+    }
+
+    &:focus-visible::before {
+      opacity: 1;
+    }
+  }
+}

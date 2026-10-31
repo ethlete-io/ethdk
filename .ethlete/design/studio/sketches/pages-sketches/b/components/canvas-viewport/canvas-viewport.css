@@ -1,0 +1,5 @@
+@layer components {
+  .st-canvas-viewport.et-focus-ring {
+    transition: outline-color var(--duration-state) var(--ease-standard);
+  }
+}
