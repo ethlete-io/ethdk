@@ -206,3 +206,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   `pages/inventory`, and each part the `implements` round links to its app file (no visible change). The builder sets
   each go with `et design go <part> --product studio --by tom` after the part's last edit, plus any inventory
   approval the part still needs, and commits go.json. Parts that need a design call are excluded until Tom decides.
+- **The word "go" (Tom, 2026-11-01), after the MVP:** "go" sounds odd as the name for releasing a part for
+  implementation. Rename it with the after-MVP `pages/inventory` rework, which is where approvals will change anyway.
+  Today the go exists only in the CLI (`et design go`); Studio has no go action.
