@@ -419,5 +419,12 @@
     "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
     "hash": "55b2e2436328490d",
     "at": "2026-10-31T15:00:35.596Z"
+  },
+  {
+    "part": "components/button",
+    "by": "claude-opus-5-5",
+    "note": "Q102 lead call (ethlete-sdk-76): the filled icon button edge draws only in the light scheme, as every inset ink edge; lib 83b0a8ba6",
+    "hash": "d9fb06adc1497d70",
+    "at": "2026-10-31T15:18:35.903Z"
   }
 ]
