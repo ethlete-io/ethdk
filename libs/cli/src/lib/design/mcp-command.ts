@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
 import { createInterface } from 'readline';
-import { callsRootOf } from './paths';
+import { callsRootOf, DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf } from './stamp';
 
 export const MCP_USAGE = 'mcp';
@@ -22,7 +22,10 @@ type ToolSpec = {
   values?: ToolInput[];
   switches?: ToolInput[];
   extra?: (args: Record<string, unknown>, context: ToolContext) => string[];
+  read?: (args: Record<string, string>, context: ToolContext) => ToolResult;
 };
+
+type ToolResult = { content: { type: 'text'; text: string }[]; isError: boolean };
 
 export type ToolRun = { code: number; stdout: string; stderr: string };
 
@@ -49,6 +52,47 @@ const VARIANT: ToolInput = { name: 'variant', flag: '--variant', description: 'T
 
 const variantFileOf = (options: { target: string; call: string; variant: string }) =>
   resolve(callsRootOf(options.target), options.call, `variant-${options.variant}.ts`);
+
+const frameBaseOf = (target: string) => {
+  const config = readConfig(target);
+
+  return process.env['DE_URL'] ?? `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`;
+};
+
+const readCall = (args: Record<string, string>, context: ToolContext): ToolResult => {
+  const call = args['call'] ?? '';
+  const variant = args['variant'] ?? '';
+  const dir = resolve(callsRootOf(context.target), call);
+  const callFile = resolve(dir, 'call.ts');
+  const fixtureFile = resolve(dir, 'fixture.ts');
+
+  if (!existsSync(callFile)) return { content: [{ type: 'text', text: `${callFile} does not exist.` }], isError: true };
+
+  const search = new URLSearchParams({ call, variant });
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: [
+          `The call: ${call}`,
+          `The variant under study: ${variant}`,
+          `The file you draw into: ${variantFileOf({ target: context.target, call, variant })}`,
+          `Its frame: ${frameBaseOf(context.target)}/frame.html?${search}`,
+          '',
+          readFileSync(callFile, 'utf8'),
+        ].join('\n'),
+      },
+      {
+        type: 'text',
+        text: existsSync(fixtureFile)
+          ? `fixture.ts, the data every variant draws. Never change it:\n\n${readFileSync(fixtureFile, 'utf8')}`
+          : `The call ${call} carries no fixture.ts.`,
+      },
+    ],
+    isError: false,
+  };
+};
 
 const callCheckArgvOf = (args: Record<string, unknown>, context: ToolContext) => {
   const call = args['call'];
@@ -79,6 +123,18 @@ export const MCP_TOOLS: ToolSpec[] = [
     name: 'parts',
     description: "List each product's parts as JSON: origin, note, states, widths, presets and problems.",
     command: ['system', '--json'],
+  },
+  {
+    name: 'call',
+    description:
+      'Read a call before you draw a variant of it: call.ts, fixture.ts (the data every variant draws, never change ' +
+      'it), the variant file you draw into and the URL of its frame.',
+    command: [],
+    values: [
+      { ...CALL, required: true },
+      { ...VARIANT, required: true },
+    ],
+    read: readCall,
   },
   {
     name: 'check',
@@ -233,7 +289,7 @@ const inputsOf = (tool: ToolSpec) => [
   ...(tool.positional ?? []),
   ...(tool.values ?? []),
   ...(tool.switches ?? []).map((input) => ({ ...input, type: 'boolean' as const })),
-  PRODUCT,
+  ...(tool.read ? [] : [PRODUCT]),
 ];
 
 const inputSchemaOf = (tool: ToolSpec) => {
@@ -297,6 +353,11 @@ const resultOf = (target: string, run: ToolRun) => ({
   isError: run.code !== 0,
 });
 
+const stringArgsOf = (args: unknown) =>
+  Object.fromEntries(
+    Object.entries((args as Record<string, unknown> | undefined) ?? {}).map(([key, value]) => [key, String(value)]),
+  );
+
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> };
 
 /** The answer to one JSON-RPC request of an MCP client; `null` for a notification. */
@@ -342,6 +403,8 @@ export const mcpAnswerOf = async (options: { target: string; request: Request; r
     });
 
     if (typeof argv === 'string') return answer({ content: [{ type: 'text', text: argv }], isError: true });
+
+    if (tool.read) return answer(tool.read(stringArgsOf(request.params?.['arguments']), { target, receipt }));
 
     return answer(resultOf(target, await run(argv)));
   }

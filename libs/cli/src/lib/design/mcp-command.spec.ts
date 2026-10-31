@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -63,6 +63,7 @@ describe('et design mcp', () => {
 
     expect(Object.keys(tools)).toEqual([
       'parts',
+      'call',
       'check',
       'shot',
       'motion_shots',
@@ -81,6 +82,7 @@ describe('et design mcp', () => {
       'inbox',
       'inbox_done',
     ]);
+    expect(tools['call']).toEqual(['call', 'variant']);
     expect(tools['motion_shots']).toEqual(['part', 'motion']);
     expect(tools['sketch_ready']).toEqual(['part', 'by']);
     expect(tools['sketch_variant']).toEqual(['part', 'variant', 'from', 'by']);
@@ -179,6 +181,36 @@ describe('et design mcp', () => {
 
     expect(inbox.result.isError).toBe(false);
     expect(JSON.parse(inbox.result.content[0]?.text ?? '')).toEqual({ items: [], waitingForUser: [] });
+  });
+
+  it('reads a call: its source, its fixture, the variant file and the frame URL, without running a command', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-mcp-call-'));
+    const dir = join(target, '.ethlete/design/calls/app/one');
+    const run = vi.fn<ToolRunner>();
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'call.ts'), 'export default { headline: "One" };\n');
+    vi.stubEnv('DE_URL', 'http://localhost:4999');
+
+    const bare = await call({ target, run, name: 'call', args: { call: 'app/one', variant: 'b' } });
+
+    writeFileSync(join(dir, 'fixture.ts'), 'export const rows = [1, 2];\n');
+
+    const full = await call({ target, run, name: 'call', args: { call: 'app/one', variant: 'b' } });
+    const gone = await call({ target, run, name: 'call', args: { call: 'app/two', variant: 'a' } });
+
+    vi.unstubAllEnvs();
+
+    expect(run).not.toHaveBeenCalled();
+    expect(full.result.isError).toBe(false);
+    expect(full.result.content[0]?.text).toContain(`The file you draw into: ${join(dir, 'variant-b.ts')}`);
+    expect(full.result.content[0]?.text).toContain(
+      'Its frame: http://localhost:4999/frame.html?call=app%2Fone&variant=b',
+    );
+    expect(full.result.content[0]?.text).toContain('headline: "One"');
+    expect(full.result.content[1]?.text).toContain('export const rows = [1, 2];');
+    expect(bare.result.content[1]?.text).toBe('The call app/one carries no fixture.ts.');
+    expect(gone.result.isError).toBe(true);
   });
 
   it('checks a call: lints its variant, types the calls and writes the receipt the server was given', async () => {

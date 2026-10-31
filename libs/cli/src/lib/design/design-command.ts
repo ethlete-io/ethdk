@@ -156,7 +156,7 @@ const helpOf = (invocation: string) =>
     '  --by is the exact model id of the agent that writes, e.g. claude-opus-5-5; every agent write needs it.',
     '',
     `${invocation} ${MCP_USAGE} [--receipt <path>]`,
-    '  Serve the design tools to an MCP client over stdio: parts, check, shot, motion_shots, sketch_new, sketch_report,',
+    '  Serve the design tools to an MCP client over stdio: parts, call, check, shot, motion_shots, sketch_new, sketch_report,',
     '  sketch_ready, sketch_merge, sketch_discard, inbox and inbox_done. Each runs the command of the same name in the',
     '  working directory and returns its output, its images and its JSON. check on a call writes its receipt to',
     '  --receipt.',
