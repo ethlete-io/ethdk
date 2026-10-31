@@ -1,0 +1,34 @@
+{
+  "target": "components/carousel",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:51:43.799Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Carousel baseline",
+      "note": "The SDK carousel (et-carousel), first drawing, drawn by its mock from @ethlete/components/design with its real markup and CSS: the et-scrollable track (itemSize full by default, no masks, snap), the slides with the clones a looping carousel adds, the controls row with the previous and next buttons (transparent sm et-icon-buttons with a chevron in the theme ink), the dots (8px in a 24px target, 35% surface-interaction, the active one in the theme primary) and, with autoplay, the play/pause toggle and the countdown ring around the active dot (2.5px, theme primary over a 30% surface-interaction track), held at 40% of the slide's time. Framed as its story does (24px padding, surface fill, slides at least 200px tall with 12px corners, title, line and 'slide n of m'), with neutral slides (14% surface ink) in place of the story's surface fill plus a fixed white/15 border. The active slide is brought into view by translating the slides statically, so the track's scroll container carries data-et-skip=CLIPPED; the countdown halves clip their half-discs on purpose (data-et-skip=CLIPPED). What the lib does: loop defaults to true, so the arrows never disable while there is more than one slide; with loop off the arrow at an end gets aria-disabled and 40% opacity; a single slide disables both arrows and still shows one dot. Every control carries et-focus-ring: a 2px outline 3px out, in the theme primary. Hover on an arrow is a 5% primary tint; hover on a dot darkens it to 55%, the active dot keeps primary. slideAlign center with partial slides fades the track edges over 32px. States: first-slide, middle-slide, last-slide, no-loop-first, no-loop-last (disabled ends), next-hover, next-active, next-focus-visible, dot-hover, active-dot-hover, dot-focus-visible, active-dot-focus-visible, autoplay-playing, autoplay-paused, play-toggle-hover, play-toggle-focus-visible, multiple-items (half, 16px gap), center-aligned (half, centred, edge fade), no-controls (showControls off), long-caption, single-slide. Numbers (light / dark), from shot pixels at scale 2: active dot vs page 1.33 / 13.50; inactive dot 1.57 / 1.93; chevron and pause icon 5.48 / 13.50; disabled chevron 1.30 / 3.09; arrow hover tint vs page 1.04 / 1.17, chevron on it 7.68 / 13.50; arrow focus ring 1.37 / 13.06; dot focus ring 1.33 / 13.50; countdown fill 1.33 / 13.50, its track 1.47 / 1.76; slide vs page 1.35 / 1.48 (Q98, numbers only). Decided rules that arise: Q88 (every control's focus ring is primary) and Q99a (the active dot, the countdown fill and the dot focus ring are accent marks, mint at 1.33:1 on light). No ink edge arises (the marks turn ink, no mint fill remains on light), so no Q102 and no c. No filled button, so no Q101. Open for Tom, not a decided rule: inactive dots (1.57 light), the disabled chevron (1.30 light) and the arrow hover tint (1.04 light) are faint. No lib bug found."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. Active dot, countdown fill and dot focus ring in the theme primary: 1.33 / 13.50 vs page (light / dark); arrow focus ring 1.37 / 13.06. Inactive dot 1.57 / 1.93; chevron 5.48 / 13.50, disabled 1.30 / 3.09; hover tint 1.04 / 1.17; countdown track 1.47 / 1.76; slide 1.35 / 1.48."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q88 and Q99a: every focus ring (arrows, play toggle, dots) takes the theme ink via --_et-focus-ring-color (light 7.68 on the arrow, 5.48 on a dot; dark 13.50); the active dot and the countdown fill are drawn light-dark(ink, primary), so on light they take the ink at 5.48 and dark keeps primary at 13.50. Everything else equals a. No ink edge arises, so Q102 does not and there is no c."
+    }
+  }
+}
