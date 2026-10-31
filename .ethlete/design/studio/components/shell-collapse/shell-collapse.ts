@@ -25,6 +25,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
 
 export default definePart({
   note: 'The button in the shell panel head that hides the panel. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade; no hairline ring or raised fill at rest.',
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   ...interactionRows<Props, 'collapse', CollapseInteraction>(
     { collapse: {} },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },

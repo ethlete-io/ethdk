@@ -1,6 +1,9 @@
 import pickerStyles from './picker.css?inline';
 import { drawing, html } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
+import { shellCollapse, shellCollapseStyles } from '@system/components/shell-collapse';
+import { shellProjectOption, shellProjectOptionStyles } from '@system/components/shell-project-option';
+import { shellProjectSwitch, shellProjectSwitchStyles } from '@system/components/shell-project-switch';
 import { icon, type IconName } from '@system/foundations/icons';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
@@ -54,47 +57,27 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     ${slot(icon('more', { size: 18 }), 'All products', false, 'all')}
   </nav>`;
 
-const projectSwitch = html`<button
-  class="st-shell-project flex items-center gap-space-2 w-full h-control-md py-0 px-space-2 rounded-control-md bg-surface-raised text-text-muted text-left"
-  type="button"
-  aria-haspopup="listbox"
->
-  <span
-    class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm bg-surface-overlay text-text text-ui-xs font-ui-strong"
-    >E</span
-  >
-  <span class="flex-1 min-w-0 overflow-hidden text-text text-ellipsis whitespace-nowrap">ethlete-sdk</span>
-  ${icon('up-down', { size: 16 })}
-</button>`;
-
-const sidePanel = (product: string, side: string) =>
+const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
   html`<aside
     class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-surface"
   >
     <header class="st-shell-side-head flex items-center justify-between box-border pr-space-2 pl-space-4">
       <span class="text-ui-lg font-ui-strong">${product}</span>
-      <button
-        class="st-shell-collapse flex items-center justify-center size-control-sm p-0 rounded-control-md bg-surface-raised text-text"
-        type="button"
-        title="Hide panel"
-      >
-        ${icon('panel', { size: 18 })}
-      </button>
+      ${shellCollapse()}
     </header>
     <div class="flex-1 min-h-0 overflow-hidden p-space-2">${side}</div>
-    <footer class="st-shell-side-foot p-space-2">${projectSwitch}</footer>
+    <footer class="st-shell-side-foot p-space-2">${shellProjectSwitch({ open: pickerOpen })}</footer>
   </aside>`;
-
-const pickerRow = (name: string, selected: boolean) =>
-  `<div class="flex items-center min-h-control-md py-0 px-space-2 rounded-control-md${selected ? ' bg-accent-subtle text-accent-text' : ''}" role="option" aria-selected="${selected}">${name}</div>`;
 
 const picker = (placement: 'above' | 'beside') =>
   html`<div
-    class="st-project-picker absolute box-border w-62 border border-surface-border p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 border border-et-surface-interaction p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
     data-placement="${placement}"
+    data-et-surface="project.open"
   >
     <div role="listbox" aria-label="Projekt auswählen">
-      ${pickerRow('ethlete-sdk', true)} ${pickerRow('fut-frontend', false)} ${pickerRow('design-playground', false)}
+      ${shellProjectOption({ name: 'ethlete-sdk', selected: true })} ${shellProjectOption({ name: 'fut-frontend' })}
+      ${shellProjectOption({ name: 'design-playground' })}
     </div>
     <div class="st-project-picker-action mt-space-1 border-t border-surface-border pt-space-1 rounded-none">
       ${button({
@@ -115,6 +98,15 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     open: BASE,
     hidden: { ...BASE, panel: 'hidden' },
   } satisfies Record<string, Props>,
+  controls: {
+    collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
+    project: {
+      kind: 'select' as const,
+      part: 'components/shell-project-switch' as const,
+      surfaces: { open: 'project-picker' as const },
+    },
+    option: { kind: 'row' as const, part: 'components/shell-project-option' as const },
+  },
   render: ({ product, section, content, side, panel, projectPicker, studio = '' }: Props) => {
     return drawing({
       body: html`<div
@@ -124,11 +116,17 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
         ${rail(section, product, panel === 'hidden', studio)}
         <div class="st-shell-stage relative min-w-0">
           <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-surface">${content}</main>
-          ${panel === 'hidden' ? '' : sidePanel(product, side)}
+          ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open')}
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement) : ''}
         </div>
       </div>`,
-      styles: styles + pickerStyles + buttonStyles,
+      styles:
+        styles +
+        pickerStyles +
+        buttonStyles +
+        shellCollapseStyles +
+        shellProjectSwitchStyles +
+        shellProjectOptionStyles,
     });
   },
 });

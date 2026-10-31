@@ -30,6 +30,7 @@ export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) =>
 
 export default definePart({
   note: 'The project switch in the shell panel foot: badge, project name and an up-down chevron; it opens the project picker. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. Plain text at rest, and the chevron sits after the name, not at the right edge.',
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   ...interactionRows<Props, 'closed' | 'open', SwitchInteraction>(
     { closed: { open: false }, open: { open: true } },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },

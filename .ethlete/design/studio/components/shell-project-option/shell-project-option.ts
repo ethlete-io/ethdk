@@ -15,6 +15,7 @@ export const shellProjectOption = ({ name, selected = false, interaction }: Prop
 
 export default definePart({
   note: 'One project row in the project picker. Hover lifts to the raised fill, the selected row is accent-subtle and darkens on hover, press draws the pressed fill and focus the teal Studio ring, all on --transition-state.',
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   ...interactionRows<Props, 'option' | 'selected', OptionInteraction>(
     { option: { name: 'fut-frontend' }, selected: { name: 'ethlete-sdk', selected: true } },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
