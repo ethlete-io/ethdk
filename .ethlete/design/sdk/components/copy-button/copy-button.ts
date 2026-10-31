@@ -8,6 +8,7 @@ type Props = {
   outcome?: 'copied' | 'failed';
   interaction?: Interaction;
   disabled?: boolean;
+  size?: 'xs' | 'sm' | 'lg' | 'xl';
 };
 
 const mark = (control: 'icon' | 'text', interaction?: Interaction) =>
@@ -15,20 +16,21 @@ const mark = (control: 'icon' | 'text', interaction?: Interaction) =>
     .filter(Boolean)
     .join(' ');
 
-const render = ({ outcome, interaction, disabled }: Props) =>
+const render = ({ outcome, interaction, disabled, size }: Props) =>
   ['icon', 'text']
     .map((kind) =>
       copyButton({
         kind: kind as 'icon' | 'text',
         outcome,
         disabled,
+        size,
         attributes: mark(kind as 'icon' | 'text', interaction),
       }),
     )
     .join('');
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     idle: {},
@@ -39,6 +41,10 @@ export default definePart({
     'focus-visible': { interaction: 'focus-visible' },
     'copied-focus-visible': { outcome: 'copied', interaction: 'focus-visible' },
     disabled: { disabled: true },
+    'size-xs': { size: 'xs' },
+    'size-sm': { size: 'sm' },
+    'size-lg': { size: 'lg' },
+    'size-xl': { size: 'xl' },
   },
   widths: [480],
   controls: {
