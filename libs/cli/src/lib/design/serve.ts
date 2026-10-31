@@ -859,8 +859,11 @@ export const createDesignServer = async (options: {
       ],
     },
     // A design mock ships as TS that imports CSS with `?inline`, which the dependency pre-bundler
-    // can not load.
-    optimizeDeps: { exclude: ['@ethlete/components', '@ethlete/core'] },
+    // can not load. The tool's own modules sit in a snapshot under `node_modules`; pre-bundled, each
+    // late find of one reloads every frame.
+    optimizeDeps: {
+      exclude: ['@ethlete/components', '@ethlete/core', '@design-explore', DESIGN_SYSTEM_SPECIFIER, KIT_SPECIFIER],
+    },
     plugins: [designExplore({ target, config, system, stylesheetImports })],
     ...(listen ? {} : { appType: 'custom' as const }),
     ...(listen && !own ? {} : { logLevel: 'error' as const }),

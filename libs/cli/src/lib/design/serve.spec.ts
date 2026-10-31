@@ -159,6 +159,18 @@ describe('serveDesign', () => {
     expect(created.map((options) => options.server.host)).toEqual([undefined, '0.0.0.0', '192.168.0.5', '0.0.0.0']);
   });
 
+  it('never pre-bundles its own authoring modules, so finding one late reloads no frame', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await serveDesign({ target: makeTarget({ port: 4999 }) });
+
+    const { optimizeDeps } = created[0] as unknown as { optimizeDeps: { exclude: string[] } };
+
+    expect(optimizeDeps.exclude).toEqual(
+      expect.arrayContaining(['@design-explore', '@design-system', '@design-system/kit']),
+    );
+  });
+
   it('gives each checkout its own Vite cache, stable across restarts', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const one = makeTarget({ port: 4999, defaultCall: 'app/one' });
