@@ -4,7 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { checkSystem } from './check-system';
+import { checkSystem, summaryText } from './check-system';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
 import { createSketch, variantDirOf } from './sketch/sketch';
@@ -28,7 +28,13 @@ const output = () => {
 };
 
 const withoutOpenPoints = (lines: string[]) =>
-  lines.filter((line) => !line.startsWith('OPEN POINTS ') && !line.startsWith('  '));
+  lines.filter(
+    (line) =>
+      !line.startsWith('OPEN POINTS ') &&
+      !line.startsWith('  ') &&
+      !line.startsWith('PART ') &&
+      !line.startsWith('PARTS '),
+  );
 
 const renderWarningsOf = (lines: string[]) =>
   lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))
@@ -408,4 +414,57 @@ describe('checkDesign', () => {
       expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(IMPLEMENTS-MISSING 1\)/),
     ]);
   }, 60_000);
+
+  it('ends with one line per part with findings and the count of the clean parts', async () => {
+    const target = acme();
+    const lines = output();
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
+      'PART acme components/button: 4 open points',
+      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 2 open points',
+      'PART acme pages/home: 1 open point',
+      'PART acme components/card: 4 open points',
+      'PARTS acme: 1 of 4 clean',
+    ]);
+  }, 60_000);
+
+  it('keeps only the findings of one part with --part', async () => {
+    const target = acme();
+    const lines = output();
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.css'), '.acme-button { color: #000; }');
+
+    expect(
+      await checkDesign({ target, argv: ['--product', 'acme', '--part', 'elements/hero'], invocation: 'et design' }),
+    ).toBe(1);
+    expect(lines.filter((line) => /^(HARD-CODED|PART|OPEN POINTS| {2})/.test(line))).toEqual([
+      expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
+      'OPEN POINTS acme: 2 in 1 part',
+      '  elements/hero: no controls declared; no implements',
+      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 2 open points',
+    ]);
+  }, 60_000);
+
+  it('finds the product of a part without --product, and refuses an unknown part', async () => {
+    const lines = output();
+
+    expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/home'], invocation: 'et design' })).toBe(0);
+    expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
+      expect.stringMatching(/^PART acme pages\/home: /),
+    ]);
+    expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/gone'], invocation: 'et design' })).toBe(1);
+    expect(lines.at(-1)).toBe('NO PART "pages/gone" in any product of config.json.');
+  }, 60_000);
+});
+
+describe('summaryText', () => {
+  it('prints a clean line for the one part asked for', () => {
+    expect(summaryText({ product: 'acme', parts: ['pages/home'], tally: new Map(), only: 'pages/home' })).toEqual([
+      'PART acme pages/home: clean',
+    ]);
+  });
 });

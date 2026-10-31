@@ -7,7 +7,7 @@ import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
 import { checkSystemRendered } from './system/check-system';
-import { resolveProduct } from './system/resolve-product';
+import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
@@ -361,17 +361,43 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const { target, invocation } = options;
   const complete = options.argv.includes('--complete');
   const argv = options.argv.filter((argument) => argument !== '--complete');
-  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
+  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
   const products = flags['--product'];
+  const parts = flags['--part'];
+
+  if (parts && parts.length !== 1) {
+    console.error(`usage: ${invocation} check [--product <name>…] --part <layer>/<name> [--complete]`);
+
+    return 2;
+  }
+
+  const part = parts?.[0];
 
   if (products) {
     if (products.length === 0) {
-      console.error(`usage: ${invocation} check --product <name>… [--complete]`);
+      console.error(`usage: ${invocation} check --product <name>… [--part <layer>/<name>] [--complete]`);
 
       return 2;
     }
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, complete });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, complete, part });
+  }
+
+  if (part) {
+    const config = readConfig(target) ?? {};
+    const holding = Object.entries(config.products ?? {}).flatMap(([name, entry]) =>
+      resolveProduct({ target, name, config: entry }).parts.some((candidate) => partKeyOf(candidate) === part)
+        ? [name]
+        : [],
+    );
+
+    if (holding.length === 0) {
+      console.error(`NO PART "${part}" in any product of config.json.`);
+
+      return 1;
+    }
+
+    return checkSystemRendered({ target, config, products: holding, complete, part });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;

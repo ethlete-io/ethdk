@@ -80,7 +80,76 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
-type CheckOptions = { target: string; config: DesignConfig; products: string[]; known?: string[]; complete?: boolean };
+/** What `design check` found per part of each product: the rules of its problems, its warnings and open points. */
+type PartTally = { problems: string[]; warnings: number; open: number };
+
+type Tally = Map<string, Map<string, PartTally>>;
+
+type CheckOptions = {
+  target: string;
+  config: DesignConfig;
+  products: string[];
+  known?: string[];
+  complete?: boolean;
+  /** Only this part's findings, `<layer>/<name>`. */
+  part?: string;
+  tally?: Tally;
+};
+
+const PRODUCT_LEVEL = '(product)';
+
+/** The key of the part whose folder holds `file`, the innermost one, or `(product)` for a file outside every part. */
+export const partOfFile = (product: ResolvedProduct, file: string): string =>
+  product.parts
+    .map((part) => ({ key: partKeyOf(part), dir: dirname(part.file) }))
+    .filter(({ dir }) => !relative(dir, file).startsWith('..'))
+    .sort((a, b) => b.dir.length - a.dir.length)[0]?.key ?? PRODUCT_LEVEL;
+
+const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }) => {
+  const { product, part } = at;
+
+  if (!tally) return null;
+
+  const parts = tally.get(product) ?? new Map<string, PartTally>();
+  const entry = parts.get(part) ?? { problems: [], warnings: 0, open: 0 };
+
+  tally.set(product, parts);
+  parts.set(part, entry);
+
+  return entry;
+};
+
+const countText = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+/**
+ * One line per part with findings, then one line with the count of clean parts; with `only`, one line for that part
+ * even when it is clean.
+ */
+export const summaryText = (options: { product: string; parts: string[]; tally: Tally; only?: string }): string[] => {
+  const found = options.tally.get(options.product) ?? new Map<string, PartTally>();
+  const keys = options.only ? [options.only] : [...new Set([...options.parts, ...found.keys()])];
+  const lineOf = (key: string) => {
+    const entry = found.get(key);
+    const rules = [...new Set(entry?.problems ?? [])].join(', ');
+    const items = [
+      ...(entry?.problems.length ? [`${countText(entry.problems.length, 'problem')} (${rules})`] : []),
+      ...(entry?.warnings ? [countText(entry.warnings, 'warning')] : []),
+      ...(entry?.open ? [countText(entry.open, 'open point')] : []),
+    ];
+
+    return items.length > 0 ? `PART ${options.product} ${key}: ${items.join(', ')}` : null;
+  };
+  const lines = keys.map((key) => ({ key, line: lineOf(key) }));
+
+  if (options.only) return [lines[0]?.line ?? `PART ${options.product} ${options.only}: clean`];
+
+  const clean = lines.filter(({ key, line }) => line === null && key !== PRODUCT_LEVEL).length;
+
+  return [
+    ...lines.flatMap(({ line }) => (line ? [line] : [])),
+    `PARTS ${options.product}: ${clean} of ${options.parts.length} clean`,
+  ];
+};
 
 const typecheckOpenSketches = (options: { target: string; product: ResolvedProduct }): Problem[] =>
   listSketches({ productDir: options.product.dir, product: options.product.name }).flatMap((sketch) =>
@@ -137,7 +206,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
-  const report = (problem: Problem) => {
+  const report = (problem: Problem, product: ResolvedProduct) => {
     const line = lineOf(target, problem);
 
     if (options.known?.includes(line)) {
@@ -149,6 +218,9 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     console.error(line);
     failed = true;
     options.blocking?.push(problem.rule);
+    tallyOf(options.tally, { product: product.name, part: partOfFile(product, problem.file) })?.problems.push(
+      problem.rule,
+    );
   };
 
   for (const name of products) {
@@ -162,19 +234,32 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     const product = resolveProduct({ target, name, config: entry });
 
-    if (options.warn) warnChangedOutsideSketch(product);
+    if (options.part && !product.parts.some((part) => partKeyOf(part) === options.part)) {
+      console.error(`NO PART "${options.part}" in product ${name}.`);
 
-    goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
-    const isOwn = (problem: Problem) => !isInBasePart(product, problem.file);
+      return 1;
+    }
+
+    if (options.warn && !options.part) warnChangedOutsideSketch(product);
+
+    if (!options.part) goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
+    const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;
+    const isOwn = (problem: Problem) => !isInBasePart(product, problem.file) && isWanted(problem);
     const warnings = warningProblemsOf(product);
     const problems = ruleProblemsOf(product);
 
-    warnings.filter(isOwn).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
-    problems.filter(isOwn).forEach(report);
-    printBaseFindings(
-      product,
-      problems.filter((problem) => !isOwn(problem)).map((problem) => problem.rule),
-    );
+    warnings.filter(isOwn).forEach((problem) => {
+      console.warn(`WARNING ${lineOf(target, problem)}`);
+      const counted = tallyOf(options.tally, { product: name, part: partOfFile(product, problem.file) });
+
+      if (counted) counted.warnings += 1;
+    });
+    problems.filter(isOwn).forEach((problem) => report(problem, product));
+    if (!options.part)
+      printBaseFindings(
+        product,
+        problems.filter((problem) => !isOwn(problem)).map((problem) => problem.rule),
+      );
 
     writeEditorTsconfig({ target, product });
 
@@ -186,9 +271,11 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
       return 1;
     }
 
-    if (result.kind === 'failed') report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` });
+    if (result.kind === 'failed')
+      report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` }, product);
 
-    if (options.warn) typecheckOpenSketches({ target, product }).forEach(report);
+    if (options.warn && !options.part)
+      typecheckOpenSketches({ target, product }).forEach((problem) => report(problem, product));
   }
 
   return failed ? 1 : 0;
@@ -243,8 +330,17 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
             missingStates: options.complete ? await drawnMissingStatesOf({ ...options, product }) : undefined,
           };
 
-    openPointsText(name, readOpenPoints(product, findings)).forEach((line) => console.log(line));
-    uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
+    const points = readOpenPoints(product, findings).filter(({ part }) => !options.part || part === options.part);
+
+    for (const { part, points: ofPart } of points) {
+      const counted = tallyOf(options.tally, { product: name, part });
+
+      if (counted) counted.open += ofPart.length;
+    }
+
+    openPointsText(name, points).forEach((line) => console.log(line));
+
+    if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
 
     const ready = readyPartsOf(product);
 
@@ -274,7 +370,7 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
 
   const rendered = await renderIssuesOf({
     ...options,
-    jobs: options.products.map((product) => ({ product, sketch: null, parts: null })),
+    jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
   });
 
   if ('unavailable' in rendered) {
@@ -294,14 +390,23 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
 
   rendered.warnings
     .filter((issue) => !isInBase(issue))
-    .forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
-  issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+    .forEach((issue) => {
+      console.warn(`WARNING ${renderIssueLineOf(issue)}`);
+      const counted = tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) });
 
-  for (const product of resolved)
-    printBaseFindings(
-      product,
-      rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
-    );
+      if (counted) counted.warnings += 1;
+    });
+  issues.forEach((issue) => {
+    console.error(renderIssueLineOf(issue));
+    tallyOf(options.tally, { product: issue.product, part: ownerPartOf(issue) })?.problems.push(issue.rule);
+  });
+
+  if (!options.part)
+    for (const product of resolved)
+      printBaseFindings(
+        product,
+        rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
+      );
 
   return { code: issues.length > 0 ? 1 : 0, rendered: issues };
 };
@@ -313,9 +418,25 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
  * the missing states of each component part as `design complete` draws them; they do not change the exit code.
  */
 export const checkSystemRendered = async (options: CheckOptions) => {
-  const { code, rendered } = await renderSystem(options);
+  const tally: Tally = new Map();
+  const counted = { ...options, tally };
+  const { code, rendered } = await renderSystem(counted);
 
-  await printOpenPoints({ ...options, rendered });
+  await printOpenPoints({ ...counted, rendered });
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (!entry) continue;
+
+    const own = resolveProduct({ target: options.target, name, config: entry }).parts.filter(
+      (part) => part.origin !== 'base',
+    );
+
+    summaryText({ product: name, parts: own.map(partKeyOf), tally, only: options.part }).forEach((line) =>
+      console.log(line),
+    );
+  }
 
   if (code === 0) console.log('ok');
 
