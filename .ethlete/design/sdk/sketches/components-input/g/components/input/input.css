@@ -21,18 +21,21 @@
 
   et-form-field[data-text-shell][data-error] {
     --_et-form-field-frame-border: var(--et-theme-color-primary-solid);
-    --_et-form-field-frame-border-hover: rgb(
-      var(
-        --et-color-primary-ink-active,
+    --_et-form-field-frame-border-hover: light-dark(
+      rgb(var(--et-color-primary-hover, var(--et-color-primary))),
+      rgb(
         var(
-          --et-color-primary-ink-focus,
+          --et-color-primary-ink-active,
           var(
-            --et-color-primary-ink-hover,
+            --et-color-primary-ink-focus,
             var(
-              --et-color-primary-ink,
+              --et-color-primary-ink-hover,
               var(
-                --et-color-primary-active,
-                var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                --et-color-primary-ink,
+                var(
+                  --et-color-primary-active,
+                  var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                )
               )
             )
           )
