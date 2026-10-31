@@ -182,3 +182,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   press reads right in the sequence. Rework after the MVP: the changed area keeps its neighbourhood, for example the
   full interaction row (rest, hover, active, focus-visible, pressed) of each changed state, with the changed cell
   marked.
+- **Q242 pick (Tom, 2026-10-31):** variant b of `sdk/sketches/components-button` r1. Filled active mixes the rest
+  primary 96% with on-primary: a slight darkening of rest, lighter than hover, about 5.2:1; danger active follows.
+  The port to `libs/components/src/lib/button/button.component.css` derives from the theme token like the lib does
+  and guards the rule with `:not([disabled], [aria-disabled='true'])`, so a loading button never flashes on Space.
