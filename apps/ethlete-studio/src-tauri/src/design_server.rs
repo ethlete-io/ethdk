@@ -41,10 +41,10 @@ const POLL: Duration = Duration::from_millis(250);
 
 const STOP_GRACE: Duration = Duration::from_secs(3);
 
-/// Must name everything `npx nx cli-runtime ethlete-studio` builds the cli out of.
+/// Must name everything `npx nx build cli` builds the cli out of.
 const CLI_SOURCES: [&str; 3] = ["libs/cli/src", "libs/cli/design", "libs/cli/package.json"];
 
-const BUILT_CLI: &str = "dist/apps/ethlete-studio/cli-runtime/node_modules/@ethlete/cli/src/index.js";
+const BUILT_CLI: &str = "dist/libs/cli/src/index.js";
 
 const SOURCE_SCAN_LIMIT: usize = 5000;
 
@@ -455,7 +455,7 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
     let entry = cli_entry(Path::new(checkout)).ok_or_else(|| {
         StudioError::Rejected(format!(
             "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
-             `npx nx cli-runtime ethlete-studio`, or point ETHLETE_CLI at a src/index.js."
+             `npx nx build cli`, or point ETHLETE_CLI at a src/index.js."
         ))
     })?;
 
@@ -511,7 +511,7 @@ fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> Studi
 async fn build_cli() -> StudioResult<Vec<String>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let output = crate::child_env::command("npx")
-        .args(["nx", "cli-runtime", "ethlete-studio"])
+        .args(["nx", "build", "cli"])
         .current_dir(root)
         .env("NX_NO_CLOUD", "true")
         .output()
