@@ -567,6 +567,10 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   decision (inside Q92): non-grid part frames (pages, declared-width parts, flow frames) also show Light then Dark,
   side by side, or stacked when a frame is too wide for two in a row. Legacy call shots keep the Studio colour mode
   (Q69). A part without a dark scheme still shows both groups, so the fault is visible.
+- Switch r2 "On track in light" ready (same sketch, assumes r1 pick b). d (pick): mint fill + 1 px ink inset
+  ring (5.48:1), ink dash and thumb; e: on track filled in ink, light loses the mint.
+- Mint under 3:1 in light is one system question (like Q75/Q87): `ethlete-sdk-33` scans libs/components and
+  proposes one rule with variants instead of one round per part. For Tom as Q99.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
