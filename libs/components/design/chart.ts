@@ -105,6 +105,13 @@ const round = (value: number) => {
   return Object.is(rounded, -0) ? 0 : rounded;
 };
 
+const labelStride = (step: number, spacing: number) => (step > 0 ? Math.max(1, Math.ceil(spacing / step - 1e-9)) : 1);
+
+const thinnedLabels = (
+  labels: readonly { text: string; position: number }[],
+  { step, stride }: { step: number; stride: number },
+) => labels.filter((_, index) => !(index % stride)).map((label) => ({ ...label, extent: step * stride }));
+
 const styled = (css: string) => ` style="${css}"`;
 
 const accentMixes = (count: number) =>
@@ -269,7 +276,16 @@ export const barChart = (options: BarChartMockOptions) => {
     { orientation: 'vertical', className: 'et-bar-chart-value-axis', blockSize: height },
   );
   const categoryAxis = axis(
-    categories.map((text, index) => ({ text, position: index * step + step / 2, extent: step })),
+    thinnedLabels(
+      categories.map((text, index) => ({ text, position: index * step + step / 2 })),
+      {
+        step,
+        stride: labelStride(
+          step,
+          Math.min(96, Math.max(24, Math.max(0, ...categories.map((text) => [...text].length)) * 7 + 12)),
+        ),
+      },
+    ),
     { orientation: 'horizontal', className: 'et-bar-chart-category-axis' },
   );
   const empty = isEmpty
@@ -359,8 +375,14 @@ export const lineChart = (options: LineChartMockOptions) => {
     { orientation: 'vertical', className: 'et-line-chart-value-axis', blockSize: height },
   );
   const xAxis = axis(
-    categories.map((text, index) => ({ text, position: positions[index] ?? 0, extent: step })),
-    { orientation: 'horizontal', className: 'et-line-chart-x-axis' },
+    thinnedLabels(
+      categories.map((text, index) => ({ text, position: positions[index] ?? 0 })),
+      { step, stride: labelStride(step, 48) },
+    ),
+    {
+      orientation: 'horizontal',
+      className: 'et-line-chart-x-axis',
+    },
   );
   const legendMarkup = series.length > 1 ? legend(series, { className: 'et-line-chart-legend', mark: 'line' }) : '';
   const host = [options.attributes, 'class="et-line-chart"'].filter(Boolean);
