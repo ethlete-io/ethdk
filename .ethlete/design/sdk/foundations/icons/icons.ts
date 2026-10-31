@@ -1,14 +1,20 @@
 import { SDK_ICONS } from '@ethlete/components/design/icon-set';
 import { definePart, iconSheet } from '@design-system';
 
+const GRID = 16;
+
+const PADDING = 1;
+
 const icons = SDK_ICONS.map((icon) => ({
   name: icon.variant ? `${icon.name}--${icon.variant}` : icon.name,
   svg: icon.data,
+  grid: GRID,
+  padding: PADDING,
 }));
 
 const titles = {
   catalogue: `Icons: the ${SDK_ICONS.length} icons the SDK ships, at each size a component draws`,
-  construction: 'Icons on their grid: pixel lines, centre lines, and the padding',
+  construction: `Every icon on the ${GRID} px candidate grid: pixel lines, centre lines, and the ${PADDING} px padding`,
 };
 
 type View = 'catalogue' | 'construction';
