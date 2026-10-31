@@ -9,6 +9,7 @@ import {
   linkedSignal,
   output,
   signal,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -18,11 +19,14 @@ import {
   EMPTY,
   Observable,
   Subject,
+  catchError,
+  defer,
   filter,
   finalize,
   fromEvent,
   map,
   merge,
+  of,
   share,
   switchMap,
   takeUntil,
@@ -168,20 +172,20 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       <ng-container [ngTemplateOutlet]="page" />
     }
     <ng-template #page>
-      @if (!painted()) {
-        @if (frame().screenshot) {
-          <img
-            [src]="live() ? frame().screenshot : (admittedShot() ?? frame().screenshot)"
-            (load)="readScreenshotSize($event)"
-            (error)="settleScreenshot($event)"
-            class="absolute inset-0 size-full border-0 object-none object-left-top"
-            alt=""
-          />
-        } @else {
-          <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction-solid)"></div>
-        }
+      @if (frame().screenshot) {
+        <img
+          #shot
+          [src]="live() ? frame().screenshot : (admittedShot() ?? frame().screenshot)"
+          [class.opacity-0]="painted()"
+          (load)="readScreenshotSize($event)"
+          (error)="settleScreenshot($event)"
+          class="absolute inset-0 size-full border-0 object-none object-left-top"
+          alt=""
+        />
+      } @else if (!painted()) {
+        <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction-solid)"></div>
       }
-      @if (live()) {
+      @if (live() || painted()) {
         <div class="absolute inset-0 overflow-hidden">
           @for (source of sources(); track source.src) {
             <iframe
@@ -259,6 +263,8 @@ export class CanvasFrameComponent {
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
+  private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
 
   protected bordered = computed(
@@ -274,7 +280,7 @@ export class CanvasFrameComponent {
   private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
 
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
-  protected shown = linkedSignal<boolean, string | null>({ source: () => this.drawn(), computation: () => null });
+  protected shown = signal<string | null>(null);
 
   protected labelPlacement = computed(() => (this.captionBelow() ? 'top-full pt-[0.4em]' : 'bottom-full pb-[0.4em]'));
 
@@ -368,15 +374,29 @@ export class CanvasFrameComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    toObservable(this.drawn)
+      .pipe(
+        switchMap((drawn) => (drawn ? EMPTY : this.decodedShot$())),
+        tap((image) => {
+          this.shown.set(null);
+
+          const src = image?.getAttribute('src');
+
+          if (!image || !src) return;
+
+          this.loadedShot.set(src);
+          this.emitScreenshotSize(image);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected readScreenshotSize(event: Event) {
-    const image = event.target as HTMLImageElement;
-
     this.settleScreenshot(event);
 
-    if (this.frame().width === undefined) this.widthChange.emit(image.naturalWidth);
-    if (this.frame().height === undefined) this.heightChange.emit(image.naturalHeight);
+    if (!this.painted()) this.emitScreenshotSize(event.target as HTMLImageElement);
   }
 
   protected readGridSize({ width, height }: Size) {
@@ -395,6 +415,23 @@ export class CanvasFrameComponent {
 
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
+  }
+
+  private emitScreenshotSize(image: HTMLImageElement) {
+    if (this.frame().width === undefined) this.widthChange.emit(image.naturalWidth);
+    if (this.frame().height === undefined) this.heightChange.emit(image.naturalHeight);
+  }
+
+  private decodedShot$() {
+    const image = this.shot()?.nativeElement;
+
+    if (!this.painted()) return EMPTY;
+    if (!image || this.frame().error || this.frame().empty !== undefined) return of(null);
+
+    return defer(() => image.decode()).pipe(
+      map(() => image),
+      catchError(() => of(null)),
+    );
   }
 
   private admit$({ kind, src }: Wanted) {

@@ -15,6 +15,7 @@ const ready = new Promise((resolve, fail) => {
 });
 const failedImports = Number(process.env.FRAME_FAILED_IMPORTS ?? 0);
 let imports = 0;
+let frames = 0;
 const context = createContext({
   document: dom.window.document,
   location: {
@@ -23,6 +24,10 @@ const context = createContext({
   },
   URLSearchParams,
   setTimeout: (callback) => setImmediate(callback),
+  requestAnimationFrame: (callback) => {
+    frames++;
+    setImmediate(callback);
+  },
   innerWidth: 800,
   innerHeight: 600,
   frameElement: null,
@@ -103,6 +108,7 @@ process.stdout.write(
     styles: [...dom.window.document.head.querySelectorAll('style')].map((style) => style.textContent),
     messages,
     imports,
+    frames,
   }),
 );
 dom.window.close();

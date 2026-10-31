@@ -192,6 +192,11 @@ const report = () => {
   );
 };
 
+const reportPainted = () =>
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => parent.postMessage({ type: 'design-explore:painted', variant: key }, '*')),
+  );
+
 const stateMarkupOf = ({ part, states }: NonNullable<typeof drawnPart>, styles: string) => {
   const sheets = new Set([styles]);
 
@@ -366,6 +371,7 @@ const drawFrame = async () => {
   if (fit) reported.observe(root);
   reporting = true;
   report();
+  reportPainted();
 
   addEventListener('keydown', (event) => {
     if (event.key === 'Escape') parent.postMessage({ type: 'design-explore:escape', variant: key }, '*');
@@ -382,4 +388,5 @@ void drawFrame().catch((error: unknown) => {
   fail(`design-explore: frame failed\n${messageOf(error)}`);
   reporting = true;
   report();
+  reportPainted();
 });

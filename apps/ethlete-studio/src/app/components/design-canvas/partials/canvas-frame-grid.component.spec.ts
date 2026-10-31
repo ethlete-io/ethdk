@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { FrameCell, FrameGrid } from '../canvas-frame';
 import { CanvasFrameCellComponent, CanvasFrameGridComponent } from './canvas-frame-grid.component';
 
@@ -25,6 +26,85 @@ describe('CanvasFrameCellComponent', () => {
     const host = await render({ id: 'leaf', row: 'leaf', column: 'rest', label: 'leaf', src: '' });
 
     expect(host.style.width).toBe('0px');
+  });
+
+  describe('swap between shot and page', () => {
+    let decoded: () => void;
+    let fixture: ComponentFixture<CanvasFrameCellComponent>;
+
+    const flush = async () => {
+      for (let tick = 0; tick < 4; tick++) await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
+    };
+
+    const post = (data: object) =>
+      window.dispatchEvent(
+        new MessageEvent('message', { source: fixture.nativeElement.querySelector('iframe').contentWindow, data }),
+      );
+
+    const shown = () => {
+      const host = fixture.nativeElement as HTMLElement;
+      const image = host.querySelector('img');
+      const iframe = host.querySelector('iframe');
+
+      return {
+        shot: !!image && !image.classList.contains('opacity-0'),
+        page: !!iframe && !iframe.classList.contains('opacity-0'),
+        mounted: !!iframe,
+      };
+    };
+
+    beforeEach(async () => {
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+      Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+        configurable: true,
+        value: () => new Promise<void>((resolve) => (decoded = resolve)),
+      });
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      fixture = TestBed.createComponent(CanvasFrameCellComponent);
+      fixture.componentRef.setInput('cell', {
+        id: 'leaf',
+        row: 'leaf',
+        column: 'rest',
+        label: 'leaf',
+        src: '',
+        screenshot: 'leaf.png',
+      });
+      fixture.componentRef.setInput('live', true);
+      await flush();
+    });
+
+    afterEach(() => {
+      delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+      vi.restoreAllMocks();
+    });
+
+    it('keeps the shot until the page says it painted, then shows the page in one step', async () => {
+      post({ type: 'design-explore:height', height: 120, width: 200 });
+      await flush();
+
+      expect(shown()).toEqual({ shot: true, page: false, mounted: true });
+
+      post({ type: 'design-explore:painted' });
+      await flush();
+
+      expect(shown()).toEqual({ shot: false, page: true, mounted: true });
+    });
+
+    it('keeps the page after it leaves live until the shot decoded, then shows the shot in one step', async () => {
+      post({ type: 'design-explore:height', height: 120, width: 200 });
+      post({ type: 'design-explore:painted' });
+      await flush();
+      fixture.componentRef.setInput('live', false);
+      await flush();
+
+      expect(shown()).toEqual({ shot: false, page: true, mounted: true });
+
+      decoded();
+      await flush();
+
+      expect(shown()).toEqual({ shot: true, page: false, mounted: false });
+    });
   });
 });
 

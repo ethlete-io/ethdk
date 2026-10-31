@@ -3,7 +3,24 @@ import { FrameMessage, frameMessageOf } from './canvas-frame';
 
 export const UNREPORTED_PAINT_MS = 1000;
 
-type PaintEvent = Extract<FrameMessage, { type: 'height' | 'loading' }> | { type: 'fallback' };
+type PaintMessage = Extract<FrameMessage, { type: 'height' | 'loading' | 'painted' }>;
+
+type PaintEvent = PaintMessage | { type: 'fallback' };
+
+type PaintState = { loading: boolean; height: boolean; late: boolean; painted: boolean };
+
+const paintStateOf = (state: PaintState, event: PaintEvent): PaintState => {
+  const next = {
+    loading: state.loading || event.type === 'loading',
+    height: state.height || event.type === 'height',
+    late: state.late || event.type === 'fallback',
+  };
+
+  return {
+    ...next,
+    painted: event.type === 'painted' || (next.late && (next.height || !next.loading)),
+  };
+};
 
 const nextPaint$ = (view: Window) =>
   new Observable<void>((subscriber) => {
@@ -26,8 +43,8 @@ export const paintedFrame$ = (iframe: HTMLIFrameElement) => {
     filter((event) => event.source === iframe.contentWindow),
     map((event) => frameMessageOf(event.data)),
     filter(
-      (message): message is Extract<FrameMessage, { type: 'height' | 'loading' }> =>
-        message?.type === 'height' || message?.type === 'loading',
+      (message): message is PaintMessage =>
+        message?.type === 'height' || message?.type === 'loading' || message?.type === 'painted',
     ),
   );
   const fallback$ = fromEvent(iframe, 'load').pipe(
@@ -36,13 +53,7 @@ export const paintedFrame$ = (iframe: HTMLIFrameElement) => {
   );
 
   return merge(messages$, fallback$).pipe(
-    scan(
-      (state, event) => ({
-        loading: state.loading || event.type === 'loading',
-        painted: event.type === 'height' || (event.type === 'fallback' && !state.loading),
-      }),
-      { loading: false, painted: false },
-    ),
+    scan(paintStateOf, { loading: false, height: false, late: false, painted: false }),
     filter(({ painted }) => painted),
     take(1),
     switchMap(() => nextPaint$(host)),

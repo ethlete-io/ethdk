@@ -14,9 +14,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { EMPTY, Observable, filter, fromEvent, map, switchMap, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, combineLatest, defer, filter, fromEvent, map, of, switchMap, tap } from 'rxjs';
 import { ColorScheme, FrameCell, FrameGrid, FrameMessage, frameMessageOf, withScheme } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
+import { paintedFrame$ } from '../frame-paint';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 
@@ -29,16 +30,18 @@ const SCHEME_LABELS: Record<ColorScheme, string> = { light: 'Light', dark: 'Dark
 @Component({
   selector: 'ethlete-canvas-frame-cell',
   template: `
-    @if (!painted() && screenshot(); as screenshot) {
+    @if (screenshot(); as screenshot) {
       <img
+        #shot
         [src]="screenshot"
+        [class.opacity-0]="painted()"
         (load)="readScreenshotSize($event)"
         (error)="loadEnd.emit()"
         class="absolute left-0 top-0 max-w-none"
         alt=""
       />
     }
-    @if (live()) {
+    @if (live() || painted()) {
       <iframe
         #iframe
         [src]="url()"
@@ -67,6 +70,8 @@ export class CanvasFrameCellComponent {
 
   private iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 
+  private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
   private src = computed(() => this.schemed(this.cell().src));
 
   protected screenshot = computed(() => this.schemed(this.cell().screenshot ?? ''));
@@ -75,19 +80,35 @@ export class CanvasFrameCellComponent {
 
   protected size = signal<Size | null>(null);
 
-  protected painted = linkedSignal<string | null, boolean>({
-    source: () => (this.live() ? this.src() : null),
-    computation: () => false,
-  });
+  protected painted = linkedSignal<string, boolean>({ source: () => this.src(), computation: () => false });
+
+  private page = computed(() => ({ iframe: this.iframe()?.nativeElement ?? null, src: this.src() }));
 
   constructor() {
-    toObservable(this.iframe)
+    toObservable(this.page)
       .pipe(
-        switchMap((iframe) => (iframe ? this.reportedSizes$(iframe.nativeElement) : EMPTY)),
+        switchMap(({ iframe }) =>
+          iframe
+            ? combineLatest([this.reportedSizes$(iframe), paintedFrame$(iframe).pipe(filter(Boolean))]).pipe(
+                map(([size]) => size),
+              )
+            : EMPTY,
+        ),
         tap((size) => {
           this.size.set(size);
           this.painted.set(true);
           this.loadEnd.emit();
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.live)
+      .pipe(
+        switchMap((live) => (live ? EMPTY : this.decodedShot$())),
+        tap((image) => {
+          if (image) this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
+          this.painted.set(false);
         }),
         takeUntilDestroyed(),
       )
@@ -97,8 +118,20 @@ export class CanvasFrameCellComponent {
   protected readScreenshotSize(event: Event) {
     const image = event.target as HTMLImageElement;
 
-    this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
+    if (!this.painted()) this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
     this.loadEnd.emit();
+  }
+
+  private decodedShot$() {
+    const image = this.shot()?.nativeElement;
+
+    if (!this.painted()) return EMPTY;
+    if (!image) return of(null);
+
+    return defer(() => image.decode()).pipe(
+      map(() => image),
+      catchError(() => of(null)),
+    );
   }
 
   private schemed(url: string) {

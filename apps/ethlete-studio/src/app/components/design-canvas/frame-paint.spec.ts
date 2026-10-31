@@ -56,6 +56,36 @@ describe('paintedFrame$', () => {
     expect(painted).toEqual([false, true]);
   });
 
+  it('keeps a reporting frame hidden until the page says it painted', () => {
+    const iframe = frame();
+    const painted = watch(iframe);
+
+    message(iframe.contentWindow, { type: 'design-explore:loading' });
+    message(iframe.contentWindow, report);
+    iframe.dispatchEvent(new Event('load'));
+    vi.advanceTimersByTime(UNREPORTED_PAINT_MS - 1);
+
+    expect(painted).toEqual([false]);
+
+    message(iframe.contentWindow, { type: 'design-explore:painted' });
+    vi.runAllTimers();
+
+    expect(painted).toEqual([false, true]);
+  });
+
+  it('settles a frame page that reports its height but never its paint once the fallback passed', () => {
+    const iframe = frame();
+    const painted = watch(iframe);
+
+    message(iframe.contentWindow, { type: 'design-explore:loading' });
+    message(iframe.contentWindow, report);
+    iframe.dispatchEvent(new Event('load'));
+    vi.advanceTimersByTime(UNREPORTED_PAINT_MS);
+    vi.runAllTimers();
+
+    expect(painted).toEqual([false, true]);
+  });
+
   it('settles an external frame that silently loads', () => {
     const iframe = frame();
     const painted = watch(iframe);
