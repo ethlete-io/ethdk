@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -14,7 +14,18 @@ use tokio::process::{Child, ChildStdin};
 
 use crate::design::{port_of, read_config};
 use crate::error::{StudioError, StudioResult};
-use crate::tools::cli_entry;
+
+/// Where the design tool lives once a checkout installs it, and where this repository builds it.
+/// The first entry that exists wins, and `ETHLETE_CLI` overrules all of them.
+const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/libs/cli/src/index.js"];
+
+/// The product name `tauri.conf.json` gives the app. Tauri builds the resource directory out of it
+/// on Linux, so the two must stay equal.
+const PRODUCT_NAME: &str = "Ethlete Studio";
+
+/// The copy of the design tool the app carries, under Tauri's resource directory. It brings its own
+/// `node_modules`, so it draws a checkout that installs no design tooling at all.
+const SHIPPED_CLI: &str = "cli-runtime/node_modules/@ethlete/cli/src/index.js";
 
 /// Enough of the server's output to read a failure, short enough to send on every poll.
 const LOG_LINES: usize = 40;
@@ -686,9 +697,48 @@ pub async fn design_server_restart(
     judged(servers.inner(), &checkout, port, None).await
 }
 
+/// The copy of the design tool this app ships, or `None` when the app runs from a build that never
+/// made one.
+fn shipped_cli() -> Option<PathBuf> {
+    let package = tauri::utils::PackageInfo {
+        name: PRODUCT_NAME.to_owned(),
+        version: env!("CARGO_PKG_VERSION").parse().ok()?,
+        authors: "",
+        description: "",
+        crate_name: env!("CARGO_PKG_NAME"),
+    };
+
+    let path = tauri::utils::platform::resource_dir(&package, &tauri::Env::default())
+        .ok()?
+        .join(SHIPPED_CLI);
+
+    path.is_file().then_some(path)
+}
+
+fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Option<PathBuf> {
+    if let Some(named) = std::env::var_os("ETHLETE_CLI") {
+        let path = PathBuf::from(named);
+
+        return path.is_file().then_some(path);
+    }
+
+    CLI_ENTRIES
+        .iter()
+        .map(|entry| checkout.join(entry))
+        .find(|path| path.is_file())
+        .or_else(shipped)
+}
+
+/// The `et` entry point that draws and checks a checkout. Step by step: an explicit override, the
+/// copy the checkout installed, the copy this repository builds, then the copy the app ships.
+pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
+    entry_of(checkout, shipped_cli)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
     use tokio::process::Command;
 
     #[test]
@@ -1081,5 +1131,72 @@ mod tests {
             .expect("the verdicts")
             .contains_key(&("/checkout".to_owned(), STOPPED)));
         drop(listener);
+    }
+
+    fn ground(name: &str) -> PathBuf {
+        let ground = std::env::temp_dir().join(format!("ethlete-studio-cli-entry-{}-{name}", std::process::id()));
+
+        let _ = std::fs::remove_dir_all(&ground);
+        std::fs::create_dir_all(&ground).expect("a temporary ground");
+
+        ground
+    }
+
+    #[test]
+    fn the_installed_cli_is_preferred_over_a_built_one() {
+        let checkout = ground("installed");
+
+        for entry in CLI_ENTRIES {
+            let path = checkout.join(entry);
+            std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
+            std::fs::write(&path, "").expect("an entry point");
+        }
+
+        assert_eq!(cli_entry(&checkout), Some(checkout.join(CLI_ENTRIES[0])));
+    }
+
+    #[test]
+    fn a_checkout_without_the_cli_falls_back_to_the_copy_the_app_ships() {
+        let shipped = ground("shipped").join("index.js");
+
+        std::fs::write(&shipped, "").expect("a shipped entry point");
+
+        assert_eq!(entry_of(&ground("bare"), || Some(shipped.clone())), Some(shipped));
+    }
+
+    #[test]
+    fn the_checkouts_own_cli_wins_over_the_copy_the_app_ships() {
+        let checkout = ground("own");
+        let path = checkout.join(CLI_ENTRIES[1]);
+
+        std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&path, "").expect("an entry point");
+
+        assert_eq!(
+            entry_of(&checkout, || Some(PathBuf::from("/nowhere/index.js"))),
+            Some(path)
+        );
+    }
+
+    #[test]
+    fn the_shipped_copy_is_where_the_tauri_config_puts_it() {
+        let config: Value = serde_json::from_str(include_str!("../tauri.conf.json")).expect("the tauri config parses");
+
+        assert_eq!(
+            config.get("productName").and_then(Value::as_str),
+            Some(PRODUCT_NAME),
+            "PRODUCT_NAME no longer matches productName, so the resource directory is resolved wrongly"
+        );
+
+        let shipped_under = SHIPPED_CLI.split('/').next().expect("a first segment");
+        let resources = config
+            .pointer("/bundle/resources")
+            .and_then(Value::as_object)
+            .expect("the bundle ships resources");
+
+        assert!(
+            resources.values().any(|target| target.as_str() == Some(shipped_under)),
+            "no resource is bundled as {shipped_under}, so SHIPPED_CLI points at nothing"
+        );
     }
 }

@@ -12,15 +12,10 @@ export type AgentDescriptor = {
   suggestedModels: string[];
 };
 
-/**
- * The call a run draws, so Studio can hand it a tool set that needs no argument. Studio knows all
- * four, so a tool call can never name the wrong call.
- */
+/** The call a run draws. Its `et design check` receipt is kept under this call and variant. */
 export type AgentTools = {
   call: string;
   variant: string;
-  port: number;
-  callsRoot: string;
 };
 
 /** One prompt, sent to one CLI, in one checkout. */

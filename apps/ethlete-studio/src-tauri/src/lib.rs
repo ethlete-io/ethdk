@@ -8,7 +8,6 @@ mod design;
 mod design_roots;
 mod design_server;
 mod error;
-mod tools;
 mod update;
 #[cfg(target_os = "macos")]
 mod webview_rebuild;
@@ -158,12 +157,6 @@ fn append_panic_report(path: &std::path::Path, report: &str) {
 }
 
 pub fn run() {
-    if let Some(context) = tools::ToolContext::from_arguments(std::env::args().skip(1)) {
-        tools::serve(&context);
-
-        return;
-    }
-
     let previous_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         previous_hook(info);

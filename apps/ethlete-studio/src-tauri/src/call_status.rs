@@ -1,13 +1,16 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::ipc::Channel;
 use tauri::State;
 
-use crate::tools::checks_dir;
-
 const SUFFIX: &str = ".status.json";
+
+/// Where the design tool records call states and check receipts.
+pub fn checks_dir() -> PathBuf {
+    std::env::temp_dir().join("ethlete-studio-checks")
+}
 
 /// The watch over the status folder one window armed. Arming it again replaces the one before it.
 #[derive(Default)]

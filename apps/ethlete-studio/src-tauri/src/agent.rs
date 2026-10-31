@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -12,8 +12,9 @@ use tokio::process::Child;
 
 use crate::agent_claude::ClaudeCli;
 use crate::agent_codex::CodexCli;
+use crate::call_status::checks_dir;
+use crate::design_server::cli_entry;
 use crate::error::{StudioError, StudioResult};
-use crate::tools::{receipt_path, ToolContext};
 
 /// One agent CLI that Studio can drive. A second CLI is another implementation of this trait, never
 /// a flag on an existing one.
@@ -99,44 +100,54 @@ pub struct AgentRequest {
     pub tools: Option<AgentTools>,
 }
 
-/// The call and the variant a run draws, so Studio can hand the agent a tool set that needs no
-/// argument.
+/// The call and the variant a run draws. The check receipt of the run is kept under both.
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AgentTools {
     pub call: String,
     pub variant: String,
-    pub port: u16,
-    pub calls_root: String,
 }
 
-/// How a CLI starts Studio's tool server. Studio is the server itself, so the command is the running
-/// binary with the arguments that name this one call.
+/// The MCP server name the agent sees. A Claude Code tool therefore reads as `mcp__studio__…`.
+const SERVER_NAME: &str = "studio";
+
+/// Where the result of a check on one variant is kept. The path is built from the call and the
+/// variant alone, so Studio finds it again without tracking the run that wrote it.
+fn receipt_path(checkout: &str, call: &str, variant: &str) -> PathBuf {
+    let flattened: String = format!("{checkout} {call} {variant}")
+        .chars()
+        .map(|letter| if letter.is_ascii_alphanumeric() { letter } else { '-' })
+        .collect();
+
+    checks_dir().join(format!("{flattened}.json"))
+}
+
+/// How a CLI starts the design tool server: `et design mcp` of the checkout.
 pub struct ToolServer {
     pub name: &'static str,
     pub command: String,
     pub arguments: Vec<String>,
 }
 
-/// The tool server for one request, or `None` when the request names no call or the binary cannot
-/// find itself.
+/// The tool server for one request, or `None` when the request names no call or the checkout
+/// reaches no design tool.
 fn tool_server(request: &AgentRequest) -> Option<ToolServer> {
     let tools = request.tools.as_ref()?;
-    let binary = std::env::current_exe().ok()?;
-
-    let context = ToolContext {
-        checkout: PathBuf::from(&request.cwd),
-        call: tools.call.clone(),
-        variant: tools.variant.clone(),
-        port: tools.port,
-        calls_root: tools.calls_root.clone(),
-        receipt: receipt_path(&request.cwd, &tools.call, &tools.variant),
-    };
+    let entry = cli_entry(Path::new(&request.cwd))?;
 
     Some(ToolServer {
-        name: crate::tools::SERVER_NAME,
-        command: binary.to_string_lossy().into_owned(),
-        arguments: context.to_arguments(),
+        name: SERVER_NAME,
+        command: "node".to_owned(),
+        arguments: vec![
+            entry.to_string_lossy().into_owned(),
+            "design".to_owned(),
+            "mcp".to_owned(),
+            "--checkout".to_owned(),
+            request.cwd.clone(),
+            "--receipt".to_owned(),
+            receipt_path(&request.cwd, &tools.call, &tools.variant)
+                .to_string_lossy()
+                .into_owned(),
+        ],
     })
 }
 
@@ -410,6 +421,50 @@ mod tests {
         fn read_line(&self, line: &str) -> Vec<AgentEvent> {
             ClaudeCli.read_line(line)
         }
+    }
+
+    #[test]
+    fn a_run_on_a_call_serves_the_design_mcp_of_its_checkout_with_the_receipt_of_its_variant() {
+        let checkout = std::env::temp_dir().join(format!("ethlete-studio-agent-{}-mcp", std::process::id()));
+        let entry = checkout.join("dist/libs/cli/src/index.js");
+
+        std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&entry, "").expect("an entry point");
+
+        let cwd = checkout.to_string_lossy().into_owned();
+        let request = AgentRequest {
+            cli: "claude".to_owned(),
+            model: None,
+            prompt: String::new(),
+            cwd: cwd.clone(),
+            resume: None,
+            tools: Some(AgentTools {
+                call: "studio/01-workbench".to_owned(),
+                variant: "b".to_owned(),
+            }),
+        };
+
+        let server = tool_server(&request).expect("a call gets a tool server");
+        let receipt = receipt_path(&cwd, "studio/01-workbench", "b");
+
+        assert_eq!(server.command, "node");
+        assert_eq!(
+            server.arguments,
+            vec![
+                entry.to_string_lossy().into_owned(),
+                "design".to_owned(),
+                "mcp".to_owned(),
+                "--checkout".to_owned(),
+                cwd.clone(),
+                "--receipt".to_owned(),
+                receipt.to_string_lossy().into_owned(),
+            ]
+        );
+        assert!(receipt.starts_with(checks_dir()));
+        assert_ne!(receipt, receipt_path(&cwd, "studio/01-workbench", "c"));
+        assert!(tool_server(&AgentRequest { tools: None, ..request }).is_none());
+
+        std::fs::remove_dir_all(&checkout).expect("the checkout is removed");
     }
 
     #[derive(Default)]
