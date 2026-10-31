@@ -1262,3 +1262,50 @@ export default definePart({
     });
   });
 });
+
+describe('sketch target add', () => {
+  const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
+
+  const start = () => {
+    const target = acme();
+    const lines = output();
+
+    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'), lines.join('\n')).toBe(0);
+    lines.length = 0;
+
+    return { target, lines };
+  };
+
+  it('adds a part to targets, seeds it into each variant, and list shows it', () => {
+    const { target, lines } = start();
+
+    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'card' },
+      }),
+    ).toMatchObject({
+      targets: ['components/button', 'components/card'],
+    });
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/card/card.ts'))).toBe(
+      true,
+    );
+    lines.length = 0;
+    expect(run(target, 'list', '--product', 'acme')).toBe(0);
+    expect(lines[0]).toContain('components/button (+ components/card)');
+  });
+
+  it('refuses a duplicate, a part another sketch holds, and a bad path', () => {
+    const { target, lines } = start();
+
+    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/button')).toBe(1);
+    expect(lines.pop()).toContain('targets components/button already');
+    expect(acmeWrite(target, 'new', 'components/card', '--variants', 'a')).toBe(0);
+    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(1);
+    expect(lines.pop()).toContain('components/card already has an open sketch');
+    expect(acmeWrite(target, 'target', 'add', 'components/button', 'nonsense')).toBe(1);
+    expect(acmeWrite(target, 'target', 'add', 'components/nothing', 'components/x')).toBe(1);
+  });
+});

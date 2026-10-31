@@ -10,6 +10,7 @@ import {
   NEW_STATE_NOTE,
   planOf,
   rowsOf,
+  sketchHoldingOf,
   shotProductOf,
   shotReportOf,
   shownVariantsOf,
@@ -302,6 +303,19 @@ describe('shownVariantsOf', () => {
     expect(shownVariantsOf({ sketch, rounds: ['r4'], variants: [] })).toBe('no round r4 (rounds: r1, r2)');
     expect(shownVariantsOf({ sketch, rounds: [], variants: ['z'] })).toBe('no variant z (variants: a, b, i, j)');
     expect(shownVariantsOf({ sketch, rounds: ['r1'], variants: ['i'] })).toContain('no variant is in round r1');
+  });
+});
+
+describe('a sketch with extra targets', () => {
+  it('is found by an extra target and draws its variants under the main target', () => {
+    const sketch = { targets: ['pages/a', 'pages/b'] };
+
+    expect(sketchHoldingOf([sketch], 'pages/b')).toBe(sketch);
+    expect(sketchHoldingOf([sketch], 'pages/c')).toBeUndefined();
+    expect(rowsOf({ part: 'pages/b', sketchTarget: 'pages/a', variants: ['one'], merged: false })[0]?.sketch).toEqual({
+      target: 'pages/a',
+      variant: 'one',
+    });
   });
 });
 

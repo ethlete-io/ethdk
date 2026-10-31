@@ -172,13 +172,17 @@ export const gridRowsOf = (row: Plan[], grid: ListedGrid): (Plan | EmptyGridCell
   return [rest, ...rows].filter((cells) => cells.some((cell) => !('empty' in cell)));
 };
 
+export const sketchHoldingOf = <T extends Pick<Sketch, 'targets'>>(sketches: T[], part: string) =>
+  sketches.find((sketch) => sketch.targets.includes(part));
+
 export const rowsOf = (options: {
   part: string;
   variants: string[] | null;
   merged: boolean;
   rejected?: string[];
+  sketchTarget?: string;
 }): Axis[] => {
-  const { part, variants, merged, rejected = [] } = options;
+  const { part, variants, merged, rejected = [], sketchTarget = part } = options;
 
   if (!variants) return [{ label: '', sketch: null }];
 
@@ -186,7 +190,7 @@ export const rowsOf = (options: {
     ...(merged ? [{ label: 'merged', sketch: null }] : []),
     ...variants.map((variant) => ({
       label: rejected.includes(variant) ? `${variant} rejected` : variant,
-      sketch: { target: part, variant },
+      sketch: { target: sketchTarget, variant },
     })),
   ];
 };
@@ -413,7 +417,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const system = createSystemModules({ target, config, sketchesRoot });
-  const sketch = system.sketchesOf(product).find((found) => found.target === part);
+  const sketch = sketchHoldingOf(system.sketchesOf(product), part);
 
   if (variants && !sketch?.variants.length) {
     console.error(`design-explore: ${part} has no open sketch in product "${product}"`);
@@ -432,6 +436,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
   const rows = rowsOf({
     part,
+    sketchTarget: sketch?.target,
     variants: shownVariants,
     merged: Boolean(system.partOf({ product, part })),
     rejected: sketch?.variants.filter((variant) => rejectionOf(sketch, variant)),

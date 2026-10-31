@@ -24,6 +24,7 @@ import {
   createSketch,
   decideSketch,
   editRound,
+  addTarget,
   editVariantNote,
   findSketch,
   finishSketchReport,
@@ -51,6 +52,7 @@ export const SKETCH_USAGE = [
   'sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant> --by <model id> [--round <title> --note <why the running round lost> [--round-note <what the new round shows>]] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
+  'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -120,6 +122,7 @@ const VERDICTS = new Set(['reject', 'reopen']);
 
 const WRITES = new Set([
   'new',
+  'target',
   'variant',
   'round',
   'note',
@@ -446,8 +449,10 @@ const listed = (context: Context) => {
         : '';
       const rejected = sketch.variants.filter((variant) => rejectionOf(sketch, variant));
 
+      const extra = sketch.targets.slice(1);
+
       console.log(
-        `${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}${sketch.hold ? `, held until: ${sketch.hold.until}` : ''}`,
+        `${sketch.product}  ${sketch.target}${extra.length > 0 ? ` (+ ${extra.join(', ')})` : ''}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}${sketch.hold ? `, held until: ${sketch.hold.until}` : ''}`,
       );
 
       for (const round of sketch.rounds) {
@@ -542,6 +547,29 @@ const noteEdited = (context: Context) =>
 
     return 0;
   });
+
+const targetAdded = (context: Context) => {
+  const [action, ...rest] = context.args.positional;
+  const [, part] = rest;
+  const usage = `usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch target '))}`;
+
+  if (action !== 'add' || rest.length !== 2 || !part) return fail(usage);
+
+  const parsed = parseTarget(part);
+
+  if (typeof parsed === 'string') return fail(parsed);
+
+  return withSketch({ ...context, args: { ...context.args, positional: rest } }, ({ product, sketch }) => {
+    const added = addTarget({ product, sketch, part: parsed, author: authorOf(context.args) ?? undefined });
+
+    if (typeof added === 'string') return fail(added);
+
+    formatSketch({ target: context.target, sketch: added, variants: added.variants });
+    console.log(`${added.target} now targets ${added.targets.join(', ')}`);
+
+    return 0;
+  });
+};
 
 const readied = (context: Context) => {
   const found = productAndSketchOf(context);
@@ -995,6 +1023,7 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   rebase: rebased,
   merge: merged,
   discard: discarded,
+  target: targetAdded,
   reject: judged('reject'),
   reopen: judged('reopen'),
 };

@@ -536,6 +536,35 @@ const variantInfoOf = (options: { round: string; author?: string; note?: string 
   ...(options.note?.trim() ? { note: options.note.trim() } : {}),
 });
 
+const seedTarget = (options: {
+  product: ResolvedProduct;
+  dir: string;
+  variant: string;
+  target: SketchTarget;
+  author?: string;
+  like?: SketchSource;
+}) => {
+  const { product, dir, variant, target, author, like } = options;
+  const folder = resolve(dir, variant, target.layer, target.name);
+  const existing = product.parts.find((part) => partKeyOf(part) === partKeyOf(target));
+
+  mkdirSync(folder, { recursive: true });
+
+  if (like) {
+    copyPartAs({ from: like, to: folder, name: target.name });
+    liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+  } else if (existing) {
+    cpSync(resolve(existing.file, '..'), folder, { recursive: true });
+    liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
+  } else if (target.layer === 'pages') {
+    const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
+    writeFileSync(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
+  } else {
+    writeFileSync(resolve(folder, `${target.name}.ts`), stubOf(target.name));
+    writeFileSync(resolve(folder, `${target.name}.css`), '');
+  }
+};
+
 /**
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
@@ -592,26 +621,7 @@ export const createSketch = (options: {
   for (const variant of variants) {
     mkdirSync(resolve(dir, variant, ASSETS_FOLDER), { recursive: true });
 
-    for (const target of all) {
-      const folder = resolve(dir, variant, target.layer, target.name);
-      const existing = product.parts.find((part) => partKeyOf(part) === partKeyOf(target));
-
-      mkdirSync(folder, { recursive: true });
-
-      if (like) {
-        copyPartAs({ from: like, to: folder, name: target.name });
-        liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
-      } else if (existing) {
-        cpSync(resolve(existing.file, '..'), folder, { recursive: true });
-        liftShared({ partDir: folder, sketchSharedDir: resolve(dir, SHARED_FOLDER) });
-      } else if (target.layer === 'pages') {
-        const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
-        writeFileSync(resolve(folder, `${target.name}.ts`), pageStubOf({ name: target.name, madeBy: author, widths }));
-      } else {
-        writeFileSync(resolve(folder, `${target.name}.ts`), stubOf(target.name));
-        writeFileSync(resolve(folder, `${target.name}.css`), '');
-      }
-    }
+    for (const target of all) seedTarget({ product, dir, variant, target, author, like });
   }
 
   if (like?.shared) cpSync(like.shared, resolve(dir, SHARED_FOLDER), { recursive: true });
@@ -640,6 +650,42 @@ export const createSketch = (options: {
   writeSketchFile(created);
 
   return created;
+};
+
+/**
+ * Adds `part` as a further target of an open sketch, seeding it into every variant like `createSketch` does. The part
+ * must not be a target of an open sketch already, and follows the sketch's merge mode.
+ */
+export const addTarget = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  part: SketchTarget;
+  author?: string;
+}): Sketch | string => {
+  const { product, sketch, part, author } = options;
+  const key = partKeyOf(part);
+
+  if (sketch.targets.includes(key)) return `${sketch.target} targets ${key} already`;
+
+  const taken = findSketch({ productDir: product.dir, product: product.name, sketch: part });
+
+  if (taken !== null) return `${key} already has an open sketch - merge or discard it first`;
+
+  const mergeProblem = mergeProblemOf({ product, targets: [key], merge: sketch.merge });
+
+  if (mergeProblem) return mergeProblem;
+
+  const clash = sharedClashOf([product.parts.find((existing) => partKeyOf(existing) === key)]);
+
+  if (clash) return clash;
+
+  for (const variant of sketch.variants) seedTarget({ product, dir: sketch.dir, variant, target: part, author });
+
+  const added: Sketch = { ...sketch, targets: [...sketch.targets, key] };
+
+  writeSketchFile(added);
+
+  return added;
 };
 
 const reportSlugOf = (sketch: Sketch) => `sketches/${sketch.product}/${sketchFolderOf(sketch)}`;

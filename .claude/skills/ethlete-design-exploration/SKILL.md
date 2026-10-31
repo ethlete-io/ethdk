@@ -121,6 +121,7 @@ answers. Variants are drawn at the same geometry, and one variant wins only agai
 ```bash
 et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--variant-note a=<text>]… [--product <p>]   # each variant starts as a copy of the part
 et design sketch new <layer>/<name> <layer>/<name>… --variants a --by <model id>   # one change across several parts: one sketch, one ready, one merge
+et design sketch target add <layer>/<name> <layer>/<name> --by <model id>   # add a part to an open sketch's targets, seeded into each variant
 et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
 et design sketch report <layer>/<name> --variant b --by <model id> --done         # you stopped drawing b; Studio shows its frames
 et design sketch check [<layer>/<name>] [--fix]                                    # each variant laid over the product
