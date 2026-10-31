@@ -1,4 +1,29 @@
 {
+  "components/canvas-viewport": {
+    "hash": "24c59621b0af790a",
+    "by": "tom",
+    "at": "2026-10-31T23:33:53.518Z"
+  },
+  "components/comment-pin": {
+    "hash": "abe6c7fc0c3b0a41",
+    "by": "tom",
+    "at": "2026-10-31T23:33:53.181Z"
+  },
+  "components/tree-row": {
+    "hash": "0a49f4052ad096c4",
+    "by": "tom",
+    "at": "2026-10-31T23:33:52.130Z"
+  },
+  "components/zoom-chip": {
+    "hash": "495a0ba0d6d2e17a",
+    "by": "tom",
+    "at": "2026-10-31T23:33:52.812Z"
+  },
+  "elements/part-tree": {
+    "hash": "1eb47b2cd77880f3",
+    "by": "tom",
+    "at": "2026-10-31T23:33:52.455Z"
+  },
   "pages/flows": {
     "hash": "142b826a05d31fbb",
     "by": "tom",
@@ -13,6 +38,11 @@
     "hash": "a050641c3c773f51",
     "by": "tom",
     "at": "2026-10-31T23:11:22.075Z"
+  },
+  "pages/merge": {
+    "hash": "e970918b69a2494b",
+    "by": "tom",
+    "at": "2026-10-31T23:33:53.809Z"
   },
   "pages/sketches": {
     "hash": "16fe088b5d526705",

@@ -1,4 +1,14 @@
 {
+  "components/canvas-viewport": {
+    "hash": "24c59621b0af790a",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:34:33.581Z"
+  },
+  "components/comment-pin": {
+    "hash": "abe6c7fc0c3b0a41",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:34:31.095Z"
+  },
   "components/disclosure": {
     "hash": "92834053fa3147f5",
     "by": "claude-opus-5-5",
@@ -13,6 +23,11 @@
     "hash": "9e909353e9de59b6",
     "by": "claude-opus-5-5",
     "at": "2026-10-31T23:31:46.914Z"
+  },
+  "components/zoom-chip": {
+    "hash": "495a0ba0d6d2e17a",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:34:18.094Z"
   },
   "elements/studio-menu": {
     "hash": "bcdb97275792be3b",
@@ -33,6 +48,11 @@
     "hash": "a050641c3c773f51",
     "by": "claude-opus-5-5",
     "at": "2026-10-31T23:32:15.012Z"
+  },
+  "pages/merge": {
+    "hash": "e970918b69a2494b",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:34:37.041Z"
   },
   "pages/sketches": {
     "hash": "16fe088b5d526705",
