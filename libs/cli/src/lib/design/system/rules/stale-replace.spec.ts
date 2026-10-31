@@ -96,6 +96,33 @@ describe('staleReplacesOf', () => {
     ]);
   });
 
+  it('leaves a replace alone on markup a package draws in either branch of a conditional', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/chip/chip.ts',
+      [
+        "import { button, iconButton } from '@acme/kit/button';",
+        "import { definePart, drawing } from '@design-system';",
+        '',
+        'const draw = (flag: boolean) => {',
+        '  const drawn = flag ? iconButton({}) : button({});',
+        "  return drawn.replace(/^<(button|a) /, '<$1 data-tagged ');",
+        '};',
+        '',
+        'export default definePart({',
+        '  states: { default: {} },',
+        "  render: () => drawing({ body: draw(true) + 'x'.replace('<gone>', ''), styles: '' }),",
+        '});',
+      ].join('\n'),
+    );
+
+    expect(staleReplacesOf(productOf(target)).map((problem) => problem.message)).toEqual([
+      "replace('<gone>') matches no markup of components/chip, so it changes nothing",
+    ]);
+  });
+
   it('leaves a replace alone on a parameter that a call fills with markup a package draws', () => {
     const target = acme();
 

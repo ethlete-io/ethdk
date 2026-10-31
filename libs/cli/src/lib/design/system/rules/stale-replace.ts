@@ -107,6 +107,9 @@ const comesFromPackage = (
 ): boolean => {
   if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node) || ts.isParenthesizedExpression(node))
     return comesFromPackage(node.expression, context);
+  if (ts.isConditionalExpression(node))
+    return comesFromPackage(node.whenTrue, context) || comesFromPackage(node.whenFalse, context);
+  if (ts.isAsExpression(node) || ts.isNonNullExpression(node)) return comesFromPackage(node.expression, context);
   if (!ts.isIdentifier(node)) return false;
   if (context.packages.has(node.text)) return true;
 
