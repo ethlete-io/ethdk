@@ -138,8 +138,8 @@ describe('inventoryFramesOf', () => {
       kind: 'control' as const,
       what: 'button',
       path,
-      marked: null,
-      within: [],
+      marked: 'button',
+      within: ['button'],
       owner: 'components/button',
       box: box(y),
     });

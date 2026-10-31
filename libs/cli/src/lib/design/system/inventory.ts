@@ -76,7 +76,6 @@ const byPlace = (a: { box: FrameBox | null }, b: { box: FrameBox | null }) =>
 const isOwnedOf = (frame: SeenFrame) => (found: FoundControl) =>
   found.kind === 'control' &&
   (found.owner ?? null) !== null &&
-  found.marked === null &&
   !found.within.some((id) => frame.controls.some((control) => control.id === id));
 
 /** Numbers the declared, owned, undeclared and unclassified controls each rest frame draws, top to bottom. */
