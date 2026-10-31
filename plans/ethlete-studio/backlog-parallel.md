@@ -642,7 +642,8 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   never answers hides the grid forever. Lead decision under Q96: reveal once every cell is loaded, failed, or in the
   existing slow state (over 2 s), so the user sees per-cell slow marks.
 - Q59 6a token names: Jost renders "--" as an en dash. Lead decision under Q96: token names use font-mono, like
-  the element name above them.
+  the element name above them. As built ("Show motion token names in the mono font"): a token name gets
+  `font-mono`, a raw value keeps the body font. Spec checked to fail without the fix; no real-browser check.
   As built ("Reveal a Studio frame grid when a shot is slow"): a cell settles when its shot turns slow and keeps
   the failed min size. Chromium, studio-lab `components/button` with the 5 solid light shots held: the grid revealed
   at ~2.3 s with those 5 cells "Rendering", the rest drawn; released, they swapped to loaded.

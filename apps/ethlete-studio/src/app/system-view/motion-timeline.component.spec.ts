@@ -110,6 +110,15 @@ describe('MotionTimelineComponent', () => {
     expect(titlesOf('[data-motion-easing]')).toEqual(['ease-out', '--ease-out, --ease-leave, --ease-exit: ease-out']);
   });
 
+  it('shows token names in the mono font, and raw values in the body font', async () => {
+    const { element } = await render(0);
+    const monoOf = (selector: string) =>
+      [...element.querySelectorAll(selector)].map((span) => span.classList.contains('font-mono'));
+
+    expect(monoOf('[data-motion-duration]')).toEqual([false, true]);
+    expect(monoOf('[data-motion-easing]')).toEqual([false, true]);
+  });
+
   it('marks the picked speed', async () => {
     const { element, fixture } = await render(0);
     const speeds = [...element.querySelectorAll<HTMLButtonElement>('[data-motion-speed]')];

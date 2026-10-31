@@ -94,10 +94,11 @@ export const trackBarOf = (track: MotionTrack, end: number) => {
 export const tokenLabelOf = (raw: string, tokens: readonly string[] = []) => {
   const [first] = tokens;
 
-  if (!first) return { shown: raw, title: raw };
+  if (!first) return { shown: raw, title: raw, token: false };
 
   return {
     shown: tokens.length > 1 ? `${first} +${tokens.length - 1}` : first,
     title: `${tokens.join(', ')}: ${raw}`,
+    token: true,
   };
 };

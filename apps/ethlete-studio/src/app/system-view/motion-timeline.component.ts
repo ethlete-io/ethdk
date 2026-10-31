@@ -80,9 +80,14 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
             <span class="flex min-w-0 flex-col">
               <span [title]="row.track.element" class="truncate font-mono text-text">{{ row.track.element }}</span>
               <span class="truncate text-text-muted">
-                {{ row.label }}, <span [title]="row.duration.title" data-motion-duration>{{ row.duration.shown }}</span
+                {{ row.label }},
+                <span [title]="row.duration.title" [class.font-mono]="row.duration.token" data-motion-duration>{{
+                  row.duration.shown
+                }}</span
                 >,
-                <span [title]="row.easing.title" data-motion-easing>{{ row.easing.shown }}</span>
+                <span [title]="row.easing.title" [class.font-mono]="row.easing.token" data-motion-easing>{{
+                  row.easing.shown
+                }}</span>
               </span>
             </span>
             <span class="relative h-3 rounded-sm bg-surface-border">
