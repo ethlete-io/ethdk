@@ -926,4 +926,4 @@ The `ethlete-codex-subagent` skill and its wrapper still name the 5.6 models. Th
 
 Drop `gpt-5.6-*` and `gpt-6-sol` from the skill. The context-warning hook gets a `gpt-6.1` entry with a 500k
 window (the 6 and 5.6 models keep 272k). Edit the source in `libs/agent-rules/content`, then `yarn agents:sync`.
-Builder: `ethlete-sdk-57`, a small slice after the running ones.
+Builder: `ethlete-sdk-57`, a small slice after the running ones. Built in 6300dac7e.
