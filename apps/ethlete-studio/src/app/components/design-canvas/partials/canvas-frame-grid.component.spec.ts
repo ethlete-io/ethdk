@@ -132,4 +132,50 @@ describe('CanvasFrameGridComponent', () => {
     expect(host.querySelectorAll('[data-grid-group], [data-grid-cell]')).toHaveLength(0);
     expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
   });
+
+  describe('reveal', () => {
+    const shots = cells.slice(0, 3).map((cell) => ({ ...cell, screenshot: `/shot/${cell.id}.png` }));
+
+    const renderShots = async () => {
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+      const fixture = TestBed.createComponent(CanvasFrameGridComponent);
+
+      fixture.componentRef.setInput('grid', { columns, rows, cells: shots });
+      await fixture.whenStable();
+
+      return fixture;
+    };
+
+    const settle = async (fixture: Awaited<ReturnType<typeof renderShots>>, index: number, type: 'load' | 'error') => {
+      fixture.nativeElement.querySelectorAll('img')[index].dispatchEvent(new Event(type));
+      await fixture.whenStable();
+    };
+
+    it('hides the cells and shows the loading state until every image has loaded', async () => {
+      const fixture = await renderShots();
+      const host = fixture.nativeElement as HTMLElement;
+
+      await settle(fixture, 0, 'load');
+      await settle(fixture, 1, 'load');
+
+      expect(host.querySelector('[data-grid-loading]')).not.toBeNull();
+      expect(host.querySelector('.invisible')).not.toBeNull();
+
+      await settle(fixture, 2, 'load');
+
+      expect(host.querySelector('[data-grid-loading]')).toBeNull();
+      expect(host.querySelector('.invisible')).toBeNull();
+    });
+
+    it('reveals once a failed image has settled too', async () => {
+      const fixture = await renderShots();
+
+      await settle(fixture, 0, 'load');
+      await settle(fixture, 1, 'error');
+      await settle(fixture, 2, 'load');
+
+      expect(fixture.nativeElement.querySelector('.invisible')).toBeNull();
+    });
+  });
 });

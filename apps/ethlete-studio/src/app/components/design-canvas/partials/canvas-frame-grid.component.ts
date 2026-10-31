@@ -25,7 +25,13 @@ const cellKeyOf = (row: string, column: string) => JSON.stringify([row, column])
   selector: 'ethlete-canvas-frame-cell',
   template: `
     @if (!painted() && cell().screenshot; as screenshot) {
-      <img [src]="screenshot" (load)="readScreenshotSize($event)" class="absolute left-0 top-0 max-w-none" alt="" />
+      <img
+        [src]="screenshot"
+        (load)="readScreenshotSize($event)"
+        (error)="loadEnd.emit()"
+        class="absolute left-0 top-0 max-w-none"
+        alt=""
+      />
     }
     @if (live()) {
       <iframe
@@ -50,6 +56,7 @@ export class CanvasFrameCellComponent {
 
   public cell = input.required<FrameCell>();
   public live = input(false);
+  public loadEnd = output<void>();
 
   private iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 
@@ -69,6 +76,7 @@ export class CanvasFrameCellComponent {
         tap((size) => {
           this.size.set(size);
           this.painted.set(true);
+          this.loadEnd.emit();
         }),
         takeUntilDestroyed(),
       )
@@ -79,6 +87,7 @@ export class CanvasFrameCellComponent {
     const image = event.target as HTMLImageElement;
 
     this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
+    this.loadEnd.emit();
   }
 
   private reportedSizes$(iframe: HTMLIFrameElement): Observable<Size> {
@@ -107,6 +116,7 @@ export class CanvasFrameCellComponent {
     @if (sheet(); as sheet) {
       <div
         #table
+        [class.invisible]="!revealed()"
         [style.grid-template-columns]="'minmax(12rem, max-content) repeat(' + grid().columns.length + ', max-content)'"
         class="absolute left-0 top-0 grid w-max gap-px bg-surface-sunken px-[2.4rem] pb-[2.4rem] pt-[1.6rem] text-[1.1rem]/[1.4rem] text-text-muted"
         data-grid-sheet
@@ -131,7 +141,12 @@ export class CanvasFrameCellComponent {
                 data-grid-cell
               >
                 @if (cellOf(row, column); as cell) {
-                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
+                  <ethlete-canvas-frame-cell
+                    #cell
+                    [cell]="cell"
+                    [live]="cellLive(cell.id)"
+                    (loadEnd)="settle(cell.id)"
+                  />
                 } @else if (drawnRows().has(row)) {
                   <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
                 }
@@ -157,7 +172,12 @@ export class CanvasFrameCellComponent {
             @for (row of line; track row) {
               <div class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border" data-grid-cell>
                 @if (cellOf(row, sheet.first); as cell) {
-                  <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
+                  <ethlete-canvas-frame-cell
+                    #cell
+                    [cell]="cell"
+                    [live]="cellLive(cell.id)"
+                    (loadEnd)="settle(cell.id)"
+                  />
                 }
               </div>
             }
@@ -170,6 +190,7 @@ export class CanvasFrameCellComponent {
     } @else {
       <div
         #table
+        [class.invisible]="!revealed()"
         [style.grid-template-columns]="'auto repeat(' + grid().columns.length + ', auto)'"
         class="absolute left-0 top-0 grid w-max items-center gap-x-[3.2rem] gap-y-[2.4rem] p-[2.4rem] text-[1.2rem] text-text-muted"
       >
@@ -181,7 +202,7 @@ export class CanvasFrameCellComponent {
           <span class="pr-[0.8rem]" data-grid-row>{{ row }}</span>
           @for (column of grid().columns; track column) {
             @if (cellOf(row, column); as cell) {
-              <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" />
+              <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="cellLive(cell.id)" (loadEnd)="settle(cell.id)" />
             } @else if (drawnRows().has(row)) {
               <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
             } @else {
@@ -190,6 +211,13 @@ export class CanvasFrameCellComponent {
           }
         }
       </div>
+    }
+    @if (!revealed()) {
+      <span
+        class="absolute left-[2.4rem] top-[2.4rem] size-[1.2rem] animate-pulse rounded-full bg-accent"
+        title="Rendering"
+        data-grid-loading
+      ></span>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -214,10 +242,24 @@ export class CanvasFrameGridComponent {
 
   protected drawnRows = computed(() => new Set(this.grid().cells.map((cell) => cell.row)));
 
+  private settledCells = linkedSignal<string, ReadonlySet<string>>({
+    source: () =>
+      this.grid()
+        .cells.map((cell) => `${cell.id}\n${cell.screenshot ?? ''}`)
+        .join('\n'),
+    computation: () => new Set(),
+  });
+
+  protected revealed = computed(() => {
+    const settled = this.settledCells();
+
+    return this.grid().cells.every((cell) => !cell.screenshot || settled.has(cell.id));
+  });
+
   private observed = computed(() => {
     const table = this.table()?.nativeElement;
 
-    return table ? [table, ...this.cells().map((cell) => cell.nativeElement)] : [];
+    return table && this.revealed() ? [table, ...this.cells().map((cell) => cell.nativeElement)] : [];
   });
 
   protected sheet = computed(() => {
@@ -255,6 +297,10 @@ export class CanvasFrameGridComponent {
     const liveCells = this.liveCells();
 
     return this.live() && (liveCells === null || liveCells.has(id));
+  }
+
+  protected settle(id: string) {
+    this.settledCells.update((settled) => (settled.has(id) ? settled : new Set(settled).add(id)));
   }
 
   protected blanksOf(line: string[]) {
