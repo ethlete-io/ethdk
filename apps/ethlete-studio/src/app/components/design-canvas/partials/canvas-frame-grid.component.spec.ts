@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { vi } from 'vitest';
+import { THEMES } from '../../../../themes';
 import { FrameCell, FrameGrid } from '../canvas-frame';
 import {
   CanvasFrameCellComponent,
@@ -9,7 +11,9 @@ import {
 } from './canvas-frame-grid.component';
 
 const render = async (cell: FrameCell) => {
-  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
 
   const fixture = TestBed.createComponent(CanvasFrameCellComponent);
 
@@ -64,7 +68,9 @@ describe('CanvasFrameCellComponent', () => {
         configurable: true,
         value: () => new Promise<void>((resolve) => (decoded = resolve)),
       });
-      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
       fixture = TestBed.createComponent(CanvasFrameCellComponent);
       fixture.componentRef.setInput('cell', {
         id: 'leaf',
@@ -122,7 +128,9 @@ const cellAt = (row: string, column: string): FrameCell => ({
 });
 
 const renderGrid = async (grid: FrameGrid) => {
-  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
 
   const fixture = TestBed.createComponent(CanvasFrameGridComponent);
 
@@ -256,7 +264,9 @@ describe('CanvasFrameGridComponent', () => {
     });
 
     it('draws each live cell in the scheme of its group', async () => {
-      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
 
       const fixture = TestBed.createComponent(CanvasFrameGridComponent);
 
@@ -275,7 +285,9 @@ describe('CanvasFrameGridComponent', () => {
     });
 
     it('waits for the shots of both schemes before it reveals', async () => {
-      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
 
       const fixture = TestBed.createComponent(CanvasFrameGridComponent);
 
@@ -301,7 +313,9 @@ describe('CanvasFrameGridComponent', () => {
     const shots = cells.slice(0, 3).map((cell) => ({ ...cell, screenshot: `/shot/${cell.id}.png` }));
 
     const renderShots = async () => {
-      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
 
       const fixture = TestBed.createComponent(CanvasFrameGridComponent);
 
@@ -341,6 +355,49 @@ describe('CanvasFrameGridComponent', () => {
 
       expect(fixture.nativeElement.querySelector('.invisible')).toBeNull();
     });
+
+    it('shows a failed shot as an error in its cell', async () => {
+      const fixture = await renderShots();
+      const host = fixture.nativeElement as HTMLElement;
+
+      await settle(fixture, 0, 'load');
+      await settle(fixture, 1, 'error');
+
+      const failed = host.querySelectorAll('ethlete-canvas-frame-cell')[1];
+
+      expect(failed?.querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+      expect(host.querySelectorAll('[data-shot-failed]').length).toBe(1);
+    });
+
+    it('marks a cell whose shot takes long as rendering until it loads', async () => {
+      vi.useFakeTimers();
+
+      try {
+        TestBed.configureTestingModule({
+          providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+        });
+
+        const fixture = TestBed.createComponent(CanvasFrameGridComponent);
+        const host = fixture.nativeElement as HTMLElement;
+        const flush = (ms: number) => vi.advanceTimersByTimeAsync(ms);
+
+        fixture.componentRef.setInput('grid', { columns, rows, cells: shots });
+        await flush(1000);
+
+        expect(host.querySelectorAll('[data-shot-slow]').length).toBe(0);
+
+        await flush(1500);
+
+        expect(host.querySelectorAll('[data-shot-slow]').length).toBe(3);
+
+        host.querySelectorAll('img')[0]?.dispatchEvent(new Event('load'));
+        await flush(20);
+
+        expect(host.querySelectorAll('[data-shot-slow]').length).toBe(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe('go live', () => {
@@ -371,7 +428,9 @@ describe('CanvasFrameGridComponent', () => {
     beforeEach(async () => {
       vi.useFakeTimers();
       vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
-      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
       fixture = TestBed.createComponent(CanvasFrameGridComponent);
       fixture.componentRef.setInput('grid', { columns, rows, cells: live });
       fixture.componentRef.setInput('live', true);

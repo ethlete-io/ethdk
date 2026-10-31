@@ -49,6 +49,7 @@ import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
+import { FAILED_SHOT_SIZE, ShotStateComponent, ShotStateDirective } from './shot-state';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 
@@ -207,7 +208,16 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           class="absolute overflow-hidden bg-surface"
         >
           @if (copy.shot) {
-            <img [src]="copy.shot" class="absolute inset-0 size-full border-0 object-none object-left-top" alt="" />
+            <img
+              #copyShot="ethleteShot"
+              [src]="copy.shot"
+              class="absolute inset-0 size-full border-0 object-none object-left-top"
+              ethleteShot
+              alt=""
+            />
+            @if (!live()) {
+              <ethlete-shot-state [state]="copyShot.state()" />
+            }
           }
           @if (live()) {
             <iframe
@@ -225,13 +235,18 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       @if (pageShot()) {
         <img
           #shot
+          #pageShotState="ethleteShot"
           [src]="live() ? pageShot() : (admittedShot() ?? pageShot())"
           [class.opacity-0]="painted()"
           (load)="readScreenshotSize($event)"
-          (error)="settleScreenshot($event)"
+          (error)="failScreenshot($event)"
           class="absolute inset-0 size-full border-0 object-none object-left-top"
           alt=""
+          ethleteShot
         />
+        @if (!painted()) {
+          <ethlete-shot-state [state]="pageShotState.state()" />
+        }
       } @else if (!painted()) {
         <div class="absolute inset-0 size-full border-0 bg-(--et-surface-interaction-solid)"></div>
       }
@@ -281,7 +296,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent],
+  imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent, ShotStateDirective, ShotStateComponent],
   host: {
     class:
       'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[schemed]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
@@ -495,22 +510,30 @@ export class CanvasFrameComponent {
     if (!this.painted()) this.emitScreenshotSize(event.target as HTMLImageElement);
   }
 
+  protected failScreenshot(event: Event) {
+    this.settleScreenshot(event);
+
+    if (this.painted()) return;
+    if (this.frame().width === undefined) this.widthChange.emit(FAILED_SHOT_SIZE.width);
+    if (this.frame().height === undefined) this.heightChange.emit(FAILED_SHOT_SIZE.height);
+  }
+
   protected readGridSize({ width, height }: Size) {
     this.widthChange.emit(width);
     this.heightChange.emit(height);
   }
 
-  protected settleScreenshot(event: Event) {
+  protected loadContent(iframe: HTMLIFrameElement) {
+    this.contentLoad$.next(iframe);
+  }
+
+  private settleScreenshot(event: Event) {
     const src = (event.target as HTMLImageElement).getAttribute('src');
 
     if (this.live() || src === null) return;
 
     this.loadedShot.set(src);
     this.settled$.next(src);
-  }
-
-  protected loadContent(iframe: HTMLIFrameElement) {
-    this.contentLoad$.next(iframe);
   }
 
   private schemed(url: string, scheme: ColorScheme | null) {

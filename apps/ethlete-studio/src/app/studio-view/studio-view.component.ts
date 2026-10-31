@@ -12,11 +12,16 @@ import {
   finalize,
   first,
   interval,
+  map,
   of,
+  retry,
   share,
+  startWith,
   switchMap,
   tap,
+  timer,
 } from 'rxjs';
+import { fromFetch } from 'rxjs/fetch';
 import {
   Project,
   ServerState,
@@ -43,6 +48,8 @@ import { rememberView, rememberedView } from './remembered';
 const SETTLE_MS = 300;
 
 const FOREIGN_SERVER_POLL_MS = 3000;
+
+const SERVER_ANSWER_RETRY_MS = 1000;
 
 const STATUS_ITEM =
   'flex min-w-0 items-center gap-1.5 whitespace-nowrap font-mono text-[1.1rem] tracking-[0.02em] text-(--et-surface-color-subtle-solid)';
@@ -125,6 +132,8 @@ const STATUS_ITEM =
         <span [title]="serverNote()" [class]="STATUS_ITEM" data-server-line>
           <i
             [style.background]="server()?.listening ? 'var(--accent)' : 'var(--et-surface-color-subtle-solid)'"
+            [class.animate-pulse]="server()?.listening && !serverReady()"
+            [attr.data-server-starting]="server()?.listening && !serverReady() ? '' : null"
             class="size-1.5 shrink-0 rounded-full"
           ></i>
           <span class="overflow-hidden text-ellipsis">{{ line }}</span>
@@ -209,6 +218,13 @@ export class StudioViewComponent {
     { initialValue: null },
   );
 
+  private serverAnswered = toSignal(
+    toObservable(this.listeningPort).pipe(switchMap((port) => (port === null ? of(false) : serverAnswers$(port)))),
+    { initialValue: false },
+  );
+
+  protected serverReady = computed(() => this.listeningPort() !== null && this.serverAnswered());
+
   protected queueLine = computed(() => queueLineOf(this.designQueue()));
 
   protected failures = computed(() =>
@@ -232,7 +248,7 @@ export class StudioViewComponent {
     return [
       `Design server ${state.port}`,
       state.foreign ? 'not started by Studio' : '',
-      state.stale ? 'stale' : 'running',
+      state.stale ? 'stale' : this.serverAnswered() ? 'running' : 'starting',
     ]
       .filter(Boolean)
       .join(' · ');
@@ -244,7 +260,9 @@ export class StudioViewComponent {
     return state && !state.listening && !this.serverBusy() ? state : null;
   });
 
-  protected serverStarting = computed(() => !!this.server() && !this.server()?.listening && this.serverBusy());
+  protected serverStarting = computed(
+    () => !!this.server() && (this.server()?.listening ? !this.serverReady() : this.serverBusy()),
+  );
 
   protected downLog = computed(() => (this.serverDown()?.log ?? []).slice(-10).join('\n'));
 
@@ -459,3 +477,14 @@ export class StudioViewComponent {
       .subscribe();
   }
 }
+
+const serverAnswers$ = (port: number) =>
+  fromFetch(`http://localhost:${port}/__design/system`).pipe(
+    map((response) => {
+      if (response.status >= 500) throw new Error(`${response.status}`);
+
+      return true;
+    }),
+    retry({ delay: () => timer(SERVER_ANSWER_RETRY_MS) }),
+    startWith(false),
+  );

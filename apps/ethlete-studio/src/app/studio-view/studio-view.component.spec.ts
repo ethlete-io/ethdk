@@ -128,6 +128,7 @@ describe('StudioViewComponent', () => {
     FakeEventSource.instances = [];
     resetDesignStreams();
     vi.stubGlobal('EventSource', FakeEventSource);
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response('[]', { status: 200 })));
     stubHost();
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
@@ -291,6 +292,37 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(system(fixture)?.port()).toBe(4402);
+  });
+
+  it('says the design server starts until it answers, then that it runs', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+
+    let answer: () => Promise<Response> = () => Promise.resolve(new Response('', { status: 500 }));
+
+    vi.stubGlobal('fetch', () => answer());
+
+    try {
+      const fixture = TestBed.createComponent(StudioViewComponent);
+
+      localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
+      fixture.autoDetectChanges();
+      await vi.advanceTimersByTimeAsync(10);
+      await fixture.whenStable();
+
+      expect(status(fixture)).toContain('Design server 4402 · starting');
+      expect(status(fixture)).not.toContain('running');
+      expect(element(fixture).textContent).toContain('The design server is starting');
+      expect(system(fixture)).toBeUndefined();
+
+      answer = () => Promise.resolve(new Response('[]', { status: 200 }));
+      await vi.advanceTimersByTimeAsync(1000);
+      await fixture.whenStable();
+
+      expect(status(fixture)).toContain('Design server 4402 · running');
+      expect(system(fixture)?.port()).toBe(4402);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('starts its own server and draws the frames again when a server Studio did not start ends', async () => {

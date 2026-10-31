@@ -40,6 +40,7 @@ import {
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
+import { ShotStateComponent, ShotStateDirective } from './shot-state';
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 
@@ -55,13 +56,18 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     @if (screenshot(); as screenshot) {
       <img
         #shot
+        #shotState="ethleteShot"
         [src]="screenshot"
         [class.opacity-0]="painted()"
         (load)="readScreenshotSize($event)"
         (error)="loadEnd.emit()"
         class="absolute left-0 top-0 max-w-none"
         alt=""
+        ethleteShot
       />
+      @if (!painted()) {
+        <ethlete-shot-state [state]="shotState.state()" />
+      }
     }
     @if (live() || painted()) {
       <iframe
@@ -74,12 +80,15 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [ShotStateDirective, ShotStateComponent],
   host: {
     class: 'relative block',
     '[style.width.px]': 'cell().width ?? size()?.width ?? 0',
     '[style.height.px]': 'size()?.height ?? 0',
     '[attr.data-cell-id]': 'cell().id',
     '[attr.data-cell-scheme]': 'scheme()',
+    '[class.min-h-20]': 'failed()',
+    '[class.min-w-40]': 'failed()',
   },
 })
 export class CanvasFrameCellComponent {
@@ -96,6 +105,8 @@ export class CanvasFrameCellComponent {
 
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
 
+  public shotState = viewChild(ShotStateDirective);
+
   private pageRevealed$ = toObservable(computed(() => this.live() && this.revealLive()));
 
   private src = computed(() => this.schemed(this.cell().src));
@@ -107,6 +118,8 @@ export class CanvasFrameCellComponent {
   protected size = signal<Size | null>(null);
 
   protected painted = linkedSignal<string, boolean>({ source: () => this.src(), computation: () => false });
+
+  protected failed = computed(() => this.shotState()?.state() === 'failed');
 
   private page = computed(() => ({ iframe: this.iframe()?.nativeElement ?? null, src: this.src() }));
 

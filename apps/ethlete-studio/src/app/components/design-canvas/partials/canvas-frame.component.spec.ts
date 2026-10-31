@@ -86,3 +86,93 @@ describe('CanvasFrameComponent swap between shot and page', () => {
     expect(shown()).toEqual({ shot: true, page: false, mounted: false });
   });
 });
+
+describe('CanvasFrameComponent shot states', () => {
+  let fixture: ComponentFixture<CanvasFrameComponent>;
+
+  const flush = (ms: number) => vi.advanceTimersByTimeAsync(ms);
+
+  const host = () => fixture.nativeElement as HTMLElement;
+
+  const copy = (scheme: string) => host().querySelector(`[data-scheme-copy="${scheme}"]`) as HTMLElement;
+
+  const shotOf = (scheme: string) => copy(scheme).querySelector('img') as HTMLImageElement;
+
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+    fixture = TestBed.createComponent(CanvasFrameComponent);
+    fixture.componentRef.setInput('frame', {
+      id: 'default',
+      src: 'about:blank',
+      label: 'default',
+      width: 300,
+      height: 200,
+      screenshot: 'http://localhost/__design/shot?call=a',
+      schemes: ['light', 'dark'],
+    });
+    fixture.componentRef.setInput('width', 300);
+    fixture.componentRef.setInput('height', 200);
+    await flush(20);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows a failed shot as an error in its own scheme copy only', async () => {
+    shotOf('dark').dispatchEvent(new Event('error'));
+    shotOf('light').dispatchEvent(new Event('load'));
+    await flush(20);
+
+    expect(copy('dark').querySelector('[data-shot-failed]')?.textContent).toContain('Render failed');
+    expect(copy('light').querySelector('[data-shot-failed]')).toBeNull();
+  });
+
+  it('marks a shot that takes long as rendering until it loads, per scheme copy', async () => {
+    await flush(1000);
+
+    expect(host().querySelector('[data-shot-slow]')).toBeNull();
+
+    await flush(1500);
+
+    expect(copy('light').querySelector('[data-shot-slow]')).not.toBeNull();
+    expect(copy('dark').querySelector('[data-shot-slow]')).not.toBeNull();
+
+    shotOf('light').dispatchEvent(new Event('load'));
+    await flush(20);
+
+    expect(copy('light').querySelector('[data-shot-slow]')).toBeNull();
+    expect(copy('dark').querySelector('[data-shot-slow]')).not.toBeNull();
+  });
+});
+
+describe('CanvasFrameComponent failed shot size', () => {
+  it('gives a frame without a size room to show a failed shot', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+    const sizes: number[] = [];
+
+    fixture.componentRef.setInput('frame', {
+      id: 'fitted',
+      src: 'about:blank',
+      label: 'fitted',
+      screenshot: 'fitted.png',
+    });
+    fixture.componentRef.setInput('width', 0);
+    fixture.componentInstance.widthChange.subscribe((width) => sizes.push(width));
+    fixture.componentInstance.heightChange.subscribe((height) => sizes.push(height));
+    await fixture.whenStable();
+
+    (fixture.nativeElement as HTMLElement).querySelector('img')?.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+
+    expect(sizes).toEqual([320, 160]);
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-shot-failed]')).not.toBeNull();
+  });
+});
