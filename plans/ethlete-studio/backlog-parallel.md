@@ -64,8 +64,16 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     single (asked the grill). Pins, outlines, comments and picking use the Light copy. Headless studio-lab `library`
     and `add-a-film`: layout, labels, pins and outlines checked; the page renders failed on the scratch server, so real
     light/dark content and a declared-width part on screen are not seen.
-  - In progress (2026-10-31): 1e, in two slices: CLI server (survives a components rebuild, own Vite cache dir per
-    command server, cold start) and Studio states (500 error cell, loading until indexed, slow state).
+  - Done (2026-10-31): 1e CLI side. HEAD renders on a fresh scratch server (studio 254/254, sdk 134/134 shots); the
+    earlier failed renders came from a scratch copy without `dist/libs` (inferred). The server watches the
+    `render.packages` dirs and redraws after a dist rebuild with no restart (`ec5b5316d`, simulated rebuild only).
+    `claimViteCache`: the first command server keeps the shared `vite-check` cache via a pid lock, an overlapping one
+    gets its own dir, removed on close (`4fb728034`). Cold start: the tool's own modules leave `optimizeDeps`, so no
+    late full reload (`489d2ad17`); first shot 2.4 -> 1.8 s, studio grid 9.5 -> 7.9 s. The bulk of the ~15 s is likely
+    Studio's debug `npx nx cli-runtime` (nx + a full `npm install` of a runtime the dev server does not use) before each
+    server start (`design_server.rs` `build_cli`) - next slice.
+  - In progress (2026-10-31): 1e Studio states (500 error cell, loading until indexed, slow state); a real Studio
+    render of Q92 on own servers; then merge-preview Light + Dark (grill decision), then skip `cli-runtime` in dev.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
