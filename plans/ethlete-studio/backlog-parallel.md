@@ -748,6 +748,9 @@ machen".
 - Q137 builder 33 order (Tom, 2026-10-31, option a): the SDK rounds Studio needs, then the Studio pages and parts as
   sketches (Q133), then the other SDK components. This lifts the Q132 stop on new SDK sketches for the time after
   the Studio sketches.
+- Lead call (Q96, 2026-10-31): chat MVP scope pushed (Q127 in `9d6a2789d`). Builder 57 next: (1) close the two Q127
+  context gaps (no part source path; the context sends the picked variant, not the variant Tom looks at); (2)
+  dogfood the MVP loop on its own ports and fix plain bugs, sending new looks or behaviour as questions.
   As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
   the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
   directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
