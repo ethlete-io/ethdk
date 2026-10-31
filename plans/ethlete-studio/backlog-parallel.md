@@ -724,6 +724,17 @@ Follows Q120. Built on products, parts, sketches and variants; nothing on legacy
 - Q129: the chat is a collapsible panel on the right that survives navigation. The `/agent` page goes away.
 - Q130: one running chat with a "New chat" button; a list of old chats only when Tom asks for it.
 
+#### Build slices (builder ethlete-sdk-57)
+
+1. Q129, in progress: a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
+   survives navigation. Follow-up messages resume the same agent session. The `/agent` page and its call inputs
+   go away; the Rust call tools stay as they are, and the chat sends `tools: null`.
+2. Q127: a root view-context store that the system and sketch views write (product, part, sketch, variant,
+   selection). A chip above the input shows it; one click removes it for the next message.
+3. Q128: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
+   is still the one the message was sent from, Studio opens the result; otherwise the reply shows a link.
+4. Q130: a "New chat" button that clears the messages and the session. No list of old chats (grill, 2026-10-31).
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
