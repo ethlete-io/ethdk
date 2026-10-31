@@ -1145,3 +1145,13 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - After the MVP (pilot slice 1 tool gap, 2026-10-31): no CLI command prints the rendered HTML of a part or of its
   implementation; the pilot dumped it with its own Playwright script. A `design dom <part>` (or a compare flag) would
   remove that step.
+- **Q222 (Tom, 2026-10-31):** a page part marks the live canvas as a projected region (`slot('canvas')`). Compare
+  masks that box in both shots; the component projects it with `<ng-content>`. No separate canvas part.
+- **Q223 (Tom, 2026-10-31):** builder order after pilot slice 1: Q219 (+ the inventory toggle in the URL), then
+  shell-main b as pilot slice 2 with the inbox moved onto it and Q222, then Q218, then Q220.
+- **Q224 (Tom, 2026-10-31):** the Inventory view gets its own Studio part `pages/inventory`; the MVP list grows by it.
+  Tool rule: every view of the Studio app needs a part that covers it through `implements`; a view without one is an
+  open point in `design check`.
+- **Q225 (Tom, 2026-10-31):** the builder writes nothing for Tom in its chat (one closing line at most); every report
+  goes only to the grill session by `SendMessage`. The builder stays a tmux session, not a subagent of the grill
+  session. Rule added to the `builder-agent` skill.
