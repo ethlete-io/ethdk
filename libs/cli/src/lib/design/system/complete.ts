@@ -45,9 +45,9 @@ export type SeenForce = { interaction: string; differs: boolean; still?: string[
 /**
  * An option or menu item inside a drawn surface. `selected` is its ARIA selected, checked, pressed or current
  * state, `look` its computed colours, so two options can be told apart without their text. `named` is set when an
- * `aria-activedescendant` in the frame names its id.
+ * `aria-activedescendant` in the frame names its id, `keyboard` when it carries `data-active-source="keyboard"`.
  */
-export type SeenOption = { selected: boolean; look: string; forced: SeenForce[]; named?: boolean };
+export type SeenOption = { selected: boolean; look: string; forced: SeenForce[]; named?: boolean; keyboard?: boolean };
 
 /** What one drawn frame of a state shows of the controls and surfaces its markup marks. */
 export type SeenFrame = {
@@ -59,6 +59,7 @@ export type SeenFrame = {
     selected?: boolean;
     disabled?: boolean;
     look?: string;
+    keyboard?: boolean;
     box?: FrameBox | null;
   }[];
   surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
@@ -84,6 +85,7 @@ type ControlKind = {
   noActive?: boolean;
   selects?: boolean;
   options?: boolean;
+  virtualFocus?: boolean;
 };
 
 const KINDS: Record<string, ControlKind> = {
@@ -91,7 +93,7 @@ const KINDS: Record<string, ControlKind> = {
   button: { adds: ['active'] },
   select: { surface: 'open', options: true },
   menu: { surface: 'open', options: true },
-  row: { selects: true },
+  row: { selects: true, virtualFocus: true },
   field: { noActive: true },
   tooltip: { surface: 'tooltip' },
 };
@@ -312,6 +314,19 @@ const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interactio
   return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too`;
 };
 
+const keyboardActiveRowGapOf = (options: { instances: SeenFrame['controls']; forcedGap: string }) => {
+  const { instances, forcedGap } = options;
+  const active = instances.filter((seen) => seen.keyboard);
+  const plain = instances.filter((seen) => !seen.keyboard && !seen.selected && !seen.disabled);
+
+  if (active.length === 0) return `${forcedGap}; no state marks it data-active-source="keyboard" either`;
+  if (plain.length === 0)
+    return `a state marks it data-active-source="keyboard", but no state draws it plain (not selected, active or disabled) to compare it with`;
+  if (active.some((seen) => plain.some((other) => other.look !== seen.look))) return null;
+
+  return `it looks the same with data-active-source="keyboard" as plain - give the active look its own colours`;
+};
+
 const stillGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
   const { frames, id, interaction } = options;
 
@@ -382,32 +397,37 @@ const surfaceGapsOf = (options: {
   return gaps;
 };
 
-const isPlain = (option: SeenOption) => !option.selected && !option.named && option.forced.length === 0;
+const KEYBOARD_ACTIVE = 'aria-activedescendant or data-active-source="keyboard"';
 
-const activeDescendantGapOf = (options: {
+const isKeyboardActive = (option: SeenOption) => !!option.named || !!option.keyboard;
+
+const isPlain = (option: SeenOption) => !option.selected && !isKeyboardActive(option) && option.forced.length === 0;
+
+const keyboardActiveGapOf = (options: {
   frames: SeenFrame[];
   shownIn: (frame: SeenFrame) => SeenOption[];
   forcedGap: string;
 }) => {
   const { frames, shownIn, forcedGap } = options;
-  const naming = frames
+  const active = frames
     .map((frame) => ({ state: frame.state, options: shownIn(frame) }))
-    .filter((frame) => frame.options.some((option) => option.named));
-  const compared = naming.filter((frame) => frame.options.some(isPlain));
+    .filter((frame) => frame.options.some(isKeyboardActive));
+  const compared = active.filter((frame) => frame.options.some(isPlain));
 
-  if (naming.length === 0) return `${forcedGap}; no option is named by aria-activedescendant on the control either`;
+  if (active.length === 0) return `${forcedGap}; no option is marked active by ${KEYBOARD_ACTIVE} either`;
   if (compared.length === 0)
-    return `state ${naming[0]?.state} names an option with aria-activedescendant, but draws no plain option (not selected, named or forced) to compare it with`;
+    return `state ${active[0]?.state} marks an option active by ${KEYBOARD_ACTIVE}, but draws no plain option (not selected, active or forced) to compare it with`;
   if (
     compared.some((frame) =>
       frame.options.some(
-        (option) => option.named && frame.options.some((plain) => isPlain(plain) && plain.look !== option.look),
+        (option) =>
+          isKeyboardActive(option) && frame.options.some((plain) => isPlain(plain) && plain.look !== option.look),
       ),
     )
   )
     return null;
 
-  return `state ${compared[0]?.state} names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look`;
+  return `state ${compared[0]?.state} marks an option active by ${KEYBOARD_ACTIVE}, but it looks the same as a plain option - give the active option its own look`;
 };
 
 const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [string, string][] => {
@@ -427,7 +447,7 @@ const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [str
     );
     const gap = forcedGapOf({ forced, what, interaction });
     const missing =
-      gap && interaction === 'focus-visible' ? activeDescendantGapOf({ frames, shownIn, forcedGap: gap }) : gap;
+      gap && interaction === 'focus-visible' ? keyboardActiveGapOf({ frames, shownIn, forcedGap: gap }) : gap;
 
     if (missing) gaps.push([`option-${interaction}`, missing]);
   }
@@ -436,7 +456,7 @@ const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [str
     .filter((frame) => frame.interaction === null)
     .flatMap((frame) =>
       shownIn(frame)
-        .filter((option) => option.forced.length === 0 && !option.named)
+        .filter((option) => option.forced.length === 0 && !isKeyboardActive(option))
         .map((option) => ({ look: option.look, flag: option.selected })),
     );
   const selected = lookGapOf({ seen, flag: 'selected', what });
@@ -461,7 +481,11 @@ const requirementGapsOf = (options: {
   const gaps: [string, string][] = [];
 
   for (const interaction of own ? requiredInteractionsOf(control) : []) {
-    const gap = interactionGapOf({ frames, id, interaction });
+    const forcedGap = interactionGapOf({ frames, id, interaction });
+    const gap =
+      forcedGap && interaction === 'focus-visible' && kind.virtualFocus
+        ? keyboardActiveRowGapOf({ instances, forcedGap })
+        : forcedGap;
 
     if (gap) gaps.push([interaction, gap]);
   }
@@ -1013,6 +1037,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
     (element.hasAttribute('aria-current') && element.getAttribute('aria-current') !== 'false');
   const isDisabled = (element) =>
     element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true' || tokensOf(element, 'data-et-force').includes('disabled');
+  const isKeyboard = (element) => element.getAttribute('data-active-source') === 'keyboard';
   let next = 0;
   const tagged = (element) => {
     const at = next++;
@@ -1035,6 +1060,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
     return {
       id: element.getAttribute('data-et-control'),
       disabled: parts.some(isDisabled),
+      keyboard: parts.some(isKeyboard),
       frameBox: frameBoxOf(element),
       ...tagged(element),
     };
@@ -1042,7 +1068,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
   const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
-    options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map((option) => ({ ...tagged(option), named: option.id !== '' && named.has(option.id) })),
+    options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map((option) => ({ ...tagged(option), named: option.id !== '' && named.has(option.id), keyboard: isKeyboard(option) })),
   }));
   const discover = ${options.discover};
   return {
@@ -1083,8 +1109,8 @@ type Tagged = {
 type Seen =
   | { refused: string }
   | {
-      controls: (Tagged & { id: string; disabled: boolean; frameBox: FrameBox | null })[];
-      surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean })[] }[];
+      controls: (Tagged & { id: string; disabled: boolean; keyboard: boolean; frameBox: FrameBox | null })[];
+      surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean; keyboard: boolean })[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
     };
@@ -1169,6 +1195,7 @@ const seeFrames = async (options: {
           selected: control.selected,
           disabled: control.disabled,
           look: control.look,
+          ...(control.keyboard ? { keyboard: true } : {}),
           box: control.frameBox,
         });
 
@@ -1181,6 +1208,7 @@ const seeFrames = async (options: {
             look: option.look,
             forced: await forcedOf(option),
             ...(option.named ? { named: true } : {}),
+            ...(option.keyboard ? { keyboard: true } : {}),
           });
 
         surfaces.push({ id: surface.id, shown: surface.shown, options });

@@ -184,6 +184,13 @@ const PARTS: Record<string, FixturePart> = {
     states: { rest: `<div>${pick}</div>`, open: named('aa-row') },
     extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
   },
+  'components/picker-keyboard': {
+    states: {
+      rest: `<div>${pick}</div>`,
+      open: `<div>${pick}<ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option(' data-active-source="keyboard"', 'aa-row aa-active')}${option()}${option(' data-et-force="hover"')}</ul></div>`,
+    },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
   'components/picker-closed': {
     states: {
       rest: `<div>${pick}</div>`,
@@ -569,6 +576,36 @@ describe('completenessGapsOf', () => {
     ]);
   });
 
+  it('counts a row marked data-active-source="keyboard" as its focus-visible look', () => {
+    const gapsOf = (frames: SeenFrame[]) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: { more: { kind: 'row', input: ['keyboard'] } },
+        states: ['rest', 'picked'],
+        frames,
+        reviewed: true,
+      })
+        .map(completenessGapLineOf)
+        .filter((line) => line.includes('.focus-visible'));
+    const rows = (keyboardLook: string) => [
+      frame('rest', {
+        controls: [
+          { id: 'more', forced: [], selected: true, look: 'navy' },
+          { id: 'more', forced: [], look: 'white' },
+          { id: 'more', forced: [], keyboard: true, look: keyboardLook },
+        ],
+      }),
+    ];
+
+    expect(gapsOf(rows('teal'))).toEqual([]);
+    expect(gapsOf(rows('white'))).toEqual([
+      'REQUIREMENT-MISSING components/a.more.focus-visible - it looks the same with data-active-source="keyboard" as plain - give the active look its own colours',
+    ]);
+    expect(gapsOf([frame('rest', { controls: [{ id: 'more', forced: [], look: 'white' }] })])).toEqual([
+      'REQUIREMENT-MISSING components/a.more.focus-visible - no state draws it focus-visible - draw a state that forces focus-visible on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too; no state marks it data-active-source="keyboard" either',
+    ]);
+  });
+
   it('requires the open surface of a select or menu with its option states, and takes the options from its part', () => {
     const shown = (options: SeenFrame['surfaces'][number]['options']) => [{ id: 'more.open', shown: true, options }];
     const full = [
@@ -599,7 +636,7 @@ describe('completenessGapsOf', () => {
       gapsOf(select, [frame('rest'), frame('open', { surfaces: shown([{ selected: false, look: 'a', forced: [] }]) })]),
     ).toEqual([
       'REQUIREMENT-MISSING components/a.more.option-hover - no state draws an option in more.open hover - force hover on it, e.g. with forceInteraction',
-      'REQUIREMENT-MISSING components/a.more.option-focus-visible - no state draws an option in more.open focus-visible - force focus-visible on it, e.g. with forceInteraction; no option is named by aria-activedescendant on the control either',
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - no state draws an option in more.open focus-visible - force focus-visible on it, e.g. with forceInteraction; no option is marked active by aria-activedescendant or data-active-source="keyboard" either',
       'REQUIREMENT-MISSING components/a.more.option-selected - no state draws an option in more.open selected - mark it with aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current in a state',
     ]);
 
@@ -616,11 +653,28 @@ describe('completenessGapsOf', () => {
     ];
 
     expect(gapsOf(select, activeOf('teal'))).toEqual([]);
+
+    const keyboardOf = (look: string) => [
+      frame('rest'),
+      frame('open', {
+        surfaces: shown([
+          { selected: true, look: 'navy', forced: [] },
+          { selected: false, look: 'white', forced: [] },
+          { selected: false, look, forced: [], keyboard: true },
+          { selected: false, look: 'x', forced: [{ interaction: 'hover', differs: true }] },
+        ]),
+      }),
+    ];
+
+    expect(gapsOf({ ...select, kind: 'menu' }, keyboardOf('teal'))).toEqual([]);
+    expect(gapsOf(select, keyboardOf('white'))).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open marks an option active by aria-activedescendant or data-active-source="keyboard", but it looks the same as a plain option - give the active option its own look',
+    ]);
     expect(gapsOf(select, activeOf('white'))).toEqual([
-      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look',
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open marks an option active by aria-activedescendant or data-active-source="keyboard", but it looks the same as a plain option - give the active option its own look',
     ]);
     expect(gapsOf(select, activeOf('teal', false))).toEqual([
-      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open names an option with aria-activedescendant, but draws no plain option (not selected, named or forced) to compare it with',
+      'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open marks an option active by aria-activedescendant or data-active-source="keyboard", but draws no plain option (not selected, active or forced) to compare it with',
       'REQUIREMENT-MISSING components/a.more.option-selected - every state draws an option in more.open selected - draw it without selected too, to compare',
     ]);
 
@@ -735,10 +789,12 @@ describe('completenessOf', () => {
 
     expect(await completenessOf({ target, config, product, part: 'components/picker-named' })).toEqual({ gaps: [] });
 
+    expect(await completenessOf({ target, config, product, part: 'components/picker-keyboard' })).toEqual({ gaps: [] });
+
     const namedPlain = await completenessOf({ target, config, product, part: 'components/picker-named-plain' });
 
     expect('gaps' in namedPlain && namedPlain.gaps.map(completenessGapLineOf)).toEqual([
-      'REQUIREMENT-MISSING components/picker-named-plain.pick.option-focus-visible - state open names an option with aria-activedescendant, but it looks the same as a plain option - give the active option its own look',
+      'REQUIREMENT-MISSING components/picker-named-plain.pick.option-focus-visible - state open marks an option active by aria-activedescendant or data-active-source="keyboard", but it looks the same as a plain option - give the active option its own look',
     ]);
 
     const closed = await completenessOf({ target, config, product, part: 'components/picker-closed' });

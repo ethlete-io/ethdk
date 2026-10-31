@@ -386,7 +386,9 @@ computed colours, opacity, shadow or font weight, or those of an element in it, 
 An option that never takes focus, such as one a listbox names with `aria-activedescendant` on its
 control, proves focus-visible without a forced interaction: in a shown surface, the option whose
 `id` an `aria-activedescendant` names must look different, by the same computed look, from a plain
-option in that surface that is not selected, named or forced.
+option in that surface that is not selected, active or forced. An option with
+`data-active-source="keyboard"` counts the same way. A `row` control with
+`data-active-source="keyboard"` proves its focus-visible the same way, against a plain row.
 `disabled: true` on a control also needs a state that draws it `disabled` or
 `aria-disabled="true"` with a look of its own; without it, no disabled state is required.
 
