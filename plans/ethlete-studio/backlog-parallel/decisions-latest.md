@@ -213,7 +213,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   conflicts when two designers work on the same product: the same part or sketch, the shared JSON records
   (`go.json`, `ready.json`, `inventory.json`, `merged.json`, `accepted.json`), and comments. Today every record is a
   plain file in git, so two edits meet only as a git merge conflict. Start with a grill: what must a designer see
-  and do when someone else changes the same thing.
+  and do when someone else changes the same thing. Tom's first thought (2026-11-01): a real-time solution like Figma
+  is probably the right direction; what fits best and how it looks is open.
 - **Q247 (Tom, 2026-11-01):** the `implements` link does not count for the Studio MVP; the MVP is the design (every
   part merged and ready). Parts whose markup is inline in a bigger app component (tree-row, part-tree, zoom-chip,
   comment-pin, canvas-viewport, the merge view) link to the file that holds that markup today. Parts with no app code
