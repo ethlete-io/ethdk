@@ -54,7 +54,9 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   closed <-> open, hidden <-> visible. A colour change is enough as a motion (a short token transition). One open
   point per missing pair and direction, for example "no motion collapsed -> expanded". Focus may have a motion but
   does not need one (no open point). Rest <-> disabled needs a motion too (Tom), although the app sets it, not the
-  user.
+  user. A state that shows ongoing work (loading, pending, indeterminate progress, a spinner) needs a looping motion
+  inside that state, plus the motions into it and out of it (Tom). How a part declares a looping motion is a builder
+  call.
 
 ## Not decided
 
