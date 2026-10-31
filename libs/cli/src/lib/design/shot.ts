@@ -259,8 +259,10 @@ export const createPartShooter = (options: {
         const marks: unknown = await page.evaluate(marksIn(frame.clip));
         const root = page.locator('#root');
 
+        const rootBox = frame.clip ? await root.boundingBox() : null;
+
         if (frame.clip) {
-          const box = await root.boundingBox();
+          const box = rootBox;
 
           if (!box || box.width === 0 || box.height === 0)
             throw new ShotUnprocessableError(
@@ -268,7 +270,7 @@ export const createPartShooter = (options: {
             );
         }
 
-        const origin = frame.crop && frame.clip ? await root.boundingBox() : null;
+        const origin = frame.crop && frame.clip ? rootBox : null;
         const crop = frame.crop && {
           ...frame.crop,
           x: frame.crop.x + (origin?.x ?? 0),
@@ -277,8 +279,8 @@ export const createPartShooter = (options: {
         const png = await (
           crop
             ? page.screenshot({ type: 'png', fullPage: true, clip: crop, timeout: DRAW_TIMEOUT_MS })
-            : frame.clip
-              ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
+            : rootBox
+              ? page.screenshot({ type: 'png', fullPage: true, clip: rootBox, timeout: DRAW_TIMEOUT_MS })
               : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
         ).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);

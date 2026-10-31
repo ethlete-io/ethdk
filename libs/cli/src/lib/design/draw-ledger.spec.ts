@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { describe, expect, it, vi } from 'vitest';
 import { createDrawLedger, KEPT_FAILURES } from './draw-ledger';
-import { createDrawQueue, createThumbnailer } from './thumb';
+import { DRAWS_AT_ONCE, createDrawQueue, createThumbnailer } from './thumb';
 
 const withBrowser = vi.fn(async () => ({
   chromium: { launch: async () => ({ close: async () => undefined }) } as never,
@@ -21,7 +21,9 @@ describe('createDrawLedger', () => {
     const ledger = createDrawLedger(() => clock);
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser, ledger });
     const releases: (() => void)[] = [];
-    const drawn = [0, 1, 2, 3, 4, 5].map(() => queue.run(() => new Promise<void>((done) => releases.push(done))));
+    const drawn = Array.from({ length: DRAWS_AT_ONCE + 2 }, () =>
+      queue.run(() => new Promise<void>((done) => releases.push(done))),
+    );
 
     expect(createDrawLedger().report()).toEqual({
       queued: 0,
@@ -31,9 +33,9 @@ describe('createDrawLedger', () => {
       failed: [],
     });
 
-    await vi.waitFor(() => expect(releases).toHaveLength(4));
+    await vi.waitFor(() => expect(releases).toHaveLength(DRAWS_AT_ONCE));
     clock = 13000;
-    expect(ledger.report()).toMatchObject({ queued: 2, rendering: 4, oldestMs: 12000 });
+    expect(ledger.report()).toMatchObject({ queued: 2, rendering: DRAWS_AT_ONCE, oldestMs: 12000 });
 
     releases.splice(0).forEach((release) => release());
     await vi.waitFor(() => expect(releases).toHaveLength(2));

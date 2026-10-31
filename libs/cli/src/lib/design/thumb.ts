@@ -82,7 +82,7 @@ export type DrawPriority = 'high' | 'low';
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
 const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
-const DRAWS_AT_ONCE = 4;
+export const DRAWS_AT_ONCE = 8;
 
 /**
  * One shared headless Chromium, launched on the first ask, that runs up to four drawings at once. A waiting

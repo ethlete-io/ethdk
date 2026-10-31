@@ -8,13 +8,13 @@ import { createDrawLedger } from './draw-ledger';
 import { DESIGN_DIR, readConfig } from './paths';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
+import { DRAWS_AT_ONCE } from './thumb';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const drawnUrls = () => goto.mock.calls.flatMap(([url]) => (url === 'about:blank' ? [] : [url]));
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
-const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
 const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; height: number } | null>>(async () => ({
   x: 10,
   y: 20,
@@ -46,7 +46,6 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
       count: async () => (selector === 'vite-error-overlay' ? overlayCount : 0),
       locator: () => ({ innerText: async () => '  Failed to resolve import "./nope"  ' }),
       first: () => ({ waitFor: async () => undefined }),
-      screenshot: rootScreenshot,
       boundingBox,
     }),
   }),
@@ -212,18 +211,20 @@ describe('createPartShooter', () => {
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 } });
     expect(new URL(drawnUrls()[0] ?? '').searchParams.has('fit')).toBe(false);
-    expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
-    expect(screenshot).not.toHaveBeenCalled();
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 10, y: 20, width: 200, height: 80 } }),
+    );
   });
 
   it('fits a state without a preset or a width to its content', async () => {
     const { shots } = acme();
     const shot = await ask(shots, 'product=acme&part=components/card&state=long');
 
-    expect(shot).toMatchObject({ status: 200, body: Buffer.from('fitted') });
+    expect(shot).toMatchObject({ status: 200, body: Buffer.from('png') });
     expect(new URL(drawnUrls()[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
-    expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
-    expect(screenshot).not.toHaveBeenCalled();
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 10, y: 20, width: 200, height: 80 } }),
+    );
   });
 
   it('passes the interaction to the frame and keeps one picture per interaction', async () => {
@@ -287,7 +288,7 @@ describe('createPartShooter', () => {
     const held = new Promise<void>((done) => (release = done));
     const card = 'product=acme&part=components/card&state=long';
 
-    const busy = ['busy-1', 'busy-2', 'busy-3', 'busy-4'];
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
 
     busy.forEach(() => goto.mockImplementationOnce(() => held));
 
@@ -309,7 +310,7 @@ describe('createPartShooter', () => {
       }),
     ];
 
-    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(4));
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
     release();
     await Promise.all(asked);
 
@@ -450,7 +451,6 @@ describe('createPartShooter', () => {
       'state "long" is not in variant "a" of components/button - it has: short, new',
     );
     expect(screenshot).not.toHaveBeenCalled();
-    expect(rootScreenshot).not.toHaveBeenCalled();
   });
 
   it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {
@@ -462,7 +462,6 @@ describe('createPartShooter', () => {
       type: 'text/plain; charset=utf-8',
       body: expect.stringContaining('part root has zero size'),
     });
-    expect(rootScreenshot).not.toHaveBeenCalled();
 
     screenshot.mockRejectedValueOnce(new Error('Timeout 15000ms exceeded'));
     expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
@@ -560,7 +559,7 @@ describe('createPartShooter pictures', () => {
         params: new URLSearchParams(),
       });
 
-    expect(await ask(null)).toEqual({ png: Buffer.from('fitted'), marks, markup: '<p>card</p>' });
+    expect(await ask(null)).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>' });
     expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks, markup: '<p>card</p>' });
     expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
       expect.stringContaining('true ?'),

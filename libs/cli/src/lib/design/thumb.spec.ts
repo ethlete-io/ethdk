@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDrawQueue, createThumbnailer } from './thumb';
+import { DRAWS_AT_ONCE, createDrawQueue, createThumbnailer } from './thumb';
 
 const sent: Record<string, unknown>[] = [];
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -93,7 +93,7 @@ describe('createThumbnailer', () => {
     expect(launch).toHaveBeenCalledOnce();
   });
 
-  it('draws at most four variants at once', async () => {
+  it('draws at most DRAWS_AT_ONCE variants at once', async () => {
     let drawing = 0;
     let most = 0;
     goto.mockImplementation(async () => {
@@ -103,9 +103,11 @@ describe('createThumbnailer', () => {
     });
     const { middleware } = thumbnailer();
 
-    await Promise.all(['a', 'b', 'c', 'd', 'e', 'f'].map((key) => ask(middleware, `/?call=app/one&variant=${key}`)));
+    await Promise.all(
+      Array.from({ length: DRAWS_AT_ONCE + 2 }, (_, key) => ask(middleware, `/?call=app/one&variant=v${key}`)),
+    );
 
-    expect(most).toBe(4);
+    expect(most).toBe(DRAWS_AT_ONCE);
     goto.mockImplementation(async () => undefined);
   });
 
@@ -185,23 +187,24 @@ describe('createThumbnailer', () => {
 });
 
 describe('createDrawQueue', () => {
-  it('draws four jobs at once and holds a fifth until one of them ends', async () => {
+  it('draws DRAWS_AT_ONCE jobs at once and holds the next until one of them ends', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const started: number[] = [];
     const releases: (() => void)[] = [];
-    const drawn = [0, 1, 2, 3, 4].map((at) =>
+    const ats = Array.from({ length: DRAWS_AT_ONCE + 1 }, (_, at) => at);
+    const drawn = ats.map((at) =>
       queue.run(async () => {
         started.push(at);
         await new Promise<void>((done) => releases.push(done));
       }),
     );
 
-    await vi.waitFor(() => expect(started).toEqual([0, 1, 2, 3]));
+    await vi.waitFor(() => expect(started).toEqual(ats.slice(0, DRAWS_AT_ONCE)));
     await new Promise((done) => setTimeout(done, 5));
-    expect(started).toEqual([0, 1, 2, 3]);
+    expect(started).toEqual(ats.slice(0, DRAWS_AT_ONCE));
 
     releases[0]?.();
-    await vi.waitFor(() => expect(started).toEqual([0, 1, 2, 3, 4]));
+    await vi.waitFor(() => expect(started).toEqual(ats));
     releases.slice(1).forEach((release) => release());
     await Promise.all(drawn);
   });
@@ -217,18 +220,19 @@ describe('createDrawQueue', () => {
       await held;
     };
 
+    const busyNames = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy ${at + 1}`);
     const drawn = [
-      ...['busy 1', 'busy 2', 'busy 3', 'busy 4'].map((name) => queue.run(busy(name), 'low')),
+      ...busyNames.map((name) => queue.run(busy(name), 'low')),
       ...['low 1', 'low 2', 'low 3'].map((name) => queue.run(job(name), 'low')),
       queue.run(job('high 1'), 'high'),
       queue.run(job('high 2')),
     ];
 
-    await vi.waitFor(() => expect(order).toHaveLength(4));
+    await vi.waitFor(() => expect(order).toHaveLength(DRAWS_AT_ONCE));
     release();
     await Promise.all(drawn);
 
-    expect(order).toEqual(['busy 1', 'busy 2', 'busy 3', 'busy 4', 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
+    expect(order).toEqual([...busyNames, 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
   });
 
   it('launches Chromium without partial raster, so the same page draws the same pixels each time', async () => {
