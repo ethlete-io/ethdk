@@ -528,6 +528,8 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   its own round later.
 - Tom: the swap between the live iframe and the shot image (both ways) flickers. Optimise it: keep the old view
   until the new one has painted, then switch in one step. Queued for `ethlete-sdk-57`.
+- Grill decision (inside Q60): Studio chat sends `tools: null`, so the one MCP server never starts from Studio.
+  Wire it now; the chat prompt names the call and the variant. Queued for `ethlete-sdk-57`.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
