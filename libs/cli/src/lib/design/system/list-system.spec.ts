@@ -92,6 +92,21 @@ describe('listSystem', () => {
     expect(usedIn(base, 'components/button')).toEqual([]);
   });
 
+  it('flags the base parts no part of the product imports as unused in the product', async () => {
+    const target = acme();
+    const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+    const flagged = (listed: Awaited<ReturnType<typeof list>>[number] | undefined) =>
+      listed?.parts.filter((part) => part.unusedInProduct).map((part) => `${part.layer}/${part.name}`);
+
+    expect(flagged((await list(target, ['acme']))[0])).toEqual([]);
+
+    writeFileSync(home, readFileSync(home, 'utf8').replace(/^import card .*$/mu, 'const card = hero;'));
+    const [base, product] = await list(target, ['acme-base', 'acme']);
+
+    expect(flagged(product)).toEqual(['components/card']);
+    expect(flagged(base)).toEqual([]);
+  });
+
   it('lists the tokens part as used by every page of each product that draws under it, though no page imports it', async () => {
     const [base, product] = await list(acme(), ['acme-base', 'acme']);
     const tokens = (listed: typeof product) =>

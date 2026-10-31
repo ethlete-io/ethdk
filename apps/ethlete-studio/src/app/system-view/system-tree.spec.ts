@@ -175,6 +175,33 @@ describe('isGroupOpen and isSectionOpen', () => {
     expect(isSectionOpen(components, context)).toBe(false);
   });
 
+  it('moves the base parts no part of the product imports into a folded group with an open section per layer', () => {
+    const tree = treeOf(
+      [
+        part({ name: 'button', origin: 'base' }),
+        part({ name: 'chip', origin: 'base', unusedInProduct: true }),
+        part({ layer: 'foundations', name: 'elevation', origin: 'base', unusedInProduct: true }),
+        part({ layer: 'pages', name: 'home' }),
+      ],
+      { product: product() },
+    );
+    const unused = tree.find((group) => group.key === 'unused')!;
+
+    expect(tree.map((group) => [group.label, group.entries.map((entry) => entry.key)])).toEqual([
+      ['Components', ['components/button']],
+      ['Pages', ['pages/home']],
+      ['Not used in Acme', []],
+    ]);
+    expect(unused.sections!.map((section) => [section.label, section.entries.map((entry) => entry.key)])).toEqual([
+      ['Components', ['components/chip']],
+      ['Foundations', ['foundations/elevation']],
+    ]);
+    expect(isGroupOpen(unused, context)).toBe(false);
+    expect(isGroupOpen(unused, { ...context, remembered: { unused: true } })).toBe(true);
+    expect(unused.sections!.every((section) => isSectionOpen(section, context))).toBe(true);
+    expect(holdersOf(tree, 'components/chip')).toEqual(['unused', 'unused/components']);
+  });
+
   it('follows a remembered choice', () => {
     expect(isGroupOpen(parts!, { ...context, remembered: { components: false } })).toBe(false);
     expect(isSectionOpen(components, { ...context, remembered: { [components.key]: true } })).toBe(true);

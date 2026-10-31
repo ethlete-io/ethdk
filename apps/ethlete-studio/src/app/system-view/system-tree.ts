@@ -18,19 +18,25 @@ import { CanvasRowHead } from '../components/design-canvas/design-canvas.compone
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
 
-export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'sketches' | 'legacy';
+export type SystemGroupKey =
+  'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'unused' | 'sketches' | 'legacy';
 
 export const isWireframe = (part: Pick<ListedPart, 'layer' | 'kitUses'>) =>
   part.layer === 'pages' && (part.kitUses ?? 0) > 0;
 
-const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer;
+const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer && !part.unusedInProduct;
 
 export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds: (part: ListedPart) => boolean }[] = [
   { key: 'foundations', label: 'Foundations', holds: onLayer('foundations') },
   { key: 'components', label: 'Components', holds: onLayer('components') },
   { key: 'elements', label: 'Elements', holds: onLayer('elements') },
-  { key: 'pages', label: 'Pages', holds: (part) => part.layer === 'pages' && !isWireframe(part) },
-  { key: 'wireframes', label: 'Wireframes', holds: isWireframe },
+  {
+    key: 'pages',
+    label: 'Pages',
+    holds: (part) => part.layer === 'pages' && !isWireframe(part) && !part.unusedInProduct,
+  },
+  { key: 'wireframes', label: 'Wireframes', holds: (part) => isWireframe(part) && !part.unusedInProduct },
+  { key: 'unused', label: 'Not used', holds: (part) => part.unusedInProduct === true },
   { key: 'sketches', label: 'Sketches', holds: () => false },
   { key: 'legacy', label: 'Legacy', holds: () => false },
 ];
@@ -158,6 +164,27 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
   });
 };
 
+const UNUSED_KEY: SystemGroupKey = 'unused';
+
+/** The base parts no part of the product imports, in one group with a section per layer. */
+const unusedGroupOf = (
+  parts: ListedPart[],
+  { product, entryOf }: { product: ListedProduct | null; entryOf: (part: ListedPart) => TreeEntry },
+): TreeGroup => {
+  const name = product ? `${product.name.charAt(0).toUpperCase()}${product.name.slice(1)}` : null;
+
+  return {
+    key: UNUSED_KEY,
+    label: name ? `Not used in ${name}` : 'Not used',
+    entries: [],
+    sections: [...new Set(parts.map((part) => part.layer))].map((layer) => ({
+      key: `${UNUSED_KEY}/${layer}`,
+      label: SYSTEM_GROUPS.find((group) => group.key === layer)?.label ?? layer,
+      entries: parts.filter((part) => part.layer === layer).map(entryOf),
+    })),
+  };
+};
+
 export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean };
 
 /** The keys of the group and the section that hold the entry, outermost first. */
@@ -175,12 +202,13 @@ export const holdersOf = (tree: TreeGroup[], key: string | null): string[] => {
   return [];
 };
 
-/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products. */
+/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products and the unused base parts. */
 export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts }: OpenContext) =>
-  remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : true);
+  remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : group.key !== UNUSED_KEY);
 
-/** Whether a section shows its entries: the remembered choice, else folded. */
-export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext) => remembered[section.key] ?? false;
+/** Whether a section shows its entries: the remembered choice, else folded - except the layers of the unused base parts. */
+export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext) =>
+  remembered[section.key] ?? section.key.startsWith(`${UNUSED_KEY}/`);
 
 /**
  * The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order.
@@ -238,26 +266,24 @@ export const treeOf = (
         },
       ];
 
-    return [
-      {
-        key,
-        label,
-        entries: parts.filter(holds).map((part) => {
-          const frames = product ? treeFramesOf(product, part) : [];
+    const entryOf = (part: ListedPart): TreeEntry => {
+      const frames = product ? treeFramesOf(product, part) : [];
 
-          return {
-            key: partKeyOf(part),
-            name: part.name,
-            ...(part.problems.length > 0
-              ? { title: part.problems.map((found) => `${found.rule}: ${found.message}`).join('\n') }
-              : {}),
-            badges: badgesOf(part, { sketched, marks: partMarks }),
-            ...(isWireframe(part) ? { count: part.kitUses } : {}),
-            ...(frames.length > 1 ? { frames } : {}),
-          };
-        }),
-      },
-    ];
+      return {
+        key: partKeyOf(part),
+        name: part.name,
+        ...(part.problems.length > 0
+          ? { title: part.problems.map((found) => `${found.rule}: ${found.message}`).join('\n') }
+          : {}),
+        badges: badgesOf(part, { sketched, marks: partMarks }),
+        ...(isWireframe(part) ? { count: part.kitUses } : {}),
+        ...(frames.length > 1 ? { frames } : {}),
+      };
+    };
+
+    if (key === 'unused') return [unusedGroupOf(parts.filter(holds), { product, entryOf })];
+
+    return [{ key, label, entries: parts.filter(holds).map(entryOf) }];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
 };
 

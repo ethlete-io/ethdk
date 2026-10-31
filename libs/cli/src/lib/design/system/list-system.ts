@@ -8,6 +8,7 @@ import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { SystemModules } from './system-modules';
+import { unusedBasePartsOf } from './unused-base-parts';
 
 export const SYSTEM_PATH = '/__design/system';
 
@@ -33,6 +34,8 @@ export type ListedPart = {
   kitUses: number;
   /** The pages that import the part, directly or through another part: of its own product, and of each product that draws it as its base part. */
   usedIn: PageUse[];
+  /** Set on a base part that no part of the product imports, directly, through other parts, or through its `@ethlete/<lib>/design` module. */
+  unusedInProduct?: true;
   /** Whether the part changed since its last sketch merge while no open sketch holds it. */
   changedOutsideSketch: boolean;
   problems: Problem[];
@@ -317,6 +320,7 @@ export const listSystem = async (options: {
 
       const problems = ruleProblemsOf(product);
       const changedOutsideSketch = new Set(changedOutsideSketchOf(product));
+      const unused = unusedBasePartsOf(product);
 
       return [
         (async (): Promise<ListedProduct> => ({
@@ -346,6 +350,7 @@ export const listSystem = async (options: {
                 interactions,
                 kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                 usedIn: usedInOf(part),
+                ...(unused.has(partKeyOf(part)) ? { unusedInProduct: true as const } : {}),
                 changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
                 problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                   relativeTo,
