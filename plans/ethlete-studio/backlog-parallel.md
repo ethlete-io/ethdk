@@ -778,15 +778,33 @@ Tom took every recommendation.
 - Q148 a click on a part grid cell selects that state; the context line names the state.
 - Q149 a sketch selection label reads like `pages/system · desktop (context)`, no repeats.
 - Q150 opening the chat keeps Tom's zoom; Studio re-fits only when the view was fitted before.
-  As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
-  the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
-  directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
-  files, tokens, config). A lookup rehashes the inputs; any change, a missing file or a corrupt entry is a miss.
-  Entries live in `node_modules/.design-explore/shots-<checkout hash>/`, only for the shared listening server, and
-  past 512 MB the oldest go. Verified: specs for a restart that keeps the shot (failed before the fix) and for a part,
-  package, stylesheet or new shared file that redraws it; tsc, lint; a live check on own ports, 348 ms first draw,
-  32 ms from disk. Not verified in Tom's Studio. Earlier fix `42392387e`: a rebuild that writes a package file back
-  with the same bytes redraws nothing.
+  As built Q145-Q150 (builder 57, 2026-10-31):
+  - Q145/Q146 `e902ae12a`: `STUDIO_BRIEF` in `agent_claude.rs` goes in through `--append-system-prompt` on runs
+    without a tool server (the chat). Call runs get none. It names `npx et design check`, `npx et design shot
+<layer>/<name> --states`, no changeset under `.ethlete/`, and the `foundations/type` tokens (`text-ui-sm`,
+    `font-ui-medium`, `font-ui-strong`). Verified: cargo tests (one fails without the change), clippy, fmt. Not
+    verified with a real chat run.
+  - Q147 `06c986d1e`: `chat/chat-markdown.ts` parses paragraphs, fenced code, `-`/`1.` lists, inline code and bold
+    into a typed tree; the panel renders it with control flow, no innerHTML. An unclosed fence runs to the end of
+    the message. No nested lists, links, tables or images.
+  - Q148/Q149 `2ac793020`: `DesignCanvasComponent.selectedCellId` (a click on a `[data-cell-id]` cell; resets with
+    the frame selection); `ViewContext.state` reads `filled · hover` (no `rest`). A second click keeps the cell;
+    grid padding clears the state. A sketch matrix frame reads `<part> · <size> (<state or context>)`; other
+    frames drop a name another name contains.
+  - Q150 `96ec2fe9f`: no code change. The canvas already re-fits on a width change only while it follows a fit
+    (`following`); a manual zoom sets it to null. Specs lock this in. The dogfood re-fit came from a view that was
+    still in its first fit. `focusFrame` keeps following its frame.
+    Verified: 448 app tests, app and spec tsc, lint on the changed files; each new spec fails without its change.
+    Not verified in Tom's Studio.
+    As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
+    the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
+    directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
+    files, tokens, config). A lookup rehashes the inputs; any change, a missing file or a corrupt entry is a miss.
+    Entries live in `node_modules/.design-explore/shots-<checkout hash>/`, only for the shared listening server, and
+    past 512 MB the oldest go. Verified: specs for a restart that keeps the shot (failed before the fix) and for a part,
+    package, stylesheet or new shared file that redraws it; tsc, lint; a live check on own ports, 348 ms first draw,
+    32 ms from disk. Not verified in Tom's Studio. Earlier fix `42392387e`: a rebuild that writes a package file back
+    with the same bytes redraws nothing.
 
 #### Build slices (builder ethlete-sdk-57)
 
