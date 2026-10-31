@@ -1,5 +1,5 @@
 import description from '../src/lib/forms/description/description.component.css?inline';
-import textareaField from '../src/lib/forms/form-field/form-field-textarea-styles.component.css?inline';
+import textareaFieldSheet from '../src/lib/forms/form-field/form-field-textarea-styles.component.css?inline';
 import { formField, formFieldStyles, FormFieldMockOptions, textarea, TextareaMockOptions } from './form-field';
 
 /** An interaction a frame forces with the `data-et-force` design marker. */
@@ -19,7 +19,7 @@ export type TextareaFieldMockOptions = Omit<FormFieldMockOptions, 'control'> &
   };
 
 /** The stylesheets `textareaField()` draws with: the real `et-form-field`, `et-textarea` and `et-description` CSS. */
-export const textareaFieldStyles = /* @__PURE__ */ [formFieldStyles, textareaField, description].join('\n');
+export const textareaFieldStyles = /* @__PURE__ */ [formFieldStyles, textareaFieldSheet, description].join('\n');
 
 const forceList = (force: TextareaFieldMockForce | TextareaFieldMockForce[] | undefined) =>
   force === undefined ? [] : Array.isArray(force) ? force : [force];
