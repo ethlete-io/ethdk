@@ -74,7 +74,7 @@ describe('design frame bootstrap', { timeout: 30_000 }, () => {
   });
 
   it('paints the page with the token `fill` names in place of the product fill', () => {
-    expect(bootstrap('resolve', undefined, '&fill=surface').pageFill).toBe('var(--surface)');
+    expect(bootstrap('resolve', undefined, '&fill=surface').pageFill).toBe('surface');
   });
 
   it('leaves the page fill to the product without `fill`', () => {

@@ -1,6 +1,7 @@
 import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
 import { Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
+import { paintFill } from './frame-fill';
 import { pinScheme } from './frame-scheme';
 import { createMotionDriver, emulateReducedMotion, motionDriveMessageOf } from '../motion-drive';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
@@ -43,7 +44,7 @@ const fill = params.get('fill');
 // On <html> a theme class ties with the `:root` defaults of the theme CSS, which come later and win.
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
-if (fill) document.body.style.background = `var(--${fill})`;
+if (fill) paintFill(document.body, fill);
 
 const scheme = params.get('scheme');
 
