@@ -1,0 +1,8 @@
+.notification-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
