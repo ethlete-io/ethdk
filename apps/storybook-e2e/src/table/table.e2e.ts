@@ -422,7 +422,7 @@ test.describe('table / keyboard', () => {
     const nameSortButton = nameHeader.locator('button');
 
     await tabUntilFocused(page, nameSortButton);
-    await expectFocusVisible(nameSortButton);
+    await expectFocusVisible(nameSortButton, nameSortButton.locator('.et-table-header-label-box'));
     await expect(nameHeader).toHaveAttribute('aria-sort', 'none');
 
     await pressKey(page, 'Enter');
