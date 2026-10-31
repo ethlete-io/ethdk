@@ -1,2 +1,4 @@
 mailbox.jsonl
 mailbox.cursor.*
+restart.log
+restart.prompt.*
