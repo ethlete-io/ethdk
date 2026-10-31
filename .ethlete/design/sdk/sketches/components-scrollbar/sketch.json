@@ -1,0 +1,29 @@
+{
+  "target": "components/scrollbar",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:36:50.568Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Scrollbar baseline",
+      "note": "The SDK scrollbar (et-scrollbar), first drawing, drawn by its mock from @ethlete/components/design next to a scroll container with the et-scrollbar-host class (native bar hidden) inside a position:relative wrapper, framed as its stories do (24px padding, surface fill, 14px rows and cards, a 24px end gutter). It is an overlay bar with no track fill, no buttons or arrows and no focus target (the thumb is not focusable and a press does not move focus, by design): a 12px track over the end edge, 4px inset at both ends, and a 6px fully rounded thumb of 35% surface-interaction, 60% on thumb hover and while dragging, faded in by opacity (150ms). Thumb size and offset follow the directive's geometry (min 24px); scrolled positions are drawn by offsetting the content statically. States: vertical (Default story, at the top), vertical-scrolled, vertical-end, horizontal (Horizontal story), horizontal-scrolled, both-axes (BothAxesAndRtl: two bars, the tracks meet in the corner), rtl (thumb starts at the right), short-content (long thumb), long-content (thumb at the 24px minimum), thumb-hover, dragging, auto-hidden (AutoHide story at rest: the bar is drawn at opacity 0). The viewports carry data-et-skip=CLIPPED: they clip on purpose. Numbers (light / dark), from shot pixels: thumb at rest vs page 1.57 / 1.93, hover and dragging 2.30 / 3.31; the track has no fill, so thumb vs track equals thumb vs page; over content (a 6% row tint) 1.53 / 1.90. WCAG 1.4.11 asks 3:1 for a needed graphical part: the rest thumb misses it in both schemes, hover passes only in dark. No decided rule arises: no focus ring (Q88), no accent mark or mint fill (Q99a, so no Q102), no filled button (Q101), no edge against the page (Q98). So only a is drawn. Open for Tom, not a decided rule: whether the rest thumb should reach 3:1."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. Thumb vs page (= vs track, no track fill) 1.57 / 1.93 at rest, 2.30 / 3.31 on hover and while dragging (light / dark); over a 6% content tint 1.53 / 1.90. No decided rule arises, so no b."
+    }
+  }
+}
