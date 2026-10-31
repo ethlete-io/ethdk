@@ -1,39 +1,76 @@
 {
   "target": "components/button",
-  "status": "ready",
-  "createdAt": "2026-10-31T01:35:45.999Z",
+  "status": "in progress",
+  "createdAt": "2026-10-31T14:09:02.050Z",
   "baseline": {
     "foundations/colors": "417ee640702da3c3",
-    "foundations/icons": "0d29d1abcb0254cd",
-    "components/button": "ef27bebcfef3d8c3",
+    "foundations/elevation": "1cb38802221872b5",
+    "foundations/icons": "693a3ae986c6ad3f",
+    "components/accent-on-light": "6a914711035c5ff4",
+    "components/accordion": "dd10d45c7ad07395",
+    "components/avatar": "19759f75b493f4ae",
+    "components/badge": "d8fc3c4cdf231487",
+    "components/banner": "0262c443ee139e8a",
+    "components/bracket": "1b29ed602db14fd4",
+    "components/breadcrumb": "2c89edad01a68fe5",
+    "components/button": "ba64c8a58bfff030",
+    "components/calendar": "c8a4a9b2e66b7023",
+    "components/card": "1bddba703f7c12fc",
+    "components/carousel": "dc7899cd298f5600",
+    "components/chart": "0ed994e3cd2e7bf6",
+    "components/chip": "bc038d45ae887187",
+    "components/copy-button": "a83c33a6d57b2675",
+    "components/description-list": "50ecf5793ff1168d",
+    "components/dialog": "456c29d64cdf631d",
+    "components/divider": "38872f4d5a86e53c",
+    "components/empty-state": "e9b939860586590a",
+    "components/floating-action": "10a89705a6724bc2",
     "components/form-field": "2f5692b326f3432a",
+    "components/grid": "7cceb70120d56c6a",
+    "components/input": "de666348456d04ca",
+    "components/kbd": "77333dcab063d964",
+    "components/loader": "e33f0439b02a0c1b",
+    "components/masonry": "961604c585d1aed6",
+    "components/match": "f7c6bcd3bfc162ae",
+    "components/menu": "f5beed5cbc682af6",
+    "components/notification": "22fef2139ad1047d",
+    "components/otp-input": "f128f8b2acd94b89",
+    "components/pagination": "79280214de615ac7",
+    "components/picture": "1db0b4dc7d33e0a9",
+    "components/progress-steps": "784478401d156e3e",
+    "components/query-error": "45d96388a85db3af",
+    "components/scheduler": "978ec8bf755daabc",
+    "components/scrollable": "301ecb520d439f3b",
+    "components/scrollbar": "3d46bc4f3d13164a",
     "components/select": "3915f5657c75ef8b",
     "components/select-panel": "02b5ecfc4ba38913",
-    "components/tree": "6ec6cc2953065201",
+    "components/skeleton": "c0985d5acade9705",
+    "components/slider": "f3e284db31e32a69",
+    "components/standings": "831e691d6cdb7f84",
+    "components/stat-tile": "1aab536b1f455a0d",
+    "components/stream": "da19ebbede187cb6",
+    "components/switch": "f9857f212b4205bc",
+    "components/table": "203f8d52d6e39ce1",
+    "components/tabs": "e195ff8378d56ecc",
+    "components/textarea": "e340122cf7959877",
+    "components/timeline": "6a0bc539efd320a4",
+    "components/toolbar": "52ab5acd9247359b",
+    "components/tooltip": "d8d78f8928e32679",
+    "components/tree": "7826d5e508a8602c",
     "fixtures.ts": "909089fbef7b8f34"
   },
   "rounds": [
     {
       "key": "r1",
-      "title": "Filled button hover",
-      "note": "Q101. Hover on a filled et-button barely changes the fill: the brand mint steps to its -hover token, 1.03:1 against the rest fill in light and in dark. The button itself is not the cause: it shows the color theme's -hover token, and danger already steps 1.34:1 (warning 1.48:1). The brand theme's -hover token sits next to its rest value, so every filled button in the brand color is hit. Fixed numbers: rest text on the mint 15.82:1; text on the danger fill 4.83:1; the mint against the light pane 1.33:1 (dark 13.50:1). Variants b and c also apply decided rules, not this round's call: focus rings in --et-theme-color-ink-solid (Q88) and a 1px inset ink edge on a filled button (Q99), which only shows in light (in dark the brand ink is the mint). The ring on the mint is 7.68:1 light, 13.50:1 dark; on danger 8.31:1 light, 9.45:1 dark (today in the fill color: mint 1.37:1 light, 13.06:1 dark). Measured and not drawn: an overlay toward the label color (on-primary) at 12% gives the mint 1.35:1 but takes danger's existing step down to 1.12:1, because danger's label is white. Variant a shows today."
+      "title": "Size axis",
+      "note": "Adds the size axis: the filled button with a plus icon at rest in each mock size, xs to xl, one row per size. It only scales the decided shape with the lib's real size tokens (padding, font, radius, gap; the icon follows the font); md and every other state stay as merged (Q182, merge under Q172)."
     }
   ],
   "variantInfo": {
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "Today: hover takes the theme's -hover token. Mint 1.03:1 against rest in light and dark, text 15.30:1; danger 1.34:1, text 6.47:1. Active is the -active token, mint 1.69:1 from rest. Focus ring in the fill color, mint 1.37:1 light, 13.06:1 dark."
-    },
-    "b": {
-      "authors": ["claude-opus-5-5"],
-      "round": "r1",
-      "note": "Pick. Hover takes the theme's -active fill step, so the theme sets the direction: mint 1.69:1 against rest in light and dark, text 9.38:1; danger 1.72:1, text 8.31:1. Pressed goes one step further, 16% toward the label color: mint 1.41:1 from hover, text 6.66:1; danger 1.37:1, text 6.05:1. The ink edge stays on hover, 7.68:1 against the light pane. Why: only the theme knows which way its fill should move, and an overlay fails on some theme (c in dark, the label-color overlay on danger). No new colour and no theme name. It relies on each theme's -active token differing from rest; warning, not drawn, would step lighter, 1.91:1, text 10.74:1."
-    },
-    "c": {
-      "authors": ["claude-opus-5-5"],
-      "round": "r1",
-      "note": "Ink overlay: the hover fill mixes 30% of --et-theme-color-ink-solid into the fill. It works in light: mint 1.59:1 against rest, text 9.96:1; danger 1.45:1, text 6.99:1. It fails in dark, because there the ink is the fill color itself or lighter: mint 1.03:1, the same as today; danger 1.04:1, with text down to 4.63:1."
+      "note": "Each size xs to xl once, filled with an icon at rest; nothing else changes."
     }
   }
 }
