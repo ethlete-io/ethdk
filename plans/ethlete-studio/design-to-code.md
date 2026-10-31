@@ -97,6 +97,14 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Hint (does not block): a state whose pixel difference to the base state covers less than about 10 % of the
     frame reports "extract the changed element as its own part", for example a small badge that changes on a big
     card.
+- Q182 a part shows every option value of its mock (Tom, 2026-10-31): the merged sdk button part shows only `md` and
+  one `sm` row, while the lib has `xs`-`xl`; the sketch agent picked the values and no check caught it.
+  - Tool check (error, blocks `ready` and `complete`): every mock option with a literal union type (for example
+    `size`, `variant`) has each value on the part's grid. A value may be left out only with a stated reason.
+  - Cleanup: builder 33 audits every merged sdk part against its mock and adds the missing values; button gets a
+    size axis with all five sizes.
+  - Re-merge: added values are new drawings, so the part goes to Tom as a new round; where a value follows only
+    from decided rules (for example a size that scales a decided shape), the lead merges it under Q172.
 
 ## Not decided
 
