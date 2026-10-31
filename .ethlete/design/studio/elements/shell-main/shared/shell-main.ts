@@ -1,5 +1,6 @@
 import pickerStyles from './picker.css?inline';
-import { drawing, html } from '@design-system';
+import { drawing, forceInteraction, html, interactionRows, ng, type Interaction } from '@design-system';
+import { setupStudioMenu } from './studio-menu';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { icon, type IconName } from '@system/foundations/icons';
 import { studioMark } from '@system/foundations/logo';
@@ -13,6 +14,8 @@ type Props = {
   content: string;
   panel?: 'hidden';
   projectPicker?: 'open';
+  studioMenu?: boolean;
+  interaction?: Exclude<Interaction, 'disabled'>;
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -45,10 +48,30 @@ const slot = (inner: string, label: string, active: boolean, kind: SlotKind, pan
 
 const sep = '<div class="st-shell-sep my-space-2 bg-surface-border"></div>';
 
-const rail = (section: Section, product: string, panelHidden: boolean) =>
+const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabled'>) => {
+  const markup = button({
+    label: studioMark(40),
+    variant: 'transparent',
+    color: 'surface',
+    size: 'sm',
+    class: 'st-shell-logo p-0',
+  }).replace(
+    /^<button /,
+    `<button data-et-control="studio-menu" data-studio-trigger aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+  );
+  return interaction ? forceInteraction(markup, interaction) : markup;
+};
+
+const rail = (
+  section: Section,
+  product: string,
+  panelHidden: boolean,
+  menuOpen: boolean,
+  interaction?: Exclude<Interaction, 'disabled'>,
+) =>
   html`<nav class="st-shell-rail flex flex-col items-center gap-space-1 py-space-3 bg-surface">
     <div class="st-shell-slot relative flex justify-center w-full" data-kind="logo">
-      <span class="st-shell-logo flex items-center justify-center text-text">${studioMark(24)}</span>
+      ${studioTrigger(menuOpen, interaction)}
     </div>
     ${sep} ${SECTIONS.map((s) => slot(icon(ICONS[s], { size: 20 }), s, s === section, 'section', panelHidden)).join('')}
     <div class="flex-1"></div>
@@ -108,37 +131,74 @@ const picker = (placement: 'above' | 'beside') =>
     </div>
   </div>`;
 
+const BASE: Props = { section: 'System', product: 'studio', side: '', content: '' };
+
+const studioPanel = async (interaction?: Exclude<Interaction, 'disabled'>) => {
+  const settings = '<button et-menu-item data-studio-action="settings" type="button">Einstellungen…</button>';
+  const rendered = await ng(
+    html`<div [hoverOpen]="false" etMenu>
+      <et-menu aria-label="Studio">
+        <et-menu-group-label>Studio</et-menu-group-label>
+        ${settings}
+        <button et-menu-item data-studio-action="appearance" type="button">Erscheinungsbild…</button>
+        <button et-menu-item data-studio-action="shortcuts" type="button">Tastenkürzel…</button>
+        <et-menu-separator />
+        <button et-menu-item data-studio-action="help" type="button">Hilfe</button>
+        <button et-menu-item data-studio-action="about" type="button">Über Studio…</button>
+      </et-menu>
+    </div>`,
+    { imports: ['MENU_IMPORTS'] },
+  );
+  return interaction
+    ? rendered.replace(/<button\b[^>]*data-studio-action="settings"[^>]*>/, (tag) =>
+        forceInteraction(tag.replace(/>$/, ' data-active>'), interaction),
+      )
+    : rendered;
+};
+
 export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
   widths: [1440],
-  states: {
-    'project-picker': { section: 'System', product: 'studio', side: '', content: '', projectPicker: 'open' },
-    open: {
-      section: 'System',
-      product: 'studio',
-      side: '',
-      content: '',
+  ...interactionRows<Props, 'project-picker' | 'open' | 'hidden' | 'studio-menu', Exclude<Interaction, 'disabled'>>(
+    {
+      'project-picker': { ...BASE, projectPicker: 'open' },
+      open: BASE,
+      hidden: { ...BASE, panel: 'hidden' },
+      'studio-menu': { ...BASE, studioMenu: true },
     },
-    hidden: {
-      section: 'System',
-      product: 'studio',
-      side: '',
-      content: '',
-      panel: 'hidden',
+    { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+  ),
+  controls: {
+    'studio-menu': {
+      kind: 'menu' as const,
+      input: ['pointer' as const, 'keyboard' as const],
+      surfaces: { open: 'studio-menu' as const },
     },
-  } satisfies Record<string, Props>,
-  render: ({ product, section, content, side, panel, projectPicker }: Props) =>
-    drawing({
+  },
+  render: async ({ product, section, content, side, panel, projectPicker, studioMenu = false, interaction }: Props) => {
+    const menu = typeof location === 'undefined' ? '' : await studioPanel(studioMenu ? interaction : undefined);
+    return drawing({
       body: html`<div
-        class="st-shell grid overflow-hidden bg-surface text-text font-ui text-ui-md"
+        class="st-shell relative grid overflow-hidden bg-surface text-text font-ui text-ui-md"
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}
       >
-        ${rail(section, product, panel === 'hidden')}
+        ${rail(section, product, panel === 'hidden', studioMenu, studioMenu ? undefined : interaction)}
         <div class="st-shell-stage relative min-w-0">
           <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-surface">${content}</main>
           ${panel === 'hidden' ? '' : sidePanel(product, side)}
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement) : ''}
         </div>
+        <div
+          id="studio-menu-surface"
+          class="st-studio-menu absolute top-space-3 left-18 z-20 w-62"
+          data-studio-menu
+          data-et-surface="studio-menu.open"
+          ${studioMenu ? '' : ' hidden'}
+        >
+          ${menu}
+        </div>
       </div>`,
-      styles: styles + pickerStyles + (projectPicker === 'open' ? buttonStyles : ''),
-    }),
+      styles: styles + pickerStyles + buttonStyles,
+      setup: setupStudioMenu,
+    });
+  },
 });

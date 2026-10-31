@@ -37,9 +37,18 @@
     height: 40px;
   }
 
-  .st-shell-logo > svg {
-    width: inherit;
-    height: inherit;
+  .st-shell-logo:hover,
+  .st-shell-logo[aria-expanded='true'] {
+    --accent: var(--surface-overlay);
+  }
+
+  .st-shell-logo:active {
+    --accent: var(--surface-pressed);
+  }
+
+  .st-studio-menu {
+    --et-menu-item-height: var(--control-md);
+    --et-menu-item-font-size: var(--text-md);
   }
 
   .st-shell-logo path {
