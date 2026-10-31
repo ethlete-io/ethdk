@@ -50,6 +50,8 @@ Changesets runs through the package manager the repo uses (`yarn changeset`, `pn
 - [`et doctor`](/cli/config#et-doctor) - report every problem with this machine's config and API checkouts at once.
 - `et design [checkout]` - serve the design system in the `.ethlete/design` folder of a checkout to Ethlete Studio (the current repo by default, or a path, or `--checkout <path>`). `et design check` checks the system and names each problem. Studio's tiles are pictures the server draws in headless Chromium, so they need `playwright` or `playwright-core` (with its Chromium) in the checkout or next to the cli; without it a tile stays blank. An edit redraws only the parts it reaches: a file that a product stylesheet only scans as a Tailwind `@source` redraws its own parts and their importers, while an edit of the stylesheet or a file it `@import`s redraws every part.
 
+A running `et design` watches the cli it was started from. Once a rebuild or reinstall of the cli has finished writing, the server restarts itself from the new build on the same port, in the same process, so Studio keeps it and no shot is drawn with old code.
+
 Running `et` with no command, `--help` or an unknown command prints the command list.
 
 ## Design product configuration

@@ -15,10 +15,10 @@ const filesUnder = (dir: string) =>
     .map((file) => ({ name: file, path: join(dir, file) }));
 
 /** The stamp of the cli on disk now. A server takes it once at start, so a reinstall moves the two apart. */
-export const buildStampOf = (): BuildStamp => {
+export const buildStampOf = (assets = assetRoot()): BuildStamp => {
   const hash = createHash('sha256');
 
-  for (const dir of [__dirname, assetRoot()]) {
+  for (const dir of [__dirname, assets]) {
     for (const file of filesUnder(dir)) hash.update(file.name).update(readFileSync(file.path));
   }
 

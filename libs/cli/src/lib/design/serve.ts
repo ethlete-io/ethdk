@@ -118,10 +118,12 @@ import {
   DESIGN_DIR,
   DesignConfig,
   DesignProject,
+  installedAssetRoot,
   portOf,
   readConfig,
   viteCacheOf,
 } from './paths';
+import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
 
@@ -1052,12 +1054,20 @@ const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {
   process.stdin.resume();
 };
 
+const installedStampOf = () => buildStampOf(installedAssetRoot()).build;
+
 /**
  * Starts the design server for a checkout and keeps it running. The returned exit code is the
- * command's, not the server's: a listening server holds the process open on its own.
+ * command's, not the server's: a listening server holds the process open on its own. With
+ * `reloadOnRebuild`, a rebuild or reinstall of the cli restarts the server on the same port from
+ * the new build, inside the process that was started.
  */
-export const serveDesign = async (options: { target: string; host?: string }): Promise<number> => {
-  const { target, host } = options;
+export const serveDesign = async (options: {
+  target: string;
+  host?: string;
+  reloadOnRebuild?: boolean;
+}): Promise<number> => {
+  const { target, host, reloadOnRebuild } = options;
   const config = readConfig(target);
 
   if (!config) {
@@ -1065,6 +1075,9 @@ export const serveDesign = async (options: { target: string; host?: string }): P
 
     return 1;
   }
+
+  const cwd = process.cwd();
+  const served = reloadOnRebuild ? installedStampOf() : '';
 
   snapshotPackage(target);
 
@@ -1089,6 +1102,28 @@ export const serveDesign = async (options: { target: string; host?: string }): P
 
   if (ownedByStudio) {
     exitWhenStdinCloses(server);
+  }
+
+  if (reloadOnRebuild) {
+    watchBuild({
+      root: dirname(installedAssetRoot()),
+      served,
+      stampOf: installedStampOf,
+      onRebuild: () => {
+        const address = server.httpServer?.address();
+        const port = address && typeof address === 'object' ? address.port : portOf(config);
+
+        console.log('design-explore: the cli was rebuilt, restarting the server from the new build');
+
+        void server
+          .close()
+          .then(() =>
+            process.env[SUPERVISED_ENV] === '1'
+              ? process.exit(RELOAD_EXIT_CODE)
+              : superviseReloads(() => relaunch({ port, cwd })).then((code) => process.exit(code)),
+          );
+      },
+    });
   }
 
   return 0;

@@ -409,5 +409,5 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     return 2;
   }
 
-  return serveDesign({ target: positional ? resolve(root, positional) : target, host });
+  return serveDesign({ target: positional ? resolve(root, positional) : target, host, reloadOnRebuild: true });
 };
