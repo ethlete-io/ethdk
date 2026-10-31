@@ -1,0 +1,35 @@
+@layer components {
+  et-switch:not([aria-checked='true']):not([data-indeterminate]) .et-switch-track {
+    box-shadow: inset 0 0 0 1px var(--et-surface-interaction-solid);
+  }
+
+  @media (hover: hover) {
+    et-switch:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not(
+        [data-indeterminate]
+      ),
+    :where(et-choice-field:has(.et-choice-field-label-area:hover))
+      et-switch:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate]) {
+      .et-switch-track {
+        box-shadow: inset 0 0 0 1px var(--et-surface-interaction-hover-solid);
+      }
+    }
+  }
+
+  et-switch:focus-visible .et-switch-track {
+    outline-color: var(--et-theme-color-ink-solid);
+  }
+
+  et-switch[aria-checked='true'] .et-switch-track {
+    box-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
+  }
+
+  et-switch[data-indeterminate] {
+    .et-switch-track::before {
+      border-color: var(--et-theme-color-ink-solid);
+    }
+
+    .et-switch-thumb {
+      background-color: var(--et-theme-color-ink-solid);
+    }
+  }
+}
