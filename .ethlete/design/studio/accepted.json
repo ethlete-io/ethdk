@@ -1049,5 +1049,26 @@
     "note": "Q200 Tom's call: --surface-hover and --surface-pressed removed, no user left",
     "hash": "714e287ef3030f47",
     "at": "2026-10-31T18:16:06.813Z"
+  },
+  {
+    "part": "components/shell-collapse",
+    "by": "claude-opus-5-5",
+    "note": "Q203 auto-surface: root-level surface scope dropped, trigger resolves to parent + 1; shot byte-identical",
+    "hash": "44e549b320e25b4a",
+    "at": "2026-10-31T18:30:41.220Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "claude-opus-5-5",
+    "note": "Q203 auto-surface: root-level surface scope dropped, trigger resolves to parent + 1; shot byte-identical",
+    "hash": "bcdb97275792be3b",
+    "at": "2026-10-31T18:30:41.404Z"
+  },
+  {
+    "part": "pages/start",
+    "by": "claude-opus-5-5",
+    "note": "Q203 auto-surface: root-level surface scope dropped, trigger resolves to parent + 1; shot byte-identical",
+    "hash": "28fd542da5c7fc82",
+    "at": "2026-10-31T18:30:41.603Z"
   }
 ]

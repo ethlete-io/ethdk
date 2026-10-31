@@ -12,10 +12,10 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
     variant: 'transparent',
     color: 'surface',
     size: 'sm',
-    class: 'st-studio-trigger et-surface--dark-elevated p-0',
+    class: 'st-studio-trigger p-0',
   }).replace(
     /^<button /,
-    `<button data-et-control="studio-menu" data-studio-trigger aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+    `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
   );
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
@@ -75,9 +75,7 @@ export default definePart({
   render: async (props: Props) => {
     const menu = await studioMenu(props);
     return drawing({
-      body: html`<div
-        class="box-border w-xl h-64 p-space-3 et-surface--dark bg-et-surface-bg text-et-surface font-ui text-ui-md"
-      >
+      body: html`<div class="box-border w-xl h-64 p-space-3 bg-et-surface-bg text-et-surface font-ui text-ui-md">
         ${menu.body}
       </div>`,
       setup: menu.setup,

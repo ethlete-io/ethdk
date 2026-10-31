@@ -16,12 +16,12 @@ const header = (repo?: string) =>
   </header>`;
 
 const ghostFolder = html`<span
-  class="block w-24 h-16 rounded-sm outline outline-et-surface-border et-surface--dark bg-et-surface-bg"
+  class="block w-24 h-16 rounded-sm outline outline-et-surface-border bg-et-surface-bg"
   aria-hidden="true"
 ></span>`;
 
 const ghostProduct =
-  '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border et-surface--dark bg-et-surface-bg"></span>';
+  '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>';
 
 const card = (inner: string) =>
   html`<div class="flex-1 flex items-center justify-center">
@@ -48,9 +48,7 @@ const noProducts = (repo: string) =>
         Ein Produkt ist ein eigenes Design-System, zum Beispiel für eine App, mit Teilen, Sketches und Flows. Dein Agent
         legt es an. Bitte ihn zum Beispiel so:
       </p>
-      <p
-        class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-et-surface-bg text-et-surface text-ui-sm"
-      >
+      <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
         Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
       </p>
       ${copy.body}
@@ -64,7 +62,7 @@ export default definePart<Props>({
   states: { 'no-repo': {}, 'no-products': { repo: 'ethlete-sdk' } },
   render: ({ repo }) =>
     drawing({
-      body: html`<div class="h-full min-h-225 flex flex-col et-surface--dark bg-et-surface-bg">
+      body: html`<div class="h-full min-h-225 flex flex-col bg-et-surface-bg">
         ${header(repo)} ${repo ? noProducts(repo) : noRepo}
       </div>`,
       styles: open.styles + copy.styles + other.styles,
