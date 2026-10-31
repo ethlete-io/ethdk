@@ -781,6 +781,12 @@ machen".
   danger ink tones of the SDK foundation (`.ethlete/design/sdk/foundations/colors/colors.css`: ink 185,28,28,
   hover 153,27,27, active 127,29,29). Today Storybook uses one ink set for both schemes (light danger text 2.77).
   App theme data, no lib change.
+- Q171 default dark surface (Tom, 2026-10-31, option b): sketch `foundations/colors` r1 (`a862255fc`) variant b.
+  `.et-surface--default-dark` must not get the dark-elevated values. Merge per Q152, then fix
+  `tools/scripts/generate-sdk-tokens.mjs:56` (`isDefault: false` for the elevated surfaces) so `yarn sdk:tokens:check`
+  passes.
+- Q172 merges by the grill lead (Tom, 2026-10-31): Tom allowed the lead to merge the decided SDK sketches: picks that
+  apply decided rules only, and sketches with only today's variant. Undecided rounds still wait for Tom.
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
