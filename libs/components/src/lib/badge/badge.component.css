@@ -64,12 +64,12 @@
     &:where([data-variant='filled']) {
       --et-theme-color-primary-opacity: 1;
       --_et-badge-color: var(--et-theme-color-on-primary);
-      --_et-badge-border-color: transparent;
+      --_et-badge-border-color: var(--et-theme-color-ink-solid);
     }
 
     &:where([data-variant='tonal']) {
       --et-theme-color-primary-opacity: 0.16;
-      --_et-badge-border-color: transparent;
+      --_et-badge-border-color: var(--et-theme-color-ink-solid);
     }
 
     &:where([data-variant='outline']) {

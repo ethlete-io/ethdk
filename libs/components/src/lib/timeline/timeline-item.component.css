@@ -72,7 +72,10 @@
       block-size: var(--et-timeline-marker-size);
       border-radius: 50%;
       background: var(--et-surface-background-solid, Canvas);
-      color: var(--et-timeline-marker-color, var(--et-theme-color-primary-solid, currentColor));
+      color: var(
+        --et-timeline-marker-color,
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid))
+      );
       font-size: calc(var(--et-timeline-marker-size) * 0.7);
       line-height: 1;
 

@@ -10,7 +10,7 @@
     z-index: 1;
 
     .et-spinner {
-      --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
+      --et-spinner-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
     }
   }
 }

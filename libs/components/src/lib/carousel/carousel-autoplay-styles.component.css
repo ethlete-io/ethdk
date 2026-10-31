@@ -51,7 +51,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: var(--et-theme-color-primary-solid, currentColor);
+      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
       rotate: -180deg;
       /* At -180deg the flat edge lies on this half's clip edge, and at a fractional device pixel ratio the
          anti-aliasing of the two leaks a one-pixel line. The sweep keyframes show it again. */

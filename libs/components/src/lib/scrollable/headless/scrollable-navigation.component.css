@@ -18,7 +18,7 @@
     background-color: transparent;
 
     &.et-scrollable-navigation-item--active::after {
-      background-color: var(--et-theme-color-primary, #c6c6c6);
+      background-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary));
     }
 
     &::after {

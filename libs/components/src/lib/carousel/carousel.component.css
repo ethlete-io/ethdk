@@ -144,13 +144,13 @@
     }
 
     &:where([data-active])::before {
-      background: var(--et-theme-color-primary-solid, currentColor);
+      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
     }
 
     /* Spelled out because the plain `:hover` above outranks a `:where()`-flattened selector, so without this
        the accent dot went grey under the pointer — the one dot that must never look unselected. */
     &:where([data-active]):hover::before {
-      background: var(--et-theme-color-primary-solid, currentColor);
+      background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
     }
   }
 

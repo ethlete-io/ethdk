@@ -403,8 +403,9 @@ provideCarouselLabels({ previous: 'Vorheriges Bild', next: 'Nächstes Bild', sli
 
 ## Theming
 
-Colours come from the app-registered [surface and color themes](/core/theming): the dots and the
-progress ring take the primary accent, inactive dots a neutral tint. Geometry is tokens:
+Colours come from the app-registered [surface and color themes](/core/theming): the active dot and
+the progress ring take the theme's ink in the light scheme and the primary accent in the dark scheme,
+inactive dots a neutral tint. Geometry is tokens:
 
 | Property                        | Default | Applies to                                                                                           |
 | ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |

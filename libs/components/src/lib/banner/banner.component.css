@@ -50,7 +50,7 @@
     /* The tint is whatever type/color resolved onto this host's color scope, so the banner reads as its
        type without a hardcoded color - including a neutral `currentColor` tint for `info` with nothing forced. */
     background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+    border: 1px solid var(--et-theme-color-ink-solid);
 
     > .et-icon {
       flex-shrink: 0;
