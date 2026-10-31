@@ -10,6 +10,7 @@
   }
 
   .et-checkbox-group-select-all-box {
+    box-sizing: border-box;
     display: grid;
     place-items: center;
     inline-size: var(--et-checkbox-option-size, 20px);

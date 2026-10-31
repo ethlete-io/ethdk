@@ -51,6 +51,7 @@
     }
 
     .et-checkbox-box {
+      box-sizing: border-box;
       position: relative;
       display: grid;
       place-items: center;

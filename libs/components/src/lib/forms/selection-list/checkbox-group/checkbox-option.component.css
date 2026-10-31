@@ -49,6 +49,7 @@
     user-select: none;
 
     .et-checkbox-option-box {
+      box-sizing: border-box;
       flex-shrink: 0;
       inline-size: var(--et-checkbox-option-size);
       block-size: var(--et-checkbox-option-size);
