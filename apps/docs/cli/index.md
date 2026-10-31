@@ -251,6 +251,10 @@ drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for lar
 `contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
 `contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
 
+A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
+colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
+names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.
+
 A product's `shared/` folder (`.ethlete/design/<product>/shared/`) holds helper modules that are
 no part, such as a layout several parts draw with. Any part imports them as `@shared/<path>`;
 they never appear in Studio's tree or `et design list`. Inside a sketch, `@shared/<path>` looks

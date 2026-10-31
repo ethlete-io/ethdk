@@ -1,7 +1,14 @@
 import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
-import { ContrastOptions, CONTRAST_STATEMENTS, contrastExceptionsOf, contrastPairsOf } from './contrast-check';
+import {
+  ColorScheme,
+  ContrastOptions,
+  schemesOf,
+  CONTRAST_STATEMENTS,
+  contrastExceptionsOf,
+  contrastPairsOf,
+} from './contrast-check';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -365,6 +372,7 @@ const inspect = async (options: { browser: Browser; base: string; frames: Frame[
     const page = await context.newPage();
 
     for (const frame of frames) {
+      await page.emulateMedia({ colorScheme: frame.contrast.scheme });
       await page.setViewportSize(frame.viewport);
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.evaluate(settled);
@@ -432,6 +440,7 @@ export const renderIssuesOf = async (options: {
       if (!drawn) continue;
 
       const namespaces = namespacesOf(drawn.parts.map((part) => part.cssSource));
+      const schemes = schemesOf(drawn.parts.map((part) => part.cssSource));
 
       for (const part of drawn.parts) {
         const key = partKeyOf(part);
@@ -500,27 +509,33 @@ export const renderIssuesOf = async (options: {
               ? widths.map((width) => ({ preset: null, width }))
               : [{ preset: null, width: null }];
 
-        let measuresPairs = true;
+        const measuresPairs = new Set<ColorScheme | null>();
 
         for (const state of states) {
           for (const { preset, width } of sizes) {
-            const address = { product, part: key, state, preset, width, sketch, interaction: null };
-            const frame = partFrameOf({ system, ...address });
+            for (const scheme of schemes) {
+              const address = { product, part: key, state, preset, width, sketch, interaction: null };
+              const frame = partFrameOf({ system, ...address });
 
-            if (frame instanceof Error) continue;
+              if (frame instanceof Error) continue;
 
-            frames.push({
-              address,
-              size: preset ?? (width ? `${width}px` : 'fitted'),
-              search: frame.search.toString(),
-              viewport: viewportOf(frame.size),
-              fixed: frame.size?.height !== undefined,
-              fit: frame.size === null,
-              skips,
-              namespaces,
-              contrast: { exceptions: exceptions.selectors, pairs: measuresPairs ? pairs : [] },
-            });
-            measuresPairs = false;
+              frames.push({
+                address,
+                size: preset ?? (width ? `${width}px` : 'fitted'),
+                search: frame.search.toString(),
+                viewport: viewportOf(frame.size),
+                fixed: frame.size?.height !== undefined,
+                fit: frame.size === null,
+                skips,
+                namespaces,
+                contrast: {
+                  exceptions: exceptions.selectors,
+                  pairs: measuresPairs.has(scheme) ? [] : pairs,
+                  scheme,
+                },
+              });
+              measuresPairs.add(scheme);
+            }
           }
         }
       }
@@ -534,13 +549,15 @@ export const renderIssuesOf = async (options: {
       issues,
       warnings: [...gridWarnings, ...firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule)))],
       grids,
-      drawn: frames.map(({ address }) => ({
-        product: address.product,
-        part: address.part,
-        state: address.state,
-        size: address.preset ?? (address.width ? `${address.width}px` : 'fitted'),
-        sketch: address.sketch,
-      })),
+      drawn: frames
+        .filter(({ contrast }) => contrast.scheme !== 'dark')
+        .map(({ address }) => ({
+          product: address.product,
+          part: address.part,
+          state: address.state,
+          size: address.preset ?? (address.width ? `${address.width}px` : 'fitted'),
+          sketch: address.sketch,
+        })),
     };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };

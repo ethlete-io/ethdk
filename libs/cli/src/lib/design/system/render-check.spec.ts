@@ -65,7 +65,7 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string }> = {
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
 
-const checkout = () => {
+const checkout = (parts: typeof PARTS = PARTS) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-render-'));
   const design = join(target, DESIGN_DIR);
 
@@ -75,7 +75,7 @@ const checkout = () => {
     JSON.stringify({ products: { shop: { presets: { desktop: { width: 400, height: 300 } } } } }),
   );
 
-  for (const [key, { body, extra = '', css }] of Object.entries(PARTS)) {
+  for (const [key, { body, extra = '', css }] of Object.entries(parts)) {
     const [layer = '', name = ''] = key.split('/');
     const dir = join(design, 'shop', layer, name);
 
@@ -165,6 +165,28 @@ describe('renderIssuesOf', () => {
       'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
     );
   }, 120_000);
+
+  it('measures text contrast in the dark scheme of a product that renders one', async (context) => {
+    const target = checkout({
+      'components/mode': {
+        body: '<p class="mode" style="margin: 0">Selected</p>',
+        css: '.mode { color: #222; background: #fff; } @media (prefers-color-scheme: dark) { .mode { color: #222; background: #111; } }',
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part}: ${issue.detail.split(';')[0]}`)).toEqual([
+      expect.stringMatching(/^CONTRAST components\/mode: "Selected" 1\.\d+:1 in the dark scheme, needs 4\.50:1$/),
+    ]);
+    expect(rendered.drawn).toHaveLength(1);
+  });
 
   it('answers why it can not draw when no browser resolves', async () => {
     const target = checkout();

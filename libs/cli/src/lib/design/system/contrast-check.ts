@@ -2,7 +2,16 @@
 export type ContrastPair = { text: string; on: string };
 
 /** What the contrast check of one frame measures: the selectors exempt from it and the token pairs to compute. */
-export type ContrastOptions = { exceptions: string[]; pairs: ContrastPair[] };
+export type ContrastOptions = { exceptions: string[]; pairs: ContrastPair[]; scheme: ColorScheme | null };
+
+/** A colour scheme a product renders. */
+export type ColorScheme = 'light' | 'dark';
+
+/** The schemes a product renders: both when a stylesheet of it holds a `prefers-color-scheme` query or `light-dark(`, else the one the browser starts with. */
+export const schemesOf = (stylesheets: (string | null)[]): (ColorScheme | null)[] =>
+  stylesheets.some((source) => source !== null && /prefers-color-scheme|light-dark\(/.test(source))
+    ? ['light', 'dark']
+    : [null];
 
 const CONTRAST_NORMAL = 4.5;
 const CONTRAST_LARGE = 3;
@@ -141,7 +150,7 @@ export const CONTRAST_STATEMENTS = `
       found.push({
         rule: 'CONTRAST',
         path,
-        detail: '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" ' + shown(ratio) + ', needs ' + shown(limit) +
+        detail: '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" ' + shown(ratio) + (options.contrast.scheme ? ' in the ' + options.contrast.scheme + ' scheme' : '') + ', needs ' + shown(limit) +
           (large ? ' (large text)' : '') + '; on purpose: definePart({ contrast: { exceptions: [{ selector, reason }] } })',
       });
     }
@@ -161,7 +170,7 @@ export const CONTRAST_STATEMENTS = `
       const ratio = ratioOf(sample);
       surface.remove();
       if (ratio !== null && ratio < ${CONTRAST_NORMAL})
-        found.push({ rule: 'CONTRAST', path: pair.text + ' on ' + pair.on, detail: 'token pair ' + shown(ratio) + ', needs ' + shown(${CONTRAST_NORMAL}) });
+        found.push({ rule: 'CONTRAST', path: pair.text + ' on ' + pair.on, detail: 'token pair ' + shown(ratio) + (options.contrast.scheme ? ' in the ' + options.contrast.scheme + ' scheme' : '') + ', needs ' + shown(${CONTRAST_NORMAL}) });
     }
     probe.remove();
   }
