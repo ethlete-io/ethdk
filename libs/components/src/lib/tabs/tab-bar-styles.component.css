@@ -167,7 +167,7 @@
 
   .et-tab-group__trigger:focus-visible .et-tab-group__trigger-content,
   .et-nav-tab-link:focus-visible .et-nav-tab-link__content {
-    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline: 2px solid var(--_et-focus-ring-color);
     outline-offset: 2px;
   }
 }

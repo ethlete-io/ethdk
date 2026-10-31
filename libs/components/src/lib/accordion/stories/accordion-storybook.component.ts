@@ -161,7 +161,8 @@ export class AccordionLazyStorybookComponent {
       cursor: pointer;
 
       &:focus-visible {
-        outline: 2px solid var(--et-theme-color-primary-solid);
+        outline: 2px solid
+          light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
         outline-offset: 2px;
       }
     }

@@ -551,7 +551,8 @@
   .et-table-expander:focus-visible,
   .et-table-cell:focus-visible,
   .et-table-header-label:focus-visible .et-table-header-label-box {
-    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline: 2px solid
+      light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
     outline-offset: -2px;
   }
 

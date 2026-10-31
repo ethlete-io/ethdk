@@ -239,7 +239,8 @@ type SentCommand = { label: string; accepted: boolean };
     }
 
     .et-sb-remote__btn:focus-visible {
-      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline: 2px solid
+        light-dark(var(--et-theme-color-ink-solid, currentColor), var(--et-theme-color-primary-solid, currentColor));
       outline-offset: 1px;
     }
 
