@@ -133,6 +133,9 @@
       color: var(--et-surface-color-muted-solid, currentColor);
       cursor: pointer;
       appearance: none;
+      transition:
+        background 120ms ease,
+        color 120ms ease;
 
       @media (hover: hover) {
         &:hover {

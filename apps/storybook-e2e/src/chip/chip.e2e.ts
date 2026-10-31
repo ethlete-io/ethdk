@@ -181,3 +181,14 @@ test.describe('chip / touch', () => {
     await expect(price).toHaveAttribute('aria-checked', 'true');
   });
 });
+
+test.describe('chip / remove button motion', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover');
+
+  test('the remove button transitions its hover background and colour', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const removeButton = root.locator('.et-chip-remove-button').first();
+
+    await expect(removeButton).toHaveCSS('transition-property', 'background, color');
+  });
+});

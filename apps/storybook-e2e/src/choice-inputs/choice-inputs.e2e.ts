@@ -634,4 +634,18 @@ test.describe('switch / track edge', () => {
       await expect(track).toHaveCSS('box-shadow', edge);
     });
   }
+
+  test('a hover on the off track transitions its edge', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'pointer-only: hover');
+    const root = await openStory(page, SWITCH_DEFAULT);
+    const toggle = root.locator('et-switch[data-can-animate]:not([aria-checked="true"])').first();
+    const track = toggle.locator('.et-switch-track');
+    await toggle.evaluate((el: HTMLElement) => el.style.setProperty('--et-switch-transition-duration', '10s'));
+
+    await track.hover();
+
+    await expect
+      .poll(() => track.evaluate((el) => el.getAnimations().map((a) => (a as CSSTransition).transitionProperty)))
+      .toContain('box-shadow');
+  });
 });

@@ -208,7 +208,9 @@
 
     &[data-can-animate] {
       .et-switch-track {
-        transition: background-color var(--et-switch-transition-duration) ease;
+        transition:
+          background-color var(--et-switch-transition-duration) ease,
+          box-shadow var(--et-switch-transition-duration) ease;
       }
 
       .et-switch-thumb {
