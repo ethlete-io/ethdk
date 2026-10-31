@@ -674,6 +674,23 @@ that missed the handoff; renumbered here because Q104/Q105 were already taken.
 - Q117: keep the browser resize grip; draw its position (corner vs 13px inside) as an r2 variant.
 - Q118: no fade on scrolled textarea content; text scrolls to the frame edge like a native textarea (r2 variant).
 
+### Morning decisions (Tom, 2026-10-31)
+
+- Q97 rejected: the Studio chat's Call/Variant inputs and the MCP `call` tool build on the old `.ethlete/design/calls`
+  system (last touched 2026-10-26). Tom: "calls? das ist doch das alte system". Follow-up question open.
+- Q98: one dark ring mix for elevation and tooltip, 35 % `--et-surface-ring`. Condition from Tom: the builder first
+  reads the theming skill (surface system, including auto surface) and checks that panes and tooltips also look good,
+  not only pass 3:1.
+- Q99: rule a. In light, edges, rings, focus rings, indicators, dots, text and icons use ink; mint fills stay with a
+  1 px inset ink edge; buttons keep their mint fill. Dark unchanged.
+- Q100: hover and error borders in primary are a lib bug; error resolves through the semantic error theme. Patch.
+- Q101: a filled et-button hovers to the theme's `-active` token; pressed goes 16 % further (button r1 b).
+- Q103: a product without a light scheme (studio, studio-lab) draws one colour-scheme copy.
+- Q104: a stat-tile without a success theme falls back to the inherited theme with a dev-mode warning. Patch.
+- Q105: the floating trigger gets a light shadow only while it floats, faded in with opacity only.
+- Q119 (otp, 33's "Q103"): filled and empty otp segments look the same; every segment gets the 3:1 input frame
+  (Q108). Caret and focus frame show the next segment.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
