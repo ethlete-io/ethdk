@@ -192,7 +192,7 @@ export const isVariantName = (name: string) => NAME.test(name) && name !== SHARE
 const foldersOf = (dir: string) =>
   existsSync(dir)
     ? readdirSync(dir)
-        .filter((name) => statSync(resolve(dir, name)).isDirectory())
+        .filter((name) => statSync(resolve(dir, name), { throwIfNoEntry: false })?.isDirectory())
         .sort()
     : [];
 

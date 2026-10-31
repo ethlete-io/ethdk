@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -245,6 +245,18 @@ describe('createSketch on a part the product overrides', () => {
 });
 
 describe('listSketches and findSketch', () => {
+  it('skips an entry that vanished before it was read', () => {
+    const target = acme();
+    const productDir = join(target, DESIGN_DIR, 'acme');
+
+    open(target, 'elements/hero');
+    symlinkSync(join(target, 'gone'), join(productDir, 'sketches/elements-gone'));
+
+    const listed = listSketches({ productDir, product: 'acme' });
+
+    expect(listed.map((entry) => (entry as Sketch).target)).toEqual(['elements/hero']);
+  });
+
   it('reads every sketch folder and reports one without sketch.json', () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');
