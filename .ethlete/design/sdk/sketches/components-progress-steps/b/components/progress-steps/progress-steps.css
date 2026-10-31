@@ -1,0 +1,37 @@
+.progress-steps-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+@layer components {
+  .et-progress-step {
+    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+
+    &:is(
+        [data-state='current'],
+        [data-state='complete'],
+        [data-state='success'],
+        [data-state='warning'],
+        [data-state='error']
+      )
+      .et-progress-step-marker {
+      border-color: var(--et-theme-color-ink-solid);
+    }
+
+    &:is([data-state='complete'], [data-state='success'], [data-state='warning'], [data-state='error']):not(
+        :last-child
+      )::after {
+      background: var(--et-theme-color-ink-solid);
+    }
+
+    &:is(a, button) {
+      @media (hover: hover) {
+        &:hover .et-progress-step-marker {
+          border-color: var(--et-theme-color-ink-solid);
+        }
+      }
+    }
+  }
+}
