@@ -53,7 +53,8 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   interaction needs a motion in both directions, for example rest <-> hover, rest <-> press, collapsed <-> expanded,
   closed <-> open, hidden <-> visible. A colour change is enough as a motion (a short token transition). One open
   point per missing pair and direction, for example "no motion collapsed -> expanded". Focus may have a motion but
-  does not need one (no open point). Disabled needs none: the user does not reach it by an interaction.
+  does not need one (no open point). Rest <-> disabled needs a motion too (Tom), although the app sets it, not the
+  user.
 
 ## Not decided
 
