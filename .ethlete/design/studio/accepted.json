@@ -1028,5 +1028,26 @@
     "note": "Q198 warning icon to the SDK warning colour scope, Q197 arbitrary et-surface values to named utilities outside the Q202 popover; byte-identical",
     "hash": "3230ae5fb8fbb786",
     "at": "2026-10-31T18:15:50.306Z"
+  },
+  {
+    "part": "pages/flows",
+    "by": "claude-opus-5-5",
+    "note": "Q199 Tom's call: prompt box on the SDK dark surface, solid",
+    "hash": "eb8798c759226c00",
+    "at": "2026-10-31T18:16:06.423Z"
+  },
+  {
+    "part": "components/comment-pin",
+    "by": "claude-opus-5-5",
+    "note": "Q200 Tom's call: hover and pressed tint the pin surface with the SDK interaction colour",
+    "hash": "3144ea8bc6881d4f",
+    "at": "2026-10-31T18:16:06.599Z"
+  },
+  {
+    "part": "foundations/colors",
+    "by": "claude-opus-5-5",
+    "note": "Q200 Tom's call: --surface-hover and --surface-pressed removed, no user left",
+    "hash": "714e287ef3030f47",
+    "at": "2026-10-31T18:16:06.813Z"
   }
 ]

@@ -28,7 +28,9 @@ const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline',
 
 export const emptyStyles = copy.styles;
 
-const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-surface-sunken text-et-surface text-ui-sm">
+const prompt = html`<p
+  class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-et-surface-bg text-et-surface text-ui-sm"
+>
   Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.
 </p>`;
 const ghostBox =
