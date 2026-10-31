@@ -1,0 +1,34 @@
+{
+  "target": "components/timeline",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:14:09.763Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Timeline baseline",
+      "note": "First drawing of the SDK timeline, drawn by its mock from @ethlete/components/design on the page. A vertical rail per item: a 20px marker box joined to the next marker by a 2px connector in --et-surface-border-solid; with no projected marker the box shrinks to an 8px dot in --et-timeline-marker-color (default: the item's theme primary). A projected [etTimelineMarker] icon draws at 14px in the same colour on a page-coloured disc. The 12px [etTimelineTime] sits above the content in the muted surface text. color scopes a theme per item (story: none, success, danger, brand; this product registers no success theme, so warning stands in). No current/active item, no links, no interactive states and no focus ring exist in the lib. States: default (dots, all in the inherited theme, as the story), with-markers (icons + themes), themed-dots, compact (14px marker, 6px dot, 8px gaps), compact-markers, no-time, long-content (two-line label and an unbroken value), single (no connector). Lib bug shown in long-content: an unbroken value overflows the item (content 638px in a 480px frame; the drawing clips the frame on purpose so the cut value shows) - .et-timeline-item-content has min-inline-size 0 but no overflow-wrap; hyphenated text wraps. Numbers (light / dark) against the page: label 17.93 / 17.18, description and time 7.81 / 6.94 (all above 4.5). Markers (dot and icon, 3:1): brand mint 1.33 / 13.50 - under 3:1 on light; warning 3.19 / 5.63; danger 4.83 / 3.71. Q98, numbers only: connector vs page 1.26 / 1.73; the marker disc equals the page (1.00 / 1.00); no fill or edge otherwise. Q88 does not arise (no focus ring). Q101 does not arise (no button). Variant b applies Q99 rule a: on light every marker (dot and icon) takes --et-theme-color-ink-solid via --et-timeline-marker-color; dark keeps primary. b adds no edge (the dot is a dot, not a fill with content), so Q102 does not arise and there is no c."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: markers in the theme primary. Light: mint dot/icon 1.33:1 against the page (under 3:1), warning 3.19, danger 4.83; dark 13.50 / 5.63 / 3.71. Connector 1.26 / 1.73. Text 17.93 / 7.81 light, 17.18 / 6.94 dark. Unbroken values overflow (lib bug)."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Decided rule Q99a only: on light, dots and icon markers in theme ink - mint 5.48:1, warning 7.09, danger 6.47 against the page; dark unchanged (primary: 13.50 / 5.63 / 3.71). Warning and danger follow too, as in the progress-steps b, since the token cannot single out mint. No edge added, so no Q102 and no c. Everything else as a."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+.timeline-frame {
+  max-inline-size: 520px;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+  overflow-x: clip;
+
+  .timeline-label,
+  .timeline-description {
+    margin: 0;
+  }
+
+  .timeline-description {
+    color: var(--et-surface-color-muted-solid);
+    font-size: 1.2rem;
+  }
+}
+
+.timeline-frame--compact .et-timeline {
+  --et-timeline-gap: 8px;
+  --et-timeline-rail-gap: 8px;
+  --et-timeline-marker-size: 14px;
+  --et-timeline-dot-size: 6px;
+}
