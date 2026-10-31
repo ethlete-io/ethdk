@@ -1010,3 +1010,21 @@ Tom: "wir nehmen das sdk surface theming system kein wenn oder aber." Studio par
   panel.
 - The migration of the merged parts is a mechanical follow-up of this decision (design accept "Q197" per part, as
   Q188/Q190). A part where the scope changes the look visibly goes to Tom as a round.
+
+### The SDK theming systems are enforced, not remembered (Tom, 2026-10-31, Q198)
+
+Tom: the surface and the colour system were named many times, and Studio still grew its own parallel tokens. "Das
+darf NICHT wieder passieren", and agent memory is no fix, because another person does not have it. So the rule lives
+in the tool and in the repo, where every person and every agent meets it:
+
+1. **Make the wrong thing impossible.** A design product's foundations define only the inputs of the SDK themes
+   (surface themes and colour themes). The product stylesheet exposes no own tier or accent utilities (`bg-surface-*`,
+   `bg-accent*`, `text-accent-*`, `var(--accent*)`, `var(--warning)`, and so on); parts can only reach the `et-surface`
+   and `et-theme-color` tokens. Q197 extends to colour: parts use the SDK colour theming (`et-theme-color-*`, colour
+   scopes, `injectSemanticColorTheme` types), not `--accent`, `--warning` or `--danger`.
+2. **Errors, not warnings.** `et design check` fails a part on a raw colour outside foundations, on a utility that
+   emits no CSS (CLASS-UNDEFINED), and on a denied class. `sketch ready`, merge and `design accept` refuse while one is
+   open. No per-part opt-out; the only exemption is the foundations part itself.
+3. **The tool tells every agent.** The task text that `et design` hands an agent (sketch, round, task) names the two
+   theming systems and points to the `theming` skill. The rule also goes into the portable agent rules
+   (`libs/agent-rules/content/`) for the design workflow, so other repos and people get it with `ethlete-agents sync`.
