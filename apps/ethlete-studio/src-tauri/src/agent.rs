@@ -13,7 +13,7 @@ use tokio::process::Child;
 use crate::agent_claude::ClaudeCli;
 use crate::agent_codex::CodexCli;
 use crate::call_status::checks_dir;
-use crate::design_server::cli_entry;
+use crate::design_server::{cli_entry, end};
 use crate::error::{StudioError, StudioResult};
 
 /// One agent CLI that Studio can drive. A second CLI is another implementation of this trait, never
@@ -280,7 +280,9 @@ async fn start(
 
     let tools = tool_server(request);
 
-    let mut child = crate::child_env::command(cli.binary())
+    let mut command = crate::child_env::command(cli.binary());
+
+    command
         .current_dir(&cwd)
         .args(cli.arguments(request, tools.as_ref()))
         // Codex reads a prompt from stdin when it is a pipe, and then waits for input that never
@@ -288,12 +290,15 @@ async fn start(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|error| match error.kind() {
-            std::io::ErrorKind::NotFound => StudioError::NotInstalled(cli.binary().to_owned()),
-            _ => StudioError::Io(error),
-        })?;
+        .kill_on_drop(true);
+
+    #[cfg(unix)]
+    command.process_group(0);
+
+    let mut child = command.spawn().map_err(|error| match error.kind() {
+        std::io::ErrorKind::NotFound => StudioError::NotInstalled(cli.binary().to_owned()),
+        _ => StudioError::Io(error),
+    })?;
 
     let stdout = child
         .stdout
@@ -380,10 +385,16 @@ async fn start(
 
 #[tauri::command]
 pub async fn agent_cancel(runs: tauri::State<'_, AgentRuns>, run_id: String) -> StudioResult<()> {
-    let taken = runs.0.lock().map_err(|_| StudioError::Poisoned)?.remove(&run_id);
+    cancel(runs.inner(), &run_id).await
+}
 
+async fn cancel(runs: &AgentRuns, run_id: &str) -> StudioResult<()> {
+    let taken = runs.0.lock().map_err(|_| StudioError::Poisoned)?.remove(run_id);
+
+    // Claude Code runs the shells of its tools in their own session, out of reach of the group
+    // signal, and ends them on SIGTERM only. A kill leaves them running.
     if let Some(mut child) = taken {
-        let _ = child.start_kill();
+        end(&mut child).await;
     }
 
     Ok(())
@@ -395,7 +406,7 @@ mod tests {
 
     use super::*;
 
-    struct ScriptedCli(&'static str);
+    struct ScriptedCli(String);
 
     impl AgentCli for ScriptedCli {
         fn id(&self) -> &'static str {
@@ -415,7 +426,7 @@ mod tests {
         }
 
         fn arguments(&self, _request: &AgentRequest, _tools: Option<&ToolServer>) -> Vec<String> {
-            vec!["-c".to_owned(), self.0.to_owned()]
+            vec!["-c".to_owned(), self.0.clone()]
         }
 
         fn read_line(&self, line: &str) -> Vec<AgentEvent> {
@@ -490,7 +501,7 @@ mod tests {
         };
 
         start(
-            Box::new(ScriptedCli(script)),
+            Box::new(ScriptedCli(script.to_owned())),
             &request,
             AgentRuns::default(),
             sink.clone(),
@@ -509,6 +520,58 @@ mod tests {
         }
 
         panic!("the run never finished");
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn a_stopped_run_ends_the_processes_its_tools_started() {
+        let tool = std::env::temp_dir().join(format!("ethlete-studio-{}-tool-pid", std::process::id()));
+        let script = format!(
+            "setsid sleep 30 & echo $! > {}; trap 'kill $!; exit' TERM; wait",
+            tool.display()
+        );
+        let runs = AgentRuns::default();
+        let request = AgentRequest {
+            cli: "scripted".to_owned(),
+            model: None,
+            prompt: String::new(),
+            cwd: ".".to_owned(),
+            resume: None,
+            tools: None,
+        };
+
+        let id = start(
+            Box::new(ScriptedCli(script)),
+            &request,
+            runs.clone(),
+            Arc::new(Collected::default()),
+        )
+        .await
+        .expect("the scripted CLI starts");
+
+        let mut pid = String::new();
+        for _ in 0..300 {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            pid = std::fs::read_to_string(&tool).unwrap_or_default().trim().to_owned();
+            if !pid.is_empty() {
+                break;
+            }
+        }
+        let proc = PathBuf::from(format!("/proc/{pid}"));
+        assert!(!pid.is_empty() && proc.exists(), "the tool runs");
+
+        cancel(&runs, &id).await.expect("the run stops");
+        let _ = std::fs::remove_file(&tool);
+
+        for _ in 0..300 {
+            if !proc.exists() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+
+        let _ = std::process::Command::new("kill").arg(&pid).status();
+        panic!("the tool of the stopped run still runs");
     }
 
     #[tokio::test]

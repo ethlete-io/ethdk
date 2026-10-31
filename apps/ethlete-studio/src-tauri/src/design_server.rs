@@ -578,7 +578,7 @@ fn signal_group(child: &Child) {
 #[cfg(not(unix))]
 fn signal_group(_child: &Child) {}
 
-async fn end(child: &mut Child) {
+pub async fn end(child: &mut Child) {
     signal_group(child);
 
     let deadline = Instant::now() + STOP_GRACE;

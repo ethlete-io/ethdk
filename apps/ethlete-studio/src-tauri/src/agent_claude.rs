@@ -56,6 +56,11 @@ impl AgentCli for ClaudeCli {
         if tools.is_none() {
             arguments.push("--append-system-prompt".to_owned());
             arguments.push(STUDIO_BRIEF.to_owned());
+            // The permission mode accepts edits only, so a run in print mode is refused every
+            // command the brief names.
+            arguments.push("--allowedTools".to_owned());
+            arguments.push("Bash(npx et design check:*)".to_owned());
+            arguments.push("Bash(npx et design shot:*)".to_owned());
         }
 
         if let Some(tools) = tools {
@@ -106,10 +111,16 @@ fn mcp_config(tools: &ToolServer) -> String {
     .to_string()
 }
 
-/// What the turn read: the fresh input, plus the part of the conversation the cache wrote and the
-/// part it replayed. Together they are the size of the session the next turn continues.
+/// What the last request of the turn read: the fresh input, plus the part of the conversation the
+/// cache wrote and the part it replayed. Together they are the size of the session the next turn
+/// continues. The top-level usage of a result sums every request of the turn.
 fn context(value: &Value) -> Vec<AgentEvent> {
-    let Some(usage) = value.get("usage") else {
+    let Some(usage) = value
+        .pointer("/usage/iterations")
+        .and_then(Value::as_array)
+        .and_then(|iterations| iterations.last())
+        .or_else(|| value.get("usage"))
+    else {
         return Vec::new();
     };
 
@@ -217,6 +228,18 @@ mod tests {
     }
 
     #[test]
+    fn a_chat_run_may_run_the_check_and_the_shot_the_brief_names() {
+        let arguments = ClaudeCli.arguments(&asking("draw it", None), None);
+        let at = arguments.iter().position(|argument| argument == "--allowedTools");
+        let allowed = &arguments[at.expect("tools are allowed") + 1..];
+
+        assert!(allowed.starts_with(&[
+            "Bash(npx et design check:*)".to_owned(),
+            "Bash(npx et design shot:*)".to_owned()
+        ]));
+    }
+
+    #[test]
     fn a_call_run_gets_no_studio_brief() {
         assert!(!ClaudeCli
             .arguments(&asking("draw it", None), Some(&serving()))
@@ -285,6 +308,20 @@ mod tests {
 
         assert!(matches!(&events[0], AgentEvent::Context { tokens } if *tokens == 22827));
         assert!(matches!(&events[1], AgentEvent::Finished { ok: true, .. }));
+    }
+
+    #[test]
+    fn a_result_of_many_requests_reports_the_size_of_the_last_one() {
+        let line = concat!(
+            r#"{"type":"result","is_error":false,"result":"done","usage":{"input_tokens":4,"#,
+            r#""cache_creation_input_tokens":10843,"cache_read_input_tokens":34353,"output_tokens":63,"#,
+            r#""iterations":[{"input_tokens":2,"cache_creation_input_tokens":212,"cache_read_input_tokens":22492,"#,
+            r#""output_tokens":4,"type":"message"}]}}"#
+        );
+
+        let events = ClaudeCli.read_line(line);
+
+        assert!(matches!(&events[0], AgentEvent::Context { tokens } if *tokens == 22706));
     }
 
     #[test]
