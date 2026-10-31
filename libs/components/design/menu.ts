@@ -48,7 +48,7 @@ export type MenuMockOptions = {
   id?: string;
   /** The app's default color theme name, as the menu syncs it from its trigger. */
   color?: string;
-  /** A surface theme name the app registers, for the panel. */
+  /** A surface theme name the app registers, for the panel. Left out, the panel takes the surface one elevation above its parent. */
   surface?: string;
 };
 
@@ -136,8 +136,9 @@ export const menu = (options: MenuMockOptions) => {
   const classes = [
     'et-menu',
     `et-color--${options.color ?? 'inherited'}`,
-    `et-surface--${options.surface ?? 'inherited'}`,
-  ];
+    options.surface && `et-surface--${options.surface}`,
+  ].filter(Boolean);
+  const autoSurface = options.surface ? '' : ' data-et-auto-surface';
 
-  return `<et-menu id="et-menu-panel-${id}" class="${classes.join(' ')}" role="menu" aria-orientation="vertical" tabindex="-1"><div class="et-menu-header"><div class="et-menu-search-field"></div></div><div class="et-menu-body-wrapper"><div class="et-menu-body"><div class="et-menu-body-content">${options.rows.map(rowMarkup).join('')}</div></div></div></et-menu>`;
+  return `<et-menu id="et-menu-panel-${id}"${autoSurface} class="${classes.join(' ')}" role="menu" aria-orientation="vertical" tabindex="-1"><div class="et-menu-header"><div class="et-menu-search-field"></div></div><div class="et-menu-body-wrapper"><div class="et-menu-body"><div class="et-menu-body-content">${options.rows.map(rowMarkup).join('')}</div></div></div></et-menu>`;
 };

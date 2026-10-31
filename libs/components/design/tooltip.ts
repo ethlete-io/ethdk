@@ -11,7 +11,7 @@ export type TooltipMockOptions = {
   content?: string;
   /** The side the pane opened on; the arrow points back at the trigger. Defaults to `top`. */
   placement?: Placement;
-  /** A surface theme name the app registers. */
+  /** A surface theme name the app registers. Left out, the pane takes the surface one elevation above its parent. */
   surface?: string;
   /** The tooltip id, which the trigger's `aria-describedby` points at. */
   id?: string;
@@ -58,7 +58,7 @@ export const tooltipStyles = /* @__PURE__ */ [
  */
 export const tooltip = (options: TooltipMockOptions = {}) => {
   const { placement = 'top', id = 'et-tooltip-1' } = options;
-  const surface = `et-surface--${options.surface ?? 'inherited'}`;
+  const surface = options.surface && `et-surface--${options.surface}`;
   const hasTemplate = options.content !== undefined;
 
   const paneClasses = [
@@ -71,17 +71,17 @@ export const tooltip = (options: TooltipMockOptions = {}) => {
     surface,
     'et-with-default-animation',
     'et-animation-enter-done',
-  ];
+  ].filter(Boolean);
 
   const tooltipAttributes = [
     options.attributes,
     'role="tooltip"',
-    `class="et-tooltip et-color--inherited ${surface}"`,
+    `class="${['et-tooltip', 'et-color--inherited', surface].filter(Boolean).join(' ')}"`,
     `id="${id}"`,
     hasTemplate && 'data-has-template="true"',
   ].filter(Boolean);
 
   const body = hasTemplate ? options.content : `<p class="et-tooltip__text">${options.text ?? ''}</p>`;
 
-  return `<div class="et-tooltip-mock-frame"><div class="${paneClasses.join(' ')}" data-overlay-placement="${placement}"><et-tooltip ${tooltipAttributes.join(' ')}><div class="et-tooltip__surface"><div class="et-tooltip__content">${body}</div></div></et-tooltip><div et-floating-arrow class="et-overlay-arrow"></div></div></div>`;
+  return `<div class="et-tooltip-mock-frame"><div class="${paneClasses.join(' ')}" data-overlay-placement="${placement}"${surface ? '' : ' data-et-auto-surface'}><et-tooltip ${tooltipAttributes.join(' ')}><div class="et-tooltip__surface"><div class="et-tooltip__content">${body}</div></div></et-tooltip><div et-floating-arrow class="et-overlay-arrow"></div></div></div>`;
 };

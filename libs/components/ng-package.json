@@ -18,7 +18,8 @@
     {
       "glob": "**/*.ts",
       "input": "design",
-      "output": "./design"
+      "output": "./design",
+      "ignore": ["**/*.spec.ts"]
     },
     {
       "glob": "**/*",

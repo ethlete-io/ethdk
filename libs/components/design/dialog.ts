@@ -28,7 +28,7 @@ export type DialogMockOptions = {
   close?: boolean | string;
   /** As the body's `dividers` input. `dynamic` draws the body scrolled to its start. */
   dividers?: false | 'static' | 'dynamic';
-  /** A surface theme name the app registers, for the pane. */
+  /** A surface theme name the app registers, for the pane. Left out, the pane takes the surface one elevation above its parent. */
   surface?: string;
   /** Extra attributes on the pane, e.g. design markers. */
   attributes?: string;
@@ -49,6 +49,7 @@ export type AlertDialogMockOptions = {
   confirmAttributes?: string;
   /** Extra attributes on the cancel button. */
   cancelAttributes?: string;
+  /** A surface theme name the app registers, for the pane. Left out, the pane takes the surface one elevation above its parent. */
   surface?: string;
   attributes?: string;
   id?: string;
@@ -121,12 +122,13 @@ const pane = (
     'et-overlay-runtime-pane',
     'et-overlay--dialog',
     'et-color--inherited',
-    `et-surface--${options.surface ?? 'inherited'}`,
+    options.surface && `et-surface--${options.surface}`,
     'et-with-default-animation',
     'et-animation-enter-done',
-  ];
+  ].filter(Boolean);
   const attributes = [
     options.attributes,
+    !options.surface && 'data-et-auto-surface',
     `role="${options.role}"`,
     'aria-modal="true"',
     'tabindex="-1"',

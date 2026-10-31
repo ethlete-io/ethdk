@@ -443,6 +443,11 @@ themes from the `.et-surface--<name>` rules of the loaded stylesheets, resolves 
 `et design task` maps both attributes to these `@ethlete/core` directives. The root surface comes from the frame
 root (`--surface`, or the product's `:root`).
 
+The floating panes from `@ethlete/components/design` carry `data-et-auto-surface` unless you pass a `surface`:
+`dialog()`, `alertDialog()`, `anchoredDialog()` (from `design/anchored-dialog`), `menu()`, `selectPanel()` and
+`tooltip()`. `anchoredDialog({ content, arrow, placement })` draws a popover pane in flow, with its arrow, so a
+part places it under the drawn trigger.
+
 A part never picks a colour theme name either. `data-et-semantic-color="<type>"` (`success`, `warning` or `error`)
 gets the `et-color--<name>` class of the registered colour theme of that type, swapped for the surface it sits on,
 like `injectSemanticColorTheme(<type>)` bound to `[etProvideColor]`, which `et design task` names as the mapping.

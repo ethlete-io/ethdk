@@ -38,7 +38,7 @@ export type SelectPanelMockOptions = {
   multiple?: boolean;
   /** The app's default color theme name: the panel provides it to the options. */
   color?: string;
-  /** A surface theme name the app registers, for the panel. */
+  /** A surface theme name the app registers, for the panel. Left out, the panel takes the surface one elevation above its parent. */
   surface?: string;
 };
 
@@ -54,7 +54,7 @@ export type SelectMockOptions = {
   clearLabel?: string;
   /** The app's default color theme name: the panel provides it to the options. */
   panelColor?: string;
-  /** A surface theme name the app registers, for the panel. */
+  /** A surface theme name the app registers, for the panel. Left out, the panel takes the surface one elevation above its parent. */
   panelSurface?: string;
 };
 
@@ -122,10 +122,11 @@ export const selectPanel = (options: SelectPanelMockOptions) => {
     'et-select-panel',
     'et-color--inherited',
     options.color && `et-color--${options.color}`,
-    `et-surface--${options.surface ?? 'inherited'}`,
+    options.surface && `et-surface--${options.surface}`,
   ].filter(Boolean);
+  const autoSurface = options.surface ? '' : ' data-et-auto-surface';
 
-  return `<et-select-panel class="${classes.join(' ')}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div ${listbox.join(' ')}>${options.content}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`;
+  return `<et-select-panel${autoSurface} class="${classes.join(' ')}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div ${listbox.join(' ')}>${options.content}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`;
 };
 
 /**
