@@ -168,3 +168,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   token-only colour variants; Tom merges the variant. No contrast exception, and no button colour or override in
   `canvas-frames`. After the merge, the open glued-class rounds for `canvas-frames` and `components/zoom-chip` go to
   ready again.
+- **Q243 (Tom, 2026-10-31):** `sketch ready` blocks only on issues the sketch adds. An issue that the merged part
+  already shows (same rule and same detail, element path normalised for the frame move of Q241) does not block, for
+  every rule, not only CONTROL-PART-INPUT. New issues still block. The old issues stay visible in `design check` and
+  still need a fix; this is not an exception. Unblocks the Q241 sketch `sdk/sketches/components-accordion`.
