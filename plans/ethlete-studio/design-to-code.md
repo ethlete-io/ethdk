@@ -110,7 +110,15 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Re-merge: added values are new drawings, so the part goes to Tom as a new round; where a value follows only
     from decided rules (for example a size that scales a decided shape), the lead merges it under Q172.
 
+- Q96 go and task (lead, 2026-10-31): go does not need ready. "No go" and "go is stale" are open point 7, so they
+  block ready. Flow: design, go, implement, compare green, ready. The allowed files of a task are the folder of the
+  `implements` file (component, template, spec, css), plus the changeset and the docs guide for sdk.
+  `et design task --verify` rejects other files and records the implemented hash when compare is green.
+
 ## Not decided
+
+- How compare renders the real component per state (a harness route in the owning app, or Storybook), and how a
+  page part gets its data (a presentational component beside the route link). With Tom (lead 76).
 
 - Where the go and the released state are stored (builder call).
 
