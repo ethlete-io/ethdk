@@ -148,6 +148,7 @@
      choosing, so it has to stay legible over every hue a token could not anticipate */
   .et-color-picker-area-thumb,
   .et-color-picker-track-thumb {
+    box-sizing: border-box;
     position: absolute;
     inline-size: var(--et-color-picker-thumb-size);
     block-size: var(--et-color-picker-thumb-size);
@@ -227,6 +228,7 @@
     --_et-color-picker-preview-color: transparent;
 
     flex: none;
+    box-sizing: border-box;
     inline-size: 20px;
     block-size: 20px;
     border-radius: 4px;

@@ -49,6 +49,7 @@
     user-select: none;
 
     .et-radio-circle {
+      box-sizing: border-box;
       flex-shrink: 0;
       inline-size: var(--et-radio-size);
       block-size: var(--et-radio-size);

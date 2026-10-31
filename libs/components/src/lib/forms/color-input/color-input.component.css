@@ -47,6 +47,7 @@
     --_et-color-input-checker: color-mix(in srgb, currentColor 18%, transparent);
     --_et-color-input-swatch-color: transparent;
 
+    box-sizing: border-box;
     inline-size: var(--et-color-input-swatch-size);
     block-size: var(--et-color-input-swatch-size);
     border-radius: var(--et-color-input-swatch-radius);
