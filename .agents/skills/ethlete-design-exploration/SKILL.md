@@ -554,7 +554,8 @@ part, one whose `controls` declare a control of a checked kind. On a shell, elem
 A drawn `button`, `a[href]`, `input`, `select`, `textarea` or control role without `data-et-control` on it or around
 it is `CONTROL-PART-INPUT`: no control check sees it. Wrap it in `control(markup, name)` from
 `@ethlete/components/design/control` and declare the name in `controls`; a sketch fails on one it adds,
-`design check` only warns of one a merged part already draws.
+`design check` only warns of one a merged part already draws. On a reused control part's render,
+`control(drawn.body, name)` renames its control: never string-replace `data-et-control`.
 `definePart({ interactions })` forces an interaction on the part's root only. To draw one element of the part
 hovered, focused, pressed or disabled, such as one row of a list, wrap that element's markup in
 `forceInteraction(markup, 'hover')` from `@design-system` inside `render`, driven by a prop; never write

@@ -12,6 +12,12 @@ describe('control', () => {
     expect(control('<button>x</button>', 'b')).toBe('<button data-et-control="b" data-can-animate="true">x</button>');
   });
 
+  it('renames a control that is already marked', () => {
+    expect(
+      control('<button class="a" data-et-control="button" data-can-animate="true">x</button>', 'open-points'),
+    ).toBe('<button data-et-control="open-points" data-can-animate="true" class="a">x</button>');
+  });
+
   it('throws without a root element', () => {
     expect(() => control('plain text', 'b')).toThrow('no root element');
   });

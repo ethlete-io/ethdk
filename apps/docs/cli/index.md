@@ -493,7 +493,8 @@ not pass. A native control (`button`, `a[href]`, `input`, `select`, `textarea`, 
 `[tabindex]`), an interactive ARIA role or a known SDK control (`et-select`, `[et-button]`, ...)
 without a `data-et-control` is a `CONTROL-UNDECLARED` hint: it does not fail `et design complete`, and the sketch
 check fails on one a sketch adds as `CONTROL-PART-INPUT`. Mark a native control with `control(markup, name)` from
-`@ethlete/components/design/control` and declare the name in `controls`. The focus container of a composite
+`@ethlete/components/design/control` and declare the name in `controls`. On a reused control part's render,
+`control(drawn.body, name)` renames its control. The focus container of a composite
 widget (role `menu`, `menubar`, `listbox`, `tree`, `treegrid`, `grid`, `tablist` or `radiogroup`
 with `tabindex="-1"` or `aria-activedescendant`) is not a control: it needs no declaration, and
 the items inside it are checked as controls. A marker on a wrapper that is not a
