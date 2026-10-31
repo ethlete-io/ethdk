@@ -16,6 +16,7 @@ type Axes = Pick<FormFieldMockOptions, 'appearance' | 'fill' | 'labelMode' | 'si
 type Props = Axes & {
   control?: FieldControl;
   value?: string;
+  textAlign?: 'center' | 'end';
   hint?: string;
   error?: string;
   focused?: boolean;
@@ -40,7 +41,7 @@ const axisRows = Object.fromEntries(
   ),
 ) as Record<string, Props>;
 
-const { states, grid } = interactionRows(
+const interactive = interactionRows(
   {
     empty: { hint: 'Shown on your profile' },
     filled: { value: 'Ada Lovelace' },
@@ -56,6 +57,23 @@ const { states, grid } = interactionRows(
   },
 );
 
+const ALIGNMENTS = ['center', 'end'] as const;
+
+const alignStates = Object.fromEntries(
+  ALIGNMENTS.map((textAlign) => [`text-align-${textAlign}`, { ...axisRow, textAlign }]),
+) as Record<`text-align-${(typeof ALIGNMENTS)[number]}`, Props>;
+
+const states = { ...interactive.states, ...alignStates };
+const grid = {
+  columns: interactive.grid.columns,
+  rows: {
+    ...interactive.grid.rows,
+    ...Object.fromEntries(
+      ALIGNMENTS.map((textAlign) => [`textAlign ${textAlign}`, { rest: `text-align-${textAlign}` as const }]),
+    ),
+  },
+};
+
 const markControl = (markup: string, control: FieldControl, interaction: FieldInteraction | undefined) => {
   const frame = ['data-et-control-part', interaction && `data-et-force="${interaction}"`].filter(Boolean);
   const native = control === 'input' ? '<input class="et-input-native"' : '<textarea class="et-textarea-native"';
@@ -67,7 +85,7 @@ const markControl = (markup: string, control: FieldControl, interaction: FieldIn
 };
 
 export default definePart<Props>({
-  note: 'The SDK form field with a text input and a textarea, drawn by its mocks from @ethlete/components/design.',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
@@ -82,14 +100,14 @@ export default definePart<Props>({
     input: { kind: 'field', input: ['pointer', 'keyboard'], disabled: true },
     textarea: { kind: 'field', input: ['pointer', 'keyboard'], disabled: true },
   },
-  render: ({ control = 'input', value, interaction, ...field }) =>
+  render: ({ control = 'input', value, textAlign, interaction, ...field }) =>
     drawing({
       body: markControl(
         formField({
           id: 'name',
           label: 'Name',
           errorColor: 'danger',
-          control: control === 'input' ? input({ value }) : textarea({ value }),
+          control: control === 'input' ? input({ value, textAlign }) : textarea({ value }),
           ...field,
         }),
         control,
