@@ -67,7 +67,6 @@
   }
 
   .et-standings-cell:where([data-column='position']) {
-    position: relative;
     inline-size: 1px;
     padding-inline-start: calc(var(--et-standings-cell-padding-inline) + var(--et-standings-zone-bar-width));
     color: var(--et-surface-color-muted-solid, currentColor);
@@ -115,13 +114,13 @@
     background: color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 7%, transparent);
   }
 
-  .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position'])::before {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    inline-size: var(--et-standings-zone-bar-width);
-    background: var(--et-theme-color-primary-solid, currentColor);
-    content: '';
+  .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position']) {
+    box-shadow: inset var(--et-standings-zone-bar-width) 0 0 var(--et-theme-color-primary-solid, currentColor);
+
+    &:dir(rtl) {
+      box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
+        var(--et-theme-color-primary-solid, currentColor);
+    }
   }
 
   .et-standings-row:where([data-highlighted]) {
@@ -167,7 +166,7 @@
   }
 
   .et-standings-form-result:where([data-result='tie']) {
-    background: color-mix(in srgb, var(--et-surface-color-solid, gray) 45%, transparent);
+    background: color-mix(in srgb, var(--et-surface-color-solid, gray) 25%, transparent);
   }
 
   .et-standings-form-result:where([data-result='loss']) {

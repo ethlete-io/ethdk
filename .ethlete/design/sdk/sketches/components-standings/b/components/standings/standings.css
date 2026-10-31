@@ -16,7 +16,16 @@
     --_et-focus-ring-color: var(--et-theme-color-ink-solid);
   }
 
-  .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position'])::before,
+  .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position']) {
+    box-shadow: inset var(--et-standings-zone-bar-width) 0 0
+      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+
+    &:dir(rtl) {
+      box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    }
+  }
+
   .et-standings-legend-swatch,
   .et-standings-pick-cut-line {
     background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));

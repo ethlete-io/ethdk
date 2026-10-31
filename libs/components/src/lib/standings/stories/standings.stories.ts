@@ -5,7 +5,15 @@ export default {
   title: 'Components/Sports/Standings',
   component: StandingsStorybookComponent,
   decorators: [moduleMetadata({ imports: [StandingsStorybookComponent] })],
-  args: { surface: 'dark', width: 760, showLegend: true, highlight: true, withZones: true, withForm: true },
+  args: {
+    surface: 'dark',
+    width: 760,
+    showLegend: true,
+    highlight: true,
+    withZones: true,
+    withForm: true,
+    direction: 'ltr',
+  },
   argTypes: {
     surface: { control: 'text' },
     width: { control: { type: 'range', min: 280, max: 900, step: 20 } },
@@ -13,6 +21,7 @@ export default {
     highlight: { control: 'boolean' },
     withZones: { control: 'boolean' },
     withForm: { control: 'boolean' },
+    direction: { control: 'inline-radio', options: ['ltr', 'rtl'] },
   },
 } as Meta<StandingsStorybookComponent>;
 
@@ -41,6 +50,17 @@ export const NoZones: Story = {
         story:
           'Without zones there is no banding and no legend - nothing to explain. Zones are a config, not a mode: ' +
           'the same array draws the bands and the legend, so the two cannot drift apart.',
+      },
+    },
+  },
+};
+
+export const Rtl: Story = {
+  args: { direction: 'rtl' },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Right to left: the zone bar sits on the start side of the position cell, now the right edge.',
       },
     },
   },
