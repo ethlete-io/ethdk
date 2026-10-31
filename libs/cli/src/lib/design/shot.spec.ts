@@ -1,9 +1,10 @@
-import { cpSync, mkdtempSync, realpathSync } from 'fs';
+import { cpSync, mkdtempSync, realpathSync, rmSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { changedPartsOf } from './changed-parts';
+import { createDrawLedger } from './draw-ledger';
 import { DESIGN_DIR, readConfig } from './paths';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
@@ -22,15 +23,18 @@ const boundingBox = vi.fn<() => Promise<{ x: number; y: number; width: number; h
 }));
 let overlayCount = 0;
 let frameError: string | null = null;
+let frameMissing: string | null = null;
 const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
 const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
   script.includes('data-et-part')
     ? marks
-    : script.includes('data-et-error')
-      ? frameError
-      : script.includes('innerHTML')
-        ? '<p>card</p>'
-        : true,
+    : script.includes('data-et-missing')
+      ? frameMissing
+      : script.includes('data-et-error')
+        ? frameError
+        : script.includes('innerHTML')
+          ? '<p>card</p>'
+          : true,
 );
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
@@ -59,6 +63,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   overlayCount = 0;
   frameError = null;
+  frameMissing = null;
 });
 
 afterEach(async () => {
@@ -73,17 +78,19 @@ const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) =>
 
   const config = readConfig(target) ?? {};
   const system = createSystemModules({ target, config });
+  const ledger = createDrawLedger();
   const shots = createPartShooter({
     target,
     base: 'http://localhost:1',
     system,
     chromiumOf: withBrowser,
     statesOf,
+    ledger,
   });
 
   closing.push(() => shots.close());
 
-  return { target, config, shots };
+  return { target, config, system, ledger, shots };
 };
 
 const ask = (shots: ReturnType<typeof createPartShooter>, query: string) =>
@@ -488,6 +495,40 @@ describe('createPartShooter broken shots', () => {
       type: 'image/png',
       body: Buffer.from('png'),
     });
+  });
+
+  it('answers 404 when the frame finds no such part, as when its sketch went away while the shot drew', async () => {
+    const { shots, ledger } = acme();
+
+    frameError =
+      'design-explore: variant "a" of the sketch on components/card in product "acme" has no part "components/card"';
+    frameMissing = '';
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 404,
+      body: frameError,
+    });
+    expect(ledger.report().failed).toMatchObject([{ status: 404 }]);
+  });
+
+  it('drops a queued shot of a sketch variant that is gone when its turn comes, as a 404', async () => {
+    const { target, config, system, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    const sketch = createSketch({ merge: 'override', product, sketch: parsed, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    const shot = ask(shots, 'product=acme&part=components/button&state=long&sketch=components/button&variant=a');
+
+    rmSync(sketch.dir, { recursive: true });
+    system.forget();
+
+    expect(await shot).toMatchObject({ status: 404, body: expect.stringContaining('has no part') });
+    expect(drawnUrls()).toEqual([]);
   });
 
   it('answers an error with the build message, never the overlay, when the frame has a build error', async () => {

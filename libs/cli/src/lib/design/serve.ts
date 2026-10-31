@@ -423,7 +423,10 @@ const designExplore = ({
 
         return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
       };
-      const ledger = createDrawLedger();
+      const ledger = createDrawLedger(
+        Date.now,
+        ({ sketch }) => !sketch || system.drawnOf(sketch.product, sketch) !== null,
+      );
       const thumbs = createThumbnailer({ target, base, ledger });
       const inventoryDraws = createDrawQueue({ target, ledger });
       const shots = createPartShooter({

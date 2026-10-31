@@ -66,6 +66,12 @@ const fail = (message: string) => {
   return null;
 };
 
+const failMissing = (message: string) => {
+  document.documentElement.setAttribute('data-et-missing', '');
+
+  return fail(message);
+};
+
 const showSetupError = (message: string) => {
   markFailed(message);
 
@@ -96,10 +102,10 @@ let drawnPart: { part: Part<unknown>; states: Record<string, unknown> } | null =
 
 const drawCall = async (): Promise<Drawing | null> => {
   const call = calls[slug];
-  if (!call) return fail(`design-explore: no call "${slug}"`);
+  if (!call) return failMissing(`design-explore: no call "${slug}"`);
 
   const variant: CallVariant | undefined = (await call()).default.variants.find((o) => o.key === key);
-  if (!variant) return fail(`design-explore: call "${slug}" has no variant "${key}"`);
+  if (!variant) return failMissing(`design-explore: call "${slug}" has no variant "${key}"`);
 
   return variant.load().then(
     (module) => module.default,
@@ -110,7 +116,7 @@ const drawCall = async (): Promise<Drawing | null> => {
 const drawPart = async (name: string): Promise<Drawing | null> => {
   const load = sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
   if (!load)
-    return fail(
+    return failMissing(
       sketch
         ? `design-explore: variant "${sketchVariant}" of the sketch on ${sketch} in product "${name}" has no part "${partKey}"`
         : `design-explore: product "${name}" has no part "${partKey}"`,
@@ -118,14 +124,14 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
 
   const loadProps = propsSketch ? sketchParts[name]?.[propsSketch]?.[propsVariant]?.[partKey] : load;
   if (!loadProps)
-    return fail(
+    return failMissing(
       `design-explore: variant "${propsVariant}" of the sketch on ${propsSketch} in product "${name}" has no part "${partKey}"`,
     );
 
   try {
     const [{ default: part }, { default: holder }] = await Promise.all([retried(load), retried(loadProps)]);
 
-    if (!(key in holder.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
+    if (!(key in holder.states)) return failMissing(`design-explore: part "${partKey}" has no state "${key}"`);
 
     drawnPart = { part: part as Part<unknown>, states: holder.states };
 

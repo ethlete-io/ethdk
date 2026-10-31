@@ -2,7 +2,14 @@ export const QUEUE_PATH = '/__design/queue';
 
 export const KEPT_FAILURES = 20;
 
-export type DrawFailure = { part: string; state: string; status: number; message: string; at: string };
+export type DrawFailure = {
+  part: string;
+  state: string;
+  status: number;
+  message: string;
+  at: string;
+  sketch?: { product: string; target: string; variant: string } | null;
+};
 
 export type QueueReport = {
   queued: number;
@@ -16,9 +23,13 @@ type Asked = { since: number; drawing: boolean };
 
 /**
  * Counts the drawings every draw queue of a design server holds, and keeps the last `KEPT_FAILURES` shots
- * that failed, newest first.
+ * that failed, newest first. A failure `applies` rejects, such as one of a sketch variant that is gone, leaves
+ * the list and the count.
  */
-export const createDrawLedger = (now: () => number = Date.now) => {
+export const createDrawLedger = (
+  now: () => number = Date.now,
+  applies: (failure: DrawFailure) => boolean = () => true,
+) => {
   const asked = new Set<Asked>();
   const failed: DrawFailure[] = [];
   let failedTotal = 0;
@@ -45,6 +56,11 @@ export const createDrawLedger = (now: () => number = Date.now) => {
       failed.splice(KEPT_FAILURES);
     },
     report: (): QueueReport => {
+      const stale = failed.filter((failure) => !applies(failure));
+
+      failedTotal -= stale.length;
+      failed.splice(0, failed.length, ...failed.filter((failure) => !stale.includes(failure)));
+
       const entries = [...asked];
       const rendering = entries.filter((entry) => entry.drawing).length;
       const oldest = Math.min(...entries.map((entry) => entry.since));

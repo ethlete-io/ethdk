@@ -293,7 +293,11 @@ export const createPartShooter = (options: {
 
         const failure: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-error')");
 
-        if (typeof failure === 'string') throw new ShotFailedError(failure, png);
+        if (typeof failure === 'string') {
+          const missing: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-missing')");
+
+          throw typeof missing === 'string' ? new ThumbMissingError(failure) : new ShotFailedError(failure, png);
+        }
 
         const markup: unknown = await page.evaluate("document.getElementById('root')?.innerHTML ?? null");
 
@@ -320,6 +324,7 @@ export const createPartShooter = (options: {
     clip?: boolean;
     priority: DrawPriority;
     fresh?: boolean;
+    gone?: () => ThumbMissingError | null;
   }) => {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
@@ -339,10 +344,13 @@ export const createPartShooter = (options: {
     if (theme.fill) options.search.set('fill', theme.fill);
 
     const search = options.search.toString();
-    const shot = drawQueue.run(
-      (browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme }),
-      options.priority,
-    );
+    const shot = drawQueue.run((browser) => {
+      const gone = options.gone?.();
+
+      return gone
+        ? Promise.reject(gone)
+        : draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme });
+    }, options.priority);
 
     cache.set(key, { drawn: options.drawn, shot });
     shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
@@ -355,7 +363,13 @@ export const createPartShooter = (options: {
 
     if (frame instanceof ThumbMissingError) return Promise.reject(frame);
 
-    const draw = () => cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh });
+    const gone = () => {
+      const now = partFrameOf({ system, ...options });
+
+      return now instanceof ThumbMissingError ? now : null;
+    };
+    const draw = () =>
+      cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh, gone });
 
     if (!statesOf) return draw();
 
@@ -506,7 +520,13 @@ export const createPartShooter = (options: {
             params,
             priority,
           }).then((picture) => picture.png),
-          (failure) => options.ledger?.fail({ part: `${product}/${part}`, state, ...failure }),
+          (failure) =>
+            options.ledger?.fail({
+              part: `${product}/${part}`,
+              state,
+              ...failure,
+              sketch: sketchVariant && { product, ...sketchVariant },
+            }),
         ),
       );
     },

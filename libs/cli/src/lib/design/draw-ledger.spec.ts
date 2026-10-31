@@ -84,4 +84,33 @@ describe('createDrawLedger', () => {
     expect(report.failed).toHaveLength(KEPT_FAILURES);
     expect(report.failed[0]?.state).toBe(String(KEPT_FAILURES + 4));
   });
+
+  it('drops the failures of a sketch variant that is gone from the list and the count', () => {
+    const gone = new Set<string>();
+    const ledger = createDrawLedger(Date.now, (failure) => !failure.sketch || !gone.has(failure.sketch.target));
+    const sketch = { product: 'sdk', target: 'components/tree', variant: 'a' };
+
+    ledger.fail({ part: 'sdk/components/tree', state: 'expanded', status: 500, message: 'broke', sketch });
+    ledger.fail({ part: 'sdk/components/tree', state: 'nope', status: 404, message: 'no state' });
+
+    expect(ledger.report()).toMatchObject({ failedTotal: 2, failed: [{ state: 'nope' }, { state: 'expanded' }] });
+
+    gone.add('components/tree');
+
+    expect(ledger.report()).toMatchObject({ failedTotal: 1, failed: [{ state: 'nope' }] });
+  });
+
+  it('never counts a failure of a sketch variant that was already gone when it failed', () => {
+    const ledger = createDrawLedger(Date.now, (failure) => !failure.sketch);
+
+    ledger.fail({
+      part: 'sdk/components/tree',
+      state: 'expanded',
+      status: 404,
+      message: 'no part',
+      sketch: { product: 'sdk', target: 'components/tree', variant: 'a' },
+    });
+
+    expect(ledger.report()).toMatchObject({ failedTotal: 0, failed: [] });
+  });
 });
