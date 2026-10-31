@@ -1,0 +1,29 @@
+{
+  "target": "components/divider",
+  "status": "ready",
+  "createdAt": "2026-10-31T02:27:27.688Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Divider baseline",
+      "note": "First drawing of the SDK divider (et-divider), drawn by its mock from @ethlete/components/design: a horizontal rule between two paragraphs, vertical rules in a flex row of three labels (one separator, one decorative), and decorative rules with a 16px inset between list rows. The divider has one visible element, a 1px rule in --et-divider-color, falling back to --et-surface-border-solid. Numbers, measured on the page background: the rule is #e5e5e5 on #ffffff, 1.26:1 light, and #404040 on #171717, 1.73:1 dark, in every state. No decided rule applies: the divider has no focus ring (Q88), no mint, dots or text of its own (Q99 rule a), so the round holds variant a only. Its contrast is the open edge question (Q98): numbers only, no variant drawn for it."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: 1px rule in the surface border colour, 1.26:1 against the light page (#e5e5e5 on #ffffff), 1.73:1 against the dark page (#404040 on #171717). Horizontal, vertical and inset look the same; decorative changes only the semantics."
+    }
+  }
+}
