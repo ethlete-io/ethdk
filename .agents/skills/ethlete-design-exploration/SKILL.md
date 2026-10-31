@@ -307,6 +307,27 @@ Pass `--question` only when you cannot go on without the user's answer. Studio l
 threads under "Questions for you". A report of what you did is no question: reply without the
 flag, and the thread shows as "answered" until the user withdraws it or replies.
 
+### The `ethlete-design` MCP server
+
+`ethlete-agents sync` registers `et design mcp` as `ethlete-design` in `.mcp.json` and
+`.codex/config.toml` when `@ethlete/cli` is installed. When the tools are in your tool list, use them
+instead of the CLI: each runs the `et design` command of the same name in the session's working
+directory, takes its flags as arguments, and every write takes `by` (your model id). `product` may be
+left out when the workspace has one. `shot` and `motion_shots` return the sheet image itself, so you
+look at it without opening a PNG path.
+
+- **Read:** `parts` (every part, as JSON), `call` (a call's `call.ts`, `fixture.ts`, the variant file to draw into and the frame URL; never change the fixture).
+- **Check:** `check` (a product; with `call` and `variant` it lints, type-checks and renders that variant - run it after every edit of a variant), `sketch_check` (each variant laid over the product), `sketch_preview` (what a merge of a variant changes).
+- **Shots:** `shot` (a part's states, `variants` for the open sketch), `motion_shots` (a motion at its keyframes, full and reduced, plus its tracks as JSON).
+- **Sketch lifecycle:** `sketch_new`, `sketch_variant`, `sketch_round`, `sketch_report`, `sketch_ready`, `sketch_rebase`, `sketch_list`. `sketch_merge` and `sketch_discard` exist, but Studio runs them on the user's click; do not call them.
+- **Comments:** `inbox` (what waits for you, then for the user), `comment_reply` (`question` waits for the user's answer), `inbox_done` (needs the new part `note`).
+
+Part files are written with your own file tools; the server has no write tool for them. Call
+`sketch_report` before every variant edit: it tells Studio what you build, and it moves a `ready`
+sketch back to in progress, so call `sketch_ready` again when you are done. `sketch_ready` runs the
+render check and refuses on any render issue; mark an element that renders wrong on purpose with
+`data-et-skip="<rule>"`. A tool that fails returns the CLI's output; fix it and call again.
+
 ### Draw a flow
 
 A flow joins states of pages into a path the user reads left to right in Studio's Flows view.
