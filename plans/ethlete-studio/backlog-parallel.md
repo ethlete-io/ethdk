@@ -58,8 +58,14 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     Headless studio-lab `components/button` (20 cells): going live 2 switch steps -> 1, 0 blank frames before and
     after; back to shots unchanged. Headless run was on the version just before a lint-only reorder; the timeout path
     is covered only by a fake-timer spec.
-  - In progress (2026-10-31): Q92 for non-grid frames (Light then Dark side by side, stacked when too wide; legacy
-    call shots stay), then 1e.
+  - Done (2026-10-31): Q92 for non-grid frames (`aa6165ad5`). Pages, declared-width parts, "used in" pages and flow
+    frames draw a Light and a Dark copy; up to 1024 px wide side by side (48 px gap), wider stacked, never shrunk.
+    Legacy call shots, cropped, error and empty frames stay single; sketch matrix and merge-preview frames stay
+    single (asked the grill). Pins, outlines, comments and picking use the Light copy. Headless studio-lab `library`
+    and `add-a-film`: layout, labels, pins and outlines checked; the page renders failed on the scratch server, so real
+    light/dark content and a declared-width part on screen are not seen.
+  - In progress (2026-10-31): 1e, in two slices: CLI server (survives a components rebuild, own Vite cache dir per
+    command server, cold start) and Studio states (500 error cell, loading until indexed, slow state).
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
