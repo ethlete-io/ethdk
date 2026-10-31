@@ -1177,3 +1177,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   pilot slice 2.
 - After the MVP (Tom, 2026-10-31): the rows of the open-points popover in `pages/system` (the "Offene Punkte" list
   per part) become clickable. Until then they are plain rows and no inventory controls.
+- **Q230 (Tom, 2026-10-31), after the MVP:** the SDK `components/select` part gets `label` and `options` props in its
+  own small SDK round. Then the `pages/sketches` round picker (sketch `pages-sketches`, variant a) drops its
+  `.replace` on the select markup. Until then the workaround stays.
+- **Q231 (Tom, 2026-10-31), after the MVP:** the `pages/sketches` round picker stays the plain small SDK select. A
+  borderless muted select look is a new SDK select look, in its own SDK sketch.
