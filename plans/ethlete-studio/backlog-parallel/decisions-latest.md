@@ -244,6 +244,9 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
     sources: the canvas-frames "Save" contrast finding (3.81:1) came from a `dist/libs/components` built before the
     lib fix 7385e470f. `design check` and `design ready` should warn on a stale dist. The part's filled-active rule
     also lacks the lib's `:not([disabled],[aria-disabled='true'])`, one more case of the button colours living twice.
+  - Studio has separate "Pick a" and "Merge a" buttons; a pick only writes `decision` into sketch.json, so the
+    shell-project-option pick sat unmerged with no sign (applied by hand in d4c238ec0). Until Studio shows "picked,
+    not merged" (or one action does both), the builder runs `sketch list` each turn and merges every picked sketch.
   - Forced interactions (hover, active) were applied to disabled states ("disabled-active").
   - A design server started before a `@ethlete/cli` update kept the old routes; Studio showed "has no system view"
     instead of "restart the server".
