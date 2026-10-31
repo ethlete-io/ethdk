@@ -53,9 +53,13 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     Tauri WebKitGTK not seen; grid cells still go live one by one, each without a blank).
   - Done: `design complete` knows a composite widget focus container (`5e71b7526`; sdk-33 dropped its menu
     workaround in `b072b382a`, menu a/b design complete).
-  - In progress (2026-10-31): a grid goes live in one step (keep all shots until every live cell posted
-    `design-explore:painted`, timeout fallback); then Q92 for non-grid frames (Light then Dark side by side, stacked
-    when too wide; legacy call shots stay), then 1e.
+  - Done (2026-10-31): a grid goes live in one step (`2c7ae20d3`). Every cell keeps its shot until all live cells
+    painted, then all switch in one frame; a 3 s timeout switches the painted cells and leaves a stuck one on its shot.
+    Headless studio-lab `components/button` (20 cells): going live 2 switch steps -> 1, 0 blank frames before and
+    after; back to shots unchanged. Headless run was on the version just before a lint-only reorder; the timeout path
+    is covered only by a fake-timer spec.
+  - In progress (2026-10-31): Q92 for non-grid frames (Light then Dark side by side, stacked when too wide; legacy
+    call shots stay), then 1e.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
