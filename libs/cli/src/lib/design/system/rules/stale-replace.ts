@@ -19,7 +19,11 @@ const matcherOf = (pattern: ts.Expression): Pick<Replace, 'label' | 'matches'> |
   const slash = pattern.text.lastIndexOf('/');
 
   try {
-    const regex = new RegExp(pattern.text.slice(1, slash), pattern.text.slice(slash + 1).replace(/[gy]/g, ''));
+    const body = pattern.text
+      .slice(1, slash)
+      .replace(/^\^/u, '')
+      .replace(/(?<!\\)\$$/u, '');
+    const regex = new RegExp(body, pattern.text.slice(slash + 1).replace(/[gy]/g, ''));
 
     return { label: pattern.text, matches: (source) => regex.test(source) };
   } catch {

@@ -34,6 +34,8 @@ describe('staleReplacesOf', () => {
         '  body',
         '    .replace(\'<section class="acme-hero">\', \'<section class="acme-hero pinned">\')',
         "    .replace(/<button class=\"acme-button\\b/u, '$&')",
+        "    .replace(/^<button\\s/u, '$&')",
+        '    .replace(/^<div class="acme-anchored">$/u, \'\')',
         "    .replaceAll('<div class=\"acme-cell\">', '')",
         '    .replace(/<div class="acme-gone">/gu, \'\')',
         "    .replace('<main>', '<main data-pinned>')",
@@ -63,6 +65,7 @@ describe('staleReplacesOf', () => {
         (problem) => `${problem.file.split('/').slice(-2).join('/')}: ${problem.message}`,
       ),
     ).toEqual([
+      'home/pinned.ts: replace(/^<div class="acme-anchored">$/u) matches no markup of pages/home or the parts it uses (elements/hero, components/button), so it changes nothing',
       'home/pinned.ts: replaceAll(\'<div class="acme-cell">\') matches no markup of pages/home or the parts it uses (elements/hero, components/button), so it changes nothing',
       'home/pinned.ts: replace(/<div class="acme-gone">/gu) matches no markup of pages/home or the parts it uses (elements/hero, components/button), so it changes nothing',
     ]);
