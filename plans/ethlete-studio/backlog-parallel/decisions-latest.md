@@ -137,3 +137,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q235 (Tom, 2026-10-31):** the Studio sketch view renders only one round at a time, as the `pages/sketches` design
   shows. The header round picker (`et-select`) switches which round is rendered; the open/folded round columns in
   `sketch-view.component.ts` (`toggleRound`, `openRounds`) go away. The view opens on the newest round.
+- **Q236 (Tom, 2026-10-31):** a control that another element fully covers (for example the Save buttons under the
+  open-points popover in `pages/system`) stays in the inventory list, marked "covered", but gets no outline or
+  number badge in the frame. Discovery checks with `elementFromPoint` whether the control is on top; a partly covered
+  control counts as visible.
