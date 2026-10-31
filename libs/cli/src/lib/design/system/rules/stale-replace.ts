@@ -59,10 +59,47 @@ const initializersOf = (file: ts.SourceFile) => {
   return initializers;
 };
 
-/** Whether `node` is markup a package draws: a call or member of a package import, directly or through a local const. */
+const parameterOf = (identifier: ts.Identifier) => {
+  for (let scope: ts.Node | undefined = identifier.parent; scope; scope = scope.parent) {
+    if (!ts.isFunctionLike(scope)) continue;
+
+    const index = scope.parameters.findIndex(
+      (parameter) => ts.isIdentifier(parameter.name) && parameter.name.text === identifier.text,
+    );
+
+    if (index === -1) continue;
+
+    const owner = scope.parent;
+    const name =
+      ts.isVariableDeclaration(owner) && ts.isIdentifier(owner.name)
+        ? owner.name.text
+        : ts.isFunctionDeclaration(scope)
+          ? scope.name?.text
+          : undefined;
+
+    return { index, name };
+  }
+
+  return null;
+};
+
+const callsTo = (file: ts.SourceFile, name: string) => {
+  const calls: ts.CallExpression[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === name)
+      calls.push(node);
+    ts.forEachChild(node, visit);
+  };
+
+  visit(file);
+
+  return calls;
+};
+
+/** Whether `node` is markup a package draws: a call or member of a package import, directly, through a local const, or through a parameter some call passes such markup to. */
 const comesFromPackage = (
   node: ts.Expression,
-  context: { packages: Set<string>; initializers: Map<string, ts.Expression>; seen: Set<string> },
+  context: { file: ts.SourceFile; packages: Set<string>; initializers: Map<string, ts.Expression>; seen: Set<string> },
 ): boolean => {
   if (ts.isCallExpression(node) || ts.isPropertyAccessExpression(node) || ts.isParenthesizedExpression(node))
     return comesFromPackage(node.expression, context);
@@ -70,6 +107,14 @@ const comesFromPackage = (
   if (context.packages.has(node.text)) return true;
 
   const initializer = context.initializers.get(node.text);
+  const parameter = initializer ? null : parameterOf(node);
+
+  if (parameter?.name)
+    return callsTo(context.file, parameter.name).some((call) => {
+      const argument = call.arguments[parameter.index];
+
+      return !!argument && comesFromPackage(argument, context);
+    });
 
   if (!initializer || context.seen.has(node.text)) return false;
 
@@ -79,7 +124,7 @@ const comesFromPackage = (
 const replacesOf = (source: string) => {
   const replaces: Replace[] = [];
   const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
-  const context = { packages: packageNamesOf(file), initializers: initializersOf(file), seen: new Set<string>() };
+  const context = { file, packages: packageNamesOf(file), initializers: initializersOf(file), seen: new Set<string>() };
   const visit = (node: ts.Node) => {
     if (
       ts.isCallExpression(node) &&

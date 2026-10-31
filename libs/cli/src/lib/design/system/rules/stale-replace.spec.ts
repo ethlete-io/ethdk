@@ -92,4 +92,26 @@ describe('staleReplacesOf', () => {
       "replace('<gone>') matches no markup of components/chip, so it changes nothing",
     ]);
   });
+
+  it('leaves a replace alone on a parameter that a call fills with markup a package draws', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/chip/chip.ts',
+      [
+        "import { button } from '@acme/kit/button';",
+        "import { definePart, drawing } from '@design-system';",
+        '',
+        "const mark = (markup: string) => markup.replace(/<(button|a) /, '<$1 data-marked ');",
+        '',
+        'export default definePart({',
+        '  states: { default: {} },',
+        "  render: () => drawing({ body: mark(button({})), styles: '' }),",
+        '});',
+      ].join('\n'),
+    );
+
+    expect(staleReplacesOf(productOf(target))).toEqual([]);
+  });
 });
