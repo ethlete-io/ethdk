@@ -966,4 +966,4 @@ Tom wants to use the new Studio UI soon instead of the patched current one. Buil
    is Tom's go for these two parts (Q153).
 4. After that: Q174, `sketch report --reopen`, Q173 migration, slice 4, the scheduled restart.
 
-Known design gap: the global chat panel was built without a Studio design.
+The global chat panel has no Studio design yet. Tom: it stays out of the MVP and gets its design after it.
