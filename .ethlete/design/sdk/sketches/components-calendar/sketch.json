@@ -1,0 +1,39 @@
+{
+  "target": "components/calendar",
+  "status": "ready",
+  "createdAt": "2026-10-31T05:33:26.035Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Calendar baseline",
+      "note": "The SDK inline calendar (et-calendar), first drawing, drawn by its mock from @ethlete/components/design/calendar with its real markup and CSS: calendar.component.css plus the coarse grid, comparison band and week number sheets, and the icon-button and icon CSS for the header. No picker overlay. Framed as a 480px page with 16px padding; fixed dates: today is Mon 14 Sep 2026, the month is September 2026, Monday first, no locale (ISO week numbers, en-US labels). States: rest (today ring on 14, the outside days Aug 31 and Oct 1-4 in muted), selected (17), selected-hover, selected-focus-visible, range (9 to 16, across the week break, today inside the band), range-focus-visible (on the start edge), day-hover and day-focus-visible (on 22), disabled (a date filter turning down 5, 6, 26, 27), limits (min 7 Sep, max 24 Sep: days outside are disabled, both nav buttons disabled), week-numbers, comparison (range 15 to 18 over a comparison band 7 to 11), year-view (May selected, Sep today), year-view-hover and year-view-focus-visible (on Mar), multi-year-view (2016 to 2039, 2024 selected, 2026 today), nav-hover and nav-focus-visible (next button), label-hover and label-focus-visible (the zoom label), long-label (September 2026, the longest English month, at --et-calendar-cell-size 32px: 224px wide, the label and its chevron nearly touch but do not overlap). Static snapshot: the slide and fade of the weeks and the label only run on navigation and are drawn at rest; the multi-month layout is left out. Numbers (light / dark), from shot pixels at scale 2, brand mint, a: day text 17.93 / 17.18; header label 17.93 / 17.18; weekdays, outside-month days and week numbers (muted) 7.81 / 6.94; disabled days (subtle, struck) 4.95 / 4.99; today ring (1px ink) 5.48 / 13.50; nav chevrons (ink) 5.48 / 13.50; selected fill vs page 1.33 / 13.50, its label 15.82 / 15.82; range band (12 %) vs page 1.06 / 1.31, text on it 16.89 / 13.12; hover tint vs page 1.16 / 1.22; focus rings (primary, 2px): day 1.33 / 13.50, header label 1.33 / 13.50, nav 1.37 / 13.06; comparison bar (muted) 7.81 / 6.94. Q98 (week column edge vs page) numbers only: 1.26 / 1.73. Decided rules that arise: Q88 (day, coarse, label and nav rings), Q99a (the range band on light; the selected day and the range edges are mint fills, so they get a 1px inset ink edge; the today ring is already ink). Q101 does not arise: the header buttons are transparent icon buttons. An ink edge arises, so Q102 arises: b draws the edge in dark too, c keeps dark as today; under the brand theme the dark ink is the mint, so b and c render the same in dark. Findings for later, not render refusals: a selected today and a selected day in b look the same (the today ring is the same 1px inset ink as the new edge); the nav button ring resolves ink on the interactive button, a darker green (7.68 on light) than the cell rings (5.48). Later rounds, left out here: the picker overlay and bottom sheet, monthsShown 2 and 3 with their month labels and range header, the range hover preview, multiple selection, custom cell classes, a custom header template, the navigation animations, locales with other week starts."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. On light the accent marks are the mint primary: focus rings 1.33 vs page (nav 1.37), selected fill and range edges 1.33, range band 1.06; today ring and nav chevrons are already ink, 5.48. Dark: rings and fill 13.50, band 1.31."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q88 and Q99a, the edge in both schemes (Q102 yes): every focus ring takes the theme ink (day, coarse and label rings 5.48 on light, nav ring 7.68; dark 13.50); the range band on light is 32 % as in the tree and table picks, 1.16 vs page, text on it 15.51; dark keeps 12 %, 1.31. The selected day and the range start and end get a 1px inset ink edge (box-shadow, left off disabled and today cells, whose today ring already draws it): on light 5.49 vs page, 4.13 vs the mint fill; in dark the brand ink is the mint, so the edge does not show. Picked because it follows the decided rules with the fewest new parts and matches the table, tree and button picks."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with dark as today (Q102 no): the edge is light-dark(ink, transparent). Light equals b (rings 5.48, edge 5.49 vs page, 4.13 vs fill, band 1.16). Dark: no edge, rings stay ink (Q88); under the brand theme it renders the same as b."
+    }
+  }
+}
