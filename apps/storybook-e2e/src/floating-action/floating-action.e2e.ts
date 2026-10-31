@@ -121,6 +121,36 @@ function distinctPositions(samples: number[]): number {
   return new Set(samples).size;
 }
 
+function setColorScheme(page: Page, scheme: 'light' | 'dark'): Promise<void> {
+  return page.evaluate((value) => {
+    document.documentElement.style.colorScheme = value;
+  }, scheme);
+}
+
+/** The colour of the trigger's inset box-shadow, or null when it draws none. */
+function insetEdgeColor(trigger: Locator): Promise<string | null> {
+  return trigger.evaluate((el) => {
+    const shadow = getComputedStyle(el).boxShadow;
+
+    if (!shadow.includes('inset')) return null;
+
+    const color = shadow.match(/rgba?\([^)]*\)/)?.[0] ?? null;
+
+    return color === 'rgba(0, 0, 0, 0)' ? null : color;
+  });
+}
+
+function contrastAgainstWhite(color: string): number {
+  const [r, g, b] = (color.match(/[\d.]+/g) ?? []).slice(0, 3).map((channel) => {
+    const value = Number(channel) / 255;
+
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (b ?? 0);
+
+  return 1.05 / (luminance + 0.05);
+}
+
 test.describe('floating-action / scroll', () => {
   test('the trigger sits in the flow while its anchor is on screen', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
@@ -204,6 +234,34 @@ test.describe('floating-action / scroll', () => {
     await expect(root.locator(HOST)).toHaveAttribute('data-state', 'hidden');
 
     await expect.poll(() => scale(trigger)).toBe('0');
+  });
+
+  test('in light, the floating trigger draws an ink edge that stands out at 3:1 from a white page', async ({
+    page,
+  }) => {
+    const root = await openStory(page, STORY_ID, { args: { surface: 'light' } });
+    const trigger = root.locator(TRIGGER);
+
+    await setColorScheme(page, 'light');
+    expect(await insetEdgeColor(trigger)).toBeNull();
+
+    await scrollPast(page, ANCHOR);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
+
+    await expect
+      .poll(async () => contrastAgainstWhite((await insetEdgeColor(trigger)) ?? 'rgb(255, 255, 255)'))
+      .toBeGreaterThanOrEqual(3);
+  });
+
+  test('in dark, the floating trigger draws no ink edge', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const trigger = root.locator(TRIGGER);
+
+    await setColorScheme(page, 'dark');
+    await scrollPast(page, ANCHOR);
+    await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
+
+    await expect.poll(() => insetEdgeColor(trigger)).toBeNull();
   });
 
   test('a disabled floating action keeps the trigger in the flow at any scroll position', async ({ page }) => {
