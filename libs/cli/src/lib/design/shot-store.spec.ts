@@ -3,7 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, viteCacheOf } from './paths';
+import { assetRoot, DESIGN_DIR, viteCacheOf } from './paths';
 import { serveDesign } from './serve';
 import { createShotStore } from './shot-store';
 import { productModuleIdOf } from './system/system-modules';
@@ -164,6 +164,36 @@ describe('the shots a design server keeps on disk', () => {
     const after = await start(target);
 
     expect(await after.shot()).toEqual({ status: 200, body: Buffer.from('drawn png') });
+    expect(screenshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('serves a shot a former server drew from the tool files of its own snapshot', async () => {
+    const { target, files } = acme();
+    const graph = graphOf(files);
+    const pid = process.pid;
+
+    Object.defineProperty(process, 'pid', { value: 2 ** 22 + 1, configurable: true });
+
+    try {
+      const before = await start(target, graph);
+      const tool: FakeModule = {
+        id: join(assetRoot(), 'define-part.ts'),
+        file: join(assetRoot(), 'define-part.ts'),
+        importers: new Set(),
+        importedModules: new Set(),
+      };
+
+      graph.get(files.kit)?.importedModules.add(tool);
+      graph.set(tool.id, tool);
+
+      await before.shot();
+      await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+    } finally {
+      Object.defineProperty(process, 'pid', { value: pid, configurable: true });
+    }
+
+    await (await start(target)).shot();
+
     expect(screenshot).toHaveBeenCalledTimes(1);
   });
 

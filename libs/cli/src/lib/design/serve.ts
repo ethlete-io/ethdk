@@ -432,13 +432,16 @@ const shotStoreOf = (options: {
         ),
       ]);
 
+      // The snapshot folder is named after the server's pid, so its files are gone after a restart; the salt's build stamp covers them.
+      const snapshot = dirname(assetRoot());
+
       return [
         ...dependencyFilesOf([...roots.flatMap((root) => root ?? []), ...styles], stylesheetImports),
         ...read,
         configPathOf(target),
         resolve(target, 'tsconfig.base.json'),
         ...(entry.head ? [resolve(target, entry.head)] : []),
-      ];
+      ].filter((file) => !isInside(snapshot, resolve(file)));
     },
     scopeOf: (address) =>
       JSON.stringify(
