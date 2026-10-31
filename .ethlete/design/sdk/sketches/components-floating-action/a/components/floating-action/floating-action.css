@@ -1,0 +1,45 @@
+.fa-frame {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  block-size: 400px;
+  transform: translate(0);
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+
+  .fa-page {
+    padding: 2.4rem;
+  }
+
+  .et-floating-action {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  .fa-heading {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .fa-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fa-row {
+    padding: 1.2rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--et-surface-color-solid) 8%, transparent);
+    list-style: none;
+  }
+}

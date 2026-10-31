@@ -1,0 +1,39 @@
+{
+  "target": "components/floating-action",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:58:44.972Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Floating action baseline",
+      "note": "The SDK floating action (etFloatingAction), first drawing, drawn by its mock from @ethlete/components/design with its real markup and CSS: the host, the anchor (etFloatingActionAnchor), the trigger (etFloatingActionTrigger, here the story's filled md et-button 'Filter (2)') and the scope (etFloatingActionScope, the results list). The lib draws no look of its own: the trigger is whatever button the consumer puts there, and the floating action only moves it. Framed as a 400px page: two paragraphs, a 'Results' heading, the anchor, 12 result rows (8% surface ink, 8px corners) and the outro; the page is scrolled by a negative margin and the frame (transform) is the containing block of the fixed trigger, so it pins to the frame's corner at 480px; the frame clips the scrolled page on purpose (data-et-skip=CLIPPED). What the lib does: inline while the anchor is on screen; floating (position fixed, 24px from the inline end and block end plus the safe-area and --et-viewport-inset-bottom, z-index 10) once the anchor scrolls away while the scope is in view, the anchor holding the trigger's in-flow size; hidden (scale 0, visibility hidden) once the scope has gone too. One position only: bottom end, moved by --et-floating-action-inset-inline-end / -block-end. The scale-in keyframe and scale-out transition (200ms) are drawn with animation and transition none at their end values. disabled keeps the trigger inline at any scroll position, so it looks like inline (not drawn apart). No label/icon-only split in the lib; the icon state draws the filter icon in the button. No elevation: the floating trigger sits on the rows with no shadow. States: inline, inline-focus-visible, floating, floating-hover, floating-active, floating-focus-visible, floating-icon, floating-inset (12px insets), floating-danger, floating-danger-hover, hidden. Numbers (light / dark), from shot pixels at scale 2, brand mint unless named: fill vs page 1.33 / 13.50, vs a result row it floats over 1.13 / 10.96; label on fill 15.82; hover fill (-hover token) vs page 1.37 / 13.06; active fill 2.24 / 8.01, label 9.38; focus ring (primary, 2px 3px out) vs row 1.17 / 10.60, vs page 1.37 / 13.06; danger fill vs page 4.83 / 3.71, label 4.83, hover 6.47 / 2.77. Q98 (row vs page) numbers only: 1.17 / 1.23. Decided rules that arise: Q88 (focus ring), Q99a (the mint fill gets a 1px inset ink edge on light) and Q101 (filled hover = -active). An ink edge arises, so Q102 arises: b draws the edge in dark too, c keeps dark as today. Open for Tom, not a decided rule: a floating trigger has no elevation, so in light the mint fill over a grey row is 1.13. No lib bug found."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. Mint fill vs page 1.33 / 13.50 (light / dark), vs the row it floats over 1.13 / 10.96; label 15.82. Hover is the -hover token (1.37 / 13.06 vs page), active 2.24 / 8.01. Focus ring in primary-hover: 1.17 / 10.60 vs row, 1.37 / 13.06 vs page. Danger fill 4.83 / 3.71, hover 6.47 / 2.77."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q88, Q99a and Q101, edge in both schemes (Q102 yes): the ring takes the theme ink (light 7.68 vs page, 6.56 vs row; dark 13.50 / 10.96); every filled button gets a 1px inset ink edge, mint fill to edge 4.13 on light, in dark the brand ink is the mint, so it disappears at rest and shows on hover (1.69); danger edge 1.34 / 1.75 (on light the danger ink equals its -active fill, so the edge vanishes on hover); hover takes -active (mint 2.24 / 8.01 vs page, label 9.38; danger 8.31 label, 2.16 dark vs page). Ink follows the scheme, matching the button and query-error b picks."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with dark as today (Q102 no): the inset edge is light-dark(ink, transparent). Light equals b (mint edge 4.13, danger 1.34, ring 7.68 vs page). Dark: no edge on any fill; ring stays ink (13.50 vs page, Q88) and hover takes -active (Q101) as in b."
+    }
+  }
+}
