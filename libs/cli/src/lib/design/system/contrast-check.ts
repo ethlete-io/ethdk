@@ -76,6 +76,11 @@ export const CONTRAST_STATEMENTS = `
       parsed.set(value, rgba);
       return rgba;
     };
+    const solidImageOf = (style) => {
+      const solid = /^linear-gradient\\(([a-z-]+\\([^()]*\\)), \\1\\)$/.exec(style.backgroundImage);
+      return solid ? rgbaOf(solid[1]) : null;
+    };
+    const imageOf = (style) => style.backgroundImage !== 'none' && solidImageOf(style) === null;
     const over = (top, under) => [0, 1, 2].map((i) => top[i] * top[3] + under[i] * (1 - top[3]));
     const fade = (inner, behind, opacity) => [0, 1, 2].map((i) => inner[i] * opacity + behind[i] * (1 - opacity));
     const chainOf = (element) => {
@@ -100,7 +105,7 @@ export const CONTRAST_STATEMENTS = `
       const context = contextOf(start);
       let opacity = parseFloat(style.opacity);
       for (let at = start; at !== context; at = at.parentElement) opacity *= parseFloat(getComputedStyle(at).opacity);
-      return { self, context, rect, opacity, z: parseInt(style.zIndex, 10), color: rgbaOf(style.backgroundColor), image: style.backgroundImage !== 'none' };
+      return { self, context, rect, opacity, z: parseInt(style.zIndex, 10), color: rgbaOf(style.backgroundColor), solid: solidImageOf(style), image: imageOf(style) };
     };
     const layersOf = () => {
       if (layers) return layers;
@@ -128,7 +133,8 @@ export const CONTRAST_STATEMENTS = `
     };
     const pixelOf = (chain, index, behind, ink, under) => {
       const style = getComputedStyle(chain[index]);
-      const filled = under[index].reduce((at, layer) => fade(over(layer.color, at), at, layer.opacity), over(rgbaOf(style.backgroundColor), behind));
+      const paint = (color, solid, at) => (solid ? over(solid, over(color, at)) : over(color, at));
+      const filled = under[index].reduce((at, layer) => fade(paint(layer.color, layer.solid, at), at, layer.opacity), paint(rgbaOf(style.backgroundColor), solidImageOf(style), behind));
       const inner = index + 1 < chain.length ? pixelOf(chain, index + 1, filled, ink, under) : ink ? over(ink, filled) : filled;
       return fade(inner, behind, parseFloat(style.opacity));
     };
@@ -138,7 +144,7 @@ export const CONTRAST_STATEMENTS = `
     };
     const contrastOf = (element, point, ink, ground) => {
       const chain = chainOf(element);
-      if (chain.some((at) => getComputedStyle(at).backgroundImage !== 'none')) return null;
+      if (chain.some((at) => imageOf(getComputedStyle(at)))) return null;
       const under = chain.map(() => []);
       for (const layer of layersOf()) {
         const index = chain.indexOf(layer.context);
@@ -241,10 +247,14 @@ export const CONTRAST_STATEMENTS = `
     const controlSelector = 'input:not([type="hidden"]), select, textarea, button, [data-et-control], [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="option"], [role="textbox"], [role="combobox"], [role="slider"], [role="menuitem"]';
     const frameSelector = 'input:not([type="hidden"]), [data-et-control]';
     const frames = new Set();
+    const hugs = (frame, control) => {
+      const box = control.getBoundingClientRect();
+      return bordersOf(frame).length === 4 && box.width * 2 >= frame.clientWidth && box.height * 2 >= frame.clientHeight;
+    };
     for (const control of root.querySelectorAll(frameSelector)) {
       for (let at = control; at && at !== root.parentElement; at = at.parentElement) {
         if (bordersOf(at).length === 0) continue;
-        if (at !== control) frames.add(at);
+        if (at !== control && hugs(at, control)) frames.add(at);
         break;
       }
     }
@@ -272,6 +282,7 @@ export const CONTRAST_STATEMENTS = `
     };
     for (const icon of [root, ...root.querySelectorAll('svg')]) {
       if (icon.tagName.toLowerCase() !== 'svg' || icon.parentElement?.closest('svg') || skipped(icon)) continue;
+      if (icon.closest('[aria-hidden="true"]') && !icon.closest(controlSelector)) continue;
       const shapes = [...icon.querySelectorAll('path, circle, ellipse, line, polygon, polyline, rect, text, use')].filter((shape) => !shape.closest('defs, clipPath, mask, symbol, pattern, marker'));
       const ratios = shapes.flatMap((shape) => {
         const style = getComputedStyle(shape);

@@ -52,6 +52,19 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   'border-frame': {
     body: '<div style="padding: 4px; border: 1px solid #ccc"><input style="border: 0; outline: 0"></div>',
   },
+  'border-separator': {
+    body: '<aside style="padding: 8px; border-right: 1px solid #ccc"><header style="padding: 8px; border-bottom: 1px solid #ccc"><span>Inbox</span><button type="button" data-et-control="collapse" style="border: 0; background: none">Hide</button></header><footer style="padding: 8px; border-top: 1px solid #ccc"><button type="button" data-et-control="project" style="width: 100%; border: 0; background: none">Project</button></footer></aside>',
+  },
+  'border-panel': {
+    body: '<section style="padding: 16px; border: 1px solid #ccc"><h3>Title</h3><p>Some text</p><div><input style="border: 0; outline: 0"></div></section>',
+  },
+  'page-fill': {
+    body: '<p style="margin: 0; color: #222">On the fill</p>',
+    setup: "(root) => { root.ownerDocument.body.style.backgroundImage = 'linear-gradient(#000, #000)'; }",
+  },
+  'border-toolbar': {
+    body: '<div role="toolbar" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #ccc"><button type="button" data-et-control="bold" style="border: 0; background: none">B</button><button type="button" data-et-control="italic" style="border: 0; background: none">I</button><button type="button" data-et-control="link" style="border: 0; background: none">L</button></div>',
+  },
   'border-ok': {
     body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid #767676"></button>',
   },
@@ -73,6 +86,12 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   },
   'icon-stroke-low': {
     body: '<svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="#ddd" stroke-width="2"/></svg>',
+  },
+  'icon-decorative': {
+    body: '<div><svg aria-hidden="true" width="200" height="40"><path d="M0 20h200" fill="none" stroke="#ddd" stroke-width="2"/></svg></div>',
+  },
+  'icon-in-control': {
+    body: '<button type="button" style="border: 0; background: none"><svg aria-hidden="true" width="16" height="16"><path d="M0 0h16v16H0z" fill="#ddd"/></svg></button>',
   },
   'icon-ok': { body: '<svg width="16" height="16"><path d="M0 0h16v16H0z" fill="#555"/></svg>' },
   'icon-hidden': {
@@ -142,6 +161,8 @@ describe('contrast check', () => {
       'components/enabled-label other div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',
       'components/helper default p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
       'components/helper other p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
+      'components/icon-in-control default button[data-et-part=components/icon-in-control] > svg - icon 1.36:1, needs 3.00:1 (non-text)',
+      'components/icon-in-control other button[data-et-part=components/icon-in-control] > svg - icon 1.36:1, needs 3.00:1 (non-text)',
       'components/icon-low default svg[data-et-part=components/icon-low] - icon 1.61:1, needs 3.00:1 (non-text)',
       'components/icon-low other svg[data-et-part=components/icon-low] - icon 1.61:1, needs 3.00:1 (non-text)',
       'components/icon-stroke-low default svg[data-et-part=components/icon-stroke-low] - icon 1.36:1, needs 3.00:1 (non-text)',
@@ -153,6 +174,8 @@ describe('contrast check', () => {
       'components/no-reason - - - contrast exception {"selector":".mark","reason":""} needs a selector and a reason, for example { selector: \'.watermark\', reason: \'decorative\' }',
       'components/no-reason default div[data-et-part=components/no-reason] > span.mark - "Mark" 1.61:1, needs 4.50:1',
       'components/no-reason other div[data-et-part=components/no-reason] > span.mark - "Mark" 1.61:1, needs 4.50:1',
+      'components/page-fill default p[data-et-part=components/page-fill] - "On the fill" 1.32:1, needs 4.50:1',
+      'components/page-fill other p[data-et-part=components/page-fill] - "On the fill" 1.32:1, needs 4.50:1',
       'components/pairs default --ink on --paper - token pair 2.85:1, needs 4.50:1',
       'components/underlay-low default div[data-et-part=components/underlay-low] > span:nth-of-type(2) - "Dim" 1.66:1, needs 4.50:1',
       'components/underlay-low other div[data-et-part=components/underlay-low] > span:nth-of-type(2) - "Dim" 1.66:1, needs 4.50:1',
