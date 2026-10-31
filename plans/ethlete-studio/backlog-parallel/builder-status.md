@@ -96,3 +96,10 @@
 - Item 7 became Q235 (single-round canvas + header et-select in sketch-view): in progress.
 - In progress: shell-main b round + Q234; Q224 pages/inventory + view coverage + `design check --part`; Q236 covered
   controls.
+
+## Builder ethlete-sdk-4b (replaces 57, 2026-10-31)
+
+- As built: Q237 `content` + `label` slot and Q238 SDK Apply button on `components/anchored-dialog` (4e94dfc61).
+  Shots filter and open-points seen on :4402; sdk tsc and eslint clean.
+- In progress (parallel subagents): pages/system and pages/inbox rounds embedding anchored-dialog; Q218 unused SDK
+  parts subtree; Q220 canonical Tailwind pass (without system/inbox); headless check of Q235.
