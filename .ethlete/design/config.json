@@ -93,7 +93,7 @@
           "fix": "Use the et-surface tokens of the scope (bg-et-surface-bg, text-et-surface-text, border-et-surface-border); set data-et-surface or a surface scope class on a raised or floating area; hover and pressed mix --et-surface-interaction-solid"
         },
         {
-          "pattern": "^var\\(--surface(-(raised|overlay|hover|pressed|sunken))?\\)$",
+          "pattern": "^var\\(--surface(-(raised|overlay|hover|pressed|sunken|dark-elevated|dark-elevated-2))?\\)$",
           "fix": "Use the et-surface tokens of the scope (bg-et-surface-bg, text-et-surface-text, border-et-surface-border); set data-et-surface or a surface scope class on a raised or floating area; hover and pressed mix --et-surface-interaction-solid"
         },
         {

@@ -64,8 +64,8 @@ type View = 'hosts' | 'detail';
 
 const surfaces = [
   { name: 'surface', cls: 'et-surface--dark bg-et-surface-bg' },
-  { name: 'surface-raised', cls: 'et-surface--dark-elevated bg-et-surface-bg' },
-  { name: 'surface-overlay', cls: 'et-surface--dark-elevated-2 bg-et-surface-bg' },
+  { name: 'surface-dark-elevated', cls: 'et-surface--dark-elevated bg-et-surface-bg' },
+  { name: 'surface-dark-elevated-2', cls: 'et-surface--dark-elevated-2 bg-et-surface-bg' },
 ];
 
 const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">

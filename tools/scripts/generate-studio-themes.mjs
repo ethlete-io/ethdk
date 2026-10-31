@@ -100,8 +100,8 @@ const colorThemes = Object.fromEntries(
 
 const surfaceThemes = {
   DARK_SURFACE: surfaceTheme('dark', 0, 'surface'),
-  DARK_ELEVATED_SURFACE: surfaceTheme('dark-elevated', 1, 'surface-raised'),
-  DARK_ELEVATED_2_SURFACE: surfaceTheme('dark-elevated-2', 2, 'surface-overlay'),
+  DARK_ELEVATED_SURFACE: surfaceTheme('dark-elevated', 1, 'surface-dark-elevated'),
+  DARK_ELEVATED_2_SURFACE: surfaceTheme('dark-elevated-2', 2, 'surface-dark-elevated-2'),
 };
 
 const files = {

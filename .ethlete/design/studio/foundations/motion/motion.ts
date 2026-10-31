@@ -15,7 +15,7 @@ const sample = html`<div class="mo-sample">
     (step) =>
       html`<span
         class="mo-cell"
-        style="background: color-mix(in oklch, var(--surface), var(--surface-raised) ${step}%)"
+        style="background: color-mix(in oklch, var(--color-et-surface-dark-bg), var(--color-et-surface-dark-elevated-bg) ${step}%)"
       ></span>`,
   )}
   ${fade('appear · opacity', (step) => html`<span class="mo-cell mo-cell--appear" style="opacity: ${step / 100}"></span>`)}
@@ -45,7 +45,7 @@ export default definePart({
         .mo-label { width: 160px; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .mo-step { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
         .mo-cell { display: block; width: 64px; height: var(--row); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); box-sizing: border-box; }
-        .mo-cell--appear { background: var(--surface-raised); }
+        .mo-cell--appear { background: var(--color-et-surface-dark-elevated-bg); }
         .mo-time { font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .mo-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }
         .mo-hint { font-size: var(--text-sm); line-height: var(--text-sm-line); color: var(--text-muted); }

@@ -13,7 +13,7 @@ const groups: Record<Group, { title: string; owns: (name: string) => boolean }> 
   error: { title: 'Error', owns: (name) => /^(on-)?danger/.test(name) },
 };
 
-const surfaces = ['surface', 'surface-raised', 'surface-overlay'];
+const surfaces = ['surface', 'surface-dark-elevated', 'surface-dark-elevated-2'];
 
 const surfaceTokens = surfaces.map((name) => `--${name}`);
 const pairs = [
@@ -29,10 +29,7 @@ const pairs = [
 const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-active`];
 
 const ratiosOf = (name: string): { on: string[]; needs: number | null; ink: boolean } | null => {
-  if (
-    /^surface(-raised|-overlay|-hover|-pressed|-shadow)?$/.test(name) ||
-    /^(accent|warning|danger)-subtle$/.test(name)
-  )
+  if (/^surface(-dark-elevated(-2)?|-shadow)?$/.test(name) || /^(accent|warning|danger)-subtle$/.test(name))
     return null;
   const onDisabled = /^on-(accent|warning|danger)-disabled$/.exec(name);
   if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: null, ink: true };
@@ -215,7 +212,7 @@ export default definePart<{ group: Group }>({
         .co-dot { width: 8px; height: 8px; margin-right: auto; border-radius: 50%; }
         .co-low { display: flex; color: var(--danger-text); }
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
-        .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
+        .co-shadow { width: 64px; height: var(--control-sm); background: var(--color-et-surface-dark-elevated-2-bg); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
         .co-cluster { display: flex; flex-wrap: wrap; gap: var(--space-3); }
         .co-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
         .co-surface { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); }
@@ -245,7 +242,7 @@ export default definePart<{ group: Group }>({
         .co-danger-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--danger-subtle); }
         .co-ink { color: var(--accent-text); font-weight: var(--weight-medium); }
         .co-subtle { align-self: stretch; display: flex; align-items: center; height: var(--row); padding: 0 var(--space-2); border-radius: var(--radius-control-sm); background: var(--accent-subtle); }
-        .co-ring { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); background: var(--surface-raised); outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+        .co-ring { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); background: var(--color-et-surface-dark-elevated-bg); outline: 2px solid var(--focus-ring); outline-offset: 2px; }
       `,
     }),
 });

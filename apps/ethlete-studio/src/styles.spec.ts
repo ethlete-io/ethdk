@@ -28,7 +28,7 @@ describe('styles.css', () => {
 
     expect(css).toMatch(/@layer studio-tokens, theme, base,/);
     expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--accent: oklch\(0\.68 0\.11 190\)/);
-    expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--surface-raised: oklch\(/);
+    expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--surface-dark-elevated: oklch\(/);
   });
 
   it('exposes the renamed font and radius tokens without shadowing Tailwind defaults', () => {

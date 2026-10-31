@@ -33,8 +33,8 @@ export default definePart({
         .sp-cluster { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-5); }
         .sp-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .sp-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }
-        .sp-radius { width: 40px; height: 40px; background: var(--surface-raised); border: 1px solid var(--accent); }
-        .sp-height { display: inline-flex; align-items: center; padding: 0 var(--space-2); box-sizing: border-box; background: var(--surface-raised); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
+        .sp-radius { width: 40px; height: 40px; background: var(--color-et-surface-dark-elevated-bg); border: 1px solid var(--accent); }
+        .sp-height { display: inline-flex; align-items: center; padding: 0 var(--space-2); box-sizing: border-box; background: var(--color-et-surface-dark-elevated-bg); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .sp-height--row { min-width: 200px; background: var(--accent-subtle); color: var(--text); }
         .sp-gap { display: flex; align-items: center; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .sp-gap i { width: var(--space-4); height: var(--space-4); background: var(--accent); border-radius: 2px; }
