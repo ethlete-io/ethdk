@@ -1,0 +1,7 @@
+.t-frame {
+  box-sizing: border-box;
+  padding: 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
