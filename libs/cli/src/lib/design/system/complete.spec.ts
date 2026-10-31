@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -979,6 +979,42 @@ describe('completenessOf', () => {
 
     expect(done).toEqual({ gaps: [] });
   }, 60_000);
+
+  it('does not fail a page on the gaps of a part it uses from its base', async (context) => {
+    const { target } = checkout();
+    const design = join(target, DESIGN_DIR);
+    const products = {
+      'app-a': { presets: { desktop: { width: 400, height: 300 } } },
+      'app-b': { base: `${DESIGN_DIR}/app-a` },
+    };
+    const pages = ['pages/uses-flat', 'pages/slotted'];
+
+    for (const page of pages) cpSync(join(design, 'app-a', page), join(design, 'app-b', page), { recursive: true });
+    writeFileSync(join(design, 'config.json'), JSON.stringify({ products }));
+
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'app-b', config: config.products?.['app-b'] ?? {} });
+
+    recordMerged({ product, parts: pages });
+
+    const lines = async (part: string) => {
+      const result = await completenessOf({ target, config, product, part });
+
+      return 'gaps' in result ? result.gaps.map(completenessGapLineOf) : result;
+    };
+    const usesFlat = await lines('pages/uses-flat');
+
+    if (!Array.isArray(usesFlat)) return context.skip(JSON.stringify(usesFlat));
+
+    expect(usesFlat).toEqual([
+      'INVENTORY-UNAPPROVED pages/uses-flat - its control inventory is not approved - check and approve it in Studio',
+    ]);
+    expect(await lines('pages/slotted')).toEqual([
+      'CONTROL-UNDECLARED pages/slotted - button at div.aa-slot > section > button.aa-own in rest - mark it with data-et-control and declare it in controls',
+      'INVENTORY-UNAPPROVED pages/slotted - its control inventory is not approved - check and approve it in Studio',
+    ]);
+    expect(await lines('components/flat')).not.toEqual([]);
+  }, 120_000);
 
   it('discovers undeclared and unclassified controls, but not the controls of an embedded page', async (context) => {
     const { target, config, product } = checkout();

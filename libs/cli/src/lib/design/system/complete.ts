@@ -1461,7 +1461,8 @@ export const inventoryIdsOf = (frames: SeenFrame[]) =>
 /**
  * Draws every state of one part, at rest and in each interaction it declares, once at its first preset or width,
  * and answers the gaps of its `controls` declaration, or why it could not draw. A part a control names in `part`,
- * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it.
+ * and an embedded part whose `data-et-part` root draws a control, is checked the same way, and its gaps fail it -
+ * unless it is a part of the product's base, whose gaps stay its own.
  * A page fails until the user approves its control inventory in Studio. An exception the user approved in Studio
  * drops the gap it names until the part changes; a pending one still fails. With `sketch`, every part is drawn as
  * that variant draws it, and a part the variant changes is not merged yet, so it never fails as unreviewed.
@@ -1588,8 +1589,12 @@ export const partsCompletenessOf = async (options: {
         ...ownersOf(seen),
       ];
 
+      const isKitPart = (other: string) =>
+        resolved.origin !== 'base' && parts.find((candidate) => partKeyOf(candidate) === other)?.origin === 'base';
+
       for (const other of used)
-        if (other !== null && !(other in referenced)) referenced[other] = await gapsOfPart(other, [...chain, key]);
+        if (other !== null && !(other in referenced))
+          referenced[other] = isKitPart(other) ? [] : await gapsOfPart(other, [...chain, key]);
 
       const excepted = withExceptions({
         part: key,
