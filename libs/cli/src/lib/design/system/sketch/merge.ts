@@ -1,6 +1,5 @@
 import { spawnSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { createRequire } from 'module';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve } from 'path';
 import { DesignConfig } from '../../paths';
@@ -11,6 +10,7 @@ import { fixturesOf, partFilesOf } from '../product';
 import { isBuiltInBase } from '../base';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
+import { prettierBinOf } from '../prettier';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';
 import { forgetMerged, recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
 import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
@@ -115,18 +115,6 @@ const baseKeysOf = (options: { product: ResolvedProduct; sketch: Sketch; keys: s
 
 /** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
 export type MergeRefusal = { reason: string; changed?: string[] };
-
-const prettierBinOf = (target: string) => {
-  const from = [join(target, 'package.json'), __filename].find((file) => {
-    try {
-      return !!createRequire(file).resolve('prettier/package.json');
-    } catch {
-      return false;
-    }
-  });
-
-  return from ? resolve(dirname(createRequire(from).resolve('prettier/package.json')), 'bin/prettier.cjs') : null;
-};
 
 const formatFiles = (target: string, files: string[]) => {
   const bin = prettierBinOf(target);

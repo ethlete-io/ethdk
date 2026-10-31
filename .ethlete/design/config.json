@@ -56,7 +56,11 @@
           "height": 900
         }
       },
-      "generatedFiles": ["foundations/colors/colors.css"]
+      "generatedFiles": ["foundations/colors/colors.css"],
+      "harness": {
+        "app": "apps/docs-examples",
+        "map": "apps/docs-examples/src/app/design-harness/design-harness-parts.ts"
+      }
     },
     "studio": {
       "schemes": ["dark"],
@@ -72,6 +76,10 @@
         }
       ],
       "base": ".ethlete/design/sdk",
+      "harness": {
+        "app": "apps/ethlete-studio",
+        "map": "apps/ethlete-studio/src/app/design-harness/design-harness-parts.ts"
+      },
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],
       "presets": {
         "desktop": {

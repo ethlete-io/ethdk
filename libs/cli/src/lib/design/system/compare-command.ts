@@ -7,6 +7,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { harnessStaleOf } from './harness-map';
 import { compareLineOf, comparePngs, HARNESS_HOST_SELECTOR, harnessUrlOf } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -197,9 +198,10 @@ export const designCompare = async (options: {
   }
 
   const task = taskPartOf({ product, part: partKeyOf(parsed) });
+  const refusal = typeof task === 'string' ? task : harnessStaleOf({ target, product });
 
-  if (typeof task === 'string') {
-    console.error(task);
+  if (typeof task === 'string' || refusal !== null) {
+    console.error(refusal);
 
     return 1;
   }

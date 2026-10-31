@@ -1,6 +1,7 @@
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
 import { comparePart, ComparePart } from './compare-command';
+import { harnessStaleOf } from './harness-map';
 import {
   allowedFilesOf,
   filesOutsideOf,
@@ -111,6 +112,14 @@ export const designTask = async (options: {
 
     if (!url) {
       console.error(`task --verify needs --url <app dev server url> to run compare`);
+
+      return 1;
+    }
+
+    const stale = harnessStaleOf({ target, product });
+
+    if (stale !== null) {
+      console.error(stale);
 
       return 1;
     }

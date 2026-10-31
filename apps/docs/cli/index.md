@@ -349,6 +349,14 @@ fails too. It prints one line per state, `default ok`, `removable DIFF 12 px` or
 keeps the design, app and diff pictures of each failing state in a temp folder it prints. It exits 0 only when every
 state is ok, and names the URL when the page shows no host element. It never starts the app server.
 
+The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
+`"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and
+`et design harness --product app-a` writes one lazy import per part whose `implements` names a component, keyed by
+`<layer>/<name>` and formatted with the checkout's Prettier. A route-only link adds no entry, and an empty map is valid.
+`--check` exits 1 when the file differs from what the links give; `compare` and `task --verify` refuse a stale map. The
+app mounts the route only in a development build, outside its shell: Ethlete Studio and the docs examples app bootstrap
+a harness root instead of the app when the path ends in `/__design-harness`.
+
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
 names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.

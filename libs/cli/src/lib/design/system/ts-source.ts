@@ -146,3 +146,20 @@ export const importedNamesOf = (source: string): Map<string, Set<string>> => {
 
   return taken;
 };
+
+/** The exported (not default) classes of a TS module that carry an Angular `@Component` decorator. */
+export const exportedComponentClassesOf = (source: string): string[] =>
+  sourceFileOf(source).statements.flatMap((statement) =>
+    ts.isClassDeclaration(statement) &&
+    statement.name &&
+    hasExportKeyword(statement) &&
+    !hasDefaultKeyword(statement) &&
+    (ts.getDecorators(statement) ?? []).some(
+      (decorator) =>
+        ts.isCallExpression(decorator.expression) &&
+        ts.isIdentifier(decorator.expression.expression) &&
+        decorator.expression.expression.text === 'Component',
+    )
+      ? [statement.name.text]
+      : [],
+  );

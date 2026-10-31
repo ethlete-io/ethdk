@@ -20,6 +20,7 @@ import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
 import { COMPARE_USAGE, designCompare } from './system/compare-command';
 import { designTask, TASK_USAGE } from './system/task-command';
+import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 
@@ -122,6 +123,11 @@ const helpOf = (invocation: string) =>
     '  [data-design-harness-host] element of <url>/__design-harness?part=&state=&props= in the same Chromium. Prints ok,',
     '  DIFF <n> px or SIZE per state at tolerance 0 and keeps the pictures of a failing state in a temp folder. It',
     '  never starts the app; exits 1 unless every state is ok.',
+    '',
+    `${invocation} ${HARNESS_USAGE}`,
+    '  Write the harness map named in config.json products.<name>.harness.map: a lazy import of the component each',
+    "  part implements, keyed by <layer>/<name>, for the app's /__design-harness route. --check exits 1 when it is",
+    '  stale; compare and task --verify refuse a stale map.',
     '',
     `${invocation} ${COMPLETE_USAGE}`,
     '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover and',
@@ -318,6 +324,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designTask({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'harness') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designHarness({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'compare') {

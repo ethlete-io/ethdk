@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { configPathOf, DesignColorScheme, DesignPreset, DesignProduct } from '../paths';
 import { loadBase, ProductSource } from './base';
+import { harnessProblemOf } from './harness-config';
 import { LAYERS } from './layers';
 import { fixturesOf, PartFile, partFilesOf, productDirOf } from './product';
 import { Problem } from './problem';
@@ -76,6 +77,12 @@ export const resolveProduct = (options: { target: string; name: string; config: 
       file: configFile,
       message: `product "${name}" declares schemes ${JSON.stringify(declaredSchemes)}; use "light", "dark" or both`,
     });
+  }
+
+  const harnessProblem = config.harness === undefined ? null : harnessProblemOf(config.harness);
+
+  if (harnessProblem !== null) {
+    problems.push({ rule: 'HARNESS', file: configFile, message: `product "${name}": ${harnessProblem}` });
   }
 
   if (!hasPresets(presets)) {
