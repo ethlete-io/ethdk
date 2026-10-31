@@ -713,5 +713,12 @@
     "note": "Q96 lead call (ethlete-sdk-76): mechanical fix of the check finding, before/after shots byte-identical",
     "hash": "1b65cea7bef41600",
     "at": "2026-10-31T16:20:05.690Z"
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "claude-opus-5-5",
+    "note": "Q188 (Tom): every control frame uses surface-interaction; lead call ethlete-sdk-76 applies it to the zoom-chip button-group frame",
+    "hash": "9c6fef509f532c0f",
+    "at": "2026-10-31T16:24:36.405Z"
   }
 ]
