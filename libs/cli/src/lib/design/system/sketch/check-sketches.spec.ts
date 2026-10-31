@@ -378,7 +378,7 @@ describe('variantWarningsOf', () => {
     ]);
   });
 
-  it("warns of an export in the sketch's shared/ that the variant does not import", () => {
+  it("warns of an export in the sketch's shared/ only when no variant imports it", () => {
     const target = acme();
     const product = resolveAcme(target);
     const sketch = createSketch({
@@ -392,14 +392,11 @@ describe('variantWarningsOf', () => {
     writeFileSync(join(sketch.dir, 'shared/data.ts'), 'export const rows = [];\nexport const flowList = [];\n');
     writeFileSync(ts, `import { rows } from '@shared/data';\nvoid rows;\n${readFileSync(ts, 'utf8')}`);
 
-    expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([
-      expect.stringMatching(
-        /^WARNING .*shared\/data\.ts: flowList is exported, but nothing in variant b imports it - delete it or drop the export$/,
-      ),
-    ]);
-    expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([
-      expect.stringMatching(/^WARNING .*shared\/data\.ts: rows is exported, but nothing in variant a imports it/),
-      expect.stringMatching(/^WARNING .*shared\/data\.ts: flowList is exported, but nothing in variant a imports it/),
-    ]);
+    const flowListUnused = expect.stringMatching(
+      /^WARNING .*shared\/data\.ts: flowList is exported, but nothing in any variant imports it - delete it or drop the export$/,
+    );
+
+    expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([flowListUnused]);
+    expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([flowListUnused]);
   });
 });

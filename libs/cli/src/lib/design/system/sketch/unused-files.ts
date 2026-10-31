@@ -18,7 +18,7 @@ const candidatesOf = (path: string) => [path, `${path}.ts`, resolve(path, 'index
 
 /**
  * A warning for each `.ts` or `.css` file of a variant that no part file, fixture or other file of the variant
- * imports.
+ * imports, and for each export of the sketch's `shared/` folder that no variant imports.
  */
 export const unusedFileWarningsOf = (options: { target: string; sketch: Sketch; variant: string }): string[] => {
   const { target, sketch, variant } = options;
@@ -41,14 +41,17 @@ export const unusedFileWarningsOf = (options: { target: string; sketch: Sketch; 
   const sharedDir = resolve(sketch.dir, SHARED_FOLDER);
   const unusedExports = unusedExportsOf({
     sharedDir,
-    importers: files.filter((path) => path.endsWith('.ts')),
+    importers: sketch.variants
+      .map((each) => variantDirOf(sketch, each))
+      .filter((each) => existsSync(each))
+      .flatMap((each) => codeFilesIn(each).filter((path) => path.endsWith('.ts'))),
     resolveSpecifier: ({ file, specifier }) =>
       specifier.startsWith(SHARED_PREFIX)
         ? resolve(sharedDir, specifier.slice(SHARED_PREFIX.length))
         : specifier.startsWith('.')
           ? resolve(dirname(file), specifier)
           : null,
-    scope: `in variant ${variant}`,
+    scope: 'in any variant',
   });
 
   return [
