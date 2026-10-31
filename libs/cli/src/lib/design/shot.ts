@@ -13,7 +13,7 @@ import {
   callDrawsFrom,
   createDrawQueue,
   DRAW_TIMEOUT_MS,
-  DrawPriority,
+  DrawWant,
   openFrame,
   send,
   noteFailure,
@@ -40,6 +40,27 @@ const VIEWPORT_HEIGHT = 800;
 const MAX_SCALE = 4;
 
 const scaleOf = (params: URLSearchParams) => Number(params.get('scale') ?? 1);
+
+const viewOf = (raw: string | null) => (raw !== null && isPositiveWhole(Number(raw)) ? Number(raw) : null);
+
+const wantOf = (params: URLSearchParams, response: ServerResponse): DrawWant => {
+  const withdraws = new Set<() => void>();
+  const rank = params.get('rank');
+  let hungUp = false;
+
+  response.once('close', () => {
+    hungUp = !response.writableFinished;
+
+    if (hungUp) withdraws.forEach((withdraw) => withdraw());
+  });
+
+  return {
+    priority: params.get('priority') === 'low' ? 'low' : 'high',
+    view: viewOf(params.get('view')),
+    rank: rank === 'active' || rank === 'visible' ? rank : null,
+    onWithdraw: (withdraw) => (hungUp ? withdraw() : withdraws.add(withdraw)),
+  };
+};
 
 const schemeOf = (params: URLSearchParams) => {
   const scheme = params.get('scheme');
@@ -375,7 +396,7 @@ export const createPartShooter = (options: {
     params: URLSearchParams;
     size: Size | null;
     clip?: boolean;
-    priority: DrawPriority;
+    want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
     address?: StoredAddress;
@@ -391,7 +412,7 @@ export const createPartShooter = (options: {
     if (kept) {
       options.onSource?.('memory');
 
-      if (options.priority === 'high') drawQueue.hurry(kept.shot);
+      drawQueue.join(kept.shot, options.want);
 
       return kept.shot;
     }
@@ -421,7 +442,7 @@ export const createPartShooter = (options: {
       return gone
         ? Promise.reject(gone)
         : draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme });
-    }, options.priority);
+    }, options.want);
 
     const { address } = options;
 
@@ -437,7 +458,7 @@ export const createPartShooter = (options: {
   const partShotOf = (
     options: PartAddress & {
       params: URLSearchParams;
-      priority: DrawPriority;
+      want: DrawWant;
       fresh?: boolean;
       onSource?: (source: ShotSource) => void;
     },
@@ -457,7 +478,7 @@ export const createPartShooter = (options: {
       cached({
         ...frame,
         params: options.params,
-        priority: options.priority,
+        want: options.want,
         fresh: options.fresh,
         gone,
         address,
@@ -485,10 +506,10 @@ export const createPartShooter = (options: {
     variant: string;
     width: number;
     params: URLSearchParams;
-    priority: DrawPriority;
+    want: DrawWant;
     onSource?: (source: ShotSource) => void;
   }) => {
-    const { slug, variant, width, params, priority, onSource } = options;
+    const { slug, variant, width, params, want, onSource } = options;
 
     return cached({
       key: ['call', slug, variant, width],
@@ -496,7 +517,7 @@ export const createPartShooter = (options: {
       search: new URLSearchParams({ call: slug, variant }),
       params,
       size: { width },
-      priority,
+      want,
       onSource,
     });
   };
@@ -504,7 +525,7 @@ export const createPartShooter = (options: {
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
-      const priority: DrawPriority = params.get('priority') === 'low' ? 'low' : 'high';
+      const want = wantOf(params, response);
       const onSource = (source: ShotSource) => response.setHeader('x-design-shot', source);
 
       if (!isScale(scaleOf(params))) {
@@ -547,7 +568,7 @@ export const createPartShooter = (options: {
         sendShot(
           response,
           noteFailure(
-            callShotOf({ slug, variant, width: pixels, params, priority, onSource }).then((picture) => picture.png),
+            callShotOf({ slug, variant, width: pixels, params, want, onSource }).then((picture) => picture.png),
             (failure) => options.ledger?.fail({ part: slug, state: variant, ...failure }),
           ),
         );
@@ -614,7 +635,7 @@ export const createPartShooter = (options: {
             sketch: sketchVariant,
             interaction: params.get('interaction'),
             params,
-            priority,
+            want,
             onSource,
           }).then((picture) => picture.png),
           (failure) =>
@@ -632,7 +653,7 @@ export const createPartShooter = (options: {
      * ahead of every shot asked with `priority=low`.
      */
     pictureOf: (options: PartAddress & { params: URLSearchParams; fresh?: boolean }) =>
-      partShotOf({ ...options, priority: 'high' }),
+      partShotOf({ ...options, want: { priority: 'high' } }),
     /**
      * Draws `motion` of a part from its `from` state, `address.state`, at each keyframe time, with the motion's tracks;
      * `mode` picks `prefers-reduced-motion`. Kept until a change redraws the part. With `flowTo`, `motion` names a flow

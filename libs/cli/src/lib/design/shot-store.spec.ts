@@ -139,6 +139,7 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
       const response = {
         statusCode: 200,
         setHeader: (name: string, value: string) => (headers[name] = value),
+        once: () => undefined,
         end: (body: unknown) => done({ status: response.statusCode, body, source: headers['x-design-shot'] }),
       };
 

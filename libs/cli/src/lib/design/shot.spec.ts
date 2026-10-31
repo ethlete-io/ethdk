@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { cpSync, mkdtempSync, realpathSync, rmSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
@@ -92,17 +93,27 @@ const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) =>
   return { target, config, system, ledger, shots };
 };
 
-const ask = (shots: ReturnType<typeof createPartShooter>, query: string) =>
-  new Promise<{ status: number; type: string; body: unknown }>((done) => {
-    const headers: Record<string, string> = {};
-    const response = {
-      statusCode: 200,
-      setHeader: (name: string, value: string) => (headers[name] = value),
-      end: (body: unknown) => done({ status: response.statusCode, type: headers['content-type'] ?? '', body }),
-    };
-
-    shots.middleware({ url: `/?${query}` } as IncomingMessage, response as unknown as ServerResponse);
+const asking = (shots: ReturnType<typeof createPartShooter>, query: string) => {
+  const headers: Record<string, string> = {};
+  const response = Object.assign(new EventEmitter(), {
+    statusCode: 200,
+    writableFinished: false,
+    setHeader: (name: string, value: string) => (headers[name] = value),
+    end: (() => undefined) as (body: unknown) => void,
   });
+  const answer = new Promise<{ status: number; type: string; body: unknown }>((done) => {
+    response.end = (body: unknown) => {
+      response.writableFinished = true;
+      done({ status: response.statusCode, type: headers['content-type'] ?? '', body });
+    };
+  });
+
+  shots.middleware({ url: `/?${query}` } as IncomingMessage, response as unknown as ServerResponse);
+
+  return { answer, hangUp: () => response.emit('close') };
+};
+
+const ask = (shots: ReturnType<typeof createPartShooter>, query: string) => asking(shots, query).answer;
 
 describe('createPartShooter', () => {
   it('draws a state at the preset width, at full height, under the asked theme', async () => {
@@ -321,6 +332,101 @@ describe('createPartShooter', () => {
       'compared',
       'low',
     ]);
+  });
+
+  it('draws the active frame of a newly shown view next, then its visible cells, before the backlog of the old view', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const asked = [
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&view=1`)),
+      ask(shots, `${card}&interaction=old-active&view=1&rank=active`),
+      ask(shots, `${card}&interaction=old-rest&view=1`),
+      ask(shots, `${card}&interaction=unviewed`),
+      ask(shots, `${card}&interaction=new-visible&view=2&rank=visible`),
+      ask(shots, `${card}&interaction=new-active&view=2&rank=active`),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    release();
+    await Promise.all(asked);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
+      ...busy,
+      'new-active',
+      'new-visible',
+      'unviewed',
+      'old-active',
+      'old-rest',
+    ]);
+  });
+
+  it('moves a queued shot of the old view ahead when the shown view asks for it again', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const asked = [
+      ...busy.map((name) => ask(shots, `${card}&interaction=${name}&view=1`)),
+      ask(shots, `${card}&interaction=first&view=1`),
+      ask(shots, `${card}&interaction=shared&view=1`),
+      ask(shots, `${card}&interaction=shared&view=2&rank=active`),
+    ];
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    release();
+    await Promise.all(asked);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([
+      ...busy,
+      'shared',
+      'first',
+    ]);
+  });
+
+  it('drops a queued shot every asker hung up on, keeps drawing, and draws it again for a new ask', async () => {
+    const { shots, ledger } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&state=long&priority=low';
+
+    const busy = Array.from({ length: DRAWS_AT_ONCE }, (_, at) => `busy-${at + 1}`);
+
+    busy.forEach(() => goto.mockImplementationOnce(() => held));
+
+    const busyAsks = busy.map((name) => ask(shots, `${card}&interaction=${name}`));
+    const gone = asking(shots, `${card}&interaction=gone&view=1`);
+    const twice = [
+      asking(shots, `${card}&interaction=twice&view=1`),
+      asking(shots, `${card}&interaction=twice&view=2`),
+    ];
+    const kept = ask(shots, `${card}&interaction=kept`);
+
+    await vi.waitFor(() => expect(goto).toHaveBeenCalledTimes(DRAWS_AT_ONCE));
+    gone.hangUp();
+    twice[0]?.hangUp();
+    release();
+
+    await expect(kept).resolves.toMatchObject({ status: 200 });
+    await expect(twice[1]?.answer).resolves.toMatchObject({ status: 200 });
+    await Promise.all(busyAsks);
+
+    expect(drawnUrls().map((url) => new URL(url).searchParams.get('interaction'))).toEqual([...busy, 'twice', 'kept']);
+    expect(ledger.report()).toMatchObject({ queued: 0, rendering: 0, failedTotal: 0 });
+
+    await expect(ask(shots, `${card}&interaction=gone&view=3`)).resolves.toMatchObject({ status: 200 });
+    expect(drawnUrls().at(-1)).toContain('interaction=gone');
   });
 
   it('crops a picture to the asked clip from the part root or the page, and answers 400 for a bad clip', async () => {

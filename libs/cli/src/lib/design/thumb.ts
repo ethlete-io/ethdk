@@ -34,6 +34,9 @@ export class ShotFailedError extends Error {
 
 export class ShotTimeoutError extends Error {}
 
+/** Rejects a drawing that was still waiting when every ask that wanted it was aborted. */
+export class DrawDroppedError extends Error {}
+
 const frameWidthOf = (slug: string) => `(async (slug) => {
   const { calls } = await import('/@id/__x00__virtual:design-explore');
   if (!calls[slug]) return null;
@@ -79,23 +82,40 @@ export const finished = `document.getAnimations()
 
 export type DrawPriority = 'high' | 'low';
 
+/**
+ * What one ask wants of a drawing. `view` is a number the asker raises with each view change; the
+ * highest one seen is the shown view. `rank` places the ask in that view. `onWithdraw` gets the callback
+ * that withdraws the ask, to call once the asker no longer waits, or at once if it already stopped.
+ */
+export type DrawWant = {
+  priority: DrawPriority;
+  view?: number | null;
+  rank?: 'active' | 'visible' | null;
+  onWithdraw?: (withdraw: () => void) => void;
+};
+
+type WaitingDraw = { job: () => Promise<void>; wants: Set<DrawWant>; drop: () => void };
+
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
 // embedded frame depends on which frame painted first: two draws of the same page differed under load.
 const DRAW_BROWSER_ARGS = ['--disable-partial-raster'];
 export const DRAWS_AT_ONCE = 8;
 
 /**
- * One shared headless Chromium, launched on the first ask, that runs up to four drawings at once. A waiting
- * `high` drawing runs before every waiting `low` one, each lane in the order asked. A failed launch is
- * not kept, so the next ask tries again.
+ * One shared headless Chromium, launched on the first ask, that runs up to `DRAWS_AT_ONCE` drawings at once.
+ * A waiting `high` drawing runs first; of the `low` ones, those for the active frame of the shown view,
+ * then its visible cells, then the rest, then those of views no longer shown, each lane in the order asked.
+ * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
+ * tries again.
  */
 export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf; ledger?: DrawLedger }) => {
   const { target, ledger } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
-  const waiting: Record<DrawPriority, (() => Promise<void>)[]> = { high: [], low: [] };
-  const jobs = new WeakMap<Promise<unknown>, () => Promise<void>>();
+  const waiting: WaitingDraw[] = [];
+  const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
   let drawing = 0;
+  let shownView = 0;
 
   const launch = () => {
     browser ??= resolveChromium(target).then((resolved) => {
@@ -117,26 +137,73 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
     return browser;
   };
 
-  const next = () => {
-    while (drawing < DRAWS_AT_ONCE) {
-      const job = waiting.high.shift() ?? waiting.low.shift();
+  const laneOf = (want: DrawWant) => {
+    if (want.priority === 'high') return 0;
+    if (typeof want.view === 'number' && want.view < shownView) return 4;
 
-      if (!job) return;
+    return want.rank === 'active' ? 1 : want.rank === 'visible' ? 2 : 3;
+  };
+
+  const entryLaneOf = (entry: WaitingDraw) => Math.min(...[...entry.wants].map(laneOf));
+
+  const next = () => {
+    while (drawing < DRAWS_AT_ONCE && waiting.length > 0) {
+      const lanes = waiting.map(entryLaneOf);
+      const at = lanes.indexOf(Math.min(...lanes));
+      const [entry] = waiting.splice(at, 1);
+
+      if (!entry) return;
 
       drawing++;
-      void job().finally(() => {
+      void entry.job().finally(() => {
         drawing--;
         next();
       });
     }
   };
 
+  const withdraw = (entry: WaitingDraw, want: DrawWant) => {
+    entry.wants.delete(want);
+
+    const at = waiting.indexOf(entry);
+
+    if (at < 0 || entry.wants.size > 0) return;
+
+    waiting.splice(at, 1);
+    entry.drop();
+  };
+
+  const see = (want: DrawWant) => {
+    if (typeof want.view === 'number' && want.view > shownView) shownView = want.view;
+  };
+
+  const add = (entry: WaitingDraw, want: DrawWant) => {
+    see(want);
+
+    if (!waiting.includes(entry)) return;
+
+    entry.wants.add(want);
+
+    want.onWithdraw?.(() => withdraw(entry, want));
+  };
+
+  const join = (drawn: Promise<unknown>, want: DrawWant) => {
+    const entry = entries.get(drawn);
+
+    if (entry) add(entry, want);
+    else see(want);
+  };
+
   return {
-    run: <T>(draw: (browser: Browser) => Promise<T>, priority: DrawPriority = 'high') => {
+    run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant = 'high') => {
       const ticket = ledger?.ask();
-      let job = () => Promise.resolve();
+      const entry: WaitingDraw = {
+        job: () => Promise.resolve(),
+        wants: new Set(),
+        drop: () => undefined,
+      };
       const drawn = new Promise<T>((resolve, reject) => {
-        job = () => {
+        entry.job = () => {
           ticket?.start();
 
           return launch()
@@ -144,21 +211,23 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
             .then(resolve, reject)
             .finally(() => ticket?.end());
         };
+        entry.drop = () => {
+          ticket?.end();
+          reject(new DrawDroppedError('design-explore: every ask withdrew the drawing before it started'));
+        };
       });
 
-      jobs.set(drawn, job);
-      waiting[priority].push(job);
+      entries.set(drawn, entry);
+      waiting.push(entry);
+      add(entry, typeof want === 'string' ? { priority: want } : want);
       next();
 
       return drawn;
     },
+    /** Adds an ask to a drawing `run` returned, so it runs in the best lane any of its asks wants, unless it already started. */
+    join,
     /** Moves a drawing `run` returned into the high lane, unless it already started. */
-    hurry: (drawn: Promise<unknown>) => {
-      const job = jobs.get(drawn);
-      const at = job ? waiting.low.indexOf(job) : -1;
-
-      if (job && at >= 0) waiting.high.push(...waiting.low.splice(at, 1));
-    },
+    hurry: (drawn: Promise<unknown>) => join(drawn, { priority: 'high' }),
     close: async () => {
       const running = browser;
 
@@ -184,7 +253,7 @@ const failureOf = (error: unknown) => ({
 
 /** Calls `failed` with the status and message a shot answers when it fails, and returns the shot. */
 export const noteFailure = <T>(shot: Promise<T>, failed: (failure: { status: number; message: string }) => void) => {
-  shot.catch((error: unknown) => failed(failureOf(error)));
+  shot.catch((error: unknown) => !(error instanceof DrawDroppedError) && failed(failureOf(error)));
 
   return shot;
 };
