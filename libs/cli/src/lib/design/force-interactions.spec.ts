@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -27,9 +28,19 @@ describe('forceInteractions', () => {
   });
 
   it('leaves look-alike pseudo-classes alone', () => {
-    const css = '.x:focus {} .x:focus-within {} .x:active-something {} .x:any-link {} a::hover {}';
+    const css = '.x:focus {} .x:active-something {} .x:any-link {} a::hover {}';
 
     expect(forceInteractions(css)).toBe(css);
+  });
+
+  it('matches :focus-within on every ancestor of an element forced to focus-visible', () => {
+    const css = forceInteractions('.field:focus-within { color: red; }');
+    document.body.innerHTML = `<style>${css}</style><div class="field"><div><input data-et-force="focus-visible"></div></div><div class="field"><input></div>`;
+
+    const [forced, rest] = document.querySelectorAll('.field');
+
+    expect(getComputedStyle(forced!).color).toBe('rgb(255, 0, 0)');
+    expect(getComputedStyle(rest!).color).not.toBe('rgb(255, 0, 0)');
   });
 
   it('leaves strings, comments, urls and declarations alone', () => {

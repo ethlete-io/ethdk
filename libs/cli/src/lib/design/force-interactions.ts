@@ -8,9 +8,9 @@ export type Interaction = (typeof INTERACTIONS)[number];
 
 export const FORCE_ATTRIBUTE = 'data-et-force';
 
-const FORCED_PSEUDOS = new Set([':hover', ':focus-visible', ':active']);
+const FORCED_PSEUDOS = new Set([':hover', ':focus-visible', ':active', ':focus-within']);
 
-const MAY_FORCE = /:(?:hover|focus-visible|active)/iu;
+const MAY_FORCE = /:(?:hover|focus-visible|active|focus-within)/iu;
 
 const isForcedAlready = (pseudo: Pseudo) => {
   const wrapper = pseudo.parent?.parent;
@@ -27,7 +27,11 @@ const isForcedAlready = (pseudo: Pseudo) => {
 };
 
 const forcedPseudoOf = (name: string) =>
-  selectorParser().astSync(`:is(:${name}, [${FORCE_ATTRIBUTE}~="${name}"])`).first.first;
+  selectorParser().astSync(
+    name === 'focus-within'
+      ? `:is(:focus-within, :has([${FORCE_ATTRIBUTE}~="focus-visible"]), [${FORCE_ATTRIBUTE}~="focus-visible"])`
+      : `:is(:${name}, [${FORCE_ATTRIBUTE}~="${name}"])`,
+  ).first.first;
 
 const forceSelector = selectorParser((selectors) => {
   const found: Pseudo[] = [];
@@ -58,7 +62,8 @@ const forceRoot = (root: Root) => {
 /**
  * Rewrites every `:hover`, `:focus-visible` and `:active` in the selectors of a stylesheet to
  * `:is(<pseudo>, [data-et-force~="<name>"])`, so a frame can force the interaction with the
- * attribute. Safe to run again on its own output; CSS it cannot parse comes back unchanged.
+ * attribute. `:focus-within` also matches an element that is, or has a descendant that is,
+ * forced to `focus-visible`. Safe to run again on its own output; CSS it cannot parse comes back unchanged.
  */
 export const forceInteractions = (css: string) => {
   if (!MAY_FORCE.test(css)) return css;

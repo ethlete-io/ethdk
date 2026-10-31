@@ -154,7 +154,7 @@ const force = (element: Element, name: string) => {
 };
 
 const forced = async (css: string) => {
-  if (!/:(?:hover|focus-visible|active)/iu.test(css)) return css;
+  if (!/:(?:hover|focus-visible|active|focus-within)/iu.test(css)) return css;
 
   const response = await fetch('/__design/force', { method: 'POST', body: css }).catch(() => null);
 
