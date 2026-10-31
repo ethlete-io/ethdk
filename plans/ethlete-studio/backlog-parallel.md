@@ -1111,3 +1111,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   only real control borders (shell-main, inbox). Hand-drawn floating panels (project picker `shell-main.ts:74`,
   inbox comment popover `inbox.ts:217`) move to the SDK `menu()` and `anchoredDialog()` renderers under Q208.
   Q212 covers floating panels only; the comment-pin is a canvas marker and keeps its Q211 ring.
+- **Q214 (Tom, 2026-10-31):** Tom accepts the Q211 pin round (`64d664072`): hover face grey 44 to 50, active 52 to 62,
+  the count badge beside the button, the brighter active ink on the unselected pin for contrast.
