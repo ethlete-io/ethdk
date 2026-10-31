@@ -9,6 +9,7 @@ import {
   contrastExceptionsOf,
   contrastPairsOf,
 } from './contrast-check';
+import { controlStateGapsOf } from './complete';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -52,6 +53,7 @@ type Frame = {
 type PartModule = {
   default?: {
     states?: unknown;
+    controls?: unknown;
     widths?: unknown;
     grid?: unknown;
     checks?: { skip?: unknown };
@@ -474,6 +476,18 @@ export const renderIssuesOf = async (options: {
         const states =
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
         const grid = gridReportOf(definition?.grid, states);
+
+        for (const gap of controlStateGapsOf({ part: key, controls: definition?.controls, states }))
+          issues.push({
+            rule: gap.code,
+            product,
+            part: key,
+            state: '-',
+            size: '-',
+            path: '-',
+            detail: gap.detail,
+            sketch,
+          });
 
         if (grid) {
           grids.push({ product, part: key, sketch, line: grid.line });

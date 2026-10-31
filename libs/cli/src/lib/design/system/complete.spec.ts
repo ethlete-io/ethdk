@@ -4,7 +4,16 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
-import { completenessGapLineOf, completenessGapsOf, completenessOf, FoundControl, SeenFrame } from './complete';
+import {
+  completenessGapLineOf,
+  completenessGapsOf,
+  completenessOf,
+  controlStateGapsOf,
+  FoundControl,
+  isInteractionState,
+  SeenFrame,
+  smallChangeHintsOf,
+} from './complete';
 import { designComplete } from './complete-command';
 import { approveException } from './exceptions';
 import { readHandoff, recordHandoff } from './handoff';
@@ -206,6 +215,13 @@ const PARTS: Record<string, FixturePart> = {
     extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
   },
   'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
+  'elements/card': {
+    states: {
+      rest: '<div style="width: 360px; height: 240px; border: 1px solid"><p>Card</p></div>',
+      badge: '<div style="width: 360px; height: 240px; border: 1px solid"><p>Card <b>3</b></p></div>',
+      filled: '<div style="width: 360px; height: 240px; border: 1px solid; background: black"><p>Card</p></div>',
+    },
+  },
   'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
   'components/focus-containers': {
     states: {
@@ -335,6 +351,76 @@ const ROWS = {
 };
 
 const COLUMNS = ['rest', 'hover', 'active', 'focus-visible'];
+
+describe('controlStateGapsOf', () => {
+  it('reads an interaction from any word of a state name', () => {
+    expect(
+      ['hover', 'row-hover', 'collapseFocus', 'focus-visible', 'pressed', 'tab_active', 'selected', 'open'].filter(
+        isInteractionState,
+      ),
+    ).toEqual(['hover', 'row-hover', 'collapseFocus', 'focus-visible', 'pressed', 'tab_active', 'selected']);
+    expect(['inactive', 'unfocusable', 'hovercard', 'rest'].filter(isInteractionState)).toEqual([]);
+  });
+
+  it('names the element to extract for each interaction state of a part that is no control part', () => {
+    const states = ['open', 'row-hover', 'row-selected', 'collapse-focus-visible', 'hover'];
+
+    expect(
+      controlStateGapsOf({ part: 'elements/shell', controls: undefined, states }).map(completenessGapLineOf),
+    ).toEqual([
+      'CONTROL-STATE elements/shell - states row-hover, row-selected draw an interaction (hover, focus, pressed, active or selected), which only a control part draws, and elements/shell declares no control of a kind disclosure, button, select, menu, row, field, tooltip - extract the row as its own control part and draw these states there',
+      'CONTROL-STATE elements/shell - state collapse-focus-visible draws an interaction (hover, focus, pressed, active or selected), which only a control part draws, and elements/shell declares no control of a kind disclosure, button, select, menu, row, field, tooltip - extract the collapse as its own control part and draw this state there',
+      'CONTROL-STATE elements/shell - state hover draws an interaction (hover, focus, pressed, active or selected), which only a control part draws, and elements/shell declares no control of a kind disclosure, button, select, menu, row, field, tooltip - extract the control as its own control part and draw this state there',
+    ]);
+  });
+
+  it('allows interaction states on a part that declares a control of a checked kind, never on a page', () => {
+    const states = ['rest', 'rest-hover', 'selected'];
+
+    expect(controlStateGapsOf({ part: 'components/row', controls: { row: { kind: 'row' } }, states })).toEqual([]);
+    expect(
+      controlStateGapsOf({ part: 'components/odd', controls: { odd: { kind: 'slider' } }, states }).map(
+        (gap) => gap.code,
+      ),
+    ).toEqual(['CONTROL-STATE', 'CONTROL-STATE']);
+    expect(
+      controlStateGapsOf({
+        part: 'pages/home',
+        controls: { more: { kind: 'disclosure', part: 'components/disclosure' } },
+        states,
+      }).map((gap) => gap.detail.split(' - ')[0]?.endsWith('a page is no control part')),
+    ).toEqual([true, true]);
+  });
+
+  it('fails the part in completenessGapsOf', () => {
+    expect(
+      completenessGapsOf({
+        part: 'elements/card',
+        controls: undefined,
+        states: ['rest', 'hover'],
+        frames: [],
+        reviewed: true,
+      }).map((gap) => gap.code),
+    ).toEqual(['CONTROL-STATE']);
+  });
+});
+
+describe('smallChangeHintsOf', () => {
+  it('hints a state that changes under a tenth of the frame of a part that is no control part', () => {
+    const changes = [
+      { state: 'badge', base: 'rest', share: 0.02 },
+      { state: 'same', base: 'rest', share: 0 },
+      { state: 'expanded', base: 'rest', share: 0.4 },
+      { state: 'row-hover', base: 'rest', share: 0.01 },
+    ];
+
+    expect(smallChangeHintsOf({ part: 'elements/card', controls: undefined, changes })).toEqual([
+      'HINT elements/card badge - changes 2.0 % of the frame against rest - extract the changed element as its own part',
+    ]);
+    expect(smallChangeHintsOf({ part: 'components/row', controls: { row: { kind: 'row' } }, changes })).toEqual([]);
+    expect(smallChangeHintsOf({ part: 'pages/home', controls: undefined, changes })).toEqual([]);
+  });
+});
 
 describe('completenessGapsOf', () => {
   it('passes a part without controls that draws none, and fails each undeclared control it draws once', () => {
@@ -726,6 +812,21 @@ describe('completenessGapsOf', () => {
 });
 
 describe('completenessOf', () => {
+  it('hints a state that changes a small share of the frame, without failing the part', async (context) => {
+    const { target, config, product } = checkout();
+    const card = await completenessOf({ target, config, product, part: 'elements/card' });
+
+    if ('unavailable' in card) return context.skip(card.unavailable);
+    if ('problem' in card) throw new Error(card.problem);
+
+    expect(card.gaps).toEqual([]);
+    expect(card.hints).toEqual([
+      expect.stringMatching(
+        /^HINT elements\/card badge - changes \d\.\d % of the frame against rest - extract the changed element as its own part$/,
+      ),
+    ]);
+  });
+
   it('fails the merge accordion that is only drawn open without its body, and passes a fully drawn one', async (context) => {
     const { target, config, product } = checkout();
 

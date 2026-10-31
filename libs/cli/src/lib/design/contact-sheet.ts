@@ -242,8 +242,7 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
   return lines;
 })(${diff})`;
 
-const changedBoxesIn = (diff: string, urls: string[]) => `(async ([before, after]) => {
-  const pixelsOf = async (src) => {
+const pixelsOfSource = `async (src) => {
     const image = new Image();
     image.src = src;
     await image.decode();
@@ -255,9 +254,23 @@ const changedBoxesIn = (diff: string, urls: string[]) => `(async ([before, after
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0);
     return context.getImageData(0, 0, canvas.width, canvas.height);
-  };
+  }`;
+
+const changedBoxesIn = (diff: string, urls: string[]) => `(async ([before, after]) => {
+  const pixelsOf = ${pixelsOfSource};
   const [beforePixels, afterPixels] = await Promise.all([pixelsOf(before), pixelsOf(after)]);
   return (${diff})(beforePixels, afterPixels).boxes;
+})(${JSON.stringify(urls)})`;
+
+const changedSharesIn = (diff: string, urls: string[]) => `(async ([base, ...others]) => {
+  const pixelsOf = ${pixelsOfSource};
+  const basePixels = await pixelsOf(base);
+  const shares = [];
+  for (const other of others) {
+    const changed = (${diff})(basePixels, await pixelsOf(other));
+    shares.push(changed.changed / Math.max(1, changed.width * changed.height));
+  }
+  return shares;
 })(${JSON.stringify(urls)})`;
 
 /**
@@ -277,6 +290,27 @@ export const changedBoxesOf = async (options: { browser: Browser; before: Buffer
     const groups = (await page.evaluate(changedBoxesIn(diffSourceOf(), urls))) as ChangedBox[];
 
     return clusteredBoxesOf(groups, { gap: CLUSTER_GAP });
+  } finally {
+    await context.close();
+  }
+};
+
+/**
+ * The share of the pixels each of `others` changes from `base`, from 0 to 1, over the larger of both sizes: a pixel
+ * only one of them covers counts as changed.
+ */
+export const changedSharesOf = async (options: { browser: Browser; base: Buffer; others: Buffer[] }) => {
+  const { browser, base, others } = options;
+
+  if (others.length === 0) return [];
+
+  const context = await browser.newContext();
+
+  try {
+    const page = await context.newPage();
+    const urls = [base, ...others].map((png) => `data:image/png;base64,${png.toString('base64')}`);
+
+    return (await page.evaluate(changedSharesIn(diffSourceOf(), urls))) as number[];
   } finally {
     await context.close();
   }

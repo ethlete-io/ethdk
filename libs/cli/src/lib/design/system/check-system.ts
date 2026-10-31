@@ -198,6 +198,8 @@ const missingStatesOf = async (
     return [];
   }
 
+  for (const hint of [...checked.hints.values()].flat()) console.log(hint);
+
   return [...checked.gaps].flatMap(([part, gaps]) =>
     typeof gaps === 'string'
       ? []

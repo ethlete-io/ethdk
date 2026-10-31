@@ -8,6 +8,7 @@ import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
+import { changedSharesOf } from '../contact-sheet';
 import { partHashOf } from './sketch/baseline';
 import { readMerged } from './sketch/merged-parts';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
@@ -173,6 +174,82 @@ export const declaredControlsOf = (value: unknown): Record<string, DeclaredContr
         }),
       )
     : null;
+
+const INTERACTION_WORDS = new Set(['hover', 'hovered', 'focus', 'focused', 'pressed', 'active', 'selected']);
+
+const NAME_WORDS = new Set([...INTERACTION_WORDS, 'visible', 'within']);
+
+const wordsOf = (state: string) =>
+  state
+    .replace(/([a-z0-9])([A-Z])/gu, '$1-$2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/u)
+    .filter((word) => word !== '');
+
+/**
+ * Whether a state name shows an interaction: one of its words, split at `-`, `_`, spaces and camelCase, is hover,
+ * hovered, focus, focused, pressed, active or selected. `row-hover`, `collapseFocus` and `focus-visible` are; `inactive` is not.
+ */
+export const isInteractionState = (state: string) => wordsOf(state).some((word) => INTERACTION_WORDS.has(word));
+
+/** Whether a part may draw interaction states: it is no page, and its `controls` declare a control of a checked kind. */
+export const isControlPart = (options: { part: string; controls: unknown }) =>
+  !options.part.startsWith('pages/') &&
+  Object.values(declaredControlsOf(options.controls) ?? {}).some((control) => CHECKED_KINDS.includes(control.kind));
+
+/**
+ * One `CONTROL-STATE` gap per element whose interaction states a part draws that is no control part. The element is
+ * the state name without its interaction words (`row-hover` names the row), or `control` when nothing is left.
+ */
+export const controlStateGapsOf = (options: {
+  part: string;
+  controls: unknown;
+  states: string[];
+}): CompletenessGap[] => {
+  const { part, states } = options;
+
+  if (isControlPart(options)) return [];
+
+  const elements = new Map<string, string[]>();
+
+  for (const state of states.filter(isInteractionState)) {
+    const element =
+      wordsOf(state)
+        .filter((word) => !NAME_WORDS.has(word))
+        .join('-') || 'control';
+
+    elements.set(element, [...(elements.get(element) ?? []), state]);
+  }
+
+  const why = part.startsWith('pages/')
+    ? 'a page is no control part'
+    : `${part} declares no control of a kind ${CHECKED_KINDS.join(', ')}`;
+
+  return [...elements].map(([element, shown]) => ({
+    code: 'CONTROL-STATE',
+    target: part,
+    detail: `${shown.length === 1 ? 'state' : 'states'} ${statesShownOf(shown)} draw${shown.length === 1 ? 's' : ''} an interaction (hover, focus, pressed, active or selected), which only a control part draws, and ${why} - extract the ${element} as its own control part and draw ${shown.length === 1 ? 'this state' : 'these states'} there`,
+  }));
+};
+
+/** How much of its frame one rest state changes against `base`, the first state of its part, from 0 to 1. */
+export type StateChange = { state: string; base: string; share: number };
+
+const SMALL_CHANGE = 0.1;
+
+/**
+ * One hint per state of an element or component that is no control part whose pixels differ from its first state in
+ * under a tenth of the frame. Pages compose parts, so they get none; interaction states are left to `CONTROL-STATE`.
+ */
+export const smallChangeHintsOf = (options: { part: string; controls: unknown; changes: StateChange[] }): string[] =>
+  options.part.startsWith('pages/') || isControlPart(options)
+    ? []
+    : options.changes
+        .filter(({ state, share }) => share > 0 && share < SMALL_CHANGE && !isInteractionState(state))
+        .map(
+          ({ state, base, share }) =>
+            `HINT ${options.part} ${state} - changes ${(share * 100).toFixed(1)} % of the frame against ${base} - extract the changed element as its own part`,
+        );
 
 /** Whether a discovered element is an undeclared or unclassified finding of the part, not owned or declared. */
 export const isFindingOf = (declared: Record<string, DeclaredControl>) => (found: FoundControl) =>
@@ -625,6 +702,7 @@ export const completenessGapsOf = (options: {
 
   return [
     ...gaps,
+    ...controlStateGapsOf({ part, controls: options.controls, states }),
     ...discoveryGapsOf({ part, declared, frames }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
@@ -1152,6 +1230,7 @@ const seeFrames = async (options: {
   const context = await browser.newContext();
   const seen: SeenFrame[] = [];
   const refused: string[] = [];
+  const shots: { state: string; png: Buffer }[] = [];
 
   try {
     const page = await context.newPage();
@@ -1169,6 +1248,15 @@ const seeFrames = async (options: {
       if ('refused' in found) {
         refused.push(`${frame.state}: ${found.refused}`);
         continue;
+      }
+
+      if (frame.interaction === null) {
+        const box = frame.clip ? await page.locator('#root').boundingBox() : null;
+
+        shots.push({
+          state: frame.state,
+          png: await page.screenshot({ type: 'png', fullPage: true, animations: 'disabled', clip: box ?? undefined }),
+        });
       }
 
       const forcedOf = async (element: Tagged) => {
@@ -1243,7 +1331,18 @@ const seeFrames = async (options: {
     await context.close();
   }
 
-  return { seen, refused };
+  const [first, ...others] = shots;
+  const shares = first ? await changedSharesOf({ browser, base: first.png, others: others.map(({ png }) => png) }) : [];
+
+  return {
+    seen,
+    refused,
+    changes: others.map(({ state }, index): StateChange => ({
+      state,
+      base: first?.state ?? '',
+      share: shares[index] ?? 0,
+    })),
+  };
 };
 
 type PartModule = {
@@ -1316,7 +1415,7 @@ export const seePart = async (options: {
     .filter((file) => file.endsWith('.css'))
     .sort()
     .map((file) => readFileSync(join(dir, file), 'utf8'));
-  const { seen, refused } = await draw((browser) => seeFrames({ browser, base, frames, part: key, ownCss }));
+  const { seen, refused, changes } = await draw((browser) => seeFrames({ browser, base, frames, part: key, ownCss }));
   const owner = partOwnerOf({ product, part });
 
   return {
@@ -1324,6 +1423,7 @@ export const seePart = async (options: {
     states,
     seen,
     refused,
+    changes,
     addresses: states.map((state): FrameAddress => ({ state, preset, width })),
     owner,
     hash: partHashOf({ product: owner, dir }),
@@ -1354,7 +1454,9 @@ export const completenessOf = async (options: {
   sketch?: SketchVariant | null;
   chromiumOf?: typeof chromiumOf;
 }): Promise<
-  { gaps: CompletenessGap[]; exceptions?: ListedException[] } | { unavailable: string } | { problem: string }
+  | { gaps: CompletenessGap[]; exceptions?: ListedException[]; hints?: string[] }
+  | { unavailable: string }
+  | { problem: string }
 > => {
   const { target, config, product, part, sketch = null } = options;
   const system = createSystemModules({ target, config });
@@ -1375,7 +1477,13 @@ export const completenessOf = async (options: {
 
   if (typeof gaps === 'string') return { problem: gaps };
 
-  return checked.exceptions.length > 0 ? { gaps, exceptions: checked.exceptions } : { gaps };
+  const hints = checked.hints.get(part) ?? [];
+
+  return {
+    gaps,
+    ...(checked.exceptions.length > 0 ? { exceptions: checked.exceptions } : {}),
+    ...(hints.length > 0 ? { hints } : {}),
+  };
 };
 
 /**
@@ -1390,7 +1498,8 @@ export const partsCompletenessOf = async (options: {
   sketch?: SketchVariant | null;
   chromiumOf?: typeof chromiumOf;
 }): Promise<
-  { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[] } | { unavailable: string }
+  | { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[]; hints: Map<string, string[]> }
+  | { unavailable: string }
 > => {
   const { target, config, product, sketch = null } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
@@ -1410,6 +1519,7 @@ export const partsCompletenessOf = async (options: {
 
     const checked = new Map<string, CompletenessGap[] | string>();
     const exceptions: ListedException[] = [];
+    const hints = new Map<string, string[]>();
     const gapsOfPart = async (key: string, chain: string[]): Promise<CompletenessGap[] | string> => {
       const known = checked.get(key);
 
@@ -1439,7 +1549,9 @@ export const partsCompletenessOf = async (options: {
 
       if (typeof sight === 'string') return [{ code: 'RENDER', target: key, detail: sight.split('\n')[0] ?? '' }];
 
-      const { definition, states, seen, refused, owner, hash } = sight;
+      const { definition, states, seen, refused, changes, owner, hash } = sight;
+
+      hints.set(key, smallChangeHintsOf({ part: key, controls: definition?.controls, changes }));
       const sketched = product.parts.find((candidate) => partKeyOf(candidate) === key)?.file !== resolved.file;
       const reviewed = sketched || readMerged(owner.dir)[key] === hash;
       const referenced: ReferencedParts = {};
@@ -1479,7 +1591,7 @@ export const partsCompletenessOf = async (options: {
 
     for (const part of options.parts) gaps.set(part, await gapsOfPart(part, []));
 
-    return { gaps, exceptions };
+    return { gaps, exceptions, hints };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
 

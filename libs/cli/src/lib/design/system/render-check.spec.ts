@@ -6,7 +6,7 @@ import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
 import { renderIssueLineOf, renderIssuesOf } from './render-check';
 
-const PARTS: Record<string, { body: string; extra?: string; css?: string }> = {
+const PARTS: Record<string, { body: string; extra?: string; css?: string; states?: string }> = {
   'pages/tall': { body: '<div style="height: 300px; border: 1px solid">Tall</div>' },
   'components/cut': {
     body: '<div style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div>',
@@ -75,7 +75,7 @@ const checkout = (parts: typeof PARTS = PARTS) => {
     JSON.stringify({ products: { shop: { presets: { desktop: { width: 400, height: 300 } } } } }),
   );
 
-  for (const [key, { body, extra = '', css }] of Object.entries(parts)) {
+  for (const [key, { body, extra = '', css, states = 'default: {}' }] of Object.entries(parts)) {
     const [layer = '', name = ''] = key.split('/');
     const dir = join(design, 'shop', layer, name);
 
@@ -88,7 +88,7 @@ ${css ? `import styles from './${name}.css?inline';` : ''}
 
 export default definePart({
   note: 'A fixture.',
-  states: { default: {} },
+  states: { ${states} },
   ${extra}
   render: () => drawing({ body: html\`${body}\`, styles: ${css ? 'styles' : "''"} }),
 });
@@ -186,6 +186,32 @@ describe('renderIssuesOf', () => {
       expect.stringMatching(/^CONTRAST components\/mode: "Selected" 1\.\d+:1 in the dark scheme, needs 4\.50:1$/),
     ]);
     expect(rendered.drawn).toHaveLength(1);
+  });
+
+  it('fails interaction states on a part that declares no control, and passes them on a control part', async (context) => {
+    const target = checkout({
+      'elements/shell': {
+        body: '<p style="margin: 0">Shell</p>',
+        states: "rest: {}, 'row-hover': {}, 'collapse-focus': {}",
+      },
+      'components/row': {
+        body: '<button data-et-control="row">Row</button>',
+        states: "rest: {}, 'rest-hover': {}",
+        extra: "controls: { row: { kind: 'row', input: [] } },",
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part}: ${issue.detail.split(' - ').at(-1)}`)).toEqual([
+      'CONTROL-STATE elements/shell: extract the row as its own control part and draw this state there',
+      'CONTROL-STATE elements/shell: extract the collapse as its own control part and draw this state there',
+    ]);
   });
 
   it('answers why it can not draw when no browser resolves', async () => {

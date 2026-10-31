@@ -94,6 +94,7 @@ export const designComplete = async (options: {
 
       for (const exception of result.exceptions ?? []) console.log(exceptionLineOf(exception));
       for (const gap of result.gaps) console.error(completenessGapLineOf(gap));
+      for (const hint of result.hints ?? []) console.log(hint);
 
       if (result.gaps.length > 0) {
         failed++;
@@ -150,6 +151,7 @@ export const designComplete = async (options: {
 
   for (const exception of result.exceptions ?? []) console.log(exceptionLineOf(exception));
   for (const gap of result.gaps) console.error(completenessGapLineOf(gap));
+  for (const hint of result.hints ?? []) console.log(hint);
 
   if (result.gaps.length > 0) {
     console.error(`${what} in ${product.name} is not design complete: ${result.gaps.length} gap(s)`);

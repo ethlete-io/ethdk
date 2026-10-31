@@ -548,6 +548,9 @@ When each of several cases is drawn at rest and in the same interactions, build 
 from `@design-system` and spread the result into `definePart`; never write those states and the grid by hand.
 `sketch check` prints `grid <rows> x <columns> ok`, or the states the grid leaves out; a state in two cells
 fails it as `GRID`, in `design check` too.
+Interaction states (a state name with the word hover, focus, pressed, active or selected) live only on a control
+part, one whose `controls` declare a control of a checked kind. On a shell, element or page they fail as
+`CONTROL-STATE`: extract the button or row as its own control part and draw its states there.
 `definePart({ interactions })` forces an interaction on the part's root only. To draw one element of the part
 hovered, focused, pressed or disabled, such as one row of a list, wrap that element's markup in
 `forceInteraction(markup, 'hover')` from `@design-system` inside `render`, driven by a prop; never write
