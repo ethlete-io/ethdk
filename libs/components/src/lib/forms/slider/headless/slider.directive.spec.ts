@@ -29,6 +29,9 @@ import { SliderMarks, SliderOrientation } from './slider.tokens';
       (touchedChange)="touched.set($event)"
     >
       <et-label>Test label</et-label>
+      @if (showValueLabel()) {
+        <ng-template etSliderThumbLabel let-value>{{ value }}</ng-template>
+      }
     </et-slider>
   `,
   imports: [SLIDER_IMPORTS, LabelDirective],
@@ -46,6 +49,7 @@ class SliderTestHost {
   snapToMarks = signal(false);
   disabled = signal(false);
   readonly = signal(false);
+  showValueLabel = signal(false);
 }
 
 describe('SliderDirective', () => {
@@ -245,6 +249,18 @@ describe('SliderDirective', () => {
       driver.press('End');
       expect(driver.host.value()).toBe(100);
     });
+  });
+
+  it('flags the host while a thumb value label is registered', () => {
+    expect(driver.hasAttr('data-thumb-value')).toBe(false);
+
+    driver.host.showValueLabel.set(true);
+    driver.tick();
+    expect(driver.hasAttr('data-thumb-value')).toBe(true);
+
+    driver.host.showValueLabel.set(false);
+    driver.tick();
+    expect(driver.hasAttr('data-thumb-value')).toBe(false);
   });
 
   describe('marks', () => {

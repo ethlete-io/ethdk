@@ -93,6 +93,7 @@
       block-size: max(44px, var(--et-slider-thumb-size));
       /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
       margin-inline: calc(var(--et-slider-thumb-size) / 2);
+      container-type: inline-size;
       cursor: pointer;
     }
 
@@ -162,7 +163,13 @@
       left: 50%;
       /* clear the thumb (which overhangs the tick by half the size difference), then add the gap */
       inset-block-start: calc(100% + (var(--et-slider-thumb-size) - var(--et-slider-mark-size)) / 2 + 6px);
-      translate: -50% 0;
+      --_et-slider-edge-x: calc(var(--_et-slider-mark-position, 0) * 1cqi);
+      translate: clamp(
+          -1 * (var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2),
+          -50%,
+          100cqi - var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2 - 100%
+        )
+        0;
       inline-size: max-content;
       font-size: var(--et-slider-mark-label-font-size);
       line-height: 1.2;
@@ -183,7 +190,13 @@
       /* physical centering is direction-safe — 50% of the thumb is 50% in both directions */
       left: 50%;
       bottom: calc(100% + 8px);
-      translate: -50% 0;
+      --_et-slider-edge-x: calc(var(--_et-slider-thumb-position, 0) * 1cqi);
+      translate: clamp(
+          -1 * (var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2),
+          -50%,
+          100cqi - var(--_et-slider-edge-x) + var(--et-slider-thumb-size) / 2 - 100%
+        )
+        0;
       inline-size: max-content;
       padding: 2px 8px;
       border-radius: 6px;
@@ -195,6 +208,21 @@
       pointer-events: none;
       -webkit-user-select: none;
       user-select: none;
+    }
+
+    .et-slider-mark-label:dir(rtl) {
+      --_et-slider-edge-x: calc((100 - var(--_et-slider-mark-position, 0)) * 1cqi);
+    }
+
+    .et-slider-thumb-value:dir(rtl) {
+      --_et-slider-edge-x: calc((100 - var(--_et-slider-thumb-position, 0)) * 1cqi);
+    }
+
+    &:where([data-thumb-value]) .et-slider-interaction {
+      margin-block-start: calc(
+        var(--et-slider-thumb-value-font-size) * 1.4 + 14px -
+          (max(44px, var(--et-slider-thumb-size)) - var(--et-slider-thumb-size)) / 2
+      );
     }
 
     /* an unresolved bulk-edit value parks the thumb at the track start — the dashed accent rail
@@ -260,6 +288,7 @@
         margin-inline: 0;
         /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
         margin-block: calc(var(--et-slider-thumb-size) / 2);
+        container-type: normal;
       }
 
       .et-slider-rail {
@@ -290,7 +319,17 @@
         bottom: auto;
         inset-block-start: 50%;
         inset-inline-start: calc(100% + 8px);
-        translate: 0 -50%;
+        translate: 0
+          clamp(
+            -1 *
+              (
+                (100 - var(--_et-slider-thumb-position, 0)) * var(--et-slider-vertical-size) / 100 +
+                  var(--et-slider-thumb-size) / 2
+              ),
+            -50%,
+            var(--_et-slider-thumb-position, 0) * var(--et-slider-vertical-size) / 100 + var(--et-slider-thumb-size) /
+              2 - 100%
+          );
       }
 
       .et-slider-mark {
@@ -307,6 +346,58 @@
         inset-block-start: 50%;
         inset-inline-end: calc(100% + (var(--et-slider-thumb-size) - var(--et-slider-mark-size)) / 2 + 6px);
         translate: 0 -50%;
+      }
+
+      &:where([data-mark-labels]) {
+        .et-slider-interaction {
+          display: grid;
+          grid-template-columns: auto max(44px, var(--et-slider-thumb-size));
+          align-self: flex-start;
+          inline-size: auto;
+        }
+
+        .et-slider-rail {
+          grid-area: 1 / 2;
+          justify-self: center;
+        }
+
+        .et-slider-fill,
+        .et-slider-thumb {
+          grid-area: 1 / 2;
+        }
+
+        .et-slider-marks,
+        .et-slider-mark {
+          display: contents;
+        }
+
+        .et-slider-mark::before {
+          content: '';
+          position: absolute;
+          grid-area: 1 / 2;
+          left: 50%;
+          bottom: calc(var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-size) / 2);
+          translate: -50% 0;
+          inline-size: var(--et-slider-mark-size);
+          block-size: var(--et-slider-mark-size);
+          border-radius: 50%;
+          background: inherit;
+        }
+
+        .et-slider-mark-label {
+          position: relative;
+          grid-area: 1 / 1;
+          justify-self: end;
+          align-self: end;
+          inset: auto;
+          bottom: clamp(
+            var(--et-slider-thumb-size) / -2,
+            var(--_et-slider-mark-position, 0) * 1% - var(--et-slider-mark-label-font-size) * 0.6,
+            100% + var(--et-slider-thumb-size) / 2 - var(--et-slider-mark-label-font-size) * 1.2
+          );
+          translate: none;
+          margin-inline-end: calc(var(--et-slider-thumb-size) / 2 + 6px - max(44px, var(--et-slider-thumb-size)) / 2);
+        }
       }
 
       &[data-mixed] {

@@ -56,6 +56,7 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
     '[attr.data-readonly]': 'slider.readonly() || null',
     '[attr.data-dragging]': 'slider.draggingThumbIndex() !== null || null',
     '[attr.data-mark-labels]': 'hasMarkLabels() || null',
+    '[attr.data-thumb-value]': '!!slider.registeredThumbLabelTemplate() || null',
   },
 })
 export class SliderComponent {

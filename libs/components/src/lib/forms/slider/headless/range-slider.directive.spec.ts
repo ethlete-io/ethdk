@@ -26,7 +26,11 @@ import { SliderMarks, SliderOrientation } from './slider.tokens';
       [disabled]="disabled()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
-    />
+    >
+      @if (showValueLabel()) {
+        <ng-template etSliderThumbLabel let-value>{{ value }}</ng-template>
+      }
+    </et-range-slider>
   `,
   imports: [SLIDER_IMPORTS],
 })
@@ -42,6 +46,7 @@ class RangeSliderTestHost {
   marks = signal<SliderMarks>(false);
   snapToMarks = signal(false);
   disabled = signal(false);
+  showValueLabel = signal(false);
 }
 
 describe('RangeSliderDirective', () => {
@@ -187,6 +192,14 @@ describe('RangeSliderDirective', () => {
       driver.pointer('pointerup', 0, 0);
       expect(driver.hasAttr('data-dragging')).toBe(false);
     });
+  });
+
+  it('flags the host while a thumb value label is registered', () => {
+    expect(driver.hasAttr('data-thumb-value')).toBe(false);
+
+    driver.host.showValueLabel.set(true);
+    driver.tick();
+    expect(driver.hasAttr('data-thumb-value')).toBe(true);
   });
 
   describe('marks', () => {

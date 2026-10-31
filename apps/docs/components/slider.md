@@ -79,7 +79,7 @@ A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Drag
 
 @example slider/slider-vertical 320px
 
-Everything else follows: `aria-orientation` reports the axis, ArrowUp/ArrowDown keep incrementing/decrementing, and the browser's native panning is freed on the other axis (`touch-action: pan-x` instead of `pan-y`). Value-label bubbles and tick labels move to the inline sides of the track instead of above and below it.
+Everything else follows: `aria-orientation` reports the axis, ArrowUp/ArrowDown keep incrementing/decrementing, and the browser's native panning is freed on the other axis (`touch-action: pan-x` instead of `pan-y`). Value-label bubbles and tick labels move to the inline sides of the track instead of above and below it; the tick labels take a column as wide as the longest label, inside the host.
 
 ## Tick marks
 
@@ -129,6 +129,8 @@ Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each
 ```
 
 @example slider/slider-value-label 220px
+
+While a value label is registered the host carries `data-thumb-value` and reserves room above the track, so a bubble never covers the `et-label`. At the track ends, bubbles and tick labels shift inward to stay inside the host.
 
 ## Mixed values in bulk editors
 
