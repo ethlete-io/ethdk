@@ -136,6 +136,8 @@ const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => 
   return false;
 };
 
+/** The IDE context chip (`[⧉ In file.ts]`, `[⧉ 3 lines selected]`) shares the prompt line and survives `/clear`. */
+const IDE_CHIP = /\[⧉ [^\]]*\]/g;
 const draftLine = (session) => {
   const pane = tmux('capture-pane', '-p', '-e', '-t', `=${session}:`).stdout ?? '';
   const prompt = pane
@@ -156,7 +158,10 @@ const draftLine = (session) => {
       return '';
     })
     .join('');
-  const text = visible.replace(/^\s*[❯›]/, '').trim();
+  const text = visible
+    .replace(/^\s*[❯›]/, '')
+    .replace(IDE_CHIP, '')
+    .trim();
   return text.length > 0 ? text : null;
 };
 const hasDraft = (session) => draftLine(session) !== null;

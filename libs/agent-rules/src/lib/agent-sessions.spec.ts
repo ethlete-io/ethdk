@@ -289,6 +289,29 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
+    'types the prompt when only the IDE context chip sits on the prompt line',
+    async () => {
+      const agent = `claude-chip-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "❯ [⧉ In merged.json]"; cat > ${log}`]);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        await expect.poll(() => readFileSync(log, 'utf8'), { timeout: 5_000, interval: 250 }).toContain('resume slug');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
     'saves the prompt and logs why when the prompt holds typed text after the clear',
     async () => {
       const agent = `claude-draft-${process.pid}`;
