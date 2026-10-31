@@ -620,8 +620,12 @@ test.describe('switch / track edge', () => {
     test(`the on track draws its ink edge only in the light scheme (${scheme})`, async ({ page }) => {
       const root = await openStory(page, SWITCH_DEFAULT);
       await setColorScheme(root, scheme);
-      const toggle = root.locator('et-switch').first();
-      if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click();
+      await root
+        .locator('et-switch:not([aria-checked="true"])')
+        .first()
+        .evaluate((el) => el.setAttribute('data-e2e-edge', ''));
+      const toggle = root.locator('et-switch[data-e2e-edge]');
+      await toggle.click();
       await expect(toggle).toHaveAttribute('aria-checked', 'true');
 
       const track = toggle.locator('.et-switch-track');
