@@ -29,6 +29,7 @@ import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
+import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
@@ -243,6 +244,7 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
           };
 
     openPointsText(name, readOpenPoints(product, findings)).forEach((line) => console.log(line));
+    uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
 
     const ready = readyPartsOf(product);
 

@@ -49,6 +49,7 @@ const helpOf = (invocation: string) =>
     '  Then it prints the open points of each part: open comments, unmerged sketches, no implements, no controls',
     '  declared, and the contrasts the render check found under the rule. --complete also draws every component part',
     '  as complete does and lists each control that lacks a drawn state or surface; it is slow. Open points never fail.',
+    '  It also lists each view of the harness app (*-view.component.ts) that no part implements.',
     '',
     `${invocation} system --json [--product <name>]`,
     "  Print each product's parts as JSON: origin, note, states, widths, presets and the problems of each part.",
