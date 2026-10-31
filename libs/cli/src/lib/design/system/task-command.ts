@@ -13,6 +13,7 @@ import {
   verifyRangeOf,
 } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { THEMING_TEXT } from './theming-text';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
@@ -197,6 +198,7 @@ export const designTask = async (options: {
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
   console.log('target: compare green');
+  console.log(THEMING_TEXT);
 
   return 0;
 };

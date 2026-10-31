@@ -17,6 +17,7 @@ import {
 } from './part-task';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
+import { THEMING_TEXT } from './theming-text';
 import { ComparePart } from './compare-command';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
@@ -202,6 +203,7 @@ describe('part task', () => {
       'allowed files:',
       '  libs/chip/**',
       'target: compare green',
+      THEMING_TEXT,
     ]);
 
     markImplemented({ product: productOf(target), part: 'components/chip', states: { default: { label: 'Old' } } });

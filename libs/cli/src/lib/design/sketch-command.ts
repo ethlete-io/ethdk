@@ -22,6 +22,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
+import { THEMING_TEXT } from './system/theming-text';
 import {
   addVariant,
   createSketch,
@@ -298,6 +299,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
       : []),
     `  sketch check ${at}`,
     `  sketch ready ${at} --by <model id>`,
+    THEMING_TEXT,
   ];
 };
 
