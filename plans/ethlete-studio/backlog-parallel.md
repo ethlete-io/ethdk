@@ -691,6 +691,19 @@ that missed the handoff; renumbered here because Q104/Q105 were already taken.
 - Q105: the floating trigger gets a light shadow only while it floats, faded in with opacity only.
 - Q119 (otp, 33's "Q103"): filled and empty otp segments look the same; every segment gets the 3:1 input frame
   (Q108). Caret and focus frame show the next segment.
+- Q102: the Q99a inset ink edge draws only in light. In dark ink is mint (13.50:1), so the edge adds a second line
+  and no contrast. Applies to every part.
+- Q120 (replaces Q97): calls are legacy and go away once the existing calls are migrated. The Studio chat becomes a
+  new, global system: one chat that stays open while Tom moves between pages, parts and sketches. When the agent
+  opens a sketch, the same chat goes on; no new chat per view. Details (how the chat learns the current view) are
+  the next grill round.
+- Slider r1 (`63d4f261a`) lib bugs, all patches: Q121 (S1) the value bubble no longer covers the label (host flag
+  when a thumb label template exists, 18px block-start space). Q122 (S2) the range slider's interaction box is
+  `max(44px, var(--et-slider-thumb-size))` like et-slider; the changeset says it grows by 16px. Q123 (S3) vertical
+  tick labels get a grid column sized to the longest label. Q124 (S4) end bubbles and tick labels clamp at the ends.
+- Q125: slider contrast rule: the thumb is at least 3:1 against the page and the rail; the fill is at least 3:1
+  against the rail; the rail itself may stay light (a dark rail takes the fill's contrast away).
+- Q126: an invalid slider gets no own mark; the error text under the field carries it, like every form field.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
