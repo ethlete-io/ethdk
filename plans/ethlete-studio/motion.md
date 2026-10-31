@@ -295,3 +295,11 @@ Each slice gets an "in progress" note here when it starts.
 - Verified: the specs, spec and app typecheck, `libs/cli/design` typecheck, eslint, `nx build cli`.
 - Not verified: a real Chromium run of the in-frame driver (no headless Studio check); a View Transition motion under the
   driver; `matchMedia` in a motion's script still sees the real reduced-motion preference.
+- Real check (2026-10-31): headless Chromium, own design server and Studio build, a scratch part (width transition plus
+  `element.animate` opacity, 1000 ms, `ctx.at(600)`). Before the fix nothing was driven: a part draws as a state grid,
+  `motionFrameIdOf` saw only the grid frame, and keyframe images were relative to Studio. After `5b3757bb0`: the
+  closed/light cell went live (Live badge, "in the live frame", image hidden); seek 250/297/754 ms put both animations
+  paused at 250/297/754 (width 65/69.7/115.4 px, opacity 0.40/0.44/0.80, the 600 ms step only at 754); play ran at
+  0.986x and 0.249x (ratio 0.253); close resumed both at rate 1 (293 -> 510 ms after 250 ms) and they finished at
+  140 px, opacity 1, step done, with the frame still live. Open: the part grid stayed `invisible` in that run (not
+  revealed, before the fix too); not looked into.
