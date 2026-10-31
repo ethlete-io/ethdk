@@ -68,6 +68,7 @@ import { mappedSubpathOf, renderPackagesOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
 import { createGeneratedStylesheets } from './generated-stylesheets';
 import { sketchStylesheetsPlugin } from './sketch-stylesheets';
+import { createDrawLedger, QUEUE_PATH } from './draw-ledger';
 import { createPartShooter, dependentIdsOf, SHOT_PATH, StylesheetImports, stylesheetImportsPlugin } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -422,11 +423,13 @@ const designExplore = ({
 
         return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
       };
-      const thumbs = createThumbnailer({ target, base });
-      const inventoryDraws = createDrawQueue({ target });
+      const ledger = createDrawLedger();
+      const thumbs = createThumbnailer({ target, base, ledger });
+      const inventoryDraws = createDrawQueue({ target, ledger });
       const shots = createPartShooter({
         target,
         base,
+        ledger,
         system,
         statesOf: async ({ product, part, sketch }) => {
           const file = system.partOf({ product, part, sketch })?.file;
@@ -587,6 +590,9 @@ const designExplore = ({
         response.setHeader('content-type', 'application/json');
         response.end(JSON.stringify(stamp));
       });
+      vite.middlewares.use(QUEUE_PATH, (_request: unknown, response: ServerResponse) =>
+        sendJson(response, { status: 200, body: ledger.report() }),
+      );
       vite.middlewares.use(RENDER_PATH, renderMiddleware(renderer));
       vite.middlewares.use(FORCE_PATH, forceMiddleware);
       vite.middlewares.use(THUMB_PATH, thumbs.middleware);

@@ -5,6 +5,7 @@ import { chromiumOf } from './browser';
 import { ChangedBox, changedBoxesOf } from './contact-sheet';
 import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
+import { DrawLedger } from './draw-ledger';
 import { fileOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import {
   Browser,
@@ -14,6 +15,7 @@ import {
   DrawPriority,
   openFrame,
   send,
+  noteFailure,
   sendShot,
   finished,
   settled,
@@ -217,6 +219,7 @@ export const createPartShooter = (options: {
   base: string | (() => string);
   system: SystemModules;
   chromiumOf?: typeof chromiumOf;
+  ledger?: DrawLedger;
   statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
 }) => {
   const { system, statesOf } = options;
@@ -433,7 +436,10 @@ export const createPartShooter = (options: {
 
         sendShot(
           response,
-          callShotOf({ slug, variant, width: pixels, params, priority }).then((picture) => picture.png),
+          noteFailure(
+            callShotOf({ slug, variant, width: pixels, params, priority }).then((picture) => picture.png),
+            (failure) => options.ledger?.fail({ part: slug, state: variant, ...failure }),
+          ),
         );
 
         return;
@@ -488,17 +494,20 @@ export const createPartShooter = (options: {
 
       sendShot(
         response,
-        partShotOf({
-          product,
-          part,
-          state,
-          preset: preset ?? null,
-          width: preset ? null : pixels,
-          sketch: sketchVariant,
-          interaction: params.get('interaction'),
-          params,
-          priority,
-        }).then((picture) => picture.png),
+        noteFailure(
+          partShotOf({
+            product,
+            part,
+            state,
+            preset: preset ?? null,
+            width: preset ? null : pixels,
+            sketch: sketchVariant,
+            interaction: params.get('interaction'),
+            params,
+            priority,
+          }).then((picture) => picture.png),
+          (failure) => options.ledger?.fail({ part: `${product}/${part}`, state, ...failure }),
+        ),
       );
     },
     /**

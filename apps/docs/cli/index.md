@@ -225,6 +225,10 @@ The design server answers the same draw for Studio: `GET /__design/motion?produc
 `to`, `mode`, `preset`, `width`, `end`, `tracks` and `keyframes: [{ ms, src }]`. Each `src` is the same URL with `frame=<ms>`
 and answers that keyframe as a PNG. The draw is kept until a change redraws the part.
 
+`GET /__design/queue` answers the render queue as JSON: `queued` and `rendering` draws, `oldestMs` (the age of the oldest
+waiting or running draw, `null` when idle), `failedTotal`, and `failed: [{ part, state, status, message, at }]` with the
+last 20 shots that failed, newest first. Studio shows it in its footer.
+
 `et design check` fails with `INLINE-SVG` when a part outside `foundations/`, or a TS file below its
 folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a helper that a
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow

@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { posix } from 'path';
 import { Chromium, chromiumOf } from './browser';
+import { DrawLedger } from './draw-ledger';
 
 export const THUMB_PATH = '/__design/thumb';
 
@@ -88,8 +89,8 @@ const DRAWS_AT_ONCE = 4;
  * `high` drawing runs before every waiting `low` one, each lane in the order asked. A failed launch is
  * not kept, so the next ask tries again.
  */
-export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf }) => {
-  const { target } = options;
+export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf; ledger?: DrawLedger }) => {
+  const { target, ledger } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   let browser: Promise<Browser> | null = null;
   const waiting: Record<DrawPriority, (() => Promise<void>)[]> = { high: [], low: [] };
@@ -132,9 +133,17 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
 
   return {
     run: <T>(draw: (browser: Browser) => Promise<T>, priority: DrawPriority = 'high') => {
+      const ticket = ledger?.ask();
       let job = () => Promise.resolve();
       const drawn = new Promise<T>((resolve, reject) => {
-        job = () => launch().then(draw).then(resolve, reject);
+        job = () => {
+          ticket?.start();
+
+          return launch()
+            .then(draw)
+            .then(resolve, reject)
+            .finally(() => ticket?.end());
+        };
       });
 
       jobs.set(drawn, job);
@@ -159,29 +168,40 @@ export const createDrawQueue = (options: { target: string; chromiumOf?: typeof c
   };
 };
 
+const failureOf = (error: unknown) => ({
+  status:
+    error instanceof ThumbUnavailableError
+      ? 503
+      : error instanceof ThumbMissingError
+        ? 404
+        : error instanceof ShotUnprocessableError
+          ? 422
+          : error instanceof ShotTimeoutError
+            ? 504
+            : 500,
+  message: error instanceof Error ? error.message : String(error),
+});
+
+/** Calls `failed` with the status and message a shot answers when it fails, and returns the shot. */
+export const noteFailure = <T>(shot: Promise<T>, failed: (failure: { status: number; message: string }) => void) => {
+  shot.catch((error: unknown) => failed(failureOf(error)));
+
+  return shot;
+};
+
 export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
   void shot.then(
     (body) => send(response, { status: 200, type: 'image/png', body }),
-    (error: unknown) =>
+    (error: unknown) => {
+      const failure = failureOf(error);
+
       send(
         response,
         error instanceof ShotFailedError
           ? { status: 500, type: 'image/png', body: error.png }
-          : {
-              status:
-                error instanceof ThumbUnavailableError
-                  ? 503
-                  : error instanceof ThumbMissingError
-                    ? 404
-                    : error instanceof ShotUnprocessableError
-                      ? 422
-                      : error instanceof ShotTimeoutError
-                        ? 504
-                        : 500,
-              type: 'text/plain; charset=utf-8',
-              body: error instanceof Error ? error.message : String(error),
-            },
-      ),
+          : { status: failure.status, type: 'text/plain; charset=utf-8', body: failure.message },
+      );
+    },
   );
 
 export const send = (response: ServerResponse, { status, type, body }: Shot) => {
@@ -205,6 +225,7 @@ export const createThumbnailer = (options: {
   target: string;
   base: string | (() => string);
   chromiumOf?: typeof chromiumOf;
+  ledger?: DrawLedger;
 }) => {
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
@@ -268,7 +289,12 @@ export const createThumbnailer = (options: {
         return;
       }
 
-      sendShot(response, shotOf(slug, url.search));
+      sendShot(
+        response,
+        noteFailure(shotOf(slug, url.search), (failure) =>
+          options.ledger?.fail({ part: slug, state: url.searchParams.get('variant') ?? '', ...failure }),
+        ),
+      );
     },
     /** Drops the pictures a changed file may draw into: its own call's, or every call below its folder. */
     forget: (file: string) => {
