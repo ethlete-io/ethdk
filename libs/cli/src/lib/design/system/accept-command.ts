@@ -8,6 +8,8 @@ import { parseTarget } from './sketch/sketch';
 export const ACCEPT_USAGE =
   'accept <layer>/<name> --product <name> --by <model id> --note <why the user approved the direct edit>';
 
+const THEMING_CLASS_RULES = new Set(['CLASS-UNDEFINED', 'DENIED-CLASS', 'DENIED-STYLESHEET']);
+
 const findingsOfPart = (options: { target: string; product: ResolvedProduct; part: string }) => {
   const found = options.product.parts.find((candidate) => partKeyOf(candidate) === options.part);
 
@@ -16,7 +18,7 @@ const findingsOfPart = (options: { target: string; product: ResolvedProduct; par
   const dir = dirname(found.file);
 
   return ruleProblemsOf(options.product)
-    .filter((problem) => !relative(dir, problem.file).startsWith('..'))
+    .filter((problem) => THEMING_CLASS_RULES.has(problem.rule) && !relative(dir, problem.file).startsWith('..'))
     .map((problem) => `${problem.rule} ${relative(options.target, problem.file)}: ${problem.message}`);
 };
 
