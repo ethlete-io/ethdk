@@ -214,3 +214,11 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   (`go.json`, `ready.json`, `inventory.json`, `merged.json`, `accepted.json`), and comments. Today every record is a
   plain file in git, so two edits meet only as a git merge conflict. Start with a grill: what must a designer see
   and do when someone else changes the same thing.
+- **Q247 (Tom, 2026-11-01):** the `implements` link does not count for the Studio MVP; the MVP is the design (every
+  part merged and ready). Parts whose markup is inline in a bigger app component (tree-row, part-tree, zoom-chip,
+  comment-pin, canvas-viewport, the merge view) link to the file that holds that markup today. Parts with no app code
+  yet (disclosure, shell-collapse, shell-project-option, shell-project-switch, studio-menu, shell-main, pages/start)
+  stay unlinked, and that does not block the MVP. Extracting inline pieces into their own components follows after
+  the MVP.
+- **Q248 (2026-11-01), after the MVP with the extraction:** `elements/canvas-frames` -> `canvas-frame-grid.component.ts`;
+  `studio-view.component.ts` gets `elements/shell-main` as its part. Recommended, not yet confirmed by Tom.
