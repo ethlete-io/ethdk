@@ -68,6 +68,15 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   'border-segmented': {
     body: '<div role="group" style="display: inline-flex; padding: 2px; border: 1px solid #ccc"><button type="button" data-et-control="day" style="width: 40px; height: 20px; border: 0; background: none">D</button><button type="button" data-et-control="week" style="width: 40px; height: 20px; border: 0; background: none">W</button><button type="button" data-et-control="month" style="width: 40px; height: 20px; border: 0; background: none">M</button></div>',
   },
+  'border-floating': {
+    body: '<div class="et-surface--base" style="padding: 8px"><div class="et-surface--raised" style="display: inline-flex; padding: 2px; border: 1px solid #ccc; box-shadow: 0 4px 8px rgb(0 0 0 / 0.3)"><button type="button" data-et-control="out" style="width: 40px; height: 20px; border: 0; background: none">-</button><button type="button" data-et-control="in" style="width: 40px; height: 20px; border: 0; background: none">+</button></div></div>',
+  },
+  'border-shadow-same-surface': {
+    body: '<div class="et-surface--base" style="padding: 8px"><div class="et-surface--base" style="display: inline-flex; padding: 2px; border: 1px solid #ccc; box-shadow: 0 4px 8px rgb(0 0 0 / 0.3)"><button type="button" data-et-control="out" style="width: 40px; height: 20px; border: 0; background: none">-</button><button type="button" data-et-control="in" style="width: 40px; height: 20px; border: 0; background: none">+</button></div></div>',
+  },
+  'border-overlay-pane': {
+    body: '<div class="et-overlay et-overlay--anchored-dialog" style="padding: 4px; border: 1px solid #ccc"><input style="border: 0; outline: 0"></div>',
+  },
   'border-ok': {
     body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid #767676"></button>',
   },
@@ -160,6 +169,8 @@ describe('contrast check', () => {
       'components/border-low other button[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/border-segmented default div[data-et-part=components/border-segmented] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/border-segmented other div[data-et-part=components/border-segmented] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-shadow-same-surface default div[data-et-part=components/border-shadow-same-surface] > div - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-shadow-same-surface other div[data-et-part=components/border-shadow-same-surface] > div - border 1.61:1, needs 3.00:1 (non-text)',
       'components/composited default div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/composited other div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/enabled-label default div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',

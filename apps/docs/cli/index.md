@@ -295,6 +295,9 @@ drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for lar
 18.66px bold). Text inside a disabled control, or in the label of one, is exempt: a `<label for>` or wrapping label, or an `aria-labelledby` target. A part lists token pairs to compute in
 `contrast: { pairs: [{ text: ['--text'], on: ['--surface'] }] }`, and exempts text with
 `contrast: { exceptions: [{ selector: '.watermark', reason: 'decorative' }] }`.
+The border of a control, or of a frame that hugs one, needs 3:1. The outer border of a floating panel is not
+checked, because its surface step and its shadow set it apart: an SDK overlay pane (`.et-overlay`), or an element
+with a shadow and an `et-surface--<name>` class unlike that of its nearest surface ancestor.
 
 A part names the code that builds it in `implements`: a component or element names the path of its
 `.component.ts` from the repository root, `implements: 'apps/app/src/app/tree-row.component.ts'`, and a page

@@ -254,6 +254,17 @@ export const CONTRAST_STATEMENTS = `
       const height = Math.max(...boxes.map((box) => box.bottom)) - Math.min(...boxes.map((box) => box.top));
       return width * 2 >= frame.clientWidth && height * 2 >= frame.clientHeight;
     };
+    const surfaceOf = (element) => [...element.classList].find((name) => name.startsWith('et-surface--'));
+    const floating = (element) => {
+      if (element.matches('.et-overlay')) return true;
+      const own = surfaceOf(element);
+      if (!own || getComputedStyle(element).boxShadow === 'none') return false;
+      for (let at = element.parentElement; at; at = at.parentElement) {
+        const step = surfaceOf(at);
+        if (step) return step !== own;
+      }
+      return true;
+    };
     const wrappers = new Set();
     for (const control of root.querySelectorAll(frameSelector)) {
       for (let at = control; at && at !== root.parentElement; at = at.parentElement) {
@@ -269,7 +280,7 @@ export const CONTRAST_STATEMENTS = `
       const box = element.getBoundingClientRect();
       if (box.width <= 1 || box.height <= 1) continue;
       const sides = bordersOf(element);
-      if (sides.length === 0 || skipped(element)) continue;
+      if (sides.length === 0 || skipped(element) || floating(element)) continue;
       const ground = chainOf(element).length - 1;
       const fill = contrastOf(element, { x: box.left + box.width / 2, y: box.top + box.height / 2 }, null, ground);
       if (fill === null || fill >= ${CONTRAST_NON_TEXT}) continue;
