@@ -6,7 +6,7 @@ import { OpenPointsInput, openPointsText } from './open-points';
 import { goPartsOf } from './part-go';
 import { readyPartsOf } from './part-ready';
 import { Problem } from './problem';
-import { contrastsOf, missingStatesOf, readOpenPoints } from './read-open-points';
+import { contrastsOf, missingStatesOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
@@ -341,6 +341,10 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     openPointsText(name, points).forEach((line) => console.log(line));
 
     if (!options.part) uncoveredViewsText(name, uncoveredViewsOf(product)).forEach((line) => console.log(line));
+
+    const unlinked = unlinkedPartsOf(product).filter((part) => !options.part || part === options.part);
+
+    if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
 
     const ready = readyPartsOf(product);
 

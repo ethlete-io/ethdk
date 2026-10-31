@@ -8,7 +8,6 @@ export const OPEN_POINT_KINDS = [
   'open-comment',
   'unmerged-sketch',
   'plan-question',
-  'unlinked',
   'no-go',
   'stale-go',
   'missing-motion',
@@ -31,7 +30,6 @@ export type OpenPoint =
   | { kind: 'contrast'; state: string; path: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | { kind: 'unmerged-sketch'; status: SketchStatus; decision: SketchDecision['kind'] | null }
-  | { kind: 'unlinked' }
   | { kind: 'no-go' }
   | { kind: 'stale-go' }
   | { kind: 'missing-motion'; from: string; to: string };
@@ -100,7 +98,6 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
       ...(input.contrasts ?? [])
         .filter((contrast) => contrast.part === key)
         .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
-      ...(linked || layer === 'foundations' ? [] : [{ kind: 'unlinked' as const }]),
       ...(linked && go === 'missing' ? [{ kind: 'no-go' as const }] : []),
       ...(linked && go === 'stale' ? [{ kind: 'stale-go' as const }] : []),
       ...missingMotionsOf(layer, motion),
@@ -221,8 +218,6 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
 
     return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
   }
-
-  if (kind === 'unlinked') return 'no implements';
 
   if (kind === 'no-go') return 'no go';
 

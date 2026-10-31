@@ -31,6 +31,7 @@ const withoutOpenPoints = (lines: string[]) =>
   lines.filter(
     (line) =>
       !line.startsWith('OPEN POINTS ') &&
+      !line.startsWith('UNLINKED ') &&
       !line.startsWith('  ') &&
       !line.startsWith('PART ') &&
       !line.startsWith('PARTS '),
@@ -310,12 +311,14 @@ describe('checkDesign', () => {
     );
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('  '))).toEqual([
-      'OPEN POINTS acme: 12 in 4 parts',
-      '  components/button: no controls declared; 1 open comment (c-1); no implements; 2 missing motions (default -> long, long -> default)',
-      '  components/card: no controls declared; no implements; 2 missing motions (default -> long, long -> default)',
+    expect(
+      lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('UNLINKED ') || line.startsWith('  ')),
+    ).toEqual([
+      'OPEN POINTS acme: 9 in 3 parts',
+      '  components/button: no controls declared; 1 open comment (c-1); 2 missing motions (default -> long, long -> default)',
+      '  components/card: no controls declared; 2 missing motions (default -> long, long -> default)',
       '  elements/hero: no controls declared; no go',
-      '  pages/home: no implements',
+      'UNLINKED acme: components/button, components/card, pages/home',
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
@@ -341,7 +344,7 @@ describe('checkDesign', () => {
 
     expect(code).toBe(1);
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
-      '  elements/hero: 1 missing state (cta); 1 contrast under the rule (state default); no implements',
+      '  elements/hero: 1 missing state (cta); 1 contrast under the rule (state default)',
     ]);
   }, 120_000);
 
@@ -391,7 +394,7 @@ describe('checkDesign', () => {
 
     expect(code).toBe(1);
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
-      '  elements/hero: no controls declared; 1 contrast under the rule (state default); no implements',
+      '  elements/hero: no controls declared; 1 contrast under the rule (state default)',
     ]);
   }, 120_000);
 
@@ -423,11 +426,10 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
-      'PART acme components/button: 4 open points',
-      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 2 open points',
-      'PART acme pages/home: 1 open point',
-      'PART acme components/card: 4 open points',
-      'PARTS acme: 1 of 4 clean',
+      'PART acme components/button: 3 open points',
+      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
+      'PART acme components/card: 3 open points',
+      'PARTS acme: 2 of 4 clean',
     ]);
   }, 60_000);
 
@@ -443,9 +445,9 @@ describe('checkDesign', () => {
     ).toBe(1);
     expect(lines.filter((line) => /^(HARD-CODED|PART|OPEN POINTS| {2})/.test(line))).toEqual([
       expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
-      'OPEN POINTS acme: 2 in 1 part',
-      '  elements/hero: no controls declared; no implements',
-      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 2 open points',
+      'OPEN POINTS acme: 1 in 1 part',
+      '  elements/hero: no controls declared',
+      'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
     ]);
   }, 60_000);
 

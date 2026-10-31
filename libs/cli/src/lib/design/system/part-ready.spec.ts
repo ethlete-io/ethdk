@@ -157,8 +157,8 @@ describe('part ready', () => {
 
     expect(await ready('components/tag', '--product', 'app-a')).toBe(2);
     expect(await ready('components/tag', '--product', 'app-a', '--by', 'tom')).toBe(1);
-    expect(lines).toContain('  components/tag: no controls declared; no implements');
-    expect(lines).toContain('components/tag has 2 open points - close them before ready');
+    expect(lines).toContain('  components/tag: no controls declared');
+    expect(lines).toContain('components/tag has 1 open point - close them before ready');
 
     expect(await ready('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
     expect(lines.at(-1)).toBe('components/chip is ready in app-a');

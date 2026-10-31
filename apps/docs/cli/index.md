@@ -311,9 +311,9 @@ with `IMPLEMENTS-MISSING` when a path does not exist, and with `IMPLEMENTS-SHAPE
 the shape of its layer.
 
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
-for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged; no implements`. A point is a
-comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), a sketch on the part that is not merged yet, or a part
-outside `foundations/` without `implements`. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
+for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
+comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
+not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
 motion: `no looping motion in loading`. The list does not change the exit code. When a check fails, the render step does not run and

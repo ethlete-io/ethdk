@@ -17,7 +17,7 @@ const comment = (id: string, part: string, flags: { answered?: boolean; resolved
 });
 
 describe('openPointsOf', () => {
-  it('lists an unlinked part, but not a linked one or a foundation', () => {
+  it('lists no open point for an unlinked part', () => {
     expect(
       openPointsOf(
         input({
@@ -29,13 +29,10 @@ describe('openPointsOf', () => {
           ],
         }),
       ),
-    ).toEqual([
-      { part: 'components/a', points: [{ kind: 'unlinked' }] },
-      { part: 'pages/d', points: [{ kind: 'unlinked' }] },
-    ]);
+    ).toEqual([]);
   });
 
-  it('orders the points by kind: open comment, unmerged sketch, unlinked', () => {
+  it('orders the points by kind: open comment, unmerged sketch', () => {
     const [part] = openPointsOf(
       input({
         parts: [{ key: 'components/a', layer: 'components', linked: false, controls: true }],
@@ -44,7 +41,7 @@ describe('openPointsOf', () => {
       }),
     );
 
-    expect(part?.points.map((point) => point.kind)).toEqual(['open-comment', 'unmerged-sketch', 'unlinked']);
+    expect(part?.points.map((point) => point.kind)).toEqual(['open-comment', 'unmerged-sketch']);
   });
 
   it('lists a component or element without controls, but not a page or a foundation', () => {
@@ -177,8 +174,8 @@ describe('openPointsText', () => {
     );
 
     expect(openPointsText('acme', list)).toEqual([
-      'OPEN POINTS acme: 5 in 2 parts',
-      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch in progress; no implements',
+      'OPEN POINTS acme: 4 in 2 parts',
+      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch in progress',
       '  components/b: sketch picked, not merged',
     ]);
   });

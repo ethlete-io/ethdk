@@ -127,3 +127,9 @@ export const sketchOpenPointsOf = ({
 
   return sketchAddedPointsOf(ownOf(merged), ownOf(variant));
 };
+
+/** The parts outside `foundations/` that have no `implements` link. */
+export const unlinkedPartsOf = (product: ResolvedProduct): string[] =>
+  product.parts
+    .filter((part) => part.layer !== 'foundations' && partLinkOf(part.source).kind === 'none')
+    .map(partKeyOf);

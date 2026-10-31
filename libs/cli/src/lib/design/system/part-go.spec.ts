@@ -96,7 +96,6 @@ describe('part go', () => {
     expect(chipPointsOf(target)).toEqual([{ kind: 'no-go' }]);
     expect(readOpenPoints(productOf(target)).find((entry) => entry.part === 'components/tag')?.points).toEqual([
       { kind: 'missing-state', control: null },
-      { kind: 'unlinked' },
     ]);
 
     await post(target, { part: 'components/chip', by: 'tom' });
