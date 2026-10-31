@@ -1110,3 +1110,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   chip drops `border-et-surface-interaction` for it; its surface step (canvas 15 to chip 32) stays. Q201 now covers
   only real control borders (shell-main, inbox). Hand-drawn floating panels (project picker `shell-main.ts:74`,
   inbox comment popover `inbox.ts:217`) move to the SDK `menu()` and `anchoredDialog()` renderers under Q208.
+  Q212 covers floating panels only; the comment-pin is a canvas marker and keeps its Q211 ring.
