@@ -26,7 +26,7 @@ export type DialogMockOptions = {
   actions?: DialogMockButton[];
   /** Draws an `et-icon-button` with `etOverlayClose` in the header; the string adds attributes to it. */
   close?: boolean | string;
-  /** As the body's `dividers` input. `dynamic` draws the body scrolled to neither end. */
+  /** As the body's `dividers` input. `dynamic` draws the body scrolled to its start. */
   dividers?: false | 'static' | 'dynamic';
   /** A surface theme name the app registers, for the pane. */
   surface?: string;
@@ -75,10 +75,6 @@ export const dialogStyles = /* @__PURE__ */ [
     font-size: 1.8rem;
     font-weight: 600;
   }
-  .et-dialog-mock-close {
-    margin-block: -0.4rem;
-    margin-inline-end: -0.4rem;
-  }
   .et-dialog-mock-actions {
     display: flex;
     flex-wrap: wrap;
@@ -111,7 +107,6 @@ const closeButton = (attributes?: string) => {
     'et-icon-button',
     'et-focus-ring',
     'et-color--inherited',
-    'et-dialog-mock-close',
   ];
 
   return `<button ${attributes ?? ''} etOverlayClose type="button" aria-label="Close" class="${classes.join(' ')}" data-variant="transparent" data-size="sm"><div class="et-icon-button-icon">${iconMarkup(TIMES_ICON)}</div></button>`;
@@ -149,9 +144,10 @@ const body = (content: string, dividers: DialogMockOptions['dividers'] = false) 
     dividers && 'et-overlay-body--render-dividers',
     dividers === 'dynamic' && 'et-overlay-body--dynamic-dividers',
     dividers === 'dynamic' && 'et-scrollable-body--can-scroll',
+    dividers === 'dynamic' && 'et-scrollable-body--is-at-start',
   ].filter(Boolean);
 
-  return `<div class="${classes.join(' ')}"><div class="et-overlay-body-container"><div class="et-overlay-body-start-element"></div>${content}<div class="et-overlay-body-end-element"></div></div></div>`;
+  return `<div class="${classes.join(' ')}"><div class="et-overlay-body-container">${content}</div></div>`;
 };
 
 /**
