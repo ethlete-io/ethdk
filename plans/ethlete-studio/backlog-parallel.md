@@ -1081,3 +1081,9 @@ takes its surface and its colours dynamically from the theme. No part names a th
 
 Order (lead, Q96): the running Q198 colour subagent stops after its finished commits; nothing more is built on fixed
 surface classes. The implementation pilot waits for (2).
+
+**Colour follows the same rule (Tom, 2026-10-31).** `etProvideColor` sets the active colour theme on its element and
+every child inherits it; parts read only `--et-theme-color-*` and set no `et-color--<name>`. A semantic colour goes by
+theme type (kit attribute resolved like `injectSemanticColorTheme`), never by name; today `pages/system` and
+`components/tree-row` hand-pick `et-color--warning`. The auto-surface resolver also applies the new surface's
+`colorThemeVariants` swap. `DENIED-CLASS` later denies `et-color--*` in parts too.
