@@ -221,7 +221,13 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     until 3c; `markImplemented` is exported for 3c. Verified: `part-task.spec.ts`, go and open-point specs, tsc,
     lint, a real refusal (no part has a link yet) and the success and verify paths in a temp repo. Not verified:
     the sdk product, a root commit for `--verify`.
-  - Next: 3c compare (Tom Q194/Q195).
+  - 3c compare, in progress (builder ethlete-sdk-57), in two parts. 3c-1 CLI: `et design compare <part> --product
+    --url <app dev server>`, `PartLink` `{ route, component }` for page parts, `task --verify` records
+    `implemented.json` when compare is green. 3c-2: the harness route in `apps/ethlete-studio` and
+    `apps/docs-examples`. Builder defaults (safe to undo): the CLI passes each state's props as a JSON `props` query
+    param to `/__design-harness?part=&state=&props=`; the app keeps a hand-written dev-only registry from part to a
+    lazy component; compare shoots the part frame and the harness host element in one Chromium at 0 px; the CLI
+    never starts the app server, it takes `--url`.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
