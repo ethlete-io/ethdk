@@ -158,3 +158,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   technical. It reads like a debugging tool for Studio itself and is a useful CLI tool, but a designer without a code
   background gets nothing from it (DOM paths, owner keys, state counts). The rework starts from that user: what
   must a designer see and decide here, and what moves to the CLI or a debug-only view.
+- **Q241 (Tom, 2026-10-31):** the demo frame of `components/anchored-dialog` (padding, background, top margin)
+  belongs only to the presentation of the part's own states. An embedded render never has a frame, with no prop to
+  set. `pages/system` and `pages/inbox` then drop their Tailwind `!` overrides (and the inbox `bottom-${'start'}`
+  hack) in a no-visible-change round. The same rule holds for every SDK part that draws a demo frame.
