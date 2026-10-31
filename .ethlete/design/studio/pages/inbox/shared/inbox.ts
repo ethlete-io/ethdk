@@ -129,27 +129,27 @@ const ACTIVE_PART = 'button';
 const replyIcon = icon('reply', { size: 14, cls: 'flex-none' });
 const checkIcon = icon('check', { size: 14, cls: 'flex-none' });
 
-const countClass = 'flex items-center gap-0.5 text-(--et-surface-color-muted-solid)';
+const countClass = 'flex items-center gap-0.5 text-et-surface-muted';
 
 const row = (c: Comment) => {
   const selected = c.id === SELECTED;
-  const strong = c.resolved ? 'text-(--et-surface-color-muted-solid)' : 'text-(--et-surface-color-solid)';
+  const strong = c.resolved ? 'text-et-surface-muted' : 'text-et-surface';
 
-  return html`<div class="flex gap-space-2 p-space-2 rounded-control-md${selected ? ' bg-accent-subtle' : ''}">
+  return html`<div class="flex gap-space-2 p-space-2 rounded-control-md${selected ? ' bg-et-theme/20' : ''}">
     <span
-      class="ib-avatar flex flex-none items-center justify-center size-5 et-surface--dark-elevated-2 bg-(--et-surface-background-solid) text-(--et-surface-color-solid) text-(length:--text-xs) font-ui-strong"
+      class="ib-avatar flex flex-none items-center justify-center size-5 et-surface--dark-elevated-2 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
       >${c.agent ? agentLogo(c.agent, 'size-3') : c.initials}</span
     >
     <div class="flex flex-1 flex-col gap-0.5 min-w-0">
       <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
         <span class="${strong} font-ui-medium">${c.author}</span>
-        <span class="flex-1 text-(--et-surface-color-muted-solid)">${c.when}</span>
-        ${c.unread ? '<span class="ib-unread size-1.5 bg-accent" title="Ungelesen"></span>' : ''}
+        <span class="flex-1 text-et-surface-muted">${c.when}</span>
+        ${c.unread ? '<span class="ib-unread size-1.5 bg-et-theme" title="Ungelesen"></span>' : ''}
       </div>
       <p class="m-0 line-clamp-2 ${strong} text-ui-sm">${c.text}</p>
       <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
         <span
-          class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-accent-text' : 'text-(--et-surface-color-muted-solid)'} font-code"
+          class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-et-theme-ink' : 'text-et-surface-muted'} font-code"
           >${c.part} › ${c.state}</span
         >
         ${c.resolved ? `<span class="${countClass}">${checkIcon}</span>` : c.replies > 0 ? `<span class="${countClass}">${replyIcon}${c.replies}</span>` : ''}
@@ -159,17 +159,17 @@ const row = (c: Comment) => {
 };
 
 const groupHead = (title: string, count: number) =>
-  `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-(--et-surface-border-solid) text-(--et-surface-color-muted-solid) text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
+  `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-et-surface-border text-et-surface-muted text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
 
 const group = (title: string, comments: Comment[]) =>
   comments.length === 0 ? '' : groupHead(title, comments.length) + comments.map(row).join('');
 
 const activeGroup = (comments: Comment[]) =>
   comments.length === 0
-    ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-(--et-surface-color-muted-solid) text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
+    ? `${groupHead(ACTIVE_PART, 0)}<p class="m-0 pt-space-1 px-space-2 pb-space-2 text-et-surface-muted text-(length:--text-sm)">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments);
 
-const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-accent-text' })}<p class="m-0 text-(--et-surface-color-solid) text-(length:--text-sm)">Keine offenen Kommentare</p><p class="m-0 text-(--et-surface-color-muted-solid) text-(length:--text-xs)">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
+const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}<p class="m-0 text-et-surface text-(length:--text-sm)">Keine offenen Kommentare</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
@@ -213,8 +213,8 @@ export const inbox = () =>
           draft || entry
             ? `<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
                 ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
-                <div class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg et-surface--dark bg-(--et-surface-background-solid)">
-                  <div class="flex flex-col items-stretch p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-(--et-surface-color-muted-solid) [--et-button-opacity-disabled:1]"'}>Senden</button></div>
+                <div class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg et-surface--dark bg-et-surface-bg">
+                  <div class="flex flex-col items-stretch p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
                 </div>
               </div>`
             : ''
@@ -246,10 +246,10 @@ export const inbox = () =>
       );
       const side = html`<div class="ib flex flex-col -m-space-2">
         <div
-          class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-(--et-surface-border-solid) text-ui-sm"
+          class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
         >
-          <span class="text-(--et-surface-color-muted-solid)">${unresolved} offen</span>
-          <div class="flex items-center gap-space-2 text-(--et-surface-color-solid)">Erledigte zeigen ${controls}</div>
+          <span class="text-et-surface-muted">${unresolved} offen</span>
+          <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
         </div>
         <div class="flex flex-col gap-px min-h-0 overflow-hidden p-space-2">
           ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(

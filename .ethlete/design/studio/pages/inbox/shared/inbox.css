@@ -4,8 +4,6 @@
   }
 
   .ib-control {
-    --et-theme-color-primary-solid: var(--accent);
-    --et-theme-color-on-primary-solid: var(--on-accent);
     --et-surface-color-muted-solid: var(--text-muted);
     --et-surface-color-solid: var(--text);
     --et-surface-interaction-solid: var(--text);

@@ -5,7 +5,7 @@ import styles from './shell-main.css?inline';
 
 const shell = shellMain('above', styles);
 const studioPreview = html`<span
-  class="inline-flex size-10 items-center justify-center rounded-control-lg et-surface--dark-elevated bg-(--et-surface-background-solid) text-(--et-surface-color-solid)"
+  class="inline-flex size-10 items-center justify-center rounded-control-lg et-surface--dark-elevated bg-et-surface-bg text-et-surface"
   aria-label="Studio"
 >
   ${studioMarkLine(28.8)}
