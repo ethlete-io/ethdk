@@ -1198,3 +1198,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   Tom rejected adding an SDK button variant just for it. Today they are `div`/`span` bubbles with only a `title`, so
   discovery cannot find them; a `title` signal in the CLI was rejected (status icons and swatches carry `title` too).
 - In progress (builder 57, 2026-10-31): parallel subagents on shell-main b round + Q234, Q228 anchored-dialog part, pages/merge Changed rows, Q224 inventory part + view coverage + `design check --part`, Q227 size budget + token report, Studio app round picker onto et-select.
+- **Q235 (Tom, 2026-10-31):** the Studio sketch view renders only one round at a time, as the `pages/sketches` design
+  shows. The header round picker (`et-select`) switches which round is rendered; the open/folded round columns in
+  `sketch-view.component.ts` (`toggleRound`, `openRounds`) go away. The view opens on the newest round.
