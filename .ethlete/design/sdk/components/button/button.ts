@@ -1,4 +1,6 @@
 import { button, buttonStyles, ButtonMockOptions } from '@ethlete/components/design/button';
+import { iconMarkup } from '@ethlete/components/design/icon';
+import { SDK_ICONS } from '@ethlete/components/design/icon-set';
 import { definePart, drawing, forceInteraction, interactionRows } from '@design-system';
 import hover from './button.css?inline';
 
@@ -12,7 +14,11 @@ const control = ({ interaction, ...options }: Props) => {
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-export const { states, grid } = interactionRows<
+const plus = iconMarkup(SDK_ICONS.find((each) => each.name === 'et-plus')!);
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+type Size = (typeof SIZES)[number];
+
+const interactive = interactionRows<
   Props,
   'filled' | 'outline' | 'tonal' | 'transparent' | 'pressed' | 'danger' | 'small' | 'disabled',
   ButtonInteraction
@@ -30,8 +36,21 @@ export const { states, grid } = interactionRows<
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );
 
+const sizeStates = Object.fromEntries(
+  SIZES.map((size) => [`size-${size}`, { label: 'Add', icon: plus, variant: 'filled', size }]),
+) as Record<`size-${Size}`, Props>;
+
+export const states = { ...interactive.states, ...sizeStates };
+export const grid = {
+  columns: interactive.grid.columns,
+  rows: {
+    ...interactive.grid.rows,
+    ...Object.fromEntries(SIZES.map((size) => [`size ${size}`, { rest: `size-${size}` as const }])),
+  },
+};
+
 export default definePart({
-  note: 'The SDK button, drawn by its mock from @ethlete/components/design.',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states,
   grid,
