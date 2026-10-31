@@ -1,0 +1,31 @@
+{
+  "target": "components/form-field",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:01:13.827Z",
+  "baseline": {
+    "foundations/colors": "1d06df1d878ee2e2",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "be6b5409e860cdad",
+    "components/select": "3915f5657c75ef8b",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Variants one axis at a time",
+      "note": "Q72: one group of rows per axis (appearance, fill, labelMode, size), each row one value with the other axes at default, interaction states in the columns."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Each axis row draws the field empty with a hint, so the label modes show the label at rest and floated on focus."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Each axis row draws the field with a value, so the rows show the text and the floated label at rest."
+    }
+  }
+}
