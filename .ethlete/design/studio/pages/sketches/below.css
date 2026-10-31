@@ -5,7 +5,7 @@
       -1 * (var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width, 1px))
     );
   }
-  .zr-picker .et-form-field-control-frame {
+  .zr-picker .et-form-field[data-text-shell] .et-form-field-control-frame {
     border-color: transparent;
     background: none;
     box-shadow: none;
