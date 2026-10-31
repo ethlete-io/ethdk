@@ -1,5 +1,94 @@
 # @ethlete/cli
 
+## 3.0.0-next.26
+
+### Minor Changes
+
+- `et design check` measures text contrast in each colour scheme a product renders (light and dark when its stylesheets use `prefers-color-scheme` or `light-dark()`) and names the scheme in a CONTRAST finding.
+- `et design` takes a product `base` from `node_modules`: `render.packages` defaults to `node_modules` without `dist/libs`, and an installed base gets no generated `tsconfig.json`.
+- The `et design mcp` `check` tool checks a call and its variant, and `et design check --receipt <path>` writes the result to a JSON file.
+- The new `call` tool of `et design mcp` reads a call: its `call.ts`, its `fixture.ts`, the variant file and the frame URL.
+- A design part can name its component with `implements`, and `et design check` prints the open points of each part.
+- A design product can declare the colour schemes it draws with `schemes` in `.ethlete/design/config.json`; both when left out.
+- The design server answers `GET /__design/queue` with its queued and drawing shots, the age of the oldest, and the last shots that failed.
+- A design product can list `generatedFiles` in its config. The part hash skips them, so regenerating a file no longer makes `design check` warn that the part changed outside a sketch.
+- Add `iconSheet` to `@design-system`: a shared icon foundation sheet with a `catalogue` and a `construction` view, drawing each icon on its own grid (from its viewBox or `grid`) with centre lines and the padding box.
+- `design complete` counts an option or a `row` control with `data-active-source="keyboard"` as its focus-visible look, the same as an option named by `aria-activedescendant`.
+- `@design-system` exports `logoSheet({ marks })`, which draws a `foundations/logo` part: each mark at its sizes, with an optional light bar.
+- `et design shot` and `et design motion` take `--scheme <light|dark>` (MCP: `scheme`) to draw a part in that colour scheme.
+- Add `et design sketch note <layer>/<name> <variant> <text> --by <model id>`: it sets the note of one variant in sketch.json and refuses an unknown sketch or variant.
+- `et design check`, `sketch check`, `sketch ready` and `design complete` fail interaction states on a part that declares no control (`CONTROL-STATE`). `design complete` hints a state that changes under 10 % of its frame.
+- `et design check` lists missing motions as open points: every ordered state pair, except focus, and a looping motion in an ongoing-work state. `definePart({ unreachable })` exempts a pair with a reason, checked by the `MOTION-UNREACHABLE-*` rules.
+- The design render check measures non-text contrast: the border of each control (and the frame around an input) and each svg icon must reach 3:1 against what it sits on. Decorative borders give no finding.
+- `et design check` lists two more open points: a component part with no controls declared, and the contrasts the render check found. With `--complete`, it also lists each control that lacks a drawn state or surface.
+- The design server answers `GET /__design/open-points?product=&part=`, the open-point list of one part or of every part; `draw=true` adds the contrasts and missing control states of one part.
+- Design checks report missing mock option values as hints for merged parts and block newly introduced gaps in sketches; use `omits` to record intentional omissions.
+- `et design ready <part>` and `POST /__design/part-ready` mark a part ready in `ready.json`, refused while the part has open points; the mark drops when the part changes.
+- `et design` shot requests take `view` (a number raised per view change) and `rank=active|visible`: the active frame of the shown view draws first, then its visible cells, then the rest, then older views. A hung-up request's queued shot is dropped.
+- `et design sketch ready` refuses while a target in a live variant has open points the sketch can close: no controls declared or a missing motion.
+- The Studio motion timeline makes the motion's start frame live and drives it: the slider pauses its animations at that time, play and speed run them, closing resumes them at 1x.
+- Motion timeline tracks name the foundations duration and easing tokens they use.
+- `et design sketch ready` now runs the render check on the sketch's variants and refuses on any render issue, as `sketch check` reports it. Skipped elements are honoured; without a browser the check is skipped.
+
+### Patch Changes
+
+- `et design check` now lists the findings of a base product's parts per rule and says they do not block the product, instead of pointing to `--product <base>`.
+- A design product without its own `tokens` takes the token parts of its base, so frames of a product that extends a base draw under the base's tokens.
+- `et design complete` no longer crashes on an option that is also a `data-et-control` in an open surface.
+- The design contrast check measures text against a `z-index: -1` fill behind it (a positioned sibling or a `::before`/`::after`) instead of the panel under that fill.
+- `et design complete` no longer fails a page on the gaps of a control part it uses from its base product; those gaps stay open points of the base part.
+- `et design check` no longer fails a product on the findings of a part it takes from its base product. It counts them in one line that points to the base product's own check.
+- `et design check` prints one `RENDER CHECK NOT RUN` line when failing checks stop the render, naming the rules and how many problems are in the base.
+- `et design` commands that load design modules (`system --json`, `sketch ready`) no longer share the dependency cache of the running design server, so they stop deleting its optimized deps and blanking every live frame.
+- `et design complete` reports `CONTROL-UNDECLARED` as a hint; the sketch check fails on a control a sketch adds. For a native control the hint says to mark it with `control(markup, name)` and declare the name in `controls`.
+- `et design` listens on `DE_PORT` when it is set, also when Studio did not start it. Before, it took a free port.
+- `design complete` no longer reports the focus container of a composite widget (a `menu`, `listbox`, `tree`, `grid`, `tablist` or similar with `tabindex="-1"` or `aria-activedescendant`) as an undeclared control; its items are still checked.
+- A package rebuild that writes a file back unchanged no longer redraws the design shots that use it.
+- `et design complete` requires hover, focus and active of a menu item but no selected look; a select still requires the selected look.
+- The design server keeps its part shots on disk, so a restart serves them without redrawing until a file they draw from changes.
+- `et design complete` names a `hover:`, `active:` or `focus:` class no stylesheet defines instead of reporting an unchanged box, and the Studio Tailwind theme gains the `surface-pressed` colour.
+- A design frame no longer grows below a scroll container for an absolute element that the container clips, such as the scroll sentinels of an overlay body.
+- A design frame no longer grows to the viewport for a fixed element on all four edges, such as an overlay backdrop.
+- A part frame now grows to cover absolutely or fixed positioned content, so an open overlay panel no longer gets cut off at the trigger's height.
+- Design tool: a forced `focus-visible` now also matches `:focus-within` on the element and its ancestors, so floating labels and focus rings draw as they do in a real focus.
+- A shot of a missing part, state or sketch variant now always answers 404, a queued shot of a removed sketch is dropped, and the render queue no longer lists failures of removed sketches.
+- A part shot is cut from the page with a clip of the root's box instead of an element screenshot, and the thumb queue draws eight shots at once instead of four, so a grid of forty states draws faster.
+- `et design shot --crop changed` also crops the states the merged part does not draw, comparing them with its first state, so a new hover state is no longer cut off.
+- `et design sketch check` and `sketch ready` print one count line per variant for the problems that were there before, instead of repeating each of them per variant.
+- The design server lists sketches about three times faster: each part source is parsed once, and the product's rule problems are found once per list. A run of merges no longer stalls frames and Studio requests for seconds.
+- The sketch check warns of an export in a sketch's `shared/` folder only when no variant imports it. An export that only some variants use no longer warns.
+- The `STALE-REPLACE` design check no longer warns on a `.replace` on a function parameter that a call fills with markup from a package.
+- `et design check` no longer reports an `rgb()` or `rgba()` as a hard-coded colour when every channel comes from `var()`, for example `rgb(var(--shadow-rgb) / 0.25)`. A literal channel is still reported.
+- Draw part and call shots on a transparent page in both colour schemes, as a live frame does.
+- `et design check` reports `CONTROL-PART-INPUT` again: an import cycle left the plain-control selector undefined, so the rule matched no element.
+- The CONTROL-PART-INPUT hint now covers the same plain controls as `design complete`: `summary`, focusable `[tabindex]` and every interactive role.
+- CONTROL-STATE counts an interaction word only as the last word of a state name, drops modifier words from the element name, and asks a component without controls to declare them (Q164).
+- Design commands that run at the same time no longer share one Vite cache folder: the first keeps the shared cache, every other one draws from a folder of its own that it removes when it closes.
+- The design contrast check no longer reports decorative separators, toolbar outlines or hidden svg lines, and measures text on a frame's page fill.
+- The contrast check measures the border of a segmented group: a bordered wrapper counts as a control frame when all its controls together fill at least half of it. Toolbars stay excluded.
+- Design checks report a drawn button, link, input or control role without `data-et-control` as `CONTROL-PART-INPUT`: a hint on merged parts, an error when a sketch adds one.
+- Design checks now list existing interaction states on non-control parts as open points while blocking new or changed states in sketches.
+- Design sketch checks accept unchanged interaction states when unrelated styles change.
+- The design server no longer crashes when a sketch folder disappears while sketches are listed.
+- The design server's parts list names each part's module file, relative to the workspace.
+- The design server no longer pre-bundles its own authoring modules (`@design-system`, `@design-system/kit`, `@design-explore`), so a cold start no longer reloads every frame when Vite finds one of them late.
+- The design server draws a rebuilt `render.packages` folder (such as `dist/libs/components`) without a restart, instead of serving the modules it loaded before the rebuild.
+- Serve a shot from the disk cache after the design server restarts, instead of drawing it again
+- Every design shot response carries an `x-design-shot` header (`disk`, `memory` or `drawn`) that says where the picture came from.
+- `sketch check` no longer prints Angular's development mode line per render, and prints a finding that repeats across states, schemes and variants once, with a count.
+- `et design sketch merge` formats the files it writes with the Prettier of the target repo. A format failure prints a warning and keeps the merge.
+- `et design sketch ready` blocks only on open points a variant adds to the merged part; inherited points are listed as a note. A new part still blocks on all of its points.
+- `et design sketch variant --from` keeps relative symlinks in the copied variant, so its `shared/` links point at the same files as the source variant.
+- `et design` no longer rewrites an unchanged tsconfig, so a `design sketch check` stops redrawing every frame in Studio.
+- A rule in a sketch's `shared/` stylesheet counts as used when any variant of the sketch draws it, so `sketch ready` no longer fails a variant on `UNUSED` for a rule only another variant uses.
+- A design frame asked for a `fill` token its product lacks keeps the product's page colour, so an sdk grid cell in the light column draws on the light surface instead of on Studio's dark canvas.
+- `et design shot <part> --variants` finds a sketch by an extra target, `sketch list` shows extra targets, and new `sketch target add <sketch> <part>` adds a target to an open sketch.
+- `et design sketch report` on a ready sketch moves it back to in progress. It still refuses a decided sketch.
+- STALE-REPLACE no longer flags a replace whose regex is anchored with `^` or `$`; the rule searches the source, not the markup string.
+- A static shot draws in the colour scheme Studio prefers, like the live frames next to it, so a dark Studio no longer mixes light shots into a grid.
+- Studio draws every part grid twice, under a Light and a Dark head, and `frame.html?scheme=` pins a live frame to one scheme.
+- Swap a canvas frame between its shot and its live page without a blank frame: the frame page reports when it painted, and Studio keeps the old view until the new one is ready.
+
 ## 3.0.0-next.25
 
 ### Minor Changes

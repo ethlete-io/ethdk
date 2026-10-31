@@ -1,5 +1,118 @@
 # Changelog
 
+## 1.0.0-next.79
+
+### Minor Changes
+
+- The package ships the `sdk` design base under `design/sdk`, with a `design/config.json` that declares the `sdk` product. A consumer extends it with `"base": "node_modules/@ethlete/components/design/sdk"`.
+- The shared focus ring is drawn in the theme's ink tone in the light scheme and stays primary in the dark scheme.
+- Add an `ariaLabel` input to `et-tab` that names the trigger button, for icon-only tabs.
+- Text fields get a 3:1 rest frame, a 2px focus frame in the text colour, a dashed readonly frame with a dashed focus frame, a 4.5:1 placeholder, a 4px text-prefix gap, and the textarea grip in the frame corner.
+
+### Patch Changes
+
+- Size an `etIcon` inside an avatar per avatar size. It filled the whole avatar and was clipped.
+- Fix banner headings and bodies without break points overflowing the banner.
+- Show the full focus ring on breadcrumb links and the overflow trigger. The breadcrumb's clip cut it off.
+- Keep the first and last category label of a chart axis inside the plot when labels are thinned.
+- Checkbox, checkbox option and select-all boxes now keep their set size in apps without a global `box-sizing: border-box` reset, so hints and errors line up with the label.
+- The focus rings of grid items, accordion, breadcrumb, chip, tabs, table, calendar and scheduler are drawn in the theme's ink tone in the light scheme, matching the shared focus ring.
+- Add `accordion()` and `accordionGroup()` design mocks under `@ethlete/components/design/accordion` that draw the accordion with its real markup and CSS.
+- Add `avatar()`, `avatarGroup()` and `avatarRow()` design mocks under `@ethlete/components/design/avatar` that draw the avatar and avatar group with their real markup and CSS.
+- Add `badge()` and `badgeRow()` design mocks under `@ethlete/components/design/badge` that draw the badge with its real markup and CSS.
+- Add a `banner()` design mock under `@ethlete/components/design/banner` that draws the banner with its real markup and CSS.
+- Add `bracket()` and `bracketParticipants()` design mocks under `@ethlete/components/design/bracket` that draw `et-bracket` with its real markup, CSS and `@ethlete/bracket` geometry.
+- Add `breadcrumb()` and `breadcrumbOverflowPanel()` design mocks under `@ethlete/components/design/breadcrumb` that draw the breadcrumb with its real markup and CSS.
+- Move the `et-breadcrumb-outlet` styles into a stylesheet.
+- A filled button now hovers to its theme's active color and darkens further while pressed, so hover is visible on light accent colors.
+- The `button()` design mock emits `data-can-animate` like `et-button`, so a drawn button transitions and `et design complete` no longer reports CONTROL-TRANSITION-MISSING on it.
+- Match merged design for tooltip, OTP input and tabs: dark tooltip ring, ink OTP caret and hover edges, ink tab focus ring and solid baseline.
+- Add a `calendar()` design mock under `@ethlete/components/design/calendar` that draws the inline calendar with its real markup and CSS.
+- Add `card()` and `cardContent()` design mocks under `@ethlete/components/design/card` that draw the card with its real markup and CSS.
+- Add a `carousel()` design mock under `@ethlete/components/design/carousel` that draws the carousel with its real markup and CSS, including its track, previous and next buttons, dots and autoplay countdown. The `scrollable()` mock takes an `itemSize`, an `itemGap` and extra host classes.
+- Add `barChart()`, `lineChart()` and `pieChart()` design mocks under `@ethlete/components/design/chart` that draw the charts with their real markup and CSS.
+- Add a checkbox design mock at `@ethlete/components/design/checkbox` with `checkbox()`, `checkboxGroup()`, `checkboxStyles` and `checkboxGroupStyles`.
+- Add `chip()` and `chipRow()` design mocks under `@ethlete/components/design/chip` that draw the chip with its real markup and CSS.
+- Add a `copyButton()` design mock under `@ethlete/components/design/copy-button` that draws the copy button with its real markup and CSS.
+- Add a `descriptionList()` design mock under `@ethlete/components/design/description-list` that draws the description list with its real markup and CSS.
+- Move the `et-description` styles into a stylesheet.
+- `control(markup, name)` from `@ethlete/components/design/control` renames a control that is already marked, so a design reuses a control part under its own control name.
+- The design mocks now draw the icons the package ships, and `@ethlete/components/design/icon-set` lists every built-in icon.
+- Add `dialog()`, `alertDialog()` and `overlayBackdrop()` design mocks under `@ethlete/components/design/dialog` that draw the dialog pane with its real markup and CSS.
+- Add a `divider()` design mock under `@ethlete/components/design/divider` that draws the divider with its real markup and CSS.
+- Add an `emptyState()` design mock under `@ethlete/components/design/empty-state` that draws the empty state with its real markup and CSS.
+- An invalid text field's frame uses the full error tone instead of a faded one, and an invalid checkbox keeps its error border on hover.
+- An invalid text field's frame and an invalid checkbox's box use the error theme's hover tone on hover in light and its active ink tone in dark.
+- An invalid dropzone and switch keep their error colour on hover instead of turning neutral.
+- Add a `floatingAction()` design mock under `@ethlete/components/design/floating-action` that draws the floating action with its real markup and CSS, in its inline, floating and hidden states.
+- Give the floating action trigger a light shadow that fades in with opacity only while it floats, and in light a 1px inset ink edge (`--et-button-shadow`) so it stands out from a light grey row.
+- Form field: a text field in error switches its border and label to the error colour theme and keeps distinct rest, hover and focus states.
+- Add a `grid()` design mock under `@ethlete/components/design/grid` that draws `et-grid`, its items, the item toolbar and the default actions with their real markup and CSS.
+- Add an `iconButton()` design mock under `@ethlete/components/design/button` that draws `et-icon-button` with its real markup, `aria-label` and CSS.
+- Loader, match, menu, progress-steps, standings and stat-tile accents use the theme's ink tone in the light scheme.
+- Badge, banner, carousel, scrollable, timeline and stream accents use the theme's ink tone in the light scheme.
+- Refine selection accents and light-scheme ink edges across components.
+- Descriptions align with the label, search inputs lose the native clear button, and a textarea cannot shrink below one line. A one-row textarea lines up with the input, also with an inline label.
+- Add a `kbd()` design mock under `@ethlete/components/design/kbd` that draws the keycaps with their real markup and CSS.
+- Add `spinner()`, `progressBar()` and `brandLoader()` design mocks under `@ethlete/components/design/loader` that draw the loaders with their real markup and CSS, with each animation held at one frame.
+- Add a `masonry()` design mock under `@ethlete/components/design/masonry` that draws an `etMasonry` list with its items packed by the masonry maths, using the real masonry CSS.
+- Add a `matchCard()` design mock under `@ethlete/components/design/match` that draws `et-match-card` with its real markup and CSS.
+- Add a `menu()` design mock under `@ethlete/components/design/menu` that draws the open `et-menu` panel with its real markup and CSS.
+- Add `notification()` and `notificationStack()` design mocks under `@ethlete/components/design/notification` that draw the notification with its real markup and CSS.
+- Add an otp input design mock at `@ethlete/components/design/otp-input` with `otpInput()` and `otpInputStyles`.
+- Add a `pagination()` design mock under `@ethlete/components/design/pagination` that draws `et-pagination` with its real markup and CSS.
+- Add a `picture()` design mock under `@ethlete/components/design/picture` that draws the picture with its real markup and CSS.
+- Add a `progressSteps()` design mock under `@ethlete/components/design/progress-steps` that draws the progress steps with their real markup and CSS.
+- Add a `queryError()` design mock under `@ethlete/components/design/query-error` that draws the query error with its real markup and CSS.
+- Add a radio group design mock at `@ethlete/components/design/radio-group` with `radioGroup()` and `radioGroupStyles`.
+- Add `scheduler()`, `schedulerTimeGrid()`, `schedulerMonth()` and `schedulerAgenda()` design mocks under `@ethlete/components/design/scheduler` that draw `et-scheduler` and its week, day, month and agenda views with their real markup and CSS.
+- Add a `scrollable()` design mock under `@ethlete/components/design/scrollable` that draws the scrollable with its real markup and CSS, including its edge masks, scroll buttons and navigation dots.
+- Add a `scrollbar()` design mock under `@ethlete/components/design/scrollbar` that draws the scrollbar with its real markup and CSS.
+- The shipped sdk design tokens (`design/sdk/foundations/colors/colors.css`) apply `.et-surface--default-dark` only with the dark surface values, not also with the dark-elevated ones.
+- A select option draws its check mark in `--et-theme-color-ink-solid`, and a keyboard-active option gets a 2px ink outline instead of a background tint, so both keep a 3:1 contrast on a light surface.
+- Add a `skeleton()` design mock under `@ethlete/components/design/skeleton` that draws the skeleton, its items and text lines with their real markup and CSS, with the shimmer held at one frame.
+- Add a slider design mock at `@ethlete/components/design/slider` with `slider()` and `sliderStyles`.
+- Add `standings()` and `standingsPick()` design mocks under `@ethlete/components/design/standings` that draw `et-standings` and `et-standings-pick` with their real markup and CSS.
+- Add a `statTile()` design mock under `@ethlete/components/design/stat-tile` that draws the stat tile and its sparkline with their real markup and CSS.
+- Fix `et-stat-tile` throwing on a coloured delta when the app registers no `success` or `error` theme; the delta now keeps the inherited theme and warns once in dev mode.
+- Add a `streamPlayerSlot()` design mock under `@ethlete/components/design/stream` that draws the stream player slot with its consent, loading, error and PiP placeholder overlays, with their real markup and CSS.
+- Move the `et-stream-consent`, `et-stream-player-error`, `et-stream-player-loading` and `et-pip-slot-placeholder` styles into stylesheets.
+- Add a `switchControl()` design mock under `@ethlete/components/design/switch` that draws `et-switch` with its real markup and CSS.
+- `et-tab-group` takes its styles from `tab-group.component.css` instead of an inline `styles` block, and a new design mock `@ethlete/components/design/tabs` draws the tab group for design tools. The look does not change.
+- Add a `table()` design mock under `@ethlete/components/design/table` that draws the table with its real markup and CSS.
+- Add a text input design mock at `@ethlete/components/design/input` with `textInput()` and `textInputStyles`.
+- Add a textarea design mock at `@ethlete/components/design/textarea` with `textareaField()` and `textareaFieldStyles`.
+- Add a `timeline()` design mock under `@ethlete/components/design/timeline` that draws the timeline with its real markup and CSS.
+- Add a `toolbar()` design mock under `@ethlete/components/design/toolbar` that draws the toolbar with its real markup and CSS.
+- Add a `tooltip()` design mock under `@ethlete/components/design/tooltip` that draws `et-tooltip` with its real markup and CSS.
+- Add a `tree()` design mock under `@ethlete/components/design/tree` that draws `et-tree` with its real markup and CSS.
+- Tree: the keyboard focus outline of a row and of the status row uses `--et-theme-color-ink-solid` instead of the primary colour, so it stays visible on a light surface.
+- Use the surface interaction color for resting selection card, checkbox, and radio frames.
+- Fix inline description-list values without break points overflowing the list.
+- The `control()` design helper writes `data-can-animate="true"`, as the real components do.
+- The accordion, breadcrumb overflow and switch design mocks emit `data-can-animate` as the components do, and `@ethlete/components/design/control` marks a control's root element for the design check.
+- A filled button in a dialog draws an inset ink edge in the light scheme.
+- Radio circles, OTP input segments, the color input swatch, and the color picker thumbs and preview now keep their set size in apps without a global `box-sizing: border-box` reset.
+- Form controls draw their focus rings in ink in the light scheme, like the shared focus ring. The dark scheme keeps primary.
+- Keep a grid item's content clear of its actions, so a long title ends before the remove button; tune the space with `--et-grid-item-actions-reserve`.
+- Move the `et-grid-item-toolbar` styles from an inline `styles` block into `grid-item-toolbar.component.css`, so the grid design mock can draw them.
+- The filled icon button draws its inset ink edge only in the light scheme.
+- Align filled icon buttons with the merged design, including their inset edge and interaction colors.
+- Draw the clipboard-check, floppy-disk, pencil, arrow-up, arrow-right, arrows-left-right, plus and underline icons as outlines. They rendered filled before.
+- Fix the match score clipping its digits at rest (it now clips only while a value rolls) and the winner's subtitle turning bold (the winner weight now sits on the name).
+- `et-otp-input` no longer shows the caret on a focused readonly field, and its segments now shrink when the host is narrower than the row.
+- The required marker on every form field uses the theme's ink tone, so it keeps 4.5:1, also in error on dark surfaces.
+- Show the scheduler appointment color dot, truncate long badge text with an ellipsis, and stop clipping the first hour label in the time grid.
+- Add `selectOption`, `selectAllOption`, `selectOptionGroup` and `selectPanel` design mocks, and draw option groups and the select-all row in `selectStyles`.
+- Fix slider value bubbles covering the label, and vertical and end-of-track labels overhanging the host. The range slider grows by 16px to the 44px touch box of `et-slider`.
+- Fix the standings draw letter contrast (lighter draw fill) and draw the zone bar as an inset shadow, so the row line runs the full row width; the bar stays on the start side in RTL.
+- The switch track transitions its edge, and the chip remove button transitions its hover and pressed background and colour.
+- The switch track draws a 1px edge, ink when on and only in the light scheme. The menu selection check and the indeterminate switch use ink.
+- The tab group drops two focus ring rules that the global focus ring always overrode.
+- Fix the table sort header focus ring cutting through the label.
+- `et-input`, `et-password-input` and `et-textarea` now clear the native field when the value is reset to the one the field last rendered, for example right after a paste and Enter.
+- Fix long timeline item content without break points overflowing the timeline.
+
 ## 1.0.0-next.78
 
 ### Patch Changes
