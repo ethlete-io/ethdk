@@ -80,7 +80,7 @@
     &:where([data-variant='filled']):not([data-pressed='true']),
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
       --et-theme-color-primary-opacity: 1;
-      --et-button-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
+      --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
       color: var(--et-theme-color-on-primary);
       box-shadow: var(--et-button-shadow, none);
 

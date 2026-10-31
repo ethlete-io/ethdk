@@ -103,6 +103,8 @@ const CHECKBOX_STORY_ID = 'components-forms-checkbox--default';
 test('filled icon buttons have a round shape and inset themed edge', async ({ page }) => {
   const root = await openStory(page, ICON_STORY_ID);
   const button = root.locator('button[et-icon-button][data-variant="filled"]').first();
+
+  await setColorScheme(root, 'light');
   const styles = await button.evaluate((el) => {
     const style = getComputedStyle(el);
 
@@ -111,8 +113,15 @@ test('filled icon buttons have a round shape and inset themed edge', async ({ pa
 
   expect(styles.width).toBe(styles.height);
   expect(parseFloat(styles.radius)).toBeGreaterThanOrEqual(parseFloat(styles.width) / 2);
+  const shadow = () => button.evaluate((el) => getComputedStyle(el).boxShadow);
+  const ink = await colorIn(button, 'var(--et-theme-color-ink-solid)');
+
   expect(styles.shadow).toContain('inset');
-  expect(styles.shadow).toContain(await colorIn(button, 'var(--et-theme-color-ink-solid)'));
+  await expect.poll(shadow).toContain(ink);
+
+  await setColorScheme(root, 'dark');
+
+  await expect.poll(shadow).toContain('rgba(0, 0, 0, 0)');
 });
 
 async function backgroundOf(locator: Locator): Promise<string> {
