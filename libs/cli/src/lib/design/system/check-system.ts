@@ -102,11 +102,19 @@ const isBasePartKey = (product: ResolvedProduct, key: string) =>
 const ownerPartOf = (issue: RenderIssue) =>
   [...issue.path.matchAll(/\[data-et-part=([^\]]+)\]/gu)].pop()?.[1] ?? issue.part;
 
-const printBaseFindings = (product: ResolvedProduct, count: number) => {
-  if (count === 0 || !product.base) return;
+const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
+  if (rules.length === 0 || !product.base) return;
+
+  const counts = new Map<string, number>();
+
+  for (const rule of rules) counts.set(rule, (counts.get(rule) ?? 0) + 1);
+
+  const perRule = [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([rule, n]) => `${rule} ${n}`);
 
   console.log(
-    `${count} finding${count === 1 ? '' : 's'} in base product ${product.base.name} - run et design check --product ${product.base.name}`,
+    `${rules.length} finding${rules.length === 1 ? '' : 's'} in base product ${product.base.name} (${perRule.join(', ')}) - they do not block this product; run et design check --product ${product.base.name} for the base's own`,
   );
 };
 
@@ -148,7 +156,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     warnings.filter(isOwn).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
     problems.filter(isOwn).forEach(report);
-    printBaseFindings(product, problems.filter((problem) => !isOwn(problem)).length);
+    printBaseFindings(
+      product,
+      problems.filter((problem) => !isOwn(problem)).map((problem) => problem.rule),
+    );
 
     writeEditorTsconfig({ target, product });
 
@@ -286,7 +297,7 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
   for (const product of resolved)
     printBaseFindings(
       product,
-      rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).length,
+      rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
     );
 
   return { code: issues.length > 0 ? 1 : 0, rendered: issues };

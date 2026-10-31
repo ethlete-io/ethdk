@@ -177,7 +177,10 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/button/button.css'), '.acme-button { color: #000; }');
 
     expect(check(target, ['acme'])).toBe(0);
-    expect(lines).toEqual(['1 finding in base product acme-base - run et design check --product acme-base', 'ok']);
+    expect(lines).toEqual([
+      "1 finding in base product acme-base (HARD-CODED-COLOUR 1) - they do not block this product; run et design check --product acme-base for the base's own",
+      'ok',
+    ]);
 
     writeFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.css'), '.acme-button { color: #fff; }');
     lines.length = 0;
@@ -185,7 +188,7 @@ describe('checkDesign', () => {
     expect(check(target, ['acme'])).toBe(1);
     expect(lines).toEqual([
       expect.stringMatching(/^HARD-CODED-COLOUR .*acme\/components\/button\/button\.css: #fff/),
-      '1 finding in base product acme-base - run et design check --product acme-base',
+      "1 finding in base product acme-base (HARD-CODED-COLOUR 1) - they do not block this product; run et design check --product acme-base for the base's own",
     ]);
 
     lines.length = 0;
@@ -351,7 +354,9 @@ describe('checkDesign', () => {
     expect(code).toBe(0);
     expect(withoutOpenPoints(lines).filter((line) => line.includes('components/card'))).toEqual([]);
     expect(lines).toContainEqual(
-      expect.stringMatching(/^\d+ findings? in base product acme-base - run et design check --product acme-base$/),
+      expect.stringMatching(
+        /^\d+ findings? in base product acme-base \((?:[A-Z-]+ \d+(?:, )?)+\) - they do not block this product; run et design check --product acme-base for the base's own$/,
+      ),
     );
     expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);
   }, 120_000);
