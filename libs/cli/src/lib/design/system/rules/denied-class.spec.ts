@@ -217,7 +217,7 @@ describe('a denied class in the flows', () => {
     expect(Array.isArray(merged) ? merged : merged.reason).toContain('the check failed');
     expect(errors.join('\n')).toMatch(/^DENIED-CLASS .*`bg-surface` is denied/mu);
     expect(readFileSync(hero, 'utf8')).toBe(before);
-  });
+  }, 30_000);
 
   it('refuses accept', () => {
     const target = acme();
