@@ -59,7 +59,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   selector: 'ethlete-canvas-frame',
   template: `
     <ng-template #caption>
-      @if (!captionBelow() && copies()[0]; as copy) {
+      @if (!captionBelow() && labelsSchemes() && copies()[0]; as copy) {
         <span class="shrink-0 uppercase tracking-[0.04em] text-text-muted" data-scheme-label>{{
           labelOf(copy.scheme)
         }}</span>
@@ -84,7 +84,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       }
     </ng-template>
     @for (copy of copies(); track copy.scheme; let first = $first) {
-      @if (!first || captionBelow()) {
+      @if (labelsSchemes() && (!first || captionBelow())) {
         <span
           [style.left.px]="copy.x"
           [style.top.px]="copy.y"
@@ -349,6 +349,8 @@ export class CanvasFrameComponent {
       (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
   );
   protected copies = computed(() => schemeCopiesOf(this.frame(), { width: this.width(), height: this.height() }));
+
+  protected labelsSchemes = computed(() => this.copies().length > 1);
 
   protected captionMaxWidth = computed(() => ((this.copies()[1]?.x ?? 0) > 0 ? this.width() : null));
 

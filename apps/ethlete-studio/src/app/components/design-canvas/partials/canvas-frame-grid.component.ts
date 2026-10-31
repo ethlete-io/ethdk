@@ -373,7 +373,7 @@ export class CanvasFrameCellComponent {
       </div>
     }
     <ng-template #schemeHeads let-placement>
-      @if (grid().schemes) {
+      @if (schemes().length > 1) {
         <span></span>
         @for (scheme of schemes(); track $index; let firstScheme = $first) {
           @if (!firstScheme) {

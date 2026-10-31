@@ -206,4 +206,40 @@ describe('CanvasFrameComponent caption', () => {
     expect(others.length).toBeGreaterThan(0);
     expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
   });
+
+  it.each([false, true])(
+    'labels the schemes of a two-scheme frame and draws a one-scheme frame unlabelled (caption below %s)',
+    async (captionBelow) => {
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+      });
+
+      const fixture = TestBed.createComponent(CanvasFrameComponent);
+      const host = fixture.nativeElement as HTMLElement;
+      const render = async (schemes: ('light' | 'dark')[]) => {
+        fixture.componentRef.setInput('frame', {
+          id: 'phone',
+          src: 'about:blank',
+          label: 'pages/library',
+          screenshot: 'phone.png',
+          width: 375,
+          height: 600,
+          schemes,
+        });
+        await fixture.whenStable();
+
+        return {
+          labels: [...host.querySelectorAll('[data-scheme-label]')].map((label) => label.textContent?.trim()).sort(),
+          copies: [...host.querySelectorAll('[data-scheme-copy]')].map((copy) => copy.getAttribute('data-scheme-copy')),
+        };
+      };
+
+      fixture.componentRef.setInput('width', 375);
+      fixture.componentRef.setInput('height', 600);
+      fixture.componentRef.setInput('captionBelow', captionBelow);
+
+      expect(await render(['light', 'dark'])).toEqual({ labels: ['Dark', 'Light'], copies: ['light', 'dark'] });
+      expect(await render(['dark'])).toEqual({ labels: [], copies: ['dark'] });
+    },
+  );
 });

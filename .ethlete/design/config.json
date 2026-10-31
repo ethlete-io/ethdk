@@ -31,6 +31,7 @@
   },
   "products": {
     "studio-lab": {
+      "schemes": ["dark"],
       "styles": ["apps/ethlete-studio/src/styles.css", ".ethlete/design/studio-lab/foundations/tokens/tokens.css"],
       "presets": {
         "phone": {
@@ -58,6 +59,7 @@
       "generatedFiles": ["foundations/colors/colors.css"]
     },
     "studio": {
+      "schemes": ["dark"],
       "styles": [".ethlete/design/studio/styles.css"],
       "generated": [
         {

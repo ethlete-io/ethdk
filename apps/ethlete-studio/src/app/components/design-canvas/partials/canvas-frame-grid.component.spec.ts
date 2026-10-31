@@ -255,6 +255,15 @@ describe('CanvasFrameGridComponent', () => {
       },
     );
 
+    it('draws one scheme without a scheme head, its cells in that scheme', async () => {
+      const host = await renderGrid({ ...grid('groups'), schemes: ['dark'] });
+
+      expect(host.querySelectorAll('[data-grid-scheme]')).toHaveLength(0);
+      expect(textsOf(host, '[data-grid-column]')).toEqual(columns);
+      expect(host.querySelectorAll('[data-cell-scheme="dark"]')).toHaveLength(cells.length);
+      expect(host.querySelectorAll('[data-cell-scheme="light"]')).toHaveLength(0);
+    });
+
     it('asks each group for the shots of its own scheme', async () => {
       const host = await renderGrid(grid());
       const shots = urlsOf(host, 'img', 'src');

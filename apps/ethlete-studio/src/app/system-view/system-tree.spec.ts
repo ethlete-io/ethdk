@@ -1,5 +1,5 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
-import { placeableFramesOf } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
   usingPagesOf,
   callFramesOf,
@@ -242,6 +242,33 @@ describe('framesOf', () => {
       ['light', 'dark'],
       ['light', 'dark'],
     ]);
+  });
+
+  it('draws one copy in the dark scheme for a product that declares only the dark scheme', () => {
+    const dark = { ...product(), schemes: ['dark' as const] };
+    const home = part({ layer: 'pages', name: 'home', states: ['default'] });
+    const card = part({
+      name: 'card',
+      states: ['default', 'long'],
+      widths: [320],
+      grid: { columns: ['rest'], rows: ['long'], cells: [{ row: 'long', column: 'rest', state: 'long' }] },
+    });
+    const schemesOfFrames = (frames: CanvasFrame[]) => frames.map((frame) => frame.schemes ?? frame.grid?.schemes);
+
+    expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: home }))).toEqual([['dark'], ['dark']]);
+    expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: card }))).toEqual([['dark'], ['dark']]);
+    expect(schemesOfFrames(framesOf({ port: 4402, product: dark, part: part() }))).toEqual([['dark']]);
+    expect(
+      schemesOfFrames(
+        mergePreviewOf({
+          port: 4402,
+          product: { ...dark, parts: [home] },
+          sketch: sketch(),
+          variant: 'b',
+          affected: ['pages/home'],
+        }).frames,
+      ),
+    ).toEqual([['dark'], ['dark']]);
   });
 
   it('draws a small part in one frame: a grid with a row per state and a column per interaction', () => {

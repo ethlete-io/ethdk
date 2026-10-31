@@ -351,7 +351,7 @@ const pageFrameOf = (options: {
     ...(size ? { width: size.width, ...(size.height === undefined ? {} : { height: size.height }) } : {}),
     label: [key, state, preset].filter(Boolean).join(' · '),
     screenshot: partShotUrl({ ...address, preset, revision }),
-    schemes: SCHEMES,
+    schemes: schemesOf(product),
     error: loadErrorOf(page.problems),
     place: { part: key, state, size: preset ?? FITTED, ...(sketch ? { sketch } : {}) },
   };
@@ -374,7 +374,11 @@ const GRID = 'grid';
 
 const SHEET_FILL = 'surface';
 
-export const SCHEMES: ColorScheme[] = ['light', 'dark'];
+const BOTH_SCHEMES: ColorScheme[] = ['light', 'dark'];
+
+/** The colour schemes every frame of `product` draws a copy in: both unless the product declares its own. */
+export const schemesOf = (product: Pick<ListedProduct, 'schemes'>): ColorScheme[] =>
+  product.schemes?.length ? product.schemes : BOTH_SCHEMES;
 
 /** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
 const gridFrameOf = (options: {
@@ -383,9 +387,10 @@ const gridFrameOf = (options: {
   addressOf: (cell: Cell) => PartAddress;
   placeOf: (cell: Cell, size: string | number) => { place?: FramePlace };
   idOf: (cell: Cell, size?: string | number) => string;
+  schemes: ColorScheme[];
   revision?: number;
 }): CanvasFrame => {
-  const { grid, width, addressOf, placeOf, idOf, revision } = options;
+  const { grid, width, addressOf, placeOf, idOf, schemes, revision } = options;
 
   return {
     id: GRID,
@@ -393,7 +398,7 @@ const gridFrameOf = (options: {
     label: GRID,
     grid: {
       sheet: 'groups',
-      schemes: SCHEMES,
+      schemes,
       columns: grid.columns,
       rows: grid.rows,
       cells: grid.cells.map(({ row, column, state }) => {
@@ -456,7 +461,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
         label: stateSizeLabelOf(cell, preset),
         row: cell.state,
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
-        schemes: SCHEMES,
+        schemes: schemesOf(product),
         error,
         ...placeOf(cell, preset),
       })),
@@ -464,7 +469,8 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
   }
 
   const widths = part.widths ?? [];
-  const gridFrames = grid ? [gridFrameOf({ grid, width: widths[0], addressOf, placeOf, idOf, revision })] : [];
+  const schemes = schemesOf(product);
+  const gridFrames = grid ? [gridFrameOf({ grid, width: widths[0], addressOf, placeOf, idOf, schemes, revision })] : [];
 
   if (widths.length > 0) {
     return [
@@ -476,7 +482,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
           label: stateSizeLabelOf(cell, 'width'),
           row: cell.state,
           screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
-          schemes: SCHEMES,
+          schemes,
           error,
           ...placeOf(cell, width),
         })),
@@ -497,7 +503,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
       label: key,
       grid: {
         sheet: 'table',
-        schemes: SCHEMES,
+        schemes,
         columns: interactions,
         rows: states.filter((state) => state !== undefined),
         cells: cells.map((cell) => ({
@@ -1210,7 +1216,7 @@ export const mergePreviewOf = ({
             width: cell.preset ? undefined : cell.width,
             revision,
           }),
-          schemes: SCHEMES,
+          schemes: schemesOf(product),
           error: rowError ?? (column === 'now' ? error : undefined),
         };
       }),

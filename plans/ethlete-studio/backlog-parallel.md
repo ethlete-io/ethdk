@@ -686,7 +686,13 @@ that missed the handoff; renumbered here because Q104/Q105 were already taken.
 - Q100: hover and error borders in primary are a lib bug; error resolves through the semantic error theme. Patch.
 - Q101: a filled et-button hovers to the theme's `-active` token; pressed goes 16 % further (button r1 b).
 - Q103: a product without a light scheme (studio, studio-lab) draws one colour-scheme copy.
-  In progress (builder 57, 2026-10-31).
+  As built (builder 57, 2026-10-31): a product declares `schemes` in `.ethlete/design/config.json` (`["light"]`,
+  `["dark"]` or both; inherited from its base; both when absent; a bad list is a `SCHEMES` problem and falls back to
+  both). `studio` and `studio-lab` declare `["dark"]`. `/__design/system` sends the list; every frame kind that had
+  two copies draws one, pinned to `?scheme=dark`, with no scheme label or Light/Dark grid heading. A Studio on an
+  older CLI keeps both copies. Verified: 7 new specs failed at HEAD and pass (Studio 411, CLI design 878 tests), tsc
+  and lint clean, the real config resolves `studio`/`studio-lab` to dark and `sdk` to both. Not verified: a running
+  Studio; the :4402 server serves `schemes` only after a restart on the new CLI.
 - Q104: a stat-tile without a success theme falls back to the inherited theme with a dev-mode warning. Patch.
 - Q105: the floating trigger gets a light shadow only while it floats, faded in with opacity only.
 - Q119 (otp, 33's "Q103"): filled and empty otp segments look the same; every segment gets the 3:1 input frame

@@ -77,6 +77,10 @@ to `["foundations/tokens"]`.
 `["foundations/colors/colors.css"]`. The part hash skips them, so regenerating one does not make
 `design check` warn that the part changed outside a sketch. An edit to any other file of the part still does.
 
+`schemes` lists the colour schemes the product draws, `"light"`, `"dark"` or both. Studio draws a copy of
+every frame per scheme, so a product whose CSS has no light scheme declares `["dark"]` and gets one copy.
+Omitted, it comes from the base, and without a base value it defaults to both.
+
 `base` can also point into `node_modules`, at a design product an installed package ships:
 
 ```json

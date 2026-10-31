@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { configPathOf, DesignPreset, DesignProduct } from '../paths';
+import { configPathOf, DesignColorScheme, DesignPreset, DesignProduct } from '../paths';
 import { loadBase, ProductSource } from './base';
 import { LAYERS } from './layers';
 import { fixturesOf, PartFile, partFilesOf, productDirOf } from './product';
@@ -14,11 +14,20 @@ export type ResolvedProduct = ProductSource & {
   parts: ResolvedPart[];
   fixtures: string | null;
   presets: Record<string, DesignPreset>;
+  schemes: DesignColorScheme[];
   tokens: string[];
   problems: Problem[];
 };
 
 const DEFAULT_TOKEN_PARTS = ['foundations/tokens'];
+
+const COLOR_SCHEMES: DesignColorScheme[] = ['light', 'dark'];
+
+const isSchemeList = (schemes: unknown): schemes is DesignColorScheme[] =>
+  Array.isArray(schemes) &&
+  schemes.length > 0 &&
+  new Set(schemes).size === schemes.length &&
+  schemes.every((scheme) => COLOR_SCHEMES.includes(scheme));
 
 export const partKeyOf = (part: { layer: string; name: string }) => `${part.layer}/${part.name}`;
 
@@ -56,6 +65,18 @@ export const resolveProduct = (options: { target: string; name: string; config: 
   const basePresets = base?.config.presets;
   const presets = hasPresets(config.presets) ? config.presets : hasPresets(basePresets) ? basePresets : {};
   const problems = [...own.problems, ...loaded.problems, ...inherited.problems];
+  const declaredSchemes = config.schemes ?? base?.config.schemes;
+  const schemes = isSchemeList(declaredSchemes)
+    ? COLOR_SCHEMES.filter((scheme) => declaredSchemes.includes(scheme))
+    : COLOR_SCHEMES;
+
+  if (declaredSchemes !== undefined && !isSchemeList(declaredSchemes)) {
+    problems.push({
+      rule: 'SCHEMES',
+      file: configFile,
+      message: `product "${name}" declares schemes ${JSON.stringify(declaredSchemes)}; use "light", "dark" or both`,
+    });
+  }
 
   if (!hasPresets(presets)) {
     problems.push({
@@ -74,6 +95,7 @@ export const resolveProduct = (options: { target: string; name: string; config: 
     parts,
     fixtures: fixturesOf(dir) ?? (base ? fixturesOf(base.dir) : null),
     presets,
+    schemes,
     tokens: config.tokens ?? base?.config.tokens ?? DEFAULT_TOKEN_PARTS,
     problems,
   };

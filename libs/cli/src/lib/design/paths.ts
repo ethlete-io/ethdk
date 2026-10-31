@@ -33,6 +33,8 @@ export type DesignRenderConfig = {
   modules?: string[];
 };
 
+export type DesignColorScheme = 'light' | 'dark';
+
 /** A viewport a product's parts are drawn at. Without a height, the frame grows with its content. */
 export type DesignPreset = { width: number; height?: number };
 
@@ -45,6 +47,8 @@ export type DesignPreset = { width: number; height?: number };
 export type DesignProduct = DesignProject & {
   base?: string;
   presets?: Record<string, DesignPreset>;
+  /** The colour schemes the product draws, each a copy of every frame; both when left out. */
+  schemes?: DesignColorScheme[];
   tokens?: string[];
   /** Inherited parts to omit; a product's own part with the same key remains visible. */
   hideBaseParts?: string[];

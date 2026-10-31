@@ -82,6 +82,45 @@ describe('resolveProduct', () => {
     expect(resolveProduct({ target, name: 'acme-base', config: {} }).tokens).toEqual(['foundations/tokens']);
   });
 
+  it('draws both colour schemes unless the product or its base declares its own', () => {
+    const target = acme();
+
+    write(
+      target,
+      'config.json',
+      JSON.stringify({
+        products: {
+          'acme-base': { schemes: ['dark'] },
+          acme: { base: '.ethlete/design/acme-base' },
+        },
+      }),
+    );
+
+    expect(resolveAcme(target).schemes).toEqual(['dark']);
+    expect(
+      resolveProduct({
+        target,
+        name: 'acme',
+        config: { base: '.ethlete/design/acme-base', schemes: ['dark', 'light'] },
+      }).schemes,
+    ).toEqual(['light', 'dark']);
+    expect(resolveProduct({ target, name: 'acme', config: { base: '@ethlete/components' } }).schemes).toEqual([
+      'light',
+      'dark',
+    ]);
+  });
+
+  it('reports a scheme list it cannot draw and draws both schemes', () => {
+    const product = resolveProduct({
+      target: acme(),
+      name: 'acme',
+      config: { base: '@ethlete/components', schemes: ['dusk'] as never },
+    });
+
+    expect(product.schemes).toEqual(['light', 'dark']);
+    expect(product.problems.map((problem) => problem.rule)).toContain('SCHEMES');
+  });
+
   it('reports a product without presets anywhere', () => {
     const product = resolveProduct({ target: acme(), name: 'acme-base', config: {} });
 

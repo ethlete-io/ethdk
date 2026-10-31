@@ -255,6 +255,8 @@ export type ListedProduct = {
   name: string;
   base: string | null;
   presets: Record<string, SystemPreset>;
+  /** The colour schemes the product draws; missing from an `@ethlete/cli` older than product schemes. */
+  schemes?: ('light' | 'dark')[];
   /** Missing from an `@ethlete/cli` older than product themes. */
   themes?: Themes;
   parts: ListedPart[];

@@ -1,6 +1,6 @@
 import { dirname, relative, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
-import { DesignPreset } from '../paths';
+import { DesignColorScheme, DesignPreset } from '../paths';
 import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
@@ -46,6 +46,7 @@ export type ListedProduct = {
   name: string;
   base: string | null;
   presets: Record<string, DesignPreset>;
+  schemes: DesignColorScheme[];
   themes: { surface: string[]; color: string[] };
   parts: ListedPart[];
   problems: Problem[];
@@ -320,6 +321,7 @@ export const listSystem = async (options: {
           name,
           base: product.config.base ?? null,
           presets: product.presets,
+          schemes: product.schemes,
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {

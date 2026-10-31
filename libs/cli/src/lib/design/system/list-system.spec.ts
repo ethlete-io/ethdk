@@ -45,13 +45,14 @@ const list = async (target: string, products: string[]) => {
 };
 
 describe('listSystem', () => {
-  it("lists each part's origin, note and states, and the product's presets", async () => {
+  it("lists each part's origin, note and states, and the product's presets and schemes", async () => {
     const [product] = await list(acme(), ['acme']);
 
     expect(product).toMatchObject({
       name: 'acme',
       base: '.ethlete/design/acme-base',
       presets: { phone: { width: 390, height: 844 }, desktop: { width: 1280 } },
+      schemes: ['light', 'dark'],
       themes: { surface: [], color: [] },
       problems: [],
     });
