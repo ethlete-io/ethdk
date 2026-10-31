@@ -18,6 +18,7 @@ import { gridReportOf } from './list-system';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { unchangedStatesOf } from './sketch/unchanged-states';
+import { optionValuesChecker } from './rules/option-values';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -476,6 +477,8 @@ export const renderIssuesOf = async (options: {
 
       if (!drawn) continue;
 
+      const optionValuesOf = optionValuesChecker({ target, config, parts: drawn.parts });
+
       const namespaces = namespacesOf(drawn.parts.map((part) => part.cssSource));
       const schemes = schemesOf(drawn.parts.map((part) => part.cssSource));
 
@@ -511,6 +514,18 @@ export const renderIssuesOf = async (options: {
         const states =
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
         const grid = gridReportOf(definition?.grid, states);
+
+        for (const problem of optionValuesOf(part, definition ?? {}))
+          issues.push({
+            rule: problem.code,
+            product,
+            part: key,
+            state: '-',
+            size: '-',
+            path: '-',
+            detail: problem.detail,
+            sketch,
+          });
 
         const compare =
           sketch && states.some(isInteractionState) && !isControlPart({ part: key, controls: definition?.controls });

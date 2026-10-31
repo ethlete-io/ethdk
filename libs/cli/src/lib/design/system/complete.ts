@@ -14,6 +14,7 @@ import { readMerged } from './sketch/merged-parts';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system-modules';
 import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
+import { optionValuesChecker } from './rules/option-values';
 
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
 export type CompletenessGap = { code: string; target: string; detail: string };
@@ -1516,6 +1517,7 @@ export const partsCompletenessOf = async (options: {
   const resolveChromium = options.chromiumOf ?? chromiumOf;
   const system = createSystemModules({ target, config });
   const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
+  const optionValuesOf = optionValuesChecker({ target, config, parts });
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -1598,7 +1600,11 @@ export const partsCompletenessOf = async (options: {
 
       exceptions.push(...excepted.listed);
 
-      return [...refused.map((detail) => ({ code: 'RENDER', target: key, detail })), ...excepted.gaps];
+      return [
+        ...refused.map((detail) => ({ code: 'RENDER', target: key, detail })),
+        ...optionValuesOf(resolved, definition ?? {}).map((gap) => ({ ...gap, target: key })),
+        ...excepted.gaps,
+      ];
     };
 
     const gaps = new Map<string, CompletenessGap[] | string>();

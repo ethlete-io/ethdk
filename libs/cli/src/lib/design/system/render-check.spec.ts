@@ -4,6 +4,8 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
+import { completenessOf } from './complete';
+import { resolveProduct } from './resolve-product';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './render-check';
 
 const PARTS: Record<string, { body: string; extra?: string; css?: string; states?: string }> = {
@@ -107,6 +109,29 @@ afterEach(() => {
 });
 
 describe('renderIssuesOf', () => {
+  it('blocks rendering and completeness when mock values are missing from the grid', async (context) => {
+    const target = checkout({
+      'components/example': {
+        body: '<div>Example</div>',
+        states: "small: { size: 'sm' }",
+        extra: "grid: { columns: ['rest'], rows: { small: { rest: 'small' } } },",
+      },
+    });
+    const dir = join(target, DESIGN_DIR, 'shop/components/example');
+    const path = join(dir, 'example.ts');
+    writeFileSync(join(dir, 'mock.ts'), "export type ButtonMockOptions = { size: 'sm' | 'md' | 'lg' };\n");
+    writeFileSync(path, `import type { ButtonMockOptions } from './mock';\n${readFileSync(path, 'utf8')}`);
+    const config = readConfig(target) ?? {};
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.issues.find((issue) => issue.rule === 'OPTION-VALUE-MISSING')?.detail).toContain('md, lg');
+    const product = resolveProduct({ target, name: 'shop', config: config.products?.['shop'] ?? {} });
+    const complete = await completenessOf({ target, config, product, part: 'components/example' });
+    expect('gaps' in complete && complete.gaps.some((gap) => gap.code === 'OPTION-VALUE-MISSING')).toBe(true);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};
