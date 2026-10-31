@@ -70,7 +70,7 @@ const ONGOING_WORK = ['loading', 'pending', 'busy', 'progress', 'indeterminate',
 const isOngoingWork = (state: string) => ONGOING_WORK.some((word) => state.includes(word));
 
 const missingMotionsOf = (layer: Layer, motion: PartMotions | undefined): OpenPoint[] => {
-  if (!motion || layer === 'foundations') return [];
+  if (!motion || STATELESS_LAYERS.includes(layer)) return [];
 
   const covered = (from: string, to: string) =>
     [...motion.motions, ...motion.unreachable].some((pair) => pair.from === from && pair.to === to);

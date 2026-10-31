@@ -98,7 +98,7 @@ describe('openPointsOf', () => {
       { part: 'components/a', points: [{ kind: 'open-comment', comment: 'answered', state: 'rest', answered: true }] },
     ]);
   });
-  it('asks a motion for every ordered pair and a loop in an ongoing-work state, but not for focus or an unreachable pair', () => {
+  it('asks a motion for every ordered pair and a loop in an ongoing-work state, but not for focus, an unreachable pair, a page or a foundation', () => {
     const points = openPointsOf(
       input({
         parts: [
@@ -149,13 +149,6 @@ describe('openPointsOf', () => {
           { kind: 'missing-motion', from: 'open', to: 'closed' },
           { kind: 'missing-motion', from: 'open', to: 'pending' },
           { kind: 'missing-motion', from: 'pending', to: 'open' },
-        ],
-      },
-      {
-        part: 'pages/b',
-        points: [
-          { kind: 'missing-motion', from: 'default', to: 'empty' },
-          { kind: 'missing-motion', from: 'empty', to: 'default' },
         ],
       },
       { part: 'components/d', points: [{ kind: 'missing-motion', from: 'busy-row', to: 'busy-row' }] },
