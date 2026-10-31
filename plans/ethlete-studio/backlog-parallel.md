@@ -47,7 +47,12 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     server (`932d95e07`, `ca45612b1`, `30bf2e496`, `26090ed81`); Studio chat sends call + variant as tools
     (`8454ff6e0`, one real `claude` turn called `call`; Tauri window and `check` receipt not verified). Flaky timetrack
     peer test was a listener race (`9bb3572a1`). Release published (cdk next.46, core next.71, components next.78).
-  - In progress: Q92 side-by-side schemes; then the view swap flicker fix, then 1e.
+  - Done: Q92 for part grids (`03a2369fb`, Light/Dark column groups, `frame.html?scheme=` pins the scheme); contrast
+    against `z-index: -1` fills (`c1a9ea834`, sdk-33 confirmed on accent-on-light); swap between shot and live page
+    without a blank frame (`c96564d46`; blank frames grid live -> shot 5/6 -> 0/6 in Chromium, WebKit 1/6 -> 0/6;
+    Tauri WebKitGTK not seen; grid cells still go live one by one, each without a blank).
+  - In progress: `design complete` knows a focus container (menu/listbox panel); then Q92 for non-grid frames (Light
+    then Dark side by side, stacked when too wide; legacy call shots stay), then 1e.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
