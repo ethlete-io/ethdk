@@ -109,6 +109,7 @@
   }
 
   .et-color--danger {
+    --et-color-theme-type: error;
     --et-color-primary: 247 93 89;
     --et-color-primary-hover: 252 122 115;
     --et-color-primary-focus: 252 122 115;
@@ -129,6 +130,7 @@
   }
 
   .et-color--warning {
+    --et-color-theme-type: warning;
     --et-color-primary: 239 168 49;
     --et-color-primary-hover: 255 184 70;
     --et-color-primary-focus: 255 184 70;
