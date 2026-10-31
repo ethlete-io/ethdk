@@ -751,6 +751,12 @@ machen".
 - Lead call (Q96, 2026-10-31): chat MVP scope pushed (Q127 in `9d6a2789d`). Builder 57 next: (1) close the two Q127
   context gaps (no part source path; the context sends the picked variant, not the variant Tom looks at); (2)
   dogfood the MVP loop on its own ports and fix plain bugs, sending new looks or behaviour as questions.
+- Q138 floating-action over a grey row (Tom, 2026-10-31, option b): the floating trigger gets the Q99a 1px inset
+  ink edge in light only, for 3:1 against a light grey row (today the fill is 1.13, the Q105 shadow 1.19-1.46). Dark
+  stays as is (fill 10.96). Round re-check `c3807b19f`.
+- Q139 error-theme hover tones (Tom, 2026-10-31, option b): a hover in the error state uses the theme's next stronger
+  tone (`-active` instead of `-hover`), the same rule as Q101 for filled buttons. Today the checkbox error hover is
+  2.77 on dark and the text-field hover ink about 2.8 on white. No theme generator change.
   As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
   the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
   directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
