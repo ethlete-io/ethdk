@@ -59,6 +59,31 @@ describe('utilityCssOf', () => {
     expect(messagesOf(acme())).toEqual([]);
   });
 
+  it('checks a base part under the stylesheets of the base, not of the inheriting product', () => {
+    const target = acme();
+
+    write(target, 'acme-base/components/card/card.css', '.card-frame { display: flex; }');
+
+    expect(messagesOf(target)).toEqual([]);
+
+    const config = readConfig(target) ?? {};
+
+    write(
+      target,
+      'config.json',
+      JSON.stringify({
+        ...config,
+        products: {
+          ...config.products,
+          'acme-base': { ...config.products?.['acme-base'], styles: [`${DESIGN_DIR}/acme-base/styles.css`] },
+        },
+      }),
+    );
+    write(target, 'acme-base/styles.css', `@import 'tailwindcss';\n`);
+
+    expect(messagesOf(target)).toEqual(['card.css: display: flex']);
+  });
+
   it('flags core layout declarations in part CSS, a shared CSS file and the CSS of a TS, outside foundations', () => {
     const target = acme();
 

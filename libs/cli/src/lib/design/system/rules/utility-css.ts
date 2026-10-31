@@ -176,10 +176,10 @@ const themeDeclarationsOf = (sources: ProductSource[]) => {
   return { declarations, tailwind };
 };
 
-const utilitiesOf = (product: ResolvedProduct): Utilities => {
+const utilitiesOf = (sources: ProductSource[]): Utilities => {
   const values = new Map<string, Set<string>>();
   let spacingScale = false;
-  const { declarations, tailwind } = themeDeclarationsOf([product, ...(product.base ? [product.base] : [])]);
+  const { declarations, tailwind } = themeDeclarationsOf(sources);
 
   const add = (properties: string[], value: string) => {
     for (const property of properties) values.set(property, (values.get(property) ?? new Set()).add(value));
@@ -286,22 +286,19 @@ const sourceFilesIn = (dir: string) =>
         .map((path) => resolve(dir, path))
     : [];
 
-/**
- * A declaration that a Tailwind utility of the product draws, in a CSS file below the folder of a part outside
- * foundations or in the CSS of a TS file there: a core layout keyword such as `display: flex`, or a value of a
- * spacing, colour, type, radius or shadow token that a `@theme` block of the product's stylesheets registers. A rule
- * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there. A product
- * whose stylesheets import no `tailwindcss` has no utilities, so nothing is flagged.
- */
-export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
-  const utilities = utilitiesOf(product);
-
+const problemsUnder = ({
+  utilities,
+  sharedSource,
+  parts,
+}: {
+  utilities: Utilities;
+  sharedSource: Parameters<typeof ownSharedFilesOf>[0];
+  parts: ResolvedProduct['parts'];
+}): Problem[] => {
   if (!utilities.tailwind) return [];
 
-  const below = product.parts
-    .filter((part) => part.layer !== 'foundations')
-    .flatMap((part) => sourceFilesIn(dirname(part.file)));
-  const files = new Set([...below, ...ownSharedFilesOf(product, below)]);
+  const below = parts.flatMap((part) => sourceFilesIn(dirname(part.file)));
+  const files = new Set([...below, ...ownSharedFilesOf(sharedSource, below)]);
 
   return [...files].sort().flatMap((file) => {
     const source = readFileSync(file, 'utf8');
@@ -312,4 +309,30 @@ export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] =
       texts.flatMap((text) => expressibleDeclarationsOf(utilities, text)),
     );
   });
+};
+
+/**
+ * A declaration that a Tailwind utility of the product draws, in a CSS file below the folder of a part outside
+ * foundations or in the CSS of a TS file there: a core layout keyword such as `display: flex`, or a value of a
+ * spacing, colour, type, radius or shadow token that a `@theme` block of the product's stylesheets registers. A rule
+ * whose selectors all end on an SDK `.et-*` element passes: the part's markup cannot put a utility there. A product
+ * whose stylesheets import no `tailwindcss` has no utilities, so nothing is flagged. A part inherited from the base is
+ * checked under the stylesheets of the base alone.
+ */
+export const utilityCssOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
+  const parts = product.parts.filter((part) => part.layer !== 'foundations');
+  const own = problemsUnder({
+    utilities: utilitiesOf([product, ...(product.base ? [product.base] : [])]),
+    sharedSource: product,
+    parts: parts.filter((part) => part.origin !== 'base'),
+  });
+  const base = product.base
+    ? problemsUnder({
+        utilities: utilitiesOf([product.base]),
+        sharedSource: { dir: product.base.dir, base: null },
+        parts: parts.filter((part) => part.origin === 'base'),
+      })
+    : [];
+
+  return [...own, ...base];
 };
