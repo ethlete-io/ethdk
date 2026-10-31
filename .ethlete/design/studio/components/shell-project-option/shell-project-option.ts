@@ -8,7 +8,7 @@ type Props = { name: string; selected?: boolean; interaction?: OptionInteraction
 export const shellProjectOptionStyles = styles;
 
 export const shellProjectOption = ({ name, selected = false, interaction }: Props) => {
-  const markup = `<div class="st-project-option flex items-center min-h-control-md py-0 px-space-2 rounded-control-md cursor-pointer${selected ? ' bg-accent-subtle text-accent-text hover:bg-accent/20' : ' hover:bg-surface-raised active:bg-surface-pressed'}" role="option" tabindex="-1" data-et-control="option" aria-selected="${selected}">${name}</div>`;
+  const markup = `<div class="st-project-option flex items-center min-h-control-md py-0 px-space-2 rounded-control-md cursor-pointer${selected ? ' bg-accent-subtle text-accent-text hover:bg-accent/20' : ' hover:bg-surface-hover active:bg-surface-pressed'}" role="option" tabindex="-1" data-et-control="option" aria-selected="${selected}">${name}</div>`;
 
   return interaction ? forceInteraction(markup, interaction) : markup;
 };

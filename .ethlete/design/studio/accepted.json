@@ -720,5 +720,19 @@
     "note": "Q188 (Tom): every control frame uses surface-interaction; lead call ethlete-sdk-76 applies it to the zoom-chip button-group frame",
     "hash": "9c6fef509f532c0f",
     "at": "2026-10-31T16:24:36.405Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-opus-5-5",
+    "note": "Q190 (Tom): plain surface hover uses bg-surface-hover; lead call ethlete-sdk-76, mechanical swap",
+    "hash": "573b013ac52fa147",
+    "at": "2026-10-31T16:29:29.946Z"
+  },
+  {
+    "part": "components/shell-project-option",
+    "by": "claude-opus-5-5",
+    "note": "Q190 (Tom): plain surface hover uses bg-surface-hover; lead call ethlete-sdk-76, mechanical swap",
+    "hash": "1f4c91eb3ad1096c",
+    "at": "2026-10-31T16:29:30.148Z"
   }
 ]
