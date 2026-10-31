@@ -134,7 +134,7 @@ Serial, all in `system/sketch`, `system/complete.ts`, `inventory*.ts`:
 
 ## Stream B - `libs/cli` MCP and motion endpoint
 
-1. `et design mcp` (design-system.md slice 8), then the `motion_shots` tool (sheet image + JSON).
+1. `et design mcp` (slice 8 in `design-system/rules.md`), then the `motion_shots` tool (sheet image + JSON).
 2. `/__design/motion` over `motionOf` with the shot cache (`serve.ts`), for motion slice 3.
 3. `ethlete-agents sync` registers `et design mcp` as `ethlete-design` in `.mcp.json` and `.codex/config.toml`
    when `@ethlete/cli` is installed, started through `packageRunner`: built (`0d81f2066`, `2c0d2ad4c`). Specs only;
