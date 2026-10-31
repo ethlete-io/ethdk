@@ -1,0 +1,54 @@
+.scrollable-frame {
+  padding: 2.4rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+
+  .et-scrollable[direction='vertical'] {
+    inline-size: 400px;
+
+    .et-scrollable-container {
+      block-size: 258px;
+    }
+
+    .et-scrollable-container > * {
+      translate: 0 var(--scrollable-offset);
+    }
+  }
+
+  .et-scrollable-container {
+    block-size: 128px;
+    gap: 12px;
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+
+  .et-scrollable-container > * {
+    translate: var(--scrollable-offset) 0;
+  }
+
+  .scrollable-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 200px;
+    min-block-size: 80px;
+    block-size: 100%;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--et-surface-color-solid) 14%, transparent);
+    color: var(--et-surface-color-solid);
+  }
+
+  .scrollable-item:focus-visible {
+    outline: -webkit-focus-ring-color auto 1px;
+  }
+}
+
+@layer components {
+  .et-scrollable-navigation-item.et-scrollable-navigation-item--active::after {
+    background-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary));
+  }
+}

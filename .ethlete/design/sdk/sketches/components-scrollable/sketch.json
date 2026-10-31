@@ -1,0 +1,34 @@
+{
+  "target": "components/scrollable",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:43:13.433Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Scrollable baseline",
+      "note": "The SDK scrollable (et-scrollable), first drawing, drawn by its mock from @ethlete/components/design with its real markup and CSS: the scroll container with its observer elements, the edge masks (et-scrollable-masks), the etScrollableButtons buttons and the etScrollableNavigation dots. Framed as its story does (24px padding, surface fill, a 128px track with a 12px gap, 200x80 items with 12px corners; vertical 400px wide and 258px tall), with neutral items (14% surface ink) in place of the story's fixed hex colours. Native scrollbars are hidden (renderScrollbars off by default); scrolled positions are drawn by translating the content statically, so the containers carry data-et-skip=CLIPPED, and the 5-dot window of the progress bar clips its dots on purpose (data-et-skip=CLIPPED). What the lib draws: 25px gradient masks from the page colour at an edge that has more content (border variant: 32px plus a 1px surface-border line); inside buttons as transparent xs et-icon-buttons with a chevron in surface-interaction, shown only off the edge they point to; footer buttons left and right of the dots; dots 20px, the active one in the theme primary at full size, the others in surface-interaction, scaled and faded by distance; darken dims every item not fully in view to 75%. The buttons and dots are tabindex=-1 and aria-hidden, so no lib focus ring ever shows; the items are the consumer's own, drawn with the browser's default ring as in the story. States: horizontal-start / -middle / -end, vertical-start / -middle / -end, button-hover, button-active, border-mask, vertical-border-mask, navigation-start / -middle / -end, vertical-navigation, footer-buttons, footer-button-hover, danger-navigation (color danger), darken, item-focus-visible, short-content (2 items, no overflow: no masks, no buttons), short-content-navigation (no footer while it cannot scroll). Numbers (light / dark), from shot pixels: active dot vs page brand 1.33 / 13.50, danger 4.83 / 3.71; dot one away 2.30 / 3.31, two away 1.82 / 2.40; footer chevron vs page 4.74 / 6.94; inside chevron vs the mask behind it 5.12 / 7.77; button hover tint vs page 1.04 / 1.17, chevron on it 4.58 / 5.91; border-mask line vs page 1.26 / 1.73 (Q98, numbers only); item vs page 1.35 / 1.48. Decided rules that arise: Q99a only (the active dot is an accent mark, mint at 1.33:1 on light). No ink edge arises (the dot turns ink, no mint fill remains on light), so no Q102 and no c. No lib focus ring (Q88) and no filled button (Q101). Story artifact, not a lib bug: in vertical the story's padding-block 4px / margin-block -4px lets the items show 4px past the masks. Open for Tom, not a decided rule: the far dots (1.82 light) and the hover tint (1.04 light) are faint."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. Active dot in the theme primary: brand 1.33 / 13.50, danger 4.83 / 3.71 vs page (light / dark). Dots one and two away 2.30 / 3.31 and 1.82 / 2.40; chevrons 4.74 / 6.94 (footer), 5.12 / 7.77 (inside, over the mask); hover tint 1.04 / 1.17; border-mask line 1.26 / 1.73."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q99a: the active navigation dot is drawn light-dark(ink, primary), so on light it takes the theme ink: brand 5.48, danger 6.47 vs page; dark keeps primary (brand 13.50, danger 3.71). Everything else equals a. No ink edge arises, so Q102 does not and there is no c."
+    }
+  }
+}
