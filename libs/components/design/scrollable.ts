@@ -47,6 +47,12 @@ export type ScrollableMockOptions = {
   snap?: boolean;
   /** A color theme name the app registers. Left out, the scrollable takes the color theme around it. */
   color?: string;
+  /** The `itemSize` the scrollable lays its items out with. Left out, `auto`. */
+  itemSize?: 'auto' | 'same' | 'full' | 'half' | 'third' | 'quarter';
+  /** The gap between the items in px, as the directive reads it from the container. Left out, 0. */
+  itemGap?: number;
+  /** Extra classes on the host, e.g. the class a wrapping component puts on it. */
+  class?: string;
   /** Extra attributes on the host, e.g. a style or design markers. */
   attributes?: string;
   /** Extra attributes on the scroll container, e.g. a style that offsets it to a scrolled position. */
@@ -141,16 +147,17 @@ export const scrollable = (options: ScrollableMockOptions) => {
     (options.partialItems ?? (canScroll && renderMasks)) && 'et-scrollable--has-partial-items',
     options.darken && 'et-scrollable--darken-non-intersecting-items',
     options.stickyButtons && options.buttons === 'inside' && 'et-scrollable--sticky-buttons',
+    options.class,
   ].filter(Boolean);
 
   const host = [
     options.attributes,
     `class="${classes.join(' ')}"`,
-    'item-size="auto"',
+    `item-size="${options.itemSize ?? 'auto'}"`,
     `direction="${direction}"`,
     options.snap && 'snap="" snap-origin="auto"',
     `mask-variant="${options.maskVariant ?? 'gradient'}"`,
-    `style="--item-count: ${options.items.length}; --item-gap: 0px; --_et-scrollable-scroll-margin: 0px"`,
+    `style="--item-count: ${options.items.length}; --item-gap: ${options.itemGap ?? 0}px; --_et-scrollable-scroll-margin: 0px"`,
   ].filter(Boolean);
 
   const itemMarkup = options.items
