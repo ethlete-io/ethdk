@@ -176,3 +176,9 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   idea. In the sketch view of `sdk/sketches/components-button` (r1) a viewer sees exactly which cells are shot images
   and which are live iframes, because the images are clearly blurry. Rework after the MVP: every visible cell must
   look the same, either by sharp shots (device pixel ratio, zoom) or by no cap. Measure the cost first.
+- **Sketch context for a state change (Tom, 2026-10-31), after the MVP:** a sketch that changes one interaction state
+  is hard to judge. "Show all" on `sdk/sketches/components-button` (r1) shows thousands of cells; "Changed area"
+  shows only the active cells, without the rest, hover and focus cells around them, so Tom cannot feel whether the
+  press reads right in the sequence. Rework after the MVP: the changed area keeps its neighbourhood, for example the
+  full interaction row (rest, hover, active, focus-visible, pressed) of each changed state, with the changed cell
+  marked.
