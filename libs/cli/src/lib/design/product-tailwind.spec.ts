@@ -1,11 +1,13 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const roots: string[] = [];
 
 const fixture = (stylesheet: string) => {
-  const root = mkdtempSync(join(__dirname, '__tailwind-'));
+  const root = mkdtempSync(join(tmpdir(), 'cli-tailwind-'));
+  symlinkSync(resolve(__dirname, '../../../../../node_modules'), join(root, 'node_modules'));
   roots.push(root);
   mkdirSync(join(root, 'sketches'));
   writeFileSync(join(root, 'styles.css'), stylesheet);
