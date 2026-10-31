@@ -74,7 +74,7 @@ export const notificationStyles = /* @__PURE__ */ [
 const spinner = () => {
   const circle = `<svg viewBox="0 0 8 8" class="et-spinner-circle-graphic" xmlns="http://www.w3.org/2000/svg" focusable="false"><circle r="3" cx="50%" cy="50%"></circle></svg>`;
 
-  return `<et-spinner class="et-notification-spinner et-notification-mock-spinner et-color--inherited et-spinner" role="progressbar" aria-label="Loading"><div class="et-spinner-indeterminate"><div class="et-spinner-indeterminate-container" aria-hidden="true"><div class="et-spinner-layer"><div class="et-spinner-circle-clipper et-spinner-circle-left">${circle}</div><div class="et-spinner-gap-patch">${circle}</div><div class="et-spinner-circle-clipper et-spinner-circle-right">${circle}</div></div></div></div></et-spinner>`;
+  return `<et-spinner data-et-skip="CLIPPED" class="et-notification-spinner et-notification-mock-spinner et-color--inherited et-spinner" role="progressbar" aria-label="Loading"><div class="et-spinner-indeterminate"><div class="et-spinner-indeterminate-container" aria-hidden="true"><div class="et-spinner-layer"><div class="et-spinner-circle-clipper et-spinner-circle-left">${circle}</div><div class="et-spinner-gap-patch">${circle}</div><div class="et-spinner-circle-clipper et-spinner-circle-right">${circle}</div></div></div></div></et-spinner>`;
 };
 
 const dismissButton = (color: string | undefined, attributes?: string) => {
