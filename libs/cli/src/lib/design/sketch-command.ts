@@ -19,6 +19,9 @@ import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
+import { openPointsText } from './system/open-points';
+import { sketchOpenPointsOf } from './system/read-open-points';
+import { overlaySketch } from './system/sketch/overlay';
 import {
   addVariant,
   createSketch,
@@ -698,6 +701,17 @@ const readyRefusalOf = (
   );
 
   if (problems.length > 0) return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
+
+  const open = sketch.variants
+    .filter((variant) => !rejectionOf(sketch, variant))
+    .flatMap((variant) =>
+      openPointsText(product.name, sketchOpenPointsOf(overlaySketch({ product, sketch, variant }), sketch.targets))
+        .slice(1)
+        .map((line) => `${sketch.target} ${variant}: ${line.trim()}`),
+    );
+
+  if (open.length > 0)
+    return fail(`${open.join('\n')}\n${sketch.target} has open points the sketch can close - close them before ready`);
 
   const running = runningRoundOf(sketch);
 

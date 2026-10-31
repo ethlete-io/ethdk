@@ -335,6 +335,10 @@ into the base and removes the copy with its `merged.json` entry. A part of a bui
 
 `sketch ready` refuses while a target of a live variant does not load. It also runs the render check on the variants and refuses on any render issue, including one the product already had; an element marked `data-et-skip` stays out, and a missing browser skips the check with a `RENDER CHECK SKIPPED` line.
 
+`sketch ready` also refuses while a target, as a live variant draws it, has an open point the sketch can close
+itself: no controls declared or a missing motion (contrasts and missing control states already fail the render
+check). Points that exist only outside the sketch do not count: the sketch itself, no `implements`, open comments.
+
 A sketch goes to `ready` only when no change to it waits on anything. `et design sketch hold components/button --until
 "the radius token lands" --by <model id>` records the wait in `sketch.json`: a `ready` sketch goes back to in progress
 and leaves the merge queue, and `sketch ready` refuses with the `--until` text. Make the change, then

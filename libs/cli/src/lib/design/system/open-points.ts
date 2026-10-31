@@ -14,6 +14,9 @@ export const OPEN_POINT_KINDS = [
 
 export type OpenPointKind = (typeof OPEN_POINT_KINDS)[number];
 
+/** The kinds a sketch closes in its own variant; the others exist only after a merge or outside the sketch. */
+export const SKETCH_KINDS: readonly OpenPointKind[] = ['missing-state', 'contrast', 'missing-motion'];
+
 /**
  * Something that keeps a part from being done. `missing-state` is a control without a drawn state (`control` null when
  * the part declares no controls); `contrast` is a drawn state under the contrast rule; `open-comment` is a thread the

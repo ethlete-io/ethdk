@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
 import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { designSketch } from './sketch-command';
+import { sketchOpenPointsOf } from './system/read-open-points';
 import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
@@ -22,6 +23,14 @@ vi.mock('./system/render-check', async (importOriginal) => ({
     drawn: [],
   })),
 }));
+
+vi.mock('./system/read-open-points', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/read-open-points')>()),
+  sketchOpenPointsOf: vi.fn(() => []),
+}));
+
+const actualSketchOpenPoints = async () =>
+  (await vi.importActual<typeof import('./system/read-open-points')>('./system/read-open-points')).sketchOpenPointsOf;
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-command-'));
@@ -111,6 +120,39 @@ describe('designSketch', { timeout: 120_000 }, () => {
       '--product',
       'acme',
     );
+
+  it('refuses ready while the variant has missing states or motions, not for its own unmerged sketch or a missing implements', async () => {
+    const target = acme();
+    const lines = output();
+    const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
+
+    const actual = await actualSketchOpenPoints();
+
+    vi.mocked(sketchOpenPointsOf).mockImplementationOnce(actual).mockImplementationOnce(actual);
+    newButton(target);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      'components/button a: components/button: no controls declared; 2 missing motions (default -> long, long -> default)\ncomponents/button has open points the sketch can close - close them before ready',
+    );
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'in progress' });
+
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace(
+        "interactions: ['hover', 'focus-visible', 'active', 'disabled'],",
+        "interactions: ['hover', 'focus-visible', 'active', 'disabled'],\n  controls: { play: { kind: 'button', input: ['pointer'] } },\n  unreachable: [{ from: 'default', to: 'long', reason: 'a label' }, { from: 'long', to: 'default', reason: 'a label' }],",
+      ),
+    );
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
 
   it('refuses ready on a render issue and keeps the sketch in progress', async () => {
     const target = acme();
