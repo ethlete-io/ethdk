@@ -72,6 +72,7 @@ import { TabComponent } from './tab.component';
       }
     </div>
   `,
+  styleUrl: './tab-group.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     TabBarTriggerDirective,
@@ -109,115 +110,6 @@ import { TabComponent } from './tab.component';
     '[attr.data-divider]': 'tabGroup.tabBar.divider()',
     '[attr.data-variant]': 'tabGroup.tabBar.variant()',
   },
-  styles: `
-    @layer components {
-      @property --et-tab-group-gap {
-        syntax: '<length>';
-        inherits: false;
-        initial-value: 0px;
-      }
-
-      @property --et-tab-group-header-gap {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 0px;
-      }
-
-      @property --et-tab-group-trigger-padding-inline {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 16px;
-      }
-
-      @property --et-tab-group-trigger-padding-block {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 12px;
-      }
-
-      @property --et-tab-group-underline-size {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 2px;
-      }
-
-      @property --et-tab-group-underline-radius {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 1px;
-      }
-
-      .et-tab-group {
-        display: flex;
-        flex-direction: column;
-        gap: var(--et-tab-group-gap);
-
-        --et-tab-group-trigger-padding-inline: var(--et-tab-padding-inline);
-        --et-tab-group-trigger-padding-block: var(--et-tab-padding-block);
-        --et-tab-group-underline-size: var(--et-tab-underline-size);
-        --et-tab-group-underline-radius: var(--et-tab-underline-radius);
-        --et-tab-group-font-size: var(--et-tab-font-size);
-        --et-tab-bar-underline-size: var(--et-tab-group-underline-size);
-        --et-tab-bar-underline-radius: var(--et-tab-group-underline-radius);
-
-        &[data-orientation='vertical'] {
-          flex-direction: row;
-        }
-
-        &:where([data-variant='primary'][data-size='sm']),
-        &:where([data-variant='primary'][data-size='md']) {
-          --et-tab-group-underline-size: 3px;
-        }
-
-        &:where([data-variant='primary'][data-size='lg']) {
-          --et-tab-group-underline-size: 4px;
-        }
-      }
-
-      .et-tab-group__header-shell {
-        min-inline-size: 0;
-      }
-
-      .et-tab-group__header-scrollable {
-        min-inline-size: 0;
-      }
-
-      .et-tab-group__header {
-        position: relative;
-        gap: var(--et-tab-group-header-gap);
-
-        [data-orientation='vertical'] & {
-          justify-items: start;
-        }
-      }
-
-      .et-tab-group__trigger {
-        padding-inline: var(--et-tab-group-trigger-padding-inline);
-        padding-block: var(--et-tab-group-trigger-padding-block);
-        border: none;
-        background: none;
-        font: inherit;
-        font-size: var(--et-tab-group-font-size);
-
-        .et-tab-group__trigger-content {
-          display: flex;
-          gap: 8px;
-        }
-      }
-
-      .et-tab-group__body {
-        display: grid;
-      }
-
-      .et-tab-group__panel {
-        grid-area: 1 / 1;
-
-        &[hidden] {
-          display: none;
-        }
-      }
-    }
-  `,
 })
 export class TabGroupComponent {
   protected tabGroup = inject(TabGroupDirective);
