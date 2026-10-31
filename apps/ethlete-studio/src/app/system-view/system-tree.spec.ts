@@ -216,9 +216,14 @@ describe('callFramesOf', () => {
     );
     expect(shot(1701)).toContain('&view=1701&');
     expect(shot()).not.toContain('view=');
-    expect(framesOf({ port: 4402, product: product(), part: part(), view: 9 })[0]?.screenshot).toContain(
-      '&view=9&rank=visible&priority=low',
-    );
+    const shots = framesOf({
+      port: 4402,
+      product: product(),
+      part: part({ layer: 'pages', name: 'home' }),
+      view: 9,
+    }).map((frame) => frame.screenshot);
+
+    expect(shots.every((url) => url?.endsWith('&view=9&rank=visible&priority=low'))).toBe(true);
   });
 
   it('falls back to 1280 without a width and fails one frame for a call that does not load', () => {
