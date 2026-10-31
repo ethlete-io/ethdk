@@ -60,6 +60,7 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 **/generators/dist/**
+libs/components/.design-base/
 
 **/.vitepress/cache/**
 .claude/worktrees

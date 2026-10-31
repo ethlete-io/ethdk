@@ -8,7 +8,13 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "dependsOn": ["^build", "build-generators", "generate-version"],
+      "dependsOn": ["^build", "build-generators", "generate-version", "stage-design-base"],
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/.ethlete/design/config.json",
+        "{workspaceRoot}/.ethlete/design/sdk/**/*"
+      ],
       "outputs": ["{workspaceRoot}/dist/libs/components"],
       "defaultConfiguration": "production",
       "options": {
@@ -52,6 +58,18 @@
       "options": {
         "commands": ["rm -rf libs/components/generators/dist", "tsc -p libs/components/generators/tsconfig.json"],
         "parallel": false
+      }
+    },
+    "stage-design-base": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "{workspaceRoot}/.ethlete/design/config.json",
+        "{workspaceRoot}/.ethlete/design/sdk/**/*",
+        "{workspaceRoot}/tools/scripts/stage-design-base.mjs"
+      ],
+      "outputs": ["{projectRoot}/.design-base"],
+      "options": {
+        "command": "node tools/scripts/stage-design-base.mjs sdk libs/components/.design-base"
       }
     },
     "generate-version": {

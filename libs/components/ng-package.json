@@ -21,6 +21,11 @@
       "output": "./design"
     },
     {
+      "glob": "**/*",
+      "input": ".design-base",
+      "output": "./design"
+    },
+    {
       "glob": "**/*.css",
       "input": "src/lib",
       "output": "./src/lib"
