@@ -152,3 +152,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   (for example a direct `anchoredDialog()` call).
 - **`pages/inventory` sketch (Tom, 2026-10-31):** Tom merges it for the MVP, but the part needs a design rework after
   the MVP. It joins the after-MVP inventory rows: canvas view, viewport clip, assets section (Q233), overlays (Q239).
+- **Q240 (Tom, 2026-10-31):** an inventory control with several instances is marked "covered" in the list only when
+  every instance is covered; covered instances still lose their outline in the frame.
