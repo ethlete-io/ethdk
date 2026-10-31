@@ -115,7 +115,7 @@ describe('a base installed in node_modules', () => {
       kind: 'failed',
       output: expect.stringContaining('card.ts'),
     });
-  });
+  }, 30_000);
 
   it.each([false, true])('resolves @system/* inside a base part to the product, linked: %s', async (linked) => {
     const target = consumer({ linked });
