@@ -40,7 +40,9 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
-  4. Q64: `fitOutOfFlow` skips full-inset fixed elements (a backdrop). Earlier only if sdk-33 is blocked by it.
+  4. Q64 done (`c70713442`): `fitOutOfFlow` skips a fixed element on all four edges. Q90 done (`9d8ae9723`).
+  - In progress (2026-10-31): 2c grid render speed (measure first), then Q92 side-by-side schemes; 2d `STALE-REPLACE`
+    on a function parameter in parallel.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
@@ -382,7 +384,7 @@ Built in `e9a7ba58c` (`#root` grows to cover absolute and fixed content). Tom's 
 - Q62: a frame with a declared width does not grow sideways; a wider overlay is cut.
 - Q63: content above the root (a `top` placement) is not counted; add it only when a part needs it.
 - Q64: elements that fill the whole viewport (`position: fixed; inset: 0`, for example a backdrop) are skipped
-  in the measure. To build after the usage limit reset.
+  in the measure. Built in `c70713442`.
 - Q66 (2026-10-31): the live Studio canvas does not fit the frame yet. After a Studio restart, select
   `open-option-hover` at 320 px is only a little taller than the closed field, and the open panel scrolls inside the
   frame. Shots are fine. `ethlete-sdk-57` fixes it now, despite the usage limit, because it blocks the select merge.
@@ -484,7 +486,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   the part changed. A hand edit to `colors.ts` still does. CI `sdk:tokens:check` guards the generated file. Built by
   `ethlete-sdk-57`.
 - Studio footer status (Tom, 2026-10-31): the footer gets a status line that shows the render queue (for example
-  queued, rendering, slow or failed shots), so a slow or blank canvas is visible as such. Built by `ethlete-sdk-57`.
+  queued, rendering, slow or failed shots), so a slow or blank canvas is visible as such. Built in `d8125345d`
+  (`GET /__design/queue`) and `3c02e86a1` (footer line, red "N failed" with a tooltip). Verified on an own server;
+  not verified in the Tauri window.
 - Studio render speed (Tom, 2026-10-31): a grid of cells must appear at once, not cell by cell. Measure first. Tom:
   "throw rust at the problem" - Rust in the Tauri host is welcome for the hot path (shot cache, render queue, image
   work, hashing) where the numbers show a gain.
