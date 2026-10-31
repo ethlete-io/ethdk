@@ -44,6 +44,7 @@ const rowMarkup = (r: Row) => {
 
   return `<div
         class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-et-theme/20 ' : ''}hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
+        data-et-surface-interactive
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"
