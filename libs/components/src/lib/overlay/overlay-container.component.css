@@ -164,4 +164,8 @@
   .et-force-invisible {
     visibility: hidden !important;
   }
+
+  .et-overlay--dialog .et-button:where([data-variant='filled']) {
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+  }
 }

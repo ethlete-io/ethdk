@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { Box, boxOf, openStory, pressKey, tap, touchSwipe, viewportOf } from '../support';
+import { Box, boxOf, openStory, pressKey, setColorScheme, tap, touchSwipe, viewportOf } from '../support';
 
 const STORY_ID = 'components-overlays-overlay--default';
 
@@ -497,4 +497,21 @@ test.describe('dialog / busy', () => {
     await expect(page.locator(DIALOG_ROOT)).toHaveCount(0, { timeout: 5000 });
     await expect(root.getByText('Last close result: submitted')).toBeVisible();
   });
+});
+
+test.describe('dialog / filled button edge', () => {
+  for (const [scheme, edge] of [
+    ['light', /^(?!rgba\(0, 0, 0, 0\)).*inset/],
+    ['dark', /^(none|rgba\(0, 0, 0, 0\) 0px 0px 0px 1px inset)$/],
+  ] as const) {
+    test(`a filled button in the dialog draws its ink edge only in the light scheme (${scheme})`, async ({ page }) => {
+      const root = await openStory(page, STORY_ID);
+      await setColorScheme(root, scheme);
+      await root.getByRole('button', { name: 'Dialog', exact: true }).click();
+
+      const confirm = page.locator(PANE).getByRole('button', { name: 'Confirm' });
+      await expect(confirm).toHaveAttribute('data-variant', 'filled');
+      await expect.poll(() => confirm.evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(edge);
+    });
+  }
 });
