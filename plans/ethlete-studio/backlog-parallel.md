@@ -741,6 +741,8 @@ machen".
 - Q135 after the MVP, unless one blocks Tom while he designs Studio (then it is friction and in scope): CEF runtime,
   more motion work, the SDK catalog in Studio, existing-code import, the git-free designer workflow, the old-chats
   list, wireframes.
+- Q178 after the MVP (Tom, 2026-10-31): Studio shows only the SDK base parts the Studio product actually uses, not
+  every SDK part.
 - Q136 shot cache on disk (Tom, 2026-10-31, option b): build it now, before the view-context chip. Today the shots
   live only in memory, so a Studio restart (an edit under `src-tauri/**`) re-renders every part. The disk cache must
   keep shots across a restart and still invalidate on a render-path change (same rules as the in-memory key after
