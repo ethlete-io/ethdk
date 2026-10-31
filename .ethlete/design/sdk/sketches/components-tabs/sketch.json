@@ -1,0 +1,34 @@
+{
+  "target": "components/tabs",
+  "status": "ready",
+  "createdAt": "2026-10-31T01:16:51.782Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Tab bar baseline",
+      "note": "First drawing of the SDK tab group: three triggers, the selected underline and the baseline, with hover, active and focus-visible on an unselected and a selected tab, plus disabled, sm, lg, primary, no divider, vertical and a panel. Both variants draw the focus ring in --et-theme-color-ink-solid, as the switch round does: light 5.48:1 against white (today mint 1.33:1, under the 3:1 line), dark unchanged 13.5:1. This follows mint-on-light rule a (Q99). Fixed numbers: underline ink 5.48:1 light, 13.5:1 dark; unselected label 4.74:1 light, 6.94:1 dark; hover label 10.37:1 light, 13.07:1 dark. The open question is the baseline under the bar."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: baseline --et-surface-border-solid at --et-tab-baseline-opacity 0.2. Light 250 on 255, 1.04:1; dark 31 on 23, 1.09:1. The bar edge nearly vanishes in both schemes."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Baseline at opacity 1, the plain border token: light 229, 1.26:1; dark 64, 1.73:1. The same --et-surface-border-solid as the tooltip pane border; the 5.48:1 ink underline still stands out clearly on top."
+    }
+  }
+}
