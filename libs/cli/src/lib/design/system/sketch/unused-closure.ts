@@ -223,13 +223,25 @@ export const unusedInVariantOf = (options: {
       return { file, text, source: ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true) };
     });
   const otherParts = product.parts.filter((part) => !sketch.targets.includes(partKeyOf(part)));
+  const otherSources = otherParts.map((part) => part.source);
+  const sharedDir = `${sharedDirOf(sketch)}${sep}`;
+  const css = files.filter((file) => file.endsWith('.css'));
+  const sketchScripts = [
+    ...new Set(
+      sketch.variants.flatMap((variant) => closureOf({ sketch, variant }).filter((file) => file.endsWith('.ts'))),
+    ),
+  ].map((file) => readFileSync(file, 'utf8'));
 
   return [
     ...scripts.flatMap(({ file, source }) => [...unusedImportsOf(file, source), ...unreferencedParamsOf(file, source)]),
     ...unpassedParamsOf({ scripts, shared: [variantSharedDirOf(sketch, options.variant), sharedDirOf(sketch)] }),
     ...unusedClassesOf({
-      css: files.filter((file) => file.endsWith('.css')),
-      sources: [...scripts.map((script) => script.text), ...otherParts.map((part) => part.source)],
+      css: css.filter((file) => !file.startsWith(sharedDir)),
+      sources: [...scripts.map((script) => script.text), ...otherSources],
+    }),
+    ...unusedClassesOf({
+      css: css.filter((file) => file.startsWith(sharedDir)),
+      sources: [...sketchScripts, ...otherSources],
     }),
   ];
 };

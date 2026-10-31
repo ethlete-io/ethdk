@@ -68,4 +68,19 @@ describe('unusedInVariantOf', () => {
 
     expect(linesOf(sketch)).toEqual([]);
   });
+
+  it('counts a rule of the shared folder as used when another variant draws it', () => {
+    const sketch = {
+      ...sketchWith({
+        'a/pages/inbox/inbox.ts': `import css from '@shared/inbox.css?inline';\n\nexport const page = () => \`<style>\${css}</style><div class="ib-list"></div>\`;\n`,
+        'b/pages/inbox/inbox.ts': `import css from '@shared/inbox.css?inline';\n\nexport const page = () => \`<style>\${css}</style><div class="ib-list ib-control"></div>\`;\n`,
+        'shared/inbox.css': `.ib-list { gap: 1rem; }\n.ib-control { gap: 2rem; }\n.ib-gone { gap: 3rem; }\n`,
+      }),
+      variants: ['a', 'b'],
+    } as Sketch;
+
+    expect(linesOf(sketch)).toEqual([
+      'UNUSED shared/inbox.css: styles .ib-gone, which nothing the variant draws uses - remove the rule',
+    ]);
+  });
 });
