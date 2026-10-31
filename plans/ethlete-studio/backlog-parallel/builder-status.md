@@ -110,10 +110,21 @@
   spec bites); Q220 needed no edit. CI fixes: covered.spec skips without a browser (0dd0a0307), frame-bootstrap
   fixture stubs `../define-part` (dec0fd622).
 - Open (handoff):
-  - Q241 subagent: definePart `frame` landed (c7f01abde); SDK parts with a demo frame and the no-visible-change
-    rounds on pages/system + pages/inbox (drop the `!` overrides and the `bottom-${'start'}` hack, plus the inbox
-    Q221 glued class) may still be open. Check `git log` and `.ethlete/design/*/sketches`. Report to the grill whether
-    the inbox merge made its go stale.
+  - Q241 (partly built): definePart `frame` + `drawState` landed (c7f01abde, spec bites, docs, cli minor). 44 SDK
+    parts carry a demo frame; only anchored-dialog (pages/system, pages/inbox) and menu (studio shell-main,
+    `[&>.menu-frame]:contents!`) are embedded. Open uncommitted sketch `.ethlete/design/sdk/sketches/components-accordion`
+    (42 targets, variant a, round "Demo frame out of render"): 29 converted; 13 copied back. `sketch ready` refuses:
+    (1) chart, menu, notification have CONTRAST problems already in the merged part, but render-check
+    (`libs/cli/src/lib/design/system/render-check.ts` ~724-740) compares sketch issues with the merged part only for
+    CONTROL-PART-INPUT; (2) 10 parts' old CONTROL-PART-INPUT warnings change element path once the mark moves off
+    the frame div. Next: fix render-check so an issue the merged part already shows (same rule and detail; path
+    normalised for the frame move) does not block, with a spec (tool gap, recommended to the grill); re-run
+    `/tmp/q241/conv.py` + `conv2.py` on the restored parts; `sketch ready`; after-shots
+    (`/tmp/q241/shoot.sh /tmp/q241/after $(cat /tmp/q241/parts.txt)`) vs `/tmp/q241/before`; convert scrollable and
+    timeline. Then no-visible-change rounds: pages/system and pages/inbox drop the `!` overrides (frame font-size 1.4rem
+    and colour may need to move to the host), inbox drops `bottom-${'start'}` and fixes the glued
+    `rounded-control-md${...}` (line ~140, Q221; if the look changes stop at ready); shell-main drops the menu override.
+    Tell the grill if the inbox merge makes its go stale. Tom's :4402 runs an old CLI until he restarts it.
   - Q242: sdk `components/button` sketch round r1 "Filled active contrast" (456dae1c3), variants a/b/c, waits for
     Tom's merge. Then port the pick to `libs/components/src/lib/button/button.component.css` (filled `:active`,
     about line 149; danger Delete fails the same way), with a changeset and docs. Then bring the open glued-class
