@@ -23,7 +23,7 @@
 }
 
 @layer components {
-  .et-table-header-label:focus-visible,
+  .et-table-header-label:focus-visible .et-table-header-label-box,
   .et-table-expander:focus-visible,
   .et-table-cell:focus-visible {
     outline-color: var(--et-theme-color-ink-solid);
