@@ -1,6 +1,6 @@
 {
   "target": "pages/system",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-31T19:04:11.697Z",
   "baseline": {
     "foundations/agent-logos": "9d16069b875f1e82",
@@ -85,7 +85,7 @@
     {
       "key": "r1",
       "title": "",
-      "note": ""
+      "note": "Open-points popover drawn as the SDK anchored dialog: auto surface, SDK border, radius, shadow and arrow; list unchanged"
     }
   ],
   "variantInfo": {
