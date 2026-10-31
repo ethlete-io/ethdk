@@ -82,11 +82,10 @@ export default definePart({
   widths: [480],
   controls: {
     item: { kind: 'row', input: ['pointer', 'keyboard'], disabled: true },
-    panel: { kind: 'field', input: [] },
   },
   render: ({ rows, forced }: Props) =>
     drawing({
-      body: `<div class="menu-frame">${menu({ rows: withForced(rows, forced), color: 'brand' }).replace('<et-menu ', '<et-menu data-et-control="panel" ')}</div>`,
+      body: `<div class="menu-frame">${menu({ rows: withForced(rows, forced), color: 'brand' })}</div>`,
       styles: [menuStyles, edge].join('\n'),
     }),
 });
