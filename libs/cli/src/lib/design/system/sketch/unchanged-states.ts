@@ -144,6 +144,7 @@ export const unchangedStatesOf = async (options: {
   keepPictures?: boolean;
   part?: string;
   compareFrames?: boolean;
+  states?: string[];
 }): Promise<string[]> => {
   const {
     product,
@@ -154,6 +155,7 @@ export const unchangedStatesOf = async (options: {
     keepPictures = false,
     part: compared = sketch.target,
     compareFrames = true,
+    states,
   } = options;
   const current = product.parts.find((part) => partKeyOf(part) === compared);
   const merged = current?.file;
@@ -173,6 +175,7 @@ export const unchangedStatesOf = async (options: {
       partHashOf({ product, dir: variantDirOf(sketch, variant) }),
       !!pictureOf,
       compareFrames,
+      states,
     ]),
   );
   const keeps = !pictureOf || keepPictures;
@@ -195,8 +198,9 @@ export const unchangedStatesOf = async (options: {
     return !!own?.css && imported.has(resolve(own.css)) && part.cssSource !== own.cssSource;
   });
   const presets = current?.layer === 'pages' ? Object.keys(product.presets) : null;
+  const comparedStates = [...after.states].filter(([state]) => !states || states.includes(state));
   const same = await Promise.all(
-    [...after.states].map(async ([state, markup]) => {
+    comparedStates.map(async ([state, markup]) => {
       if (!now.states.has(state)) return 'different';
 
       const before = now.states.get(state);
@@ -218,7 +222,7 @@ export const unchangedStatesOf = async (options: {
     }),
   );
 
-  const unchanged = [...after.states.keys()].filter((_, index) => same[index] === 'same');
+  const unchanged = comparedStates.filter((_, index) => same[index] === 'same').map(([state]) => state);
 
   return keeps && !same.includes('failed') ? remember(key, unchanged) : unchanged;
 };

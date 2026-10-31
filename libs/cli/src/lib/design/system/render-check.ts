@@ -12,7 +12,7 @@ import {
 import { controlStateGapsOf, isInteractionState, isControlPart } from './complete';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
-import { PartAddress, partFrameOf, viewportOf } from '../shot';
+import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './list-system';
 import { partKeyOf } from './resolve-product';
@@ -459,6 +459,7 @@ export const renderIssuesOf = async (options: {
 
   const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
+  let shots: ReturnType<typeof createPartShooter> | undefined;
 
   try {
     await server.listen();
@@ -466,6 +467,7 @@ export const renderIssuesOf = async (options: {
     const { port } = server.httpServer?.address() as AddressInfo;
     const base = `http://localhost:${port}`;
     const system = createSystemModules({ target, config });
+    shots = createPartShooter({ target, base, system, queue });
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
     const grids: RenderedGrid[] = [];
@@ -541,6 +543,8 @@ export const renderIssuesOf = async (options: {
                 variant: sketch.variant,
                 part: key,
                 compareFrames: false,
+                states: states.filter(isInteractionState),
+                pictureOf: shots.pictureOf,
                 load: ({ file, product: name, sketch: variant }) =>
                   server.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: variant })),
               })
@@ -651,6 +655,6 @@ export const renderIssuesOf = async (options: {
 
     throw error;
   } finally {
-    await Promise.all([queue.close(), server.close()]);
+    await Promise.all([shots ? shots.close() : queue.close(), server.close()]);
   }
 };

@@ -293,10 +293,11 @@ export const createPartShooter = (options: {
   ledger?: DrawLedger;
   statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
   store?: ShotStore;
+  queue?: ReturnType<typeof createDrawQueue>;
 }) => {
   const { system, statesOf, store } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
-  const drawQueue = createDrawQueue(options);
+  const drawQueue = options.queue ?? createDrawQueue(options);
   const warmPages = createWarmPages();
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();

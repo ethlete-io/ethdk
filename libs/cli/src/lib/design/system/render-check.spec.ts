@@ -270,6 +270,50 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('compares pixels of merged interaction states when sketch CSS changes', async (context) => {
+    const target = checkout({
+      'components/shell': {
+        body: '<div class="shell">Shell</div>',
+        css: '.shell { color: black; }',
+        states: "rest: {}, 'row-hover': {}",
+      },
+    });
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches/components-shell');
+    const source = readFileSync(join(shop, 'components/shell/shell.ts'), 'utf8');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'components/shell', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+    for (const [variant, css] of [
+      ['same', '.shell { color: black; } .sized .shell { min-width: 0; }'],
+      ['changed', '.shell { color: red; }'],
+    ] as const) {
+      const part = join(dir, variant, 'components/shell');
+      mkdirSync(part, { recursive: true });
+      writeFileSync(join(part, 'shell.ts'), source);
+      writeFileSync(join(part, 'shell.css'), css);
+    }
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: ['same', 'changed'].map((variant) => ({
+        product: 'shop',
+        sketch: { target: 'components/shell', variant },
+        parts: ['components/shell'],
+      })),
+    });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(
+      rendered.issues.filter((issue) => issue.rule === 'CONTROL-STATE').map((issue) => issue.sketch?.variant),
+    ).toEqual(['changed']);
+  }, 120_000);
+
   it('answers why it can not draw when no browser resolves', async () => {
     const target = checkout();
 
