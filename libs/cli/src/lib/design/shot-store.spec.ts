@@ -134,11 +134,12 @@ const start = async (target: string, graph = new Map<string, FakeModule>()) => {
   });
 
   const shot = () =>
-    new Promise<{ status: number; body: unknown }>((done) => {
+    new Promise<{ status: number; body: unknown; source: string | undefined }>((done) => {
+      const headers: Record<string, string> = {};
       const response = {
         statusCode: 200,
-        setHeader: () => undefined,
-        end: (body: unknown) => done({ status: response.statusCode, body }),
+        setHeader: (name: string, value: string) => (headers[name] = value),
+        end: (body: unknown) => done({ status: response.statusCode, body, source: headers['x-design-shot'] }),
       };
 
       handlers.get('/__design/shot')?.({ url: `/?${SHOT}` } as IncomingMessage, response as unknown as ServerResponse);
@@ -158,13 +159,24 @@ describe('the shots a design server keeps on disk', () => {
     const { target, files } = acme();
     const before = await start(target, graphOf(files));
 
-    expect(await before.shot()).toEqual({ status: 200, body: Buffer.from('drawn png') });
+    expect(await before.shot()).toMatchObject({ status: 200, body: Buffer.from('drawn png') });
     await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
 
     const after = await start(target);
 
-    expect(await after.shot()).toEqual({ status: 200, body: Buffer.from('drawn png') });
+    expect(await after.shot()).toMatchObject({ status: 200, body: Buffer.from('drawn png') });
     expect(screenshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('names where a shot came from in the x-design-shot header', async () => {
+    const { target, files } = acme();
+    const before = await start(target, graphOf(files));
+
+    expect((await before.shot()).source).toBe('drawn');
+    expect((await before.shot()).source).toBe('memory');
+    await vi.waitFor(() => expect(storedIn(target)).toHaveLength(1));
+
+    expect((await (await start(target)).shot()).source).toBe('disk');
   });
 
   it('serves a shot a former server drew from the tool files of its own snapshot', async () => {

@@ -109,6 +109,9 @@ export type ImportingModule = { file?: string | null; importedModules: Set<Impor
 export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
 
 /** One drawn PNG, the part roots in it, and the markup of the frame root. */
+/** Where a shot response's picture came from: the disk store, the in-memory cache or a fresh draw. */
+export type ShotSource = 'disk' | 'memory' | 'drawn';
+
 export type Picture = { png: Buffer; marks: PartMark[]; markup?: string };
 
 const marksIn = (clip: boolean) => `(() => {
@@ -376,6 +379,7 @@ export const createPartShooter = (options: {
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
     address?: StoredAddress;
+    onSource?: (source: ShotSource) => void;
   }) => {
     const theme = themeOf(options.params);
     const scale = scaleOf(options.params);
@@ -385,6 +389,8 @@ export const createPartShooter = (options: {
     const kept = options.fresh ? undefined : cache.get(key);
 
     if (kept) {
+      options.onSource?.('memory');
+
       if (options.priority === 'high') drawQueue.hurry(kept.shot);
 
       return kept.shot;
@@ -393,12 +399,16 @@ export const createPartShooter = (options: {
     const stored = !options.fresh && options.address ? store?.read(key, options.address) : null;
 
     if (stored) {
+      options.onSource?.('disk');
+
       const shot = Promise.resolve(stored);
 
       cache.set(key, { drawn: options.drawn, shot });
 
       return shot;
     }
+
+    options.onSource?.('drawn');
 
     if (theme.surface) options.search.set('surface', theme.surface);
     if (theme.color) options.search.set('color', theme.color);
@@ -424,7 +434,14 @@ export const createPartShooter = (options: {
     return shot;
   };
 
-  const partShotOf = (options: PartAddress & { params: URLSearchParams; priority: DrawPriority; fresh?: boolean }) => {
+  const partShotOf = (
+    options: PartAddress & {
+      params: URLSearchParams;
+      priority: DrawPriority;
+      fresh?: boolean;
+      onSource?: (source: ShotSource) => void;
+    },
+  ) => {
     const frame = partFrameOf({ system, ...options });
 
     if (frame instanceof ThumbMissingError) return Promise.reject(frame);
@@ -437,7 +454,15 @@ export const createPartShooter = (options: {
     const { product, part, sketch, props } = options;
     const address = { product, part, sketch, props: props ?? null };
     const draw = () =>
-      cached({ ...frame, params: options.params, priority: options.priority, fresh: options.fresh, gone, address });
+      cached({
+        ...frame,
+        params: options.params,
+        priority: options.priority,
+        fresh: options.fresh,
+        gone,
+        address,
+        onSource: options.onSource,
+      });
 
     if (!statesOf) return draw();
 
@@ -461,8 +486,9 @@ export const createPartShooter = (options: {
     width: number;
     params: URLSearchParams;
     priority: DrawPriority;
+    onSource?: (source: ShotSource) => void;
   }) => {
-    const { slug, variant, width, params, priority } = options;
+    const { slug, variant, width, params, priority, onSource } = options;
 
     return cached({
       key: ['call', slug, variant, width],
@@ -471,6 +497,7 @@ export const createPartShooter = (options: {
       params,
       size: { width },
       priority,
+      onSource,
     });
   };
 
@@ -478,6 +505,7 @@ export const createPartShooter = (options: {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
       const priority: DrawPriority = params.get('priority') === 'low' ? 'low' : 'high';
+      const onSource = (source: ShotSource) => response.setHeader('x-design-shot', source);
 
       if (!isScale(scaleOf(params))) {
         send(response, {
@@ -519,7 +547,7 @@ export const createPartShooter = (options: {
         sendShot(
           response,
           noteFailure(
-            callShotOf({ slug, variant, width: pixels, params, priority }).then((picture) => picture.png),
+            callShotOf({ slug, variant, width: pixels, params, priority, onSource }).then((picture) => picture.png),
             (failure) => options.ledger?.fail({ part: slug, state: variant, ...failure }),
           ),
         );
@@ -587,6 +615,7 @@ export const createPartShooter = (options: {
             interaction: params.get('interaction'),
             params,
             priority,
+            onSource,
           }).then((picture) => picture.png),
           (failure) =>
             options.ledger?.fail({
