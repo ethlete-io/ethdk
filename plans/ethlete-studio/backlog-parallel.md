@@ -523,6 +523,11 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   merges a round; merging stays with Tom. Risky points (public API, breaking change, release) are noted for Tom
   with a recommendation.
 - Tom: keep the tree committed, push from time to time, and check CI.
+- Grill decision (inside Q51): the switch focus ring uses the ink token, like the tree focus ring. It is part of
+  the switch round `f49f5ab8a` (all variants). The light on-track fill (primary, 1.33:1 on the light panel) gets
+  its own round later.
+- Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
+  1.2, overflow hidden). No glyph is cut.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
