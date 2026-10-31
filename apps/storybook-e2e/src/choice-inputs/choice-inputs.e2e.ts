@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap, themePrimaryIn } from '../support';
+import { expectFocusVisible, openStory, pressKey, tap, themeInkActiveIn, themePrimaryIn } from '../support';
 
 const CHECKBOX_DEFAULT = 'components-forms-checkbox--default';
 const CHECKBOX_READONLY = 'components-forms-checkbox--readonly';
@@ -505,7 +505,7 @@ function settledBorderColor(element: Locator): Promise<string> {
 test.describe('choice-inputs / error state', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: the error border is checked under hover');
 
-  test('an invalid checkbox keeps an error theme border while hovered', async ({ page }) => {
+  test('an invalid checkbox draws its hovered border in the active tone of the error theme', async ({ page }) => {
     const root = await openStory(page, CHECKBOX_DEFAULT, { args: { required: true } });
     const field = root.locator('et-choice-field').first();
     const checkbox = field.getByRole('checkbox');
@@ -519,7 +519,7 @@ test.describe('choice-inputs / error state', () => {
 
     await expect(box).toHaveCSS('border-top-color', errorTone);
     await box.hover();
-    expect(await settledBorderColor(box)).toBe(await themePrimaryIn(box));
+    expect(await settledBorderColor(box)).toBe(await themeInkActiveIn(field));
   });
 
   test('an invalid radio group draws its circles in the error theme, at rest and hovered', async ({ page }) => {

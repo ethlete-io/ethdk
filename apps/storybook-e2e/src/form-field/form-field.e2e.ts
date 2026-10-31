@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, tap, themePrimaryIn } from '../support';
+import { boxOf, openStory, pressKey, tap, themeInkActiveIn, themePrimaryIn } from '../support';
 
 const INPUT_STORY_ID = 'components-forms-input--default';
 const DESCRIPTION_STORY_ID = 'components-forms-input--description';
@@ -279,6 +279,20 @@ test.describe('form-field / support region', () => {
 
     await expect(field).toHaveAttribute('data-error');
     await expect(frame).toHaveCSS('border-top-color', await themePrimaryIn(field));
+  });
+
+  test('an invalid field draws its hovered frame in the active tone of the error theme', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'pointer-only: the frame is checked under hover');
+
+    const root = await openStory(page, INPUT_STORY_ID, { args: { required: true } });
+    const { field, frame: shellBorder, control } = fieldParts(root);
+
+    await control.focus();
+    await control.blur();
+    await expect(field).toHaveAttribute('data-error');
+
+    await shellBorder.hover();
+    await expect(shellBorder).toHaveCSS('border-top-color', await themeInkActiveIn(field));
   });
 
   test('the hint returns once neither an error nor a warning applies', async ({ page }) => {
