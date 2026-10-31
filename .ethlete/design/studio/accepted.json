@@ -1469,5 +1469,47 @@
     "note": "declare controls",
     "hash": "a87826a30b366cf1",
     "at": "2026-10-31T23:09:09.832Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "0a49f4052ad096c4",
+    "at": "2026-10-31T23:21:55.487Z"
+  },
+  {
+    "part": "elements/part-tree",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "1eb47b2cd77880f3",
+    "at": "2026-10-31T23:21:56.944Z"
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "495a0ba0d6d2e17a",
+    "at": "2026-10-31T23:21:58.412Z"
+  },
+  {
+    "part": "components/comment-pin",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "abe6c7fc0c3b0a41",
+    "at": "2026-10-31T23:21:59.834Z"
+  },
+  {
+    "part": "components/canvas-viewport",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "24c59621b0af790a",
+    "at": "2026-10-31T23:22:01.259Z"
+  },
+  {
+    "part": "pages/merge",
+    "by": "claude-opus-5-5",
+    "note": "implements link (Q247)",
+    "hash": "e970918b69a2494b",
+    "at": "2026-10-31T23:22:02.716Z"
   }
 ]

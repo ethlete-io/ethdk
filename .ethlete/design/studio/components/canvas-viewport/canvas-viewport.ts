@@ -39,6 +39,7 @@ const world = html`<div class="absolute top-space-4 left-space-4 flex gap-space-
 </div>`;
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts',
   note: 'The pannable design canvas of the Sketches page: arrow keys pan it, so it takes keyboard focus. Focus-visible draws the SDK focus ring inset 2px inside the viewport edge, so the ring never clips at the page edge and needs no free space around the canvas.',
   madeBy: ['claude-opus-5-5'],
   ...interactionRows<Props, 'canvas', 'focus-visible'>(

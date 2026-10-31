@@ -31,6 +31,7 @@ export const { states, grid } = interactionRows<Props, 'out' | 'reset' | 'in' | 
 const BUTTON = { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts',
   note: 'The zoom chip in the canvas corner: zoom out, the zoom in percent (resets to 100 %), zoom in, fit. Each row draws one button at rest, hovered, pressed and focused, at 25 %, 100 % or 250 %. The root has `data-canvas-zoom`; each button sits in a `data-camera-out`, `-reset`, `-in` or `-fit` wrapper for a setup to wire. A host places it through `class`, for example `absolute right-space-3 bottom-space-3`.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states,

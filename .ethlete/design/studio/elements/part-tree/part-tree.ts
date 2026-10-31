@@ -44,6 +44,7 @@ const componentsOpen: Props = {
 };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/system-view/system-view.component.ts',
   note: 'A dense, quiet tree of the product parts: layers, then parts, then the frames of an open part (a part drawn in one frame is a leaf), with a warning mark on a part that needs a look and no counts anywhere.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [232],

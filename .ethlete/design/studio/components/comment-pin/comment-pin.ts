@@ -6,6 +6,7 @@ export type { Props } from './shared/comment-pin';
 export const commentPinMark = (props: Props) => pin(props);
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/components/design-canvas/design-canvas.component.ts',
   note: "Merged variant a of Count alignment: the count is a badge on the teardrop's head.",
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   styles: '',
