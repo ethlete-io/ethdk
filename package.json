@@ -26,6 +26,7 @@
     "e2e:affected": "node apps/storybook-e2e/affected.mjs origin/next --run",
     "lint:changesets": "node ./tools/scripts/lint-changesets.js && node ./tools/scripts/check-changeset-coverage.js",
     "lint:size": "node ./tools/scripts/check-size-budget.mjs",
+    "tokens:report": "node ./tools/scripts/token-report.mjs",
     "lint:css-properties": "node ./tools/scripts/lint-css-properties.js",
     "prepare": "husky",
     "prepare:release": "node ./tools/scripts/prepare-release.js",
