@@ -1308,5 +1308,13 @@
     "note": "Q217 Tom's call: the zoom chip takes the SDK overlay shadow",
     "hash": "49893f828dc4020b",
     "at": "2026-10-31T20:59:28.624Z"
+  },
+  {
+    "part": "pages/flows",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "d4dc89c9a0f1d07d",
+    "at": "2026-10-31T21:31:30.647Z",
+    "auto": true
   }
 ]

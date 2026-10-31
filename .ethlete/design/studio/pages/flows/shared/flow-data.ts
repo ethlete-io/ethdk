@@ -1,7 +1,6 @@
-import { formField } from '@ethlete/components/design/form-field';
-import { select } from '@ethlete/components/design/select';
 import { embedPage, html } from '@design-system';
 import button from '@system/components/button';
+import select from '@system/components/select';
 import treeRow from '@system/components/tree-row';
 
 export type FlowProps = { flow: 'open' | 'none' };
@@ -15,12 +14,17 @@ const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
 const shot = (step: Step, scale: number) =>
   embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
 
-export const presetPicker = () =>
-  formField({
-    id: 'flow-preset',
-    size: 'sm',
-    control: select({ options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }], value: 'desktop' }),
-  });
+const picker = await select.render({ value: 'review', size: 'sm' });
+
+export const presetPicker = picker.body
+  .replace(/<et-label [^]*?<\/et-label>/, '')
+  .replace(' data-has-label=""', '')
+  .replace(
+    '<span class="et-select-value">In review</span>',
+    '<span class="et-select-value">Desktop · 1440 × 900</span>',
+  );
+
+export const presetPickerStyles = picker.styles;
 
 const caption = (text: string) => html`<span class="text-et-surface-muted text-ui-sm">${text}</span>`;
 
@@ -96,7 +100,8 @@ const EDGES = [
 
 const CAPTION = 20;
 
-export const flowGraph = (scale: number, colGap: number, rowGap = 56) => {
+export const flowGraph = (scale: number, colGap: number) => {
+  const rowGap = 56;
   const w = 1440 * scale;
   const h = 900 * scale;
   const at = (node: Node) => ({ x: node.col * (w + colGap), y: node.row * (h + CAPTION + rowGap) });

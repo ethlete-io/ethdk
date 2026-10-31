@@ -1,4 +1,3 @@
-import { selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing, html } from '@design-system';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -13,10 +12,11 @@ import {
   pageHeader,
   pagePadding,
   presetPicker,
+  presetPickerStyles,
 } from './shared/flow-data';
 
 const content = html`<div class="h-full box-border flex flex-col gap-space-4 ${pagePadding}">
-  ${pageHeader(FLOW_NAME, `<div class="w-60">${presetPicker()}</div>`)}
+  ${pageHeader(FLOW_NAME, `<div class="w-60">${presetPicker}</div>`)}
   <div class="flex-1 min-h-0 flex items-center justify-center">${flowGraph(0.18, 140)}</div>
 </div>`;
 
@@ -38,7 +38,7 @@ export default definePart<FlowProps>({
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + list.styles + selectStyles + emptyStyles,
+      styles: shell.styles + menu.styles + list.styles + presetPickerStyles + emptyStyles,
     });
   },
 });
