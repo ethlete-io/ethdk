@@ -305,6 +305,12 @@
       );
     }
 
+    > et-description {
+      padding-inline-start: calc(
+        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
+      );
+    }
+
     .et-form-field-support[data-can-animate] {
       transition: block-size var(--et-form-field-support-duration) ease;
 

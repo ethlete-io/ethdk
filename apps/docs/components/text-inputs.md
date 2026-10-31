@@ -50,7 +50,8 @@ registers itself into it via DI - no manual wiring:
 (`disabled`, `readonly`, `invalid`, `required`, …). For numbers use
 [`et-number-input`](#number-input), for plain multi-line text use
 [`et-textarea`](#textarea), and for formatted content the
-[rich text editor](/components/rich-text-editor).
+[rich text editor](/components/rich-text-editor). A `search` input hides the
+browser's native clear button.
 
 A **read-only** text field (set `readonly` in the field schema) keeps its normal
 box but drops every interactive affordance - no hover/focus border change,
@@ -209,7 +210,7 @@ content and shrinks back, clamped by `minRows` (defaults to `rows`, default 3)
 and `maxRows` (unbounded when unset). Beyond `maxRows` the content scrolls. With
 `autosize` off the native resize handle takes over, controlled by
 `resize: 'none' | 'vertical'` (an autosizing textarea is never manually
-resizable).
+resizable, and a manual resize stops at one line).
 
 ```html
 <et-form-field>

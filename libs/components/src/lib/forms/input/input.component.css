@@ -26,6 +26,10 @@
         color: color-mix(in srgb, currentColor 46%, transparent);
       }
 
+      &::-webkit-search-cancel-button {
+        appearance: none;
+      }
+
       &[data-text-align='start'] {
         text-align: start;
       }

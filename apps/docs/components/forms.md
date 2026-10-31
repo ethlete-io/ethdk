@@ -393,7 +393,7 @@ The field chrome handles error display and aria wiring uniformly:
   `aria-labelledby` at the `et-label`; the label renders a `*` marker when the
   control is `required`.
 - An `et-description` projected into `et-form-field` renders between the control
-  and the support row, and the control's `aria-describedby` names it ahead of the
+  and the support row, indented to the label and value, and the control's `aria-describedby` names it ahead of the
   error, warning or hint.
 - The `et-label` is **optional**, but every control needs an accessible name.
   When you omit the label, give the control its own `aria-label` or

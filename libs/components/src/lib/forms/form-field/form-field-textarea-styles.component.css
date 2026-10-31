@@ -4,6 +4,17 @@
       align-items: stretch;
     }
 
+    &[data-appearance='box']:not([data-label-mode='inline'], [data-label-mode='floating-inside'])
+      .et-form-field-control-frame {
+      padding-block: calc(
+        (
+            var(--et-form-field-control-min-height) - var(--et-form-field-control-font-size) *
+              var(--et-form-field-control-line-height) - 2 * var(--et-form-field-control-border-width)
+          ) /
+          2
+      );
+    }
+
     .et-form-field-control-area,
     .et-form-field-control-slot {
       align-items: stretch;

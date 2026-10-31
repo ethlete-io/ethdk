@@ -27,6 +27,7 @@
 
       &[data-resize='vertical'] {
         resize: vertical;
+        min-block-size: 1lh;
       }
     }
 
