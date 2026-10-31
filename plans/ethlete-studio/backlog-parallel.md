@@ -792,6 +792,9 @@ machen".
 - Q174 both schemes in a sketch (Tom, 2026-10-31, option a): Studio shows each sketch variant in light and in dark
   side by side. Cause: accent-on-light a, b and c looked identical to Tom because Studio showed only dark, where the
   three are equal by design. The render queue serves the viewed frames first (lead call, sent to 57).
+- Q180 icon-only tabs (Tom, 2026-10-31, from his tabs comment "es fehlen varianten mit icons"): `et-tab` gets an
+  optional `ariaLabel` input, bound to the trigger button, so an icon-only tab has an accessible name. Then the tabs
+  sketch adds icon-only states next to `icons` and `primary-icons` (`ad6cf7701`). Changeset and tabs docs guide.
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
