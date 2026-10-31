@@ -47,6 +47,10 @@
   }
 }
 
+.scrollable-frame--sized .scrollable-item {
+  min-inline-size: 0;
+}
+
 @layer components {
   .et-scrollable-navigation-item.et-scrollable-navigation-item--active::after {
     background-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary));

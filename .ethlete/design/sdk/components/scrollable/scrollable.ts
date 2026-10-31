@@ -5,6 +5,9 @@ import frame from './scrollable.css?inline';
 type Position = 'start' | 'middle' | 'end';
 type Interaction = 'hover' | 'active';
 
+const ITEM_SIZES = ['same', 'full', 'half', 'third', 'quarter'] as const;
+type ItemSize = (typeof ITEM_SIZES)[number];
+
 type Props = {
   direction?: 'horizontal' | 'vertical';
   position?: Position;
@@ -16,6 +19,7 @@ type Props = {
   color?: string;
   endButton?: Interaction;
   focusItem?: number;
+  itemSize?: ItemSize;
 };
 
 const ITEM = { horizontal: 200, vertical: 80 };
@@ -63,6 +67,8 @@ const render = (props: Props) => {
     buttons: buttons === 'none' ? undefined : buttons,
     navigationActive: props.navigation ? active : undefined,
     darken: props.darken,
+    itemSize: props.itemSize,
+    itemGap: props.itemSize ? GAP : undefined,
     color: props.color,
     endButtonAttributes: props.endButton ? `data-et-force="${props.endButton}"` : undefined,
     containerAttributes: `data-et-skip="CLIPPED" style="--scrollable-offset: -${offset}px"`,
@@ -87,7 +93,7 @@ const render = (props: Props) => {
 };
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     'horizontal-start': {},
@@ -111,11 +117,17 @@ export default definePart({
     'item-focus-visible': { focusItem: 1 },
     'short-content': { items: 2 },
     'short-content-navigation': { items: 2, navigation: true },
+    ...(Object.fromEntries(
+      ITEM_SIZES.map((itemSize) => [
+        `item-size-${itemSize}`,
+        itemSize === 'same' ? { itemSize, items: 2 } : { itemSize },
+      ]),
+    ) as Record<`item-size-${ItemSize}`, Props>),
   },
   widths: [480],
   render: (props: Props) =>
     drawing({
-      body: `<div class="scrollable-frame">${render(props)}</div>`,
+      body: `<div class="scrollable-frame${props.itemSize ? ' scrollable-frame--sized' : ''}">${render(props)}</div>`,
       styles: [scrollableStyles, frame].join('\n'),
     }),
 });
