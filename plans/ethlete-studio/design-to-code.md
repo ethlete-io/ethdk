@@ -50,10 +50,17 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
 
 ## Build slices (builder ethlete-sdk-57)
 
-1. In progress: Q157 link (`implements` in `definePart`; a page part names its route) and an open-point list in the
-   cli for the points that need no decision (unlinked part, open comment, sketch in progress or ready but not
-   merged), printed by `et design check`.
-2. Not started: point 1 missing state (waits for the state-list decision), point 2 contrast, point 8 missing
+1. Built (`cae5fb9c6`): `definePart({ implements })` takes a `PartLink`: `'<repo path>.component.ts'`, or
+   `{ route: '/x' }` for a `pages/` part. Rule `system/rules/implements.ts`: `IMPLEMENTS-MISSING` (no such file)
+   and `IMPLEMENTS-SHAPE` (not a literal, wrong form for the layer, absolute path, route without `/`).
+   `system/open-points.ts` is pure: `OPEN_POINT_KINDS` holds the Q156 order, `openPointsOf()` lists the points per
+   part; `read-open-points.ts` reads them for a product. Open comment = any comment not `resolved` (an answered one
+   counts). Unmerged sketch = any sketch folder that targets the part. Unlinked = no `implements`; foundations do
+   not count. `et design check` prints them after the problems; the exit code is unchanged. Studio API not touched.
+   Verified: 419 cli design tests, tsc, lint; the new check specs fail without the change; one real check run.
+   Not built: a new-part sketch has no part to attach to; routes are not checked against the router.
+2. Not started: point 1 missing state (Q164: `design complete` control failures, plus "no controls declared" for a
+   component part; pages exempt), point 2 contrast, point 8 missing
    transition or motion.
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
