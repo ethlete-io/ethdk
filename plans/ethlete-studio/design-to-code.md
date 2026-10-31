@@ -247,7 +247,13 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     lint, prod and dev builds, docs-examples in Chromium (unknown part text; a temporary map entry rendered a host).
     Not verified: Studio served, a real `compare` against a harness, a non-empty map under module-boundary lint.
   - Q198 (a) and (b) built (backlog-parallel.md); (c) waits for the Q197 migration.
-  - 3c-3 in progress (builder ethlete-sdk-57): compare starts the app dev server without `--url`.
+  - 3c-3 built (`8554ad508`): without `--url`, `compare` and `task --verify` run `nx run <project>:serve --port=<n>
+    --host=127.0.0.1` for `harness.app` as a detached process group on an OS-given free port (never 4221, 4400, 4402,
+    4403, 4492), poll `/__design-harness` up to 300 s, and always stop the group (also on a failure and on SIGINT).
+    The stale-map refusal and the git file check run before the start (`system/harness-server.ts`). Verified: specs,
+    tsc, lint, a real docs-examples start and stop (ready in 18 s, no process left, also after Ctrl-C). Not verified:
+    a real compare of a part (empty map), Studio served this way, the 300 s timeout, the CLI from `dist`.
+  - Next: the pilot (Studio `elements/shell-main` b, `pages/inbox` d through go, task and compare).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
