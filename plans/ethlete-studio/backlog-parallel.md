@@ -1101,3 +1101,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   hand-built overlay `div`.
 - **Q209:** Tom accepts the brighter SDK hover and active tint on rows with `data-et-surface-interactive` (tree-row:
   hover grey 28 to 34, active 36 to 47); the other hover rows move to the attribute.
+- **Q211:** the comment-pin is rebuilt the SDK way: the pin button itself is the auto surface and carries
+  `data-et-surface-interactive`; the face is no separate surface element. The hand-built Q200 tint goes.
