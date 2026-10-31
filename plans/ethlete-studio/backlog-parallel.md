@@ -781,9 +781,13 @@ goes. Gaps: no part source path (`ListedPart` has none); the variant is the pick
 Verified: 425 app tests, tsc, lint; the specs fail without the behaviour; a headless check with a faked design
 server showed the chip, the remove, and the preamble. Not verified with a real design server.
 
-5. Q127 gaps, in progress: the context line names the part source file, and the variant Tom looks at (the
-   selected frame's variant, else the one most in view), not the picked one.
-6. Then: dogfood the chat loop on own ports and list each friction (grill, 2026-10-31).
+5. Q127 gaps, built (`4d8f359ea`, `24fa2c9cc`): `ListedPart.file` (relative to the workspace, from
+   `listSystem`) goes into the line as `part … (file …)`; a sketch names its target part's file. The variant is the
+   selected frame's variant, else the one with the most visible frame area (`areasInView` in `canvas-math.ts`, the
+   canvas signal `frameAreasInView` at rest), else the only one; the pick shows as `picked a` when it differs.
+   Verified: app tests, 887 cli design tests, tsc, lint; specs fail without the change. Not verified in a running
+   Studio; the in-view rule only by the pure spec.
+6. In progress: dogfood the chat loop on own ports and list each friction (grill, 2026-10-31).
 
 As built, slice 1 (`d3003cfc3`): `injectChatStore()` in `apps/ethlete-studio/src/app/chat/chat-store.ts` (root
 provider) holds the CLI, the model, the entries, the session and the open flag. `ChatPanelComponent` sits beside
