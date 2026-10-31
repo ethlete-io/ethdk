@@ -2,6 +2,7 @@ import { interactiveStyles } from '@ethlete/core/design/interactive-styles';
 import focusRing from '../src/lib/focus-ring/focus-ring-styles.component.css?inline';
 import buttonProperties from '../src/lib/button/button-properties-styles.component.css?inline';
 import buttonBase from '../src/lib/button/button.component.css?inline';
+import iconButtonBase from '../src/lib/button/icon-button.component.css?inline';
 
 export type ButtonMockOptions = {
   /** The label, as HTML. */
@@ -55,4 +56,51 @@ export const button = (options: ButtonMockOptions) => {
   ].filter(Boolean);
 
   return `<${tag} ${attributes.join(' ')}>${iconAlignment === 'start' ? iconBox : ''}<div class="et-button-contents">${label}</div>${iconAlignment === 'end' ? iconBox : ''}</${tag}>`;
+};
+
+export type IconButtonMockOptions = Omit<ButtonMockOptions, 'label' | 'icon' | 'iconAlignment'> & {
+  /** The icon, as HTML. */
+  icon: string;
+  /** The accessible name: an icon-only button has no visible label. */
+  ariaLabel: string;
+};
+
+const ICON_PRESSED_VARIANT = {
+  filled: 'transparent',
+  outline: 'filled',
+  tonal: 'filled',
+  transparent: 'tonal',
+} as const;
+
+/** The stylesheets `iconButton()` draws with: the real `et-icon-button` CSS. */
+export const iconButtonStyles = `${interactiveStyles}\n${focusRing}\n${buttonProperties}\n${iconButtonBase}`;
+
+/** Draws `<button et-icon-button>` as HTML, the square icon-only button, with the DOM and classes the component renders. */
+export const iconButton = (options: IconButtonMockOptions) => {
+  const { icon, ariaLabel, size = 'md', variant = 'transparent', tag = 'button' } = options;
+
+  const classes = [
+    'et-surface-interactive',
+    'et-color-interactive',
+    'et-icon-button',
+    'et-focus-ring',
+    options.color ? `et-color--${options.color}` : 'et-color--inherited',
+    options.class,
+  ].filter(Boolean);
+
+  const attributes = [
+    `class="${classes.join(' ')}"`,
+    tag === 'button' && 'type="button"',
+    `aria-label="${ariaLabel}"`,
+    options.pressed && 'data-pressed="true"',
+    options.pressed !== undefined && `aria-pressed="${options.pressed}"`,
+    options.disabled && (tag === 'button' ? 'disabled aria-disabled="true"' : 'aria-disabled="true"'),
+    `data-variant="${variant}"`,
+    `data-size="${size}"`,
+    'data-can-animate="true"',
+    options.pressed && `data-pressed-variant="${ICON_PRESSED_VARIANT[variant]}"`,
+    options.style && `style="${options.style}"`,
+  ].filter(Boolean);
+
+  return `<${tag} ${attributes.join(' ')}><div class="et-icon-button-icon">${icon}</div></${tag}>`;
 };

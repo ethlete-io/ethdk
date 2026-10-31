@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { button, ButtonMockOptions } from '../../../design/button';
+import { button, ButtonMockOptions, iconButton, IconButtonMockOptions } from '../../../design/button';
 import '../../test-helpers';
 import { mockShapeOf, shapeOf } from '../testing/design-mock-shape';
 import { ButtonComponent } from './button.component';
+import { IconButtonComponent } from './icon-button.component';
 import { ButtonIconAlignment, ButtonSize, ButtonVariant } from './button.types';
 
 @Component({
@@ -32,6 +33,37 @@ class ButtonHost {
   public disabled = input(false);
   public color = input<string | undefined>(undefined);
 }
+
+@Component({
+  imports: [IconButtonComponent],
+  template: `
+    <button
+      [variant]="variant()"
+      [size]="size()"
+      [pressed]="pressed()"
+      [disabled]="disabled()"
+      [color]="color()"
+      et-icon-button
+      aria-label="Add"
+    >
+      <i etIcon>i</i>
+    </button>
+  `,
+})
+class IconButtonHost {
+  public variant = input<ButtonVariant>('transparent');
+  public size = input<ButtonSize>('md');
+  public pressed = input<boolean | undefined>(undefined);
+  public disabled = input(false);
+  public color = input<string | undefined>(undefined);
+}
+
+const ICON_CASES: Omit<IconButtonMockOptions, 'icon' | 'ariaLabel'>[] = [
+  {},
+  { variant: 'filled', size: 'xs', color: 'brand', pressed: true },
+  { variant: 'outline', size: 'lg', pressed: false },
+  { variant: 'tonal', disabled: true },
+];
 
 const CASES: ButtonMockOptions[] = [
   { label: 'Save' },
@@ -77,5 +109,23 @@ describe('button design mock', () => {
     if (!options.pressed && !options.disabled && options.iconAlignment !== 'end') {
       expect(mockShapeOf(button({ ...options, tag: 'a' }), '.et-button')).toEqual(shapeOf(anchor));
     }
+  });
+
+  it.each(ICON_CASES)('draws the icon-only button the component renders for %o', async (options) => {
+    const fixture = TestBed.createComponent(IconButtonHost);
+
+    for (const name of ['variant', 'size', 'pressed', 'disabled', 'color'] as const) {
+      if (options[name] !== undefined) fixture.componentRef.setInput(name, options[name]);
+    }
+
+    fixture.detectChanges();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    fixture.detectChanges();
+
+    const real = fixture.nativeElement.querySelector('[et-icon-button]');
+
+    expect(mockShapeOf(iconButton({ ...options, icon: '<i>i</i>', ariaLabel: 'Add' }), '.et-icon-button')).toEqual(
+      shapeOf(real),
+    );
   });
 });
