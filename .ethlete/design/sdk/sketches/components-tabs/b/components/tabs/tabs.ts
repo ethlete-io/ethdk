@@ -1,3 +1,5 @@
+import { iconMarkup } from '@ethlete/components/design/icon';
+import { SDK_ICONS } from '@ethlete/components/design/icon-set';
 import { tabs, type TabsMockOptions, tabsStyles } from '@ethlete/components/design/tabs';
 import { definePart, drawing, interactionRows } from '@design-system';
 import edge from './tabs.css?inline';
@@ -8,6 +10,17 @@ type Props = TabsMockOptions & { forced?: { tab: number; interaction: TriggerInt
 
 const TABS = [{ label: 'Overview' }, { label: 'Activity' }, { label: 'Settings' }];
 const WITH_DISABLED = [...TABS, { label: 'Billing', disabled: true }];
+
+const icon = (name: string) =>
+  iconMarkup(
+    SDK_ICONS.find((each) => each.name === name)!,
+    'et-tab-group__trigger-icon',
+  );
+const WITH_ICONS = [
+  { label: `${icon('et-grid-2x2')}Overview` },
+  { label: `${icon('et-clock')}Activity` },
+  { label: `${icon('et-pencil')}Settings` },
+];
 
 const { states, grid } = interactionRows(
   {
@@ -29,6 +42,8 @@ export default definePart({
     sm: { tabs: TABS, size: 'sm' },
     lg: { tabs: TABS, size: 'lg' },
     primary: { tabs: TABS, variant: 'primary' },
+    icons: { tabs: WITH_ICONS },
+    'primary-icons': { tabs: WITH_ICONS, variant: 'primary' },
     'no-divider': { tabs: TABS, divider: false },
     vertical: { tabs: TABS, orientation: 'vertical' },
     panel: { tabs: TABS, panel: '<p>Three open tasks, two of them due this week.</p>' },
