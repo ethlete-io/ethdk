@@ -1119,3 +1119,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q216 (Tom, 2026-10-31, option A):** the CONTRAST rule does not check the outer border of a floating panel (an
   overlay pane, or an element with its own surface step and shadow). The SDK overlay border stays at 1.63:1; such a
   panel is identified by its surface step and shadow (WCAG 1.4.11). A tool fix, no per-part exceptions.
+- After the MVP (lead call, Q96, 2026-10-31; gaps from the canvas focus sketch): `control()` on a page for one
+  focusable region and a `region` control kind (today a component part such as `components/canvas-viewport` carries
+  it); a `focusRingStyles` export in `@ethlete/components/design` (parts import all of `buttonStyles` today); public
+  focus-ring tokens for offset, width and colour (today private `--_et-*` vars; an SDK API call for Tom).
