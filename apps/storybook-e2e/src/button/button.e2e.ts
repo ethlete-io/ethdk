@@ -1,5 +1,16 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, countClicks, expectFocusVisible, openStory, pressKey, settle, tabUntilFocused, tap } from '../support';
+import {
+  boxOf,
+  colorIn,
+  countClicks,
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  setColorScheme,
+  settle,
+  tabUntilFocused,
+  tap,
+} from '../support';
 
 const STORY_ID = 'components-actions-button-surface--default';
 
@@ -235,6 +246,28 @@ test.describe('button / focus ring press state', () => {
 
     expect(outline).toEqual({ style: 'solid', width: '2px', offset: '3px' });
   });
+
+  for (const [scheme, token] of [
+    ['light', 'var(--et-theme-color-ink-solid)'],
+    ['dark', 'var(--et-theme-color-primary-solid)'],
+  ] as const) {
+    test(`the focus ring is drawn in ${token} in the ${scheme} scheme`, async ({ page }) => {
+      const root = await openStory(page, STORY_ID, { args: { color: 'danger' } });
+      const button = root.locator('button[et-button]').first();
+
+      await setColorScheme(root, scheme);
+      await pressKey(page, 'Tab');
+      await expectFocusVisible(button);
+
+      const ink = await colorIn(button, 'var(--et-theme-color-ink-solid)');
+      const primary = await colorIn(button, 'var(--et-theme-color-primary-solid)');
+
+      expect(ink).not.toBe(primary);
+      const outline = await button.evaluate((el) => getComputedStyle(el).outlineColor);
+
+      expect(await colorIn(button, outline)).toBe(await colorIn(button, token));
+    });
+  }
 
   test('blurring mid-press clears the active state', async ({ page }) => {
     const root = await openStory(page, STORY_ID);
