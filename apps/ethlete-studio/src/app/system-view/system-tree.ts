@@ -248,6 +248,9 @@ export const treeOf = (
           return {
             key: partKeyOf(part),
             name: part.name,
+            ...(part.problems.length > 0
+              ? { title: part.problems.map((found) => `${found.rule}: ${found.message}`).join('\n') }
+              : {}),
             badges: badgesOf(part, { sketched, marks: partMarks }),
             ...(isWireframe(part) ? { count: part.kitUses } : {}),
             ...(frames.length > 1 ? { frames } : {}),

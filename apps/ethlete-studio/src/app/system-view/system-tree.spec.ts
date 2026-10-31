@@ -84,6 +84,15 @@ describe('treeOf', () => {
     expect(group?.entries.map((entry) => entry.badges)).toEqual([['from base'], ['overridden', 'error'], []]);
   });
 
+  it('titles an errored part with its problems', () => {
+    const [group] = treeOf([
+      part({ name: 'a', problems: [{ rule: 'UTILITY-CSS', file: 'x', message: 'utility classes' }] }),
+      part({ name: 'b' }),
+    ]);
+
+    expect(group?.entries.map((entry) => entry.title)).toEqual(['UTILITY-CSS: utility classes', undefined]);
+  });
+
   it('badges a part changed outside a sketch', () => {
     const [group] = treeOf([part({ name: 'a', changedOutsideSketch: true }), part({ name: 'b' })]);
 

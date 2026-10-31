@@ -178,7 +178,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </span>
               @for (badge of entry.badges; track badge) {
                 @if (badge === 'error') {
-                  <span [class]="BADGE_ACCENT" [etProvideColor]="errorTheme()">error</span>
+                  <span [class]="BADGE_ACCENT" [etProvideColor]="errorTheme()" [title]="entry.title ?? ''">error</span>
                 } @else if (badge === 'question') {
                   <span [class]="BADGE_ACCENT" data-tree-question>question</span>
                 } @else if (badge === 'merging') {
