@@ -1030,7 +1030,7 @@ const discoverControls = `((root) => {
     return null;
   };
   const labelOf = (element) =>
-    (element.getAttribute('aria-label') ?? element.textContent ?? '').replace(/\\s+/g, ' ').trim().slice(0, 60) || null;
+    (element.getAttribute('aria-label') ?? element.innerText ?? element.textContent ?? '').replace(/\\s+/g, ' ').trim().slice(0, 60) || null;
   const found = [];
   for (const element of root.querySelectorAll('*')) {
     if (!rendered(element)) continue;
