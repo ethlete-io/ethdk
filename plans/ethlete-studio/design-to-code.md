@@ -164,8 +164,24 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     `definePart({ omits })`); merged gaps are hints, a sketch blocks on a newly missed value. 18 merged sdk parts
     miss values. Also: `sketch merge` runs the target repo's Prettier (`89fdc42c7`), `variant --from` keeps
     relative symlinks (`c9bafb453`).
-- In progress: friction slice B: Q176, Q177, Q179, then the CONTROL-PART-INPUT rule, the `control()` helper and
-  `data-can-animate` in the design mocks.
+- Built, friction slice B:
+  - Q176 (`6b348f54f`): `bg-surface-pressed` in the Studio theme (`apps/ethlete-studio/src/styles.css`); a forced
+    state that draws no different pixel names an undefined `hover:`/`active:`/`focus` class. Studio has no hover
+    token yet (with the lead).
+  - Q177 (`c9406cde0`): kind `menu` needs hover, focus-visible, active and no selected look; `select` keeps
+    selected. No `listbox` kind until a part needs one.
+  - Q179 (`37356a2f3`, `a53ccb27c`, `91b915f17`): the existing `base` relation is the kit. A page no longer fails on
+    gaps of base parts, and base-part findings never block the consuming product's `check`; one line counts them
+    per rule.
+  - CONTROL-PART-INPUT (`2e85c5747`, `beb4c70db`): a control without `data-et-control` is a warning in `check`; a
+    sketch blocks only a newly added one. One selector (`PLAIN_CONTROL_SELECTOR`) with `CONTROL-UNDECLARED`, which
+    is now a hint in `complete` (`5451296f2`). sdk: 39 warnings in 17 parts.
+  - `control(markup, name)` (`6f28f0a61`, `ee8b754e6`) in `libs/components/design/control.ts`, for product parts;
+    the sdk mocks set plain `data-can-animate="true"`. CONTROL-TRANSITION-MISSING on sdk: 10 to 5 (chip remove and
+    switch track need lib CSS, with 33).
+  - Verified: specs that fail without each change, tsc, lint, read-only `check` on sdk and studio. Studio's check
+    still stops on 3 findings in its own design files (with 33).
+- In progress: step 2: `GET /__design/open-points`, the part ready mark (`ready.json`), and the `sketch ready` gate.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
