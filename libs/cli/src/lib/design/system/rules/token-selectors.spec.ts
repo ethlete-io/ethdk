@@ -6,7 +6,7 @@ import { tokenSelectorsOf } from './token-selectors';
 
 const productOf = (css: string): ResolvedProduct =>
   ({
-    config: { tokens: ['foundations/tokens'] },
+    tokens: ['foundations/tokens'],
     parts: [
       {
         layer: 'foundations',
@@ -47,7 +47,7 @@ describe('tokenSelectorsOf', () => {
 
   it('ignores stylesheets not listed as token parts', () => {
     const product = productOf('.outside { color: red }');
-    product.config.tokens = [];
+    product.tokens = [];
     expect(tokenSelectorsOf(product)).toEqual([]);
   });
 });

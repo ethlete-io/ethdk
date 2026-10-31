@@ -61,6 +61,27 @@ describe('resolveProduct', () => {
     });
   });
 
+  it('takes the token parts of the base when the product has none', () => {
+    const target = acme();
+
+    write(
+      target,
+      'config.json',
+      JSON.stringify({
+        products: {
+          'acme-base': { tokens: ['foundations/tokens', 'foundations/palette'] },
+          acme: { base: '.ethlete/design/acme-base' },
+        },
+      }),
+    );
+
+    expect(resolveAcme(target).tokens).toEqual(['foundations/tokens', 'foundations/palette']);
+    expect(
+      resolveProduct({ target, name: 'acme', config: { base: '.ethlete/design/acme-base', tokens: [] } }).tokens,
+    ).toEqual([]);
+    expect(resolveProduct({ target, name: 'acme-base', config: {} }).tokens).toEqual(['foundations/tokens']);
+  });
+
   it('reports a product without presets anywhere', () => {
     const product = resolveProduct({ target: acme(), name: 'acme-base', config: {} });
 

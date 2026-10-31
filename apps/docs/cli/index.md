@@ -70,7 +70,8 @@ In `.ethlete/design/config.json`, a product can hide parts inherited from its ba
 
 `hideBaseParts` defaults to an empty list. It hides inherited parts from the resolved system;
 a product's own part with the same key remains available. `tokens` lists the parts whose CSS
-every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
+every frame loads, in order; omitted, it comes from the base, and without a base value it defaults
+to `["foundations/tokens"]`.
 
 `base` can also point into `node_modules`, at a design product an installed package ships:
 

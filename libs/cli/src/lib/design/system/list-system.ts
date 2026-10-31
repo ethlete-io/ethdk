@@ -5,7 +5,7 @@ import { ruleProblemsOf } from './check-system';
 import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
-import { partKeyOf, PartOrigin, ResolvedPart, tokenPartsOf } from './resolve-product';
+import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { SystemModules } from './system-modules';
 
@@ -229,7 +229,7 @@ const pageReachOf = (system: SystemModules) =>
 
     if (!product) return [];
 
-    const tokenParts = new Set(tokenPartsOf(product.config));
+    const tokenParts = new Set(product.tokens);
     const tokens = product.parts.filter((part) => tokenParts.has(partKeyOf(part)));
 
     return product.parts

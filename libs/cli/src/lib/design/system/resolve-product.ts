@@ -14,13 +14,11 @@ export type ResolvedProduct = ProductSource & {
   parts: ResolvedPart[];
   fixtures: string | null;
   presets: Record<string, DesignPreset>;
+  tokens: string[];
   problems: Problem[];
 };
 
 const DEFAULT_TOKEN_PARTS = ['foundations/tokens'];
-
-/** The parts whose stylesheets every frame of a product draws under, in order. */
-export const tokenPartsOf = (config: DesignProduct) => config.tokens ?? DEFAULT_TOKEN_PARTS;
 
 export const partKeyOf = (part: { layer: string; name: string }) => `${part.layer}/${part.name}`;
 
@@ -36,7 +34,7 @@ const hasPresets = (presets: Record<string, DesignPreset> | undefined): presets 
 
 /**
  * A product's design system as it draws: its own parts, the base parts it does not override, the
- * fixture set and the viewport presets, each taken from the product first and from the base second.
+ * fixture set, the viewport presets and the token parts, each taken from the product first and from the base second.
  */
 export const resolveProduct = (options: { target: string; name: string; config: DesignProduct }): ResolvedProduct => {
   const { target, name, config } = options;
@@ -76,6 +74,7 @@ export const resolveProduct = (options: { target: string; name: string; config: 
     parts,
     fixtures: fixturesOf(dir) ?? (base ? fixturesOf(base.dir) : null),
     presets,
+    tokens: config.tokens ?? base?.config.tokens ?? DEFAULT_TOKEN_PARTS,
     problems,
   };
 };

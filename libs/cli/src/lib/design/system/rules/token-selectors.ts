@@ -1,7 +1,7 @@
 import postcss, { Rule } from 'postcss';
 import selectorParser, { Node, Selector } from 'postcss-selector-parser';
 import { Problem } from '../problem';
-import { partKeyOf, ResolvedProduct, tokenPartsOf } from '../resolve-product';
+import { partKeyOf, ResolvedProduct } from '../resolve-product';
 
 const sdkNode = (node: Node): boolean => {
   if (node.type === 'class') return node.value.startsWith('et-');
@@ -55,7 +55,7 @@ const sdkScoped = (rule: Rule): boolean => {
 };
 
 export const tokenSelectorsOf = (product: ResolvedProduct): Problem[] => {
-  const tokens = new Set(tokenPartsOf(product.config));
+  const tokens = new Set(product.tokens);
 
   return product.parts
     .filter((part) => tokens.has(partKeyOf(part)) && part.css && part.cssSource !== null)

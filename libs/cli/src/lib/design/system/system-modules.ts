@@ -4,7 +4,7 @@ import { DesignConfig } from '../paths';
 import { fsUrl, sourceFileOf } from '../vite-paths';
 import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport, productSharedDirsOf, sharedFileOf as sharedFileIn } from './imports';
-import { partKeyOf, resolveProduct, ResolvedProduct, tokenPartsOf } from './resolve-product';
+import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch, variantSharedDirOf } from './sketch/sketch';
 
@@ -120,15 +120,12 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
   const tokenStylesheetsOf = (options: { product: string; sketch?: SketchVariant | null }) => {
     const { product, sketch } = options;
-    const entry = config.products?.[product];
 
-    return entry
-      ? tokenPartsOf(entry).flatMap((part) => {
-          const css = partOf({ product, part, sketch })?.css;
+    return (productOf(product)?.tokens ?? []).flatMap((part) => {
+      const css = partOf({ product, part, sketch })?.css;
 
-          return css && existsSync(css) ? [css] : [];
-        })
-      : [];
+      return css && existsSync(css) ? [css] : [];
+    });
   };
 
   /** Each part stylesheet of the product that one sketch variant draws from another file, mapped to that file. */
