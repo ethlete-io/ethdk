@@ -64,7 +64,7 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
    not count. `et design check` prints them after the problems; the exit code is unchanged. Studio API not touched.
    Verified: 419 cli design tests, tsc, lint; the new check specs fail without the change; one real check run.
    Not built: a new-part sketch has no part to attach to; routes are not checked against the router.
-2. Not started: point 1 missing state (Q164: `design complete` control failures, plus "no controls declared" for a
+2. In progress (2026-10-31): point 1 missing state (Q164: `design complete` control failures, plus "no controls declared" for a
    component part; pages exempt), point 2 contrast, point 8 missing
    transition or motion.
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
