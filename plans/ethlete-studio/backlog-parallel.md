@@ -82,8 +82,10 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     the dev spawn uses `dist/libs/cli`, the runtime copy is only the release fallback. The stale-server check now
     compares against `dist/libs/cli`. Warm: build cli 0.55 s, the skipped runtime install 1.1 s; the uncached numbers
     and a real debug start are not measured. `beforeDevCommand` still runs `cli-runtime` once per `yarn studio`.
-  - In progress (2026-10-31): a real Studio render of Q92 on own servers; merge-preview Light + Dark (grill
-    decision).
+  - Done (2026-10-31): merge-preview frames draw Light + Dark (`075e48532`, `mergePreviewOf` sets `schemes`); the
+    sketch matrix cells stay single (its "in context" page frames draw both since `aa6165ad5`). Data spec only, no
+    render check.
+  - In progress (2026-10-31): a real Studio render of Q92 on own servers.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
