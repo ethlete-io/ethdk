@@ -1210,5 +1210,33 @@
     "note": "Q198 alias slice, invisible (0/255)",
     "hash": "99753939ebe518a9",
     "at": "2026-10-31T19:46:10.123Z"
+  },
+  {
+    "part": "components/comment-pin",
+    "by": "claude-opus-5-5",
+    "note": "Q164 controls declared, invisible (0/255)",
+    "hash": "e43999adaafeef86",
+    "at": "2026-10-31T19:57:59.289Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-opus-5-5",
+    "note": "Q164 controls declared, invisible (0/255)",
+    "hash": "3e4885d8f70f3360",
+    "at": "2026-10-31T19:58:00.631Z"
+  },
+  {
+    "part": "elements/canvas-frames",
+    "by": "claude-opus-5-5",
+    "note": "Q164 controls declared, invisible (0/255)",
+    "hash": "055eb9a7dd0a2d75",
+    "at": "2026-10-31T19:58:02.047Z"
+  },
+  {
+    "part": "elements/part-tree",
+    "by": "claude-opus-5-5",
+    "note": "Q164 controls declared, invisible (0/255)",
+    "hash": "93a2fcc04810db4c",
+    "at": "2026-10-31T19:58:03.433Z"
   }
 ]
