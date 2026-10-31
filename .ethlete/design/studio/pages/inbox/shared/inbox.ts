@@ -1,6 +1,6 @@
 import { definePart, drawing, html, ng } from '@design-system';
-import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
 import { control } from '@ethlete/components/design/control';
+import anchoredDialog from '@system/components/anchored-dialog';
 import { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
@@ -214,23 +214,26 @@ export const inbox = () =>
         `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" />`, 'resolved')}</span>`,
         { imports: ['SWITCH_IMPORTS'] },
       );
-      const editor =
+      const dialog =
         draft || entry
-          ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
-              ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
-              <div class="mt-1.25">
-                ${anchoredDialog({
-                  label: 'Kommentar',
-                  modal: false,
-                  placement: 'bottom-start',
-                  content: await ng(
-                    `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
-                    { imports: ['TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'] },
-                  ),
-                })}
-              </div>
-            </div>`
-          : '';
+          ? await anchoredDialog.render({
+              label: 'Kommentar',
+              modal: false,
+              placement: `bottom-${'start'}` as const,
+              content: await ng(
+                `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
+                { imports: ['TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'] },
+              ),
+            })
+          : null;
+      const editor = dialog
+        ? html`<div
+            class="fixed [&_.anchored-dialog-frame]:p-0! [&_.anchored-dialog-frame]:bg-transparent! [&_.anchored-dialog-frame]:text-[length:inherit]! [&_.et-anchored-dialog-mock]:mt-0! top-46.75 left-152.25 w-80 z-10 text-ui-sm"
+          >
+            ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
+            <div class="mt-1.25">${dialog.body}</div>
+          </div>`
+        : '';
       const comments = COMMENTS.filter(
         (c) =>
           c.resolved ||
@@ -296,7 +299,7 @@ export const inbox = () =>
       return drawing({
         body: shell.body,
         setup: menu.setup,
-        styles: shell.styles + menu.styles + frames.styles + anchoredDialogStyles + styles,
+        styles: shell.styles + menu.styles + frames.styles + (dialog?.styles ?? '') + styles,
       });
     },
   });
