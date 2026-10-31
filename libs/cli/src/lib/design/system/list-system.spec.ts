@@ -64,6 +64,14 @@ describe('listSystem', () => {
       ['elements/hero', 'product', ['default']],
       ['pages/home', 'product', ['default', 'empty']],
     ]);
+    expect(product?.parts.map(({ file }) => file)).toEqual([
+      '.ethlete/design/acme/foundations/palette/palette.ts',
+      '.ethlete/design/acme-base/foundations/tokens/tokens.ts',
+      '.ethlete/design/acme/components/button/button.ts',
+      '.ethlete/design/acme-base/components/card/card.ts',
+      '.ethlete/design/acme/elements/hero/hero.ts',
+      '.ethlete/design/acme/pages/home/home.ts',
+    ]);
     expect(product?.parts.find((part) => part.name === 'button')?.note).toBe(
       'Pill shape, because Acme rounds every action.',
     );

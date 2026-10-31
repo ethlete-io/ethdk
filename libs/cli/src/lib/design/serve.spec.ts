@@ -427,6 +427,7 @@ describe('the design server for a design system', () => {
       layer: 'foundations',
       name: 'palette',
       origin: 'product',
+      file: '.ethlete/design/acme/foundations/palette/palette.ts',
       note: 'n',
       madeBy: [],
       states: ['one'],

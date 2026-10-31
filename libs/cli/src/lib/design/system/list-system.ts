@@ -15,6 +15,8 @@ export type ListedPart = {
   layer: string;
   name: string;
   origin: PartOrigin;
+  /** The part's module file, relative to the workspace. */
+  file: string;
   note: string | null;
   /** The model ids that drew the part, written by the last sketch merge; empty when none is known. */
   madeBy: string[];
@@ -336,6 +338,7 @@ export const listSystem = async (options: {
                 layer: part.layer,
                 name: part.name,
                 origin: part.origin,
+                file: relative(target, part.file),
                 note,
                 madeBy,
                 states,
