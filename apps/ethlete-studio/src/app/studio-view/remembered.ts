@@ -22,6 +22,8 @@ export type ViewState = {
   commentsOpen: boolean;
   /** Whether the comment sidebar lists the resolved threads too. */
   resolvedShown: boolean;
+  /** Whether the global chat panel is open. */
+  chatOpen: boolean;
   /** The size, interaction and mode a sketch view showed, keyed by its camera key. */
   sketchViews: Record<string, SketchViewPick>;
   /** The preset a flow view showed, keyed by its camera key. */
@@ -231,6 +233,7 @@ export const rememberedView = (): Partial<ViewState> => {
       measuredSizes,
       commentsOpen,
       resolvedShown,
+      chatOpen,
       sketchViews,
       flowPresets,
       notesShown,
@@ -246,6 +249,7 @@ export const rememberedView = (): Partial<ViewState> => {
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
       resolvedShown: typeof resolvedShown === 'boolean' ? resolvedShown : undefined,
+      chatOpen: typeof chatOpen === 'boolean' ? chatOpen : undefined,
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
       notesShown: openFlags(notesShown),
