@@ -67,6 +67,7 @@ type PartModule = {
     grid?: unknown;
     checks?: { skip?: unknown };
     contrast?: { pairs?: unknown; exceptions?: unknown };
+    frame?: unknown;
   };
 };
 
@@ -122,6 +123,19 @@ const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
+const PATH_DEPTH = 4;
+
+const tagOf = (name: string) => /^[a-z0-9-]+/u.exec(name)?.[0] ?? name;
+
+const frameNeutralPathOf = ({ path, part, framed }: { path: string; part: string; framed: boolean }) => {
+  const names = path.split(' > ');
+  const marked = names.findIndex((name) => name.endsWith(`[data-et-part=${part}]`));
+  const cut =
+    marked < 0 ? (names.length === PATH_DEPTH ? [0] : []) : framed ? [marked - 1, marked] : [marked, marked + 1];
+
+  return names.map((name, index) => (cut.includes(index) ? tagOf(name) : name)).join(' > ');
+};
+
 // complete.ts and this module sit in an import cycle: read PLAIN_CONTROL_SELECTOR here, a top-level copy can be undefined.
 const inspectFrame = (options: {
   fixed: boolean;
@@ -159,7 +173,7 @@ const inspectFrame = (options: {
   };
   const pathOf = (element) => {
     const names = [];
-    for (let at = element; at && at !== root && names.length < 4; at = at.parentElement) names.unshift(nameOf(at));
+    for (let at = element; at && at !== root && names.length < ${PATH_DEPTH}; at = at.parentElement) names.unshift(nameOf(at));
     return names.join(' > ');
   };
   const report = (rule, element, detail) => {
@@ -508,6 +522,8 @@ export const renderIssuesOf = async (options: {
     const grids: RenderedGrid[] = [];
     const gridWarnings: RenderIssue[] = [];
     const baselines = new Map<string, Frame[]>();
+    const mergedSkips = new Map<string, string[]>();
+    const framed = new Map<string, boolean>();
     for (const { product, sketch, parts } of jobs) {
       const skips: Record<string, string[]> = {};
 
@@ -654,36 +670,51 @@ export const renderIssuesOf = async (options: {
         const controlInputs = part.layer !== 'foundations';
         const baselineKey = JSON.stringify([product, key]);
 
-        if (merged && mergedPart && controlInputs && !baselines.has(baselineKey)) {
+        framed.set(JSON.stringify([product, key, sketch]), typeof definition?.frame === 'function');
+
+        if (merged && mergedPart && !baselines.has(baselineKey)) {
           const mergedStates =
             mergedDefinition?.states && typeof mergedDefinition.states === 'object'
               ? Object.keys(mergedDefinition.states)
               : [];
+          const mergedContrast = {
+            exceptions: contrastExceptionsOf(mergedDefinition?.contrast?.exceptions).selectors,
+            pairs: contrastPairsOf(mergedDefinition?.contrast?.pairs),
+          };
+          const measured = new Set<ColorScheme | null>();
 
+          mergedSkips.set(baselineKey, stringsOf(mergedDefinition?.checks?.skip));
+          framed.set(JSON.stringify([product, key, null]), typeof mergedDefinition?.frame === 'function');
           baselines.set(
             baselineKey,
             mergedStates.flatMap((state) =>
-              sizesOf(widthsOf(mergedDefinition?.widths), merged.presets).flatMap(({ preset, width }) => {
-                const address = { product, part: key, state, preset, width, sketch: null, interaction: null };
-                const frame = partFrameOf({ system, ...address });
+              sizesOf(widthsOf(mergedDefinition?.widths), merged.presets).flatMap(({ preset, width }) =>
+                schemes.flatMap((scheme) => {
+                  const address = { product, part: key, state, preset, width, sketch: null, interaction: null };
+                  const frame = partFrameOf({ system, ...address });
 
-                return frame instanceof Error
-                  ? []
-                  : [
-                      {
-                        address,
-                        size: preset ?? (width ? `${width}px` : 'fitted'),
-                        search: frame.search.toString(),
-                        viewport: viewportOf(frame.size),
-                        fixed: frame.size?.height !== undefined,
-                        fit: frame.size === null,
-                        skips: {},
-                        namespaces,
-                        contrast: { exceptions: [], pairs: [], scheme: schemes[0] ?? null },
-                        controlInputs,
-                      },
-                    ];
-              }),
+                  if (frame instanceof Error) return [];
+
+                  const pairs = measured.has(scheme) ? [] : mergedContrast.pairs;
+
+                  measured.add(scheme);
+
+                  return [
+                    {
+                      address,
+                      size: preset ?? (width ? `${width}px` : 'fitted'),
+                      search: frame.search.toString(),
+                      viewport: viewportOf(frame.size),
+                      fixed: frame.size?.height !== undefined,
+                      fit: frame.size === null,
+                      skips,
+                      namespaces,
+                      contrast: { exceptions: mergedContrast.exceptions, pairs, scheme },
+                      controlInputs,
+                    },
+                  ];
+                }),
+              ),
             ),
           );
         }
@@ -723,20 +754,39 @@ export const renderIssuesOf = async (options: {
 
     const inspected = await queue.run((browser) => inspect({ browser, base, frames }));
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
-    const sketchedInputs = inspected.filter((issue) => isInput(issue) && issue.sketch);
-    const compared = [...new Set(sketchedInputs.map((issue) => JSON.stringify([issue.product, issue.part])))];
-    const baseline = compared.flatMap((key) => baselines.get(key) ?? []);
-    const elementOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part, issue.path]);
-    const existing = new Set(
-      (baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : [])
-        .filter(isInput)
-        .map(elementOf),
+    const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
+    const compared = [...new Set(sketched.map((issue) => JSON.stringify([issue.product, issue.part])))];
+    const baseline = compared.flatMap((key) =>
+      (baselines.get(key) ?? []).map((frame) => ({
+        ...frame,
+        skips: { ...frame.skips, [frame.address.part]: mergedSkips.get(key) ?? [] },
+      })),
     );
+    const elementOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part, issue.path]);
+    const sameIssueOf = (issue: RenderIssue, inFrame: boolean | null) =>
+      JSON.stringify([
+        issue.product,
+        issue.part,
+        issue.rule,
+        isInput(issue) ? null : issue.detail,
+        inFrame === null ? issue.path : frameNeutralPathOf({ path: issue.path, part: issue.part, framed: inFrame }),
+      ]);
+    const framedOf = (issue: RenderIssue, sketch: SketchVariant | null) =>
+      framed.get(JSON.stringify([issue.product, issue.part, sketch])) ?? false;
+    const existing = new Set(
+      (baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : []).flatMap(
+        (issue) => [sameIssueOf(issue, null), sameIssueOf(issue, framedOf(issue, null))],
+      ),
+    );
+    const isOld = (issue: RenderIssue) =>
+      existing.has(sameIssueOf(issue, null)) ||
+      (framedOf(issue, issue.sketch) !== framedOf(issue, null) &&
+        existing.has(sameIssueOf(issue, framedOf(issue, issue.sketch))));
     const mergedInputs = inspected.filter((issue) => isInput(issue) && !issue.sketch);
 
     issues.push(
-      ...inspected.filter((issue) => !WARNING_RULES.has(issue.rule) && !isInput(issue)),
-      ...sketchedInputs.filter((issue) => !existing.has(elementOf(issue))),
+      ...inspected.filter((issue) => !issue.sketch && !WARNING_RULES.has(issue.rule) && !isInput(issue)),
+      ...sketched.filter((issue) => !isOld(issue)),
     );
 
     return {

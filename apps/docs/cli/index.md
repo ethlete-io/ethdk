@@ -401,7 +401,7 @@ product override instead, and the merge writes a product copy. When the product 
 refuses without one of two flags: `--override` sketches the product copy, and `--into-base` starts from the copy, merges
 into the base and removes the copy with its `merged.json` entry. A part of a built-in base takes `--override` only.
 
-`sketch ready` refuses while a target of a live variant does not load. It also runs the render check on the variants and refuses on any render issue, including one the product already had; an element marked `data-et-skip` stays out, and a missing browser skips the check with a `RENDER CHECK SKIPPED` line.
+`sketch ready` refuses while a target of a live variant does not load. It also runs the render check on the variants and refuses on a render issue the merged part does not already show (same rule, detail and element, also when the part moved its demo frame into `frame`); `design check` still lists the old ones. An element marked `data-et-skip` stays out, and a missing browser skips the check with a `RENDER CHECK SKIPPED` line.
 
 `sketch ready` also refuses while a live variant adds an open point the sketch can close itself to a target: no
 controls declared or a missing motion (contrasts and missing control states already fail the render check). A point

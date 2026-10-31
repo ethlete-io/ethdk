@@ -368,6 +368,54 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('blocks only issues a sketch adds, also when it moves its demo frame out of render', async (context) => {
+    const card = '<div class="card"><p style="margin: 0; color: #f00">Low</p><button>Go</button></div>';
+    const target = checkout({
+      'components/card': { body: `<div class="card-frame" style="padding: 8px">${card}</div>` },
+    });
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'components-card');
+    const source = readFileSync(join(shop, 'components/card/card.ts'), 'utf8');
+    const variants = {
+      same: source,
+      moved: source
+        .replace('<div class="card-frame" style="padding: 8px">', '')
+        .replace('</div></div>`', '</div>`')
+        .replace(
+          'render:',
+          'frame: (body: string) => `<div class="card-frame" style="padding: 8px">${body}</div>`,\n  render:',
+        ),
+      fresh: source.replace('<button>', '<span style="color: #f88">New</span><button>'),
+    };
+
+    for (const [variant, file] of Object.entries(variants)) {
+      mkdirSync(join(dir, variant, 'components/card'), { recursive: true });
+      writeFileSync(join(dir, variant, 'components/card/card.ts'), file);
+    }
+
+    writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/card', status: 'ready' }));
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [null, ...Object.keys(variants).map((variant) => ({ target: 'components/card', variant }))].map(
+        (sketch) => ({ product: 'shop', sketch, parts: null }),
+      ),
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(variants.moved).toContain('frame:');
+    expect(
+      rendered.issues.map(
+        (issue) => `${issue.sketch?.variant ?? '-'} ${issue.rule}: ${issue.detail.split(' ')[0]} ${issue.path}`,
+      ),
+    ).toEqual([
+      '- CONTRAST: "Low" div[data-et-part=components/card] > div.card > p',
+      'fresh CONTRAST: "New" div[data-et-part=components/card] > div.card > span',
+    ]);
+  }, 120_000);
+
   it('compares pixels of merged interaction states when sketch CSS changes', async (context) => {
     const target = checkout({
       'components/shell': {
@@ -428,7 +476,13 @@ describe('renderIssuesOf', () => {
   it('keeps the skips of each sketch variant apart', async (context) => {
     const target = checkout();
     const dir = join(target, DESIGN_DIR, 'shop', 'sketches', 'components-cut');
-    const cut = readFileSync(join(target, DESIGN_DIR, 'shop', 'components', 'cut', 'cut.ts'), 'utf8');
+    const merged = join(target, DESIGN_DIR, 'shop', 'components', 'cut', 'cut.ts');
+    const cut = readFileSync(merged, 'utf8');
+
+    writeFileSync(
+      merged,
+      cut.replace('states: { default: {} },', "states: { default: {} }, checks: { skip: ['CLIPPED'] },"),
+    );
 
     mkdirSync(join(dir, 'a', 'components', 'cut'), { recursive: true });
     mkdirSync(join(dir, 'b', 'components', 'cut'), { recursive: true });
