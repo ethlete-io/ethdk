@@ -33,6 +33,10 @@
   .st-shell-bubble {
     width: 40px;
     height: 40px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
   }
 
   .st-shell-slot[data-active]::before {
