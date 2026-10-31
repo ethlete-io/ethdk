@@ -1,0 +1,39 @@
+{
+  "target": "components/button",
+  "status": "ready",
+  "createdAt": "2026-10-31T01:35:45.999Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Filled button hover",
+      "note": "Q101. Hover on a filled et-button barely changes the fill: the brand mint steps to its -hover token, 1.03:1 against the rest fill in light and in dark. The button itself is not the cause: it shows the color theme's -hover token, and danger already steps 1.34:1 (warning 1.48:1). The brand theme's -hover token sits next to its rest value, so every filled button in the brand color is hit. Fixed numbers: rest text on the mint 15.82:1; text on the danger fill 4.83:1; the mint against the light pane 1.33:1 (dark 13.50:1). Variants b and c also apply decided rules, not this round's call: focus rings in --et-theme-color-ink-solid (Q88) and a 1px inset ink edge on a filled button (Q99), which only shows in light (in dark the brand ink is the mint). The ring on the mint is 7.68:1 light, 13.50:1 dark; on danger 8.31:1 light, 9.45:1 dark (today in the fill color: mint 1.37:1 light, 13.06:1 dark). Measured and not drawn: an overlay toward the label color (on-primary) at 12% gives the mint 1.35:1 but takes danger's existing step down to 1.12:1, because danger's label is white. Variant a shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: hover takes the theme's -hover token. Mint 1.03:1 against rest in light and dark, text 15.30:1; danger 1.34:1, text 6.47:1. Active is the -active token, mint 1.69:1 from rest. Focus ring in the fill color, mint 1.37:1 light, 13.06:1 dark."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Hover takes the theme's -active fill step, so the theme sets the direction: mint 1.69:1 against rest in light and dark, text 9.38:1; danger 1.72:1, text 8.31:1. Pressed goes one step further, 16% toward the label color: mint 1.41:1 from hover, text 6.66:1; danger 1.37:1, text 6.05:1. The ink edge stays on hover, 7.68:1 against the light pane. Why: only the theme knows which way its fill should move, and an overlay fails on some theme (c in dark, the label-color overlay on danger). No new colour and no theme name. It relies on each theme's -active token differing from rest; warning, not drawn, would step lighter, 1.91:1, text 10.74:1."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Ink overlay: the hover fill mixes 30% of --et-theme-color-ink-solid into the fill. It works in light: mint 1.59:1 against rest, text 9.96:1; danger 1.45:1, text 6.99:1. It fails in dark, because there the ink is the fill color itself or lighter: mint 1.03:1, the same as today; danger 1.04:1, with text down to 4.63:1."
+    }
+  }
+}
