@@ -19,6 +19,7 @@ type LoadedPart = {
   widths?: unknown;
   interactions?: unknown;
   render?: (props: unknown) => unknown;
+  frame?: (body: string, props: unknown) => string;
 };
 
 type Markup = { body: string; styles: string };
@@ -41,7 +42,7 @@ const markupOf = async (part: LoadedPart, props: unknown): Promise<Markup | null
     const styles = drawn?.styles ?? '';
 
     return typeof drawn?.body === 'string' && typeof styles === 'string'
-      ? { body: hashOf(drawn.body), styles: hashOf(styles) }
+      ? { body: hashOf(part.frame ? part.frame(drawn.body, props) : drawn.body), styles: hashOf(styles) }
       : null;
   } catch {
     return null;

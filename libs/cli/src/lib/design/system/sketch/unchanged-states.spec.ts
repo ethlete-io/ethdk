@@ -36,6 +36,7 @@ const counting = () => {
           body: source.includes('spaced') ? `<h1>  ${title}</h1>` : `<h1>${title}</h1>`,
           styles,
         }),
+        frame: (body: string) => (source.includes('framed') ? `<div class="frame">${body}</div>` : body),
       },
     };
   };
@@ -48,6 +49,15 @@ describe('unchangedStatesOf', () => {
     const { product, sketch } = acme();
 
     expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual(['default']);
+  });
+
+  it('leaves out a state whose demo frame the variant changed', async () => {
+    const { product, sketch, hero } = acme();
+    const file = resolve(hero, 'hero.ts');
+
+    writeFileSync(file, `${readFileSync(file, 'utf8')}\n// framed\n`);
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual([]);
   });
 
   it('leaves out a state whose styles the variant changed', async () => {

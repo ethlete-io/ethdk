@@ -613,6 +613,19 @@ an owned part fails as `CONTROL-OVERRIDDEN`, unless the host marks it with `data
 declares it. On the owned root itself, outer layout (margin, size, position, inset, flex and grid
 placement, transform) is not an override.
 
+A demo frame around a part, such as padding and a page background that only present its states, goes in
+`definePart({ frame })`, not in `render`. `frame(body, props)` wraps the body of each state the tool draws of the part
+itself; a part that calls `render` of this one gets it without the frame, so the host needs no override to remove it.
+
+```ts
+export default definePart({
+  note: 'An open popover anchored to its trigger',
+  states: { open: { placement: 'bottom-end' } },
+  frame: (body) => `<div class="anchored-dialog-frame">${body}</div>`,
+  render: ({ placement }) => drawing({ body: anchoredDialog({ placement }), styles }),
+});
+```
+
 A page also fails as `INVENTORY-UNAPPROVED` until the user approves its control inventory in
 Studio: each rest frame with a numbered box over every control it draws. The approval stores the
 page's control ids and part hash in `.ethlete/design/<product>/inventory.json`; an added or removed

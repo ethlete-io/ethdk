@@ -1,5 +1,5 @@
 import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
-import { Motion, Part } from '../define-part';
+import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
 import { fitRoot } from './frame-fit';
@@ -142,7 +142,7 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
 
     drawnPart = { part: part as Part<unknown>, states: holder.states };
 
-    return await part.render(holder.states[key]);
+    return await drawState(part as Part<unknown>, holder.states[key]);
   } catch (error) {
     return fail(`design-explore: state "${key}" of "${partKey}" failed\n${messageOf(error)}`);
   }
@@ -203,7 +203,7 @@ const stateMarkupOf = ({ part, states }: NonNullable<typeof drawnPart>, styles: 
   const sheets = new Set([styles]);
 
   return (state: string) =>
-    Promise.resolve(part.render(states[state])).then((drawn) =>
+    drawState(part, states[state]).then((drawn) =>
       sheets.has(drawn.styles)
         ? drawn.body
         : forced(drawn.styles).then((css) => {
@@ -369,7 +369,7 @@ const exposeFlowLine = (options: { product: string; to: string; styles: string }
 
         // The styles of the to page ride in the markup: in <head> they would restyle the from page before the View Transition captures it.
 
-        return Promise.resolve((part as Part<unknown>).render(states[toState]))
+        return drawState(part as Part<unknown>, states[toState])
           .then((drawn) =>
             drawn.styles === options.styles
               ? drawn.body

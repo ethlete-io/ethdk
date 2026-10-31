@@ -26,6 +26,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * One part of a product's design system. `note` records why the part has its current shape, and
  * `madeBy` the model ids that drew it, written by a sketch merge.
  * `states` names each state it is drawn in with the props for that state, and `render` draws it.
+ * `frame` wraps the body of each of the part's own states in a demo frame (padding, a page background); a part that
+ * calls `render` of this one gets the part without it.
  * `styles` is the part's stylesheet: every drawing of the part gets it before the styles `render` returns, and a
  * host that embeds a piece of the part's markup takes it from the default export.
  * A part that responds to its width lists the container `widths` it is drawn at; without them a
@@ -48,6 +50,7 @@ export type Part<TProps, TState extends string = string> = {
   madeBy?: string[];
   states: Record<TState, TProps>;
   styles?: string;
+  frame?: (body: string, props: TProps) => string;
   widths?: number[];
   interactions?: Interaction[];
   grid?: StateGrid<TState>;
@@ -153,8 +156,9 @@ export type RenderOptions = { interaction?: Interaction };
 
 type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
   Part<TProps, TState>,
-  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render'
+  'states' | 'grid' | 'controls' | 'motions' | 'rules' | 'render' | 'frame'
 > & {
+  frame?: (body: string, props: NoInfer<TProps>) => string;
   motions?: Record<string, Motion<NoInfer<TState>>>;
   rules?: PartRule<NoInfer<TState>>[];
   states: Record<TState, NoInfer<TProps>>;
@@ -184,6 +188,12 @@ const finished = (
   body: interaction ? forceBody(drawn.body, interaction) : drawn.body,
   styles: [styles, drawn.styles].filter(Boolean).join('\n'),
 });
+
+/** Draws `props` as one of the part's own states: the drawing of `render` inside the part's `frame`. */
+export const drawState = <TProps>(part: Part<TProps>, props: TProps): Promise<DrawnPart> =>
+  Promise.resolve(part.render(props)).then((drawn) =>
+    part.frame ? { ...drawn, body: part.frame(drawn.body, props) } : drawn,
+  );
 
 /**
  * Types a part where it is written. A part file default-exports the result, and may export named

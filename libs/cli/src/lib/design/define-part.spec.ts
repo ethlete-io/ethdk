@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definePart, drawing, forceInteraction, slot } from '../../../design/define-part';
+import { definePart, drawing, drawState, forceInteraction, slot } from '../../../design/define-part';
 import { markPart } from '../../../design/mark-part';
 
 type Props = { label: string };
@@ -179,6 +179,33 @@ describe('definePart', () => {
 
     expect(Object.keys(moving.motions ?? {})).toEqual(['fold']);
     expect(button.motions).toBeUndefined();
+  });
+});
+
+describe('drawState', () => {
+  const framed = definePart({
+    ...source,
+    frame: (body, { label }) => `<div class="frame" data-label="${label}">${body}</div>`,
+  });
+
+  it("draws one of the part's own states inside its frame", async () => {
+    expect((await drawState(framed, { label: 'Save' })).body).toBe(
+      '<div class="frame" data-label="Save"><button class="b">Save</button></div>',
+    );
+  });
+
+  it('leaves the frame out of a render from another part', async () => {
+    expect((await framed.render({ label: 'Save' })).body).toBe('<button class="b">Save</button>');
+  });
+
+  it('keeps the frame outside the part mark the design server adds', async () => {
+    expect((await drawState(markPart(framed, 'components/b'), { label: 'Go' })).body).toMatch(
+      /^<div class="frame" data-label="Go"><button [^>]*data-et-part="components\/b"/u,
+    );
+  });
+
+  it('draws a part without a frame as render does', async () => {
+    expect((await drawState(button, { label: 'Go' })).body).toBe('<button class="b">Go</button>');
   });
 });
 
