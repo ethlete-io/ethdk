@@ -41,8 +41,13 @@ export type FoundControl = {
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
 export type FoundOverride = { owner: string; selector: string; path: string; properties: string[] };
 
-/** A forced interaction on a drawn element: whether its box differs from rest, and which colours change in one frame. */
-export type SeenForce = { interaction: string; differs: boolean; still?: string[] };
+/**
+ * A forced interaction on a drawn element: whether its box differs from rest, which colours change in one frame, and
+ * the classes of that interaction's variant no stylesheet defines when it does not differ.
+ */
+export type SeenForce = { interaction: string; differs: boolean; still?: string[]; undefinedClasses?: string[] };
+
+type ForcedSeen = { state: string; differs: boolean; undefinedClasses?: string[] };
 
 /**
  * An option or menu item inside a drawn surface. `selected` is its ARIA selected, checked, pressed or current
@@ -388,18 +393,32 @@ const ownersOf = (frames: SeenFrame[]) => [
   ),
 ];
 
+const undefinedClassesGapOf = (options: { forced: ForcedSeen[]; what: string; interaction: string }) => {
+  const { forced, what, interaction } = options;
+  const seen = forced.find((force) => force.undefinedClasses?.length);
+
+  if (!seen) return null;
+
+  const classes = seen.undefinedClasses ?? [];
+
+  return `state ${seen.state} forces ${interaction} on ${what}, but no stylesheet defines its ${classes.length === 1 ? 'class' : 'classes'} ${classes.join(', ')} - Tailwind generates no utility of that name; use a colour or value the product's theme defines`;
+};
+
 const interactionGapOf = (options: { frames: SeenFrame[]; id: string; interaction: string }) => {
   const { frames, id, interaction } = options;
   const forced = frames.flatMap((frame) =>
     frame.controls
       .filter((control) => control.id === id)
       .flatMap((control) => control.forced.filter((force) => force.interaction === interaction))
-      .map((force) => ({ state: frame.state, differs: force.differs })),
+      .map((force) => ({ state: frame.state, differs: force.differs, undefinedClasses: force.undefinedClasses })),
   );
 
   if (forced.some((force) => force.differs)) return null;
   if (forced.length > 0)
-    return `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest - if a descendant draws ${interaction}, mark it with data-et-control-part`;
+    return (
+      undefinedClassesGapOf({ forced, what: 'it', interaction }) ??
+      `state ${forced[0]?.state} forces ${interaction} on it, but its box draws no different pixel than at rest - if a descendant draws ${interaction}, mark it with data-et-control-part`
+    );
 
   return `no state draws it ${interaction} - draw a state that forces ${interaction} on the data-et-control element, e.g. with forceInteraction - a data-et-control-part in it takes the force too`;
 };
@@ -446,12 +465,15 @@ const lookGapOf = (options: {
   return null;
 };
 
-const forcedGapOf = (options: { forced: { state: string; differs: boolean }[]; what: string; interaction: string }) => {
+const forcedGapOf = (options: { forced: ForcedSeen[]; what: string; interaction: string }) => {
   const { forced, what, interaction } = options;
 
   if (forced.some((force) => force.differs)) return null;
   if (forced.length > 0)
-    return `state ${forced[0]?.state} forces ${interaction} on ${what}, but its box draws no different pixel than at rest`;
+    return (
+      undefinedClassesGapOf(options) ??
+      `state ${forced[0]?.state} forces ${interaction} on ${what}, but its box draws no different pixel than at rest`
+    );
 
   return `no state draws ${what} ${interaction} - force ${interaction} on it, e.g. with forceInteraction`;
 };
@@ -537,7 +559,7 @@ const optionGapsOf = (options: {
       shownIn(frame).flatMap((option) =>
         option.forced
           .filter((force) => force.interaction === interaction)
-          .map((force) => ({ state: frame.state, differs: force.differs })),
+          .map((force) => ({ state: frame.state, differs: force.differs, undefinedClasses: force.undefinedClasses })),
       ),
     );
     const gap = forcedGapOf({ forced, what, interaction });
@@ -597,7 +619,7 @@ const requirementGapsOf = (options: {
       frame.controls
         .filter((seen) => seen.id === id && seen.selected)
         .flatMap((seen) => seen.forced.filter((force) => force.interaction === 'hover'))
-        .map((force) => ({ state: frame.state, differs: force.differs })),
+        .map((force) => ({ state: frame.state, differs: force.differs, undefinedClasses: force.undefinedClasses })),
     );
     const hovered = forcedGapOf({ forced, what: 'it selected', interaction: 'hover' });
 
@@ -800,6 +822,32 @@ const coversOf = (property: string) => {
 
   return ['all', property];
 };
+
+const undefinedVariantClasses = (at: number) => `((at) => {
+  const control = document.querySelector('[data-et-complete="' + at + '"]');
+  const selectors = [];
+  const collect = (rules) => {
+    for (const rule of rules) {
+      if (rule.selectorText) selectors.push(rule.selectorText);
+      if (rule.cssRules) collect(rule.cssRules);
+    }
+  };
+  for (const sheet of document.styleSheets) {
+    try {
+      collect(sheet.cssRules);
+    } catch {}
+  }
+  const tokens = new Set([control, ...control.querySelectorAll('*')].flatMap((element) => [...element.classList]));
+  return [...tokens].filter((token) => token.includes(':') && !selectors.some((selector) => selector.includes('.' + CSS.escape(token))));
+})(${JSON.stringify(at)})`;
+
+const VARIANT_WORDS: Record<string, string> = { hover: 'hover', active: 'active', 'focus-visible': 'focus' };
+
+const isVariantOf = (token: string, interaction: string) =>
+  token
+    .split(':')
+    .slice(0, -1)
+    .some((variant) => variant.includes(VARIANT_WORDS[interaction] ?? interaction));
 
 const stillChangesOf = (rest: ColourSnapshot, forced: ColourSnapshot) =>
   forced.names.flatMap((name, element) => {
@@ -1300,10 +1348,19 @@ const seeFrames = async (options: {
           const restColours = (await page.evaluate(colourSnapshot(element.at))) as ColourSnapshot;
 
           await page.evaluate(forceOn({ at: element.at, interaction, on: true }));
+
+          const differs = !drawn.equals(rest);
+          const undefinedClasses = differs
+            ? []
+            : ((await page.evaluate(undefinedVariantClasses(element.at))) as string[]).filter((token) =>
+                isVariantOf(token, interaction),
+              );
+
           forced.push({
             interaction,
-            differs: !drawn.equals(rest),
+            differs,
             still: stillChangesOf(restColours, drawnColours),
+            ...(undefinedClasses.length > 0 ? { undefinedClasses } : {}),
           });
         }
 

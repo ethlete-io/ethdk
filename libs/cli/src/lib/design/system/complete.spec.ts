@@ -980,6 +980,39 @@ describe('completenessOf', () => {
     expect(done).toEqual({ gaps: [] });
   }, 60_000);
 
+  it('names the variant classes no stylesheet defines when a forced interaction draws no different pixel', async (context) => {
+    const { target, config } = checkout();
+    const dir = join(target, DESIGN_DIR, 'app-a', 'components', 'unknown-utility');
+    const more = (force: string) =>
+      `<div><span data-et-control="more"${force} class="hover:bg-surface-nope hover:text-defined active:bg-other">More</span></div>`;
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'unknown-utility.ts'),
+      `import { definePart, drawing } from '@design-system';
+
+const BODIES: Record<string, string> = ${JSON.stringify({ rest: more(''), hovered: more(' data-et-force="hover"') })};
+
+export default definePart({
+  note: 'A fixture.',
+  states: { rest: { state: 'rest' }, hovered: { state: 'hovered' } },
+  controls: { more: { kind: 'button', input: ['pointer'] } },
+  render: async ({ state }: { state: string }) =>
+    drawing({ body: BODIES[state] ?? '', styles: ${JSON.stringify(STYLES)} + '.hover\\\\:text-defined:hover { }' }),
+});
+`,
+    );
+
+    const product = resolveProduct({ target, name: 'app-a', config: config.products?.['app-a'] ?? {} });
+    const result = await completenessOf({ target, config, product, part: 'components/unknown-utility' });
+
+    if ('unavailable' in result) return context.skip(result.unavailable);
+
+    expect('gaps' in result && result.gaps.map(completenessGapLineOf)).toContain(
+      "REQUIREMENT-MISSING components/unknown-utility.more.hover - state hovered forces hover on it, but no stylesheet defines its class hover:bg-surface-nope - Tailwind generates no utility of that name; use a colour or value the product's theme defines",
+    );
+  }, 60_000);
+
   it('does not fail a page on the gaps of a part it uses from its base', async (context) => {
     const { target } = checkout();
     const design = join(target, DESIGN_DIR);
