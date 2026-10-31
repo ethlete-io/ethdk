@@ -992,3 +992,21 @@ no counterpart in the design), the go/task/compare flow reports it itself.
 - **Q191 open-point list in Studio:** 33 sketches where Studio shows the open-point list; Tom merges the sketch. It
   is built after the pilot, through go/task/compare. Until then the CLI and `GET /__design/open-points` show the
   list. No UI for it before the merged sketch.
+
+### Studio uses the SDK surface theming (Tom, 2026-10-31, Q197)
+
+Tom: "wir nehmen das sdk surface theming system kein wenn oder aber." Studio parts use the SDK surface theming
+(`libs/core` surface themes, the `theming` skill), not their own tier classes:
+
+- Every raised or floating area sets a surface scope (`dark`, `dark-elevated`, `dark-elevated-2`, generated from
+  `foundations/colors` by `yarn studio:themes`) and draws its background, text, border and interaction states from
+  the `et-surface` tokens of that scope. No direct `bg-surface`, `bg-surface-raised`, `bg-surface-overlay` tier
+  classes in parts.
+- Hover and pressed come from `--et-surface-interaction-solid` mixes as in the SDK. This replaces Q190: the Studio
+  `--surface-hover` and `--surface-pressed` tokens go away.
+- `bg-surface-sunken` (alias removed on 2026-10-30, still in `pages/start`, `pages/flows`, `pages/system`) is fixed
+  first, as part of the migration.
+- Q49 (shadow on the Q191 popover) is folded in: the popover follows the SDK overlay pattern like every other floating
+  panel.
+- The migration of the merged parts is a mechanical follow-up of this decision (design accept "Q197" per part, as
+  Q188/Q190). A part where the scope changes the look visibly goes to Tom as a round.
