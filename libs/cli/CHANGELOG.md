@@ -1,5 +1,42 @@
 # @ethlete/cli
 
+## 3.0.0-next.25
+
+### Minor Changes
+
+- `et design mcp` serves the design tools to an MCP client over stdio: parts, check, shot, motion_shots, the sketch commands and the inbox. `shot` and `motion_shots` return the sheet image; `motion_shots` also returns its JSON.
+- The design server answers `GET /__design/motion` with the keyframes and tracks of one motion mode, and each keyframe as a PNG with `frame=<ms>`. The draw is kept until the part changes.
+- `embedPage` takes `mark` and `css`, both applied inside the embedded page: every element matching `mark` gets an accent outline, and `css` is added as a stylesheet there.
+- `et design check` warns with `EMBED-SCALE` when an element around an `embedPage` frame with a `scale` scales it again, so the page shrinks twice.
+- `et design complete` accepts a `field` control kind for text fields: it needs a drawn hover and focus-visible, but no active.
+- The shot sheet draws an empty "not drawn" cell for each state combo a grid row leaves out, and `sketch check` lists those cells on the grid line.
+- `et design motion flow <flow> <line>` draws a flow line with `"transition": "view"` as a stepped View Transition from the `from` page to the `to` page, shot in the preset viewport. Lines are named by `id` or `from→to`.
+- `et design motion shots` clips each shot to the part and every animated element over all keyframes, so an overshoot is not cut off, and names a track's element by `data-et-key` where it has one.
+- Add `et design motion shots <part> <motion>`: it draws a motion at its keyframes in full and reduced motion into one sheet and writes its tracks as JSON.
+- `spring({ damping, frequency })` from `@design-system` returns a `linear()` easing and its duration for a motion token. A motion's `interrupt` now switches back to its `from` state at that time in `motion shots`.
+- `design sketch` merges a sketch of a base part into the base. `sketch new --override` opens a product override; `--into-base` moves an existing override into the base. `sketch ready` refuses a variant that does not load.
+- Add `design sketch hold <sketch> --until <text>` and `design sketch release <sketch>`: a held sketch goes back to in progress, leaves the merge queue, and `sketch ready` refuses with the `--until` text until it is released.
+- A sketch may carry an edit to a host of its target in a higher layer when the edit only changes the host's imports, so a rename across layers merges in one sketch.
+- `sketch ready` refuses a live variant whose files, or the `shared/` files they import, keep an unused import, parameter or CSS class.
+- Add `tokenSheet` to `@design-system`: it draws a foundations part as a sheet of its CSS custom properties, labelled with the values the drawing resolves, so every product draws its foundations the same way.
+- `design complete` checks the `button`, `select`, `menu`, `row` and `tooltip` control kinds and a declared `disabled` look, and reads a base part's review from its base's `merged.json`.
+- `design complete` fails a page as `INVENTORY-UNAPPROVED` until its control inventory is approved; the design server answers `/__design/inventory` and `/__design/inventory-approve`, which writes `inventory.json` and refuses pages with undeclared or unclassified controls.
+- `design complete` gives each control inside an embedded part's `data-et-part` root to that part, fails the host while that part is incomplete, and fails a host CSS rule restyling it as `CONTROL-OVERRIDDEN`.
+- `et design mcp` gains the tools `sketch_variant`, `sketch_round`, `sketch_list`, `sketch_check`, `sketch_preview`, `sketch_rebase` and `comment_reply`.
+
+### Patch Changes
+
+- `design complete` accepts an option named by `aria-activedescendant` as focus-visible evidence when it looks different from a plain option in its surface, and its gap says which evidence is missing.
+- `design complete --request <part>.<control>.<requirement> --reason` writes a pending exception that still fails. Studio's approve endpoint records by, at and the part hash; then the gap passes until the part changes.
+- `design complete <layer>/<name> --variant <key>` checks a variant of the part's open sketch, so a sketch proves it closes its gaps before it is merged.
+- `design complete`: a `data-et-control-part` descendant of a `data-et-control` takes the forced interactions of its control, and its `disabled` or `aria-disabled="true"` counts as the control's disabled mark.
+- `et design complete <part> --handoff` gives a design complete part the `handoff` status; `et design complete --handoff` re-checks every `handoff` part and exits 1 when one regressed, for CI.
+- `design` renders no longer fail with "exports is not defined": the CLI build again ships the frame runtime as source only, with no CommonJS copies next to it.
+- `STALE-REPLACE` no longer warns on a `.replace` of markup a package draws, such as `button(options)` from `@ethlete/components`, which the rule cannot read.
+- `tokenSheet` styles now carry static fallbacks for every custom property, so design products without the Studio tokens draw a sane sheet.
+- `tokenSheet` takes `scope`, classes on the sheet root where values are read, so theme-scoped tokens resolve, and `note`, markup drawn under the title.
+- A design frame retries a failed part import twice after a short back-off, so a part file that changes while its grid loads no longer leaves "Failed to fetch dynamically imported module" in the frame.
+
 ## 3.0.0-next.24
 
 ### Minor Changes
