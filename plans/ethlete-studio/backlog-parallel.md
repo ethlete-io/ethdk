@@ -927,3 +927,15 @@ The `ethlete-codex-subagent` skill and its wrapper still name the 5.6 models. Th
 Drop `gpt-5.6-*` and `gpt-6-sol` from the skill. The context-warning hook gets a `gpt-6.1` entry with a 500k
 window (the 6 and 5.6 models keep 272k). Edit the source in `libs/agent-rules/content`, then `yarn agents:sync`.
 Builder: `ethlete-sdk-57`, a small slice after the running ones. Built in 6300dac7e.
+
+### Ink e2e and control frame decisions (Tom, 2026-10-31, Q187-Q188)
+
+- **Q187 (e2e follows the merged ink look):** the merged b picks give badge, banner and the progress-steps
+  connector an ink edge. Rewrite `badge.e2e.ts:209/219` (tonal/filled no border), `banner.e2e.ts:73` (24 % primary
+  wash) and `progress-steps.e2e.ts:186` (failed connector = own primary) to assert the theme's ink. The brand loader
+  test stays; `--et-brand-loader-accent` stays an override. Builder: `ethlete-sdk-33`.
+- **Q188 (control frames use the interaction token):** every control frame uses `surface-interaction`, the token
+  of the passing `et-input` frame; container edges keep `surface-border`. SDK: the resting `et-selection-card` edge
+  (`selection-card-styles.component.css:47`) and the unchecked checkbox and radio boxes. Studio:
+  `border-et-surface-interaction` on the project picker (`shell-main.ts:74`), the comment textarea box (inbox b, c,
+  d) and the inbox c segmented. Then shell-main and pages/inbox can be marked ready. Builder: `ethlete-sdk-33`.
