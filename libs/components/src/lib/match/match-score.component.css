@@ -10,7 +10,7 @@
     line-height: 1.2;
   }
 
-  .et-match-score:has(.et-match-score-digit:not([data-state='static']), .et-match-score-flash) {
+  .et-match-score:has(.et-match-score-digit:is([data-state='in'], [data-state='out']), .et-match-score-flash) {
     overflow: hidden;
   }
 
