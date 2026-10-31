@@ -3,6 +3,7 @@
   "components/form-field": "2f5692b326f3432a",
   "components/select": "3915f5657c75ef8b",
   "components/select-panel": "02b5ecfc4ba38913",
+  "components/tree": "6ec6cc2953065201",
   "foundations/colors": "417ee640702da3c3",
   "foundations/icons": "0182aa2840bc34e6"
 }
