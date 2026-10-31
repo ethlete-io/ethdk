@@ -745,6 +745,9 @@ machen".
   live only in memory, so a Studio restart (an edit under `src-tauri/**`) re-renders every part. The disk cache must
   keep shots across a restart and still invalidate on a render-path change (same rules as the in-memory key after
   the sha1 fix `42392387e`).
+- Q137 builder 33 order (Tom, 2026-10-31, option a): the SDK rounds Studio needs, then the Studio pages and parts as
+  sketches (Q133), then the other SDK components. This lifts the Q132 stop on new SDK sketches for the time after
+  the Studio sketches.
   In progress (builder ethlete-sdk-57): a disk shot cache in `libs/cli` design, keyed like the memory cache.
 
 #### Build slices (builder ethlete-sdk-57)
