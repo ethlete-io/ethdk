@@ -1155,3 +1155,17 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q225 (Tom, 2026-10-31):** the builder writes nothing for Tom in its chat (one closing line at most); every report
   goes only to the grill session by `SendMessage`. The builder stays a tmux session, not a subagent of the grill
   session. Rule added to the `builder-agent` skill.
+- **Q227 token savings (Tom, 2026-10-31: "alles was sinn macht", and every saving must last, not a one-off).** A
+  transcript analysis of 7 days (899 transcripts, 3.72B tokens, 97% cache reads) found the cost is context size x
+  turns, not tool output. Subagents used 59%. Measures, each with a guard so it lasts:
+  1. Plans: `design-system.md` (225k chars), `design-system-actions.md` (146k) and `studio-wireframes-handoff.md` (54k)
+     become a short index (status, open points, links) plus topic files; finished sections move to
+     `plans/ethlete-studio/archive/`. `backlog-parallel.md` follows at a quiet moment (two sessions append to it).
+  2. The `design-exploration` skill (47k chars) is cut to a short SKILL.md plus a reference file the skill names.
+  3. The delegation rule in the agent rules gets a measurable bar: a lookup under about 10 tool calls stays inline.
+  4. Guard (builder): a size budget check in the pre-push Checks job for plan index files, SKILL.md files and
+     AGENTS.md, so the files cannot grow back unnoticed.
+  5. Guard (builder): a repeatable token report command (per session, per subagent, start cost, top tool results,
+     top repeated reads), run weekly; the result goes to the grill session.
+  6. `design check` gets a `--part <key>` filter and a one-line-per-part summary (with Q184).
+     Rejected: pinging idle sessions to keep the cache warm costs more than it saves.
