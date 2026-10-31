@@ -59,13 +59,15 @@ describe('button design mock', () => {
     });
   });
 
-  it.each(CASES)('draws the classes the component renders for %o', (options) => {
+  it.each(CASES)('draws the classes the component renders for %o', async (options) => {
     const fixture = TestBed.createComponent(ButtonHost);
 
     for (const name of ['variant', 'size', 'iconAlignment', 'pressed', 'disabled', 'color'] as const) {
       if (options[name] !== undefined) fixture.componentRef.setInput(name, options[name]);
     }
 
+    fixture.detectChanges();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     fixture.detectChanges();
 
     const [real, anchor] = fixture.nativeElement.querySelectorAll('[et-button]');

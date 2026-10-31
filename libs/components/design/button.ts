@@ -49,6 +49,7 @@ export const button = (options: ButtonMockOptions) => {
     `data-icon-alignment="${iconAlignment}"`,
     `data-variant="${variant}"`,
     `data-size="${size}"`,
+    'data-can-animate="true"',
     options.pressed && `data-pressed-variant="${PRESSED_VARIANT[variant]}"`,
     options.style && `style="${options.style}"`,
   ].filter(Boolean);
