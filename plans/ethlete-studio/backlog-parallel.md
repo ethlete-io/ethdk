@@ -1028,3 +1028,18 @@ in the tool and in the repo, where every person and every agent meets it:
 3. **The tool tells every agent.** The task text that `et design` hands an agent (sketch, round, task) names the two
    theming systems and points to the `theming` skill. The rule also goes into the portable agent rules
    (`libs/agent-rules/content/`) for the design workflow, so other repos and people get it with `ethlete-agents sync`.
+
+**As built (builder, 2026-10-31), steps (a) and (b); the switch to errors (c) waits for the Q197 migration:**
+
+- `d3ef77ac3`: `DENIED-CLASS` checks the classes (without variants, `!` and opacity) and `var()` references of each
+  part outside `foundations/`; `DENIED-STYLESHEET` checks the product's own stylesheets outside `foundations/` (custom
+  properties, `@theme --color-*`, `@utility`, class rules). The patterns are regular expressions in
+  `products.<name>.deniedClasses` of `config.json`, each with its fix text; Studio has four. Both print as warnings in
+  `check`; a sketch fails on a hit it adds. `HARD-CODED-COLOUR` was already an error outside foundations.
+  Read-only run on Studio: 30 part hits and 10 in `apps/ethlete-studio/src/styles.css`.
+- `9f63947dc`, `1ab53ab75`: `sketch new` and `task` print one theming line (`system/theming-text.ts`). `sketch round`
+  prints no agent text, so it has none.
+- `fac71a294`: the design-exploration skill in `libs/agent-rules/content/` states the rule. It cannot link the
+  `theming` skill, because the sync emits that skill only for consumers.
+- Verified: the specs of both rules and both texts. Not verified: `et design check` on the real product, which
+  writes into `.ethlete/design`.
