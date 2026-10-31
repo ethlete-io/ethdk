@@ -25,6 +25,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 
 - `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped, and a selected tab that turns disabled hands the selection to its nearest enabled neighbour (the preceding one on a tie).
 - `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
+- `ariaLabel` names the trigger button. Set it on an icon-only tab (an `icon` and no `label`), which otherwise has no accessible name: `<et-tab icon="et-grid-2x2" ariaLabel="Overview">`.
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
 - `sessionMemoryKey` remembers the selected tab in session storage under that key and restores it on the next mount. Nothing is stored without a key. The stored tab wins over the initial `selectedIndex`, so leave the key unset when the index comes from the URL.
 - The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
@@ -97,7 +98,7 @@ Both flavors accept the shared tab-bar inputs:
 
 ## Accessibility
 
-Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware from the focused tab (wrapping, skipping disabled; <kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> swap in a right-to-left bar), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>). A disabled tab never holds the tab stop - it sits on the first enabled one instead, and a bar whose tabs are all disabled is skipped in the tab order. A disabled nav tab link has no `href`, so focusing it programmatically and pressing <kbd>Enter</kbd> navigates nowhere.
+Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-labelledby` and roving tabindex. Arrow keys move orientation-aware from the focused tab (wrapping, skipping disabled; <kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> swap in a right-to-left bar), <kbd>Home</kbd>/<kbd>End</kbd> jump, <kbd>Enter</kbd> activates (nav links also on <kbd>Space</kbd>). A disabled tab never holds the tab stop - it sits on the first enabled one instead, and a bar whose tabs are all disabled is skipped in the tab order. A disabled nav tab link has no `href`, so focusing it programmatically and pressing <kbd>Enter</kbd> navigates nowhere. An icon-only content tab needs `ariaLabel`; an icon-only nav tab link takes a plain `aria-label` on the `<a>`.
 
 ## Theming
 

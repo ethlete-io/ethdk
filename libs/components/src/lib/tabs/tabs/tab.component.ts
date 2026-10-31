@@ -34,6 +34,7 @@ export class TabComponent {
 
   public label = input('');
   public icon = input<string | null>(null);
+  public ariaLabel = input<string | null>(null);
   public disabled = input(false, { transform: booleanAttribute });
 
   public customLabel = contentChild(TabLabelDirective);

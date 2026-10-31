@@ -69,6 +69,17 @@ class RepeatedTabGroupsHostComponent {
   sizes = ['sm', 'md', 'lg'] as const;
 }
 
+@Component({
+  imports: [TabGroupComponent, TabComponent],
+  template: `
+    <et-tab-group>
+      <et-tab ariaLabel="Settings">Settings content</et-tab>
+      <et-tab label="Labelled">Labelled content</et-tab>
+    </et-tab-group>
+  `,
+})
+class IconOnlyTabsHostComponent {}
+
 describe('TabGroupComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let hostComponent: TestHostComponent;
@@ -120,7 +131,7 @@ describe('TabGroupComponent', () => {
     });
 
     TestBed.configureTestingModule({
-      imports: [RepeatedTabGroupsHostComponent, RememberingHostComponent, TestHostComponent],
+      imports: [IconOnlyTabsHostComponent, RepeatedTabGroupsHostComponent, RememberingHostComponent, TestHostComponent],
     });
     fixture = TestBed.createComponent(TestHostComponent);
     hostComponent = fixture.componentInstance;
@@ -134,6 +145,18 @@ describe('TabGroupComponent', () => {
     }
 
     Reflect.deleteProperty(globalThis, 'sessionStorage');
+  });
+
+  it('names an icon-only trigger from the tab ariaLabel and leaves a labelled trigger without one', () => {
+    const iconFixture = TestBed.createComponent(IconOnlyTabsHostComponent);
+    iconFixture.detectChanges();
+
+    const triggers = Array.from(
+      (iconFixture.nativeElement as HTMLElement).querySelectorAll('.et-tab-group__trigger'),
+    ) as HTMLButtonElement[];
+
+    expect(triggers[0]?.getAttribute('aria-label')).toBe('Settings');
+    expect(triggers[1]?.hasAttribute('aria-label')).toBe(false);
   });
 
   it('owns its triggers from the tablist', () => {

@@ -36,6 +36,7 @@ import { TabComponent } from './tab.component';
             [class.et-tab-group__trigger--disabled]="tab.disabled()"
             [disabled]="tab.disabled()"
             [attr.aria-controls]="'et-tab-panel-' + tabGroupId + '-' + idx"
+            [attr.aria-label]="tab.ariaLabel()"
             class="et-tab-group__trigger"
             etTabBarTrigger
             etFocusRing
