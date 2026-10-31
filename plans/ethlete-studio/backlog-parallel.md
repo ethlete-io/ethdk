@@ -495,6 +495,8 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q92: every part in Studio shows both colour schemes side by side, light and dark as two column groups, so a
   contrast fault in either scheme is visible without a switch. No toolbar switch, and no doubled `-light`/`-dark`
   states in parts. Built by `ethlete-sdk-57` (live canvas and shot route `scheme=`).
+- Q80 pick (Tom merged b): all SDK icons move to the 16 px grid with 1 px padding. 16 icons are on it, 38 are
+  redrawn in `libs/components` with a changeset.
 - Q87: the option check icon uses the ink token (in the light scheme the brand-on-light ink), not primary mint. Same
   rule as Q75.
 - Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
