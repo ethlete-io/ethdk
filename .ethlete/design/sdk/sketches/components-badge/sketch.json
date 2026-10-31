@@ -1,0 +1,39 @@
+{
+  "target": "components/badge",
+  "status": "ready",
+  "createdAt": "2026-10-31T01:58:21.744Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Badge baseline",
+      "note": "First drawing of the SDK badge (et-badge), drawn by its mock from @ethlete/components/design on the page: three variants (filled, tonal 16%, outline with its 1px ink border), three sizes (sm 16px, md 20px, lg 24px), an etIcon at start or end, in the inherited colour theme (brand in this product) and the brand, warning and danger themes. The badge is not interactive: no hover, active or focus states, so Q88 (focus rings) and Q101 (filled hover) do not apply. It has no dot form and the lib does not position it on an icon or a button, so the page is the only host. Today on light the mint fills vanish: tonal mint 1.08:1 against the page, filled mint 1.33:1, both with no edge (tonal warning 1.19:1, tonal danger 1.29:1, filled warning 3.19:1). Dark: tonal mint 1.46:1, warning 1.23:1, danger 1.12:1; filled danger 3.71:1. Fixed numbers: filled labels on their fill 15.82:1 mint, 5.63:1 warning, 4.83:1 danger in both schemes; tonal ink labels 5.07:1 mint, 5.96:1 warning, 5.02:1 danger on light, 9.24:1 / 6.77:1 / 5.80:1 dark; outline ink label and border against the page 5.48:1 / 7.09:1 / 6.47:1 light, 13.50:1 / 8.35:1 / 6.48:1 dark. Not this round's question: the tonal fills of warning and danger against the page; the filled danger fill against the dark page (3.71:1); type sizes (sm is 10px); pane edges (Q98, open). Variants b and c apply decided rule Q99 rule a: the mint fills (filled and tonal) get a 1px inset ink edge, drawn with the badge's own transparent border so no size changes. Variant a shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: on light tonal mint 1.08:1 and filled mint 1.33:1 against the page with no edge (tonal warning 1.19:1, danger 1.29:1). Dark: tonal mint 1.46:1, warning 1.23:1, danger 1.12:1, filled danger 3.71:1."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Decided rule Q99 rule a: filled and tonal badges take --et-theme-color-ink-solid as their border colour, a 1px inset ink edge. Light: edge 5.48:1 against the page (warning 7.09:1, danger 6.47:1); against the tonal fill 5.07:1, against the filled mint 4.13:1 (filled warning 2.23:1, filled danger 1.34:1). Dark: ink is mint, so the edge draws 13.50:1 against the page (warning 8.35:1, danger 6.48:1), invisible on the filled mint. Picked for the chip, button and pagination rounds' reading: ink follows the scheme, so the edge runs in both. Beyond rule a: the edge also lands on warning and danger, not only mint, and in dark adds a visible edge. On both schemes the tonal badge now reads close to outline (same edge, tonal fill 1.08:1 light / 1.46:1 dark). If dark should stay as today, take c."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with the ink edge on light only: the border takes light-dark(ink, transparent). Light equal to b (edge 5.48:1 against the page, 5.07:1 against the tonal mint, 4.13:1 against the filled mint); dark as today, tonal mint 1.46:1 with no edge, which keeps tonal and outline apart in dark. It keys on color-scheme, not on the surface, so a dark surface theme inside a light page would still draw the edge; that mechanism is my reading of rule a, not a decided rule."
+    }
+  }
+}

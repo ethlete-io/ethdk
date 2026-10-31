@@ -1,0 +1,13 @@
+.badge-frame {
+  display: flex;
+  align-items: center;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+@layer components {
+  .et-badge:where([data-variant='filled'], [data-variant='tonal']) {
+    --_et-badge-border-color: var(--et-theme-color-ink-solid);
+  }
+}
