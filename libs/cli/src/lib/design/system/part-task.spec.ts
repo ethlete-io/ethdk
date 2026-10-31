@@ -11,6 +11,7 @@ import {
   markImplemented,
   readImplemented,
   stateHashOf,
+  surfaceDirectivesOf,
   taskPartOf,
   taskStatesOf,
   verifyRangeOf,
@@ -215,6 +216,31 @@ describe('part task', () => {
     await task(target, []);
     expect(lines).toContain('  new: removable');
     expect(lines).toContain('  changed: default');
+  });
+
+  it('maps the surface attributes of a part to the directives of @ethlete/core', async () => {
+    expect(surfaceDirectivesOf('<div data-et-auto-surface><button data-et-surface-interactive>')).toEqual([
+      'data-et-auto-surface -> etAutoSurface',
+      'data-et-surface-interactive -> etSurfaceInteractive',
+    ]);
+    expect(surfaceDirectivesOf('<div data-et-auto-surface-x class="et-surface--dark">')).toEqual([]);
+
+    const { target, chip } = checkout();
+    const lines = output();
+
+    writeFileSync(
+      chip,
+      "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => ({ body: '<div data-et-auto-surface></div>' }) });\n",
+    );
+    go(target);
+
+    expect(await task(target, [])).toBe(0);
+    expect(lines.slice(lines.indexOf('surface directives (@ethlete/core):'))).toEqual([
+      'surface directives (@ethlete/core):',
+      '  data-et-auto-surface -> etAutoSurface',
+      'target: compare green',
+      THEMING_TEXT,
+    ]);
   });
 
   it('verifies the files of a commit or range, then records the part only when compare is green', async () => {

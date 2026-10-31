@@ -3,6 +3,8 @@ import { Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
 import { pinScheme } from './frame-scheme';
+import { watchSurfaces } from './frame-surfaces';
+import surfaceInteractiveCss from './surface-interactive.css?inline';
 import { createMotionDriver, emulateReducedMotion, motionDriveMessageOf } from '../motion-drive';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { rootTokensOf, withTokenNames } from '../motion-tokens';
@@ -416,6 +418,8 @@ const drawFrame = async () => {
     style.textContent = await forced(loaded.styles ?? '');
     document.head.append(style);
     const error = mountDrawing(root, loaded);
+
+    watchSurfaces(root, surfaceInteractiveCss);
     const partRoot = partRootOf(root);
 
     if (interaction && partRoot) force(partRoot, interaction);

@@ -435,6 +435,14 @@ stays light, so `light-dark()` and theme rules bound to `prefers-color-scheme` s
 light branch. `--scheme dark` (or `light`) pins the scheme the way Studio's scheme copies do; pass
 both, e.g. `--surface dark --scheme dark`, to check a dark theme.
 
+A part gets its surfaces by elevation, as the app does, not by a picked `et-surface--<name>` class. The frame gives
+each element with `data-et-auto-surface` the registered surface theme of the same type one elevation above the
+surface it sits on (outer first; without such a theme it keeps the parent's), like `etAutoSurface`, and gives each
+element with `data-et-surface-interactive` the hover, focus and pressed tint of `etSurfaceInteractive`. It reads the
+themes from the `.et-surface--<name>` rules of the loaded stylesheets, resolves again after every state switch, and
+`et design task` maps both attributes to these `@ethlete/core` directives. The root surface comes from the frame
+root (`--surface`, or the product's `:root`).
+
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.

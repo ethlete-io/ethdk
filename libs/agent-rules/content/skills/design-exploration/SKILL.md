@@ -607,7 +607,9 @@ background, text, border and interaction states from the `et-surface` tokens of 
 accent, a warning or a danger colour comes from the SDK colour theming (`--et-theme-color-*` under a
 colour theme scope). Foundations define only the inputs of these themes. Never add a tier class
 (`bg-surface-raised`), an accent utility or a `var(--accent)` to a part or to the product
-stylesheet. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
+stylesheet. Give a raised or floating area `data-et-auto-surface` and an interactive one
+`data-et-surface-interactive`, never a picked `et-surface--<name>` class: the frame resolves them by elevation like
+`etAutoSurface` and `etSurfaceInteractive`. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
 a denied class from the product's `deniedClasses` list in `config.json`.
 
 A part is one folder, `<product>/<layer>/<part>/`, with its drawing and states. Read the parts of

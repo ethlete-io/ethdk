@@ -12,6 +12,7 @@
   },
   "include": [
     "web/**/*.ts",
+    "css-inline.d.ts",
     "contrast.ts",
     "define-call.ts",
     "define-part.ts",

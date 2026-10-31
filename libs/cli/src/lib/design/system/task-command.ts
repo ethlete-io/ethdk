@@ -9,6 +9,7 @@ import {
   gitDiffFilesOf,
   markImplemented,
   readImplemented,
+  surfaceDirectivesOf,
   taskPartOf,
   taskStatesOf,
   verifyRangeOf,
@@ -171,7 +172,8 @@ export const designTask = async (options: {
     return 0;
   }
 
-  const file = product.parts.find((candidate) => partKeyOf(candidate) === task.part)?.file ?? '';
+  const drawn = product.parts.find((candidate) => partKeyOf(candidate) === task.part);
+  const file = drawn?.file ?? '';
   const loaded = await (options.load ?? loadStates)({ target, product, file });
   const states =
     loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
@@ -190,6 +192,12 @@ export const designTask = async (options: {
   if (since.added.length === 0 && since.changed.length === 0 && !since.all) console.log('  no change');
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
+  const directives = surfaceDirectivesOf(drawn?.source ?? '');
+
+  if (directives.length > 0) {
+    console.log('surface directives (@ethlete/core):');
+    directives.forEach((mapping) => console.log(`  ${mapping}`));
+  }
   console.log('target: compare green');
   console.log(THEMING_TEXT);
 

@@ -63,6 +63,8 @@ const modules = {
   '../motion-tokens': { rootTokensOf: () => ({}), withTokenNames: (track) => track },
   './frame-fill': { paintFill: (body, fill) => body.setAttribute('data-fill', fill) },
   './frame-scheme': { pinScheme: () => undefined },
+  './frame-surfaces': { watchSurfaces: () => undefined },
+  './surface-interactive.css?inline': { default: '' },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },
   'virtual:design-explore/system': {

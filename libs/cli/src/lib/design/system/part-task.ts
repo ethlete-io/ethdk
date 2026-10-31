@@ -157,3 +157,14 @@ export const gitDiffFilesOf = (options: { root: string; range: string }) =>
   execFileSync('git', ['diff', '--name-only', options.range], { cwd: options.root, encoding: 'utf8', stdio: 'pipe' })
     .split('\n')
     .filter((line) => line !== '');
+
+const SURFACE_DIRECTIVES = [
+  ['data-et-auto-surface', 'etAutoSurface'],
+  ['data-et-surface-interactive', 'etSurfaceInteractive'],
+] as const;
+
+/** Each surface attribute a part's source uses, mapped to the `@ethlete/core` directive the implementation puts there. */
+export const surfaceDirectivesOf = (source: string) =>
+  SURFACE_DIRECTIVES.filter(([attribute]) => new RegExp(`${attribute}(?![\\w-])`, 'u').test(source)).map(
+    ([attribute, directive]) => `${attribute} -> ${directive}`,
+  );
