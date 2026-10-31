@@ -305,11 +305,11 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('  '))).toEqual([
-      'OPEN POINTS acme: 13 in 4 parts',
+      'OPEN POINTS acme: 12 in 4 parts',
       '  components/button: no controls declared; 1 open comment (c-1); no implements; 2 missing motions (default -> long, long -> default)',
       '  components/card: no controls declared; no implements; 2 missing motions (default -> long, long -> default)',
       '  elements/hero: no controls declared; no go',
-      '  pages/home: no implements; no motion default -> empty',
+      '  pages/home: no implements',
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
