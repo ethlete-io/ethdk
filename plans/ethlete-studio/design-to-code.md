@@ -67,6 +67,11 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   as a follow-up of slice 2. Today it measures text only.
 - Q170 large text (Tom, 2026-10-31): the WCAG large-text rule stays. Text from 24px, or from 18.66px bold, passes at
   3:1; other text needs 4.5:1. This refines Q156.
+- Q173 states are user states (Tom, 2026-10-31): `states` holds only the states a user can reach in one instance.
+  Showcase variants (size, theme, tone, group) move to the existing grid or variant axis, and motion points count
+  only `states`. The builder migrates the design data of both products (studio, sdk), with `et design check` as the
+  guide. Reason: point 8 gave about 3,750 motion points per product, mostly pairs of showcase variants that never
+  animate into each other.
 
 ## Not decided
 
