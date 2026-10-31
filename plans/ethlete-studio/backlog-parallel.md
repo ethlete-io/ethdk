@@ -787,6 +787,9 @@ machen".
   passes.
 - Q172 merges by the grill lead (Tom, 2026-10-31): Tom allowed the lead to merge the decided SDK sketches: picks that
   apply decided rules only, and sketches with only today's variant. Undecided rounds still wait for Tom.
+- Q174 both schemes in a sketch (Tom, 2026-10-31, option a): Studio shows each sketch variant in light and in dark
+  side by side. Cause: accent-on-light a, b and c looked identical to Tom because Studio showed only dark, where the
+  three are equal by design. The render queue serves the viewed frames first (lead call, sent to 57).
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
