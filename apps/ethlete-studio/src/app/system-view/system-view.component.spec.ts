@@ -794,6 +794,7 @@ describe('SystemViewComponent view context', () => {
       variant: null,
       picked: null,
       selection: null,
+      state: null,
     });
 
     const frame = canvas?.frames()[0];
@@ -802,6 +803,17 @@ describe('SystemViewComponent view context', () => {
     await settle(fixture);
 
     expect(context.context().selection).toBe(frame?.label);
+    expect(context.context().state).toBeNull();
+
+    const grid = canvas?.frames().find((candidate) => candidate.grid);
+    const cell = grid?.grid?.cells.find((candidate) => candidate.place?.interaction === 'hover');
+
+    canvas?.selectedId.set(grid?.id ?? null);
+    canvas?.selectedCellId.set(cell?.id ?? null);
+    await settle(fixture);
+
+    expect(cell).toBeDefined();
+    expect(context.context().state).toBe(`${cell?.place?.state} · hover`);
 
     fixture.destroy();
 
@@ -821,6 +833,7 @@ describe('SystemViewComponent view context', () => {
       variant: null,
       picked: 'b',
       selection: null,
+      state: null,
     });
 
     const canvas: DesignCanvasComponent = fixture.debugElement
@@ -833,6 +846,7 @@ describe('SystemViewComponent view context', () => {
 
     expect(frame).toBeDefined();
     expect(context.context().variant).toBe('a');
+    expect(context.context().selection).toBe('elements/rating (default)');
 
     fixture.destroy();
 

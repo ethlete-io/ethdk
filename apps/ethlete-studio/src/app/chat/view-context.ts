@@ -15,26 +15,77 @@ export type ViewContext = {
   variant: string | null;
   /** The variant picked as the sketch's decision. */
   picked: string | null;
-  /** The frame or state clicked on the canvas. */
+  /** The frame clicked on the canvas. */
   selection: string | null;
+  /** The state of the grid cell clicked on the canvas, with its interaction when it has one. */
+  state: string | null;
 };
 
 /** The view writing the fields: the system view, or the sketch view inside it, whose fields win. */
 export type ViewContextOwner = 'system' | 'sketch';
 
-const FIELDS = ['product', 'part', 'partFile', 'sketch', 'sketchDir', 'variant', 'picked', 'selection'] as const;
+const FIELDS = [
+  'product',
+  'part',
+  'partFile',
+  'sketch',
+  'sketchDir',
+  'variant',
+  'picked',
+  'selection',
+  'state',
+] as const;
 
 const isEmpty = (context: ViewContext) => FIELDS.every((field) => context[field] === null);
 
-/** The canvas frame `id` points at, as its column, row and label, or `null` without one. */
+const SIZE_UNNAMED = 'fitted';
+
+const sizeNameOf = (size: string | number) => (typeof size === 'number' ? `${size} px` : size);
+
+const withoutContained = (names: string[]) => {
+  const unique = [...new Set(names)];
+
+  return unique.filter((name) => !unique.some((other) => other !== name && other.includes(name)));
+};
+
+/**
+ * The canvas frame `id` points at, or `null` without one. A frame of a matrix reads `part · size (state)`, with
+ * `context` for the state of a page that shows the part; any other frame joins its column, row and label.
+ */
 export const selectionOf = (frames: readonly CanvasFrame[], id: string | null | undefined) => {
   const frame = id ? frames.find((candidate) => candidate.id === id) : undefined;
 
   if (!frame) return null;
 
+  const { place } = frame;
+
+  if (place && frame.column !== undefined) {
+    const inContext = frame.column.startsWith('in context');
+    const where = [place.part, place.size === SIZE_UNNAMED ? '' : sizeNameOf(place.size)].filter((name) => name !== '');
+    const what = inContext ? 'context' : [place.state, place.interaction].filter(Boolean).join(' · ');
+
+    return `${where.join(' · ')}${what === '' ? '' : ` (${what})`}`;
+  }
+
   const names = [frame.column, frame.rowLabel ?? frame.row, frame.label].map((name) => name?.trim() ?? '');
 
-  return [...new Set(names.filter((name) => name !== ''))].join(' ');
+  return withoutContained(names.filter((name) => name !== '')).join(' ');
+};
+
+/** The state of the cell `cellId` in the grid frame `id`, with its interaction unless it is `rest`; `null` without one. */
+export const stateOf = (frames: readonly CanvasFrame[], selected: { id?: string | null; cellId?: string | null }) => {
+  const { id, cellId } = selected;
+  const cell =
+    id && cellId
+      ? frames.find((frame) => frame.id === id)?.grid?.cells.find((entry) => entry.id === cellId)
+      : undefined;
+
+  if (!cell) return null;
+
+  const state = cell.place?.state ?? cell.label;
+  const interaction = cell.place?.interaction;
+
+  return interaction ? `${state} · ${interaction}` : state;
 };
 
 const variantOfFrame = (frame: CanvasFrame, variants: readonly string[]) => {
@@ -85,6 +136,7 @@ export const chipOf = (context: ViewContext) => {
     context.variant !== null ? `variant ${context.variant}` : null,
     pickedOf(context),
     context.selection !== null ? `frame ${context.selection}` : null,
+    context.state !== null ? `state ${context.state}` : null,
   ].filter((item) => item !== null);
 
   return [path.join(' › '), ...rest].filter((item) => item !== '').join(' · ');
@@ -103,6 +155,7 @@ export const preambleOf = (context: ViewContext) => {
     context.variant !== null ? `variant ${context.variant}` : null,
     pickedOf(context),
     context.selection !== null ? `selected frame ${context.selection}` : null,
+    context.state !== null ? `selected state ${context.state}` : null,
   ].filter((item) => item !== null);
 
   return `Studio view: ${items.join(', ')}.`;

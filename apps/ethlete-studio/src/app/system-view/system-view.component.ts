@@ -83,7 +83,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { ExceptionListComponent } from './exception-list.component';
 import { MotionStripComponent } from './motion-strip.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
-import { injectViewContext, selectionOf } from '../chat/view-context';
+import { injectViewContext, selectionOf, stateOf } from '../chat/view-context';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -1129,6 +1129,7 @@ export class SystemViewComponent {
         sketch: sketch?.target ?? null,
         sketchDir: sketch?.dir ?? null,
         selection: canvas ? selectionOf(canvas.frames(), canvas.selectedId()) : null,
+        state: canvas ? stateOf(canvas.frames(), { id: canvas.selectedId(), cellId: canvas.selectedCellId() }) : null,
       });
     });
     this.destroyRef.onDestroy(() => this.viewContext.drop('system'));

@@ -251,6 +251,10 @@ export class DesignCanvasComponent {
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
   public selectedId = signal<string | null>(null);
+  public selectedCellId = linkedSignal<string | null, string | null>({
+    source: this.selectedId,
+    computation: () => null,
+  });
   public activeId = linkedSignal<boolean, string | null>({ source: this.pointing, computation: () => null });
   protected spaceHeld = signal(false);
   protected panning = signal(false);
@@ -753,6 +757,11 @@ export class DesignCanvasComponent {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     this.selectedId.set(id);
+    const cell = event
+      .composedPath()
+      .find((target): target is HTMLElement => target instanceof HTMLElement && 'cellId' in target.dataset);
+
+    this.selectedCellId.set(cell?.dataset['cellId'] ?? null);
     if (this.activeId() !== id) this.activeId.set(null);
   }
 
@@ -827,6 +836,7 @@ export class DesignCanvasComponent {
     if (!placed) return;
 
     this.selectedId.set(placed.owner);
+    this.selectedCellId.set(placed.owner === id ? null : id);
 
     const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
 
@@ -841,6 +851,7 @@ export class DesignCanvasComponent {
     if (!placed) return;
 
     this.selectedId.set(placed.owner);
+    this.selectedCellId.set(placed.owner === id ? null : id);
     this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING }), true);
   }
 
