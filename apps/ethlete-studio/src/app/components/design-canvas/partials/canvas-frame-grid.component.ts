@@ -435,13 +435,23 @@ export class CanvasFrameGridComponent {
     computation: () => new Set(),
   });
 
-  protected revealed = computed(() => {
+  private shotsSettled = computed(() => {
     const settled = this.settledCells();
     const schemes = this.schemes();
 
     return this.grid().cells.every(
       (cell) => !cell.screenshot || schemes.every((scheme) => settled.has(settledKeyOf(cell.id, scheme))),
     );
+  });
+
+  private layoutKey = computed(() =>
+    [this.schemes().join(' '), ...this.grid().cells.map((cell) => cell.id)].join('\n'),
+  );
+
+  protected revealed = linkedSignal<{ layout: string; settled: boolean }, boolean>({
+    source: () => ({ layout: this.layoutKey(), settled: this.shotsSettled() }),
+    computation: ({ layout, settled }, previous) =>
+      settled || (previous !== undefined && previous.source.layout === layout && previous.value),
   });
 
   private liveKeys = computed(() => {

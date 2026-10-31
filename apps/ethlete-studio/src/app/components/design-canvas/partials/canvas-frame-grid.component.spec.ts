@@ -347,6 +347,34 @@ describe('CanvasFrameGridComponent', () => {
       expect(host.querySelector('.invisible')).toBeNull();
     });
 
+    it('stays revealed while the shots of an edited part load, and hides again for a new cell', async () => {
+      const fixture = await renderShots();
+      const host = fixture.nativeElement as HTMLElement;
+
+      await settle(fixture, 0, 'load');
+      await settle(fixture, 1, 'load');
+      await settle(fixture, 2, 'load');
+
+      fixture.componentRef.setInput('grid', {
+        columns,
+        rows,
+        cells: shots.map((cell) => ({ ...cell, screenshot: `${cell.screenshot}?revision=1` })),
+      });
+      await fixture.whenStable();
+
+      expect(host.querySelector('[data-grid-loading]')).toBeNull();
+      expect(host.querySelector('.invisible')).toBeNull();
+
+      fixture.componentRef.setInput('grid', {
+        columns,
+        rows,
+        cells: [...shots, { ...cellAt('group', 'rest'), screenshot: '/shot/group rest.png' }],
+      });
+      await fixture.whenStable();
+
+      expect(host.querySelector('.invisible')).not.toBeNull();
+    });
+
     it('reveals once a failed image has settled too', async () => {
       const fixture = await renderShots();
 
