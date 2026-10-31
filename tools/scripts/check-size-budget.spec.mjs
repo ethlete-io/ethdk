@@ -16,10 +16,16 @@ const config = {
 test('flags files over budget and honours per-file overrides', () => {
   const root = mkdtempSync(join(tmpdir(), 'size-budget-'));
   writeFileSync(join(root, 'AGENTS.md'), 'x'.repeat(11));
-  for (const [name, n] of [['small', 5], ['huge', 11], ['big', 40]]) {
+  for (const [name, n] of [
+    ['small', 5],
+    ['huge', 11],
+    ['big', 40],
+  ]) {
     mkdirSync(join(root, '.agents/skills', name), { recursive: true });
     writeFileSync(join(root, '.agents/skills', name, 'SKILL.md'), 'x'.repeat(n));
   }
-  const failed = checkSizeBudget(root, config).map((f) => f.file).sort();
+  const failed = checkSizeBudget(root, config)
+    .map((f) => f.file)
+    .sort();
   assert.deepEqual(failed, ['.agents/skills/huge/SKILL.md', 'AGENTS.md']);
 });
