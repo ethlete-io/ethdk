@@ -1056,7 +1056,7 @@ const seeFrame = (options: { discover: boolean; part: string; ownCss: string[]; 
   const isKeyboard = (element) => element.getAttribute('data-active-source') === 'keyboard';
   let next = 0;
   const tagged = (element) => {
-    const at = next++;
+    const at = element.hasAttribute('data-et-complete') ? Number(element.getAttribute('data-et-complete')) : next++;
     element.setAttribute('data-et-complete', String(at));
     const box = element.getBoundingClientRect();
     const x = Math.max(0, box.x + scrollX - ${PAD});

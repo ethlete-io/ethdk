@@ -198,6 +198,13 @@ const PARTS: Record<string, FixturePart> = {
     },
     extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
   },
+  'components/picker-control-option': {
+    states: {
+      rest: `<div>${pick}</div>`,
+      open: `<div>${pick}<ul data-et-surface="pick.open">${option(' data-et-control="row" data-et-force="hover"')}</ul></div>`,
+    },
+    extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
+  },
   'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
   'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
   'components/focus-containers': {
@@ -940,6 +947,19 @@ describe('completenessOf', () => {
       'REQUIREMENT-MISSING components/field-unmarked.field.hover - state hovered forces hover on it, but its box draws no different pixel than at rest - if a descendant draws hover, mark it with data-et-control-part',
       'REQUIREMENT-MISSING components/field-unmarked.field.active - state pressed forces active on it, but its box draws no different pixel than at rest - if a descendant draws active, mark it with data-et-control-part',
       'REQUIREMENT-MISSING components/field-unmarked.field.disabled - no state draws it disabled - mark it with disabled or aria-disabled="true" on it or a data-et-control-part in it in a state',
+    ]);
+  }, 60_000);
+
+  it('forces an option that is also a control in its open surface', async (context) => {
+    const { target, config, product } = checkout();
+    const checked = await completenessOf({ target, config, product, part: 'components/picker-control-option' });
+
+    if ('unavailable' in checked) return context.skip(checked.unavailable);
+
+    expect('gaps' in checked && checked.gaps.map(completenessGapLineOf)).toEqual([
+      'CONTROL-UNKNOWN components/picker-control-option.row - data-et-control="row" is not in controls',
+      'REQUIREMENT-MISSING components/picker-control-option.pick.option-focus-visible - no state draws an option in pick.open focus-visible - force focus-visible on it, e.g. with forceInteraction; no option is marked active by aria-activedescendant or data-active-source="keyboard" either',
+      'REQUIREMENT-MISSING components/picker-control-option.pick.option-selected - no state draws an option in pick.open selected - mark it with aria-selected="true", aria-checked="true", aria-pressed="true" or aria-current in a state',
     ]);
   }, 60_000);
 
