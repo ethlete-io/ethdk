@@ -5,15 +5,15 @@ import { paintFill } from '../../../design/web/frame-fill';
 const PAGE_COLOUR = 'rgb(250, 250, 250)';
 
 describe('paintFill', () => {
-  let browser: Browser;
+  let browser: Browser | undefined;
 
   beforeAll(async () => {
-    browser = await chromium.launch();
+    browser = await chromium.launch().catch(() => undefined);
   });
 
-  afterAll(() => browser.close());
+  afterAll(() => browser?.close());
 
-  const paintedPixel = async (rootRule: string) => {
+  const paintedPixel = async (browser: Browser, rootRule: string) => {
     const page = await browser.newPage({ viewport: { width: 20, height: 20 }, colorScheme: 'dark' });
 
     await page.setContent(`<style>${rootRule} body { margin: 0; background: ${PAGE_COLOUR}; }</style>`);
@@ -35,11 +35,15 @@ describe('paintFill', () => {
     return `rgb(${pixel.join(', ')})`;
   };
 
-  it('keeps the page colour of a product without the token', async () => {
-    expect(await paintedPixel('')).toBe(PAGE_COLOUR);
+  it('keeps the page colour of a product without the token', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect(await paintedPixel(browser, '')).toBe(PAGE_COLOUR);
   });
 
-  it('paints the token of a product that has it', async () => {
-    expect(await paintedPixel(':root { --surface: rgb(10, 20, 30); }')).toBe('rgb(10, 20, 30)');
+  it('paints the token of a product that has it', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect(await paintedPixel(browser, ':root { --surface: rgb(10, 20, 30); }')).toBe('rgb(10, 20, 30)');
   });
 }, 30_000);

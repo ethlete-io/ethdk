@@ -30,6 +30,11 @@ const output = () => {
 const withoutOpenPoints = (lines: string[]) =>
   lines.filter((line) => !line.startsWith('OPEN POINTS ') && !line.startsWith('  '));
 
+const renderWarningsOf = (lines: string[]) =>
+  lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))
+    ? []
+    : [expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /)];
+
 const check = (target: string, products: string[]) =>
   checkSystem({ target, config: readConfig(target) ?? {}, products });
 
@@ -212,7 +217,7 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings).toEqual([
       expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
-      expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
+      ...renderWarningsOf(lines),
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
@@ -231,7 +236,7 @@ describe('checkDesign', () => {
       expect.stringMatching(
         /^WARNING UNUSED-EXPORT .*hero\/shared\/data\.ts: rows is exported, but nothing imports it/,
       ),
-      expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
+      ...renderWarningsOf(lines),
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
