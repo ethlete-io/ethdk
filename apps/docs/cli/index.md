@@ -443,6 +443,15 @@ themes from the `.et-surface--<name>` rules of the loaded stylesheets, resolves 
 `et design task` maps both attributes to these `@ethlete/core` directives. The root surface comes from the frame
 root (`--surface`, or the product's `:root`).
 
+A part never picks a colour theme name either. `data-et-semantic-color="<type>"` (`success`, `warning` or `error`)
+gets the `et-color--<name>` class of the registered colour theme of that type, swapped for the surface it sits on,
+like `injectSemanticColorTheme(<type>)` bound to `[etProvideColor]`, which `et design task` names as the mapping.
+Without a theme of that type the frame sets nothing; the SDK throws when the component reads that theme. An auto
+surface also gets the class of its new surface's `colorThemeVariants` swap of the inherited accent, as
+`etProvideSurface` does. The frame reads the types from `--et-color-theme-type` and the swaps from
+`--et-surface-color-theme-variants`, which the `@ethlete/core` theme generators write; regenerate the theme CSS
+once to get them. The root default colour theme stays as the product provides it.
+
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.

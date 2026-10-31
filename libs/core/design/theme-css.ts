@@ -8,6 +8,7 @@ export type ThemeCssSurfaceTheme = {
   type: 'light' | 'dark';
   elevation: number;
   isDefault?: boolean;
+  colorThemeVariants?: Partial<Record<string, string>>;
   interactionColor?: {
     color: Required<StateMap<Rgb>>;
     onColor?: StateMap<Rgb>;
@@ -28,6 +29,7 @@ type ThemeCssSwatch = {
 
 export type ThemeCssColorTheme = {
   name: string;
+  type?: 'success' | 'warning' | 'error';
   isDefault?: boolean;
   primary: ThemeCssSwatch;
   secondary?: ThemeCssSwatch;
@@ -252,6 +254,8 @@ export const colorThemeCss = (themes: ThemeCssColorTheme[], options: ThemeCssOpt
       themeVars.push(`.${runtimePrefix}-color--${name} {`);
     }
 
+    if (theme.type) themeVars.push(`  --${runtimePrefix}-color-theme-type: ${theme.type};`);
+
     addThemeColorVariants(themeVars, runtimePrefix, theme);
     themeVars.push('}\n');
   }
@@ -429,6 +433,16 @@ const pushSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssS
   vars.push(`${indent}--${runtimePrefix}-surface-border: ${theme.border};`);
   vars.push(`${indent}--${runtimePrefix}-surface-type: ${theme.type};`);
   vars.push(`${indent}--${runtimePrefix}-surface-elevation: ${theme.elevation};`);
+
+  const variants = Object.entries(theme.colorThemeVariants ?? {}).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string',
+  );
+
+  if (variants.length > 0) {
+    vars.push(
+      `${indent}--${runtimePrefix}-surface-color-theme-variants: ${variants.map(([chosen, variant]) => `${cssThemeName(chosen)} ${cssThemeName(variant)}`).join(', ')};`,
+    );
+  }
 
   if (theme.interactionColor) {
     const { color, onColor, inkColor } = theme.interactionColor;

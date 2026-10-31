@@ -11,7 +11,7 @@ import {
   markImplemented,
   readImplemented,
   stateHashOf,
-  surfaceDirectivesOf,
+  themingDirectivesOf,
   taskPartOf,
   taskStatesOf,
   verifyRangeOf,
@@ -219,25 +219,34 @@ describe('part task', () => {
   });
 
   it('maps the surface attributes of a part to the directives of @ethlete/core', async () => {
-    expect(surfaceDirectivesOf('<div data-et-auto-surface><button data-et-surface-interactive>')).toEqual([
+    expect(themingDirectivesOf('<div data-et-auto-surface><button data-et-surface-interactive>')).toEqual([
       'data-et-auto-surface -> etAutoSurface',
       'data-et-surface-interactive -> etSurfaceInteractive',
     ]);
-    expect(surfaceDirectivesOf('<div data-et-auto-surface-x class="et-surface--dark">')).toEqual([]);
+    expect(themingDirectivesOf('<div data-et-auto-surface-x class="et-surface--dark">')).toEqual([]);
+    expect(
+      themingDirectivesOf(
+        `<p data-et-semantic-color="warning"></p><b data-et-semantic-color='error'></b><i data-et-semantic-color="warning"></i>`,
+      ),
+    ).toEqual([
+      `data-et-semantic-color="warning" -> [etProvideColor] bound to injectSemanticColorTheme('warning')`,
+      `data-et-semantic-color="error" -> [etProvideColor] bound to injectSemanticColorTheme('error')`,
+    ]);
 
     const { target, chip } = checkout();
     const lines = output();
 
     writeFileSync(
       chip,
-      "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => ({ body: '<div data-et-auto-surface></div>' }) });\n",
+      "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => ({ body: '<div data-et-auto-surface><p data-et-semantic-color=\"warning\"></p></div>' }) });\n",
     );
     go(target);
 
     expect(await task(target, [])).toBe(0);
-    expect(lines.slice(lines.indexOf('surface directives (@ethlete/core):'))).toEqual([
-      'surface directives (@ethlete/core):',
+    expect(lines.slice(lines.indexOf('theming directives (@ethlete/core):'))).toEqual([
+      'theming directives (@ethlete/core):',
       '  data-et-auto-surface -> etAutoSurface',
+      `  data-et-semantic-color="warning" -> [etProvideColor] bound to injectSemanticColorTheme('warning')`,
       'target: compare green',
       THEMING_TEXT,
     ]);

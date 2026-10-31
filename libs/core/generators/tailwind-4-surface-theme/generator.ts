@@ -35,6 +35,7 @@ type SurfaceTheme = {
   type: SurfaceType;
   elevation: number;
   isDefault?: boolean;
+  colorThemeVariants?: Record<string, string>;
   interactionColor?: SurfaceInteractionColor;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
@@ -383,6 +384,21 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
       if (!interactionColorObj) {
         throw new Error('Surface theme interactionColor must be an inline or same-file object literal.');
       }
+      continue;
+    }
+
+    if (propName === 'colorThemeVariants') {
+      const variants = resolveObjectLiteral(initializer, sourceFile);
+
+      theme.colorThemeVariants = Object.fromEntries(
+        (variants?.getProperties() ?? []).flatMap((variant) => {
+          const value = variant.isKind(SyntaxKind.PropertyAssignment) ? variant.getInitializer() : undefined;
+
+          return variant.isKind(SyntaxKind.PropertyAssignment) && value?.isKind(SyntaxKind.StringLiteral)
+            ? [[variant.getName().replace(/^['"]|['"]$/gu, ''), value.getLiteralValue()]]
+            : [];
+        }),
+      );
       continue;
     }
 

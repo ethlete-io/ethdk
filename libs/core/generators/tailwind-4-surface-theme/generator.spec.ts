@@ -80,6 +80,25 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(content).toContain('.et-surface--card {');
   });
 
+  it('writes the colorThemeVariants of a surface into its scope rule', async () => {
+    tree.write(
+      'src/surface-themes.ts',
+      CARD_AND_SHEET.replace(
+        'elevation: 2,',
+        "elevation: 2,\n      colorThemeVariants: { brand: 'brand-on-dark', 'warning': 'amberDeep' },",
+      ),
+    );
+
+    await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8') ?? '';
+
+    expect(content).toMatch(
+      /\.et-surface--sheet \{[^}]*--et-surface-color-theme-variants: brand brand-on-dark, warning amberdeep;/u,
+    );
+    expect(content).not.toMatch(/\.et-surface--card \{[^}]*--et-surface-color-theme-variants/u);
+  });
+
   it('should parse individual surface theme objects using `satisfies X` instead of `as const`', async () => {
     const themesContent = `
       import { type SurfaceTheme as EthleteSurfaceTheme } from '@ethlete/core';

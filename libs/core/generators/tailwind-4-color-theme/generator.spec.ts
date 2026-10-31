@@ -169,6 +169,24 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('.et-color--pitch-green');
   });
 
+  it('writes the type of a typed theme into its scope rule', async () => {
+    tree.write(
+      'src/themes.ts',
+      `
+      export const BRAND = { name: 'brand', isDefault: true, primary: { color: { default: '0 0 255' }, onColor: { default: '255 255 255' } } };
+      export const AMBER = { name: 'amber', type: 'warning', primary: { color: { default: '255 200 0' }, onColor: { default: '0 0 0' } } };
+      export const THEMES = [BRAND, AMBER];
+    `,
+    );
+
+    await migrate(tree, { themesPath: 'src/themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8') ?? '';
+
+    expect(content).toMatch(/\.et-color--amber \{\s*--et-color-theme-type: warning;/u);
+    expect(content.match(/--et-color-theme-type:/gu)).toHaveLength(1);
+  });
+
   it('should generate an EthleteColorThemeNameRegistry augmentation next to the CSS by default', async () => {
     const themesContent = `
     export const PITCH_GREEN = {

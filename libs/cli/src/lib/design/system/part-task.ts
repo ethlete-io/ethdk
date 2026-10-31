@@ -163,8 +163,15 @@ const SURFACE_DIRECTIVES = [
   ['data-et-surface-interactive', 'etSurfaceInteractive'],
 ] as const;
 
-/** Each surface attribute a part's source uses, mapped to the `@ethlete/core` directive the implementation puts there. */
-export const surfaceDirectivesOf = (source: string) =>
-  SURFACE_DIRECTIVES.filter(([attribute]) => new RegExp(`${attribute}(?![\\w-])`, 'u').test(source)).map(
+/**
+ * Each theming attribute a part's source uses, mapped to the `@ethlete/core` API the implementation puts there: the
+ * surface directives, and per semantic colour type `[etProvideColor]` bound to `injectSemanticColorTheme(<type>)`.
+ */
+export const themingDirectivesOf = (source: string) => [
+  ...SURFACE_DIRECTIVES.filter(([attribute]) => new RegExp(`${attribute}(?![\\w-])`, 'u').test(source)).map(
     ([attribute, directive]) => `${attribute} -> ${directive}`,
-  );
+  ),
+  ...[...new Set(Array.from(source.matchAll(/data-et-semantic-color=["']?([\w-]+)/gu), ([, type]) => type))].map(
+    (type) => `data-et-semantic-color="${type}" -> [etProvideColor] bound to injectSemanticColorTheme('${type}')`,
+  ),
+];
