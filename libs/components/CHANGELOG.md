@@ -1,5 +1,78 @@
 # Changelog
 
+## 1.0.0-next.79
+
+### Minor Changes
+
+- The package ships the `sdk` design base under `design/sdk`, with a `design/config.json` that declares the `sdk` product. A consumer extends it with `"base": "node_modules/@ethlete/components/design/sdk"`.
+
+### Patch Changes
+
+- Size an `etIcon` inside an avatar per avatar size. It filled the whole avatar and was clipped.
+- Fix banner headings and bodies without break points overflowing the banner.
+- Show the full focus ring on breadcrumb links and the overflow trigger. The breadcrumb's clip cut it off.
+- Keep the first and last category label of a chart axis inside the plot when labels are thinned.
+- Add `accordion()` and `accordionGroup()` design mocks under `@ethlete/components/design/accordion` that draw the accordion with its real markup and CSS.
+- Add `avatar()`, `avatarGroup()` and `avatarRow()` design mocks under `@ethlete/components/design/avatar` that draw the avatar and avatar group with their real markup and CSS.
+- Add `badge()` and `badgeRow()` design mocks under `@ethlete/components/design/badge` that draw the badge with its real markup and CSS.
+- Add a `banner()` design mock under `@ethlete/components/design/banner` that draws the banner with its real markup and CSS.
+- Add `bracket()` and `bracketParticipants()` design mocks under `@ethlete/components/design/bracket` that draw `et-bracket` with its real markup, CSS and `@ethlete/bracket` geometry.
+- Add `breadcrumb()` and `breadcrumbOverflowPanel()` design mocks under `@ethlete/components/design/breadcrumb` that draw the breadcrumb with its real markup and CSS.
+- Move the `et-breadcrumb-outlet` styles into a stylesheet.
+- Add a `calendar()` design mock under `@ethlete/components/design/calendar` that draws the inline calendar with its real markup and CSS.
+- Add `card()` and `cardContent()` design mocks under `@ethlete/components/design/card` that draw the card with its real markup and CSS.
+- Add a `carousel()` design mock under `@ethlete/components/design/carousel` that draws the carousel with its real markup and CSS, including its track, previous and next buttons, dots and autoplay countdown. The `scrollable()` mock takes an `itemSize`, an `itemGap` and extra host classes.
+- Add `barChart()`, `lineChart()` and `pieChart()` design mocks under `@ethlete/components/design/chart` that draw the charts with their real markup and CSS.
+- Add a checkbox design mock at `@ethlete/components/design/checkbox` with `checkbox()`, `checkboxGroup()`, `checkboxStyles` and `checkboxGroupStyles`.
+- Add `chip()` and `chipRow()` design mocks under `@ethlete/components/design/chip` that draw the chip with its real markup and CSS.
+- Add a `copyButton()` design mock under `@ethlete/components/design/copy-button` that draws the copy button with its real markup and CSS.
+- Add a `descriptionList()` design mock under `@ethlete/components/design/description-list` that draws the description list with its real markup and CSS.
+- The design mocks now draw the icons the package ships, and `@ethlete/components/design/icon-set` lists every built-in icon.
+- Add `dialog()`, `alertDialog()` and `overlayBackdrop()` design mocks under `@ethlete/components/design/dialog` that draw the dialog pane with its real markup and CSS.
+- Add a `divider()` design mock under `@ethlete/components/design/divider` that draws the divider with its real markup and CSS.
+- Add an `emptyState()` design mock under `@ethlete/components/design/empty-state` that draws the empty state with its real markup and CSS.
+- Add a `floatingAction()` design mock under `@ethlete/components/design/floating-action` that draws the floating action with its real markup and CSS, in its inline, floating and hidden states.
+- Form field: a text field in error switches its border and label to the error colour theme and keeps distinct rest, hover and focus states.
+- Add a `grid()` design mock under `@ethlete/components/design/grid` that draws `et-grid`, its items, the item toolbar and the default actions with their real markup and CSS.
+- Add a `kbd()` design mock under `@ethlete/components/design/kbd` that draws the keycaps with their real markup and CSS.
+- Add `spinner()`, `progressBar()` and `brandLoader()` design mocks under `@ethlete/components/design/loader` that draw the loaders with their real markup and CSS, with each animation held at one frame.
+- Add a `masonry()` design mock under `@ethlete/components/design/masonry` that draws an `etMasonry` list with its items packed by the masonry maths, using the real masonry CSS.
+- Add a `matchCard()` design mock under `@ethlete/components/design/match` that draws `et-match-card` with its real markup and CSS.
+- Add a `menu()` design mock under `@ethlete/components/design/menu` that draws the open `et-menu` panel with its real markup and CSS.
+- Add `notification()` and `notificationStack()` design mocks under `@ethlete/components/design/notification` that draw the notification with its real markup and CSS.
+- Add a `pagination()` design mock under `@ethlete/components/design/pagination` that draws `et-pagination` with its real markup and CSS.
+- Add a `picture()` design mock under `@ethlete/components/design/picture` that draws the picture with its real markup and CSS.
+- Add a `progressSteps()` design mock under `@ethlete/components/design/progress-steps` that draws the progress steps with their real markup and CSS.
+- Add a `queryError()` design mock under `@ethlete/components/design/query-error` that draws the query error with its real markup and CSS.
+- Add `scheduler()`, `schedulerTimeGrid()`, `schedulerMonth()` and `schedulerAgenda()` design mocks under `@ethlete/components/design/scheduler` that draw `et-scheduler` and its week, day, month and agenda views with their real markup and CSS.
+- Add a `scrollable()` design mock under `@ethlete/components/design/scrollable` that draws the scrollable with its real markup and CSS, including its edge masks, scroll buttons and navigation dots.
+- Add a `scrollbar()` design mock under `@ethlete/components/design/scrollbar` that draws the scrollbar with its real markup and CSS.
+- The shipped sdk design tokens (`design/sdk/foundations/colors/colors.css`) apply `.et-surface--default-dark` only with the dark surface values, not also with the dark-elevated ones.
+- A select option draws its check mark in `--et-theme-color-ink-solid`, and a keyboard-active option gets a 2px ink outline instead of a background tint, so both keep a 3:1 contrast on a light surface.
+- Add a `skeleton()` design mock under `@ethlete/components/design/skeleton` that draws the skeleton, its items and text lines with their real markup and CSS, with the shimmer held at one frame.
+- Add `standings()` and `standingsPick()` design mocks under `@ethlete/components/design/standings` that draw `et-standings` and `et-standings-pick` with their real markup and CSS.
+- Add a `statTile()` design mock under `@ethlete/components/design/stat-tile` that draws the stat tile and its sparkline with their real markup and CSS.
+- Add a `streamPlayerSlot()` design mock under `@ethlete/components/design/stream` that draws the stream player slot with its consent, loading, error and PiP placeholder overlays, with their real markup and CSS.
+- Move the `et-stream-consent`, `et-stream-player-error`, `et-stream-player-loading` and `et-pip-slot-placeholder` styles into stylesheets.
+- Add a `switchControl()` design mock under `@ethlete/components/design/switch` that draws `et-switch` with its real markup and CSS.
+- `et-tab-group` takes its styles from `tab-group.component.css` instead of an inline `styles` block, and a new design mock `@ethlete/components/design/tabs` draws the tab group for design tools. The look does not change.
+- Add a `table()` design mock under `@ethlete/components/design/table` that draws the table with its real markup and CSS.
+- Add a `timeline()` design mock under `@ethlete/components/design/timeline` that draws the timeline with its real markup and CSS.
+- Add a `toolbar()` design mock under `@ethlete/components/design/toolbar` that draws the toolbar with its real markup and CSS.
+- Add a `tooltip()` design mock under `@ethlete/components/design/tooltip` that draws `et-tooltip` with its real markup and CSS.
+- Add a `tree()` design mock under `@ethlete/components/design/tree` that draws `et-tree` with its real markup and CSS.
+- Tree: the keyboard focus outline of a row and of the status row uses `--et-theme-color-ink-solid` instead of the primary colour, so it stays visible on a light surface.
+- Fix inline description-list values without break points overflowing the list.
+- Keep a grid item's content clear of its actions, so a long title ends before the remove button; tune the space with `--et-grid-item-actions-reserve`.
+- Move the `et-grid-item-toolbar` styles from an inline `styles` block into `grid-item-toolbar.component.css`, so the grid design mock can draw them.
+- Draw the clipboard-check, floppy-disk, pencil, arrow-up, arrow-right, arrows-left-right, plus and underline icons as outlines. They rendered filled before.
+- Fix the match score clipping its digits at rest (it now clips only while a value rolls) and the winner's subtitle turning bold (the winner weight now sits on the name).
+- Show the scheduler appointment color dot, truncate long badge text with an ellipsis, and stop clipping the first hour label in the time grid.
+- Add `selectOption`, `selectAllOption`, `selectOptionGroup` and `selectPanel` design mocks, and draw option groups and the select-all row in `selectStyles`.
+- Fix the standings draw letter contrast (lighter draw fill) and draw the zone bar as an inset shadow, so the row line runs the full row width; the bar stays on the start side in RTL.
+- Fix the table sort header focus ring cutting through the label.
+- Fix long timeline item content without break points overflowing the timeline.
+
 ## 1.0.0-next.78
 
 ### Patch Changes

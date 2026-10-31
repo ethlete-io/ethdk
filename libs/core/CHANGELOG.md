@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.72
+
+### Patch Changes
+
+- Add `resizeHandlesStyles` under `@ethlete/core/design/resize-handles`: the `et-resize-handles` stylesheet for a design drawing.
+
 ## 5.0.0-next.71
 
 ### Patch Changes
