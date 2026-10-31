@@ -81,6 +81,12 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   utility class instead of reporting "draws no different pixel".
 - Q177 menu vs select (Tom, 2026-10-31): the Q164 control table splits kind `menu` (action items: hover, focus,
   active; no selected) from `select`/`listbox` (selected look required).
+- Q179 a product uses another product as its kit (Tom, 2026-10-31): a product may name another product as its kit
+  (studio -> sdk). A control part a page uses (for example `components/switch`) resolves in the kit product when
+  the product itself has no such part, so `complete --product studio` no longer reports "no part
+  components/switch". Gaps of a kit part do not block the consuming page; they stay the kit part's own open points.
+  No copies of kit parts in the consuming product (two sources drift). So a Studio page may keep an `et-switch`;
+  in the pages/inbox round the switch, the toggle button (b) and the segment (c) are a variant pick by merge.
 
 ## Not decided
 
