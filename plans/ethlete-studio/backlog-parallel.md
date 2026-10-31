@@ -559,6 +559,14 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   Light unchanged. Builder pick b. Open for Tom (Q98): decide the dark ring once for elevation and tooltip. For
   WCAG 3:1 one mix does not fit both (elevation needs 30 % over the fill, tooltip 35 % over the base): use 35 %
   for both, or per-surface values in the generator.
+- Generator bug, revised: cause `tools/scripts/generate-sdk-tokens.mjs:56` keeps `isDefault: true` on the
+  elevated surfaces. No sdk part uses `.et-surface--default-dark`, dark shots of a and b are byte-identical. Grill
+  decision: fix the generator directly (no visible change). The round on foundations/colors (`a862255fc`) is moot;
+  only Tom discards it in Studio (morning list).
+- Q92 built in `03a2369fb` (Light and Dark column groups, `frame.html?scheme=`; Tauri window not checked). Grill
+  decision (inside Q92): non-grid part frames (pages, declared-width parts, flow frames) also show Light then Dark,
+  side by side, or stacked when a frame is too wide for two in a row. Legacy call shots keep the Studio colour mode
+  (Q69). A part without a dark scheme still shows both groups, so the fault is visible.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
