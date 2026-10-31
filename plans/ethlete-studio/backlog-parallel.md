@@ -534,6 +534,16 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   (32/38/44 %, ink 4.74-4.56:1). A pure tint stops at about 1.2:1 against the panel (ink falls under 4.5:1 above
   47 %). Grill decision: add variant d now (56-64 % tint with a darker selected-row ink), so Tom sees the full
   range in one review.
+- Q93 variant d added: 56/60/64 % tint, label ink 80 % mixed with black (ink vs fill about 6:1, fill vs panel
+  1.27:1). A merge of d needs a darker selected ink (new generator token or a color-mix in tree.component.css).
+- Q95 round ready: new part sdk `foundations/elevation`, r1 "Dark elevation edge" (`466dfc5b5`), dark only. Edge
+  vs base / pane on panel: today 1.76/1.50, a ring 2.61/2.22, b shadows 1.92/1.86, c highlight 1.76/1.50. Builder
+  pick a. Grill decision: add variant d, the ring at the strength that reaches 3:1 (about 29 %). A merge needs a
+  lib change: generator emits `--et-surface-ring` per surface theme (light = border); select-panel, floating
+  panels and the menu use it.
+- Generator bug: in foundations/colors `colors.css`, `.et-surface--default-dark` sits in both the dark and the
+  dark-elevated blocks, so the dark-elevated values win. Grill decision: a round for Tom (a today, b fixed), not a
+  silent fix, because tonight's merges were reviewed against today's look.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
