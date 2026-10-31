@@ -641,6 +641,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Grid reveal with a hung shot (found in the 6b check): reveal waits only on image load or error, so a shot that
   never answers hides the grid forever. Lead decision under Q96: reveal once every cell is loaded, failed, or in the
   existing slow state (over 2 s), so the user sees per-cell slow marks.
+  As built ("Reveal a Studio frame grid when a shot is slow"): a cell settles when its shot turns slow and keeps
+  the failed min size. Chromium, studio-lab `components/button` with the 5 solid light shots held: the grid revealed
+  at ~2.3 s with those 5 cells "Rendering", the rest drawn; released, they swapped to loaded.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 

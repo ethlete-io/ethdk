@@ -9,6 +9,7 @@ import {
   CanvasFrameGridComponent,
   LIVE_REVEAL_TIMEOUT_MS,
 } from './canvas-frame-grid.component';
+import { SLOW_SHOT_MS } from './shot-state';
 
 const render = async (cell: FrameCell) => {
   TestBed.configureTestingModule({
@@ -394,6 +395,39 @@ describe('CanvasFrameGridComponent', () => {
         await flush(20);
 
         expect(host.querySelectorAll('[data-shot-slow]').length).toBe(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('reveals with the slow mark once a shot that never answers turns slow', async () => {
+      vi.useFakeTimers();
+
+      try {
+        TestBed.configureTestingModule({
+          providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+        });
+
+        const fixture = TestBed.createComponent(CanvasFrameGridComponent);
+        const host = fixture.nativeElement as HTMLElement;
+        const flush = (ms: number) => vi.advanceTimersByTimeAsync(ms);
+
+        fixture.componentRef.setInput('grid', { columns, rows, cells: shots });
+        await flush(20);
+
+        host.querySelectorAll('img')[0]?.dispatchEvent(new Event('load'));
+        host.querySelectorAll('img')[1]?.dispatchEvent(new Event('error'));
+        await flush(1000);
+
+        expect(host.querySelector('.invisible')).not.toBeNull();
+
+        await flush(SLOW_SHOT_MS);
+
+        const hung = host.querySelectorAll('ethlete-canvas-frame-cell')[2];
+
+        expect(host.querySelector('.invisible')).toBeNull();
+        expect(host.querySelector('[data-grid-loading]')).toBeNull();
+        expect(hung?.querySelector('[data-shot-slow]')).not.toBeNull();
       } finally {
         vi.useRealTimers();
       }

@@ -87,8 +87,8 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
     '[style.height.px]': 'size()?.height ?? 0',
     '[attr.data-cell-id]': 'cell().id',
     '[attr.data-cell-scheme]': 'scheme()',
-    '[class.min-h-20]': 'failed()',
-    '[class.min-w-40]': 'failed()',
+    '[class.min-h-20]': 'failed() || slow()',
+    '[class.min-w-40]': 'failed() || slow()',
   },
 })
 export class CanvasFrameCellComponent {
@@ -120,6 +120,8 @@ export class CanvasFrameCellComponent {
   protected painted = linkedSignal<string, boolean>({ source: () => this.src(), computation: () => false });
 
   protected failed = computed(() => this.shotState()?.state() === 'failed');
+
+  protected slow = computed(() => this.shotState()?.state() === 'slow');
 
   /** The window of the cell's live page once it painted; `null` while the cell shows a shot. */
   public liveWindow = computed(() =>
@@ -163,6 +165,14 @@ export class CanvasFrameCellComponent {
           this.painted.set(false);
           this.pageReadyChange.emit(false);
         }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.slow)
+      .pipe(
+        filter(Boolean),
+        tap(() => this.loadEnd.emit()),
         takeUntilDestroyed(),
       )
       .subscribe();
