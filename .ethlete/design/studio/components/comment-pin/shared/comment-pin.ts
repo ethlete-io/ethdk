@@ -1,3 +1,4 @@
+import { control } from '@ethlete/components/design/control';
 import { forceInteraction, interactionRows } from '@design-system';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
@@ -56,7 +57,8 @@ export const pin = (p: Props, placement: CountPlacement = 'beside') => {
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}
       >${face(p, inside ? badge : '')}</button>`;
-  const button = p.interaction ? forceInteraction(markup, p.interaction) : markup;
+  const marked = control(markup, 'pin');
+  const button = p.interaction ? forceInteraction(marked, p.interaction) : marked;
 
   return inside || !badge ? button : `<span class="relative inline-flex">${button}${badge}</span>`;
 };

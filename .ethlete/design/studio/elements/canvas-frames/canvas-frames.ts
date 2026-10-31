@@ -110,6 +110,8 @@ const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'di
 const forcedOf = (interaction: (typeof interactions)[number]) =>
   interaction === 'rest' || interaction === 'pressed' ? {} : { interaction };
 
+const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
+
 const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
@@ -122,6 +124,13 @@ export default definePart({
   widths: [1440],
   states: {
     default: defaultFrames,
+  },
+  controls: {
+    button: { kind: 'button', part: 'components/button' },
+    out: ZOOM,
+    reset: ZOOM,
+    in: ZOOM,
+    fit: ZOOM,
   },
   render: async ({ part, states, zoom }: Props) => {
     const rows = await Promise.all(

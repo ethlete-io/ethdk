@@ -48,5 +48,6 @@ export default definePart({
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [232],
   states: { 'components-open': componentsOpen },
+  controls: { row: { kind: 'row', part: 'components/tree-row' } },
   render: ({ layers }: Props) => treeRow.render({ rows: layers.flatMap(layerRows) }),
 });

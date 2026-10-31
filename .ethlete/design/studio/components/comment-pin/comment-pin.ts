@@ -11,5 +11,6 @@ export default definePart({
   styles: '',
   states,
   grid,
+  controls: { pin: { kind: 'button', input: ['pointer', 'keyboard'] } },
   render: (props: Props) => drawing({ body: `<span class="inline-flex p-space-2">${commentPinMark(props)}</span>` }),
 });

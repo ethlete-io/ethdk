@@ -32,6 +32,7 @@ export default definePart({
       'selected-marks': { rest: 'selected-marks' },
     },
   },
+  controls: { row: { kind: 'row', input: ['pointer', 'keyboard'] } },
   render: ({ rows }: Props) =>
     drawing({ body: html`<div class="flex flex-col gap-px">${rows.map(row).join('')}</div>`, styles }),
 });
