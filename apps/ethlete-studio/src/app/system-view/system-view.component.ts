@@ -6,6 +6,7 @@ import {
   ViewEncapsulation,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -82,6 +83,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { ExceptionListComponent } from './exception-list.component';
 import { MotionStripComponent } from './motion-strip.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
+import { injectViewContext, selectionOf } from '../chat/view-context';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -577,6 +579,7 @@ export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
   protected noteStore = injectNoteStore();
+  private viewContext = injectViewContext();
   private injector = inject(Injector);
   public port = input<number | null>(null);
   public epoch = input(0);
@@ -1105,6 +1108,28 @@ export class SystemViewComponent {
 
     this.commentStore.connect(source);
     this.noteStore.connect(source);
+
+    effect(() => {
+      const product = this.product();
+
+      if (!product || this.creating() || this.call()) {
+        this.viewContext.drop('system');
+
+        return;
+      }
+
+      const sketch = this.sketch();
+      const canvas = this.partCanvas();
+
+      this.viewContext.put('system', {
+        product: product.name,
+        part: sketch?.target ?? (this.flow() ? null : (this.part()?.key ?? null)),
+        sketch: sketch?.target ?? null,
+        sketchDir: sketch?.dir ?? null,
+        selection: canvas ? selectionOf(canvas.frames(), canvas.selectedId()) : null,
+      });
+    });
+    this.destroyRef.onDestroy(() => this.viewContext.drop('system'));
   }
 
   protected toggleComments() {

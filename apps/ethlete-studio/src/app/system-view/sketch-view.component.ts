@@ -4,6 +4,7 @@ import {
   Injector,
   ViewEncapsulation,
   afterNextRender,
+  afterRenderEffect,
   computed,
   inject,
   input,
@@ -49,6 +50,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { REST } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
+import { injectViewContext, selectionOf } from '../chat/view-context';
 import { CommentDraftComponent } from './comment-draft.component';
 import { CommentThreadComponent } from './comment-thread.component';
 import {
@@ -597,6 +599,7 @@ export class SketchViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
+  private viewContext = injectViewContext();
   private injector = inject(Injector);
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
@@ -990,6 +993,18 @@ export class SketchViewComponent {
   protected canvasColumns = computed(() =>
     this.changedAreaView().columns.map(({ drawing, ...column }) => ({ ...column, muted: drawing })),
   );
+
+  constructor() {
+    afterRenderEffect(() => {
+      const canvas = this.canvasRef();
+
+      this.viewContext.put('sketch', {
+        variant: this.picked(),
+        selection: selectionOf(canvas.frames(), canvas.selectedId()),
+      });
+    });
+    this.destroyRef.onDestroy(() => this.viewContext.drop('sketch'));
+  }
 
   protected reportTitleOf(report: SketchReport) {
     return report.author ? `${report.message}\n\nby ${report.author}` : report.message;

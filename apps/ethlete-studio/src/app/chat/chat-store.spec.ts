@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, finalize, of } from 'rxjs';
 import type { AgentEvent, AgentRequest } from '../../host/agent';
 import { injectChatStore } from './chat-store';
+import { injectViewContext } from './view-context';
 
 const host = vi.hoisted(() => ({
   run: vi.fn<(request: AgentRequest) => void>(),
@@ -32,6 +33,8 @@ const setup = () => {
 
   return TestBed.runInInjectionContext(() => injectChatStore());
 };
+
+const viewContext = () => TestBed.runInInjectionContext(() => injectViewContext());
 
 const finish = (session: string) => {
   const run = host.runs.at(-1);
@@ -129,5 +132,54 @@ describe('injectChatStore', () => {
 
     expect(store.open()).toBe(true);
     expect(JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').chatOpen).toBe(true);
+  });
+
+  it('puts the view in front of the prompt and shows it on the prompt entry', () => {
+    const store = setup();
+
+    viewContext().put('system', {
+      product: 'Kit',
+      part: 'components/button',
+      sketch: 'components/button',
+      sketchDir: '.ethlete/design/kit/sketches/components-button',
+    });
+    viewContext().put('sketch', { variant: 'b', selection: 'b hover' });
+    store.send('Make it calmer.');
+
+    expect(host.run.mock.calls[0]?.[0].prompt).toBe(
+      'Studio view: product Kit, part components/button, sketch components/button' +
+        ' (dir .ethlete/design/kit/sketches/components-button), variant b, selected frame b hover.\n\nMake it calmer.',
+    );
+    expect(store.entries()).toEqual([
+      {
+        kind: 'prompt',
+        text: 'Make it calmer.',
+        context: 'Kit › components/button › sketch · variant b · frame b hover',
+      },
+    ]);
+  });
+
+  it('leaves a removed view out until the view changes, and brings it back after a send', () => {
+    const store = setup();
+    const context = viewContext();
+
+    context.put('system', { product: 'Kit', part: 'components/button' });
+    context.remove();
+    store.send('First.');
+    finish('session-1');
+
+    expect(host.run.mock.calls[0]?.[0].prompt).toBe('First.');
+    expect(store.entries()[0]).toEqual({ kind: 'prompt', text: 'First.' });
+    expect(context.shown()).not.toBeNull();
+
+    context.remove();
+    context.put('system', { product: 'Kit', part: 'components/button' });
+
+    expect(context.shown()).toBeNull();
+
+    context.put('system', { product: 'Kit', part: 'components/select' });
+    store.send('Second.');
+
+    expect(host.run.mock.calls[1]?.[0].prompt).toBe('Studio view: product Kit, part components/select.\n\nSecond.');
   });
 });

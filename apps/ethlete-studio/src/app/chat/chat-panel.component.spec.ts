@@ -7,6 +7,7 @@ import type { AgentRequest } from '../../host/agent';
 import { THEMES } from '../../themes';
 import { AppComponent } from '../app.component';
 import { ChatPanelComponent } from './chat-panel.component';
+import { injectViewContext } from './view-context';
 
 const host = vi.hoisted(() => ({ run: vi.fn<(request: AgentRequest) => void>() }));
 
@@ -98,7 +99,7 @@ describe('ChatPanelComponent', () => {
     await press(fixture, field, false);
     expect(host.run).toHaveBeenCalledTimes(1);
     expect(host.run.mock.calls[0]?.[0]).toMatchObject({ prompt: 'Make the header calmer.', tools: null });
-    expect(element(fixture).querySelector('[data-chat-entry="prompt"]')?.textContent?.trim()).toBe(
+    expect(element(fixture).querySelector('[data-chat-entry-text]')?.textContent?.trim()).toBe(
       'Make the header calmer.',
     );
     expect(field.value).toBe('');
@@ -135,6 +136,33 @@ describe('ChatPanelComponent', () => {
 
     expect(element(fixture).textContent).toContain('second');
     expect(fixture.debugElement.query((node) => node.componentInstance instanceof ChatPanelComponent)).toBe(panel);
-    expect(element(fixture).querySelector('[data-chat-entry="prompt"]')?.textContent?.trim()).toBe('Keep me.');
+    expect(element(fixture).querySelector('[data-chat-entry-text]')?.textContent?.trim()).toBe('Keep me.');
+  });
+
+  it('shows the view above the prompt field and sends the message without it once removed', async () => {
+    const fixture = await render();
+
+    TestBed.runInInjectionContext(() => injectViewContext()).put('system', {
+      product: 'Kit',
+      part: 'components/button',
+    });
+    await open(fixture);
+
+    const chip = () => element(fixture).querySelector('[data-chat-context]');
+
+    expect(chip()?.textContent).toContain('Kit › components/button');
+
+    element(fixture).querySelector<HTMLButtonElement>('[data-chat-context-remove]')?.click();
+    await fixture.whenStable();
+
+    expect(chip()).toBeNull();
+
+    await type(fixture, 'Plain.');
+    element(fixture).querySelector<HTMLButtonElement>('[data-chat-send]')?.click();
+    await fixture.whenStable();
+
+    expect(host.run.mock.calls[0]?.[0]).toMatchObject({ prompt: 'Plain.' });
+    expect(element(fixture).querySelector('[data-chat-entry-context]')).toBeNull();
+    expect(chip()).not.toBeNull();
   });
 });

@@ -5,12 +5,14 @@ import { EMPTY, Subscription, catchError, finalize, of, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
 import { workspaceRoot$ } from '../../host/workspace';
 import { rememberView, rememberedView } from '../studio-view/remembered';
+import { chipOf, injectViewContext, preambleOf } from './view-context';
 
-/** One line of the chat: a prompt the user sent, or an event of the agent run that answered it. */
-export type ChatEntry = { kind: 'prompt'; text: string } | AgentEvent;
+/** One line of the chat: a prompt the user sent with the view it carried, or an event of the agent run that answered it. */
+export type ChatEntry = { kind: 'prompt'; text: string; context?: string } | AgentEvent;
 
 const CHAT_STORE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const destroyRef = inject(DestroyRef);
+  const viewContext = injectViewContext();
   const clis = signal<AgentDescriptor[]>([]);
   const trouble = signal('');
   const cli = signal<AgentDescriptor | null>(null);
@@ -63,12 +65,15 @@ const CHAT_STORE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!picked || !root() || !text || running()) return false;
 
-    record({ kind: 'prompt', text });
+    const context = viewContext.shown();
+
+    record(context ? { kind: 'prompt', text, context: chipOf(context) } : { kind: 'prompt', text });
+    viewContext.sent();
     running.set(true);
     run = agentRun$({
       cli: picked.id,
       model: model() || null,
-      prompt: text,
+      prompt: context ? `${preambleOf(context)}\n\n${text}` : text,
       cwd: root(),
       resume: session(),
       tools: null,

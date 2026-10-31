@@ -1,4 +1,12 @@
-import { Component, ElementRef, ViewEncapsulation, afterRenderEffect, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  afterRenderEffect,
+  computed,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   BUTTON_IMPORTS,
   FORM_FIELD_IMPORTS,
@@ -8,6 +16,7 @@ import {
 } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { injectChatStore } from './chat-store';
+import { chipOf, injectViewContext } from './view-context';
 
 @Component({
   selector: 'ethlete-chat-panel',
@@ -75,10 +84,13 @@ import { injectChatStore } from './chat-store';
             @switch (entry.kind) {
               @case ('prompt') {
                 <li
-                  class="self-end rounded-md bg-surface-raised px-3 py-2 whitespace-pre-wrap text-text"
+                  class="flex flex-col gap-1 self-end rounded-md bg-surface-raised px-3 py-2 text-text"
                   data-chat-entry="prompt"
                 >
-                  {{ entry.text }}
+                  @if (entry.context) {
+                    <span class="text-small text-text-muted" data-chat-entry-context>{{ entry.context }}</span>
+                  }
+                  <span class="whitespace-pre-wrap" data-chat-entry-text>{{ entry.text }}</span>
                 </li>
               }
               @case ('message') {
@@ -107,6 +119,26 @@ import { injectChatStore } from './chat-store';
           }
         </ol>
 
+        @if (chip(); as chip) {
+          <div
+            class="flex items-center gap-1 self-start rounded-md bg-surface-raised py-0.5 pl-2 text-small text-text-muted"
+            data-chat-context
+          >
+            <span class="truncate" title="Sent with the next message">{{ chip }}</span>
+            <button
+              (click)="viewContext.remove()"
+              et-button
+              type="button"
+              variant="transparent"
+              color="surface"
+              size="xs"
+              aria-label="Remove the view context"
+              data-chat-context-remove
+            >
+              ×
+            </button>
+          </div>
+        }
         <et-form-field appearance="box">
           <et-textarea
             [(value)]="prompt"
@@ -167,9 +199,15 @@ import { injectChatStore } from './chat-store';
 })
 export class ChatPanelComponent {
   protected store = injectChatStore();
+  protected viewContext = injectViewContext();
   protected errorTheme = injectSemanticColorTheme('error');
   private list = viewChild<ElementRef<HTMLElement>>('list');
   private promptField = viewChild(TextareaDirective);
+  protected chip = computed(() => {
+    const context = this.viewContext.shown();
+
+    return context ? chipOf(context) : null;
+  });
   protected prompt = signal('');
 
   constructor() {
