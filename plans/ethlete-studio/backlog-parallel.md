@@ -478,8 +478,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q86: Tom picks the light filled-field fill (Q83 round, a 250 / b 245 / c 240 / d 235) by merging a variant in
   Studio. A sketch-round pick is never a grill question. Tom merged c: the light elevated surface background is
   240 240 240.
-- Q90 (Q78): the product `config.json` lists generator-owned files, for example
-  `"generated": ["foundations/colors/colors.css"]`. The part hash skips them, so a `yarn sdk:tokens` run never marks
+- Q90 (Q78, built 9d8ae9723): the product `config.json` lists generator-owned files, for example
+  `"generatedFiles": ["foundations/colors/colors.css"]` (not `generated`: `DesignProduct.generated` already names
+  the stylesheet generators). A base part is hashed with the base's own list. The part hash skips them, so a `yarn sdk:tokens` run never marks
   the part changed. A hand edit to `colors.ts` still does. CI `sdk:tokens:check` guards the generated file. Built by
   `ethlete-sdk-57`.
 - Studio footer status (Tom, 2026-10-31): the footer gets a status line that shows the render queue (for example
