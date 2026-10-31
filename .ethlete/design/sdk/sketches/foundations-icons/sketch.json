@@ -1,0 +1,29 @@
+{
+  "target": "foundations/icons",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:37:34.347Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "16 px redraw",
+      "note": "The 16 px redraw: the 39 icons off the picked 16 px grid with 1 px padding, redrawn on it. All other icons are unchanged."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "16 px redraw, stroke 1.4 round. Kept filled: play, pause, star, quote, ellipsis, ellipsis-vertical (and the dots in circle-info, triangle-exclamation, lock, the image sun and mountains, the focus-frame centre). Moved to outline: check, chevron, times, minus, circle-check, circle-info, triangle-exclamation, eye, eye-slash, lock, image, focus-frame, arrow-out-up-right."
+    }
+  }
+}
