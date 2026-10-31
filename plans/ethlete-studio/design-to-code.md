@@ -246,7 +246,8 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     on `/__design-harness` in dev only (`ngDevMode`); production bundles hold no harness. Verified: specs, tsc,
     lint, prod and dev builds, docs-examples in Chromium (unknown part text; a temporary map entry rendered a host).
     Not verified: Studio served, a real `compare` against a harness, a non-empty map under module-boundary lint.
-  - Next: Q198 (backlog-parallel.md) before 3c-3; then 3c-3 compare starts the app dev server without `--url`.
+  - Q198 (a) and (b) built (backlog-parallel.md); (c) waits for the Q197 migration.
+  - 3c-3 in progress (builder ethlete-sdk-57): compare starts the app dev server without `--url`.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
