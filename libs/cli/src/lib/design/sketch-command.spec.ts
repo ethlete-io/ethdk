@@ -1090,6 +1090,26 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   }, 120_000);
 
+  it('notes the problems that were there before as one count per variant', async () => {
+    const target = acme();
+    const warnings: string[] = [];
+
+    output();
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'),
+      '.acme-hero { color: #fff; }\n.acme-hero-title { color: #000; }',
+    );
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+
+    await run(target, 'check', '--product', 'acme');
+
+    expect(warnings.filter((line) => line.startsWith('NOTE'))).toEqual([
+      'NOTE elements/hero a: 2 problems were there before (design check lists them)',
+      'NOTE elements/hero b: 2 problems were there before (design check lists them)',
+    ]);
+  }, 120_000);
+
   it('draws each variant of the open sketches and reports what breaks a render rule', async (context) => {
     const target = acme();
     const lines = output();

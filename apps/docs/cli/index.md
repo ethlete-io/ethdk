@@ -364,6 +364,9 @@ stays ready, and the output names each changed part and state. A state that look
 Every variant must draw the same; one changed variant is enough to stop it. A variant draws its
 own part stylesheets, also where the product stylesheet `@import`s the merged file.
 
+A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per
+variant, `NOTE elements/hero a: 2 problems were there before (design check lists them)`.
+
 `et design sketch check` and `sketch ready` also verify that the merger can write the target's
 note and authors. A variant that delegates to a shared factory keeps a `definePart` object with
 a literal `note` in its own target file:

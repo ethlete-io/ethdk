@@ -619,6 +619,13 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
   return 0;
 };
 
+const noteProblemsBefore = ({ sketch, variant, before }: { sketch: Sketch; variant: string; before: Problem[] }) => {
+  if (before.length > 0)
+    console.warn(
+      `NOTE ${sketch.target} ${variant}: ${before.length} problem${before.length === 1 ? ' was' : 's were'} there before (design check lists them)`,
+    );
+};
+
 const readyRefusalOf = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
@@ -627,9 +634,7 @@ const readyRefusalOf = (
     `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
   const found = variantProblemsOf({ product, sketch });
 
-  found.forEach(({ variant, before }) =>
-    before.forEach((problem) => console.warn(`NOTE (was there before) ${lineOf(variant, problem)}`)),
-  );
+  found.forEach(noteProblemsBefore);
 
   const problems = found.flatMap(({ variant, problems }) =>
     [
@@ -793,11 +798,7 @@ const checked = async (context: Context) => {
   for (const { sketch, variant, problems, before } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
 
-    before.forEach((problem) =>
-      console.warn(
-        `NOTE (was there before) ${sketch.target} ${variant}: ${problem.rule} ${relative(target, problem.file)}: ${problem.message}`,
-      ),
-    );
+    noteProblemsBefore({ sketch, variant, before });
 
     variantWarningsOf({ target, product, sketch, variant }).forEach((warning) =>
       console.warn(`${sketch.target} ${variant}: ${warning}`),
