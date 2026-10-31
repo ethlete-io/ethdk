@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { badMotionsOf, hardCodedMotionOf, scriptedMotionOf } from './motion';
+import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './motion';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -157,6 +157,51 @@ describe('badMotionsOf', () => {
 
     expect(badMotionsOf(resolveAcme(target)).map(({ rule, message }) => `${rule} ${message}`)).toEqual([
       'MOTION-NAME a rule names motion "unfold", which the part does not declare',
+    ]);
+  });
+
+  it('accepts a looping motion from a state to itself', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', withMotions("motions: { spin: { from: 'open', to: 'open' } }"));
+
+    expect(badMotionsOf(resolveAcme(target))).toEqual([]);
+  });
+});
+
+describe('badUnreachableOf', () => {
+  const withUnreachable = (value: string) =>
+    `import { definePart } from '@design-system';\nexport default definePart({ note: '', states: { closed: {}, open: {} }, unreachable: ${value}, render: () => ({ body: '', styles: '' }) });\n`;
+  const problemsOf = (value: string) => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', withUnreachable(value));
+
+    return badUnreachableOf(resolveAcme(target)).map(({ rule, message }) => `${rule} ${message}`);
+  };
+
+  it('passes the clean fixture and a literal pair of known states with a reason', () => {
+    expect(badUnreachableOf(resolveAcme(acme()))).toEqual([]);
+    expect(problemsOf("[{ from: 'open', to: 'closed', reason: 'The app closes it.' }]")).toEqual([]);
+  });
+
+  it('flags an unknown state and a missing or empty reason', () => {
+    expect(
+      problemsOf(
+        "[{ from: 'open', to: 'shut', reason: 'x' }, { from: 'open', to: 'closed' }, { from: 'closed', to: 'open', reason: ' ' }]",
+      ),
+    ).toEqual([
+      'MOTION-UNREACHABLE-STATE unreachable open -> shut names "shut", which is no state of the part',
+      'MOTION-UNREACHABLE-REASON unreachable open -> closed gives no reason',
+      'MOTION-UNREACHABLE-REASON unreachable closed -> open gives no reason',
+    ]);
+  });
+
+  it('flags a value that is not written as literals', () => {
+    expect(problemsOf('pairs')).toEqual(['MOTION-UNREACHABLE-LITERAL unreachable must be an array literal']);
+    expect(problemsOf("[{ from: state, to: 'open', reason: 'x' }, { from: 'open', to: 'closed', reason }]")).toEqual([
+      'MOTION-UNREACHABLE-LITERAL an unreachable pair needs from, to and reason as string literals',
+      'MOTION-UNREACHABLE-LITERAL an unreachable pair needs from, to and reason as string literals',
     ]);
   });
 });

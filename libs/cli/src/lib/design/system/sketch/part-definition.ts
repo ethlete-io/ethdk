@@ -238,6 +238,44 @@ export const motionRefsOf = (source: string) => {
 };
 
 /**
+ * A pair a part file writes in `definePart({ unreachable: [ … ] })`. `literal` is false when the entry or one of its
+ * fields is written as something else than a literal; a field that is missing or not a string literal is null.
+ */
+export type UnreachableSource = { from: string | null; to: string | null; reason: string | null; literal: boolean };
+
+const isStringLiteral = (node: ts.Expression) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
+
+/**
+ * The pairs a part file marks unreachable, read without running it: none without `unreachable`, null when it is not
+ * an array literal.
+ */
+export const unreachableOf = (source: string): UnreachableSource[] | null => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === 'unreachable',
+  );
+
+  if (!property) return [];
+
+  if (!ts.isPropertyAssignment(property) || !ts.isArrayLiteralExpression(property.initializer)) return null;
+
+  return property.initializer.elements.map((element) => {
+    if (!ts.isObjectLiteralExpression(element)) return { from: null, to: null, reason: null, literal: false };
+
+    const fields = ['from', 'to', 'reason'].map((name) => propertyOf(element, name)?.initializer);
+
+    return {
+      from: literalOf(fields[0]),
+      to: literalOf(fields[1]),
+      reason: literalOf(fields[2]),
+      literal:
+        element.properties.every(ts.isPropertyAssignment) &&
+        fields.every((field) => field === undefined || isStringLiteral(field)),
+    };
+  });
+};
+
+/**
  * What a part file writes in `definePart({ implements })`, read without running it: `none` without one, `unreadable`
  * when it is not a string literal or a `{ route: '…' }` literal.
  */

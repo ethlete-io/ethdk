@@ -139,6 +139,9 @@ states, with optional `at` (shot times in ms), `interrupt`, `viewTransition` and
 `{ on: 'click .open', to: 'open', motion: 'fold' }`. `et design check` fails with `MOTION-STATE` when `from` or `to` is no state of
 the part, with `MOTION-NAME` when a rule names a motion the part does not declare, and with `MOTION` when motion code calls
 `requestAnimationFrame`, `setInterval` or `setTimeout`. `et design list` shows the motions without `play`.
+A motion with `from` equal to `to` is the looping motion inside that state. `unreachable: [{ from: 'empty', to: 'default', reason: '…' }]`
+marks a pair no user reaches; `et design check` fails with `MOTION-UNREACHABLE-STATE`, `MOTION-UNREACHABLE-REASON` or
+`MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal.
 
 In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,
 so CSS transitions and `@starting-style` run. The named motion then runs `play(ctx)`, inside a View Transition with
@@ -283,7 +286,10 @@ path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal 
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged; no implements`. A point is a
 comment the user has not resolved (an answered one too), a sketch on the part that is not merged yet, or a part
-outside `foundations/` without `implements`. The list does not change the exit code.
+outside `foundations/` without `implements`. Outside `foundations/`, every ordered pair of a part's states needs a
+motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
+a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
+motion: `no looping motion in loading`. The list does not change the exit code.
 
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding

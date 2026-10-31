@@ -15,7 +15,7 @@ import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineSvgsOf } from './rules/inline-svg';
-import { badMotionsOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
+import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { tokenSelectorsOf } from './rules/token-selectors';
@@ -38,6 +38,7 @@ const RULES = [
   componentCopiesOf,
   scriptedMotionOf,
   badMotionsOf,
+  badUnreachableOf,
   hardCodedMotionOf,
   staleCommentsOf,
   staleNotesOf,

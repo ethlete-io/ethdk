@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declaresControlsOf, stateNamesOf, widthsOf, withMadeBy, withNote } from './part-definition';
+import { declaresControlsOf, stateNamesOf, unreachableOf, widthsOf, withMadeBy, withNote } from './part-definition';
 
 const part = `import { definePart } from '@design-system';
 export default definePart({
@@ -65,5 +65,27 @@ describe('declaresControlsOf', () => {
     expect(declaresControlsOf(part.replace('render:', 'controls: {},\n  render:'))).toBe(false);
     expect(declaresControlsOf(part.replace('render:', "controls: { a: { kind: 'button' } },\n  render:"))).toBe(true);
     expect(declaresControlsOf(part.replace('render:', 'controls,\n  render:'))).toBe(true);
+  });
+});
+
+describe('unreachableOf', () => {
+  const withUnreachable = (value: string) => part.replace('render:', `unreachable: ${value},\n  render:`);
+
+  it('reads literal pairs, none without the field, and null for a value that is no array literal', () => {
+    expect(unreachableOf(part)).toEqual([]);
+    expect(unreachableOf(withUnreachable("[{ from: 'default', to: 'very-long', reason: 'Set by the app.' }]"))).toEqual(
+      [{ from: 'default', to: 'very-long', reason: 'Set by the app.', literal: true }],
+    );
+    expect(unreachableOf(withUnreachable('pairs'))).toBeNull();
+  });
+
+  it('marks an entry or a field that is no literal, and leaves a missing reason null', () => {
+    expect(
+      unreachableOf(withUnreachable("[pair, { from: state, to: 'default', reason: 'x' }, { from: 'a', to: 'b' }]")),
+    ).toEqual([
+      { from: null, to: null, reason: null, literal: false },
+      { from: null, to: 'default', reason: 'x', literal: false },
+      { from: 'a', to: 'b', reason: null, literal: true },
+    ]);
   });
 });

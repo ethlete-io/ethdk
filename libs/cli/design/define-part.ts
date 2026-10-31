@@ -35,6 +35,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * `controls` names each control the part draws, keyed by the id its markup carries in `data-et-control`; `design
  * complete` requires the states and surfaces its `kind` and `input` need, see `Control`.
  * `motions` names each motion between two of its states, see `Motion`; a rule in `rules` can name one.
+ * `unreachable` lists the state pairs no user can move between, each with its `reason`; they need no motion.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
@@ -53,6 +54,7 @@ export type Part<TProps, TState extends string = string> = {
   checks?: { skip?: RenderCheck[] };
   contrast?: PartContrast;
   motions?: Record<string, Motion<TState>>;
+  unreachable?: { from: TState; to: TState; reason: string }[];
   rules?: PartRule<TState>[];
   implements?: PartLink;
   render: (props: TProps, options?: RenderOptions) => DrawnPart | Promise<DrawnPart>;
@@ -72,7 +74,7 @@ export type MotionContext = {
 };
 
 /**
- * A motion from the state `from` to the state `to`. `at` adds shot times in ms, `interrupt` starts the reverse motion
+ * A motion from the state `from` to the state `to`; with `from` equal to `to` it is the looping motion inside that state. `at` adds shot times in ms, `interrupt` starts the reverse motion
  * at that time, `viewTransition` uses a View Transition, and `play` runs after the morph for what CSS cannot express.
  */
 export type Motion<TState extends string = string> = {

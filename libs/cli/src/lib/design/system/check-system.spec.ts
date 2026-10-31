@@ -242,6 +242,15 @@ describe('checkDesign', () => {
         "definePart<HeroProps>({ implements: 'src/hero.component.ts',",
       ),
     );
+    const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+
+    writeFileSync(
+      home,
+      readFileSync(home, 'utf8').replace(
+        'definePart<HomeProps>({',
+        "definePart<HomeProps>({ unreachable: [{ from: 'empty', to: 'default', reason: 'Films never come back.' }],",
+      ),
+    );
     mkdirSync(join(target, DESIGN_DIR, 'acme/comments'));
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/comments/c-1.json'),
@@ -256,11 +265,11 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('  '))).toEqual([
-      'OPEN POINTS acme: 7 in 4 parts',
-      '  components/button: no controls declared; 1 open comment (c-1); no implements',
-      '  components/card: no controls declared; no implements',
+      'OPEN POINTS acme: 12 in 4 parts',
+      '  components/button: no controls declared; 1 open comment (c-1); no implements; 2 missing motions (default -> long, long -> default)',
+      '  components/card: no controls declared; no implements; 2 missing motions (default -> long, long -> default)',
       '  elements/hero: no controls declared',
-      '  pages/home: no implements',
+      '  pages/home: no implements; no motion default -> empty',
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);

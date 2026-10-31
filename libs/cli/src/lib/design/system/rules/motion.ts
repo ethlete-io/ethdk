@@ -1,7 +1,7 @@
 import { cssBlocksOf, declarationValueOf } from '../css-source';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
-import { motionRefsOf, stateNamesOf } from '../sketch/part-definition';
+import { motionRefsOf, stateNamesOf, unreachableOf } from '../sketch/part-definition';
 import { calledNamesOf, textsOf } from '../ts-source';
 
 const TIMED = ['requestAnimationFrame', 'setInterval', 'setTimeout'];
@@ -44,6 +44,39 @@ export const badMotionsOf = (product: ResolvedProduct): Problem[] =>
           : [problem('MOTION-NAME', `a rule names motion "${name}", which the part does not declare`)],
       ),
     ];
+  });
+
+/** A part whose `unreachable` is not written as literals, gives a pair no reason, or names a state it does not have. */
+export const badUnreachableOf = (product: ResolvedProduct): Problem[] =>
+  product.parts.flatMap((part) => {
+    const states = stateNamesOf(part.source);
+    const pairs = unreachableOf(part.source);
+    const problem = (rule: string, message: string): Problem => ({ rule, file: part.file, message });
+
+    if (pairs === null) return [problem('MOTION-UNREACHABLE-LITERAL', 'unreachable must be an array literal')];
+
+    return pairs.flatMap(({ from, to, reason, literal }) => {
+      if (!literal || from === null || to === null)
+        return [
+          problem('MOTION-UNREACHABLE-LITERAL', 'an unreachable pair needs from, to and reason as string literals'),
+        ];
+
+      return [
+        ...(reason?.trim()
+          ? []
+          : [problem('MOTION-UNREACHABLE-REASON', `unreachable ${from} -> ${to} gives no reason`)]),
+        ...(states
+          ? [from, to]
+              .filter((state) => !states.includes(state))
+              .map((state) =>
+                problem(
+                  'MOTION-UNREACHABLE-STATE',
+                  `unreachable ${from} -> ${to} names "${state}", which is no state of the part`,
+                ),
+              )
+          : []),
+      ];
+    });
   });
 
 const TIMING = /^(transition|animation)(-duration|-delay|-timing-function)?$/;
