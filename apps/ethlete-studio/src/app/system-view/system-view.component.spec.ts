@@ -32,6 +32,7 @@ const part = (layer: string, name: string): ListedPart => ({
   layer,
   name,
   origin: 'product',
+  file: `.ethlete/design/web/${layer}/${name}/${name}.ts`,
   note: null,
   states: ['default'],
   problems: [],
@@ -787,9 +788,11 @@ describe('SystemViewComponent view context', () => {
     expect(context.context()).toEqual({
       product: 'web',
       part: 'elements/rating',
+      partFile: '.ethlete/design/web/elements/rating/rating.ts',
       sketch: null,
       sketchDir: null,
       variant: null,
+      picked: null,
       selection: null,
     });
 
@@ -805,18 +808,31 @@ describe('SystemViewComponent view context', () => {
     expect(context.shown()).toBeNull();
   });
 
-  it('writes the sketch, its directory and the picked variant', async () => {
+  it("writes the sketch, its directory, its part's file, the picked variant and the variant of the selected frame", async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
     const context = TestBed.runInInjectionContext(() => injectViewContext());
 
     expect(context.context()).toEqual({
       product: 'web',
       part: 'elements/rating',
+      partFile: '.ethlete/design/web/elements/rating/rating.ts',
       sketch: 'elements/rating',
       sketchDir: '.ethlete/design/web/sketches/elements-rating',
-      variant: 'b',
+      variant: null,
+      picked: 'b',
       selection: null,
     });
+
+    const canvas: DesignCanvasComponent = fixture.debugElement
+      .query(By.directive(SketchViewComponent))
+      .query(By.directive(DesignCanvasComponent)).componentInstance;
+    const frame = canvas.frames().find((candidate) => candidate.place?.sketch?.variant === 'a');
+
+    canvas.selectedId.set(frame?.id ?? null);
+    await settle(fixture);
+
+    expect(frame).toBeDefined();
+    expect(context.context().variant).toBe('a');
 
     fixture.destroy();
 

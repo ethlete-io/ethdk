@@ -52,6 +52,7 @@ import {
   Point,
   Rect,
   Size,
+  areasInView,
   boundingRect,
   fitRect,
   focusRect,
@@ -543,6 +544,15 @@ export class DesignCanvasComponent {
   );
 
   private framesById = computed(() => new Map(this.targets().map((placed) => [placed.frame.id, placed])));
+
+  /** By frame id, the world area of each frame the viewport shows once the camera rests. */
+  public frameAreasInView = computed(() =>
+    areasInView({
+      rects: this.layout().frames.map(({ x, y, width, height, frame }) => ({ x, y, width, height, id: frame.id })),
+      camera: this.restedCamera() ?? this.camera(),
+      viewport: this.viewport(),
+    }),
+  );
 
   protected placedPins = computed(() => {
     const byId = this.framesById();

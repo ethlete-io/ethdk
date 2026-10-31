@@ -6,10 +6,15 @@ import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 export type ViewContext = {
   product: string | null;
   part: string | null;
+  /** The part's module file, relative to the checkout. */
+  partFile: string | null;
   sketch: string | null;
   /** The sketch's directory, relative to the checkout. */
   sketchDir: string | null;
+  /** The variant the user looks at. */
   variant: string | null;
+  /** The variant picked as the sketch's decision. */
+  picked: string | null;
   /** The frame or state clicked on the canvas. */
   selection: string | null;
 };
@@ -17,7 +22,7 @@ export type ViewContext = {
 /** The view writing the fields: the system view, or the sketch view inside it, whose fields win. */
 export type ViewContextOwner = 'system' | 'sketch';
 
-const FIELDS = ['product', 'part', 'sketch', 'sketchDir', 'variant', 'selection'] as const;
+const FIELDS = ['product', 'part', 'partFile', 'sketch', 'sketchDir', 'variant', 'picked', 'selection'] as const;
 
 const isEmpty = (context: ViewContext) => FIELDS.every((field) => context[field] === null);
 
@@ -32,6 +37,45 @@ export const selectionOf = (frames: readonly CanvasFrame[], id: string | null | 
   return [...new Set(names.filter((name) => name !== ''))].join(' ');
 };
 
+const variantOfFrame = (frame: CanvasFrame, variants: readonly string[]) => {
+  const variant = frame.place?.sketch?.variant ?? frame.column;
+
+  return variant !== undefined && variants.includes(variant) ? variant : null;
+};
+
+/**
+ * The variant the user looks at: the selected frame's, else the one whose frames fill most of the viewport,
+ * else the only one, else `null`.
+ */
+export const lookedAtVariantOf = (options: {
+  frames: readonly CanvasFrame[];
+  selectedId: string | null;
+  areasInView: ReadonlyMap<string, number>;
+  variants: readonly string[];
+}) => {
+  const { frames, selectedId, areasInView, variants } = options;
+  const byId = new Map(frames.map((frame) => [frame.id, frame]));
+  const selected = selectedId === null ? undefined : byId.get(selectedId);
+
+  if (selected) return variantOfFrame(selected, variants);
+
+  const shown = new Map<string, number>();
+
+  for (const [id, area] of areasInView) {
+    const frame = byId.get(id);
+    const variant = frame ? variantOfFrame(frame, variants) : null;
+
+    if (variant !== null) shown.set(variant, (shown.get(variant) ?? 0) + area);
+  }
+
+  const [most] = [...shown].sort(([, a], [, b]) => b - a);
+
+  return most?.[0] ?? (variants.length === 1 ? (variants[0] ?? null) : null);
+};
+
+const pickedOf = (context: ViewContext) =>
+  context.picked !== null && context.picked !== context.variant ? `picked ${context.picked}` : null;
+
 /** The chip line: `Kit › components/button › sketch · variant b · frame hover`. */
 export const chipOf = (context: ViewContext) => {
   const path = [context.product, context.part, context.sketch !== null ? 'sketch' : null].filter(
@@ -39,6 +83,7 @@ export const chipOf = (context: ViewContext) => {
   );
   const rest = [
     context.variant !== null ? `variant ${context.variant}` : null,
+    pickedOf(context),
     context.selection !== null ? `frame ${context.selection}` : null,
   ].filter((item) => item !== null);
 
@@ -49,11 +94,14 @@ export const chipOf = (context: ViewContext) => {
 export const preambleOf = (context: ViewContext) => {
   const items = [
     context.product !== null ? `product ${context.product}` : null,
-    context.part !== null ? `part ${context.part}` : null,
+    context.part !== null
+      ? `part ${context.part}${context.partFile !== null ? ` (file ${context.partFile})` : ''}`
+      : null,
     context.sketch !== null
       ? `sketch ${context.sketch}${context.sketchDir !== null ? ` (dir ${context.sketchDir})` : ''}`
       : null,
     context.variant !== null ? `variant ${context.variant}` : null,
+    pickedOf(context),
     context.selection !== null ? `selected frame ${context.selection}` : null,
   ].filter((item) => item !== null);
 

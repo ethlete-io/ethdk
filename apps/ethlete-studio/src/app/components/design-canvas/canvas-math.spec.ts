@@ -1,6 +1,7 @@
 import {
   MAX_ZOOM,
   MIN_ZOOM,
+  areasInView,
   boundingRect,
   clampZoom,
   fitRect,
@@ -49,6 +50,23 @@ describe('canvas math', () => {
     expect(wheelZoomFactor(-10)).toBeGreaterThan(1);
     expect(wheelZoomFactor(10)).toBeLessThan(1);
     expect(wheelZoomFactor(1000)).toBe(wheelZoomFactor(25));
+  });
+
+  it('measures the world area of each rect the viewport shows and leaves out a rect out of view', () => {
+    const areas = areasInView({
+      rects: [
+        { id: 'cut', x: 0, y: 0, width: 100, height: 100 },
+        { id: 'inside', x: 200, y: 100, width: 200, height: 200 },
+        { id: 'outside', x: 600, y: 0, width: 100, height: 100 },
+      ],
+      camera: { x: -100, y: 0, zoom: 2 },
+      viewport: { width: 1000, height: 800 },
+    });
+
+    expect([...areas]).toEqual([
+      ['cut', 5000],
+      ['inside', 40000],
+    ]);
   });
 
   it('fits a rect centered across and at the top of the viewport', () => {

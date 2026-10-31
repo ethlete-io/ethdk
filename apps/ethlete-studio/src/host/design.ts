@@ -231,6 +231,8 @@ export type ListedPart = {
   layer: string;
   name: string;
   origin: PartOrigin;
+  /** The part's module file, relative to the checkout. Missing from an `@ethlete/cli` older than part files. */
+  file?: string;
   note: string | null;
   states: string[];
   widths?: number[];

@@ -50,7 +50,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { REST } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
-import { injectViewContext, selectionOf } from '../chat/view-context';
+import { injectViewContext, lookedAtVariantOf, selectionOf } from '../chat/view-context';
 import { CommentDraftComponent } from './comment-draft.component';
 import { CommentThreadComponent } from './comment-thread.component';
 import {
@@ -999,7 +999,13 @@ export class SketchViewComponent {
       const canvas = this.canvasRef();
 
       this.viewContext.put('sketch', {
-        variant: this.picked(),
+        variant: lookedAtVariantOf({
+          frames: canvas.frames(),
+          selectedId: canvas.selectedId(),
+          areasInView: canvas.frameAreasInView(),
+          variants: this.current().variants,
+        }),
+        picked: this.picked(),
         selection: selectionOf(canvas.frames(), canvas.selectedId()),
       });
     });

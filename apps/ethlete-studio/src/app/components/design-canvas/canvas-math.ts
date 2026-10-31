@@ -72,6 +72,22 @@ export const visibleWorldRect = ({ camera, viewport, margin }: VisibleWorldRectO
   };
 };
 
+export type AreasInViewOptions = { rects: readonly (Rect & { id: string })[]; camera: Camera; viewport: Size };
+
+/** By id, the world area of each rect that the viewport shows; a rect out of view is left out. */
+export const areasInView = ({ rects, camera, viewport }: AreasInViewOptions) => {
+  const view = visibleWorldRect({ camera, viewport, margin: 0 });
+
+  return new Map(
+    rects.flatMap(({ id, x, y, width, height }) => {
+      const shownWidth = Math.min(x + width, view.x + view.width) - Math.max(x, view.x);
+      const shownHeight = Math.min(y + height, view.y + view.height) - Math.max(y, view.y);
+
+      return shownWidth > 0 && shownHeight > 0 ? [[id, shownWidth * shownHeight] as const] : [];
+    }),
+  );
+};
+
 export type FocusRectOptions = { rect: Rect; camera: Camera; viewport: Size; padding: number };
 
 /** The camera that brings a rect into view at the current zoom, or `null` when it is already in view. */

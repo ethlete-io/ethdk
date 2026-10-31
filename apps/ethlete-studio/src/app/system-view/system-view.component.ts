@@ -1120,10 +1120,12 @@ export class SystemViewComponent {
 
       const sketch = this.sketch();
       const canvas = this.partCanvas();
+      const part = sketch?.target ?? (this.flow() ? null : (this.part()?.key ?? null));
 
       this.viewContext.put('system', {
         product: product.name,
-        part: sketch?.target ?? (this.flow() ? null : (this.part()?.key ?? null)),
+        part,
+        partFile: product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? null,
         sketch: sketch?.target ?? null,
         sketchDir: sketch?.dir ?? null,
         selection: canvas ? selectionOf(canvas.frames(), canvas.selectedId()) : null,

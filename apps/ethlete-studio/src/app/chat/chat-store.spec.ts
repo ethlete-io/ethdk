@@ -140,21 +140,23 @@ describe('injectChatStore', () => {
     viewContext().put('system', {
       product: 'Kit',
       part: 'components/button',
+      partFile: '.ethlete/design/kit/components/button/button.ts',
       sketch: 'components/button',
       sketchDir: '.ethlete/design/kit/sketches/components-button',
     });
-    viewContext().put('sketch', { variant: 'b', selection: 'b hover' });
+    viewContext().put('sketch', { variant: 'b', picked: 'a', selection: 'b hover' });
     store.send('Make it calmer.');
 
     expect(host.run.mock.calls[0]?.[0].prompt).toBe(
-      'Studio view: product Kit, part components/button, sketch components/button' +
-        ' (dir .ethlete/design/kit/sketches/components-button), variant b, selected frame b hover.\n\nMake it calmer.',
+      'Studio view: product Kit, part components/button (file .ethlete/design/kit/components/button/button.ts),' +
+        ' sketch components/button (dir .ethlete/design/kit/sketches/components-button), variant b, picked a,' +
+        ' selected frame b hover.\n\nMake it calmer.',
     );
     expect(store.entries()).toEqual([
       {
         kind: 'prompt',
         text: 'Make it calmer.',
-        context: 'Kit › components/button › sketch · variant b · frame b hover',
+        context: 'Kit › components/button › sketch · variant b · picked a · frame b hover',
       },
     ]);
   });
