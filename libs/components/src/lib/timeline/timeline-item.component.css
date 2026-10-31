@@ -94,6 +94,7 @@
     .et-timeline-item-content {
       flex: 1;
       min-inline-size: 0;
+      overflow-wrap: anywhere;
       /* The gap lives on the content, not the item: the rail stretches over the item's full height,
          so paying for the gap inside it is what lets the line run unbroken into the next marker. */
       padding-block-end: var(--et-timeline-gap);
