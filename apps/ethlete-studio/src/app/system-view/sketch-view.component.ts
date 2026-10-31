@@ -112,7 +112,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     </ng-template>
 
     @let shown = current();
-    <header class="flex items-center gap-3 border-b border-surface-border px-4 py-3">
+    <header class="flex items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
       <div class="min-w-0 flex-1">
         <span class="font-mono text-small text-(--et-surface-color-subtle-solid)"> Sketch · {{ shown.product }} </span>
         <h2 class="truncate text-h4">{{ shown.target }}</h2>
@@ -121,8 +121,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       <span
         [class]="
           shown.status === 'in progress'
-            ? 'border-accent text-accent'
-            : 'border-surface-border text-(--et-surface-color-subtle-solid)'
+            ? 'border-(--et-theme-color-primary-solid) text-(--et-theme-color-ink-solid)'
+            : 'border-(--et-surface-border-solid) text-(--et-surface-color-subtle-solid)'
         "
         class="whitespace-nowrap rounded-full border px-2 font-mono text-small"
       >
@@ -130,7 +130,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </span>
     </header>
 
-    <section class="flex flex-col gap-2 border-b border-surface-border px-4 py-3 text-small" aria-label="Decision">
+    <section
+      class="flex flex-col gap-2 border-b border-(--et-surface-border-solid) px-4 py-3 text-small"
+      aria-label="Decision"
+    >
       <div class="flex flex-wrap gap-3" role="group" aria-label="Variants">
         @for (variant of shown.variants; track variant) {
           @let rejected = rejectedLabels()[variant];
@@ -361,7 +364,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           </p>
           <div class="flex items-center gap-2">
             <pre
-              class="m-0 min-w-0 flex-1 overflow-x-auto rounded-md border border-surface-border px-3 py-2 font-mono text-text"
+              class="m-0 min-w-0 flex-1 overflow-x-auto rounded-md border border-(--et-surface-border-solid) px-3 py-2 font-mono text-text"
               data-rebase-command
               >{{ refused.rebase }}</pre>
             <button
@@ -381,7 +384,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     </section>
 
     @if (hasToolbar()) {
-      <div class="flex flex-wrap items-center gap-2 border-b border-surface-border px-4 py-2 text-small">
+      <div class="flex flex-wrap items-center gap-2 border-b border-(--et-surface-border-solid) px-4 py-2 text-small">
         @if (shown.status === 'in progress' && shown.report; as report) {
           <span [title]="reportTitleOf(report)" class="min-w-0 flex-1 truncate text-(--et-surface-color-subtle-solid)">
             Agent: {{ report.message }}
@@ -472,7 +475,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     }
 
     @if (showing() === 'matrix' && pixelFreeLines().length > 0) {
-      <div class="flex flex-col items-start gap-1 border-b border-surface-border px-4 py-2 text-small" data-pixel-free>
+      <div
+        class="flex flex-col items-start gap-1 border-b border-(--et-surface-border-solid) px-4 py-2 text-small"
+        data-pixel-free
+      >
         @for (line of pixelFreeLines(); track line.variant) {
           <button
             [pressed]="noteDiffOpen() === line.variant"
@@ -515,7 +521,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
     @if (showing() === 'merge') {
       <div
-        class="flex flex-col items-start gap-1 border-b border-surface-border px-4 py-2 text-small"
+        class="flex flex-col items-start gap-1 border-b border-(--et-surface-border-solid) px-4 py-2 text-small"
         data-merge-preview
       >
         <p>{{ shown.target }} appears in these parts. Left: now. Right: after merging {{ picked() }}.</p>
@@ -545,7 +551,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           } @else {
             <p class="flex items-center gap-2 text-(--et-surface-color-subtle-solid)">
               <span
-                class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-accent"
+                class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
                 data-merge-compare-rendering
                 title="Rendering"
               ></span>

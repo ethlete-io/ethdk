@@ -63,12 +63,12 @@ export const agentLogo = (agent: Agent, cls = '') =>
 type View = 'hosts' | 'detail';
 
 const surfaces = [
-  { name: 'surface', cls: 'bg-surface' },
-  { name: 'surface-raised', cls: 'bg-surface-raised' },
-  { name: 'surface-overlay', cls: 'bg-surface-overlay' },
+  { name: 'surface', cls: 'et-surface--dark bg-et-surface-bg' },
+  { name: 'surface-raised', cls: 'et-surface--dark-elevated bg-et-surface-bg' },
+  { name: 'surface-overlay', cls: 'et-surface--dark-elevated-2 bg-et-surface-bg' },
 ];
 
-const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
   <h2 class="m-0 text-ui-xl font-ui-strong">
     Agent logos at 1.2rem, as the inbox, the sketches page and the comment pin draw them
   </h2>
@@ -77,7 +77,7 @@ const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface te
       .map(
         (surface) =>
           html`<div
-            class="flex flex-col gap-space-2 px-space-4 py-space-3 border border-surface-border rounded-control-md ${surface.cls}"
+            class="flex flex-col gap-space-2 px-space-4 py-space-3 border border-et-surface-border rounded-control-md ${surface.cls}"
           >
             <span class="font-code text-ui-xs text-text-muted">--${surface.name}</span>
             <div class="flex items-center gap-space-4">
@@ -89,7 +89,7 @@ const hosts = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface te
   </div>
 </div>`;
 
-const detail = html`<div class="flex flex-col gap-space-4 p-space-6 bg-surface text-text font-ui text-ui-md">
+const detail = html`<div class="flex flex-col gap-space-4 p-space-6 bg-et-surface-bg text-text font-ui text-ui-md">
   <h2 class="m-0 text-ui-xl font-ui-strong">Agent logos at 3.2rem</h2>
   <div class="flex items-center gap-space-7">
     ${agents

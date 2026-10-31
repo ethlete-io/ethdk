@@ -71,7 +71,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           [class.animate-pulse]="state === 'rendering'"
           [title]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
           [attr.data-reload]="state"
-          class="size-[0.6em] shrink-0 self-center rounded-full bg-accent"
+          class="size-[0.6em] shrink-0 self-center rounded-full bg-(--et-theme-color-primary-solid)"
         ></span>
       }
       @if (frame().width !== undefined) {
@@ -81,7 +81,12 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span class="shrink-0 tabular-nums text-text-muted" data-frame-note>{{ note }}</span>
       }
       @if (active()) {
-        <span class="shrink-0 rounded-sm bg-accent px-[0.4em] text-on-accent" data-live-badge> Live · Esc </span>
+        <span
+          class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)"
+          data-live-badge
+        >
+          Live · Esc
+        </span>
       }
     </ng-template>
     @for (copy of copies(); track copy.scheme; let first = $first) {
@@ -119,7 +124,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     }
     @if (frame().empty; as empty) {
       <div
-        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-surface-border p-4 text-center text-[length:calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
+        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[length:calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
         data-empty-cell
       >
         {{ empty }}
@@ -145,7 +150,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <div
           [style.width.px]="cropped.thumb.width"
           [style.height.px]="cropped.thumb.height"
-          class="absolute top-0 left-0 overflow-hidden outline outline-surface-border"
+          class="absolute top-0 left-0 overflow-hidden outline outline-(--et-surface-border-solid)"
           data-crop-thumb
         >
           <img
@@ -160,7 +165,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
               [style.top.px]="outline.y"
               [style.width.px]="outline.width"
               [style.height.px]="outline.height"
-              class="absolute outline-2 outline-accent outline-solid"
+              class="absolute outline-2 outline-(--et-theme-color-primary-solid) outline-solid"
               data-crop-outline
             ></div>
           }
@@ -194,7 +199,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       }
     } @else {
       <div
-        [class]="copies().length > 0 ? 'absolute left-0 top-0 bg-surface' : 'absolute inset-0'"
+        [class]="copies().length > 0 ? 'absolute left-0 top-0 bg-(--et-surface-background-solid)' : 'absolute inset-0'"
         [style.width.px]="copies().length > 0 ? width() : null"
         [style.height.px]="copies().length > 0 ? height() : null"
         [attr.data-scheme-copy]="copies()[0]?.scheme ?? null"
@@ -208,7 +213,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           [style.width.px]="width()"
           [style.height.px]="height()"
           [attr.data-scheme-copy]="copy.scheme"
-          class="absolute overflow-hidden bg-surface"
+          class="absolute overflow-hidden bg-(--et-surface-background-solid)"
         >
           @if (copy.shot) {
             <img
@@ -272,13 +277,13 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     </ng-template>
     @if (frame().pending; as pending) {
       <div
-        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-surface/70 p-[calc(2.4rem_*_var(--et-design-canvas-label-scale))]"
+        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-(--et-surface-background-solid)/70 p-[calc(2.4rem_*_var(--et-design-canvas-label-scale))]"
         data-frame-pending
       >
         <span
-          class="flex items-center gap-[0.6em] rounded-full border border-surface-border bg-surface px-[0.8em] py-[0.3em] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
+          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
         >
-          <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-accent"></span>
+          <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
           {{ pending }}
         </span>
       </div>
@@ -293,7 +298,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         [style.width.px]="box ? width() : null"
         [style.height.px]="box ? height() : null"
         [class.size-full]="!box"
-        class="pointer-events-none absolute outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-surface-border outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-accent"
+        class="pointer-events-none absolute outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-(--et-surface-border-solid) outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-(--et-theme-color-primary-solid)"
         data-frame-border
       ></div>
     }
@@ -302,7 +307,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent, ShotStateDirective, ShotStateComponent],
   host: {
     class:
-      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[schemed]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
+      'group/frame absolute block bg-(--et-surface-background-solid) data-[empty]:bg-transparent data-[schemed]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',

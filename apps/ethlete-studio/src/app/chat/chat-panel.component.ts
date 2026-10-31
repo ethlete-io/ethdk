@@ -15,7 +15,7 @@ import {
   TEXTAREA_IMPORTS,
   TextareaDirective,
 } from '@ethlete/components';
-import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { AutoSurfaceDirective, ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { ChatBlock, parseChatMarkdown } from './chat-markdown';
 import { injectChatStore } from './chat-store';
 import { chipOf, injectViewContext } from './view-context';
@@ -24,7 +24,10 @@ import { chipOf, injectViewContext } from './view-context';
   selector: 'ethlete-chat-panel',
   template: `
     @if (store.open()) {
-      <aside class="flex h-full w-2xl flex-col gap-3 border-l border-surface-border bg-surface p-3" data-chat-panel>
+      <aside
+        class="flex h-full w-2xl flex-col gap-3 border-l border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3"
+        data-chat-panel
+      >
         <div class="flex items-center justify-between gap-2">
           <span class="text-h4">Chat</span>
           <div class="flex gap-1">
@@ -86,7 +89,8 @@ import { chipOf, injectViewContext } from './view-context';
             @switch (entry.kind) {
               @case ('prompt') {
                 <li
-                  class="flex flex-col gap-1 self-end rounded-md bg-surface-raised px-3 py-2 text-text"
+                  class="flex flex-col gap-1 self-end rounded-md bg-(--et-surface-background-solid) px-3 py-2 text-text"
+                  etAutoSurface
                   data-chat-entry="prompt"
                 >
                   @if (entry.context) {
@@ -102,7 +106,8 @@ import { chipOf, injectViewContext } from './view-context';
                       @case ('code') {
                         <pre
                           [attr.data-language]="block.language || null"
-                          class="m-0 overflow-x-auto rounded-md bg-surface-raised p-2 font-mono text-mono text-text"
+                          class="m-0 overflow-x-auto rounded-md bg-(--et-surface-background-solid) p-2 font-mono text-mono text-text"
+                          etAutoSurface
                           data-chat-code-block
                         ><code>{{ block.text }}</code></pre>
                       }
@@ -170,7 +175,9 @@ import { chipOf, injectViewContext } from './view-context';
           @for (part of items; track $index) {
             @switch (part.kind) {
               @case ('code') {
-                <code class="rounded-sm bg-surface-raised px-1 font-mono text-mono">{{ part.text }}</code>
+                <code class="rounded-sm bg-(--et-surface-background-solid) px-1 font-mono text-mono" etAutoSurface>{{
+                  part.text
+                }}</code>
               }
               @case ('bold') {
                 <strong>{{ part.text }}</strong>
@@ -184,7 +191,8 @@ import { chipOf, injectViewContext } from './view-context';
 
         @if (chip(); as chip) {
           <div
-            class="flex items-center gap-1 self-start rounded-md bg-surface-raised py-0.5 pl-2 text-small text-text-muted"
+            class="flex items-center gap-1 self-start rounded-md bg-(--et-surface-background-solid) py-0.5 pl-2 text-small text-text-muted"
+            etAutoSurface
             data-chat-context
           >
             <span class="truncate" title="Sent with the next message">{{ chip }}</span>
@@ -240,7 +248,9 @@ import { chipOf, injectViewContext } from './view-context';
         </div>
       </aside>
     } @else {
-      <div class="flex h-full flex-col border-l border-surface-border bg-surface p-1">
+      <div
+        class="flex h-full flex-col border-l border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-1"
+      >
         <button
           (click)="store.toggle()"
           et-button
@@ -263,6 +273,7 @@ import { chipOf, injectViewContext } from './view-context';
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
     TEXTAREA_IMPORTS,
+    AutoSurfaceDirective,
     ProvideColorDirective,
   ],
   host: { class: 'flex min-h-0 shrink-0' },

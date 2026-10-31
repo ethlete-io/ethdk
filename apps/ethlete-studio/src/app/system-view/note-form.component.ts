@@ -16,7 +16,7 @@ import { injectNoteStore } from './note-store';
   selector: 'ethlete-note-form',
   template: `
     <div
-      class="flex w-80 flex-col gap-2 rounded-sm border border-dashed border-surface-border bg-surface p-3 shadow-lg"
+      class="flex w-80 flex-col gap-2 rounded-sm border border-dashed border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 shadow-lg"
       data-note-form
       data-canvas-popover
     >

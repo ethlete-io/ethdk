@@ -13,7 +13,7 @@ import { injectCommentStore } from './comment-store';
         @for (entry of entries(); track $index) {
           <li [attr.data-comment-by]="entry.by" class="flex flex-col gap-0.5">
             <span class="flex gap-2 text-[1.1rem] text-(--et-surface-color-subtle-solid)">
-              <span [class.text-accent]="entry.by === 'agent'" class="font-semibold">{{
+              <span [class.text-et-theme-ink]="entry.by === 'agent'" class="font-semibold">{{
                 entry.author ? SENDER_LABELS[entry.by] + ' · ' + entry.author : SENDER_LABELS[entry.by]
               }}</span>
               <time [attr.datetime]="entry.createdAt" [title]="entry.createdAt">{{
@@ -27,7 +27,7 @@ import { injectCommentStore } from './comment-store';
       @if (comment.addressed; as addressed) {
         <span
           [title]="addressed.note ?? ''"
-          class="rounded-full border border-surface-border px-2 text-[1.1rem]"
+          class="rounded-full border border-(--et-surface-border-solid) px-2 text-[1.1rem]"
           data-comment-addressed
           >{{ ADDRESSED_LABEL_OF(addressed) }} · {{ ADDRESSED_BY_OF(addressed) }}</span
         >

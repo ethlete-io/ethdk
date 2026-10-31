@@ -91,7 +91,7 @@ const STATUS_ITEM =
     }
 
     <footer
-      class="flex h-8 items-center gap-4 border-t border-surface-border bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
+      class="flex h-8 items-center gap-4 border-t border-(--et-surface-border-solid) bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
     >
       <ethlete-checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
 
@@ -110,14 +110,14 @@ const STATUS_ITEM =
 
       @if (renderQueue.count(); as rendering) {
         <span [class]="STATUS_ITEM" data-rendering>
-          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"></i>
+          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></i>
           Rendering {{ rendering }} {{ rendering === 1 ? 'frame' : 'frames' }}
         </span>
       }
 
       @if (queueLine(); as line) {
         <span [class]="STATUS_ITEM" title="Shots the design server draws, and the age of the oldest" data-design-queue>
-          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"></i>
+          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></i>
           {{ line }}
         </span>
       }
@@ -185,7 +185,7 @@ const STATUS_ITEM =
     UpdateCheckButtonComponent,
   ],
   host: {
-    class: 'grid h-dvh grid-rows-[minmax(0,1fr)_auto] bg-surface text-text',
+    class: 'grid h-dvh grid-rows-[minmax(0,1fr)_auto] bg-(--et-surface-background-solid) text-text',
   },
 })
 export class StudioViewComponent {

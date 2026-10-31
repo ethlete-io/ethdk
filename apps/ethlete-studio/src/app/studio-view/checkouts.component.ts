@@ -2,7 +2,7 @@ import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, outp
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective, ProvideSurfaceDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { AutoSurfaceDirective, ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   DesignRoots,
   designRoots$,
@@ -61,8 +61,8 @@ type Row = {
 
       @if (open()) {
         <div
-          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-surface-border bg-surface-raised p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
-          etProvideSurface="dark-elevated"
+          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
+          etAutoSurface
         >
           <div class="flex items-center gap-2">
             <span [class]="LABEL">Search folder</span>
@@ -163,7 +163,7 @@ type Row = {
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, AutoSurfaceDirective, ProvideColorDirective],
 })
 export class CheckoutsComponent {
   protected errorTheme = injectSemanticColorTheme('error');

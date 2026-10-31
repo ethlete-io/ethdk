@@ -23,7 +23,7 @@ const pinBase = `group/pin relative inline-flex size-5.5 cursor-pointer items-ce
 
 const pinClass = ({ agent, selected }: Props) => {
   if (!selected) {
-    return `${pinBase} bg-et-surface-bg text-text-muted ring-1 ring-surface-border hover:text-text hover:ring-text-muted active:text-text focus-visible:outline-offset-2`;
+    return `${pinBase} bg-et-surface-bg text-text-muted ring-1 ring-et-surface-border hover:text-text hover:ring-text-muted active:text-text focus-visible:outline-offset-2`;
   }
 
   const rings =

@@ -23,7 +23,10 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
   selector: 'ethlete-motion-timeline',
   template: `
     @let shown = answer();
-    <section class="flex flex-col gap-3 rounded-md border border-surface-border bg-surface p-3" data-motion-timeline>
+    <section
+      class="flex flex-col gap-3 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3"
+      data-motion-timeline
+    >
       <header class="flex flex-wrap items-center gap-2">
         <span class="font-mono text-small text-text">{{ shown.motion }}</span>
         <span class="text-small text-text-muted">{{ shown.from }} → {{ shown.to }}, {{ shown.mode }}</span>
@@ -53,7 +56,7 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
         <img
           [src]="keyframe.src"
           [alt]="shown.motion + ' at ' + keyframe.ms + ' ms'"
-          class="max-h-80 self-start rounded-sm border border-surface-border"
+          class="max-h-80 self-start rounded-sm border border-(--et-surface-border-solid)"
           data-motion-picture
         />
       }
@@ -90,7 +93,7 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
                 }}</span>
               </span>
             </span>
-            <span class="relative h-3 rounded-sm bg-surface-border">
+            <span class="relative h-3 rounded-sm bg-(--et-surface-border-solid)">
               <span
                 [style.left.%]="row.bar.left"
                 [style.width.%]="row.bar.width"

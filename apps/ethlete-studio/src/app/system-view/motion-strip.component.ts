@@ -31,7 +31,10 @@ const rowOf$ = ({
 @Component({
   selector: 'ethlete-motion-strip',
   template: `
-    <section class="flex flex-col gap-3 border-t border-surface-border bg-surface p-3" data-motions>
+    <section
+      class="flex flex-col gap-3 border-t border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3"
+      data-motions
+    >
       <header class="flex flex-wrap items-center gap-2">
         <span class="text-small font-semibold text-text">Motions</span>
         <span class="flex-1"></span>

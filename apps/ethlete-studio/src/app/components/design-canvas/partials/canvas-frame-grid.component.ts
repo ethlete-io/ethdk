@@ -231,12 +231,12 @@ export class CanvasFrameCellComponent {
         #table
         [class.invisible]="!revealed()"
         [style.grid-template-columns]="templateColumns()"
-        class="absolute left-0 top-0 grid w-max gap-px bg-surface-sunken px-[2.4rem] pb-[2.4rem] pt-[1.6rem] text-[1.1rem]/[1.4rem] text-text-muted"
+        class="absolute left-0 top-0 grid w-max gap-px px-[2.4rem] pb-[2.4rem] pt-[1.6rem] text-[1.1rem]/[1.4rem] text-text-muted"
         data-grid-sheet
       >
         @if (sheet.interactive.length > 0) {
           <span
-            class="col-span-full mb-[0.8rem] border-b border-surface-border pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
+            class="col-span-full mb-[0.8rem] border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
             data-grid-group
             >States by interaction</span
           >
@@ -260,7 +260,7 @@ export class CanvasFrameCellComponent {
                 <div
                   [class.grid]="sheet.centered"
                   [class.place-items-center]="sheet.centered"
-                  class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border"
+                  class="bg-(--et-surface-background-solid) px-space-1 py-space-2 ring-1 ring-(--et-surface-border-solid)"
                   data-grid-cell
                 >
                   @if (cellOf(row, column); as cell) {
@@ -283,7 +283,7 @@ export class CanvasFrameCellComponent {
         }
         @if (sheet.packed.length > 0) {
           <span
-            class="col-span-full mb-[0.8rem] mt-[2.4rem] border-b border-surface-border pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em] first:mt-0"
+            class="col-span-full mb-[0.8rem] mt-[2.4rem] border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em] first:mt-0"
             data-grid-group
             >Rest only</span
           >
@@ -307,7 +307,10 @@ export class CanvasFrameCellComponent {
                 <span></span>
               }
               @for (row of line; track row) {
-                <div class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border" data-grid-cell>
+                <div
+                  class="bg-(--et-surface-background-solid) px-space-1 py-space-2 ring-1 ring-(--et-surface-border-solid)"
+                  data-grid-cell
+                >
                   @if (cellOf(row, sheet.first); as cell) {
                     <ethlete-canvas-frame-cell
                       #cell
@@ -382,7 +385,7 @@ export class CanvasFrameCellComponent {
           <span
             [class]="placement"
             [style.grid-column]="'span ' + grid().columns.length"
-            class="border-b border-surface-border pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
+            class="border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
             data-grid-scheme
             >{{ schemeLabelOf(scheme) }}</span
           >
@@ -391,7 +394,7 @@ export class CanvasFrameCellComponent {
     </ng-template>
     @if (!revealed()) {
       <span
-        class="absolute left-[2.4rem] top-[2.4rem] size-[1.2rem] animate-pulse rounded-full bg-accent"
+        class="absolute left-[2.4rem] top-[2.4rem] size-[1.2rem] animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
         title="Rendering"
         data-grid-loading
       ></span>

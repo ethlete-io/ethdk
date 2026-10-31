@@ -24,7 +24,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
 @Component({
   selector: 'ethlete-inventory-view',
   template: `
-    <header class="flex flex-wrap items-center gap-3 border-b border-surface-border px-4 py-3">
+    <header class="flex flex-wrap items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
       <h2 class="m-0 text-[1.4rem] font-semibold">Inventory</h2>
       @if (inventory(); as shown) {
         <span class="text-small text-text-muted" data-inventory-approval>{{ APPROVAL_LABEL_OF(shown) }}</span>
@@ -58,7 +58,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
     @if (error(); as message) {
       <p
         [etProvideColor]="errorTheme()"
-        class="m-0 border-b border-surface-border px-4 py-2 text-small text-(--et-theme-color-primary-solid)"
+        class="m-0 border-b border-(--et-surface-border-solid) px-4 py-2 text-small text-(--et-theme-color-primary-solid)"
         data-inventory-error
       >
         {{ message }}
@@ -70,7 +70,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
           @for (frame of shown.frames; track frame.shot) {
             <figure class="m-0 flex flex-col gap-2">
               <figcaption class="font-mono text-small text-text-muted">{{ FRAME_LABEL_OF(frame) }}</figcaption>
-              <div class="relative self-start border border-surface-border">
+              <div class="relative self-start border border-(--et-surface-border-solid)">
                 <img [src]="shotUrl(frame)" (load)="measure(frame, $event)" class="block max-w-full" alt="" />
                 @if (sizes()[frame.shot]; as size) {
                   @for (control of frame.controls; track $index) {
@@ -98,7 +98,9 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
             <p class="m-0 text-small text-text-muted">This page draws no rest frame.</p>
           }
         </div>
-        <ol class="m-0 flex min-h-0 list-none flex-col gap-2 overflow-auto border-l border-surface-border p-4">
+        <ol
+          class="m-0 flex min-h-0 list-none flex-col gap-2 overflow-auto border-l border-(--et-surface-border-solid) p-4"
+        >
           @for (control of controls(); track control.number) {
             <li
               [etProvideColor]="themeOf(control.status)"
@@ -136,7 +138,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, ProvideColorDirective],
-  host: { class: 'grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] bg-surface' },
+  host: { class: 'grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] bg-(--et-surface-background-solid)' },
 })
 export class InventoryViewComponent {
   private destroyRef = inject(DestroyRef);

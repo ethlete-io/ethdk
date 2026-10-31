@@ -18,7 +18,7 @@ import {
 @Component({
   selector: 'ethlete-comment-panel',
   template: `
-    <header class="flex items-center gap-2 border-b border-surface-border px-4 py-3">
+    <header class="flex items-center gap-2 border-b border-(--et-surface-border-solid) px-4 py-3">
       <h2 class="m-0 flex-1 text-[1.4rem] font-semibold">Comments</h2>
       @if (resolved().length) {
         <button
@@ -67,9 +67,11 @@ import {
             <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
             <span class="shrink-0">{{ SENDER_LABELS[LAST_SENDER_OF(comment)] }}</span>
             @if (comment.addressed; as addressed) {
-              <span class="shrink-0 rounded-full border border-surface-border px-1.5" data-comment-addressed>{{
-                ADDRESSED_LABEL_OF(addressed)
-              }}</span>
+              <span
+                class="shrink-0 rounded-full border border-(--et-surface-border-solid) px-1.5"
+                data-comment-addressed
+                >{{ ADDRESSED_LABEL_OF(addressed) }}</span
+              >
             } @else if (IS_ANSWERED(comment)) {
               <span class="shrink-0" data-comment-answered>answered</span>
             }
@@ -86,7 +88,7 @@ import {
     <div class="min-h-0 overflow-y-auto">
       @if (loadError() || interrupted()) {
         <div
-          class="m-2 flex items-center gap-2 rounded border border-surface-border p-2"
+          class="m-2 flex items-center gap-2 rounded border border-(--et-surface-border-solid) p-2"
           role="alert"
           data-comment-problem
         >
@@ -116,7 +118,7 @@ import {
       }
       @if (questions().length) {
         <section class="flex flex-col gap-0.5 p-2" aria-label="Questions for you" data-comment-questions-group>
-          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-accent">Questions for you</h3>
+          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-(--et-theme-color-ink-solid)">Questions for you</h3>
           @for (comment of questions(); track comment.id) {
             <ng-container *ngTemplateOutlet="entry; context: { $implicit: comment }" />
           }
@@ -125,7 +127,7 @@ import {
       @for (group of groups(); track group.part) {
         <section [attr.aria-label]="group.part" class="flex flex-col gap-0.5 p-2" data-comment-group>
           <h3
-            [class.text-accent]="group.part === selected()"
+            [class.text-et-theme-ink]="group.part === selected()"
             class="m-0 px-2 py-1 font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)"
           >
             {{ group.part }}
@@ -181,7 +183,8 @@ import {
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, NgTemplateOutlet],
   host: {
-    class: 'grid min-h-0 w-80 grid-rows-[auto_minmax(0,1fr)] border-l border-surface-border bg-surface',
+    class:
+      'grid min-h-0 w-80 grid-rows-[auto_minmax(0,1fr)] border-l border-(--et-surface-border-solid) bg-(--et-surface-background-solid)',
   },
 })
 export class CommentPanelComponent {

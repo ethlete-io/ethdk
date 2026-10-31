@@ -31,7 +31,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </button>
       @if (expanded()) {
         <section
-          class="absolute top-full right-0 mt-2 flex w-xl flex-col gap-3 rounded-md border border-surface-border bg-surface p-3 shadow-lg"
+          class="absolute top-full right-0 mt-2 flex w-xl flex-col gap-3 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 shadow-lg"
           data-exceptions
         >
           @if (error(); as message) {
