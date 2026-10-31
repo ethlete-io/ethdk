@@ -686,6 +686,7 @@ that missed the handoff; renumbered here because Q104/Q105 were already taken.
 - Q100: hover and error borders in primary are a lib bug; error resolves through the semantic error theme. Patch.
 - Q101: a filled et-button hovers to the theme's `-active` token; pressed goes 16 % further (button r1 b).
 - Q103: a product without a light scheme (studio, studio-lab) draws one colour-scheme copy.
+  In progress (builder 57, 2026-10-31).
 - Q104: a stat-tile without a success theme falls back to the inherited theme with a dev-mode warning. Patch.
 - Q105: the floating trigger gets a light shadow only while it floats, faded in with opacity only.
 - Q119 (otp, 33's "Q103"): filled and empty otp segments look the same; every segment gets the 3:1 input frame
