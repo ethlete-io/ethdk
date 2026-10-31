@@ -62,4 +62,22 @@ describe('unusedBasePartsOf', () => {
 
     expect(unusedOf(target)).toEqual(['components/chip']);
   });
+
+  it.each([
+    [
+      'a control part ref',
+      "export const part = { controls: { on: { kind: 'button', part: 'components/switch' } } };\n",
+    ],
+    ['an ng imports name', "export const view = ng('<et-switch />', { imports: ['SWITCH_IMPORTS'] });\n"],
+  ])('counts a base part as used through %s of a product file', (_, line) => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero/hero.ts`;
+
+    basePart(target, 'components/switch', '');
+    expect(unusedOf(target)).toEqual(['components/switch']);
+
+    write(target, hero, `${readFileSync(join(target, hero), 'utf8')}${line}`);
+
+    expect(unusedOf(target)).toEqual([]);
+  });
 });
