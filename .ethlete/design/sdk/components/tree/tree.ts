@@ -1,5 +1,6 @@
 import { tree, TreeMockItem, treeStyles } from '@ethlete/components/design/tree';
 import { definePart, drawing, interactionRows } from '@design-system';
+import selectedTint from './selected-tint.css?inline';
 
 type RowInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -64,6 +65,6 @@ export default definePart({
         label: 'Files',
         rowAttributes: forced && { [forced.row]: `data-et-force="${forced.interaction}"` },
       }).replaceAll('role="treeitem"', 'data-et-control="row" role="treeitem"'),
-      styles: treeStyles,
+      styles: [treeStyles, selectedTint].join('\n'),
     }),
 });

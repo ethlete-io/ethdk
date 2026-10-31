@@ -1,5 +1,6 @@
 import { button, buttonStyles, ButtonMockOptions } from '@ethlete/components/design/button';
 import { definePart, drawing, forceInteraction, interactionRows } from '@design-system';
+import hover from './button.css?inline';
 
 type ButtonInteraction = 'hover' | 'active' | 'focus-visible';
 
@@ -35,5 +36,5 @@ export default definePart({
   states,
   grid,
   controls: { button: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true } },
-  render: (props: Props) => drawing({ body: control(props), styles: buttonStyles }),
+  render: (props: Props) => drawing({ body: control(props), styles: [buttonStyles, hover].join('\n') }),
 });

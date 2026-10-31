@@ -1,5 +1,5 @@
 import { definePart } from '@design-system';
-import { ELEVATION_STATES, elevationScene, type ElevationProps } from '@shared/elevation/scene';
+import { ELEVATION_STATES, elevationScene, type ElevationProps } from './shared/elevation/scene';
 import edge from './elevation.css?inline';
 
 export default definePart<ElevationProps>({
