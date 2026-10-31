@@ -74,6 +74,19 @@ const FLOW_SPACING = { columnGap: 280, rowGap: 120, maxColumnGap: 560 };
 const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
   Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, top]) => b[key] === top);
 
+const cellAt = (event: MouseEvent) => {
+  const frame = event.currentTarget;
+
+  if (!(frame instanceof HTMLElement)) return undefined;
+
+  return frame.ownerDocument
+    .elementsFromPoint(event.clientX, event.clientY)
+    .find(
+      (target): target is HTMLElement =>
+        target instanceof HTMLElement && 'cellId' in target.dataset && frame.contains(target),
+    );
+};
+
 let canvasCount = 0;
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
@@ -757,9 +770,11 @@ export class DesignCanvasComponent {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     this.selectedId.set(id);
-    const cell = event
-      .composedPath()
-      .find((target): target is HTMLElement => target instanceof HTMLElement && 'cellId' in target.dataset);
+    const cell =
+      event
+        .composedPath()
+        .find((target): target is HTMLElement => target instanceof HTMLElement && 'cellId' in target.dataset) ??
+      cellAt(event);
 
     this.selectedCellId.set(cell?.dataset['cellId'] ?? null);
     if (this.activeId() !== id) this.activeId.set(null);

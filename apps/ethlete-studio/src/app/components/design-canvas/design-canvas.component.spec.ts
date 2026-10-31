@@ -1093,4 +1093,36 @@ describe('DesignCanvasComponent', () => {
     fixture.componentInstance.selectedId.set(null);
     expect(fixture.componentInstance.selectedCellId()).toBeNull();
   });
+
+  it('selects the cell under a click that lands on the shield over an inactive grid frame', async () => {
+    const cell = (id: string) => ({ id, row: 'filled', column: id, label: id, src: 'about:blank', width: 100 });
+    const fixture = await render([
+      {
+        id: 'grid',
+        src: '',
+        label: 'grid',
+        grid: { columns: ['a', 'b'], rows: ['filled'], cells: [cell('a'), cell('b')] },
+      },
+    ]);
+    const host = fixture.nativeElement as HTMLElement;
+    const frame = host.querySelector('ethlete-canvas-frame');
+    const shield = [...(frame?.children ?? [])].find(
+      (child) => child.className === 'absolute inset-0 size-full border-0',
+    );
+    const cellB = host.querySelector('[data-cell-id="b"]');
+
+    expect(shield).toBeDefined();
+    Object.defineProperty(document, 'elementsFromPoint', {
+      configurable: true,
+      value: (x: number) => (x >= 100 ? [shield, cellB, frame] : [shield, frame]),
+    });
+
+    try {
+      shield?.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 150, clientY: 20 }));
+    } finally {
+      Reflect.deleteProperty(document, 'elementsFromPoint');
+    }
+
+    expect([fixture.componentInstance.selectedId(), fixture.componentInstance.selectedCellId()]).toEqual(['grid', 'b']);
+  });
 });
