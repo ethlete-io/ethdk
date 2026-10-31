@@ -177,7 +177,7 @@ export const declaredControlsOf = (value: unknown): Record<string, DeclaredContr
 
 const INTERACTION_WORDS = new Set(['hover', 'hovered', 'focus', 'focused', 'pressed', 'active', 'selected']);
 
-const NAME_WORDS = new Set([...INTERACTION_WORDS, 'visible', 'within']);
+const NAME_WORDS = new Set([...INTERACTION_WORDS, 'visible', 'within', 'invalid', 'disabled', 'checked', 'open']);
 
 const wordsOf = (state: string) =>
   state
@@ -187,10 +187,17 @@ const wordsOf = (state: string) =>
     .filter((word) => word !== '');
 
 /**
- * Whether a state name shows an interaction: one of its words, split at `-`, `_`, spaces and camelCase, is hover,
- * hovered, focus, focused, pressed, active or selected. `row-hover`, `collapseFocus` and `focus-visible` are; `inactive` is not.
+ * Whether a state name shows an interaction: its last word, split at `-`, `_`, spaces and camelCase, or the whole name
+ * is hover, hovered, focus, focused, pressed, active or selected. `row-hover`, `collapseFocus` and `focus-visible`
+ * are; `active-only` and `inactive` are not.
  */
-export const isInteractionState = (state: string) => wordsOf(state).some((word) => INTERACTION_WORDS.has(word));
+export const isInteractionState = (state: string) => {
+  const words = wordsOf(state);
+
+  while (words.length > 1 && ['visible', 'within'].includes(words[words.length - 1] ?? '')) words.pop();
+
+  return INTERACTION_WORDS.has(words[words.length - 1] ?? '');
+};
 
 /** Whether a part may draw interaction states: it is no page, and its `controls` declare a control of a checked kind. */
 export const isControlPart = (options: { part: string; controls: unknown }) =>
@@ -224,11 +231,16 @@ export const controlStateGapsOf = (options: {
   const why = part.startsWith('pages/')
     ? 'a page is no control part'
     : `${part} declares no control of a kind ${CHECKED_KINDS.join(', ')}`;
+  const declaresNone = Object.keys(declaredControlsOf(options.controls) ?? {}).length === 0;
+  const fixOf = (element: string) =>
+    part.startsWith('components/') && declaresNone
+      ? `declare its controls (Q164), or extract the ${element} as its own control part`
+      : `extract the ${element} as its own control part`;
 
   return [...elements].map(([element, shown]) => ({
     code: 'CONTROL-STATE',
     target: part,
-    detail: `${shown.length === 1 ? 'state' : 'states'} ${statesShownOf(shown)} draw${shown.length === 1 ? 's' : ''} an interaction (hover, focus, pressed, active or selected), which only a control part draws, and ${why} - extract the ${element} as its own control part and draw ${shown.length === 1 ? 'this state' : 'these states'} there`,
+    detail: `${shown.length === 1 ? 'state' : 'states'} ${statesShownOf(shown)} draw${shown.length === 1 ? 's' : ''} an interaction (hover, focus, pressed, active or selected), which only a control part draws, and ${why} - ${fixOf(element)} and draw ${shown.length === 1 ? 'this state' : 'these states'} there`,
   }));
 };
 
