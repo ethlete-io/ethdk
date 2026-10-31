@@ -1,6 +1,7 @@
 import { interactiveStyles } from '@ethlete/core/design/interactive-styles';
 import checkboxBase from '../src/lib/forms/checkbox/checkbox.component.css?inline';
 import choiceFieldBase from '../src/lib/forms/choice-field/choice-field.component.css?inline';
+import description from '../src/lib/forms/description/description.component.css?inline';
 import choiceFieldCard from '../src/lib/forms/choice-field/choice-field-card-styles.component.css?inline';
 import formSupport from '../src/lib/forms/form-field/form-support-styles.component.css?inline';
 import label from '../src/lib/forms/form-field/headless/label.directive.css?inline';
@@ -83,20 +84,12 @@ export type CheckboxGroupMockOptions = CheckboxMockSupport & {
   color?: string;
 };
 
-const descriptionStyles = `@layer components {
-  et-description {
-    display: block;
-    font-size: var(--et-description-font-size, 12px);
-    color: var(--et-surface-color-muted-solid, currentColor);
-  }
-}`;
-
 /** The stylesheets `checkbox()` draws with: the real `et-checkbox`, `et-choice-field` and form support CSS. */
 export const checkboxStyles = /* @__PURE__ */ [
   interactiveStyles,
   focusRing,
   label,
-  descriptionStyles,
+  description,
   formSupport,
   selectionCard,
   choiceFieldBase,
@@ -108,7 +101,7 @@ export const checkboxStyles = /* @__PURE__ */ [
 export const checkboxGroupStyles = /* @__PURE__ */ [
   interactiveStyles,
   label,
-  descriptionStyles,
+  description,
   formSupport,
   selectionCard,
   checkboxGroupBase,
