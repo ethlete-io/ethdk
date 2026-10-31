@@ -1,0 +1,8 @@
+.copy-button-frame {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
