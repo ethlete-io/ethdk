@@ -48,6 +48,12 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   never get the "unlinked" open point and can become ready.
 - Q166 sketch without a part (Tom, 2026-10-31): a sketch for a part that does not exist yet gets no open point. Leave
   it until Studio lists sketches as their own entries.
+- Q167 missing motion, open point 8 (Tom, 2026-10-31): follows `plans/ethlete-studio/motion.md` ("hover and press
+  are states, so they are motions too"). Every state pair of the Q164 control table that a user reaches by an
+  interaction needs a motion in both directions, for example rest <-> hover, rest <-> press, collapsed <-> expanded,
+  closed <-> open, hidden <-> visible. A colour change is enough as a motion (a short token transition). One open
+  point per missing pair and direction, for example "no motion collapsed -> expanded". Focus may have a motion but
+  does not need one (no open point). Disabled needs none: the user does not reach it by an interaction.
 
 ## Not decided
 
