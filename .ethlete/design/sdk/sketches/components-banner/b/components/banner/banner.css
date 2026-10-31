@@ -1,0 +1,18 @@
+.banner-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+@layer components {
+  .et-banner {
+    border-color: var(--et-theme-color-ink-solid);
+  }
+
+  .et-banner .et-focus-ring {
+    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+  }
+}
