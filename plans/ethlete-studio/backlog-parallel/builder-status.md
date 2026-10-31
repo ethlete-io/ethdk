@@ -121,6 +121,6 @@
   - CI: the covered.spec skip means the Q236 check never runs in CI (frame-fill and other browser specs skip
     there too). Move the browser specs into a job with Chromium (storybook-e2e or test-storybook) or install the
     browser in the unit job.
-  - Q235 headless check: the subagent result was not in when this note was written; re-run it if no report exists,
-    then delete the root `q235-verify.mjs`.
+  - Q235 headless check: done, all four checks pass (one round, select lists rounds, opens newest, switches);
+    `q235-verify.mjs` deleted.
   - Watch CI for 456dae1c3 or later: `gh run list --branch next --limit 5`.
