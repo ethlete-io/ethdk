@@ -97,6 +97,12 @@ the model. They are no reference for correct behaviour: some of them are broken.
 3. The keyframe strip and the timeline in Studio. Done (2026-10-30), see "As built: slice 3 Studio".
 4. `spring()` and `interrupt`. Done (2026-10-30), see "As built: slice 4".
 5. Flow lines. Done (2026-10-30), see "As built: slice 5".
+6. Q59, split into two slices (builder, 2026-10-31):
+   - 6a Token names on tracks. In progress (builder, 2026-10-31). The motion core matches each track's duration and
+     easing against the foundations motion tokens computed on `:root` in the frame and adds `durationToken` and
+     `easingToken`. The timeline shows the token name, with the raw value in the `title`.
+   - 6b The timeline drives the live frame. A `postMessage` switch into the frame pauses every animation of
+     `document.getAnimations()` at the slider time and sets `playbackRate` to the speed. Not started.
 
 Each slice gets an "in progress" note here when it starts.
 
