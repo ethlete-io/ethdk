@@ -19,6 +19,7 @@
 
   .et-avatar {
     --_et-avatar-size: 40px;
+    --_et-avatar-icon-size: 2rem;
     --et-theme-color-primary-opacity: 1;
 
     display: inline-flex;
@@ -43,27 +44,36 @@
 
     &:where([data-size='xs']) {
       --_et-avatar-size: 24px;
+      --_et-avatar-icon-size: 1.4rem;
       --et-avatar-font-size: 10px;
     }
 
     &:where([data-size='sm']) {
       --_et-avatar-size: 32px;
+      --_et-avatar-icon-size: 1.8rem;
       --et-avatar-font-size: 12px;
     }
 
     &:where([data-size='lg']) {
       --_et-avatar-size: 48px;
+      --_et-avatar-icon-size: 2.4rem;
       --et-avatar-font-size: 16px;
     }
 
     &:where([data-size='xl']) {
       --_et-avatar-size: 64px;
+      --_et-avatar-icon-size: 2.8rem;
       --et-avatar-font-size: 20px;
     }
 
     &:where([data-shape='square']) {
       --et-avatar-border-radius: 8px;
     }
+  }
+
+  .et-avatar .et-icon {
+    inline-size: var(--_et-avatar-icon-size);
+    block-size: var(--_et-avatar-icon-size);
   }
 
   .et-avatar-image {
