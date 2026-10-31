@@ -485,6 +485,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   `ethlete-sdk-57`.
 - Studio footer status (Tom, 2026-10-31): the footer gets a status line that shows the render queue (for example
   queued, rendering, slow or failed shots), so a slow or blank canvas is visible as such. Built by `ethlete-sdk-57`.
+- Studio render speed (Tom, 2026-10-31): a grid of cells must appear at once, not cell by cell. Measure first. Tom:
+  "throw rust at the problem" - Rust in the Tauri host is welcome for the hot path (shot cache, render queue, image
+  work, hashing) where the numbers show a gain.
 - Q87: the option check icon uses the ink token (in the light scheme the brand-on-light ink), not primary mint. Same
   rule as Q75.
 - Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
