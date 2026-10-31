@@ -57,6 +57,7 @@ import {
   isSectionOpen,
   partKeyOf,
   sketchKeyOf,
+  pickedPartKeyOf,
   treeOf,
 } from './system-tree';
 import { CommentDraftComponent } from './comment-draft.component';
@@ -967,7 +968,10 @@ export class SystemViewComponent {
     const first = treeOf(parts)[0]?.entries[0]?.key;
     const listed =
       parts.find((candidate) => partKeyOf(candidate) === this.picked()) ??
-      (this.awaitingPicked() ? undefined : parts.find((candidate) => partKeyOf(candidate) === first));
+      (this.awaitingPicked()
+        ? undefined
+        : (parts.find((candidate) => partKeyOf(candidate) === pickedPartKeyOf(this.picked())) ??
+          parts.find((candidate) => partKeyOf(candidate) === first)));
 
     return listed ? { key: partKeyOf(listed), listed } : null;
   });

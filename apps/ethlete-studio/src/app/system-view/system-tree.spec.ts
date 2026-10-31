@@ -10,6 +10,7 @@ import {
   framesOf,
   isSmallPart,
   pickedVariantOf,
+  pickedPartKeyOf,
   mergePreviewOf,
   PENDING_LABEL,
   sketchMatrixOf,
@@ -1180,5 +1181,13 @@ describe('picking a variant', () => {
     expect(pickedVariantOf(rejected)).toBeNull();
     expect(canPick(reopened, 'a')).toBe(true);
     expect(pickedVariantOf(reopened)).toBe('a');
+  });
+});
+
+describe('a sketch that is gone', () => {
+  it('shows the part a merged or removed sketch targeted, and a picked part as itself', () => {
+    expect(pickedPartKeyOf('sketch:components/tree')).toBe('components/tree');
+    expect(pickedPartKeyOf('components/card')).toBe('components/card');
+    expect(pickedPartKeyOf(null)).toBeNull();
   });
 });

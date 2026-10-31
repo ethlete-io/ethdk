@@ -89,7 +89,13 @@ const badgesOf = (
   ...(part.problems.length > 0 ? (['error'] as const) : []),
 ];
 
-export const sketchKeyOf = (target: string) => `sketch:${target}`;
+const SKETCH_KEY = 'sketch:';
+
+export const sketchKeyOf = (target: string) => `${SKETCH_KEY}${target}`;
+
+/** The part a picked entry shows when no listed sketch has it: the part itself, or the target of a sketch key. */
+export const pickedPartKeyOf = (picked: string | null) =>
+  picked?.startsWith(SKETCH_KEY) ? picked.slice(SKETCH_KEY.length) : picked;
 
 const sketchEntryOf = (
   sketch: ListedSketch,
