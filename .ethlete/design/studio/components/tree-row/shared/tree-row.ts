@@ -49,7 +49,7 @@ const rowMarkup = (r: Row) => {
         tabindex="0"
         data-et-surface-interactive
         data-kind="${r.kind}"
-        ${r.selected ? 'data-selected' : ''}
+        ${r.selected ? 'data-selected aria-current="true"' : ''}
       >
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>

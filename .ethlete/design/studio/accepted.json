@@ -1511,5 +1511,13 @@
     "note": "implements link (Q247)",
     "hash": "e970918b69a2494b",
     "at": "2026-10-31T23:22:02.716Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "89d4aeb6b29338b6",
+    "at": "2026-10-31T23:50:04.642Z",
+    "auto": true
   }
 ]
