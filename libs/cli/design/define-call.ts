@@ -248,7 +248,8 @@ export const placeOverlays = (root: HTMLElement) => {
 /**
  * Grows `root` to cover every absolutely or fixed positioned element inside it, such as an open
  * overlay pane, so a frame measured or shot from `root` shows them. Skips a fixed element on all four
- * edges of the viewport, such as a backdrop. Grows sideways too with `sideways`. Safe to run again.
+ * edges of the viewport, such as a backdrop, and counts an absolute element only as far as the
+ * overflow boxes that clip it. Grows sideways too with `sideways`. Safe to run again.
  */
 export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) => {
   const view = root.ownerDocument.defaultView;
@@ -260,11 +261,36 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
   const fillsViewport = (style: CSSStyleDeclaration) =>
     style.position === 'fixed' &&
     [style.top, style.right, style.bottom, style.left].every((edge) => parseFloat(edge) === 0);
+  const clips = (style: CSSStyleDeclaration) =>
+    [style.overflow, style.overflowX, style.overflowY].some((overflow) => overflow && overflow !== 'visible');
+  const holdsAbsolute = (style: CSSStyleDeclaration) =>
+    !['static', ''].includes(style.position) || !['none', ''].includes(style.transform);
+  const clipped = (element: Element) => {
+    let { top, right, bottom, left } = element.getBoundingClientRect();
+    let escaping = true;
+
+    for (let ancestor = element.parentElement; ancestor && ancestor !== root; ancestor = ancestor.parentElement) {
+      const style = view.getComputedStyle(ancestor);
+
+      if (escaping && holdsAbsolute(style)) escaping = false;
+      if (!escaping && clips(style)) {
+        const box = ancestor.getBoundingClientRect();
+
+        top = Math.max(top, box.top);
+        right = Math.min(right, box.right);
+        bottom = Math.min(bottom, box.bottom);
+        left = Math.max(left, box.left);
+      }
+      if (style.position === 'fixed') break;
+      if (style.position === 'absolute') escaping = true;
+    }
+
+    return { top, right, bottom, left, width: right - left, height: bottom - top };
+  };
   const outOfFlow = [...root.querySelectorAll('*')]
     .map((element) => ({ element, style: view.getComputedStyle(element) }))
     .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
-    .map(({ element }) => element)
-    .map((element) => element.getBoundingClientRect())
+    .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
     .filter((rect) => rect.width > 0 && rect.height > 0);
   const extentOf = ({ side, start, paddings }: { side: 'bottom' | 'right'; start: number; paddings: string[] }) => {
     const extent = Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));

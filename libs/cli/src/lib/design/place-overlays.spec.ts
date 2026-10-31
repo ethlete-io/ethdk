@@ -189,6 +189,47 @@ describe('fitOutOfFlow', () => {
     expect([root.style.minHeight, root.style.minWidth]).toEqual(['244px', '400px']);
   });
 
+  const scrolling = (options: { body: string; sentinel?: string }) => {
+    const root = mount(
+      `<div class="et-overlay-runtime-root">` +
+        `<div class="et-overlay-runtime-entry" id="panel" style="position: absolute">` +
+        `<main id="body" style="${options.body}"><div style="position: relative">` +
+        `<div id="sentinel" style="${options.sentinel ?? 'position: absolute'}"></div></div></main></div></div>`,
+    );
+
+    rect(root, { top: 10, left: 0, width: 320, height: 40 });
+    rect(root.querySelector('#panel'), { top: 54, left: 0, width: 400, height: 200 });
+    rect(root.querySelector('#body'), { top: 94, left: 0, width: 400, height: 120 });
+    rect(root.querySelector('#sentinel'), { top: 453, left: 0, width: 400, height: 1 });
+
+    return root;
+  };
+
+  it('counts an absolute element inside a scroll container only as far as the container', () => {
+    const root = scrolling({ body: 'overflow: auto' });
+
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.minHeight, root.style.minWidth]).toEqual(['244px', '400px']);
+  });
+
+  it('counts an absolute element whose containing block is above the scroll container in full', () => {
+    const root = scrolling({ body: 'overflow: hidden', sentinel: 'position: absolute' });
+
+    root.querySelector('#body > div')?.setAttribute('style', '');
+    fitOutOfFlow(root, { sideways: false });
+
+    expect(root.style.minHeight).toBe('444px');
+  });
+
+  it('counts an absolute element inside a visible overflow box in full', () => {
+    const root = scrolling({ body: 'overflow: visible' });
+
+    fitOutOfFlow(root, { sideways: false });
+
+    expect(root.style.minHeight).toBe('444px');
+  });
+
   it('leaves the root of a closed state at its own height, also after it was open', () => {
     const root = open();
 
