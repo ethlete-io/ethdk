@@ -2140,7 +2140,21 @@ mod tests {
         assert_eq!(hello.app_version, "0.0.0-test");
         assert!(hello.clock_offset_ms.abs() < 1_000);
 
-        let (on_a, on_b) = (&a.list().await.unwrap()[0], &b.list().await.unwrap()[0]);
+        // The listener stores its side after the caller's last frame, so `hello` can return first.
+        let on_a = &tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let rows = a.list().await.unwrap();
+
+                if rows[0].last_seen_ms.is_some_and(|at| at >= started_ms) {
+                    return rows;
+                }
+
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("the listener stores its side of the hello")[0];
+        let on_b = &b.list().await.unwrap()[0];
 
         for seen in [on_a, on_b] {
             assert!(seen.last_seen_ms.is_some_and(|at| at >= started_ms));
