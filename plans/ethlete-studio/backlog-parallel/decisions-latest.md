@@ -194,3 +194,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   `split-button.component.css`: filled active mixes the theme primary-solid 96% with on-primary, guarded with
   `:not([disabled], [aria-disabled='true'])`. Small; the builder does it after the Q241 accordion round, without
   delaying the MVP path.
+- **floating-action frame (2026-11-01), after the MVP, open:** the Q241 round left `components/floating-action` out.
+  Its demo frame is two elements (`fa-frame > fa-page`), and the Q243 path normalisation assumes a one-element frame,
+  so an old CONTROL-PART-INPUT issue looks new. Options: teach the normalisation multi-element frames, or keep
+  `fa-page` in render. Recommendation: teach the normalisation, so every part follows the same frame rule.
