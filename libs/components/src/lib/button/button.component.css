@@ -135,6 +135,25 @@
       --_et-button-border-color: transparent;
     }
 
+    &:where([data-variant='filled']) {
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-rgb: var(
+            --et-color-primary-active,
+            var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+          );
+        }
+      }
+
+      &:active {
+        --_et-button-background: color-mix(
+          in srgb,
+          var(--et-theme-color-primary-solid) 84%,
+          var(--et-theme-color-on-primary-solid)
+        );
+      }
+    }
+
     &[data-pressed='true']:where([data-pressed-variant='filled']) {
       --et-theme-color-primary-opacity: 1;
       --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
