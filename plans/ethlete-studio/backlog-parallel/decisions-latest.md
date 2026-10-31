@@ -247,3 +247,12 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   - App views build parts inline that should be their own components (tree-row, part-tree, zoom-chip, comment-pin,
     canvas-viewport, the merge view; Q247), and some designed parts have no app code at all. The system must make a
     part map to one component from the start, so a design part and its implementation cannot drift apart.
+  - Glued and interpolated class strings landed in many parts and needed cleanup rounds (Q221, and a new
+    CLASS-GLUED-INTERPOLATION after a merge); the check should stop them when a part is written, not after.
+  - Pages fought embedded demo frames with Tailwind `!` overrides (Q241); parts should not be able to use `!`.
+  - Detection rules were too narrow at first: unused base parts counted only ES imports (Q218); STALE-REPLACE did not
+    follow a conditional receiver; the Q243 path normalisation assumes a one-element frame (floating-action).
+  - Test fixtures broke on a new import without a signal (frame-bootstrap stub), and a spec hit the 5 s limit only
+    on the CI runner.
+  - The tomflix design server and the docs-examples app both use port 4403 (`.ethlete/design/config.json`,
+    `apps/docs-examples`); the default ports must not collide.
