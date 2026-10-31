@@ -190,3 +190,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   title as its title (for example "Demo frame out of render"), with "<n> parts" below it that expands to the target
   list. A one-part sketch keeps the part name. Today the head shows only the first target, so the 42-part Q241
   sketch reads as a `components/accordion` sketch.
+- **Q245 (Tom, 2026-10-31):** the Q242 pick also goes into `icon-button.component.css` and
+  `split-button.component.css`: filled active mixes the theme primary-solid 96% with on-primary, guarded with
+  `:not([disabled], [aria-disabled='true'])`. Small; the builder does it after the Q241 accordion round, without
+  delaying the MVP path.
