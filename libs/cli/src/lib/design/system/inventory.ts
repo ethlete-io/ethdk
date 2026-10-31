@@ -32,6 +32,7 @@ export type InventoryStatus = 'declared' | 'owned' | 'undeclared' | 'unclassifie
 export type InventoryControl = {
   number: number;
   id: string;
+  label: string | null;
   status: InventoryStatus;
   kind: string;
   inputs: string[];
@@ -98,6 +99,7 @@ export const inventoryFramesOf = (options: {
         return {
           key: `declared ${control.id}`,
           id: control.id,
+          label: null,
           status: known ? ('declared' as const) : ('undeclared' as const),
           kind: known?.kind ?? '',
           inputs: known?.input ?? [],
@@ -107,8 +109,9 @@ export const inventoryFramesOf = (options: {
         };
       }),
       ...(frame.found ?? []).filter(isOwnedOf(frame)).map((found) => ({
-        key: `owned ${found.owner} ${found.path}`,
+        key: `owned ${found.owner} ${found.path} ${found.label ?? ''}`,
         id: found.path,
+        label: found.label ?? null,
         status: 'owned' as const,
         kind: found.what,
         inputs: [],
@@ -119,6 +122,7 @@ export const inventoryFramesOf = (options: {
       ...(frame.found ?? []).filter(isFinding).map((found) => ({
         key: findingKeyOf(found),
         id: found.path,
+        label: found.label ?? null,
         status: found.kind === 'control' ? ('undeclared' as const) : ('unclassified' as const),
         kind: found.what,
         inputs: [],

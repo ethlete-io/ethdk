@@ -26,12 +26,14 @@ export type FrameBox = { x: number; y: number; width: number; height: number };
  * An element of a drawn frame that looks interactive. `control` is a native control, an interactive role or a known
  * SDK control; `unclassified` has a pointer cursor or a matched `:hover` rule and sits in no control. `marked` is the
  * `data-et-control` that declares it, `within` every `data-et-control` around it, nearest first. `owner` is the
- * embedded part whose `data-et-part` root draws it, or `null` for the frame's own part.
+ * embedded part whose `data-et-part` root draws it, or `null` for the frame's own part. `label` is its accessible name
+ * or text, which tells apart two controls at the same path.
  */
 export type FoundControl = {
   kind: 'control' | 'unclassified';
   what: string;
   path: string;
+  label?: string | null;
   marked: string | null;
   within: string[];
   owner?: string | null;
@@ -275,7 +277,7 @@ export const isFindingOf = (declared: Record<string, DeclaredControl>) => (found
   !found.within.some((id) => (declared[id]?.part ?? null) !== null) &&
   !(found.kind === 'control' && found.marked !== null);
 
-export const findingKeyOf = (found: FoundControl) => `${found.kind} ${found.what} ${found.path}`;
+export const findingKeyOf = (found: FoundControl) => `${found.kind} ${found.what} ${found.path} ${found.label ?? ''}`;
 
 const NATIVE_CONTROLS = ['button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', 'summary'];
 
@@ -1027,6 +1029,8 @@ const discoverControls = `((root) => {
     }
     return null;
   };
+  const labelOf = (element) =>
+    (element.getAttribute('aria-label') ?? element.textContent ?? '').replace(/\\s+/g, ' ').trim().slice(0, 60) || null;
   const found = [];
   for (const element of root.querySelectorAll('*')) {
     if (!rendered(element)) continue;
@@ -1034,7 +1038,7 @@ const discoverControls = `((root) => {
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
-      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), label: labelOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
       continue;
     }
     const cursor = getComputedStyle(element).cursor;
@@ -1044,7 +1048,7 @@ const discoverControls = `((root) => {
     for (let at = element; at && !inControl; at = at.parentElement) inControl = at.hasAttribute('data-et-control') || isLikely(at);
     if (inControl) continue;
     const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
-    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
+    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), label: labelOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
   }
   return found;
 })`;

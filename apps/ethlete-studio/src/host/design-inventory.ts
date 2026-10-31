@@ -15,6 +15,7 @@ export type InventoryBox = { x: number; y: number; width: number; height: number
 export type InventoryControl = {
   number: number;
   id: string;
+  label: string | null;
   status: InventoryStatus;
   kind: string;
   inputs: string[];

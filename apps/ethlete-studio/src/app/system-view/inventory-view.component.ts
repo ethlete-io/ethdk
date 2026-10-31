@@ -114,6 +114,9 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
                 {{ control.number }}
               </span>
               <span class="flex min-w-0 flex-col">
+                @if (control.label) {
+                  <span class="text-text">{{ control.label }}</span>
+                }
                 <span class="font-mono break-all text-text">{{ control.id }}</span>
                 <span class="text-text-muted">
                   {{ control.owner ? 'owned by ' + control.owner : control.status }} · {{ control.kind }} ·

@@ -124,6 +124,7 @@ describe('inventoryFramesOf', () => {
         status: 'declared',
         kind: 'disclosure',
         inputs: ['pointer'],
+        label: null,
         surfaces: ['body'],
         owner: null,
         states: 2,
@@ -165,6 +166,57 @@ describe('inventoryFramesOf', () => {
         [2, 'main > et-button.other', 'owned', 'button', 'components/button'],
       ],
     );
+  });
+
+  it('numbers two controls at the same path apart by their label, once across frames', () => {
+    const owned = (label: string) => ({
+      kind: 'control' as const,
+      what: 'button',
+      path: 'div.card > button',
+      label,
+      marked: 'button',
+      within: ['button'],
+      owner: 'components/button',
+    });
+    const found = (label: string) => ({
+      kind: 'unclassified' as const,
+      what: 'li with cursor: pointer',
+      path: 'ul > li',
+      label,
+      marked: null,
+      within: [],
+    });
+    const frame = (state: string, found: SeenFrame['found']): SeenFrame => ({
+      state,
+      interaction: null,
+      controls: [],
+      surfaces: [],
+      found,
+    });
+    const frames = inventoryFramesOf({
+      product: 'app-a',
+      part: 'pages/start',
+      controls: undefined,
+      frames: [
+        frame('no-repo', [owned('Repo öffnen'), found('Erste')]),
+        frame('no-products', [owned('Prompt kopieren'), found('Zweite')]),
+      ],
+      addresses: [
+        { state: 'no-repo', preset: 'desktop', width: null },
+        { state: 'no-products', preset: 'desktop', width: null },
+      ],
+    });
+
+    expect(frames.map((shown) => shown.controls.map(({ number, label }) => [number, label]))).toEqual([
+      [
+        [1, 'Repo öffnen'],
+        [2, 'Erste'],
+      ],
+      [
+        [3, 'Prompt kopieren'],
+        [4, 'Zweite'],
+      ],
+    ]);
   });
 
   it('does not list an owned control twice inside a marked control of the page', () => {

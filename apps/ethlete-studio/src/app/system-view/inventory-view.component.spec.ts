@@ -8,6 +8,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 const control = (number: number, id: string, status: InventoryControl['status']): InventoryControl => ({
   number,
   id,
+  label: null,
   status,
   kind: 'button',
   inputs: ['pointer'],
