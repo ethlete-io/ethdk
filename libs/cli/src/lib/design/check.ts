@@ -1,4 +1,6 @@
 import { execFileSync } from 'child_process';
+import { mkdirSync, writeFileSync } from 'fs';
+import { dirname } from 'path';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
@@ -246,7 +248,9 @@ const runChecks = async (options: {
   const tsconfig = '--tsconfig' in flags ? (flags['--tsconfig']?.[0] ?? writeCallsTsconfig(target)) : null;
 
   if (lintFiles.length === 0 && !tsconfig && !slug) {
-    console.error(`usage: ${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`);
+    console.error(
+      `usage: ${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]] [--receipt <path>]`,
+    );
 
     return 2;
   }
@@ -286,14 +290,74 @@ const runChecks = async (options: {
   return runBrowser({ target, base, slug, wanted, fails });
 };
 
+const receiptArgvOf = (argv: string[]) => {
+  const index = argv.indexOf('--receipt');
+
+  if (index === -1) return { receipt: null, rest: argv };
+
+  return { receipt: argv[index + 1] ?? null, rest: [...argv.slice(0, index), ...argv.slice(index + 2)] };
+};
+
+const writeReceipt = (options: { path: string; argv: string[]; ok: boolean; said: string }) => {
+  const flags = parse(options.argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
+
+  mkdirSync(dirname(options.path), { recursive: true });
+  writeFileSync(
+    options.path,
+    JSON.stringify({
+      call: flags['--call']?.[0] ?? null,
+      variant: flags['--variant']?.[0] ?? null,
+      ok: options.ok,
+      at: Math.floor(Date.now() / 1000),
+      said: options.said.trim(),
+    }),
+  );
+};
+
 /**
  * Finds out why a call does not render, in the cheapest order: eslint on the named files, then
  * `tsc --noEmit` over the checkout's calls, then the live page in a headless browser. A compile
  * error draws an overlay on top of the drawing, so a screenshot of one looks like a design -
  * never screenshot before this says `ok`. With `--call`, the call's status follows the check, but
  * a check that cannot run (no browser, no server, a stale server) leaves the status it found.
+ * `--receipt <path>` also writes what the check said and whether it passed to that file.
  */
 export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { receipt, rest } = receiptArgvOf(options.argv);
+
+  if (!receipt) return checkWithStatus(options);
+
+  const said: string[] = [];
+  const log = console.log;
+  const error = console.error;
+  const tee =
+    (write: (...lines: unknown[]) => void) =>
+    (...lines: unknown[]) => {
+      said.push(lines.map(String).join(' '));
+      write(...lines);
+    };
+
+  console.log = tee(log);
+  console.error = tee(error);
+
+  try {
+    const code = await checkWithStatus({ ...options, argv: rest });
+
+    writeReceipt({ path: receipt, argv: rest, ok: code === 0, said: said.join('\n') });
+
+    return code;
+  } catch (thrown) {
+    said.push(thrown instanceof Error ? thrown.message : String(thrown));
+    writeReceipt({ path: receipt, argv: rest, ok: false, said: said.join('\n') });
+
+    throw thrown;
+  } finally {
+    console.log = log;
+    console.error = error;
+  }
+};
+
+const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, argv, invocation } = options;
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
   const products = flags['--product'];

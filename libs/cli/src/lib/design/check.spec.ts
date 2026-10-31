@@ -61,6 +61,30 @@ describe('checkDesign', () => {
     expect(statusOf(target)).toMatchObject({ state: 'failed', message: expect.stringContaining('NO CALL "app/one"') });
   });
 
+  it('writes a receipt with the call, the variant, the verdict and what the check said', async () => {
+    const target = checkout();
+    const receipt = join(target, 'receipts/one.json');
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect(
+      await checkDesign({
+        target,
+        argv: ['--call', 'app/one', '--variant', 'a', '--receipt', receipt],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    errors.mockRestore();
+
+    expect(JSON.parse(readFileSync(receipt, 'utf8'))).toEqual({
+      call: 'app/one',
+      variant: 'a',
+      ok: false,
+      at: expect.any(Number),
+      said: expect.stringContaining('NO CALL "app/one"'),
+    });
+    expect(statusOf(target)?.state).toBe('failed');
+  });
+
   it('leaves the status alone when no browser resolves, and names playwright-core', async () => {
     const target = checkout();
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);

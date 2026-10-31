@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
 import { createInterface } from 'readline';
+import { callsRootOf } from './paths';
 import { buildStampOf } from './stamp';
 
 export const MCP_USAGE = 'mcp';
@@ -10,6 +11,9 @@ export const MCP_PROTOCOL_VERSION = '2025-06-18';
 
 type ToolInput = { name: string; flag?: string; description: string; required?: boolean; type?: 'string' | 'integer' };
 
+/** What the server was started with: the workspace, and where `check` on a call writes its receipt. */
+export type ToolContext = { target: string; receipt?: string };
+
 type ToolSpec = {
   name: string;
   description: string;
@@ -17,6 +21,7 @@ type ToolSpec = {
   positional?: ToolInput[];
   values?: ToolInput[];
   switches?: ToolInput[];
+  extra?: (args: Record<string, unknown>, context: ToolContext) => string[];
 };
 
 export type ToolRun = { code: number; stdout: string; stderr: string };
@@ -38,6 +43,28 @@ const PRODUCT: ToolInput = {
   description: 'The product. Optional when the workspace has only one.',
 };
 
+const CALL: ToolInput = { name: 'call', flag: '--call', description: 'The call slug, e.g. studio/01-workbench.' };
+
+const VARIANT: ToolInput = { name: 'variant', flag: '--variant', description: 'The variant key of the call.' };
+
+const variantFileOf = (options: { target: string; call: string; variant: string }) =>
+  resolve(callsRootOf(options.target), options.call, `variant-${options.variant}.ts`);
+
+const callCheckArgvOf = (args: Record<string, unknown>, context: ToolContext) => {
+  const call = args['call'];
+  const variant = args['variant'];
+
+  if (typeof call !== 'string' || call === '') return [];
+
+  return [
+    '--tsconfig',
+    ...(typeof variant === 'string' && variant !== ''
+      ? ['--lint', variantFileOf({ target: context.target, call, variant })]
+      : []),
+    ...(context.receipt ? ['--receipt', context.receipt] : []),
+  ];
+};
+
 const SIZE: ToolInput[] = [
   { name: 'preset', flag: '--preset', description: 'A preset of the product, e.g. phone.' },
   { name: 'width', flag: '--width', description: 'A width in px instead of a preset.', type: 'integer' },
@@ -55,8 +82,13 @@ export const MCP_TOOLS: ToolSpec[] = [
   },
   {
     name: 'check',
-    description: "Check a product's design system, or every product without one. Exits with an error on findings.",
+    description:
+      "Check a product's design system, or every product without one. With a call, lint its variant, type-check " +
+      'the calls and render the call in a browser instead: run it after every edit of a variant. Exits with an ' +
+      'error on findings.',
     command: ['check'],
+    values: [CALL, VARIANT],
+    extra: callCheckArgvOf,
   },
   {
     name: 'shot',
@@ -217,7 +249,12 @@ const inputSchemaOf = (tool: ToolSpec) => {
 };
 
 /** The `et design` arguments a tool call runs, or why it cannot run. */
-export const toolArgvOf = (tool: ToolSpec, args: Record<string, unknown>): string[] | string => {
+export const toolArgvOf = (options: {
+  tool: ToolSpec;
+  args: Record<string, unknown>;
+  context: ToolContext;
+}): string[] | string => {
+  const { tool, args, context } = options;
   const missing = inputsOf(tool).filter((input) => input.required && (args[input.name] ?? '') === '');
 
   if (missing.length > 0) return `${tool.name} needs ${missing.map((input) => input.name).join(', ')}`;
@@ -232,6 +269,7 @@ export const toolArgvOf = (tool: ToolSpec, args: Record<string, unknown>): strin
     ),
     ...(tool.name === 'shot' ? ['--states'] : []),
     ...(tool.switches ?? []).flatMap((input) => (valueOf(input) === true ? [input.flag ?? ''] : [])),
+    ...(tool.extra?.(args, context) ?? []),
   ];
 };
 
@@ -262,8 +300,8 @@ const resultOf = (target: string, run: ToolRun) => ({
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> };
 
 /** The answer to one JSON-RPC request of an MCP client; `null` for a notification. */
-export const mcpAnswerOf = async (options: { target: string; request: Request; run: ToolRunner }) => {
-  const { target, request, run } = options;
+export const mcpAnswerOf = async (options: { target: string; request: Request; run: ToolRunner; receipt?: string }) => {
+  const { target, request, run, receipt } = options;
 
   if (request.id === undefined || request.id === null) return null;
 
@@ -297,7 +335,11 @@ export const mcpAnswerOf = async (options: { target: string; request: Request; r
 
     if (!tool) return { jsonrpc: '2.0', id: request.id, error: { code: -32602, message: `unknown tool "${name}"` } };
 
-    const argv = toolArgvOf(tool, (request.params?.['arguments'] as Record<string, unknown> | undefined) ?? {});
+    const argv = toolArgvOf({
+      tool,
+      args: (request.params?.['arguments'] as Record<string, unknown> | undefined) ?? {},
+      context: { target, receipt },
+    });
 
     if (typeof argv === 'string') return answer({ content: [{ type: 'text', text: argv }], isError: true });
 
@@ -333,10 +375,11 @@ export const cliRunnerOf =
 
 /**
  * `et design mcp` serves the design tools to an MCP client over stdio. The workspace is the working directory;
- * each tool runs the `et design` command of the same name there.
+ * each tool runs the `et design` command of the same name there. With `receipt`, `check` on a call writes its receipt
+ * to that path.
  */
-export const designMcp = (options: { target: string; run?: ToolRunner }) => {
-  const { target } = options;
+export const designMcp = (options: { target: string; run?: ToolRunner; receipt?: string }) => {
+  const { target, receipt } = options;
   const run = options.run ?? cliRunnerOf(target);
   const lines = createInterface({ input: process.stdin });
   const pending = new Set<Promise<void>>();
@@ -350,7 +393,7 @@ export const designMcp = (options: { target: string; run?: ToolRunner }) => {
       return;
     }
 
-    const answered = mcpAnswerOf({ target, request, run }).then((answer) => {
+    const answered = mcpAnswerOf({ target, request, run, receipt }).then((answer) => {
       if (answer) process.stdout.write(`${JSON.stringify(answer)}\n`);
     });
 

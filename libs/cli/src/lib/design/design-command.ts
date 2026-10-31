@@ -34,9 +34,9 @@ const helpOf = (invocation: string) =>
     '  Serve the variant frames of a checkout. The checkout defaults to the working directory. The server listens on',
     '  localhost; --host (or DE_HOST) names another address, e.g. 0.0.0.0 to reach it over the LAN.',
     '',
-    `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`,
+    `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]] [--receipt <path>]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
-    '  of an open sketch.',
+    '  of an open sketch. --receipt writes the call, the variant, ok, the time and the output to a JSON file.',
     '',
     `${invocation} check --product <name>`,
     "  Check a product's design system: layer dependencies, hard-coded colours, var() tokens nothing defines,",
@@ -155,10 +155,11 @@ const helpOf = (invocation: string) =>
     '  inbox without --product covers every product.',
     '  --by is the exact model id of the agent that writes, e.g. claude-opus-5-5; every agent write needs it.',
     '',
-    `${invocation} ${MCP_USAGE}`,
+    `${invocation} ${MCP_USAGE} [--receipt <path>]`,
     '  Serve the design tools to an MCP client over stdio: parts, check, shot, motion_shots, sketch_new, sketch_report,',
     '  sketch_ready, sketch_merge, sketch_discard, inbox and inbox_done. Each runs the command of the same name in the',
-    '  working directory and returns its output, its images and its JSON.',
+    '  working directory and returns its output, its images and its JSON. check on a call writes its receipt to',
+    '  --receipt.',
     '',
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
@@ -296,9 +297,10 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
   }
 
   if (argv[0] === 'mcp') {
-    const { target } = splitCheckout(argv.slice(1), root);
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+    const receipt = rest.includes('--receipt') ? rest[rest.indexOf('--receipt') + 1] : undefined;
 
-    return designMcp({ target });
+    return designMcp({ target, receipt: receipt ? resolve(root, receipt) : undefined });
   }
 
   if (argv[0] === 'token') {

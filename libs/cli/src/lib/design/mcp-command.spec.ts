@@ -181,6 +181,34 @@ describe('et design mcp', () => {
     expect(JSON.parse(inbox.result.content[0]?.text ?? '')).toEqual({ items: [], waitingForUser: [] });
   });
 
+  it('checks a call: lints its variant, types the calls and writes the receipt the server was given', async () => {
+    const run = vi.fn<ToolRunner>(async () => ({ code: 0, stdout: 'ok', stderr: '' }));
+
+    await mcpAnswerOf({
+      target: '/w',
+      run,
+      receipt: '/tmp/r.json',
+      request: { id: 1, method: 'tools/call', params: { name: 'check', arguments: { call: 'app/one', variant: 'b' } } },
+    });
+    await mcpAnswerOf({ target: '/w', run, request: { id: 2, method: 'tools/call', params: { name: 'check' } } });
+
+    expect(run.mock.calls.map(([argv]) => argv)).toEqual([
+      [
+        'check',
+        '--call',
+        'app/one',
+        '--variant',
+        'b',
+        '--tsconfig',
+        '--lint',
+        '/w/.ethlete/design/calls/app/one/variant-b.ts',
+        '--receipt',
+        '/tmp/r.json',
+      ],
+      ['check'],
+    ]);
+  });
+
   it('maps the sketch and comment tools onto their commands and arguments', async () => {
     const run = vi.fn<ToolRunner>(async () => ({ code: 0, stdout: 'ok', stderr: '' }));
     const argvOf = async (name: string, args: Record<string, unknown>) => {
