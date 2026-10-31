@@ -459,6 +459,17 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   generated `tsconfig.json` into a base outside the repo, and resolves `@system/*` for a base in `node_modules`. Then
   `ethlete-sdk-33` tests a consumer against a packed tarball.
 
+### Select panel option decisions (2026-10-31)
+
+- Q86: Tom picks the light filled-field fill (Q83 round, a 250 / b 245 / c 240 / d 235) by merging a variant in
+  Studio. A sketch-round pick is never a grill question.
+- Q87: the option check icon uses the ink token (in the light scheme the brand-on-light ink), not primary mint. Same
+  rule as Q75.
+- Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
+  selected option stays check only, with no background.
+- Q89: `design complete` counts the keyboard-active option look (`data-active-source="keyboard"`) as focus-visible
+  for the select, menu and row kinds. No per-sketch exception. Built by `ethlete-sdk-57`.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
