@@ -21,7 +21,7 @@ const label = (text: string, extra = '') =>
 type Place = NonNullable<StateGridOptions['place']>;
 
 const cell = (place: Place) => (body: string | undefined) =>
-  `<div class="st-sgrid-cell py-space-2 px-space-1 et-surface--dark bg-et-surface-bg${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
+  `<div class="st-sgrid-cell py-space-2 px-space-1 bg-et-surface-bg${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
 
 const tableRow =
   (place: Place) =>
@@ -66,7 +66,7 @@ export const stateGrid = (
       </div>`
     : '';
   return html`<div
-    class="st-sgrid flex flex-col gap-6 w-max et-surface--dark bg-et-surface-bg text-et-surface-muted pt-4 px-6 pb-6"
+    class="st-sgrid flex flex-col gap-6 w-max bg-et-surface-bg text-et-surface-muted pt-4 px-6 pb-6"
     data-place="${place}"
     style="--st-cols: ${columns.length}; --st-cell-w: ${cellWidth}"
   >
@@ -82,7 +82,7 @@ export const canvasFrameHead = (name: string, width = '') =>
 
 /** The box of a frame: a hairline-edged surface around the body, with an optional head above it. */
 export const canvasFrameBox = (body: string, head = '') =>
-  html`<figure class="st-cframe relative m-0 et-surface--dark bg-et-surface-bg">${head}${body}</figure>`;
+  html`<figure class="st-cframe relative m-0 bg-et-surface-bg">${head}${body}</figure>`;
 
 /** One frame on the canvas: the head above the box, the body inside. */
 export const canvasFrame = (name: string, body: string, width = '') =>

@@ -137,7 +137,8 @@ const row = (c: Comment) => {
 
   return html`<div class="flex gap-space-2 p-space-2 rounded-control-md${selected ? ' bg-et-theme/20' : ''}">
     <span
-      class="ib-avatar flex flex-none items-center justify-center size-5 et-surface--dark-elevated-2 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
+      class="ib-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
+      data-et-auto-surface
       >${c.agent ? agentLogo(c.agent, 'size-3') : c.initials}</span
     >
     <div class="flex flex-1 flex-col gap-0.5 min-w-0">
@@ -213,7 +214,7 @@ export const inbox = () =>
           draft || entry
             ? `<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
                 ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
-                <div class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg et-surface--dark bg-et-surface-bg">
+                <div data-et-auto-surface class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg bg-et-surface-bg">
                   <div class="flex flex-col items-stretch p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
                 </div>
               </div>`

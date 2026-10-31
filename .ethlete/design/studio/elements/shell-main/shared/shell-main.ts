@@ -37,19 +37,19 @@ const bubbleClass = (kind: SlotKind, active: boolean, panelHidden: boolean) => {
   }
 
   if (kind === 'product') {
-    return `rounded-control-md ${active ? 'et-surface--dark-elevated-2 bg-et-surface-bg text-et-surface' : 'et-surface--dark-elevated bg-et-surface-bg text-et-surface-muted'}`;
+    return `rounded-control-md bg-et-surface-bg ${active ? 'text-et-surface' : 'text-et-surface-muted'}`;
   }
 
   return 'rounded-control-md text-et-surface-muted';
 };
 
 const slot = (inner: string, label: string, active: boolean, kind: SlotKind, panelHidden = false) =>
-  `<div class="st-shell-slot relative flex justify-center w-full${active ? ` before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}><span class="st-shell-bubble flex items-center justify-center text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" title="${label}">${inner}</span></div>`;
+  `<div class="st-shell-slot relative flex justify-center w-full${active ? ` before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}><span${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" title="${label}">${inner}</span></div>`;
 
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
 const rail = (section: Section, product: string, panelHidden: boolean, studio: string) =>
-  html`<nav class="st-shell-rail flex flex-col items-center gap-space-1 py-space-3 et-surface--dark bg-et-surface-bg">
+  html`<nav class="st-shell-rail flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep} ${SECTIONS.map((s) => slot(icon(ICONS[s], { size: 20 }), s, s === section, 'section', panelHidden)).join('')}
     <div class="flex-1"></div>
@@ -59,7 +59,7 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
 
 const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
   html`<aside
-    class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg et-surface--dark bg-et-surface-bg"
+    class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-et-surface-bg"
   >
     <header class="st-shell-side-head flex items-center justify-between box-border pr-space-2 pl-space-4">
       <span class="text-ui-lg font-ui-strong">${product}</span>
@@ -71,7 +71,8 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
 
 const picker = (placement: 'above' | 'beside') =>
   html`<div
-    class="st-project-picker absolute box-border w-62 border border-et-surface-interaction p-space-1 rounded-control-lg et-surface--dark-elevated-2 bg-et-surface-bg${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 border border-et-surface-interaction p-space-1 rounded-control-lg bg-et-surface-bg${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    data-et-auto-surface
     data-placement="${placement}"
     data-et-surface="project.open"
   >
@@ -110,14 +111,12 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
   render: ({ product, section, content, side, panel, projectPicker, studio = '' }: Props) => {
     return drawing({
       body: html`<div
-        class="st-shell relative grid overflow-hidden et-surface--dark bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md"
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}
       >
         ${rail(section, product, panel === 'hidden', studio)}
         <div class="st-shell-stage relative min-w-0">
-          <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden et-surface--dark bg-et-surface-bg">
-            ${content}
-          </main>
+          <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg">${content}</main>
           ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open')}
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement) : ''}
         </div>

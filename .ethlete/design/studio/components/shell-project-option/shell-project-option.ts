@@ -25,7 +25,8 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="box-border w-62 p-space-1 rounded-control-lg et-surface--dark-elevated-2 bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        class="box-border w-62 p-space-1 rounded-control-lg bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        data-et-auto-surface
         role="listbox"
         aria-label="Projekt auswählen"
       >

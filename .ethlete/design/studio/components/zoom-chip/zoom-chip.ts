@@ -39,9 +39,10 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex rounded-control-md border border-et-surface-interaction et-surface--dark bg-et-surface-bg${
+        class="inline-flex rounded-control-md border border-et-surface-interaction bg-et-surface-bg${
           props.class ? ` ${props.class}` : ''
         }"
+        data-et-auto-surface
         data-canvas-zoom
       >
         ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props, 'tabular-nums')}${chipButton(

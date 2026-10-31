@@ -28,13 +28,10 @@ const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline',
 
 export const emptyStyles = copy.styles;
 
-const prompt = html`<p
-  class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-et-surface-bg text-et-surface text-ui-sm"
->
+const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
   Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.
 </p>`;
-const ghostBox =
-  '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border et-surface--dark bg-et-surface-bg"></span>';
+const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 const ghostLine = '<span class="block w-10 h-px bg-et-surface-border"></span>';
 
 export const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">

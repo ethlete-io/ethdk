@@ -31,7 +31,7 @@ export const buttonTree = await partTree.render({
 
 export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
   html`<div
-    class="mg-shot relative flex-none overflow-hidden rounded-control-md et-surface--dark bg-et-surface-bg"
+    class="mg-shot relative flex-none overflow-hidden rounded-control-md bg-et-surface-bg"
     data-et-skip="CLIPPED"
     data-side="${side}"
     style="--mg-scale: ${scale}; --mg-w: ${row.width}px; --mg-h: ${row.height}px"

@@ -19,8 +19,7 @@ import {
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
-const ghostBox =
-  '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border et-surface--dark bg-et-surface-bg"></span>';
+const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
 
 const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
   <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
@@ -30,7 +29,7 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
       Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
       zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
     </p>
-    <p class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-et-surface-bg text-et-surface text-ui-sm">
+    <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
     ${copy.body}

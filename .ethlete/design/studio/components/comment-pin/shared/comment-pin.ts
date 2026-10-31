@@ -25,21 +25,21 @@ const faceClass = ({ agent, selected }: Props) => {
     'group-active/pin:bg-linear-to-r group-active/pin:from-et-surface-interaction/15 group-active/pin:to-et-surface-interaction/15';
 
   if (!selected) {
-    return `${faceBase} et-surface--dark-elevated-2 bg-et-surface-bg ring-1 ring-surface-border group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 group-hover/pin:text-text group-hover/pin:ring-text-muted ${pressed} group-focus-visible/pin:outline-offset-2`;
+    return `${faceBase} bg-et-surface-bg ring-1 ring-surface-border group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 group-hover/pin:text-text group-hover/pin:ring-text-muted ${pressed} group-focus-visible/pin:outline-offset-2`;
   }
 
   const rings =
     'ring-2 shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] text-et-on-theme group-focus-visible/pin:outline-offset-[5px]';
 
   return agent
-    ? `${faceBase} et-surface--dark-elevated-2 bg-et-surface-bg ring-et-theme ${rings} group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 ${pressed}`
+    ? `${faceBase} bg-et-surface-bg ring-et-theme ${rings} group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 ${pressed}`
     : `${faceBase} bg-et-theme ring-et-surface-bg ${rings} group-hover/pin:bg-et-theme-hover group-active/pin:bg-et-theme-active`;
 };
 
 const face = (p: Props, inner = '') =>
   p.agent
-    ? `<span class="${faceClass(p)}">${agentLogo(p.agent, 'size-3')}${inner}</span>`
-    : `<span class="${faceClass(p)}">${p.initials ?? ''}${inner}</span>`;
+    ? `<span${p.selected && !p.agent ? '' : ' data-et-auto-surface'} class="${faceClass(p)}">${agentLogo(p.agent, 'size-3')}${inner}</span>`
+    : `<span${p.selected && !p.agent ? '' : ' data-et-auto-surface'} class="${faceClass(p)}">${p.initials ?? ''}${inner}</span>`;
 
 const countBadge = ({ count }: Props) =>
   count && count > 1

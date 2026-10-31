@@ -73,7 +73,7 @@ const variantHead = (variant: PageVariant) =>
 
 const frame = (variant: PageVariant, selected: boolean) =>
   html`<figure
-    class="sk-frame relative m-0 box-border flex rounded-control-md et-surface--dark bg-et-surface-bg p-space-2"
+    class="sk-frame relative m-0 box-border flex rounded-control-md bg-et-surface-bg p-space-2"
     ${selected ? ' data-selected' : ''}
   >
     ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
