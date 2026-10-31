@@ -1,5 +1,12 @@
 # @ethlete/cdk
 
+## 5.0.0-next.47
+
+### Patch Changes
+
+- The combobox no longer clears the text you typed when its first options arrive, so that text is still used as the filter.
+- The `migrate-from-cdk` generator now knows the tab group classes of `@ethlete/components`.
+
 ## 5.0.0-next.46
 
 ### Patch Changes

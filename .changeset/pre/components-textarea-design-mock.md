@@ -2,4 +2,4 @@
 '@ethlete/components': patch
 ---
 
-Design: add a `textarea()` control mock to `@ethlete/components/design/form-field`, drawn like `input()`.
+Add a textarea design mock at `@ethlete/components/design/textarea` with `textareaField()` and `textareaFieldStyles`.

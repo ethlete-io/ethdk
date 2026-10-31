@@ -1,5 +1,22 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.31
+
+### Minor Changes
+
+- The design-exploration skill now describes the `ethlete-design` MCP server: its tools by job, when to use them instead of the `et design` CLI, and the `sketch_report` and `sketch_ready` rules.
+
+### Patch Changes
+
+- The Codex subagent skill lists gpt-6-luna, gpt-6.1-terra (the new default), gpt-6.1-sol and gpt-6-astra. The context hook gives gpt-6.1 a 500k pricing boundary.
+- `agent-sessions restart` types the prompt after the clear even when a message woke the fresh session. Only typed text in its prompt holds the prompt back.
+- The design exploration skill lists `et design sketch target add`.
+- `agent-sessions restart` no longer reads the Claude Code IDE context chip (`[⧉ In file]`) on the prompt line as a draft, so it types the resume prompt after the clear.
+- `control(markup, name)` from `@ethlete/components/design/control` renames a control that is already marked, so a design reuses a control part under its own control name.
+- CONTROL-STATE counts an interaction word only as the last word of a state name, drops modifier words from the element name, and asks a component without controls to declare them (Q164).
+- `et design check`, `sketch check`, `sketch ready` and `design complete` fail interaction states on a part that declares no control (`CONTROL-STATE`). `design complete` hints a state that changes under 10 % of its frame.
+- Design checks report a drawn button, link, input or control role without `data-et-control` as `CONTROL-PART-INPUT`: a hint on merged parts, an error when a sketch adds one.
+
 ## 0.1.0-next.30
 
 ### Minor Changes
