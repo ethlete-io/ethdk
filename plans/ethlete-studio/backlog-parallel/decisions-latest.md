@@ -162,3 +162,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   belongs only to the presentation of the part's own states. An embedded render never has a frame, with no prop to
   set. `pages/system` and `pages/inbox` then drop their Tailwind `!` overrides (and the inbox `bottom-${'start'}`
   hack) in a no-visible-change round. The same rule holds for every SDK part that draws a demo frame.
+- **Q242 (Tom, 2026-10-31):** the "Save" button in studio `elements/canvas-frames` fails the CONTRAST rule (3.81:1,
+  needs 4.5:1). Fix it with a colour change in its own canvas-frames sketch round with colour variants; Tom merges
+  the variant. No contrast exception. After the merge, the open glued-class rounds for `canvas-frames` and
+  `components/zoom-chip` go to ready again.
