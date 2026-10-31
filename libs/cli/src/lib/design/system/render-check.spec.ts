@@ -329,7 +329,7 @@ describe('renderIssuesOf', () => {
       join(dir, 'added/components/bar/bar.ts'),
       source.replace(
         '</div>',
-        '<input class="bar-name" placeholder="Name" /><details><summary>More</summary></details><div class="bar-focus" tabindex="0">Pick</div><div role="listbox" tabindex="-1">Rows</div><div role="dialog" tabindex="-1">Pane</div></div>',
+        '<input class="bar-name" placeholder="Name" /><details><summary>More</summary></details><div class="bar-focus" tabindex="0">Pick</div><div role="listbox" tabindex="-1">Rows</div><div role="dialog" tabindex="-1">Pane</div><div class="bar-canvas" tabindex="0" aria-label="Design Canvas"><style>.bar-x { color: red; }</style></div></div>',
       ),
     );
     writeFileSync(join(dir, 'added/components/fresh/fresh.ts'), source);
@@ -356,6 +356,7 @@ describe('renderIssuesOf', () => {
       'added components/bar: input.bar-name "Name"',
       'added components/bar: summary "More"',
       'added components/bar: div.bar-focus "Pick"',
+      'added components/bar: div.bar-canvas "Design Canvas"',
       'added components/fresh: button "Save"',
       'added components/fresh: span "On"',
     ]);

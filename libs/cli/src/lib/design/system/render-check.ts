@@ -380,13 +380,17 @@ ${CONTRAST_STATEMENTS}
       }
     return true;
   };
+  const textOf = (node) =>
+    [...node.childNodes]
+      .map((child) => (child.nodeType === Node.TEXT_NODE ? child.data : child.nodeType === Node.ELEMENT_NODE && !child.matches('style, script, template') ? textOf(child) : ''))
+      .join('');
   if (options.part !== null)
     for (const element of root.querySelectorAll(options.controlInputs)) {
       if (element.getClientRects().length === 0 || element.closest('[data-et-control]') || !ownedOf(element)) continue;
       if (element.matches('[role="option"], [role^="menuitem"]') && element.closest('[data-et-surface]')) continue;
       const sdk = element.parentElement?.closest(options.sdkControls);
       if (sdk && root.contains(sdk)) continue;
-      const text = (element.textContent.trim() || element.getAttribute('aria-label') || element.getAttribute('placeholder') || '').replace(/\\s+/g, ' ');
+      const text = (element.getAttribute('aria-label') || textOf(element).trim() || element.getAttribute('placeholder') || '').replace(/\\s+/g, ' ');
       const cls = [...element.classList].find((name) => !/^et-(surface|color)--/.test(name));
       const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
