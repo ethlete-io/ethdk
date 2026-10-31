@@ -628,6 +628,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q92 non-grid frames built (`aa6165ad5`). Lead decisions under Q96: keep the 1024 px side-by-side threshold;
   merge-preview frames also draw Light + Dark (they show what lands); the sketch matrix stays one copy (a variant
   comparison, already wide).
+- Q59 lead decisions under Q96: 6a shows the first token with the track's value in foundations declaration order,
+  plus "+N" when more tokens share it; the title lists all names and the raw value. 6b: opening the timeline makes
+  the frame live and drives it; closing it leaves the frame live, resumed at 1x.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
