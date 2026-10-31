@@ -110,6 +110,6 @@ const svg = (config: { width: number; height: number; label: string; fill: strin
       `dominant-baseline="middle">${config.label}</text></svg>`,
   );
 
-const WIDE = svg({ width: 800, height: 450, label: 'wide 16:9', fill: '%2300ffa1' });
-const TALL = svg({ width: 450, height: 600, label: 'tall 3:4', fill: '%2300d0ff' });
-const FALLBACK = svg({ width: 800, height: 450, label: 'fallback', fill: '%23ffd000' });
+const WIDE = svg({ width: 800, height: 450, label: 'wide 16:9', fill: '#00ffa1' });
+const TALL = svg({ width: 450, height: 600, label: 'tall 3:4', fill: '#00d0ff' });
+const FALLBACK = svg({ width: 800, height: 450, label: 'fallback', fill: '#ffd000' });
