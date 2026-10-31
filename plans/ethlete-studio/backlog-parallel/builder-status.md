@@ -165,3 +165,13 @@
   - CI: last runs were cancelled by newer pushes; c29548924 watch was running. Check
     `gh run list --branch next --limit 5` and fix any red job.
   - Parked after MVP: Q244 (/tmp/q244-partial.patch), floating-action frame normalisation.
+
+## Builder ethlete-sdk-4b (second fresh context, 2026-11-01)
+
+- As built: Tom's go for pages/system, flows, sketches pushed (a8635dead).
+- As built (Q247): implements links for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, pages/merge
+  (0d006948d). An unlinked part is no longer an open point; `design check` prints `UNLINKED <product>: …` with own
+  parts only (fee19ffbf, 12c80d992; spec bites, both tsc and lint clean). 10 parts ready (b284ca96e).
+- Gap: `design ready` also counts missing states, plain `design check` does not. Still open after Tom's go for the
+  six linked parts: tree-row (3 states), part-tree (1), shell-project-option (1), shell-main (12), canvas-frames
+  (4 states + 1 contrast). Sent to the grill with the go command for Tom and a recommendation.
