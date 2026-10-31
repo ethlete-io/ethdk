@@ -1,34 +1,20 @@
-import { iconMarkup } from '@ethlete/components/design/icon';
 import { SDK_ICONS } from '@ethlete/components/design/icon-set';
-import { definePart, drawing, html } from '@design-system';
-import styles from './icons.css?inline';
+import { definePart, iconSheet } from '@design-system';
 
-type Props = { surface: 'light' | 'dark' };
+const icons = SDK_ICONS.map((icon) => ({
+  name: icon.variant ? `${icon.name}--${icon.variant}` : icon.name,
+  svg: icon.data,
+}));
 
-const tile = (icon: (typeof SDK_ICONS)[number]) =>
-  html`<li class="sdk-icon-tile">
-    ${iconMarkup(icon, 'sdk-icon-glyph')}<span class="sdk-icon-name">${icon.name}</span>
-  </li>`;
+const titles = {
+  catalogue: `Icons: the ${SDK_ICONS.length} icons the SDK ships, at each size a component draws`,
+  construction: 'Icons on their grid: pixel lines, centre lines, and the padding',
+};
 
-const render = ({ surface }: Props) =>
-  drawing({
-    body: html`<div class="sdk-icons et-surface--${surface}">
-      <h2 class="sdk-icons-title">Icons, ${surface}</h2>
-      <p class="sdk-icons-note">
-        ${SDK_ICONS.length} icons from libs/components/src/lib/icon/headless, drawn in currentColor.
-      </p>
-      <ul class="sdk-icons-grid">
-        ${SDK_ICONS.map(tile).join('')}
-      </ul>
-    </div>`,
-    styles,
-  });
+type View = 'catalogue' | 'construction';
 
-export default definePart<Props>({
-  note: 'Every icon the SDK ships, read from the icon source files in libs/components/src/lib/icon/headless, with its registered name, on a light and a dark surface.',
-  states: {
-    light: { surface: 'light' },
-    dark: { surface: 'dark' },
-  },
-  render,
+export default definePart<{ view: View }>({
+  note: 'Every icon the SDK ships, read from the icon source files in libs/components/src/lib/icon/headless, with its registered name.',
+  states: { catalogue: { view: 'catalogue' }, construction: { view: 'construction' } },
+  render: ({ view }) => iconSheet({ view, title: titles[view], icons, sizes: [16, 20, 24] }),
 });
