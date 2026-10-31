@@ -228,6 +228,9 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     param to `/__design-harness?part=&state=&props=`; the app keeps a hand-written dev-only registry from part to a
     lazy component; compare shoots the part frame and the harness host element in one Chromium at 0 px; the CLI
     never starts the app server, it takes `--url`.
+    Lead changes (76, 2026-10-31): no hand-written registry; the part-to-component map comes from the `implements`
+    links (generated, or resolved by the harness from the link; Q157 one source of truth). `--url` stays; without
+    it, compare starts the app's dev server itself on a free port, never on 4221, 4402 or 4492 (3c-3).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
