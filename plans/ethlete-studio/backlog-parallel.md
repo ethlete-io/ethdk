@@ -1093,6 +1093,11 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q207:** Tom accepts the elevations the system computes on the 11 visible parts (comment-pin, shell-project-option,
   shell-project-switch, zoom-chip, canvas-frames, shell-main, flows, inbox, merge, sketches, system). If a spot looks
   wrong, the structure changes, never a hand-picked elevation.
-- **Q208:** the design kit gets a way for `ng(...)` or the frame to render an open SDK overlay pane, so the
-  open-points popover (Q202) and every later popover, dialog or sheet in a part draw the real overlay container
-  chrome. No hand-built overlay `div`.
+- **Q208 (revised by Tom the same evening):** not through `ng(...)`. Studio already draws SDK components with the
+  static design renderers in `libs/components/design/`, and `design/dialog.ts` already draws the real overlay chrome
+  from the overlay container CSS. So the SDK gets an anchored-dialog (popover) renderer there, its pane on
+  `data-et-auto-surface` by default, and the overlay renderers' `surface` option defaults to the auto surface instead
+  of a theme name. The open-points popover (Q202) and every later popover, dialog or sheet in a part use these. No
+  hand-built overlay `div`.
+- **Q209:** Tom accepts the brighter SDK hover and active tint on rows with `data-et-surface-interactive` (tree-row:
+  hover grey 28 to 34, active 36 to 47); the other hover rows move to the attribute.
