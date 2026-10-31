@@ -3,7 +3,14 @@ import { TestBed } from '@angular/core/testing';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import { formField } from '../../../../design/form-field';
-import { select, SelectMockOptions } from '../../../../design/select';
+import {
+  select,
+  selectAllOption,
+  SelectMockOptions,
+  selectOption,
+  selectOptionGroup,
+  selectPanel,
+} from '../../../../design/select';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 import { mockShapeOf, shapeOf } from '../../testing/design-mock-shape';
@@ -40,6 +47,44 @@ class SelectHost implements OnInit {
   public ngOnInit() {
     this.model.set({ team: this.value() });
   }
+}
+
+const GROUPS = [
+  {
+    label: 'Forwards',
+    options: [
+      { value: 'f1', label: 'Mbappé' },
+      { value: 'f2', label: 'Haaland', disabled: true },
+    ],
+  },
+  { label: 'Midfielders', options: [{ value: 'm1', label: 'Bellingham' }] },
+];
+
+@Component({
+  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS, FormField],
+  template: `
+    <et-form-field>
+      <et-label>Players</et-label>
+      <et-select [formField]="fields.players" [open]="open()" multiple selectAll>
+        @for (group of groups; track group.label) {
+          <et-select-option-group [label]="group.label">
+            @for (option of group.options; track option.value) {
+              <et-select-option [value]="option.value" [disabled]="!!option.disabled">{{
+                option.label
+              }}</et-select-option>
+            }
+          </et-select-option-group>
+        }
+      </et-select>
+    </et-form-field>
+  `,
+})
+class GroupedSelectHost {
+  public open = signal(false);
+
+  protected groups = GROUPS;
+  protected model = signal<{ players: string[] }>({ players: ['f1'] });
+  public fields = form(this.model);
 }
 
 type Case = { select: SelectMockOptions; open?: boolean; disabled?: boolean };
@@ -92,5 +137,43 @@ describe('select design mock', () => {
 
       expect(mockShapeOf(drawn, 'et-select-panel')).toEqual(shapeOf(panel));
     }
+  });
+
+  it('draws the panel of a grouped multi select with a select-all row', async () => {
+    const fixture = TestBed.createComponent(GroupedSelectHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.open.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const panel = document.querySelector('et-select-panel');
+    if (!panel) throw new Error('the select opened no panel');
+
+    const groups = GROUPS.map((group, groupIndex) =>
+      selectOptionGroup({
+        labelId: `group-${groupIndex}`,
+        label: group.label,
+        content: group.options
+          .map((option, index) =>
+            selectOption(option, {
+              id: `option-${groupIndex}-${index}`,
+              selected: option.value === 'f1',
+              active: option.value === 'f1' ? 'keyboard' : undefined,
+            }),
+          )
+          .join(''),
+      }),
+    ).join('');
+    const drawn = selectPanel({
+      id: 'players',
+      labelId: 'label',
+      multiple: true,
+      color: 'default',
+      content: selectAllOption({ id: 'all', label: 'Select all', checked: 'mixed' }) + groups,
+    });
+
+    expect(mockShapeOf(drawn, 'et-select-panel')).toEqual(shapeOf(panel));
   });
 });

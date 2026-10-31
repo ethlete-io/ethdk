@@ -1,14 +1,46 @@
 import controlSuffix from '../src/lib/forms/form-field/form-field-control-suffix-styles.component.css?inline';
+import selectAllOptionStyles from '../src/lib/forms/select/select-all-option.component.css?inline';
 import selectBase from '../src/lib/forms/select/select.component.css?inline';
-import selectOption from '../src/lib/forms/select/select-option-styles.component.css?inline';
-import selectPanel from '../src/lib/forms/select/select-panel.component.css?inline';
+import selectOptionGroupStyles from '../src/lib/forms/select/select-option-group.component.css?inline';
+import selectOptionStyles from '../src/lib/forms/select/select-option-styles.component.css?inline';
+import selectPanelStyles from '../src/lib/forms/select/select-panel.component.css?inline';
 import { CHECK_ICON } from '../src/lib/icon/headless/check-icon';
 import { CHEVRON_ICON } from '../src/lib/icon/headless/chevron-icon';
 import { TIMES_ICON } from '../src/lib/icon/headless/times-icon';
 import { FormFieldControlMock, formFieldStyles, FormFieldMockState } from './form-field';
 import { iconMarkup } from './icon';
 
-export type SelectMockOption = { value: string; label: string };
+export type SelectMockOption = { value: string; label: string; disabled?: boolean };
+
+export type SelectMockActiveSource = 'keyboard' | 'pointer';
+
+export type SelectOptionMockState = {
+  id: string;
+  selected?: boolean;
+  /** Where the active option came from: the keyboard draws it highlighted, the pointer only under `:hover`. */
+  active?: SelectMockActiveSource;
+};
+
+export type SelectAllOptionMockOptions = {
+  id: string;
+  label: string;
+  checked: boolean | 'mixed';
+  active?: SelectMockActiveSource;
+};
+
+export type SelectOptionGroupMockOptions = { labelId: string; label: string; content: string };
+
+export type SelectPanelMockOptions = {
+  id: string;
+  labelId?: string | null;
+  /** The panel's options, groups and select-all row as HTML. */
+  content: string;
+  multiple?: boolean;
+  /** The app's default color theme name: the panel provides it to the options. */
+  color?: string;
+  /** A surface theme name the app registers, for the panel. */
+  surface?: string;
+};
 
 export type SelectMockOptions = {
   options: SelectMockOption[];
@@ -31,9 +63,70 @@ export const selectStyles = /* @__PURE__ */ [
   formFieldStyles,
   controlSuffix,
   selectBase,
-  selectOption,
-  selectPanel,
+  selectOptionStyles,
+  selectOptionGroupStyles,
+  selectAllOptionStyles,
+  selectPanelStyles,
 ].join('\n');
+
+const activeAttributes = (active: SelectMockActiveSource | undefined) =>
+  active && `data-active="true" data-active-source="${active}"`;
+
+/** Draws one `<et-select-option>` as the select panel renders it. */
+export const selectOption = (option: SelectMockOption, state: SelectOptionMockState) => {
+  const attributes = [
+    'role="option"',
+    `value="${option.value}"`,
+    'class="et-select-option"',
+    `id="${state.id}"`,
+    `aria-selected="${!!state.selected}"`,
+    option.disabled && 'aria-disabled="true"',
+    state.selected && 'data-selected="true"',
+    activeAttributes(state.active),
+  ].filter(Boolean);
+
+  return `<et-select-option ${attributes.join(' ')}><span class="et-select-option-label">${option.label}</span><span class="et-select-option-check">${iconMarkup(CHECK_ICON)}</span></et-select-option>`;
+};
+
+/** Draws the `<et-select-all-option>` row a multi select with `selectAll` renders first in its panel. */
+export const selectAllOption = (options: SelectAllOptionMockOptions) => {
+  const attributes = [
+    'role="option"',
+    'class="et-select-option et-select-all-option"',
+    `id="${options.id}"`,
+    `aria-checked="${options.checked}"`,
+    activeAttributes(options.active),
+  ].filter(Boolean);
+  const check =
+    options.checked === 'mixed'
+      ? '<span class="et-select-all-option-dash" aria-hidden="true"></span>'
+      : iconMarkup(CHECK_ICON);
+
+  return `<et-select-all-option ${attributes.join(' ')}><span class="et-select-option-label">${options.label}</span><span class="et-select-option-check">${check}</span></et-select-all-option>`;
+};
+
+/** Draws an `<et-select-option-group>` with its label around the option HTML in `content`. */
+export const selectOptionGroup = (options: SelectOptionGroupMockOptions) =>
+  `<et-select-option-group role="group" aria-labelledby="${options.labelId}" class="et-select-option-group"><div id="${options.labelId}" class="et-select-option-group-label">${options.label}</div>${options.content}</et-select-option-group>`;
+
+/** Draws the open `<et-select-panel>` with its listbox around the HTML in `content`. */
+export const selectPanel = (options: SelectPanelMockOptions) => {
+  const listbox = [
+    'role="listbox"',
+    'class="et-select-listbox"',
+    `id="et-select-listbox-${options.id}"`,
+    options.labelId && `aria-labelledby="${options.labelId}"`,
+    options.multiple && 'aria-multiselectable="true"',
+  ].filter(Boolean);
+  const classes = [
+    'et-select-panel',
+    'et-color--inherited',
+    options.color && `et-color--${options.color}`,
+    `et-surface--${options.surface ?? 'inherited'}`,
+  ].filter(Boolean);
+
+  return `<et-select-panel class="${classes.join(' ')}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div ${listbox.join(' ')}>${options.content}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`;
+};
 
 /**
  * Draws `<et-select>` as a control for `formField()`. Pass `open: true` to `formField()` to draw
@@ -42,21 +135,12 @@ export const selectStyles = /* @__PURE__ */ [
 export const select = (options: SelectMockOptions): FormFieldControlMock => {
   const selected = options.options.find((option) => option.value === options.value);
 
-  const optionHtml = (state: FormFieldMockState) => (option: SelectMockOption, index: number) => {
-    const isSelected = option === selected;
-    const isActive = state.open && option.value === options.active;
-    const attributes = [
-      'role="option"',
-      `value="${option.value}"`,
-      'class="et-select-option"',
-      `id="et-select-option-${state.id}-${index}"`,
-      `aria-selected="${isSelected}"`,
-      isSelected && 'data-selected="true"',
-      isActive && 'data-active="true" data-active-source="keyboard"',
-    ].filter(Boolean);
-
-    return `<et-select-option ${attributes.join(' ')}><span class="et-select-option-label">${option.label}</span><span class="et-select-option-check">${iconMarkup(CHECK_ICON)}</span></et-select-option>`;
-  };
+  const optionHtml = (state: FormFieldMockState) => (option: SelectMockOption, index: number) =>
+    selectOption(option, {
+      id: `et-select-option-${state.id}-${index}`,
+      selected: option === selected,
+      active: state.open && option.value === options.active ? 'keyboard' : undefined,
+    });
 
   const optionsHtml = (state: FormFieldMockState) => options.options.map(optionHtml(state)).join('');
 
@@ -100,6 +184,12 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
       return `${clear}<button aria-hidden="true" tabindex="-1" type="button" class="et-input-picker-trigger et-select-arrow"${state.disabled ? ' disabled' : ''}>${iconMarkup(CHEVRON_ICON)}</button>`;
     },
     panel: (state) =>
-      `<et-select-panel class="et-select-panel et-color--inherited${options.panelColor ? ` et-color--${options.panelColor}` : ''} et-surface--${options.panelSurface ?? 'inherited'}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div role="listbox" class="et-select-listbox" id="et-select-listbox-${state.id}"${state.labelId ? ` aria-labelledby="${state.labelId}"` : ''}>${optionsHtml(state)}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`,
+      selectPanel({
+        id: state.id,
+        labelId: state.labelId,
+        content: optionsHtml(state),
+        color: options.panelColor,
+        surface: options.panelSurface,
+      }),
   };
 };
