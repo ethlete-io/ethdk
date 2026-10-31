@@ -71,7 +71,7 @@
     {
       "key": "r1",
       "title": "Inbox controls",
-      "note": "Open points (design complete pages/inbox): four controls are undeclared - the 'Erledigte zeigen' switch in the panel head (all seven states), and the comment editor's pin, textarea and 'Senden' button (comment-draft, comment-entry). The switch is the worst one: the design system has no switch part, so no part draws its hover, press or focus, and a page cannot draw them itself. Cause: the page was drawn before controls were declared; the switch came straight from the SDK template. Not in this round: components/comment-pin and the SDK components/textarea each have one gap of their own (an undeclared button / form-field), which pin and comment now point at. a) today. b) the switch becomes one SDK transparent toggle button 'Erledigte zeigen', pressed when resolved threads show. c) the switch and the '6 offen' caption become one segmented control 'Offen 6 | Alle 8' of two SDK buttons in a hairline ring, the active one pressed. b and c both declare pin, comment and send, naming the part that draws each. Pick: c, because both filter states are named and the open count sits in the control; in b the off state is plain text and only a faint tonal fill says it is on."
+      "note": "Open points (design complete pages/inbox): four controls are undeclared - the 'Erledigte zeigen' switch in the panel head (all seven states), and the comment editor's pin, textarea and 'Senden' button (comment-draft, comment-entry). The switch is the worst one: the design system has no switch part, so no part draws its hover, press or focus, and a page cannot draw them itself. Cause: the page was drawn before controls were declared; the switch came straight from the SDK template. Not in this round: components/comment-pin and the SDK components/textarea each have one gap of their own (an undeclared button / form-field), which pin and comment now point at. a) today. b) the switch becomes one SDK transparent toggle button 'Erledigte zeigen', pressed when resolved threads show. c) the switch and the '6 offen' caption become one segmented control 'Offen 6 | Alle 8' of two SDK buttons in a hairline ring, the active one pressed. b and c both declare pin, comment and send, naming the part that draws each. d keeps the switch (Q179). Pick: c, because both filter states are named and the open count sits in the control; in b the off state is plain text and only a faint tonal fill says it is on."
     }
   ],
   "variantInfo": {
@@ -89,6 +89,11 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "A segmented 'Offen 6 | Alle 8' of two SDK buttons in a hairline ring, the active one pressed; components/button draws each segment's states. Pin, comment and send declared. Costs: the '6 offen' caption goes, the head is left-aligned, and two buttons replace one control."
+    },
+    "d": {
+      "authors": ["claude-sonnet-5-5"],
+      "round": "r1",
+      "note": "As a: keeps the Erledigte zeigen switch (Q179: the SDK is Studio's kit; the switch is declared once that lands), plus the pin, comment and send declarations of b and c."
     }
   }
 }
