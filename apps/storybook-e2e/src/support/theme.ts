@@ -20,11 +20,6 @@ export function themePrimaryIn(scope: Locator): Promise<string> {
 const INK_ACTIVE =
   'rgb(var(--et-color-primary-ink-active, var(--et-color-primary-ink-focus, var(--et-color-primary-ink-hover, var(--et-color-primary-ink, var(--et-color-primary-active, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))))))))';
 
-/** Resolves the theme's active ink tone (`--et-color-primary-ink-active` and its fallbacks) inside `scope`. */
-export function themeInkActiveIn(scope: Locator): Promise<string> {
-  return resolveBorderColorIn(scope, INK_ACTIVE);
-}
-
 const PRIMARY_HOVER = 'rgb(var(--et-color-primary-hover, var(--et-color-primary)))';
 
 export type ColorScheme = 'light' | 'dark';

@@ -5,8 +5,8 @@ import {
   pressKey,
   setColorScheme,
   tap,
+  themeErrorHoverIn,
   themeErrorHoverMixIn,
-  themeInkActiveIn,
   themePrimaryIn,
 } from '../support';
 
@@ -522,22 +522,25 @@ function settledBackgroundColor(element: Locator): Promise<string> {
 test.describe('choice-inputs / error state', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: the error border is checked under hover');
 
-  test('an invalid checkbox draws its hovered border in the active tone of the error theme', async ({ page }) => {
-    const root = await openStory(page, CHECKBOX_DEFAULT, { args: { required: true } });
-    const field = root.locator('et-choice-field').first();
-    const checkbox = field.getByRole('checkbox');
-    const box = field.locator('.et-checkbox-box');
+  for (const scheme of ['dark', 'light'] as const) {
+    test(`an invalid checkbox draws its hovered border in the error hover tone (${scheme})`, async ({ page }) => {
+      const root = await openStory(page, CHECKBOX_DEFAULT, { args: { required: true } });
+      const field = root.locator('et-choice-field').first();
+      const checkbox = field.getByRole('checkbox');
+      const box = field.locator('.et-checkbox-box');
 
-    await checkbox.focus();
-    await checkbox.blur();
-    await expect(field).toHaveAttribute('data-error');
+      await setColorScheme(root, scheme);
+      await checkbox.focus();
+      await checkbox.blur();
+      await expect(field).toHaveAttribute('data-error');
 
-    const errorTone = await themePrimaryIn(field);
+      const errorTone = await themePrimaryIn(field);
 
-    await expect(box).toHaveCSS('border-top-color', errorTone);
-    await box.hover();
-    expect(await settledBorderColor(box)).toBe(await themeInkActiveIn(field));
-  });
+      await expect(box).toHaveCSS('border-top-color', errorTone);
+      await box.hover();
+      expect(await settledBorderColor(box)).toBe(await themeErrorHoverIn(field, scheme));
+    });
+  }
 
   for (const scheme of ['dark', 'light'] as const) {
     test(`an invalid switch tints its hovered track in the error hover tone (${scheme})`, async ({ page }) => {

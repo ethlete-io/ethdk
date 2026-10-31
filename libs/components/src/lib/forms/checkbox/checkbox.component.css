@@ -86,18 +86,21 @@
       :where(et-choice-field[data-error]:has(.et-choice-field-label-area:hover))
         &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
         .et-checkbox-box {
-        border-color: rgb(
-          var(
-            --et-color-primary-ink-active,
+        border-color: light-dark(
+          rgb(var(--et-color-primary-hover, var(--et-color-primary))),
+          rgb(
             var(
-              --et-color-primary-ink-focus,
+              --et-color-primary-ink-active,
               var(
-                --et-color-primary-ink-hover,
+                --et-color-primary-ink-focus,
                 var(
-                  --et-color-primary-ink,
+                  --et-color-primary-ink-hover,
                   var(
-                    --et-color-primary-active,
-                    var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                    --et-color-primary-ink,
+                    var(
+                      --et-color-primary-active,
+                      var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                    )
                   )
                 )
               )
