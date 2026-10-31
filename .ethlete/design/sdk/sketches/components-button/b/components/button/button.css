@@ -1,0 +1,42 @@
+@layer components {
+  .et-button {
+    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+  }
+
+  .et-button:where([data-variant='filled']) {
+    --et-button-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-rgb: var(--et-color-primary-active);
+      }
+    }
+
+    &:active {
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-theme-color-primary-solid) 84%,
+        var(--et-theme-color-on-primary-solid)
+      );
+    }
+  }
+
+  .et-icon-button {
+    &:where([data-size='xs']) {
+      --et-icon-button-border-radius: 0.3rem;
+    }
+
+    &:where([data-size='sm']),
+    &:where([data-size='md']) {
+      --et-icon-button-border-radius: 0.4rem;
+    }
+
+    &:where([data-size='lg']) {
+      --et-icon-button-border-radius: 0.6rem;
+    }
+
+    &:where([data-size='xl']) {
+      --et-icon-button-border-radius: 0.8rem;
+    }
+  }
+}
