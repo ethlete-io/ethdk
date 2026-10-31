@@ -82,7 +82,7 @@ const overflowTrigger = (label: string, attributes?: string) => {
     'et-breadcrumb-overflow-trigger',
   ];
 
-  return `<et-breadcrumb-overflow class="et-breadcrumb-overflow"><button ${attributes ?? ''} ettoggletiptrigger="" type="button" aria-label="${label}" aria-haspopup="dialog" aria-expanded="false" class="${classes.join(' ')}" data-variant="transparent" data-size="xs"><div class="et-icon-button-icon">${iconMarkup(ELLIPSIS_ICON)}</div></button></et-breadcrumb-overflow>`;
+  return `<et-breadcrumb-overflow class="et-breadcrumb-overflow"><button ${attributes ?? ''} ettoggletiptrigger="" type="button" aria-label="${label}" aria-haspopup="dialog" aria-expanded="false" class="${classes.join(' ')}" data-variant="transparent" data-size="xs" data-can-animate="true"><div class="et-icon-button-icon">${iconMarkup(ELLIPSIS_ICON)}</div></button></et-breadcrumb-overflow>`;
 };
 
 /** Draws an `et-breadcrumb` as the component renders it, as HTML: a chevron between crumbs, the last one marked as the current page. */

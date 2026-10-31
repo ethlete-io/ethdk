@@ -48,6 +48,7 @@ export const switchControl = (options: SwitchMockOptions = {}) => {
     options.attributes,
     'role="switch"',
     'class="et-switch et-color-interactive"',
+    'data-can-animate="true"',
     `aria-checked="${!!options.checked}"`,
     options.indeterminate && 'data-indeterminate="true"',
     options.disabled && 'aria-disabled="true"',
@@ -65,6 +66,7 @@ export const switchControl = (options: SwitchMockOptions = {}) => {
     `class="et-choice-field et-color--${options.color ?? 'inherited'}"`,
     `data-size="${options.size ?? 'md'}"`,
     `data-variant="${variant}"`,
+    'data-can-animate="true"',
     variant === 'card' && `data-control-position="${options.controlPosition ?? 'end'}"`,
   ].filter(Boolean);
 

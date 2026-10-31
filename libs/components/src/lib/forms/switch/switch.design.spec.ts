@@ -75,6 +75,8 @@ describe('switch design mock', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    fixture.detectChanges();
 
     const [standalone, field] = fixture.nativeElement.querySelectorAll('et-switch, et-choice-field');
 

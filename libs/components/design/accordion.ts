@@ -40,6 +40,7 @@ export const accordion = (options: AccordionMockOptions) => {
   const hostAttributes = [
     options.attributes,
     'class="et-accordion"',
+    'data-can-animate="true"',
     options.open && 'data-open=""',
     options.disabled && 'data-disabled=""',
   ].filter(Boolean);
