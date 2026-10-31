@@ -37,7 +37,7 @@
 
   .et-description-list {
     display: grid;
-    grid-template-columns: minmax(var(--et-description-list-term-min-width), max-content) 1fr;
+    grid-template-columns: minmax(var(--et-description-list-term-min-width), max-content) minmax(0, 1fr);
     row-gap: var(--et-description-list-row-gap);
     column-gap: var(--et-description-list-column-gap);
     margin: 0;
@@ -55,6 +55,7 @@
     dd {
       grid-column: 2;
       margin: 0;
+      overflow-wrap: anywhere;
       font-size: var(--et-description-list-detail-font-size);
       color: var(--et-surface-color-solid, currentColor);
     }
