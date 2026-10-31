@@ -205,9 +205,14 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   `control(markup, name)` renames an already marked control (`fc4258a3a`). CLIPPED on the narrowed canvas: no tool
   change, the canvas part marks its pan viewport itself (33). CI fix: cli specs run without a browser (`923da26db`).
 - In progress, step 3 (go/task/compare), in slices:
-  - 3a go: `go.json` `{ [part]: { hash, by, at } }` beside `ready.json`, stale on a design change;
-    `et design go`, `POST /__design/part-go`, MCP `part_go`; open point 7 "no go" and "go is stale".
-  - 3b task, 3c compare: wait for the lead's call on how the real component renders per state.
+  - 3a go, built (`aafb4e832`): `go.json` `{ [part]: { hash, by, at } }` beside `ready.json`, stale on a hash
+    change; `et design go <part> --product --by`, `POST /__design/part-go` (400, 404, 409 stale hash), MCP `part_go`;
+    `check` prints `GO`. Open points `no-go` and `stale-go` only for a part with an `implements` link, so a linked
+    part needs a go before ready. `GET /__design/open-points` for one part also answers `go`. Verified: new
+    `part-go.spec.ts`, system/mcp/open-points specs, tsc, lint. Not verified: the `serve.ts` route in a running
+    server.
+  - `sketch report` refuses a ready sketch without `--reopen` (`b199b7164`).
+  - Next: 3b task, then 3c compare (Tom Q194/Q195).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
