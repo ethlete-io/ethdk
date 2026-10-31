@@ -1,0 +1,52 @@
+{
+  "components/disclosure": {
+    "hash": "92834053fa3147f5",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:31:35.491Z"
+  },
+  "components/shell-collapse": {
+    "hash": "44e549b320e25b4a",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:31:38.684Z"
+  },
+  "components/shell-project-switch": {
+    "hash": "9e909353e9de59b6",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:31:46.914Z"
+  },
+  "elements/studio-menu": {
+    "hash": "bcdb97275792be3b",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:03.648Z"
+  },
+  "pages/flows": {
+    "hash": "142b826a05d31fbb",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:06.945Z"
+  },
+  "pages/inbox": {
+    "hash": "ee3d99940358a87d",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:10.912Z"
+  },
+  "pages/inventory": {
+    "hash": "a050641c3c773f51",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:15.012Z"
+  },
+  "pages/sketches": {
+    "hash": "16fe088b5d526705",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:18.465Z"
+  },
+  "pages/start": {
+    "hash": "28fd542da5c7fc82",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:20.308Z"
+  },
+  "pages/system": {
+    "hash": "e82726307d35bbd4",
+    "by": "claude-opus-5-5",
+    "at": "2026-10-31T23:32:24.224Z"
+  }
+}
