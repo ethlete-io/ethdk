@@ -30,6 +30,7 @@ const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-'));
 
   cpSync(join(__dirname, '..', '__fixtures__'), target, { recursive: true });
+  writeFileSync(join(target, '.prettierrc'), '{ "singleQuote": true }');
 
   return target;
 };
@@ -502,6 +503,38 @@ describe('mergeSketch with a shared folder', () => {
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain("from './shared/data'");
     expect(readFileSync(join(heroOf(target), 'shared/data.ts'), 'utf8')).toContain("from './more'");
     expect(existsSync(join(heroOf(target), 'shared/more.ts'))).toBe(true);
+  }, 120_000);
+
+  it('formats merged part and carried shared files using the product configuration', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const target = acme();
+    const found = withShared(target);
+
+    writeFileSync(join(target, '.prettierrc'), '{ "singleQuote": true, "semi": false }');
+    writeFileSync(join(found.sketch.dir, 'shared/more.ts'), 'export const more=1;\n');
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero{gap:1rem}');
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/unformatted.unknown'), 'unchanged');
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'shared/more.ts'), 'utf8')).toBe('export const more = 1\n');
+    expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toBe('.acme-hero {\n  gap: 1rem;\n}\n');
+    expect(readFileSync(join(heroOf(target), 'unformatted.unknown'), 'utf8')).toBe('unchanged');
+    expect(warning.mock.calls.flat().join('\n')).not.toContain('Could not format');
+  }, 120_000);
+
+  it('keeps the merge when formatting fails and skips files without a parser', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const target = acme();
+    const found = withShared(target);
+
+    writeFileSync(join(found.sketch.dir, 'b/elements/hero/unformatted.unknown'), 'unchanged');
+    writeFileSync(join(target, '.prettierrc'), '{ invalid');
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'unformatted.unknown'), 'utf8')).toBe('unchanged');
+    expect(warning).toHaveBeenCalledWith(expect.stringContaining('Could not format'));
   }, 120_000);
 
   it('refuses when a part other than the target imports @shared/', () => {

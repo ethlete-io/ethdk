@@ -1,4 +1,6 @@
+import { spawnSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { createRequire } from 'module';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve } from 'path';
 import { DesignConfig } from '../../paths';
@@ -114,6 +116,32 @@ const baseKeysOf = (options: { product: ResolvedProduct; sketch: Sketch; keys: s
 /** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
 export type MergeRefusal = { reason: string; changed?: string[] };
 
+const prettierBinOf = (target: string) => {
+  const from = [join(target, 'package.json'), __filename].find((file) => {
+    try {
+      return !!createRequire(file).resolve('prettier/package.json');
+    } catch {
+      return false;
+    }
+  });
+
+  return from ? resolve(dirname(createRequire(from).resolve('prettier/package.json')), 'bin/prettier.cjs') : null;
+};
+
+const formatFiles = (target: string, files: string[]) => {
+  const bin = prettierBinOf(target);
+
+  if (!bin || files.length === 0) return;
+
+  const formatted = spawnSync(process.execPath, [bin, '--write', '--ignore-unknown', '--log-level', 'warn', ...files], {
+    cwd: target,
+    encoding: 'utf8',
+  });
+
+  if (formatted.error || formatted.status !== 0)
+    console.warn(`Could not format the merged files: ${(formatted.stderr || formatted.error?.message || '').trim()}`);
+};
+
 const mergeOrReason = (options: {
   target: string;
   config: DesignConfig;
@@ -222,6 +250,14 @@ const mergeOrReason = (options: {
 
     return `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`;
   }
+
+  const written = [
+    ...mergedKeys.flatMap((key) => filesBelow(resolve(rootOf(key), key))),
+    ...sharedChanges.map(({ to }) => to),
+    ...(fixtures ? [resolve(product.dir, 'fixtures.ts')] : []),
+    ...assetFiles.map((file) => resolve(product.dir, ASSETS_FOLDER, relative(resolve(dir, ASSETS_FOLDER), file))),
+  ];
+  formatFiles(target, [...new Set(written)]);
 
   swapped.drop();
   const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
