@@ -1,0 +1,41 @@
+@layer components {
+  .et-button {
+    --_et-focus-ring-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+  }
+
+  .et-button:where([data-variant='filled']):active {
+    --_et-button-background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid) 84%,
+      var(--et-theme-color-ink-solid)
+    );
+  }
+
+  .et-icon-button:where([data-variant='filled']) {
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-rgb: var(--et-color-primary-active);
+      }
+    }
+
+    &:active {
+      --_et-button-background: color-mix(
+        in srgb,
+        var(--et-theme-color-primary-solid) 84%,
+        var(--et-theme-color-on-primary-solid)
+      );
+    }
+  }
+
+  .et-icon-button:where([data-variant='filled']) {
+    box-shadow: var(--et-button-shadow, none);
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: 1;
+      }
+    }
+  }
+}
