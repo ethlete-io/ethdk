@@ -74,7 +74,7 @@ const drawer = (open: PartOpenPoints, filter: Filter) => {
         ${shown.map((group) => groupRows(group, filter === 'all' ? 3 : 8)).join('')}
       </div>`
     : html`<div class="flex-1 flex items-center justify-center gap-space-2 text-text-muted">
-        ${checkIcon()}<span>Nichts offen. Jeder Zustand ist gezeichnet, verknüpft und besprochen.</span>
+        ${checkIcon(16)}<span>Nichts offen. Jeder Zustand ist gezeichnet, verknüpft und besprochen.</span>
       </div>`;
   return html`<section
     class="absolute right-space-3 bottom-space-3 left-[calc(var(--st-shell-inset-left)+var(--space-3))] h-72 flex flex-col overflow-hidden rounded-control-lg border border-surface-border bg-surface text-ui-sm"
