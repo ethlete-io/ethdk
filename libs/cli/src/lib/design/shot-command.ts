@@ -10,13 +10,13 @@ import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
 import { findSketch, parseTarget, rejectionOf, Sketch } from './system/sketch/sketch';
-import { createPartShooter, cropOf, PartAddress } from './shot';
+import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -321,6 +321,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     '--crop',
     '--surface',
     '--color',
+    '--scheme',
     '--out',
   ]);
   const usage = `usage: ${invocation} ${SHOT_USAGE}`;
@@ -354,7 +355,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     (preset && width) ||
     !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
     (cropChanged ? !variants : cropOf(args.values['--crop']) === undefined) ||
-    (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction))
+    (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction)) ||
+    !isSchemeFlag(args.values['--scheme'])
   ) {
     console.error(usage);
 
@@ -487,13 +489,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const isPage = part.startsWith('pages/');
     const presets = system.productOf(product)?.presets ?? {};
     const chosenPreset = preset ?? (isPage ? (Object.keys(presets)[0] ?? null) : null);
-    const params = new URLSearchParams();
-
-    for (const name of ['surface', 'color', 'scale']) {
-      const value = args.values[`--${name}`];
-
-      if (value) params.set(name, value);
-    }
+    const params = drawParamsOf(args.values);
 
     if (args.values['--crop'] && !cropChanged) params.set('clip', args.values['--crop']);
 

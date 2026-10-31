@@ -15,6 +15,7 @@ import {
   shownVariantsOf,
   withDiffRows,
 } from './shot-command';
+import { drawParamsOf } from './shot';
 import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules } from './system/system-modules';
 
@@ -188,6 +189,15 @@ describe('designShot', () => {
     );
   });
 
+  it('takes --scheme light or dark, named in the usage', async () => {
+    expect((await run(['components/button', '--states', '--scheme', 'dark'])).text).toContain('no config at');
+
+    const { code, text } = await run(['components/button', '--states', '--scheme', 'dusk']);
+
+    expect(code).toBe(2);
+    expect(text).toContain('--scheme <light|dark>');
+  });
+
   it('takes a crop of four whole numbers', async () => {
     expect((await run(['components/button', '--states', '--crop', '1,2,3'])).code).toBe(2);
     expect((await run(['components/button', '--states', '--crop', '0,0,40,20'])).text).toContain('no config at');
@@ -206,6 +216,14 @@ describe('designShot', () => {
 
     expect(code).toBe(1);
     expect(text).toContain('no config at');
+  });
+});
+
+describe('drawParamsOf', () => {
+  it('passes the scheme to the frame next to the surface, so a dark surface can draw in the dark scheme', () => {
+    const params = drawParamsOf({ '--surface': 'dark', '--scheme': 'dark', '--scale': '2', '--out': 'x.png' });
+
+    expect(Object.fromEntries(params)).toEqual({ surface: 'dark', scheme: 'dark', scale: '2' });
   });
 });
 

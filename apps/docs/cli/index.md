@@ -146,7 +146,7 @@ at its `at` times, in full and in reduced motion (`--mode full|reduced` picks on
 pauses every animation and steps the `ctx.at` clock, so each keyframe is the same in every run. Next to the sheet it writes a JSON
 file with the end of each mode, its keyframe times and one track per animation: element, kind, properties, start, delay,
 duration, iterations and easing. It takes `--variant <key>` of the part's open sketch, `--preset` or `--width`, `--scale`,
-`--surface`, `--color` and `--out`. A track's element is `[data-et-key="..."]` where the element sets one, otherwise its selector. Each
+`--surface`, `--color`, `--scheme` and `--out`. A track's element is `[data-et-key="..."]` where the element sets one, otherwise its selector. Each
 shot is cut to the union of the part and the animated elements over all keyframes, so an overshoot is not clipped and the frames line
 up. Limits: an animation or step that starts after 30 s is not drawn, and an infinite animation does not count towards `end`. The
 timeline in Studio comes in a later release.
@@ -223,7 +223,7 @@ the whole viewport of `--preset` (the product's first preset by default). The `t
 `::view-transition-*` rules, arrive with its markup, so the `from` page is captured unchanged; the `from` page's styles stay
 loaded. Name the line by its `id` when it has one, otherwise as `<part>#<state>→<part>#<state>` (`->` works too), for example
 `{ "from": { "part": "pages/list", "state": "rest" }, "to": { "part": "pages/detail", "state": "rest" }, "id": "open", "transition": "view" }`.
-It takes `--mode`, `--scale`, `--surface`, `--color`, `--product` and `--out`; the JSON names the line, its label and both ends.
+It takes `--mode`, `--scale`, `--surface`, `--color`, `--scheme`, `--product` and `--out`; the JSON names the line, its label and both ends.
 
 `et design mcp` serves the design tools to an MCP client over stdio, in the working directory of the session: `parts`,
 `call`, `check`, `shot`, `motion_shots`, `sketch_new`, `sketch_report`, `sketch_ready`, `sketch_merge`, `sketch_discard`, `sketch_variant`, `sketch_round`, `sketch_list`, `sketch_check`, `sketch_preview`, `sketch_rebase`, `comment_reply`, `inbox` and
@@ -326,6 +326,11 @@ A pixel comparison gives one box per cluster of changed pixels: changes closer t
 merge, and at most eight boxes remain. `et design shot <part> --variants --crop changed` writes one
 contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single cluster keeps
 `<out>`), and Studio's changed area stacks one enlarged crop per cluster below the whole page.
+
+`--surface <name>` only puts the `et-surface--<name>` class on the frame root; the colour scheme
+stays light, so `light-dark()` and theme rules bound to `prefers-color-scheme` still draw their
+light branch. `--scheme dark` (or `light`) pins the scheme the way Studio's scheme copies do; pass
+both, e.g. `--surface dark --scheme dark`, to check a dark theme.
 
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.

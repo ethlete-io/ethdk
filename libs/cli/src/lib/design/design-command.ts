@@ -122,6 +122,8 @@ const helpOf = (invocation: string) =>
     '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '  With --variants --crop changed, every cell is cut to one box around the pixels any shown variant changes',
     '  from the merged part, plus a margin, and the box is printed for a later --crop x,y,width,height.',
+    '  --scheme pins the colour scheme the frame draws in, as a Studio scheme copy does; --surface only sets the',
+    '  surface class of the root, so light-dark() and scheme-bound theme rules still draw light without it.',
     '',
     `${invocation} ${MOTION_USAGE}`,
     '  Draw a motion of a part from its from state at 0, 25, 50, 75 and 100 % of its run and at its at times, in full',

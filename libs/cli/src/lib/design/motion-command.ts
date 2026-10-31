@@ -6,15 +6,15 @@ import { flowLineAddressOf, flowLineOf } from './motion-flow';
 import { MOTION_MODES, MotionMode, MotionPictures } from './motion-shot';
 import { DesignConfig, workRootOf } from './paths';
 import { createDesignServer } from './serve';
-import { createPartShooter } from './shot';
+import { createPartShooter, drawParamsOf, isSchemeFlag } from './shot';
 import { shotProductOf } from './shot-command';
 import { DesignFlow, FlowLine, flowStateKeyOf, listFlows } from './system/flows/flow';
 import { argsOf, configOf, oneProductOf } from './system/sketch/cli-args';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 import { createDrawQueue } from './thumb';
 
-export const MOTION_USAGE = `motion shots <layer>/<name> <motion> [--variant <key>] [--mode <${MOTION_MODES.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]
-  motion flow <flow> <line id | part#state→part#state> [--mode <${MOTION_MODES.join('|')}>] [--preset <preset>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const MOTION_USAGE = `motion shots <layer>/<name> <motion> [--variant <key>] [--mode <${MOTION_MODES.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]
+  motion flow <flow> <line id | part#state→part#state> [--mode <${MOTION_MODES.join('|')}>] [--preset <preset>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
 type DeclaredMotion = { from: string; to: string; at?: number[]; interrupt?: number };
 
@@ -94,20 +94,9 @@ const MOTION_FLAGS = [
   '--scale',
   '--surface',
   '--color',
+  '--scheme',
   '--out',
 ];
-
-const themeParamsOf = (values: Record<string, string | undefined>) => {
-  const params = new URLSearchParams();
-
-  for (const name of ['surface', 'color', 'scale']) {
-    const value = values[`--${name}`];
-
-    if (value) params.set(name, value);
-  }
-
-  return params;
-};
 
 /** Opens a design server and a shooter, lets `draw` draw each mode, and writes the contact sheet and the JSON report. */
 const writeMotionSheet = async (options: {
@@ -192,7 +181,8 @@ const designMotionFlow = (options: {
     args.values['--width'] !== undefined ||
     args.values['--variant'] !== undefined ||
     (mode !== undefined && !(MOTION_MODES as readonly string[]).includes(mode)) ||
-    !(Number.isInteger(scale) && scale >= 1 && scale <= 4)
+    !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
+    !isSchemeFlag(args.values['--scheme'])
   ) {
     console.error(usage);
 
@@ -240,7 +230,7 @@ const designMotionFlow = (options: {
     return Promise.resolve(1);
   }
 
-  const params = themeParamsOf(args.values);
+  const params = drawParamsOf(args.values);
   const name = flowLineAddressOf(line);
 
   return writeMotionSheet({
@@ -319,7 +309,8 @@ export const designMotion = async (options: { target: string; argv: string[]; in
     (mode !== undefined && !(MOTION_MODES as readonly string[]).includes(mode)) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
-    !(Number.isInteger(scale) && scale >= 1 && scale <= 4)
+    !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
+    !isSchemeFlag(args.values['--scheme'])
   ) {
     console.error(usage);
 
@@ -372,7 +363,7 @@ export const designMotion = async (options: { target: string; argv: string[]; in
 
       const presets = system.productOf(product)?.presets ?? {};
       const chosenPreset = preset ?? (part.startsWith('pages/') ? (Object.keys(presets)[0] ?? null) : null);
-      const params = themeParamsOf(args.values);
+      const params = drawParamsOf(args.values);
       const drawn: DrawnModes = {};
 
       for (const shown of modesOf(mode)) {

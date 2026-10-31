@@ -45,6 +45,22 @@ const schemeOf = (params: URLSearchParams) => {
   return scheme === 'dark' || scheme === 'light' ? scheme : null;
 };
 
+/** Whether a `--scheme` value is absent or one the frame pins. */
+export const isSchemeFlag = (value: string | undefined) => value === undefined || value === 'light' || value === 'dark';
+
+/** The frame params of the `--surface`, `--color`, `--scheme` and `--scale` flags of a shot command. */
+export const drawParamsOf = (values: Record<string, string | undefined>) => {
+  const params = new URLSearchParams();
+
+  for (const name of ['surface', 'color', 'scheme', 'scale']) {
+    const value = values[`--${name}`];
+
+    if (value) params.set(name, value);
+  }
+
+  return params;
+};
+
 const isScale = (scale: number) => Number.isInteger(scale) && scale >= 1 && scale <= MAX_SCALE;
 
 /** The `x,y,width,height` crop of a picture in CSS pixels, `null` without one, `undefined` for a malformed one. */

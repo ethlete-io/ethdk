@@ -115,6 +115,11 @@ const SIZE: ToolInput[] = [
   { name: 'scale', flag: '--scale', description: 'The device scale, 1 to 4.', type: 'integer' },
   { name: 'surface', flag: '--surface', description: 'The surface theme to draw on.' },
   { name: 'color', flag: '--color', description: 'The colour theme to draw with.' },
+  {
+    name: 'scheme',
+    flag: '--scheme',
+    description: 'The colour scheme to draw in, light or dark; a surface theme alone does not switch it.',
+  },
 ];
 
 /** The tools of `et design mcp`: each runs the `et design` command of the same name. */
