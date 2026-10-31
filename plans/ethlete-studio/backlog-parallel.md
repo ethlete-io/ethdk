@@ -1185,3 +1185,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q229 (Tom, 2026-10-31):** inventory controls are keyed and numbered on DOM path + label, not on the DOM path
   alone. On `pages/start`, "Repo öffnen" (no-repo) and "Prompt kopieren" (no-products) sit at the same path; today they
   share number 1 and the list shows one row for both. After the fix each gets its own number and row.
+- After the MVP (Tom, 2026-10-31): the Inventory view becomes a canvas like the other Studio views (pan and zoom).
+- After the MVP (Tom, 2026-10-31): the Inventory view respects the frame viewport. Today a control outline that
+  reaches past the frame edge (for example the zoom bar of a sketch page) makes the frame scroll; outlines must be
+  clipped to the frame or drawn inside it, so they never add a scrollbar.
