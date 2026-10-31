@@ -123,7 +123,10 @@
     }
 
     et-choice-field[data-error] &:focus-visible:not([aria-checked='true']):not([aria-checked='mixed']) {
-      --_et-focus-ring-color: var(--et-theme-color-primary-solid);
+      --_et-focus-ring-color: light-dark(
+        var(--et-theme-color-ink-solid, currentColor),
+        var(--et-theme-color-primary-solid, currentColor)
+      );
     }
 
     et-choice-field[data-error]
