@@ -49,11 +49,6 @@
   et-range-slider .et-range-slider-interaction {
     block-size: max(44px, var(--et-slider-thumb-size));
   }
-
-  :is(et-slider, et-range-slider)[data-orientation='vertical'][data-mark-labels]
-    > :is(.et-slider-interaction, .et-range-slider-interaction) {
-    margin-inline-start: 3.2rem;
-  }
 }
 
 @layer components {

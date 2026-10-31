@@ -85,6 +85,7 @@ export const slider = (options: SliderMockOptions) => {
     options.readonly && 'data-readonly="true"',
     options.dragging !== undefined && 'data-dragging="true"',
     hasMarkLabels && 'data-mark-labels="true"',
+    options.valueLabel && 'data-thumb-value="true"',
   ].filter(Boolean);
 
   const labelHtml = labelId
