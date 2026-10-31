@@ -8,14 +8,13 @@
 @import '../../../.ethlete/design/studio/foundations/spacing/spacing.css' layer(studio-tokens);
 @import '../../../.ethlete/design/studio/foundations/motion/motion.css' layer(studio-tokens);
 
+@import './styles/reset-colors.css';
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
 @import './styles/sdk-token-map.css' layer(studio-sdk);
 
 @theme {
   --spacing: 0.4rem;
-
-  --color-*: initial;
 
   --shadow-*: initial;
   --shadow-sm:
