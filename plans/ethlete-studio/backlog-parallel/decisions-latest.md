@@ -202,3 +202,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   and the canvas shows its frame), so the inventory numbers them. No visible change. Tom gives the new inbox go
   after this round, because it changes the hash again. The open-point rows in `pages/system` stay after the MVP:
   they are not clickable yet.
+- **MVP go (Tom, 2026-11-01):** Tom gives the go for every Studio part that is open now: `pages/inbox`,
+  `pages/inventory`, and each part the `implements` round links to its app file (no visible change). The builder sets
+  each go with `et design go <part> --product studio --by tom` after the part's last edit, plus any inventory
+  approval the part still needs, and commits go.json. Parts that need a design call are excluded until Tom decides.
