@@ -49,6 +49,16 @@ function triggerPaint(trigger: Locator) {
   });
 }
 
+function restingTriggerPaint(trigger: Locator) {
+  return trigger.evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+
+    const style = getComputedStyle(el);
+
+    return `${style.borderTopColor} ${style.backgroundColor}`;
+  });
+}
+
 test.describe('dropzone / dropping files', () => {
   test('a dropped image fills the single preview with that image', async ({ page }) => {
     const root = await openStory(page, DEFAULT_ID);
@@ -103,7 +113,8 @@ test.describe('dropzone / drag-over styling', () => {
     const root = await openStory(page, DEFAULT_ID);
     const dropzone = root.locator('et-dropzone');
     const trigger = root.locator('.et-dropzone-trigger');
-    const idle = await triggerPaint(trigger);
+    // The border still fades in from the story's boot theme; an earlier read records a colour it never returns to.
+    const idle = await restingTriggerPaint(trigger);
     const dataTransfer = await dataTransferWith(page, [PHOTO]);
 
     await dropzone.dispatchEvent('dragenter', { dataTransfer });
