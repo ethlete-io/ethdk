@@ -3,6 +3,12 @@ import { Observable, filter, map, pairwise, startWith } from 'rxjs';
 /** The state of a part, at a preset, a width or fitted, that a frame draws; a comment on the frame names it. */
 export const REST = 'rest';
 
+/**
+ * The least viewport height a live page is drawn in when the frame's height follows its content, so `vh` sizes
+ * resolve as in a shot and not against the content they size. Must match `VIEWPORT_HEIGHT` in `@ethlete/cli`'s shot.
+ */
+export const FOLLOWED_VIEWPORT_HEIGHT = 800;
+
 export type FramePlace = {
   part: string;
   state: string;

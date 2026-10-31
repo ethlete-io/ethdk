@@ -654,6 +654,41 @@ describe('DesignCanvasComponent', () => {
     expect(first?.nativeElement.querySelector('[data-live-badge]')).toBeNull();
   });
 
+  it('draws the page of a live frame whose height follows its content in the viewport of a shot, clipped to the frame', async () => {
+    const frames = [
+      { id: 'followed', src: 'http://localhost:1/frame.html', label: 'followed', width: 320 },
+      { id: 'sized', src: 'http://localhost:1/frame.html', label: 'sized', width: 390, height: 600 },
+    ];
+    const fixture = await render(frames);
+    const [followed, sized] = fixture.debugElement.queryAll(By.directive(CanvasFrameComponent));
+
+    followed?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+
+    const iframeOf = (frame = followed) => (frame?.nativeElement as HTMLElement).querySelector('iframe');
+
+    expect(iframeOf()?.style.minHeight).toBe('800px');
+    expect(iframeOf()?.parentElement?.classList).toContain('overflow-hidden');
+
+    sized?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+
+    expect(iframeOf(sized)?.style.minHeight).toBe('');
+  });
+
+  it('takes no height from the blank document a live iframe loads before its page', async () => {
+    const fixture = await render([{ id: 'followed', src: 'about:blank', label: 'followed', width: 320 }]);
+    const frame = frameElement(fixture);
+    const heights: number[] = [];
+
+    (frame.componentInstance as CanvasFrameComponent).heightChange.subscribe((height) => heights.push(height));
+    frame.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(heights).toEqual([]);
+  });
+
   it('emits the key of a column group whose switch is clicked, and shows whether it is on', async () => {
     const fixture = await render([{ ...FITTED, id: 'a', column: 'a', width: 390, height: 844 }]);
     const switched: string[] = [];

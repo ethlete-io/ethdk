@@ -30,6 +30,7 @@ import {
 } from 'rxjs';
 import {
   CanvasFrame,
+  FOLLOWED_VIEWPORT_HEIGHT,
   FrameMessage,
   MeasuredSide,
   croppedLayoutOf,
@@ -181,17 +182,20 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         }
       }
       @if (live()) {
-        @for (source of sources(); track source.src) {
-          <iframe
-            #iframe
-            [src]="source.url"
-            [title]="frame().label"
-            [class]="source.src !== shown() || !active() ? 'pointer-events-none' : ''"
-            [class.opacity-0]="source.src !== shown()"
-            (load)="loadContent(iframe)"
-            class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
-          ></iframe>
-        }
+        <div class="absolute inset-0 overflow-hidden">
+          @for (source of sources(); track source.src) {
+            <iframe
+              #iframe
+              [src]="source.url"
+              [title]="frame().label"
+              [class]="source.src !== shown() || !active() ? 'pointer-events-none' : ''"
+              [class.opacity-0]="source.src !== shown()"
+              [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
+              (load)="loadContent(iframe)"
+              class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
+            ></iframe>
+          }
+        </div>
       }
     </ng-template>
     @if (frame().pending; as pending) {
@@ -254,6 +258,8 @@ export class CanvasFrameComponent {
   public cellsChange = output<Record<string, Rect>>();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
+
+  protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
 
   protected bordered = computed(
     () =>
@@ -419,7 +425,7 @@ export class CanvasFrameComponent {
     const content = iframe.contentDocument;
     const view = content?.defaultView;
 
-    if (!content || !view) return EMPTY;
+    if (!content || !view || content.URL === 'about:blank') return EMPTY;
 
     const root = content.documentElement;
     const height$ = new Observable<MeasuredSide>((subscriber) => {
