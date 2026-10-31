@@ -24,8 +24,8 @@ agent type carries the model and reasoning effort its own definition sets, and a
 inherits the parent's model.
 
 A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
-and measured subagents cost as much as the sessions that spawn them. Do a lookup of a few tool
-calls yourself. Give each subagent one large slice, not several small ones.
+and measured subagents cost as much as the sessions that spawn them. A lookup or job of under about 10 tool
+calls stays in the session. Give each subagent one large slice, not several small ones.
 
 A subagent has the same context budget as the session, measured on its own transcript, and the
 context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
