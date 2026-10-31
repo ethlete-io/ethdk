@@ -27,11 +27,15 @@
   }
 
   .st-trow[data-selected]:hover {
-    background: linear-gradient(var(--accent-subtle), var(--accent-subtle)), var(--surface-raised);
+    background:
+      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 9%, transparent);
   }
 
   .st-trow[data-selected]:active {
-    background: linear-gradient(var(--accent-subtle), var(--accent-subtle)), var(--surface-pressed);
+    background:
+      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
+      color-mix(in srgb, var(--et-surface-interaction-solid) 15%, transparent);
   }
 
   .st-trow:focus-visible {

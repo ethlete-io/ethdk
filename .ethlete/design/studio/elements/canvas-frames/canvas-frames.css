@@ -4,7 +4,7 @@
   }
 
   .st-cframe {
-    box-shadow: 0 0 0 1px var(--surface-border);
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
   }
 
   .st-cframe-head {
@@ -33,6 +33,6 @@
   }
 
   .st-sgrid-cell {
-    box-shadow: 0 0 0 1px var(--surface-border);
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
   }
 }

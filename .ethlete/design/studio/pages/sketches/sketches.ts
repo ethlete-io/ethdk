@@ -61,17 +61,21 @@ const variantHead = (variant: PageVariant) =>
     <div class="flex items-center gap-space-2 whitespace-nowrap [&>*]:flex-none [&_.et-button]:ms-space-2">
       ${
         variant.key === 'current'
-          ? html`<span class="font-ui font-ui-medium text-ui-sm text-text">${variant.label}</span>`
-          : html`<span class="font-code text-ui-sm text-text">Variante ${variant.label}</span>`
+          ? html`<span class="font-ui font-ui-medium text-ui-sm text-(--et-surface-color-solid)"
+              >${variant.label}</span
+            >`
+          : html`<span class="font-code text-ui-sm text-(--et-surface-color-solid)">Variante ${variant.label}</span>`
       }
       ${pageAuthor(variant)} ${variant.key === 'current' ? '' : merge.body}
     </div>
-    <span class="text-text-muted text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis">${variant.note}</span>
+    <span class="text-(--et-surface-color-muted-solid) text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis"
+      >${variant.note}</span
+    >
   </div>`;
 
 const frame = (variant: PageVariant, selected: boolean) =>
   html`<figure
-    class="sk-frame relative m-0 box-border flex rounded-control-md bg-surface p-space-2"
+    class="sk-frame relative m-0 box-border flex rounded-control-md et-surface--dark bg-(--et-surface-background-solid) p-space-2"
     ${selected ? ' data-selected' : ''}
   >
     ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
@@ -152,7 +156,7 @@ export default definePart<Props>({
   },
   render: async ({ camera, selected }) => {
     const content = html`<div
-      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] after:content-['']"
+      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--et-surface-background-solid)_60%,transparent)] after:content-['']"
       data-sketches-page
       ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
     >

@@ -22,25 +22,28 @@ export const presetPicker = () =>
     control: select({ options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }], value: 'desktop' }),
   });
 
-const caption = (text: string) => html`<span class="text-text-muted text-ui-sm">${text}</span>`;
+const caption = (text: string) => html`<span class="text-(--et-surface-color-muted-solid) text-ui-sm">${text}</span>`;
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
 export const emptyStyles = copy.styles;
 
-const prompt = html`<p class="m-0 p-space-3 rounded-(--radius-control-md) bg-surface-sunken text-text text-ui-sm">
+const prompt = html`<p
+  class="m-0 p-space-3 rounded-(--radius-control-md) bg-surface-sunken text-(--et-surface-color-solid) text-ui-sm"
+>
   Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.
 </p>`;
-const ghostBox = '<span class="block w-24 h-15 rounded-sm outline outline-surface-border bg-surface"></span>';
-const ghostLine = '<span class="block w-10 h-px bg-surface-border"></span>';
+const ghostBox =
+  '<span class="block w-24 h-15 rounded-sm outline outline-(--et-surface-border-solid) et-surface--dark bg-(--et-surface-background-solid)"></span>';
+const ghostLine = '<span class="block w-10 h-px bg-(--et-surface-border-solid)"></span>';
 
 export const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
   <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
     <div class="flex items-center gap-space-2" aria-hidden="true">
       ${ghostBox}${ghostLine}${ghostBox}${ghostLine}${ghostBox}
     </div>
-    <p class="m-0 text-text font-ui-strong text-ui-md">Noch keine Flows</p>
-    <p class="m-0 text-text-muted">
+    <p class="m-0 text-(--et-surface-color-solid) font-ui-strong text-ui-md">Noch keine Flows</p>
+    <p class="m-0 text-(--et-surface-color-muted-solid)">
       Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn
       an. Bitte ihn zum Beispiel so:
     </p>
@@ -48,7 +51,9 @@ export const emptyCanvas = html`<div class="h-full flex items-center justify-cen
   </div>
 </div>`;
 
-export const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-sm">Noch keine Flows.</p>`;
+export const emptySide = html`<p class="px-space-3 py-space-2 text-(--et-surface-color-muted-solid) text-ui-sm">
+  Noch keine Flows.
+</p>`;
 
 export const flatFlowList = () =>
   treeRow.render({
@@ -108,7 +113,7 @@ export const flowGraph = (scale: number, colGap: number, rowGap = 56) => {
 
   const frames = NODES.map((node) => {
     const { x, y } = at(node);
-    return `<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${x}px;top:${y}px">${caption(node.step.title)}<div class="rounded-sm outline outline-surface-border">${shot(node.step, scale)}</div></figure>`;
+    return `<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${x}px;top:${y}px">${caption(node.step.title)}<div class="rounded-sm outline outline-(--et-surface-border-solid)">${shot(node.step, scale)}</div></figure>`;
   }).join('');
 
   const edges = EDGES.flatMap((edge) => {
@@ -123,11 +128,11 @@ export const flowGraph = (scale: number, colGap: number, rowGap = 56) => {
     const y2 = b.y + CAPTION + h / 2;
     const bend = x1 + 12;
     const path = y1 === y2 ? `M${x1} ${y1}H${x2}` : `M${x1} ${y1}H${bend}V${y2}H${x2}`;
-    const label = `<span class="absolute text-center text-text-muted text-ui-xs -translate-y-full pb-space-1" style="left:${bend + 4}px;top:${y2}px;width:${x2 - bend - 8}px">${edge.label}</span>`;
+    const label = `<span class="absolute text-center text-(--et-surface-color-muted-solid) text-ui-xs -translate-y-full pb-space-1" style="left:${bend + 4}px;top:${y2}px;width:${x2 - bend - 8}px">${edge.label}</span>`;
     return [{ path, label }];
   });
 
-  const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-text-muted" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
+  const svg = `<svg data-et-drawing class="absolute inset-0 overflow-visible text-(--et-surface-color-muted-solid)" width="${width}" height="${height}" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="currentColor" stroke-width="1.5"/></marker></defs>${edges.map((edge) => `<path d="${edge.path}" marker-end="url(#flow-arrow)"/>`).join('')}</svg>`;
 
   return html`<div class="relative flex-none" style="width:${width}px;height:${height}px">
     ${svg}${frames}${edges.map((edge) => edge.label).join('')}

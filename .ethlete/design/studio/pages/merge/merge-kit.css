@@ -2,7 +2,7 @@
   .mg-shot {
     width: calc(var(--mg-w) * var(--mg-scale));
     height: calc(var(--mg-h) * var(--mg-scale));
-    box-shadow: 0 0 0 1px var(--surface-border);
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
   }
 
   .mg-shot-page {

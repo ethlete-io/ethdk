@@ -36,14 +36,18 @@ const dot = (inert?: boolean) =>
 
 const lead = ({ kind, expanded, inert }: Row) => (kind === 'leaf' ? dot(inert) : chevron(expanded === true));
 
-const statusClass = { 'in-progress': 'text-text-muted', ready: 'text-accent' };
+const statusClass = { 'in-progress': 'text-(--et-surface-color-muted-solid)', ready: 'text-accent' };
 
 const rowMarkup = (r: Row) => {
-  const accent = r.selected ? 'text-accent-text' : 'text-text-muted';
-  const color = r.selected ? 'text-accent-text' : r.kind === 'group' ? 'text-text-muted' : 'text-text';
+  const accent = r.selected ? 'text-accent-text' : 'text-(--et-surface-color-muted-solid)';
+  const color = r.selected
+    ? 'text-accent-text'
+    : r.kind === 'group'
+      ? 'text-(--et-surface-color-muted-solid)'
+      : 'text-(--et-surface-color-solid)';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-accent-subtle ' : ''}hover:bg-surface-hover active:bg-(--surface-pressed) ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-accent-subtle ' : ''}hover:bg-(--et-surface-interaction-solid)/9 active:bg-(--et-surface-interaction-solid)/15 ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"

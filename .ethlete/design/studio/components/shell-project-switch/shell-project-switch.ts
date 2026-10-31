@@ -12,9 +12,10 @@ export const shellProjectSwitchStyles = styles + buttonStyles;
 export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) => {
   const markup = button({
     label: html`<span
-        class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm bg-surface-overlay text-text text-ui-xs font-ui-strong"
+        class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm et-surface--dark-elevated-2 bg-(--et-surface-background-solid) text-(--et-surface-color-solid) text-ui-xs font-ui-strong"
         >E</span
-      ><span class="flex-1 min-w-0 overflow-hidden text-text text-ellipsis whitespace-nowrap">ethlete-sdk</span
+      ><span class="flex-1 min-w-0 overflow-hidden text-(--et-surface-color-solid) text-ellipsis whitespace-nowrap"
+        >ethlete-sdk</span
       >${icon('up-down', { size: 16 })}`,
     variant: 'transparent',
     color: 'surface',
@@ -39,7 +40,9 @@ export default definePart({
   styles: shellProjectSwitchStyles,
   render: (props: Props) =>
     drawing({
-      body: html`<div class="box-border w-62 p-space-2 bg-surface text-text font-ui text-ui-md">
+      body: html`<div
+        class="box-border w-62 p-space-2 et-surface--dark bg-(--et-surface-background-solid) text-(--et-surface-color-solid) font-ui text-ui-md"
+      >
         ${shellProjectSwitch(props)}
       </div>`,
     }),

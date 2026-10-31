@@ -1,6 +1,6 @@
 @layer components {
   .sk-shot {
-    box-shadow: 0 0 0 1px var(--surface-border);
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
   }
 
   .sk-shot:hover {

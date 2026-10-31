@@ -31,7 +31,7 @@ export const buttonTree = await partTree.render({
 
 export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
   html`<div
-    class="mg-shot relative flex-none overflow-hidden rounded-control-md bg-surface"
+    class="mg-shot relative flex-none overflow-hidden rounded-control-md et-surface--dark bg-(--et-surface-background-solid)"
     data-et-skip="CLIPPED"
     data-side="${side}"
     style="--mg-scale: ${scale}; --mg-w: ${row.width}px; --mg-h: ${row.height}px"
@@ -42,9 +42,10 @@ export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
 export const rowCaption = (row: Row, stacked = false) =>
   html`<span
     class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap${stacked ? ' flex-wrap gap-y-0' : ''}"
-    ><span class="text-text font-code">${row.part}</span><span class="text-text-muted">${row.state}</span
+    ><span class="text-(--et-surface-color-solid) font-code">${row.part}</span
+    ><span class="text-(--et-surface-color-muted-solid)">${row.state}</span
     ><span
-      class="text-text-muted text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
+      class="text-(--et-surface-color-muted-solid) text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
       >${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span
     ></span
   >`;
@@ -56,5 +57,5 @@ export const picked = (variant: string) =>
   >`;
 
 export const unchangedBody = html`<ul class="${disclosureBodyClass}">
-  ${UNCHANGED.states.map((state) => html`<li><span class="text-text font-code">${UNCHANGED.part}</span><span class="text-text-muted">${state}</span></li>`).join('')}
+  ${UNCHANGED.states.map((state) => html`<li><span class="text-(--et-surface-color-solid) font-code">${UNCHANGED.part}</span><span class="text-(--et-surface-color-muted-solid)">${state}</span></li>`).join('')}
 </ul>`;

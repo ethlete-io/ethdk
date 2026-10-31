@@ -1,18 +1,18 @@
 @layer components {
   .st-studio-trigger {
-    --accent: var(--surface-raised);
-    --on-accent: var(--text);
+    --accent: var(--et-surface-background-solid);
+    --on-accent: var(--et-surface-color-solid);
     width: 40px;
     height: 40px;
   }
 
   .st-studio-trigger:hover,
   .st-studio-trigger[aria-expanded='true'] {
-    --accent: var(--surface-overlay);
+    --accent: color-mix(in srgb, var(--et-surface-interaction-hover-solid) 5%, var(--et-surface-background-solid));
   }
 
   .st-studio-trigger:active {
-    --accent: var(--surface-pressed);
+    --accent: color-mix(in oklch, var(--et-surface-interaction-active-solid) 10%, transparent);
   }
 
   .st-studio-menu {
