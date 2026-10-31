@@ -204,6 +204,13 @@ export const MCP_TOOLS: ToolSpec[] = [
     values: [BY],
   },
   {
+    name: 'part_go',
+    description: 'Release a part for implementation at its current design. A design change after it needs a new go.',
+    command: ['go'],
+    positional: [PART],
+    values: [BY],
+  },
+  {
     name: 'sketch_ready',
     description: 'Mark a sketch ready for the user to pick.',
     command: ['sketch', 'ready'],

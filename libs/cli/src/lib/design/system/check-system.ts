@@ -3,6 +3,7 @@ import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
 import { partsCompletenessOf } from './complete';
 import { OpenPointsInput, openPointsText } from './open-points';
+import { goPartsOf } from './part-go';
 import { readyPartsOf } from './part-ready';
 import { Problem } from './problem';
 import { contrastsOf, missingStatesOf, readOpenPoints } from './read-open-points';
@@ -234,6 +235,10 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     const ready = readyPartsOf(product);
 
     if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
+
+    const go = goPartsOf(product);
+
+    if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
   }
 };
 

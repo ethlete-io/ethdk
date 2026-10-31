@@ -311,6 +311,14 @@ then reads as not ready. Studio sends `POST /__design/part-ready?product=` with 
 has open points, 503 when it cannot draw. `et design check` prints a `READY <product>: <parts>` line after the open
 points when a mark holds.
 
+A go releases a part for implementation. `et design go components/chip --product app-a --by tom` stores the part hash,
+who and when in `.ethlete/design/<product>/go.json`, next to `ready.json`. A go needs no empty open-point list. Any edit
+of the part changes its hash, and the go then reads as stale: the design changed, so the part needs a new go. A part
+with an `implements` link and no current go has the open point `no go`, or `go is stale` after a change. Studio sends
+`POST /__design/part-go?product=` with `{ part, by }` and optional `hash`: 400 without `by`, 404 for an unknown part,
+409 when the part changed since `hash`. The one-part open-point answer also holds `go`. `et design check` prints a
+`GO <product>: <parts>` line when a go holds.
+
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
 names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.

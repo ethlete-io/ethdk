@@ -45,11 +45,24 @@ describe('openPointsAnswer', () => {
 
     expect(await openPointsAnswer(ask(target, '/?product=app-a'))).toEqual({
       status: 200,
-      body: { drawn: false, parts: [] },
+      body: {
+        drawn: false,
+        parts: [
+          { part: 'components/chip', points: [{ kind: 'no-go' }] },
+          { part: 'pages/home', points: [{ kind: 'no-go' }] },
+        ],
+      },
     });
     expect(await openPointsAnswer(ask(target, '/?product=app-a&part=pages/home'))).toEqual({
       status: 200,
-      body: { part: 'pages/home', hash: expect.any(String), ready: null, drawn: false, points: [] },
+      body: {
+        part: 'pages/home',
+        hash: expect.any(String),
+        ready: null,
+        go: null,
+        drawn: false,
+        points: [{ kind: 'no-go' }],
+      },
     });
     expect(drawnFindingsOf).not.toHaveBeenCalled();
   });
@@ -63,10 +76,12 @@ describe('openPointsAnswer', () => {
         part: 'components/chip',
         hash: expect.any(String),
         ready: null,
+        go: null,
         drawn: true,
         points: [
           { kind: 'missing-state', control: 'remove' },
           { kind: 'contrast', state: 'default', path: 'span' },
+          { kind: 'no-go' },
         ],
       },
     });

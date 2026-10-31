@@ -30,6 +30,8 @@ import {
   inventoryApproveAnswer,
   OPEN_POINTS_PATH,
   openPointsAnswer,
+  PART_GO_PATH,
+  partGoAnswer,
   PART_READY_PATH,
   partReadyAnswer,
   FLOW_NOTE_CHANGE_PATH,
@@ -885,6 +887,7 @@ const designExplore = ({
       studio(INVENTORY_APPROVE_PATH, inventoryApproveAnswer);
       studio(OPEN_POINTS_PATH, openPointsAnswer);
       studio(PART_READY_PATH, partReadyAnswer);
+      studio(PART_GO_PATH, partGoAnswer);
       studio(EXCEPTIONS_PATH, exceptionsAnswer);
       studio(EXCEPTION_APPROVE_PATH, exceptionApproveAnswer);
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);

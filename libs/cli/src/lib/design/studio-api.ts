@@ -27,6 +27,7 @@ import {
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
+import { goMarkOf, markPartGo } from './system/part-go';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
@@ -83,6 +84,7 @@ export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
 export const PART_READY_PATH = '/__design/part-ready';
+export const PART_GO_PATH = '/__design/part-go';
 
 export type Answer = { status: number; body: unknown };
 
@@ -790,7 +792,9 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const hash = typeof located === 'string' ? null : located.hash;
   const ready = readyMarkOf({ product: found.product, part });
 
-  return { status: 200, body: { part, hash, ready, drawn: draw === 'true', points } };
+  const go = goMarkOf({ product: found.product, part });
+
+  return { status: 200, body: { part, hash, ready, go, drawn: draw === 'true', points } };
 });
 
 /**
@@ -821,4 +825,24 @@ export const partReadyAnswer = withProduct('POST', async (found) => {
     };
 
   return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
+});
+
+/**
+ * POST `?product=`, body `{ part, by, hash? }`: stores a go for a part at its current hash. A `hash` Studio showed must
+ * still match (409). A go does not need an empty open-point list.
+ */
+export const partGoAnswer = withProduct('POST', async (found) => {
+  const body = await bodyOf(found.asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const part = knownPartOf(found.product, body['part']);
+
+  if (typeof part !== 'string') return part;
+
+  const marked = markPartGo({ product: found.product, part, by: body['by'], hash: body['hash'] });
+
+  if ('status' in marked) return failure(marked.status, marked.error);
+
+  return { status: 200, body: { part, hash: marked.hash, go: marked } };
 });

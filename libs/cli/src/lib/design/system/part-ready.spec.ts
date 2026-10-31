@@ -8,6 +8,7 @@ import { DESIGN_DIR } from '../paths';
 import { openPointsAnswer, partReadyAnswer } from '../studio-api';
 import { drawnFindingsOf } from './drawn-open-points';
 import { readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
+import { markPartGo } from './part-go';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
 
@@ -41,6 +42,8 @@ const hashOf = (target: string, part = 'components/chip') => {
   return typeof found === 'string' ? found : found.hash;
 };
 
+const goOf = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom' });
+
 const post = (target: string, body: unknown) =>
   partReadyAnswer({
     target,
@@ -65,6 +68,9 @@ describe('part ready', () => {
 
   it('marks a part without open points ready, and drops the mark when the part changes', async () => {
     const { target, dir } = checkout();
+
+    goOf(target);
+
     const hash = hashOf(target);
     const answer = await post(target, { part: 'components/chip', hash, by: 'tom' });
 
@@ -81,6 +87,7 @@ describe('part ready', () => {
   it('refuses with the list while the part has open points, the drawn ones too', async () => {
     const { target, dir } = checkout();
 
+    goOf(target);
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
       contrasts: [{ part: 'components/chip', state: 'default', path: 'span' }],
       missingStates: [],
@@ -117,6 +124,9 @@ describe('part ready', () => {
 
   it('answers the hash and the ready mark of a part with its open points', async () => {
     const { target } = checkout();
+
+    goOf(target);
+
     const hash = hashOf(target);
 
     await post(target, { part: 'components/chip', hash, by: 'tom' });
@@ -131,6 +141,7 @@ describe('part ready', () => {
       part: 'components/chip',
       hash,
       ready: { hash, by: 'tom', at: expect.any(String) },
+      go: { hash, by: 'tom', at: expect.any(String) },
       drawn: false,
       points: [],
     });
@@ -139,6 +150,9 @@ describe('part ready', () => {
   it('et design ready exits 1 with the open points, and marks a part without any', async () => {
     const { target, dir } = checkout();
     const lines = output();
+
+    goOf(target);
+
     const ready = (...argv: string[]) => designReady({ target, argv, invocation: 'et design' });
 
     expect(await ready('components/tag', '--product', 'app-a')).toBe(2);

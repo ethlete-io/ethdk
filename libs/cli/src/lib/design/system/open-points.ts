@@ -9,6 +9,8 @@ export const OPEN_POINT_KINDS = [
   'unmerged-sketch',
   'plan-question',
   'unlinked',
+  'no-go',
+  'stale-go',
   'missing-motion',
 ] as const;
 
@@ -30,6 +32,8 @@ export type OpenPoint =
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
   | { kind: 'unmerged-sketch'; status: SketchStatus; decision: SketchDecision['kind'] | null }
   | { kind: 'unlinked' }
+  | { kind: 'no-go' }
+  | { kind: 'stale-go' }
   | { kind: 'missing-motion'; from: string; to: string };
 
 /** The state pairs of a part as its file declares them, read without running it. */
@@ -45,7 +49,14 @@ export type PartMotions = {
  * from drawing the parts, so a check without a browser leaves them out.
  */
 export type OpenPointsInput = {
-  parts: { key: string; layer: Layer; linked: boolean; controls: boolean; motion?: PartMotions }[];
+  parts: {
+    key: string;
+    layer: Layer;
+    linked: boolean;
+    go?: 'current' | 'missing' | 'stale';
+    controls: boolean;
+    motion?: PartMotions;
+  }[];
   comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
   sketches: { targets: string[]; status: SketchStatus; decision: SketchDecision['kind'] | null }[];
   missingStates?: { part: string; control: string }[];
@@ -79,7 +90,7 @@ const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
 
 /** The open points of each part that has any, in the order of `parts`, each list in the order of `OPEN_POINT_KINDS`. */
 export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
-  input.parts.flatMap(({ key, layer, linked, controls, motion }) => {
+  input.parts.flatMap(({ key, layer, linked, go, controls, motion }) => {
     const stateful = !STATELESS_LAYERS.includes(layer);
     const points: OpenPoint[] = [
       ...(stateful && !controls ? [{ kind: 'missing-state' as const, control: null }] : []),
@@ -90,6 +101,8 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
         .filter((contrast) => contrast.part === key)
         .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
       ...(linked || layer === 'foundations' ? [] : [{ kind: 'unlinked' as const }]),
+      ...(linked && go === 'missing' ? [{ kind: 'no-go' as const }] : []),
+      ...(linked && go === 'stale' ? [{ kind: 'stale-go' as const }] : []),
       ...missingMotionsOf(layer, motion),
       ...input.sketches
         .filter((sketch) => sketch.targets.includes(key))
@@ -204,6 +217,10 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
   }
 
   if (kind === 'unlinked') return 'no implements';
+
+  if (kind === 'no-go') return 'no go';
+
+  if (kind === 'stale-go') return 'go is stale - the design changed since the go';
 
   return points.map((point) => (point.kind === 'unmerged-sketch' ? sketchText(point) : point.kind)).join('; ');
 };
