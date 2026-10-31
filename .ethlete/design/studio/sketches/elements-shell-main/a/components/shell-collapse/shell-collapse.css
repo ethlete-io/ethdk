@@ -1,0 +1,6 @@
+@layer components {
+  .st-shell-collapse {
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+  }
+}

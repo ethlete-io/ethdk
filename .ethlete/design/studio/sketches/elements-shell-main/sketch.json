@@ -1,5 +1,11 @@
 {
   "target": "elements/shell-main",
+  "targets": [
+    "elements/shell-main",
+    "components/shell-collapse",
+    "components/shell-project-switch",
+    "components/shell-project-option"
+  ],
   "status": "in progress",
   "createdAt": "2026-10-31T13:27:52.015Z",
   "baseline": {
@@ -71,7 +77,7 @@
     {
       "key": "r1",
       "title": "Shell panel controls",
-      "note": "Open points (design complete elements/shell-main): the panel's four controls are undeclared and have no drawn states - the collapse button, the project switch, the three project options and 'Projekt öffnen…'. The open switch does not say so (no aria-expanded), and options have no hover row. Cause: the shell was drawn as geometry; its buttons are plain <button>s with a rest look only. Every page inherits it (pages/inbox, sketches and merge report CONTROL-PART-INCOMPLETE for shell-main). Not in this round: the rail section and product slots are spans, not buttons, so they have no focus or hover either. a) today. b) the SDK transparent button for collapse and switch. c) keeps the Studio hairline buttons and adds its own hover, pressed and focus rules. b and c both declare the four controls, add hover/pressed/focus rows for each, mark the picker as the switch's surface, set aria-expanded and give options a hover row. Pick: c, because it keeps the switch's full-width layout and the teal focus ring every other Studio control draws; b drops the ring and fill and packs the chevron next to the name."
+      "note": "The panel's controls are their own parts now: components/shell-collapse (collapse), components/shell-project-switch (closed, open) and components/shell-project-option (option, selected), each drawn at rest, hovered, pressed and focused. elements/shell-main keeps only its layout states open, hidden and project-picker and declares the three controls with part:. The picker stays the switch's surface. 'Projekt öffnen…' is the SDK button and takes its states from components/button. a) today: rest look only. b) SDK transparent buttons for collapse and switch. c) Studio hairline buttons with their own hover, pressed and teal focus ring. Pick: c, because it keeps the switch's full-width layout and the teal focus ring every other Studio control draws."
     }
   ],
   "variantInfo": {

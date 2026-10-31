@@ -13,7 +13,7 @@ const studioPreview = html`<span
 
 export default definePart({
   ...shell,
-  note: 'The shell owns rail and panel geometry, with a 40-px studio slot for the independently composed Studio menu. Its standalone preview fills that slot with the neutral Studio mark; pages supply the complete menu element and its styles and setup. Menu states live on elements/studio-menu. The panel declares its controls collapse, project (the picker is its surface), option and action, each drawn at rest, hovered, pressed and focused.',
+  note: 'The shell owns rail and panel geometry, with a 40-px studio slot for the independently composed Studio menu. Its standalone preview fills that slot with the neutral Studio mark; pages supply the complete menu element and its styles and setup. Menu states live on elements/studio-menu. Its states are layout only: panel open, panel hidden, project picker open. The panel controls and their interaction states are their own parts: components/shell-collapse, components/shell-project-switch (the picker is its surface) and components/shell-project-option.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra', 'claude-sonnet-5-5', 'gpt-6'],
   render: (props: Parameters<typeof shell.render>[0]) =>
     shell.render({ ...props, studio: props.studio ?? studioPreview }),
