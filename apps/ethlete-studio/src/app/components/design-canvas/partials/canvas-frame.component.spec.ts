@@ -176,3 +176,34 @@ describe('CanvasFrameComponent failed shot size', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-shot-failed]')).not.toBeNull();
   });
 });
+
+describe('CanvasFrameComponent caption', () => {
+  it('lets only the frame label shrink to an ellipsis in a narrow frame', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(CanvasFrameComponent);
+
+    fixture.componentRef.setInput('frame', {
+      id: 'phone',
+      src: 'about:blank',
+      label: 'pages/library · a long state name',
+      screenshot: 'phone.png',
+      width: 375,
+      note: 'note',
+    });
+    fixture.componentRef.setInput('width', 375);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const label = host.querySelector('[data-frame-label]');
+    const others = [...(label?.parentElement?.children ?? [])].filter((child) => child !== label);
+
+    expect(label?.textContent?.trim()).toBe('pages/library · a long state name');
+    expect(label?.classList).toContain('truncate');
+    expect(label?.classList).toContain('min-w-0');
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
+  });
+});

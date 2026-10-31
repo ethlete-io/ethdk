@@ -60,9 +60,11 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   template: `
     <ng-template #caption>
       @if (!captionBelow() && copies()[0]; as copy) {
-        <span class="uppercase tracking-[0.04em] text-text-muted" data-scheme-label>{{ labelOf(copy.scheme) }}</span>
+        <span class="shrink-0 uppercase tracking-[0.04em] text-text-muted" data-scheme-label>{{
+          labelOf(copy.scheme)
+        }}</span>
       }
-      {{ frame().label }}
+      <span class="min-w-0 truncate" data-frame-label>{{ frame().label }}</span>
       @if (reload(); as state) {
         <span
           [class.animate-pulse]="state === 'rendering'"
@@ -72,13 +74,13 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         ></span>
       }
       @if (frame().width !== undefined) {
-        <span class="tabular-nums text-text-muted">{{ width() }}</span>
+        <span class="shrink-0 tabular-nums text-text-muted">{{ width() }}</span>
       }
       @if (frame().note; as note) {
-        <span class="tabular-nums text-text-muted" data-frame-note>{{ note }}</span>
+        <span class="shrink-0 tabular-nums text-text-muted" data-frame-note>{{ note }}</span>
       }
       @if (active()) {
-        <span class="rounded-sm bg-accent px-[0.4em] text-on-accent" data-live-badge> Live · Esc </span>
+        <span class="shrink-0 rounded-sm bg-accent px-[0.4em] text-on-accent" data-live-badge> Live · Esc </span>
       }
     </ng-template>
     @for (copy of copies(); track copy.scheme; let first = $first) {
