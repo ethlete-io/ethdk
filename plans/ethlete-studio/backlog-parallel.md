@@ -1197,3 +1197,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   `controls`, with their current look. They are not SDK button parts: the rail item is a Studio-only control, and
   Tom rejected adding an SDK button variant just for it. Today they are `div`/`span` bubbles with only a `title`, so
   discovery cannot find them; a `title` signal in the CLI was rejected (status icons and swatches carry `title` too).
+- In progress (builder 57, 2026-10-31): parallel subagents on shell-main b round + Q234, Q228 anchored-dialog part, pages/merge Changed rows, Q224 inventory part + view coverage + `design check --part`, Q227 size budget + token report, Studio app round picker onto et-select.
