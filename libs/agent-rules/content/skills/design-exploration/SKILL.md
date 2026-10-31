@@ -325,8 +325,9 @@ look at it without opening a PNG path.
 - **Comments:** `inbox` (what waits for you, then for the user), `comment_reply` (`question` waits for the user's answer), `inbox_done` (needs the new part `note`).
 
 Part files are written with your own file tools; the server has no write tool for them. Call
-`sketch_report` before every variant edit: it tells Studio what you build, and it moves a `ready`
-sketch back to in progress, so call `sketch_ready` again when you are done. `sketch_ready` runs the
+`sketch_report` before every variant edit: it tells Studio what you build. It refuses a `ready` sketch: only when the
+user asks for a change, run `et design sketch report … --reopen`, which moves the sketch back to in progress, and call
+`sketch_ready` again when you are done. `sketch_ready` runs the
 render check and refuses on any render issue; mark an element that renders wrong on purpose with
 `data-et-skip="<rule>"`. A tool that fails returns the CLI's output; fix it and call again.
 

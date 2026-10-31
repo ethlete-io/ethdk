@@ -57,7 +57,7 @@ export const SKETCH_USAGE = [
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
-  'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
+  'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
   'sketch hold <layer>/<name> --until <what the change waits on> --by <model id> [--product <name>]',
   'sketch release <layer>/<name> --by <model id> [--product <name>]',
@@ -92,6 +92,7 @@ const FLAG_HELP: Record<string, string> = {
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
   '--until': 'what the pending change waits on: an open decision, a helper still to land',
   '--done': 'end the live report of the variant',
+  '--reopen': 'on report: move a ready sketch back to in progress',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
   '--fix': "write the variants in the checkout's Prettier format first",
@@ -482,7 +483,7 @@ const reported = (context: Context) =>
 
     if ((message === '' && !done) || !variant || !author)
       return fail(
-        `usage: sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>] - --product is needed when config.json declares more than one product`,
+        `usage: sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>] - --product is needed when config.json declares more than one product`,
       );
 
     if (done) {
@@ -492,7 +493,14 @@ const reported = (context: Context) =>
       return 0;
     }
 
-    const reported = reportSketch({ checkout: context.target, sketch, variant, author, message });
+    const reported = reportSketch({
+      checkout: context.target,
+      sketch,
+      variant,
+      author,
+      message,
+      reopen: context.args.flags.has('--reopen'),
+    });
 
     if (typeof reported === 'string') return fail(reported);
 

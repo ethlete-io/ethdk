@@ -306,10 +306,16 @@ describe('status', () => {
     );
   });
 
-  it('moves a ready sketch back to in progress on a report, but refuses a decided one', () => {
+  it('refuses a report on a ready sketch without reopen, moves it back to in progress with it, and refuses a decided one', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    expect(reportSketch({ checkout: target, sketch: ready, variant: 'a', author: 'gpt-5.6-sol', message: 'fix' })).toBe(
+      'elements/hero is ready - a report moves it back to in progress, so nothing was recorded; add --reopen if the user asked for a change',
+    );
+    expect(sketchJson(target, 'elements-hero')['status']).toBe('ready');
+    expect(readSketchReport({ checkout: target, sketch })).toBeNull();
 
     const reopened = reportSketch({
       checkout: target,
@@ -317,6 +323,7 @@ describe('status', () => {
       variant: 'a',
       author: 'gpt-5.6-sol',
       message: 'fix',
+      reopen: true,
     });
 
     expect((reopened as Sketch).status).toBe('in progress');
