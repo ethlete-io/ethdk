@@ -103,3 +103,24 @@
   Shots filter and open-points seen on :4402; sdk tsc and eslint clean.
 - In progress (parallel subagents): pages/system and pages/inbox rounds embedding anchored-dialog; Q218 unused SDK
   parts subtree; Q220 canonical Tailwind pass (without system/inbox); headless check of Q235.
+- As built (builder 4b): pages/system and pages/inbox embed the SDK anchored-dialog part (1de1bafc1, 13bd46415);
+  CLASS-UNDEFINED skips `X.render({...})` option values (d90139f01); inventory: disabled controls are not covered
+  (59cefde7c); Q221 glued classes in 9 parts (76043b858); STALE-REPLACE follows conditionals (f75a91d6f); Q218
+  "Not used in <Product>" subtree (9a7c40c56) + control `part:` refs and `ng` imports count as use (38359b7fe,
+  spec bites); Q220 needed no edit. CI fixes: covered.spec skips without a browser (0dd0a0307), frame-bootstrap
+  fixture stubs `../define-part` (dec0fd622).
+- Open (handoff):
+  - Q241 subagent: definePart `frame` landed (c7f01abde); SDK parts with a demo frame and the no-visible-change
+    rounds on pages/system + pages/inbox (drop the `!` overrides and the `bottom-${'start'}` hack, plus the inbox
+    Q221 glued class) may still be open. Check `git log` and `.ethlete/design/*/sketches`. Report to the grill whether
+    the inbox merge made its go stale.
+  - Q242: sdk `components/button` sketch round r1 "Filled active contrast" (456dae1c3), variants a/b/c, waits for
+    Tom's merge. Then port the pick to `libs/components/src/lib/button/button.component.css` (filled `:active`,
+    about line 149; danger Delete fails the same way), with a changeset and docs. Then bring the open glued-class
+    sketches `studio/sketches/elements-canvas-frames` and `components-zoom-chip` to ready.
+  - CI: the covered.spec skip means the Q236 check never runs in CI (frame-fill and other browser specs skip
+    there too). Move the browser specs into a job with Chromium (storybook-e2e or test-storybook) or install the
+    browser in the unit job.
+  - Q235 headless check: the subagent result was not in when this note was written; re-run it if no report exists,
+    then delete the root `q235-verify.mjs`.
+  - Watch CI for 456dae1c3 or later: `gh run list --branch next --limit 5`.
