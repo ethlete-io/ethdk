@@ -356,5 +356,12 @@
     "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
     "hash": "b6ccc8cf2def87bf",
     "at": "2026-10-31T14:19:54.756Z"
+  },
+  {
+    "part": "components/select",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "8faf968d8a5cff8d",
+    "at": "2026-10-31T14:23:04.714Z"
   }
 ]

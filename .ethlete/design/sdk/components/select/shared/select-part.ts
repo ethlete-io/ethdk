@@ -10,6 +10,7 @@ export type SelectProps = {
   active?: string;
   pointerActive?: boolean;
   disabled?: boolean;
+  size?: 'sm' | 'lg';
   interaction?: FieldInteraction;
 };
 
@@ -32,7 +33,7 @@ const markControl = (markup: string, { interaction, pointerActive }: SelectProps
     : marked;
 };
 
-export const { states, grid } = interactionRows<SelectProps, 'placeholder' | 'selected', FieldInteraction>(
+const interactive = interactionRows<SelectProps, 'placeholder' | 'selected', FieldInteraction>(
   {
     placeholder: {},
     selected: { value: 'review' },
@@ -40,10 +41,23 @@ export const { states, grid } = interactionRows<SelectProps, 'placeholder' | 'se
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );
 
+const SIZES = ['sm', 'lg'] as const;
+
+export const states = interactive.states;
+export const grid = {
+  columns: interactive.grid.columns,
+  rows: {
+    ...interactive.grid.rows,
+    ...Object.fromEntries(SIZES.map((size) => [`size ${size}`, { rest: `size-${size}` as const }])),
+  },
+};
+
 export const moreStates = {
   disabled: { value: 'review', disabled: true },
   open: { value: 'review', open: true, active: 'merged' },
   'open-option-hover': { value: 'review', open: true, active: 'drafts', pointerActive: true },
+  'size-sm': { value: 'review', size: 'sm' },
+  'size-lg': { value: 'review', size: 'lg' },
 } satisfies Record<string, SelectProps>;
 
 export const selectBody = (props: SelectProps) =>
@@ -54,6 +68,7 @@ export const selectBody = (props: SelectProps) =>
       errorColor: 'danger',
       open: props.open,
       disabled: props.disabled,
+      size: props.size,
       control: select({ options: OPTIONS, value: props.value, active: props.active, placeholder: 'Pick a status' }),
     }),
     props,
