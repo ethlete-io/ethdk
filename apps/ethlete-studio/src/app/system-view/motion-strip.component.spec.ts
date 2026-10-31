@@ -13,7 +13,7 @@ const answerOf = (motion: string, url: string): MotionAnswer => ({
   motion,
   from: 'closed',
   to: 'open',
-  mode: 'full',
+  mode: new URL(url).searchParams.get('mode') === 'reduced' ? 'reduced' : 'full',
   preset: 'phone',
   width: 390,
   end: 400,
@@ -198,6 +198,7 @@ describe('MotionStripComponent driving the live frame', () => {
     const canvas: MotionCanvas = {
       frames: () => FRAMES,
       activate: vi.fn((id: string) => live.set(id)),
+      focusFrame: vi.fn(),
       liveWindowOf: (id) => (live() === id ? target : null),
     };
     const rendered = await render();
@@ -216,13 +217,38 @@ describe('MotionStripComponent driving the live frame', () => {
       new MessageEvent('message', { data: { type: 'design-explore:motion-ready', motion }, source: target }),
     );
 
-  it('makes the frame of the from state live and starts the motion in it', async () => {
+  it('makes the frame of the from state live, moves the camera to it and starts the motion in it', async () => {
     const { canvas, element, messages } = await drive();
 
     expect(canvas.activate).toHaveBeenCalledWith('closed phone');
+    expect(canvas.focusFrame).toHaveBeenCalledWith('closed phone');
     expect(messages()).toEqual([{ type: 'design-explore:motion-start', motion: 'open', reduced: false }]);
     expect(element.querySelector('[data-motion-picture]')).not.toBeNull();
     expect(element.querySelector('[data-motion-driven]')).toBeNull();
+  });
+
+  it('makes the frame of another preset live, moves the camera to it and starts the motion there', async () => {
+    const { canvas, element, fixture, messages } = await drive();
+
+    element.querySelectorAll<HTMLButtonElement>('[data-motion-preset]')[1]?.click();
+    await settle(fixture);
+
+    expect(vi.mocked(canvas.activate).mock.calls.at(-1)).toEqual(['closed desktop']);
+    expect(vi.mocked(canvas.focusFrame).mock.calls.at(-1)).toEqual(['closed desktop']);
+    expect(messages().at(-1)).toEqual({ type: 'design-explore:motion-start', motion: 'open', reduced: false });
+  });
+
+  it('keeps the frame live and the camera on it when reduced motion is toggled', async () => {
+    const { canvas, element, fixture, messages } = await drive();
+
+    vi.mocked(canvas.activate).mockClear();
+    vi.mocked(canvas.focusFrame).mockClear();
+    element.querySelector<HTMLButtonElement>('[data-motion-reduced]')?.click();
+    await settle(fixture);
+
+    expect(canvas.activate).toHaveBeenCalledWith('closed phone');
+    expect(canvas.focusFrame).toHaveBeenCalledWith('closed phone');
+    expect(messages().at(-1)).toEqual({ type: 'design-explore:motion-start', motion: 'open', reduced: true });
   });
 
   it('posts the slider time, play and speed once the frame is ready, and stop on close', async () => {

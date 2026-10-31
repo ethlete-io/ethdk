@@ -12,6 +12,7 @@ export type MotionDriveMessage =
 export type MotionCanvas = {
   frames: () => readonly CanvasFrame[];
   activate: (id: string) => void;
+  focusFrame: (id: string) => void;
   liveWindowOf: (id: string) => Window | null;
 };
 

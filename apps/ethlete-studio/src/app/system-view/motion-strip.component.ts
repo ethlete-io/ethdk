@@ -1,8 +1,8 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { Observable, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { Observable, catchError, combineLatest, filter, map, of, pairwise, startWith, switchMap, tap } from 'rxjs';
 import { ListedMotion, MotionAddress, MotionAnswer, MotionMode, motionAnswer$ } from '../../host/design-motion';
 import { MotionCanvas, motionFrameIdOf } from './motion-drive';
 import { MotionTimelineComponent } from './motion-timeline.component';
@@ -178,12 +178,37 @@ export class MotionStripComponent {
     return id ? (this.canvas()?.liveWindowOf(id) ?? null) : null;
   });
 
+  private target = computed(() => {
+    const id = this.drivenId();
+
+    return id === null ? null : `${id}\n${this.mode()}`;
+  });
+
+  constructor() {
+    toObservable(this.target)
+      .pipe(
+        pairwise(),
+        filter(([previous, next]) => previous !== null && next !== null),
+        tap(() => this.follow(this.drivenId())),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
   protected open(opened: Opened, listed: ListedMotion) {
     this.opened.set(opened);
 
     const canvas = this.canvas();
-    const id = canvas && motionFrameIdOf(canvas.frames(), { state: listed.from, preset: this.preset() });
 
-    if (id) canvas.activate(id);
+    this.follow(canvas && motionFrameIdOf(canvas.frames(), { state: listed.from, preset: this.preset() }));
+  }
+
+  private follow(id: string | null) {
+    const canvas = this.canvas();
+
+    if (!canvas || !id) return;
+
+    canvas.activate(id);
+    canvas.focusFrame(id);
   }
 }

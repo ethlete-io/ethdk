@@ -625,7 +625,7 @@ export class DesignCanvasComponent {
 
   private fittedFor: string | null | undefined = undefined;
 
-  private following: 'all' | 'start' | null = null;
+  private following: 'all' | 'start' | { frame: string } | null = null;
 
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
@@ -667,7 +667,9 @@ export class DesignCanvasComponent {
 
       untracked(() => {
         if (this.fittedFor === key) {
-          if (this.following) this.camera.set(this.fitted({ bounds, viewport, fit: this.following }));
+          const camera = this.following && this.followedCamera({ bounds, viewport, following: this.following });
+
+          if (camera) this.camera.set(camera);
 
           return;
         }
@@ -808,7 +810,7 @@ export class DesignCanvasComponent {
     if (pin) this.focusFrame(pin.frameId);
   }
 
-  /** Selects a frame and moves the camera to it. */
+  /** Selects a frame and moves the camera to it, and keeps it in view as the canvas resizes until the user moves the camera. */
   public focusFrame(id: string) {
     const placed = this.framesById().get(id);
 
@@ -819,6 +821,7 @@ export class DesignCanvasComponent {
     const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
 
     if (camera) this.moveCamera(camera, true);
+    this.following = { frame: id };
   }
 
   /** Selects a frame and zooms the camera so the frame fills the view. */
@@ -959,6 +962,22 @@ export class DesignCanvasComponent {
 
     this.measured.update((measured) => ({ ...measured, [id]: { ...measured[id], ...size } }));
     if (key !== null) this.measure$.next({ cameraKey: key, frameId: id, size });
+  }
+
+  private followedCamera({
+    bounds,
+    viewport,
+    following,
+  }: {
+    bounds: Rect;
+    viewport: Size;
+    following: 'all' | 'start' | { frame: string };
+  }): Camera | null {
+    if (typeof following === 'string') return this.fitted({ bounds, viewport, fit: following });
+
+    const placed = this.framesById().get(following.frame);
+
+    return placed ? focusRect({ rect: placed, camera: this.camera(), viewport, padding: FIT_PADDING }) : null;
   }
 
   private fitted({ bounds, viewport, fit }: { bounds: Rect; viewport: Size; fit: 'all' | 'start' }): Camera {

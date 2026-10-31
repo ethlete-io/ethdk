@@ -317,6 +317,75 @@ describe('DesignCanvasComponent', () => {
     expect(reported.at(-1)).toBeNull();
   });
 
+  it('keeps a focused frame in view when the canvas shrinks, until the user moves the camera', async () => {
+    const size = { width: 1200, height: 1000 };
+    const resized: (() => void)[] = [];
+    let host: unknown = null;
+
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this === host ? size.width : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this === host ? size.height : 0;
+    });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resized.push(() => callback([{ target: this.target } as ResizeObserverEntry], this as never));
+        }
+        private target: Element | null = null;
+        observe(target: Element) {
+          this.target = target;
+        }
+        disconnect() {
+          return undefined;
+        }
+      },
+    );
+
+    const fixture = await render([
+      { ...FITTED, id: 'a', width: 390, height: 600 },
+      { ...FITTED, id: 'b', width: 390, height: 600 },
+    ]);
+    const canvas = fixture.componentInstance;
+
+    host = fixture.nativeElement;
+    resized.forEach((resize) => resize());
+    await fixture.whenStable();
+
+    const shrink = async (height: number) => {
+      size.height = height;
+      resized.forEach((resize) => resize());
+      await fixture.whenStable();
+    };
+    const bottomOf = (id: string) => {
+      const placed = canvas['framesById']().get(id);
+      const { y, zoom } = canvas.camera();
+
+      return placed ? y + (placed.y + placed.height) * zoom : NaN;
+    };
+
+    canvas['zoomBy'](1);
+    canvas.camera.set({ x: -5000, y: -5000, zoom: 1 });
+    canvas.focusFrame('b');
+
+    expect(bottomOf('b')).toBeGreaterThan(500);
+
+    await shrink(500);
+
+    expect(bottomOf('b')).toBeLessThanOrEqual(500);
+
+    canvas['zoomBy'](2);
+    const moved = canvas.camera();
+
+    await shrink(400);
+
+    expect(canvas.camera()).toEqual(moved);
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('sizes a fitted frame by its measured content, whatever size an older Studio stored for it', async () => {
     localStorage.setItem(
       'ethlete-studio.call-view',
