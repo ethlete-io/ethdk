@@ -211,7 +211,7 @@ export const schedulerTimeGrid = (options: SchedulerMockTimeGridOptions) => {
             .filter((entry) => entry.day === dayIndex)
             .map(
               (entry) =>
-                `<button type="button" tabindex="-1" class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry${colored(entry.color)}"${appointmentAttributes(entry)}${styled(`--_et-scheduler-time-grid-all-day-offset: 0; --_et-scheduler-time-grid-all-day-size: ${entry.span * 100}; --_et-scheduler-time-grid-all-day-row: ${entry.row ?? 0}`)}>${badges(entry)}${resizeHandles('et-scheduler-time-grid-all-day-resize')}</button>`,
+                `<button type="button" tabindex="-1" class="et-scheduler-appointment et-scheduler-time-grid-all-day-entry${colored(entry.color)}"${appointmentAttributes(entry)}${styled(`--_et-scheduler-time-grid-all-day-offset: ${(dayIndex / options.days.length) * 100}; --_et-scheduler-time-grid-all-day-size: ${(entry.span / options.days.length) * 100}; --_et-scheduler-time-grid-all-day-row: ${entry.row ?? 0}`)}>${badges(entry)}${resizeHandles('et-scheduler-time-grid-all-day-resize')}</button>`,
             )
             .join('');
 
