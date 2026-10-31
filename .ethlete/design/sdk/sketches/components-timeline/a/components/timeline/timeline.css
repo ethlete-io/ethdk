@@ -4,7 +4,6 @@
   background: var(--et-surface-background-solid);
   color: var(--et-surface-color-solid);
   font-size: 1.4rem;
-  overflow-x: clip;
 
   .timeline-label,
   .timeline-description {

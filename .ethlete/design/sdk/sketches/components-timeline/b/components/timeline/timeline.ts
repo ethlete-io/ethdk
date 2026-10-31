@@ -81,7 +81,7 @@ export default definePart({
   widths: [480],
   render: (props: Props) =>
     drawing({
-      body: `<div class="timeline-frame${props.compact ? ' timeline-frame--compact' : ''}"${props.long ? ' data-et-skip="CLIPPED"' : ''}>${timeline({ items: items(props) })}</div>`,
+      body: `<div class="timeline-frame${props.compact ? ' timeline-frame--compact' : ''}">${timeline({ items: items(props) })}</div>`,
       styles: [timelineStyles, frame].join('\n'),
     }),
 });
