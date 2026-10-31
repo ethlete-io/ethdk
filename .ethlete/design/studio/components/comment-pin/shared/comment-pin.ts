@@ -17,44 +17,48 @@ const label = ({ author, count }: Props) =>
 
 type CountPlacement = 'beside' | 'inside';
 
-const faceBase =
-  'flex size-5.5 items-center justify-center rounded-[50%_50%_50%_0] text-ui-xs font-ui-strong leading-none group-focus-visible/pin:outline-2 group-focus-visible/pin:outline-focus-ring';
+const shape = 'rounded-[50%_50%_50%_0]';
 
-const faceClass = ({ agent, selected }: Props) => {
-  const pressed =
-    'group-active/pin:bg-linear-to-r group-active/pin:from-et-surface-interaction/15 group-active/pin:to-et-surface-interaction/15';
+const pinBase = `group/pin relative inline-flex size-5.5 cursor-pointer items-center justify-center ${shape} border-0 p-0 text-ui-xs font-ui-strong leading-none focus-visible:outline-2 focus-visible:outline-focus-ring`;
 
+const pinClass = ({ agent, selected }: Props) => {
   if (!selected) {
-    return `${faceBase} bg-et-surface-bg ring-1 ring-surface-border group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 group-hover/pin:text-text group-hover/pin:ring-text-muted ${pressed} group-focus-visible/pin:outline-offset-2`;
+    return `${pinBase} bg-et-surface-bg text-text-muted ring-1 ring-surface-border hover:text-text hover:ring-text-muted active:text-text focus-visible:outline-offset-2`;
   }
 
   const rings =
-    'ring-2 shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] text-et-on-theme group-focus-visible/pin:outline-offset-[5px]';
+    'ring-2 shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] text-et-on-theme focus-visible:outline-offset-[5px]';
 
   return agent
-    ? `${faceBase} bg-et-surface-bg ring-et-theme ${rings} group-hover/pin:bg-linear-to-r group-hover/pin:from-et-surface-interaction/9 group-hover/pin:to-et-surface-interaction/9 ${pressed}`
-    : `${faceBase} bg-et-theme ring-et-surface-bg ${rings} group-hover/pin:bg-et-theme-hover group-active/pin:bg-et-theme-active`;
+    ? `${pinBase} bg-et-surface-bg ring-et-theme ${rings}`
+    : `${pinBase} bg-et-theme ring-et-surface-bg ${rings} hover:bg-et-theme-hover active:bg-et-theme-active`;
 };
 
+const faceClass = ({ agent, selected }: Props) =>
+  `flex size-full items-center justify-center ${shape}${selected && !agent ? '' : ' group-hover/pin:bg-et-surface-interaction/9 group-active/pin:bg-et-surface-interaction/15'}`;
+
 const face = (p: Props, inner = '') =>
-  p.agent
-    ? `<span${p.selected && !p.agent ? '' : ' data-et-auto-surface'} class="${faceClass(p)}">${agentLogo(p.agent, 'size-3')}${inner}</span>`
-    : `<span${p.selected && !p.agent ? '' : ' data-et-auto-surface'} class="${faceClass(p)}">${p.initials ?? ''}${inner}</span>`;
+  `<span class="${faceClass(p)}">${p.agent ? agentLogo(p.agent, 'size-3') : (p.initials ?? '')}${inner}</span>`;
 
 const countBadge = ({ count }: Props) =>
   count && count > 1
-    ? `<span class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
+    ? `<span aria-hidden="true" class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
     : '';
 
 export const pin = (p: Props, placement: CountPlacement = 'beside') => {
+  const badge = countBadge(p);
+  const inside = placement === 'inside';
   const markup = `<button
         type="button"
-        class="group/pin relative inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-text-muted focus-visible:outline-none"
+        class="${pinClass(p)}"
+        ${p.selected && !p.agent ? '' : 'data-et-auto-surface'}
+        data-et-surface-interactive
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}
-      >${placement === 'inside' ? face(p, countBadge(p)) : `${face(p)}${countBadge(p)}`}</button>`;
+      >${face(p, inside ? badge : '')}</button>`;
+  const button = p.interaction ? forceInteraction(markup, p.interaction) : markup;
 
-  return p.interaction ? forceInteraction(markup, p.interaction) : markup;
+  return inside || !badge ? button : `<span class="relative inline-flex">${button}${badge}</span>`;
 };
 
 const tom: Props = { author: 'Tom', initials: 'TB' };
