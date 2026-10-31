@@ -1,5 +1,14 @@
 import { Locator, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap, themeInkActiveIn, themePrimaryIn } from '../support';
+import {
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  setColorScheme,
+  tap,
+  themeErrorHoverMixIn,
+  themeInkActiveIn,
+  themePrimaryIn,
+} from '../support';
 
 const CHECKBOX_DEFAULT = 'components-forms-checkbox--default';
 const CHECKBOX_READONLY = 'components-forms-checkbox--readonly';
@@ -502,6 +511,14 @@ function settledBorderColor(element: Locator): Promise<string> {
   });
 }
 
+function settledBackgroundColor(element: Locator): Promise<string> {
+  return element.evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+
+    return getComputedStyle(el).backgroundColor;
+  });
+}
+
 test.describe('choice-inputs / error state', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: the error border is checked under hover');
 
@@ -521,6 +538,26 @@ test.describe('choice-inputs / error state', () => {
     await box.hover();
     expect(await settledBorderColor(box)).toBe(await themeInkActiveIn(field));
   });
+
+  for (const scheme of ['dark', 'light'] as const) {
+    test(`an invalid switch tints its hovered track in the error hover tone (${scheme})`, async ({ page }) => {
+      const root = await openStory(page, SWITCH_DEFAULT);
+      const field = root.locator('et-choice-field', { hasText: 'Accept terms' });
+      const toggle = field.getByRole('switch');
+      const track = field.locator('.et-switch-track');
+
+      await setColorScheme(root, scheme);
+      await toggle.focus();
+      await toggle.blur();
+      await expect(field).toHaveAttribute('data-error');
+
+      const hoverTone = await themeErrorHoverMixIn(field, scheme, 40);
+
+      expect(await settledBackgroundColor(track)).not.toBe(hoverTone);
+      await track.hover();
+      expect(await settledBackgroundColor(track)).toBe(hoverTone);
+    });
+  }
 
   test('an invalid radio group draws its circles in the error theme, at rest and hovered', async ({ page }) => {
     const root = await openStory(page, RADIO_GROUP_DEFAULT, { args: { required: true } });

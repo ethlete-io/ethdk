@@ -255,6 +255,32 @@
   et-dropzone[data-error] {
     .et-dropzone-trigger {
       border-color: var(--et-theme-color-primary-solid, currentColor);
+
+      @media (hover: hover) {
+        &:hover:not(:disabled, [aria-disabled='true']) {
+          border-color: light-dark(
+            rgb(var(--et-color-primary-hover, var(--et-color-primary))),
+            rgb(
+              var(
+                --et-color-primary-ink-active,
+                var(
+                  --et-color-primary-ink-focus,
+                  var(
+                    --et-color-primary-ink-hover,
+                    var(
+                      --et-color-primary-ink,
+                      var(
+                        --et-color-primary-active,
+                        var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
+        }
+      }
     }
   }
 

@@ -374,12 +374,14 @@ The field chrome handles error display and aria wiring uniformly:
   (`aria-live="polite"`), replacing the hint with an animated transition. While
   erroring, the field forces the app's error color theme (the theme registered
   with `type: 'error'`). A text field's border (in the theme's full tone, not a
-  faded one) and label, and a checkbox's box, switch to that theme and keep
-  their rest, hover and focus states, so each state stays visible while the
-  field shows an error. On hover, the text field's border and the checkbox's box
-  use the theme's active ink tone (`--et-color-primary-ink-active`), the next
-  stronger step, so the hovered border keeps a 3:1 contrast on light and dark
-  surfaces.
+  faded one) and label, a checkbox's box, a dropzone's border and a switch's
+  track switch to that theme and keep their rest, hover and focus states, so
+  each state stays visible while the field shows an error. On hover, the text
+  field's border and the checkbox's box use the theme's active ink tone
+  (`--et-color-primary-ink-active`), the next stronger step, so the hovered
+  border keeps a 3:1 contrast on light and dark surfaces. The dropzone's border
+  and the switch's track use the theme's hover tone (`--et-color-primary-hover`)
+  in light and its active ink tone in dark.
 - Only a message that appears after the field first lays out animates in. A
   hint, warning or error that is there from the first render - also in a field
   mounted hidden and revealed later, or one shown again when its tab panel is

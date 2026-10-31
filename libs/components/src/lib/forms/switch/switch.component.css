@@ -78,6 +78,42 @@
       background-color: color-mix(in srgb, var(--et-theme-color-primary-solid) 40%, transparent);
     }
 
+    @media (hover: hover) {
+      :where(et-choice-field[data-error])
+        &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
+        .et-switch-track,
+      :where(et-choice-field[data-error]:has(.et-choice-field-label-area:hover))
+        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
+        .et-switch-track {
+        background-color: color-mix(
+          in srgb,
+          light-dark(
+              rgb(var(--et-color-primary-hover, var(--et-color-primary))),
+              rgb(
+                var(
+                  --et-color-primary-ink-active,
+                  var(
+                    --et-color-primary-ink-focus,
+                    var(
+                      --et-color-primary-ink-hover,
+                      var(
+                        --et-color-primary-ink,
+                        var(
+                          --et-color-primary-active,
+                          var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            40%,
+          transparent
+        );
+      }
+    }
+
     &:focus-visible .et-switch-track {
       outline: 2px solid var(--et-theme-color-primary-solid);
       outline-offset: 2px;

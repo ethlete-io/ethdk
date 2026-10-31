@@ -1,5 +1,13 @@
 import { Page, expect, test } from '@playwright/test';
-import { expectFocusVisible, openStory, pressKey, tap } from '../support';
+import {
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  setColorScheme,
+  tap,
+  themeErrorHoverIn,
+  themePrimaryIn,
+} from '../support';
 
 const DEFAULT_ID = 'components-forms-dropzone--default';
 const MULTIPLE_ID = 'components-forms-dropzone--multiple';
@@ -61,6 +69,29 @@ test.describe('dropzone / focus', () => {
 
     await expectFocusVisible(list);
   });
+});
+
+test.describe('dropzone / error state', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: the error border is checked under hover');
+
+  for (const scheme of ['dark', 'light'] as const) {
+    test(`an invalid dropzone keeps an error border while hovered, in the error hover tone (${scheme})`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, DEFAULT_ID, { args: { required: true } });
+      const dropzone = root.locator('et-dropzone');
+      const trigger = root.locator(TRIGGER);
+
+      await setColorScheme(root, scheme);
+      await trigger.focus();
+      await trigger.blur();
+      await expect(dropzone).toHaveAttribute('data-error');
+
+      await expect(trigger).toHaveCSS('border-top-color', await themePrimaryIn(dropzone));
+      await trigger.hover();
+      await expect(trigger).toHaveCSS('border-top-color', await themeErrorHoverIn(dropzone, scheme));
+    });
+  }
 });
 
 test.describe('dropzone / keyboard', () => {
