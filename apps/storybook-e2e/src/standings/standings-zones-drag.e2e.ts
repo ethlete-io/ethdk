@@ -13,7 +13,7 @@ const rowSlots = (root: Locator) => root.locator('.et-standings-pick-row');
 const zoneBarColor = (row: Locator) =>
   row
     .locator('.et-standings-cell[data-column="position"]')
-    .evaluate((el) => getComputedStyle(el, '::before').backgroundColor);
+    .evaluate((el) => getComputedStyle(el).boxShadow.match(/^rgba?\([^)]*\)/)?.[0] ?? 'rgba(0, 0, 0, 0)');
 
 const rgbOf = (color: string) =>
   color
