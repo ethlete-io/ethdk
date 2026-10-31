@@ -1,4 +1,12 @@
 @layer components {
+  et-scheduler-badge-color-dot,
+  et-scheduler-badge-title,
+  et-scheduler-badge-time-range,
+  et-scheduler-badge-location,
+  et-scheduler-badge-chain-count {
+    display: contents;
+  }
+
   .et-scheduler-appointment {
     display: flex;
     align-items: center;
@@ -50,7 +58,7 @@
     overflow: hidden;
     font-weight: 600;
     min-inline-size: 0;
-    flex: 1;
+    flex: 1 1 auto;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -69,14 +77,19 @@
   }
 
   .et-scheduler-appointment-time-range {
-    flex-shrink: 0;
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
     font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .et-scheduler-appointment-location {
     display: flex;
-    flex-shrink: 0;
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
     align-items: center;
     gap: 3px;
     max-inline-size: 40%;

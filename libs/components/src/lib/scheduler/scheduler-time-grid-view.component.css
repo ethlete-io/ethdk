@@ -42,7 +42,10 @@
   }
 
   .et-scheduler-time-grid-body {
+    --_et-scheduler-time-grid-hour-label-line-height: 14px;
+
     overflow-y: auto;
+    padding-block-start: calc(var(--_et-scheduler-time-grid-hour-label-line-height) / 2);
     max-block-size: var(--et-scheduler-time-grid-body-max-height);
   }
 
@@ -146,6 +149,7 @@
     inline-size: max-content;
     transform: translateY(-50%);
     font-size: 11px;
+    line-height: var(--_et-scheduler-time-grid-hour-label-line-height);
     font-variant-numeric: tabular-nums;
     color: var(--et-surface-color-muted-solid);
   }
