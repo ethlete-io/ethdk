@@ -151,3 +151,17 @@
   sdk textarea glued class (6d9a00a81), shell-main menu override (this commit), studio canvas-frames + zoom-chip
   (4861c0165). Checked only by the tool's state pixel compare.
 - Parked after MVP: Q244 sketch head (partial diff in /tmp/q244-partial.patch), floating-action frame normalisation.
+- As built: Q246 inbox rows as `row` control (c29548924, hash ee3d99940358a87d); Tom's inventory approval + go for
+  pages/inbox and pages/inventory (9a9111c41, fb69fba06); inventory.json written Prettier-clean (3dd71ffb3, spec
+  bites); implements links pages/system, flows, sketches (b2c680b4c) and shell-main controls (b5e8692b8).
+- Gap after the links (`design check --product studio`, /tmp/studio-check2.txt): 15 own parts with 1 open point each.
+  "no go" for pages/system, flows, sketches (Tom runs `design go`; agents must not set a go `--by tom`, the
+  permission check blocks it). "no implements" for 14 parts + view studio-view: design call sent to the grill
+  (recommendation: extract inline pieces into components, then link and go; canvas-frames -> canvas-frame-grid;
+  studio-view -> shell-main; pages/start build or drop).
+- Open (handoff to the next builder):
+  - Wait for the grill's decision on the 14 unlinked parts; build it in parallel subagents.
+  - Commit go.json after Tom's gos; then `design check --product studio` and report the gap.
+  - CI: last runs were cancelled by newer pushes; c29548924 watch was running. Check
+    `gh run list --branch next --limit 5` and fix any red job.
+  - Parked after MVP: Q244 (/tmp/q244-partial.patch), floating-action frame normalisation.
