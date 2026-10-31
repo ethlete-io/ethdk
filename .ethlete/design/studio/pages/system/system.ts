@@ -40,7 +40,9 @@ const chip = async (open: PartOpenPoints, pressed: boolean) => {
   const count = open.points.length;
   const drawn = await button.render({
     label: count ? `${count} offen` : 'Nichts offen',
-    icon: count ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>` : checkIcon(14),
+    icon: count
+      ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`
+      : checkIcon(14),
     variant: 'outline',
     size: 'sm',
     pressed,
