@@ -967,3 +967,18 @@ Tom wants to use the new Studio UI soon instead of the patched current one. Buil
 4. After that: Q174, `sketch report --reopen`, Q173 migration, slice 4, the scheduled restart.
 
 The global chat panel has no Studio design yet. Tom: it stays out of the MVP and gets its design after it.
+
+### Implementation is a design test too (Tom, 2026-10-31)
+
+Building a merged design into `apps/ethlete-studio` (the shell-main and inbox pilot first) stays a product test, like
+designing Studio in Studio. Every implementation slice reports, next to what it built:
+
+- **Missed design:** a state, a part or a behaviour the design does not show, so the agent had to decide it.
+- **Invented:** anything the agent built that the design does not contain.
+- **Worked around:** places where the agent had to build around the design, the tool or the SDK.
+- **Too big:** a component that grew large and should have been split into `elements/` or `components/` parts.
+
+The agent does not resolve these alone: a missed design or an invention becomes a design question for Tom (through
+the lead), a workaround becomes a friction fix to the tool or the SDK, and a too-big component becomes a split in
+the design first. Where the system can detect one of these (for example a compare diff, or a class or element with
+no counterpart in the design), the go/task/compare flow reports it itself.
