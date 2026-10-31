@@ -239,9 +239,14 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     `implemented.json` only on green. PNG compare on Node `zlib`, no new dependency. Verified: specs (browser cases
     skip without Chromium), tsc, lint, one real Chromium run against a static harness in a temp checkout. Not
     verified: a real app harness (3c-2), the CLI from `dist`.
-  - 3c-2, in progress: products name their harness app in `.ethlete/design/config.json`; a CLI command generates
-    the part-to-lazy-component map from the `implements` links into that app; the app adds the dev-only
-    `/__design-harness` route.
+  - 3c-2 built (`280efe991`): `harness: { app, map }` per product in `.ethlete/design/config.json` (studio:
+    `apps/ethlete-studio`, sdk: `apps/docs-examples`); `et design harness --product [--check]` generates
+    `DESIGN_HARNESS_PARTS` from the `implements` links (one exported `@Component` per file, route-only skipped);
+    `compare` and `task --verify` refuse a stale map. Both apps use hash routing, so `main.ts` boots a harness root
+    on `/__design-harness` in dev only (`ngDevMode`); production bundles hold no harness. Verified: specs, tsc,
+    lint, prod and dev builds, docs-examples in Chromium (unknown part text; a temporary map entry rendered a host).
+    Not verified: Studio served, a real `compare` against a harness, a non-empty map under module-boundary lint.
+  - Next: Q198 (backlog-parallel.md) before 3c-3; then 3c-3 compare starts the app dev server without `--url`.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
