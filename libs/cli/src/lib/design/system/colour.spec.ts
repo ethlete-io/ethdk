@@ -8,6 +8,23 @@ describe('coloursIn', () => {
     expect(coloursIn('var(--x, #fff)')).toEqual(['#fff']);
   });
 
+  it('leaves an rgb() alone when every channel comes from a token, with a literal alpha', () => {
+    expect(
+      coloursIn(
+        'rgb(var(--shadow-rgb) / 0.25) rgba(var(--shadow-rgb), 0.5) rgb(var(--r) var(--g) var(--b)) rgb(var(--c, var(--d)))',
+      ),
+    ).toEqual([]);
+  });
+
+  it('still finds an rgb() with a literal channel, or with nothing to come from', () => {
+    expect(coloursIn('rgb(0 0 var(--b)) rgba(0, 0, 0, var(--a)) rgb() oklch(var(--l) 0 0')).toEqual([
+      'rgb(',
+      'rgba(',
+      'rgb(',
+      'oklch(',
+    ]);
+  });
+
   it('leaves look-alikes alone', () => {
     expect(coloursIn('#abcde #ab #main #add-button')).toEqual([]);
     expect(coloursIn('&#123; &#x1F;')).toEqual([]);
