@@ -86,7 +86,25 @@
           "width": 1440,
           "height": 900
         }
-      }
+      },
+      "deniedClasses": [
+        {
+          "pattern": "^(bg|text|border|ring|divide|outline)-surface(-(raised|overlay|hover|pressed|sunken))?$",
+          "fix": "Use the et-surface tokens of the scope (bg-et-surface-bg, text-et-surface-text, border-et-surface-border); set data-et-surface or a surface scope class on a raised or floating area; hover and pressed mix --et-surface-interaction-solid"
+        },
+        {
+          "pattern": "^var\\(--surface(-(raised|overlay|hover|pressed|sunken))?\\)$",
+          "fix": "Use the et-surface tokens of the scope (bg-et-surface-bg, text-et-surface-text, border-et-surface-border); set data-et-surface or a surface scope class on a raised or floating area; hover and pressed mix --et-surface-interaction-solid"
+        },
+        {
+          "pattern": "^(bg|text|border|ring|divide|outline|fill|stroke)-accent(-|$)",
+          "fix": "Use the SDK colour theming: --et-theme-color-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
+        },
+        {
+          "pattern": "^var\\(--(accent|warning|danger)(-|\\))",
+          "fix": "Use the SDK colour theming: --et-theme-color-* tokens under a colour theme scope (injectSemanticColorTheme types), not the Studio accent, warning or danger vars"
+        }
+      ]
     }
   }
 }

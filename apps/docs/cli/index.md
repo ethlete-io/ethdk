@@ -272,6 +272,15 @@ for such a class, so it fails silently in the browser. `et-` classes, names Tail
 and classes the product's stylesheets or the file itself give a rule pass. A sketch fails only on a
 class it adds.
 
+`et design check` warns with `DENIED-CLASS` when a part outside `foundations/`, a TS file below its
+folder, or a `shared/` file it imports uses a class or a `var(--name)` reference that a pattern in the
+product's `deniedClasses` matches. Each entry holds a regular expression and the fix the line prints:
+`"deniedClasses": [{ "pattern": "^bg-surface-raised$", "fix": "use bg-et-surface-bg in a data-et-surface scope" }]`.
+The rule tests a class without its variants, its `!` and its opacity, so `hover:bg-surface-raised/50`
+counts as `bg-surface-raised`. It warns with `DENIED-STYLESHEET` when the product's own stylesheets,
+outside `foundations/`, define what would expose a denied name: a custom property, a `--color-*` theme
+value, an `@utility` or a class rule. A sketch fails only on a denied class it adds.
+
 `et design check` fails with `UTILITY-CSS` when the CSS of a part outside `foundations/` holds a
 declaration that a Tailwind utility of the product draws: a layout keyword such as `display: flex`, or
 the value of a token that a `@theme` block registers. Put the utility in the markup. A rule whose

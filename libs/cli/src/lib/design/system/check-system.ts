@@ -10,6 +10,7 @@ import { contrastsOf, missingStatesOf, readOpenPoints } from './read-open-points
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
+import { deniedClassesOf } from './rules/denied-class';
 import { RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
@@ -54,10 +55,11 @@ const RULES = [
   inlineSvgsOf,
   canonicalClassesOf,
   undefinedClassesOf,
+  deniedClassesOf,
   utilityCssOf,
 ];
 
-const WARN_ONLY_RULES = new Set(['CLASS-UNDEFINED']);
+const WARN_ONLY_RULES = new Set(['CLASS-UNDEFINED', 'DENIED-CLASS', 'DENIED-STYLESHEET']);
 
 const isWarnOnly = (problem: Problem) => WARN_ONLY_RULES.has(problem.rule);
 

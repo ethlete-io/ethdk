@@ -59,7 +59,12 @@ export type DesignProduct = DesignProject & {
   /** Files, relative to the product folder, that a generator owns; a part hash skips them. */
   generatedFiles?: string[];
   harness?: DesignHarness;
+  /** Classes and `var()` references the product's parts must not use, each with the fix `et design check` prints. */
+  deniedClasses?: DesignDeniedClass[];
 };
+
+/** A regular expression a class or a `var(--name)` reference is tested against, and the fix for a match. */
+export type DesignDeniedClass = { pattern: string; fix: string };
 
 /**
  * Stylesheets a command generates from one part's stylesheet. A frame of a sketch variant that changes `part`
