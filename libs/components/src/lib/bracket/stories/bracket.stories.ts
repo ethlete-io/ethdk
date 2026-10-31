@@ -1,6 +1,7 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { Meta, StoryFn } from '@storybook/angular';
 import { BRACKET_DATA_LAYOUT } from '@ethlete/bracket';
+import { BracketDataSource } from '../integrations/base';
 import { generateBracketDataForEthlete } from '../integrations/ethlete';
 import { StorybookBracketComponent } from './bracket-storybook.component';
 import { ET_DUMMY_DATA_SWISS } from './dummy-data';
@@ -74,6 +75,30 @@ export const SingleElimination = {
   render: Template,
   args: {
     source: generateSingleEliminationBracket(8),
+  },
+};
+
+const LIVE_MATCH_ID = 'se-r1-m1';
+
+const liveSemiFinalSource = (): BracketDataSource<null, null> => {
+  const source = generateSingleEliminationBracket(8);
+
+  return {
+    ...source,
+    matches: source.matches.map((match) => {
+      if (match.id === LIVE_MATCH_ID) return { ...match, winner: null, status: 'pending' };
+      if (match.roundId === 'se-r2') return { ...match, away: null, winner: null, status: 'pending' };
+
+      return match;
+    }),
+  };
+};
+
+export const SingleEliminationLiveMatch = {
+  render: Template,
+  args: {
+    source: liveSemiFinalSource(),
+    liveMatchId: LIVE_MATCH_ID,
   },
 };
 

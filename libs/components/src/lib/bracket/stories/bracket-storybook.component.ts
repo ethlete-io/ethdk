@@ -21,6 +21,7 @@ import {
   BracketRoundSwissGroup,
   BracketSwissColors,
 } from '@ethlete/bracket';
+import { BracketMatchNormalizer } from '../bracket-card-context';
 import { BracketDataSource } from '../integrations/base';
 import {
   doubleEliminationBracketLayout,
@@ -231,7 +232,7 @@ export class StorybookBracketDensityComponent {
       <et-bracket
         [(focusedParticipantId)]="focusedParticipantId"
         [source]="source()"
-        [matchNormalizer]="MATCH_NORMALIZER"
+        [matchNormalizer]="matchNormalizer()"
         [finalMatchComponent]="customFinalCard() ? FINAL_MATCH_COMPONENT : undefined"
         [roundHeaderLevel]="roundHeaderLevel()"
         [columnWidth]="columnWidth()"
@@ -316,7 +317,21 @@ export class StorybookBracketComponent {
   /** Render the participants legend that pins a journey - the focus-mode demo. */
   public withParticipantList = input(false, { transform: booleanAttribute });
 
+  public liveMatchId = input<string | null>(null);
+
   protected focusedParticipantId = signal<string | null>(null);
+
+  protected matchNormalizer = computed<BracketMatchNormalizer>(() => {
+    const liveMatchId = this.liveMatchId();
+
+    if (!liveMatchId) return demoMatchNormalizer;
+
+    return (match) => {
+      const card = demoMatchNormalizer(match);
+
+      return match.id === liveMatchId ? { ...card, status: 'live', homeScore: 1, awayScore: 1 } : card;
+    };
+  });
 
   /** What the `layout` control resolves to: the mirrored factories, or the plain ones. */
   protected layouts = computed(() =>
@@ -333,7 +348,4 @@ export class StorybookBracketComponent {
   });
 
   protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
-
-  /** The story data carries no payload, so this derives its cards from the bracket's own structure. */
-  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }
