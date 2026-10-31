@@ -1,0 +1,39 @@
+{
+  "target": "components/switch",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:43:49.805Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Off track contrast",
+      "note": "The off track is the only edge that shows where an off switch sits: a 22 % mix of --et-surface-interaction, 1.32:1 on the light panel and 1.47:1 on the dark one, under the 3:1 WCAG 1.4.11 asks of a control's boundary (hover: 1.47 and 1.74). The thumb inside it passes (5.93 and 4.72 on the track). The round draws the off track at 3:1 or more with surface tokens only. Left for later: the mint on track and the focus ring use --et-theme-color-primary, 1.33:1 on the light panel (Q51 answers the ring with the ink token, as in the tree)."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today's look: off track a 22 % interaction mix, 1.32:1 light / 1.47:1 dark against the panel."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Keeps the 22 % fill and adds a 1 px inset ring in --et-surface-interaction: 4.74:1 light / 6.94:1 dark, hover ring --et-surface-interaction-hover 10.37 / 13.07. Smallest change, and off stays quieter than the mint on track, so on still reads as the loud state."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Solid --et-surface-interaction track with a --et-surface-background thumb: track 4.74:1 light / 6.94:1 dark against the panel, thumb the same against the track, hover 10.37 / 13.07. Passes, but off becomes as heavy as on: dark grey in light, a bright grey in dark that competes with the mint."
+    }
+  }
+}
