@@ -190,6 +190,7 @@ describe('callFramesOf', () => {
       ['a', 'Solid', 960, undefined],
       ['b', 'Ghost', 960, undefined],
     ]);
+    expect(frames.every((frame) => frame.schemes === undefined)).toBe(true);
     expect(frames[0]?.src).toBe(
       'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3',
     );
@@ -231,6 +232,16 @@ describe('framesOf', () => {
       'http://localhost:4402/__design/shot?product=acme&part=pages%2Fhome&state=default&preset=phone&surface=dark&epoch=2&revision=3&priority=low',
     );
     expect(frames.every((frame) => frame.error === undefined)).toBe(true);
+    expect(frames.map((frame) => frame.schemes)).toEqual(Array(4).fill(['light', 'dark']));
+  });
+
+  it('draws a part at a declared width in the light and the dark scheme', () => {
+    const card = part({ name: 'card', widths: [320] });
+
+    expect(framesOf({ port: 4402, product: product(), part: card }).map((frame) => frame.schemes)).toEqual([
+      ['light', 'dark'],
+      ['light', 'dark'],
+    ]);
   });
 
   it('draws a small part in one frame: a grid with a row per state and a column per interaction', () => {

@@ -2,7 +2,7 @@ import { FlowState, ListedFlow } from '../../host/design-flows';
 import { ListedSketch, partFrameUrl, partShotUrl } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { CanvasLine } from '../components/design-canvas/flow-layout';
-import { FramesSource, TreeGroup, partKeyOf } from './system-tree';
+import { FramesSource, SCHEMES, TreeGroup, partKeyOf } from './system-tree';
 
 export const flowKeyOf = (name: string) => `flow:${name}`;
 
@@ -82,6 +82,7 @@ export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[];
       ...(size ? { width: size.width } : {}),
       ...(page && size?.height ? { height: size.height } : {}),
       screenshot: partShotUrl(page ? { ...address, preset } : { ...address, width: size?.width }),
+      schemes: SCHEMES,
       ...(error ? { error } : {}),
       ...(position ? { at: position } : {}),
       place: { part: key, state, size: preset },

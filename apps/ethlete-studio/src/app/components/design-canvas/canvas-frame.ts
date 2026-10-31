@@ -1,4 +1,5 @@
 import { Observable, filter, map, pairwise, startWith } from 'rxjs';
+import { Size } from './canvas-math';
 
 /** The state of a part, at a preset, a width or fitted, that a frame draws; a comment on the frame names it. */
 export const REST = 'rest';
@@ -48,6 +49,8 @@ export type CanvasFrame = {
   at?: { x: number; y: number };
   /** Draws a table of fitted cells inside the frame instead of `src`; each cell takes comments of its own. */
   grid?: FrameGrid;
+  /** Draws the page once per colour scheme, as `schemeCopiesOf` places them; comments point at the first. */
+  schemes?: ColorScheme[];
   /** Draws only these areas of the page, each enlarged up to the frame's width, below a small picture of the whole page. */
   crop?: FrameCrop;
 };
@@ -170,6 +173,36 @@ export type FrameGrid = {
   cells: FrameCell[];
   sheet?: 'table' | 'groups';
   schemes?: ColorScheme[];
+};
+
+export const SCHEME_LABELS: Record<ColorScheme, string> = { light: 'Light', dark: 'Dark' };
+
+/** A frame of `schemes` up to this wide draws its copies side by side; a wider one stacks them, never shrunk. */
+export const SIDE_BY_SIDE_MAX_WIDTH = 1024;
+
+/** The room between two scheme copies, which holds the label of the next one when they stack. */
+export const SCHEME_GAP = 48;
+
+export type SchemeCopy = { scheme: ColorScheme; x: number; y: number };
+
+/** Where each colour scheme of a frame `size` big is drawn in the frame; none for a frame that draws one page. */
+export const schemeCopiesOf = (frame: CanvasFrame, size: Size): SchemeCopy[] => {
+  if (!frame.schemes || frame.grid || frame.crop || frame.error || frame.empty !== undefined) return [];
+
+  const stacked = size.width > SIDE_BY_SIDE_MAX_WIDTH;
+
+  return frame.schemes.map((scheme, index) => ({
+    scheme,
+    x: stacked ? 0 : index * (size.width + SCHEME_GAP),
+    y: stacked ? index * (size.height + SCHEME_GAP) : 0,
+  }));
+};
+
+/** The size of a frame that draws one page `size` big, with every scheme copy in it. */
+export const schemeBoxOf = (frame: CanvasFrame, size: Size): Size => {
+  const last = schemeCopiesOf(frame, size).at(-1);
+
+  return last ? { width: last.x + size.width, height: last.y + size.height } : size;
 };
 
 export const withScheme = (url: string, scheme: ColorScheme) => {

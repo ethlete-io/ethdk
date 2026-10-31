@@ -29,7 +29,15 @@ import {
   tap,
   timer,
 } from 'rxjs';
-import { ColorScheme, FrameCell, FrameGrid, FrameMessage, frameMessageOf, withScheme } from '../canvas-frame';
+import {
+  ColorScheme,
+  FrameCell,
+  FrameGrid,
+  FrameMessage,
+  SCHEME_LABELS,
+  frameMessageOf,
+  withScheme,
+} from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
 
@@ -40,8 +48,6 @@ const cellKeyOf = (row: string, column: string) => JSON.stringify([row, column])
 const settledKeyOf = (id: string, scheme: ColorScheme | null) => JSON.stringify([id, scheme]);
 
 export const LIVE_REVEAL_TIMEOUT_MS = 3000;
-
-const SCHEME_LABELS: Record<ColorScheme, string> = { light: 'Light', dark: 'Dark' };
 
 @Component({
   selector: 'ethlete-canvas-frame-cell',

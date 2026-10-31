@@ -4,12 +4,27 @@ import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { rememberedView } from '../../studio-view/remembered';
-import { CanvasFrame } from './canvas-frame';
+import { ListedCall } from '../../../host/design';
+import { callFramesOf } from '../../system-view/system-tree';
+import { CanvasFrame, SCHEME_GAP, SIDE_BY_SIDE_MAX_WIDTH } from './canvas-frame';
 import { FramePoint } from './canvas-pin';
 import { DesignCanvasComponent } from './design-canvas.component';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const FITTED: CanvasFrame = { id: 'default', src: 'about:blank', label: 'default', error: 'not drawn in jsdom' };
+
+const LEGACY_CALL: ListedCall = {
+  slug: 'acme/components/button',
+  project: 'acme',
+  eyebrow: 'Button',
+  headline: 'Which button?',
+  stage: 'component',
+  legacy: true,
+  transferred: false,
+  closed: null,
+  frameWidth: 960,
+  variants: [{ key: 'a', name: 'Solid' }],
+};
 
 const render = async (frames: CanvasFrame[]) => {
   TestBed.configureTestingModule({
@@ -574,6 +589,100 @@ describe('DesignCanvasComponent', () => {
     expect(parseFloat(outlines[0]?.style.top ?? '') - parseFloat(frame.style.top)).toBe(34);
     expect(outlines[0]?.style.width).toBe('56px');
     expect(outlines[0]?.style.height).toBe('78px');
+  });
+
+  describe('a frame in both colour schemes', () => {
+    const PAGE: CanvasFrame = {
+      id: 'page',
+      src: 'about:blank',
+      label: 'page',
+      width: 390,
+      height: 600,
+      screenshot: 'http://localhost/__design/shot?part=home',
+      schemes: ['light', 'dark'],
+      place: { part: 'pages/home', state: 'default', size: 'phone' },
+    };
+
+    const copiesOf = (fixture: ComponentFixture<DesignCanvasComponent>) =>
+      [...(frameElement(fixture).nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[data-scheme-copy]')].map(
+        (copy) => ({
+          scheme: copy.dataset['schemeCopy'],
+          left: copy.style.left,
+          top: copy.style.top,
+          shot: copy.querySelector('img')?.getAttribute('src'),
+        }),
+      );
+
+    const labelsOf = (fixture: ComponentFixture<DesignCanvasComponent>) =>
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[data-scheme-label]')]
+        .map((label) => [label.textContent?.trim(), label.style.left, label.style.top])
+        .sort();
+
+    it('draws a page in the light scheme, then the dark one beside it, each under its label', async () => {
+      const fixture = await render([PAGE]);
+      const host = frameElement(fixture).nativeElement as HTMLElement;
+
+      expect(host.style.width).toBe(`${390 * 2 + SCHEME_GAP}px`);
+      expect(host.style.height).toBe('600px');
+      expect(copiesOf(fixture)).toEqual([
+        { scheme: 'light', left: '', top: '', shot: 'http://localhost/__design/shot?part=home&scheme=light' },
+        {
+          scheme: 'dark',
+          left: `${390 + SCHEME_GAP}px`,
+          top: '0px',
+          shot: 'http://localhost/__design/shot?part=home&scheme=dark',
+        },
+      ]);
+      expect(labelsOf(fixture)).toEqual([
+        ['Dark', `${390 + SCHEME_GAP}px`, '0px'],
+        ['Light', '', ''],
+      ]);
+    });
+
+    it('stacks the dark scheme below the light one when the two do not fit side by side', async () => {
+      const fixture = await render([{ ...PAGE, width: SIDE_BY_SIDE_MAX_WIDTH + 1 }]);
+      const host = frameElement(fixture).nativeElement as HTMLElement;
+
+      expect(host.style.width).toBe(`${SIDE_BY_SIDE_MAX_WIDTH + 1}px`);
+      expect(host.style.height).toBe(`${600 * 2 + SCHEME_GAP}px`);
+      expect(copiesOf(fixture).map(({ scheme, left, top }) => [scheme, left, top])).toEqual([
+        ['light', '', ''],
+        ['dark', '0px', `${600 + SCHEME_GAP}px`],
+      ]);
+      expect(labelsOf(fixture)).toEqual([
+        ['Dark', '0px', `${600 + SCHEME_GAP}px`],
+        ['Light', '', ''],
+      ]);
+    });
+
+    it('points pins, outlines and comment targets at the light scheme', async () => {
+      const fixture = await render([PAGE]);
+
+      fixture.componentRef.setInput('pins', [{ id: 'p', frameId: 'page', label: '1', text: 'one' }]);
+      fixture.componentRef.setInput('outlines', [{ frameId: 'page', x: 12, y: 34, width: 56, height: 78 }]);
+      fixture.componentRef.setInput('pointing', true);
+      await fixture.whenStable();
+
+      const host = frameElement(fixture).nativeElement as HTMLElement;
+      const left = (element: Element | null) =>
+        parseFloat((element as HTMLElement | null)?.style.left ?? '') - parseFloat(host.style.left);
+      const target = fixture.nativeElement.querySelector('[data-comment-target]') as HTMLElement;
+
+      expect(left(fixture.nativeElement.querySelector('[data-comment-pin]')?.parentElement)).toBe(390);
+      expect(left(fixture.nativeElement.querySelector('[data-part-outline]'))).toBe(12);
+      expect([target.style.width, target.style.height]).toEqual(['390px', '600px']);
+    });
+
+    it('draws a legacy call shot once, without schemes', async () => {
+      const fixture = await render(
+        callFramesOf({ port: 4402, call: LEGACY_CALL }).map((frame) => ({ ...frame, height: 600 })),
+      );
+      const host = frameElement(fixture).nativeElement as HTMLElement;
+
+      expect(host.style.width).toBe('960px');
+      expect(copiesOf(fixture)).toEqual([]);
+      expect(labelsOf(fixture)).toEqual([]);
+    });
   });
 
   it('goes live once the camera rests, on the frames nearest the centre, and keeps them for a while after', async () => {

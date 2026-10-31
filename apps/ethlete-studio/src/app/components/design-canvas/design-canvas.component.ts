@@ -20,7 +20,15 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
-import { CanvasFrame, FrameCrop, cropPointOf, cropRectOf, pagePointOfCrop, placeableFramesOf } from './canvas-frame';
+import {
+  CanvasFrame,
+  FrameCrop,
+  cropPointOf,
+  cropRectOf,
+  pagePointOfCrop,
+  placeableFramesOf,
+  schemeBoxOf,
+} from './canvas-frame';
 import {
   CanvasNote,
   NOTE_BELOW_GAP,
@@ -135,6 +143,7 @@ type ColumnGroupHead = CanvasColumnGroup & { x: number; y: number; width: number
 
 type PlacedFrame = Rect & {
   frame: CanvasFrame;
+  page: Size;
   unsized: boolean;
   live: boolean;
   liveCells: ReadonlySet<string> | null;
@@ -303,9 +312,14 @@ export class DesignCanvasComponent {
 
       return sizes.length > 0 ? Math.max(...sizes) : frame[side];
     };
+    const pages = new Map<string, Size>();
     const sized = frames.map((frame) => {
       const { width, height } =
         frame.empty === undefined ? known(frame) : { width: rowMax(frame, 'width'), height: rowMax(frame, 'height') };
+      const page = { width: width ?? FALLBACK_WIDTH, height: height ?? FALLBACK_HEIGHT };
+      const box = schemeBoxOf(frame, page);
+
+      pages.set(frame.id, page);
 
       return {
         id: frame.id,
@@ -314,8 +328,7 @@ export class DesignCanvasComponent {
         ...(frame.rowGroup === undefined ? {} : { rowGroup: frame.rowGroup }),
         column: frame.column ?? '',
         fitted: frame.width === undefined,
-        width: width ?? FALLBACK_WIDTH,
-        height: height ?? FALLBACK_HEIGHT,
+        ...box,
         unsized: width === undefined || height === undefined,
       };
     });
@@ -418,7 +431,7 @@ export class DesignCanvasComponent {
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
 
-        return frame ? [{ ...placed, frame, unsized: unsized.has(frame.id) }] : [];
+        return frame ? [{ ...placed, frame, page: pages.get(frame.id) ?? placed, unsized: unsized.has(frame.id) }] : [];
       }),
     };
   });
@@ -472,12 +485,13 @@ export class DesignCanvasComponent {
     const activeId = this.activeId();
     const selectedId = this.selectedId();
 
-    return this.layout().frames.map(({ x, y, width, height, frame, unsized }) => ({
+    return this.layout().frames.map(({ x, y, width, height, frame, page, unsized }) => ({
       x,
       y,
       width,
       height,
       frame,
+      page,
       unsized,
       active: frame.id === activeId,
       selected: frame.id === selectedId,
@@ -491,7 +505,7 @@ export class DesignCanvasComponent {
     const cellRects = this.cellRects();
 
     return this.layout().frames.flatMap((placed) => {
-      if (!placed.frame.grid) return [{ ...placed, owner: placed.frame.id }];
+      if (!placed.frame.grid) return [{ ...placed, ...placed.page, owner: placed.frame.id }];
 
       const rects = cellRects[placed.frame.id] ?? {};
 

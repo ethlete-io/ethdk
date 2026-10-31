@@ -34,12 +34,16 @@ import {
 } from 'rxjs';
 import {
   CanvasFrame,
+  ColorScheme,
   FOLLOWED_VIEWPORT_HEIGHT,
   FrameMessage,
   MeasuredSide,
+  SCHEME_LABELS,
   croppedLayoutOf,
   followedSizes,
   frameMessageOf,
+  schemeCopiesOf,
+  withScheme,
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
@@ -54,6 +58,9 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   selector: 'ethlete-canvas-frame',
   template: `
     <ng-template #caption>
+      @if (!captionBelow() && copies()[0]; as copy) {
+        <span class="uppercase tracking-[0.04em] text-text-muted" data-scheme-label>{{ labelOf(copy.scheme) }}</span>
+      }
       {{ frame().label }}
       @if (reload(); as state) {
         <span
@@ -73,13 +80,25 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span class="rounded-sm bg-accent px-[0.4em] text-on-accent" data-live-badge> Live · Esc </span>
       }
     </ng-template>
+    @for (copy of copies(); track copy.scheme; let first = $first) {
+      @if (!first || captionBelow()) {
+        <span
+          [style.left.px]="copy.x"
+          [style.top.px]="copy.y"
+          class="absolute -translate-y-full whitespace-nowrap pb-[0.4em] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] uppercase tracking-[0.04em] text-text-muted"
+          data-scheme-label
+          >{{ labelOf(copy.scheme) }}</span
+        >
+      }
+    }
     @if (captionPickable()) {
       <span
         [title]="'Comment on the state ' + frame().label"
         [class]="labelPlacement()"
+        [style.max-width.px]="captionMaxWidth()"
         (click)="captionClick.emit($event)"
         (keydown.enter)="captionClick.emit($event)"
-        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
+        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
         role="button"
         tabindex="0"
         data-comment-caption
@@ -89,7 +108,8 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     } @else {
       <span
         [class]="labelPlacement()"
-        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
+        [style.max-width.px]="captionMaxWidth()"
+        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
         ><ng-container [ngTemplateOutlet]="caption"
       /></span>
     }
@@ -169,13 +189,43 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         </div>
       }
     } @else {
-      <ng-container [ngTemplateOutlet]="page" />
+      <div
+        [class]="copies().length > 0 ? 'absolute left-0 top-0 bg-surface' : 'absolute inset-0'"
+        [style.width.px]="copies().length > 0 ? width() : null"
+        [style.height.px]="copies().length > 0 ? height() : null"
+        [attr.data-scheme-copy]="copies()[0]?.scheme ?? null"
+      >
+        <ng-container [ngTemplateOutlet]="page" />
+      </div>
+      @for (copy of laterCopies(); track copy.scheme) {
+        <div
+          [style.left.px]="copy.x"
+          [style.top.px]="copy.y"
+          [style.width.px]="width()"
+          [style.height.px]="height()"
+          [attr.data-scheme-copy]="copy.scheme"
+          class="absolute overflow-hidden bg-surface"
+        >
+          @if (copy.shot) {
+            <img [src]="copy.shot" class="absolute inset-0 size-full border-0 object-none object-left-top" alt="" />
+          }
+          @if (live()) {
+            <iframe
+              [src]="copy.url"
+              [title]="frame().label + ' ' + labelOf(copy.scheme)"
+              [class.pointer-events-none]="!active()"
+              [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
+              class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
+            ></iframe>
+          }
+        </div>
+      }
     }
     <ng-template #page>
-      @if (frame().screenshot) {
+      @if (pageShot()) {
         <img
           #shot
-          [src]="live() ? frame().screenshot : (admittedShot() ?? frame().screenshot)"
+          [src]="live() ? pageShot() : (admittedShot() ?? pageShot())"
           [class.opacity-0]="painted()"
           (load)="readScreenshotSize($event)"
           (error)="settleScreenshot($event)"
@@ -218,9 +268,14 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     @if (!active()) {
       <div class="absolute inset-0 size-full border-0"></div>
     }
-    @if (bordered()) {
+    @for (box of borderBoxes(); track $index) {
       <div
-        class="pointer-events-none absolute inset-0 outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-surface-border outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-accent"
+        [style.left.px]="box?.x ?? 0"
+        [style.top.px]="box?.y ?? 0"
+        [style.width.px]="box ? width() : null"
+        [style.height.px]="box ? height() : null"
+        [class.size-full]="!box"
+        class="pointer-events-none absolute outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-surface-border outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-accent"
         data-frame-border
       ></div>
     }
@@ -229,7 +284,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent],
   host: {
     class:
-      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
+      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[schemed]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',
@@ -238,6 +293,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     '[attr.data-fitted]': 'frame().width === undefined || null',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',
+    '[attr.data-schemed]': 'copies().length > 0 || null',
   },
 })
 export class CanvasFrameComponent {
@@ -246,7 +302,9 @@ export class CanvasFrameComponent {
   private queue = injectFrameRenderQueue();
 
   public frame = input.required<CanvasFrame>();
+  /** The width of one scheme copy; the host spans every copy. */
   public width = input.required<number>();
+  public height = input(0);
   public live = input(false);
   /** The grid cells that go live while `live`; `null` makes every cell live. */
   public liveCells = input<ReadonlySet<string> | null>(null);
@@ -267,11 +325,45 @@ export class CanvasFrameComponent {
 
   protected readonly FOLLOWED_VIEWPORT_HEIGHT = FOLLOWED_VIEWPORT_HEIGHT;
 
-  protected bordered = computed(
+  public bordered = computed(
     () =>
       this.selected() ||
       (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
   );
+  protected copies = computed(() => schemeCopiesOf(this.frame(), { width: this.width(), height: this.height() }));
+
+  protected captionMaxWidth = computed(() => ((this.copies()[1]?.x ?? 0) > 0 ? this.width() : null));
+
+  private firstScheme = computed(() => this.copies()[0]?.scheme ?? null);
+
+  private pageSrc = computed(() => this.schemed(this.frame().src, this.firstScheme()));
+
+  protected pageShot = computed(() => this.schemed(this.frame().screenshot ?? '', this.firstScheme()));
+
+  private laterSources = computed(
+    () =>
+      this.copies()
+        .slice(1)
+        .map((copy) => ({
+          ...copy,
+          src: this.schemed(this.frame().src, copy.scheme),
+          shot: this.schemed(this.frame().screenshot ?? '', copy.scheme),
+        })),
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+
+  protected laterCopies = computed(() =>
+    this.laterSources().map((copy) => ({ ...copy, url: this.sanitizer.bypassSecurityTrustResourceUrl(copy.src) })),
+  );
+
+  protected borderBoxes = computed(() => {
+    if (!this.bordered()) return [];
+
+    const copies = this.copies();
+
+    return copies.length > 0 ? copies : [null];
+  });
+
   protected cropped = computed(() => {
     const crop = this.frame().crop;
 
@@ -309,9 +401,9 @@ export class CanvasFrameComponent {
       const frame = this.frame();
 
       if (frame.empty !== undefined || frame.error || frame.grid) return null;
-      if (this.live()) return { kind: 'page', src: frame.src };
+      if (this.live()) return { kind: 'page', src: this.pageSrc() };
 
-      return frame.screenshot ? { kind: 'shot', src: frame.screenshot } : null;
+      return frame.screenshot ? { kind: 'shot', src: this.pageShot() } : null;
     },
     { equal: (a, b) => a?.kind === b?.kind && a?.src === b?.src },
   );
@@ -393,6 +485,10 @@ export class CanvasFrameComponent {
       .subscribe();
   }
 
+  protected labelOf(scheme: ColorScheme) {
+    return SCHEME_LABELS[scheme];
+  }
+
   protected readScreenshotSize(event: Event) {
     this.settleScreenshot(event);
 
@@ -415,6 +511,10 @@ export class CanvasFrameComponent {
 
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
+  }
+
+  private schemed(url: string, scheme: ColorScheme | null) {
+    return scheme ? withScheme(url, scheme) : url;
   }
 
   private emitScreenshotSize(image: HTMLImageElement) {

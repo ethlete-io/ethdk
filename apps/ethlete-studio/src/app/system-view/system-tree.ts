@@ -351,6 +351,7 @@ const pageFrameOf = (options: {
     ...(size ? { width: size.width, ...(size.height === undefined ? {} : { height: size.height }) } : {}),
     label: [key, state, preset].filter(Boolean).join(' · '),
     screenshot: partShotUrl({ ...address, preset, revision }),
+    schemes: SCHEMES,
     error: loadErrorOf(page.problems),
     place: { part: key, state, size: preset ?? FITTED, ...(sketch ? { sketch } : {}) },
   };
@@ -373,7 +374,7 @@ const GRID = 'grid';
 
 const SHEET_FILL = 'surface';
 
-const SCHEMES: ColorScheme[] = ['light', 'dark'];
+export const SCHEMES: ColorScheme[] = ['light', 'dark'];
 
 /** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
 const gridFrameOf = (options: {
@@ -455,6 +456,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
         label: stateSizeLabelOf(cell, preset),
         row: cell.state,
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
+        schemes: SCHEMES,
         error,
         ...placeOf(cell, preset),
       })),
@@ -474,6 +476,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
           label: stateSizeLabelOf(cell, 'width'),
           row: cell.state,
           screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+          schemes: SCHEMES,
           error,
           ...placeOf(cell, width),
         })),

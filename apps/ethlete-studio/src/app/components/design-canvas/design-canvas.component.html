@@ -180,7 +180,8 @@
   @for (placed of placedFrames(); track placed.frame.id) {
     <ethlete-canvas-frame
       [frame]="placed.frame"
-      [width]="placed.width"
+      [width]="placed.page.width"
+      [height]="placed.page.height"
       [live]="placed.live"
       [liveCells]="placed.liveCells"
       [active]="placed.active"
