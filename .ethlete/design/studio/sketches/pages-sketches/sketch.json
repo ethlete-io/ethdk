@@ -1,7 +1,7 @@
 {
   "target": "pages/sketches",
   "targets": ["pages/sketches", "components/canvas-viewport"],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-31T20:03:35.569Z",
   "baseline": {
     "foundations/agent-logos": "da1df24471b4c6b7",
