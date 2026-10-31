@@ -81,7 +81,7 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   - Done (2026-10-31): debug Studio runs `npx nx build cli` before a server start, not `nx cli-runtime` (`ca4227c0b`);
     the dev spawn uses `dist/libs/cli`, the runtime copy is only the release fallback. The stale-server check now
     compares against `dist/libs/cli`. Warm: build cli 0.55 s, the skipped runtime install 1.1 s; the uncached numbers
-    and a real debug start are not measured. `beforeDevCommand` still runs `cli-runtime` once per `yarn studio`.
+    and a real debug start are not measured. `beforeDevCommand` still runs `cli-runtime` once per `yarn studio`. Closed (2026-10-31, grill decision): measured, ~1.1 s (`nx cli-runtime` 1.6 s warm vs `nx build cli` 0.5 s), not worth a stale fallback CLI for checkouts without their own CLI in dev; no change.
   - Done (2026-10-31): merge-preview frames draw Light + Dark (`075e48532`, `mergePreviewOf` sets `schemes`); the
     sketch matrix cells stay single (its "in context" page frames draw both since `aa6165ad5`). Data spec only, no
     render check.
