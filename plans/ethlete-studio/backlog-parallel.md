@@ -748,14 +748,22 @@ machen".
 - Q137 builder 33 order (Tom, 2026-10-31, option a): the SDK rounds Studio needs, then the Studio pages and parts as
   sketches (Q133), then the other SDK components. This lifts the Q132 stop on new SDK sketches for the time after
   the Studio sketches.
-  In progress (builder ethlete-sdk-57): a disk shot cache in `libs/cli` design, keyed like the memory cache.
+  As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
+  the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
+  directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
+  files, tokens, config). A lookup rehashes the inputs; any change, a missing file or a corrupt entry is a miss.
+  Entries live in `node_modules/.design-explore/shots-<checkout hash>/`, only for the shared listening server, and
+  past 512 MB the oldest go. Verified: specs for a restart that keeps the shot (failed before the fix) and for a part,
+  package, stylesheet or new shared file that redraws it; tsc, lint; a live check on own ports, 348 ms first draw,
+  32 ms from disk. Not verified in Tom's Studio. Earlier fix `42392387e`: a rebuild that writes a package file back
+  with the same bytes redraws nothing.
 
 #### Build slices (builder ethlete-sdk-57)
 
 1. Q129, built (`d3003cfc3`): a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
    survives navigation. Follow-up messages resume the same agent session. The `/agent` page and its call inputs
    go away; the Rust call tools stay as they are, and the chat sends `tools: null`.
-2. Q127: a root view-context store that the system and sketch views write (product, part, sketch, variant,
+2. Q127, in progress: a root view-context store that the system and sketch views write (product, part, sketch, variant,
    selection). A chip above the input shows it; one click removes it for the next message.
 3. Q128, after the MVP (Studio MVP scope, 2026-10-31), not built now: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
    is still the one the message was sent from, Studio opens the result; otherwise the reply shows a link.
