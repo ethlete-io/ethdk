@@ -1,4 +1,13 @@
 @layer base {
+  :root.et-scheme--light,
+  :where(:root.et-scheme--light) :is(.et-color--default, .et-color--brand) {
+    --et-color-primary-ink: 4 120 87;
+    --et-color-primary-ink-hover: 6 95 70;
+    --et-color-primary-ink-focus: 6 95 70;
+    --et-color-primary-ink-active: 6 78 59;
+    --et-color-primary-ink-disabled: 130 200 170;
+  }
+
   :where(:root.et-scheme--light) .et-color--danger {
     --et-color-primary-ink: 185 28 28;
     --et-color-primary-ink-hover: 153 27 27;
