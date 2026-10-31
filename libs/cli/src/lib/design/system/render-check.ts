@@ -122,8 +122,7 @@ const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
-const CONTROL_INPUTS = PLAIN_CONTROL_SELECTOR;
-
+// complete.ts and this module sit in an import cycle: read PLAIN_CONTROL_SELECTOR here, a top-level copy can be undefined.
 const inspectFrame = (options: {
   fixed: boolean;
   fit: boolean;
@@ -393,7 +392,7 @@ ${CONTRAST_STATEMENTS}
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
   return found;
-})(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: CONTROL_INPUTS, sdkControls: SDK_CONTROLS.join(', ') })})`;
+})(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
 
 const stringsOf = (value: unknown) =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
