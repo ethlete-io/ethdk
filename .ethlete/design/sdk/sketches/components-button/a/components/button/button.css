@@ -3,7 +3,8 @@
     --_et-focus-ring-color: var(--et-theme-color-ink-solid);
   }
 
-  .et-button:where([data-variant='filled']) {
+  .et-button:where([data-variant='filled']),
+  .et-icon-button:where([data-variant='filled']) {
     --et-button-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
 
     @media (hover: hover) {
@@ -18,6 +19,16 @@
         var(--et-theme-color-primary-solid) 84%,
         var(--et-theme-color-on-primary-solid)
       );
+    }
+  }
+
+  .et-icon-button:where([data-variant='filled']) {
+    box-shadow: var(--et-button-shadow, none);
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: 1;
+      }
     }
   }
 }

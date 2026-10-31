@@ -1,6 +1,6 @@
 {
   "target": "components/button",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-31T14:19:11.877Z",
   "baseline": {
     "foundations/colors": "417ee640702da3c3",
@@ -68,12 +68,12 @@
   ],
   "variantInfo": {
     "a": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "claude-sonnet-5-5"],
       "round": "r1",
       "note": "et-icon-button as the lib draws it: round (border-radius 9999px), 39px square at md. Costs nothing."
     },
     "b": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "claude-sonnet-5-5"],
       "round": "r1",
       "note": "et-icon-button with --et-icon-button-border-radius set to the et-button radius of each size (0.4rem at md): a rounded square. Costs a token override in the lib or the app."
     }
