@@ -488,6 +488,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Studio render speed (Tom, 2026-10-31): a grid of cells must appear at once, not cell by cell. Measure first. Tom:
   "throw rust at the problem" - Rust in the Tauri host is welcome for the hot path (shot cache, render queue, image
   work, hashing) where the numbers show a gain.
+- Q92: every part in Studio shows both colour schemes side by side, light and dark as two column groups, so a
+  contrast fault in either scheme is visible without a switch. No toolbar switch, and no doubled `-light`/`-dark`
+  states in parts. Built by `ethlete-sdk-57` (live canvas and shot route `scheme=`).
 - Q87: the option check icon uses the ink token (in the light scheme the brand-on-light ink), not primary mint. Same
   rule as Q75.
 - Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
