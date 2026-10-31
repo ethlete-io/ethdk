@@ -319,6 +319,16 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 409 when the part changed since `hash`. The one-part open-point answer also holds `go`. `et design check` prints a
 `GO <product>: <parts>` line when a go holds.
 
+`et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
+the `implements` component, each state with its props, the states new or changed since the last implementation, the
+allowed files and the target, compare green. The allowed files are the folder of the component, and for the product
+`sdk` also `.changeset/*.md` and `apps/docs/components/**`. The task refuses a part without a go, with a stale go,
+without an `implements` link, or with only a route link: a page part needs a presentational component link for compare.
+`.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
+when the part changed but no state's props did, the task lists all states. `--verify [<rev>]` checks the files of a
+commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. It records
+nothing until compare exists.
+
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
 names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.

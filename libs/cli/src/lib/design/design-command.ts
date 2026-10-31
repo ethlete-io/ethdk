@@ -18,6 +18,7 @@ import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
+import { designTask, TASK_USAGE } from './system/task-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 
@@ -108,6 +109,11 @@ const helpOf = (invocation: string) =>
     `${invocation} ${GO_USAGE}`,
     '  Release a part for implementation in .ethlete/design/<product>/go.json at its current design. It needs no empty',
     '  open-point list. A linked part without a current go lists an open point; the go drops when the part changes.',
+    '',
+    `${invocation} ${TASK_USAGE}`,
+    '  Print what implementing a part with a current go takes: its implements link, each state with its props, the',
+    '  states new or changed since implemented.json, and the files it may change. --verify checks the files of a',
+    '  commit or range (default HEAD) against them; it records nothing until compare exists.',
     '',
     `${invocation} ${COMPLETE_USAGE}`,
     '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover and',
@@ -298,6 +304,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designGo({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'task') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designTask({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'ready') {
