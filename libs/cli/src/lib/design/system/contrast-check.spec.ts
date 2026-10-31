@@ -65,6 +65,9 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   'border-toolbar': {
     body: '<div role="toolbar" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #ccc"><button type="button" data-et-control="bold" style="border: 0; background: none">B</button><button type="button" data-et-control="italic" style="border: 0; background: none">I</button><button type="button" data-et-control="link" style="border: 0; background: none">L</button></div>',
   },
+  'border-segmented': {
+    body: '<div role="group" style="display: inline-flex; padding: 2px; border: 1px solid #ccc"><button type="button" data-et-control="day" style="width: 40px; height: 20px; border: 0; background: none">D</button><button type="button" data-et-control="week" style="width: 40px; height: 20px; border: 0; background: none">W</button><button type="button" data-et-control="month" style="width: 40px; height: 20px; border: 0; background: none">M</button></div>',
+  },
   'border-ok': {
     body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid #767676"></button>',
   },
@@ -155,6 +158,8 @@ describe('contrast check', () => {
       'components/border-frame other div[data-et-part=components/border-frame] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/border-low default button[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/border-low other button[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-segmented default div[data-et-part=components/border-segmented] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-segmented other div[data-et-part=components/border-segmented] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/composited default div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/composited other div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/enabled-label default div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',

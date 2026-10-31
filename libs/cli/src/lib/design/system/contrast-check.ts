@@ -247,17 +247,22 @@ export const CONTRAST_STATEMENTS = `
     const controlSelector = 'input:not([type="hidden"]), select, textarea, button, [data-et-control], [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="option"], [role="textbox"], [role="combobox"], [role="slider"], [role="menuitem"]';
     const frameSelector = 'input:not([type="hidden"]), [data-et-control]';
     const frames = new Set();
-    const hugs = (frame, control) => {
-      const box = control.getBoundingClientRect();
-      return bordersOf(frame).length === 4 && box.width * 2 >= frame.clientWidth && box.height * 2 >= frame.clientHeight;
+    const hugs = (frame) => {
+      if (frame.matches('[role="toolbar"]') || bordersOf(frame).length !== 4) return false;
+      const boxes = [...frame.querySelectorAll(frameSelector)].map((control) => control.getBoundingClientRect());
+      const width = Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.left));
+      const height = Math.max(...boxes.map((box) => box.bottom)) - Math.min(...boxes.map((box) => box.top));
+      return width * 2 >= frame.clientWidth && height * 2 >= frame.clientHeight;
     };
+    const wrappers = new Set();
     for (const control of root.querySelectorAll(frameSelector)) {
       for (let at = control; at && at !== root.parentElement; at = at.parentElement) {
         if (bordersOf(at).length === 0) continue;
-        if (at !== control && hugs(at, control)) frames.add(at);
+        if (at !== control) wrappers.add(at);
         break;
       }
     }
+    for (const wrapper of wrappers) if (hugs(wrapper)) frames.add(wrapper);
     for (const element of [root, ...root.querySelectorAll('*')]) {
       if (element.closest('svg, style, script, template')) continue;
       if (!element.matches(controlSelector) && !frames.has(element)) continue;
