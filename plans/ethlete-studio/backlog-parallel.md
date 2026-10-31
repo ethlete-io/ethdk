@@ -72,8 +72,14 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     late full reload (`489d2ad17`); first shot 2.4 -> 1.8 s, studio grid 9.5 -> 7.9 s. The bulk of the ~15 s is likely
     Studio's debug `npx nx cli-runtime` (nx + a full `npm install` of a runtime the dev server does not use) before each
     server start (`design_server.rs` `build_cli`) - next slice.
-  - In progress (2026-10-31): 1e Studio states (500 error cell, loading until indexed, slow state); a real Studio
-    render of Q92 on own servers; then merge-preview Light + Dark (grill decision), then skip `cli-runtime` in dev.
+  - Done (2026-10-31): 1e Studio states (`b27437525`). `img[ethleteShot]` tracks loading / slow (> 2 s) / loaded /
+    failed per shot copy and per grid cell; failed shows "Render failed" in the error theme, slow a "Rendering" pill;
+    a failed cell still settles the grid. Footer says "starting" and the body waits until `/__design/system` answers
+    below 500. Headless against a stub server (500 for 8 s, then failing shots): starting -> running, grid cells show
+    "Render failed" in Light and Dark. Limits: no HTTP status in the error (img hides it); a restart on the same port
+    does not show "starting" again; per-cell slow marker hidden until the grid reveals (as before).
+  - In progress (2026-10-31): a real Studio render of Q92 on own servers; then merge-preview Light + Dark (grill
+    decision), then skip `cli-runtime` in dev.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
