@@ -56,11 +56,11 @@ async function main() {
     pushWithGitCli,
   });
 
-  let { changesets } = await readChangesetState(cwd);
+  const { changesets } = await readChangesetState(cwd);
 
-  let publishScript = core.getInput("publish-script");
-  let hasChangesets = changesets.length !== 0;
-  let hasPublishScript = !!publishScript;
+  const publishScript = core.getInput("publish-script");
+  const hasChangesets = changesets.length !== 0;
+  const hasPublishScript = !!publishScript;
   const plan = planRun({ changesets, hasPublishScript });
 
   core.setOutput("published", "false");

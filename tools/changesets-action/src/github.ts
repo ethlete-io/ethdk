@@ -18,11 +18,11 @@ const switchToMaybeExistingBranch = async (
   branch: string,
   options: GitOptions,
 ) => {
-  let { stderr } = await getExecOutput("git", ["checkout", branch], {
+  const { stderr } = await getExecOutput("git", ["checkout", branch], {
     ignoreReturnCode: true,
     ...options,
   });
-  let isCreatingBranch = !stderr
+  const isCreatingBranch = !stderr
     .toString()
     .includes(`Switched to a new branch '${branch}'`);
   if (isCreatingBranch) {

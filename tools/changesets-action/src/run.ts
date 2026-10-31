@@ -46,7 +46,7 @@ const createRelease = async (
     }
     throw err;
   }
-  let changelogEntry = getChangelogEntry(changelog, pkg.packageJson.version);
+  const changelogEntry = getChangelogEntry(changelog, pkg.packageJson.version);
   if (!changelogEntry) {
     // we can find a changelog but not the entry for this version
     // if this is true, something has probably gone wrong
@@ -208,8 +208,8 @@ export async function runPublish({
     );
   }
 
-  let { packages, tool } = await getPackages(cwd);
-  let packagesByName = new Map(packages.map((x) => [x.packageJson.name, x]));
+  const { packages, tool } = await getPackages(cwd);
+  const packagesByName = new Map(packages.map((x) => [x.packageJson.name, x]));
   let output: ChangesetsOutputEvent[];
   try {
     output = await readChangesetsOutput(outputFile);
@@ -222,8 +222,8 @@ export async function runPublish({
     );
     output = [];
   }
-  let releases = output.map((event) => {
-    let pkg = packagesByName.get(event.packageName);
+  const releases = output.map((event) => {
+    const pkg = packagesByName.get(event.packageName);
     if (pkg === undefined) {
       throw new Error(
         `Package "${event.packageName}" not found.` +
@@ -296,13 +296,13 @@ export async function getVersionPrBody({
   prBodyMaxCharacters,
   branch,
 }: GetMessageOptions) {
-  let messageHeader = `This PR was opened by the [Changesets release](https://github.com/changesets/action) GitHub action. When you're ready to do a release, you can merge this and ${
+  const messageHeader = `This PR was opened by the [Changesets release](https://github.com/changesets/action) GitHub action. When you're ready to do a release, you can merge this and ${
     hasPublishScript
       ? `the packages will be published to npm automatically`
       : `publish to npm yourself or [setup this action to publish automatically](https://github.com/changesets/action#with-publishing)`
   }. If you're not ready to do a release yet, that's fine, whenever you add more changesets to ${branch}, this PR will be updated.
 `;
-  let messagePrestate = !!preState
+  const messagePrestate = preState
     ? `⚠️⚠️⚠️⚠️⚠️⚠️
 
 \`${branch}\` is currently in **pre mode** so this branch has prereleases rather than normal releases. If you want to exit prereleases, run \`changeset pre exit\` on \`${branch}\`.
@@ -310,7 +310,7 @@ export async function getVersionPrBody({
 ⚠️⚠️⚠️⚠️⚠️⚠️
 `
     : "";
-  let messageReleasesHeading = `# Releases`;
+  const messageReleasesHeading = `# Releases`;
 
   let fullMessage = [
     messageHeader,
@@ -373,13 +373,13 @@ export async function runVersion({
   prDraft,
 }: VersionOptions): Promise<RunVersionResult> {
   const { octokit } = github;
-  let versionBranch = `changeset-release/${branch}`;
+  const versionBranch = `changeset-release/${branch}`;
 
-  let { preState } = await readChangesetState(cwd);
+  const { preState } = await readChangesetState(cwd);
 
   await github.prepareBranch(versionBranch);
 
-  let versionsByDirectory = await getVersionsByDirectory(cwd);
+  const versionsByDirectory = await getVersionsByDirectory(cwd);
 
   const env = { ...process.env, GITHUB_TOKEN: github.getToken() };
 
@@ -389,15 +389,15 @@ export async function runVersion({
     await execChangesetsCli(["version"], { cwd, env });
   }
 
-  let changedPackages = await getChangedPackages(cwd, versionsByDirectory);
-  let changedPackagesInfoPromises = Promise.all(
+  const changedPackages = await getChangedPackages(cwd, versionsByDirectory);
+  const changedPackagesInfoPromises = Promise.all(
     changedPackages.map(async (pkg) => {
-      let changelogContents = await fs.readFile(
+      const changelogContents = await fs.readFile(
         path.join(pkg.dir, "CHANGELOG.md"),
         "utf8",
       );
 
-      let entry = getChangelogEntry(changelogContents, pkg.packageJson.version);
+      const entry = getChangelogEntry(changelogContents, pkg.packageJson.version);
       return {
         highestLevel: entry.highestLevel,
         private: !!pkg.packageJson.private,
@@ -407,9 +407,9 @@ export async function runVersion({
     }),
   );
 
-  const finalPrTitle = `${prTitle}${!!preState ? ` (${preState.tag})` : ""}`;
+  const finalPrTitle = `${prTitle}${preState ? ` (${preState.tag})` : ""}`;
   const finalCommitMessage = `${commitMessage}${
-    !!preState ? ` (${preState.tag})` : ""
+    preState ? ` (${preState.tag})` : ""
   }`;
 
   const existingPullRequests = await octokit.rest.pulls.list({
@@ -435,7 +435,7 @@ export async function runVersion({
     .filter((x) => x)
     .sort(sortTheThings);
 
-  let prBody = await getVersionPrBody({
+  const prBody = await getVersionPrBody({
     hasPublishScript,
     preState,
     branch,

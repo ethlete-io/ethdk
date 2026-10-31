@@ -31,7 +31,7 @@ vi.mock("@actions/core", async (importOriginal) => ({
 }));
 vi.mock("@changesets/ghcommit");
 
-let mockedGithubMethods = {
+const mockedGithubMethods = {
   pulls: {
     create: vi.fn(),
     list: vi.fn(),
@@ -40,7 +40,7 @@ let mockedGithubMethods = {
     createRelease: vi.fn(),
   },
 };
-let mockedGraphql = vi.fn();
+const mockedGraphql = vi.fn();
 
 const nodeModulesDir = path.join(import.meta.dirname, "..", "node_modules");
 
