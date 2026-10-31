@@ -78,8 +78,12 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     below 500. Headless against a stub server (500 for 8 s, then failing shots): starting -> running, grid cells show
     "Render failed" in Light and Dark. Limits: no HTTP status in the error (img hides it); a restart on the same port
     does not show "starting" again; per-cell slow marker hidden until the grid reveals (as before).
-  - In progress (2026-10-31): a real Studio render of Q92 on own servers; then merge-preview Light + Dark (grill
-    decision), then skip `cli-runtime` in dev.
+  - Done (2026-10-31): debug Studio runs `npx nx build cli` before a server start, not `nx cli-runtime` (`ca4227c0b`);
+    the dev spawn uses `dist/libs/cli`, the runtime copy is only the release fallback. The stale-server check now
+    compares against `dist/libs/cli`. Warm: build cli 0.55 s, the skipped runtime install 1.1 s; the uncached numbers
+    and a real debug start are not measured. `beforeDevCommand` still runs `cli-runtime` once per `yarn studio`.
+  - In progress (2026-10-31): a real Studio render of Q92 on own servers; merge-preview Light + Dark (grill
+    decision).
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
