@@ -168,4 +168,8 @@
     white-space: nowrap;
     color: var(--et-surface-color-muted-solid, CanvasText);
   }
+
+  .et-pagination-host .et-pagination-button:where([aria-current='page']) {
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+  }
 }

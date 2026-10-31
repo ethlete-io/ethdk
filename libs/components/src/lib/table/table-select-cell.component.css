@@ -42,15 +42,25 @@
   }
 
   .et-table-row.et-table-row--selected .et-table-cell {
-    background: color-mix(in srgb, var(--_et-table-selected-accent) 12%, transparent);
+    background: light-dark(
+      color-mix(in srgb, var(--_et-table-selected-accent) 32%, transparent),
+      color-mix(in srgb, var(--_et-table-selected-accent) 12%, transparent)
+    );
   }
 
   .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-start,
   .et-table-row.et-table-row--selected .et-table-cell.et-table-sticky-end {
-    background: color-mix(
-      in srgb,
-      var(--_et-table-selected-accent) 12%,
-      var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+    background: light-dark(
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 32%,
+        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+      ),
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 12%,
+        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+      )
     );
   }
 
@@ -58,32 +68,52 @@
      base table paints on hover. */
   @media (hover: hover) {
     .et-table-row.et-table-row--selected:hover .et-table-cell {
-      background: color-mix(in srgb, var(--_et-table-selected-accent) 18%, transparent);
+      background: light-dark(
+        color-mix(in srgb, var(--_et-table-selected-accent) 38%, transparent),
+        color-mix(in srgb, var(--_et-table-selected-accent) 18%, transparent)
+      );
     }
 
     .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
     .et-table-row.et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
-      background: color-mix(
-        in srgb,
-        var(--_et-table-selected-accent) 18%,
-        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+      background: light-dark(
+        color-mix(
+          in srgb,
+          var(--_et-table-selected-accent) 38%,
+          var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        ),
+        color-mix(
+          in srgb,
+          var(--_et-table-selected-accent) 18%,
+          var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+        )
       );
     }
   }
 
   /* A held selected row escalates within its accent, for the same reason. */
   .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell {
-    background: color-mix(in srgb, var(--_et-table-selected-accent) 26%, transparent);
+    background: light-dark(
+      color-mix(in srgb, var(--_et-table-selected-accent) 44%, transparent),
+      color-mix(in srgb, var(--_et-table-selected-accent) 26%, transparent)
+    );
   }
 
   .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
     .et-table-cell.et-table-sticky-start,
   .et-table-row.et-table-row--selected:where(.et-table-row--interactive, .et-table-row--link):active
     .et-table-cell.et-table-sticky-end {
-    background: color-mix(
-      in srgb,
-      var(--_et-table-selected-accent) 26%,
-      var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+    background: light-dark(
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 44%,
+        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+      ),
+      color-mix(
+        in srgb,
+        var(--_et-table-selected-accent) 26%,
+        var(--_et-table-row-surface, var(--et-surface-background-solid, Canvas))
+      )
     );
   }
 }

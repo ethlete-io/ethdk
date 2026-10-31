@@ -205,7 +205,10 @@
         inset-block: 4px;
         inset-inline: 0;
         display: none;
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid) 12%, transparent);
+        background: light-dark(
+          color-mix(in srgb, var(--et-theme-color-primary-solid) 32%, transparent),
+          color-mix(in srgb, var(--et-theme-color-primary-solid) 12%, transparent)
+        );
       }
 
       &:where([data-band])::before {
@@ -255,6 +258,11 @@
 
       &:where([data-today]) .et-calendar-cell-content {
         box-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
+      }
+
+      &:where([data-selected], [data-band='start'], [data-band='end']):where(:not([data-disabled], [data-today]))
+        .et-calendar-cell-content {
+        box-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
       }
 
       &:where([data-band='start'], [data-band='end']):where(:not([data-selected])) {

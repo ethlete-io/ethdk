@@ -11,4 +11,8 @@
     overflow: hidden;
     border-radius: var(--et-stream-player-slot-radius);
   }
+
+  .et-stream-player-slot .et-button:where([data-variant='filled']) {
+    --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+  }
 }

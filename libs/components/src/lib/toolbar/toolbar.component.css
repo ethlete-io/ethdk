@@ -37,4 +37,8 @@
       align-items: stretch;
     }
   }
+
+  .et-toolbar .et-icon-button:where([data-pressed='true']) {
+    box-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
+  }
 }

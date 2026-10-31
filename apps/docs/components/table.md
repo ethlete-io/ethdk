@@ -2225,11 +2225,11 @@ page, for one, where the band and the page are the same near-black.
 
 Three more knobs cover what apps restyle most:
 
-| Property                        | Default                          | Sets                                                                                                       |
-| ------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `--et-table-header-color`       | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                    |
-| `--et-table-row-min-block-size` | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row. |
-| `--et-table-row-selected-tint`  | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 12% at rest, 18% hovered, 26% held.                                    |
+| Property                        | Default                          | Sets                                                                                                                  |
+| ------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `--et-table-header-color`       | `--et-surface-color-muted-solid` | The header labels' ink.                                                                                               |
+| `--et-table-row-min-block-size` | `auto`                           | A height floor for every body row, skeleton placeholder rows included. Taller content still grows the row.            |
+| `--et-table-row-selected-tint`  | `--et-theme-color-primary-solid` | The accent a selected row mixes in: 32% / 12% at rest, 38% / 18% hovered, and 44% / 26% held in light / dark schemes. |
 
 The header's filter and column-menu triggers are `xs` icon buttons with a 24px floor, so an
 app that scales its own `xs` below the [WCAG 2.2 target size
