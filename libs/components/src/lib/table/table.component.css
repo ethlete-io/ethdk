@@ -548,11 +548,15 @@
      The row-link ring and the row/card box itself live in `TableRowLinkStylesComponent` and
      `TableCardRowStylesComponent`, mounted by the table when `[rowLink]` or `[appearance]="'cards'"`
      is set - a table using neither carries none of it. */
-  .et-table-header-label:focus-visible,
   .et-table-expander:focus-visible,
-  .et-table-cell:focus-visible {
+  .et-table-cell:focus-visible,
+  .et-table-header-label:focus-visible .et-table-header-label-box {
     outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
     outline-offset: -2px;
+  }
+
+  .et-table-header-label:focus-visible {
+    outline: none;
   }
 
   .et-table-header-label {
