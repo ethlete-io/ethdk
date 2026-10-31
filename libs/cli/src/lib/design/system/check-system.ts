@@ -57,6 +57,10 @@ const RULES = [
   utilityCssOf,
 ];
 
+const WARN_ONLY_RULES = new Set(['CLASS-UNDEFINED']);
+
+const isWarnOnly = (problem: Problem) => WARN_ONLY_RULES.has(problem.rule);
+
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
   ruleProblemsOf(product).map((problem) => lineOf(target, problem));
 
@@ -155,8 +159,14 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
     const isOwn = (problem: Problem) => !isInBasePart(product, problem.file);
-    const warnings = [...unusedSharedExportsOf(product), ...staleReplacesOf(product), ...tokenSelectorsOf(product)];
-    const problems = ruleProblemsOf(product);
+    const ruled = ruleProblemsOf(product);
+    const warnings = [
+      ...unusedSharedExportsOf(product),
+      ...staleReplacesOf(product),
+      ...tokenSelectorsOf(product),
+      ...ruled.filter(isWarnOnly),
+    ];
+    const problems = ruled.filter((problem) => !isWarnOnly(problem));
 
     warnings.filter(isOwn).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
     problems.filter(isOwn).forEach(report);

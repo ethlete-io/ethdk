@@ -1,8 +1,9 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
+import { checkDesign } from '../../check';
 import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
 import { openSketchProblemsOf } from '../sketch/check-sketches';
@@ -87,6 +88,18 @@ describe('undefinedClassesOf', { timeout: 30_000 }, () => {
     write(target, 'acme/pages/home/home.ts', part('<div class="bg-surface-sunken"></div>'));
 
     expect(ruleProblemsOf(resolveAcme(target)).filter((problem) => problem.rule === 'CLASS-UNDEFINED')).toHaveLength(1);
+  });
+
+  it('warns in design check but does not fail it', async () => {
+    const target = acme();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    write(target, 'acme/pages/home/home.ts', part('<div class="bg-surface-sunken"></div>'));
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(warn.mock.calls.flat().some((line) => /^WARNING .*CLASS-UNDEFINED/.test(String(line)))).toBe(true);
+
+    warn.mockRestore();
   });
 
   it('blocks a sketch variant only on a class it adds', () => {
