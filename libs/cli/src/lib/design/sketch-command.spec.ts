@@ -5,11 +5,22 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
 import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { designSketch } from './sketch-command';
+import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
 vi.mock('./ready-shots', () => ({
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
+}));
+
+vi.mock('./system/render-check', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./system/render-check')>()),
+  renderIssuesOf: vi.fn(async (): Promise<Awaited<ReturnType<typeof renderIssuesOf>>> => ({
+    issues: [],
+    warnings: [],
+    grids: [],
+    drawn: [],
+  })),
 }));
 
 const acme = () => {
@@ -34,6 +45,23 @@ const output = () => {
 const run = (target: string, ...argv: string[]) => designSketch({ target, argv, invocation: 'et design' });
 
 const write = (target: string, ...argv: string[]) => run(target, ...argv, '--by', 'claude-opus-5-5');
+
+const actualRender = async () =>
+  (await vi.importActual<typeof import('./system/render-check')>('./system/render-check')).renderIssuesOf;
+
+const wideHero = (target: string, attributes: string) => {
+  writeFileSync(
+    join(target, DESIGN_DIR, 'acme/sketches/elements-hero/a/elements/hero/hero.ts'),
+    `import { definePart, drawing, html } from '@design-system';
+
+export default definePart({
+  note: 'A hero.',
+  states: { default: {} },
+  render: () => drawing({ body: html\`<button ${attributes} style="width: 60px">Save the draft now</button>\`, styles: '' }),
+});
+`,
+  );
+};
 
 describe('designSketch', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -66,6 +94,68 @@ describe('designSketch', () => {
     expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
       { part: 'components/button', by: 'claude-opus-5-5', auto: true },
     ]);
+  });
+
+  const newButton = (target: string) =>
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a',
+      '--round',
+      'R',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+
+  it('refuses ready on a render issue and keeps the sketch in progress', async () => {
+    const target = acme();
+    const lines = output();
+
+    newButton(target);
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce({
+      issues: [
+        {
+          rule: 'OVERFLOW',
+          product: 'acme',
+          part: 'components/button',
+          state: 'default',
+          size: 'phone',
+          path: '#root > button',
+          detail: 'sticks out',
+          sketch: { target: 'components/button', variant: 'a' },
+        },
+      ],
+      warnings: [],
+      grids: [],
+      drawn: [],
+    });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.join('\n')).toContain('OVERFLOW');
+    expect(lines.join('\n')).toContain('components/button has problems - fix them before ready');
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'in progress' });
+  });
+
+  it('accepts ready with a SKIPPED line when the browser is unavailable', async () => {
+    const target = acme();
+    const lines = output();
+
+    newButton(target);
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce({ unavailable: 'no playwright' });
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain('RENDER CHECK SKIPPED - no playwright');
   });
 
   it('refuses ready while a variant does not load, and keeps the sketch in progress', async () => {
@@ -1017,6 +1107,8 @@ export default definePart({
 `,
     );
 
+    vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
+
     const code = await run(target, 'check', '--product', 'acme');
 
     if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip();
@@ -1027,6 +1119,29 @@ export default definePart({
     );
     expect(lines).toContain('elements/hero a: elements/hero default at fitted ok');
     expect(lines).toContain('elements/hero b: elements/hero default at fitted WRAP');
+  }, 120_000);
+
+  it('refuses ready on a real render issue and honours data-et-skip', async (context) => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'elements/hero', '--variants', 'a', '--round', 'R', '--note', 'n', '--product', 'acme');
+    wideHero(target, 'class="acme-hero"');
+    vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
+
+    const refused = await write(target, 'ready', 'elements/hero', '--product', 'acme');
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip();
+
+    expect(refused).toBe(1);
+    expect(lines.join('\n')).toContain('WRAP');
+    expect(lines).toContain('elements/hero has problems - fix them before ready');
+
+    wideHero(target, 'class="acme-hero" data-et-skip="WRAP"');
+    vi.mocked(renderIssuesOf).mockImplementationOnce(await actualRender());
+    vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
+
+    expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
   }, 120_000);
 
   describe('merge --variant --allowed-by', () => {

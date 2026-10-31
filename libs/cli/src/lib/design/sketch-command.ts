@@ -537,6 +537,22 @@ const readied = (context: Context) => {
 
   if (refused !== null) return refused;
 
+  return renderedAndReady(context, found);
+};
+
+const renderedAndReady = async (context: Context, found: { product: ResolvedProduct; sketch: Sketch }) => {
+  const { product, sketch } = found;
+  const rendered = await renderedVariantsOf({
+    target: context.target,
+    config: context.config,
+    product,
+    entries: sketch.variants.map((variant) => ({ sketch, variant })),
+    drawn: false,
+  });
+
+  if ('issues' in rendered && rendered.issues.length > 0)
+    return fail(`${sketch.target} has problems - fix them before ready`);
+
   return loadedAndReady(context, found);
 };
 
@@ -681,6 +697,71 @@ const released = (context: Context) =>
     return 0;
   });
 
+const renderedVariantsOf = async ({
+  target,
+  config,
+  product,
+  entries,
+  drawn,
+}: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  entries: { sketch: Sketch; variant: string }[];
+  drawn: boolean;
+}) => {
+  const rendered = await renderIssuesOf({
+    target,
+    config,
+    jobs: entries.map(({ sketch, variant }) => {
+      const preview = mergePreviewOf({ product, sketch, variant });
+
+      return {
+        product: product.name,
+        sketch: { target: sketch.target, variant },
+        parts: [...preview.changed, ...preview.affected],
+      };
+    }),
+  });
+
+  if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+  else {
+    for (const { sketch, part, state, size } of drawn ? rendered.drawn : []) {
+      const rules = [
+        ...new Set(
+          rendered.issues
+            .filter(
+              (issue) =>
+                issue.sketch?.target === sketch?.target &&
+                issue.sketch?.variant === sketch?.variant &&
+                issue.part === part &&
+                issue.state === state &&
+                issue.size === size,
+            )
+            .map((issue) => issue.rule),
+        ),
+      ];
+
+      console.log(
+        `${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${state} at ${size} ${rules.join(' ') || 'ok'}`,
+      );
+    }
+
+    if (drawn)
+      rendered.grids.forEach(({ sketch, part, line }) =>
+        console.log(`${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${line}`),
+      );
+    rendered.warnings.forEach((issue) =>
+      console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
+    );
+    rendered.issues.forEach((issue) =>
+      console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
+    );
+  }
+
+  return rendered;
+};
+
 const checked = async (context: Context) => {
   const { target, config, args } = context;
   const product = sketchProductOf(context);
@@ -740,53 +821,13 @@ const checked = async (context: Context) => {
 
   if (failed) return 1;
 
-  const rendered = await renderIssuesOf({
+  const rendered = await renderedVariantsOf({
     target,
     config,
-    jobs: chosen.map(({ sketch, variant }) => {
-      const preview = mergePreviewOf({ product, sketch, variant });
-
-      return {
-        product: product.name,
-        sketch: { target: sketch.target, variant },
-        parts: [...preview.changed, ...preview.affected],
-      };
-    }),
+    product,
+    entries: chosen,
+    drawn: true,
   });
-
-  if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-  else {
-    for (const { sketch, part, state, size } of rendered.drawn) {
-      const rules = [
-        ...new Set(
-          rendered.issues
-            .filter(
-              (issue) =>
-                issue.sketch?.target === sketch?.target &&
-                issue.sketch?.variant === sketch?.variant &&
-                issue.part === part &&
-                issue.state === state &&
-                issue.size === size,
-            )
-            .map((issue) => issue.rule),
-        ),
-      ];
-
-      console.log(
-        `${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${state} at ${size} ${rules.join(' ') || 'ok'}`,
-      );
-    }
-
-    rendered.grids.forEach(({ sketch, part, line }) =>
-      console.log(`${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${line}`),
-    );
-    rendered.warnings.forEach((issue) =>
-      console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
-    );
-    rendered.issues.forEach((issue) =>
-      console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
-    );
-  }
 
   if ('issues' in rendered && rendered.issues.length > 0) return 1;
 
