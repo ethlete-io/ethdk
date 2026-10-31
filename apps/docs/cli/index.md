@@ -274,6 +274,10 @@ for such a class, so it fails silently in the browser. `et-` classes, names Tail
 and classes the product's stylesheets or the file itself give a rule pass. A sketch fails only on a
 class it adds.
 
+`et design check` fails with `CLASS-GLUED-INTERPOLATION` when a class in an `html` template of a part, or of a TS file below its
+folder, has no space between it and a `${...}` interpolation, as in `shadow-lg${props.class}`. Tailwind's scanner reads
+both as one candidate and emits no CSS for the class. A class built by interpolation (`et-icon--${name}`, `md:${name}`) passes.
+
 `et design check` fails with `DENIED-CLASS` when a part outside `foundations/`, a TS file below its
 folder, or a `shared/` file it imports uses a class or a `var(--name)` reference that a pattern in the
 product's `deniedClasses` matches. Each entry holds a regular expression and the fix the line prints:
@@ -361,9 +365,11 @@ device scale, and shoots the `[data-design-harness-host]` element. The app owns 
 `implements` component with the state's props inside the host. Pixels compare at tolerance 0, and a size mismatch
 fails too. It prints one line per state, `default ok`, `removable DIFF 12 px` or `removable SIZE 120x32 vs 118x32`, and
 keeps the design, app and diff pictures of each failing state in a temp folder it prints. It exits 0 only when every
-state is ok, and names the URL when the page shows no host element. Without `--url` it starts the dev server of the
-product's harness app (`nx run <project>:serve`) on a free port, waits until it serves `/__design-harness`, and stops
-it afterwards, also on failure or Ctrl-C.
+state is ok, and names the URL when the page shows no host element. Without `--url` it builds the
+product's harness app (`nx run <project>:build:development`) into a temp folder, serves it on a free port with every
+unknown path answered by its `index.html`, and stops the server and removes the folder afterwards, also on failure or
+Ctrl-C. This works next to a running dev server of the same app. When another nx process runs the same build, it
+fails at once and asks for `--url`.
 
 The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
 `"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and
