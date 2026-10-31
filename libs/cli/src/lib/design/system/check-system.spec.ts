@@ -318,7 +318,7 @@ describe('checkDesign', () => {
       '  components/button: no controls declared; 1 open comment (c-1); 2 missing motions (default -> long, long -> default)',
       '  components/card: no controls declared; 2 missing motions (default -> long, long -> default)',
       '  elements/hero: no controls declared; no go',
-      'UNLINKED acme: components/button, components/card, pages/home',
+      'UNLINKED acme: components/button, pages/home',
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
