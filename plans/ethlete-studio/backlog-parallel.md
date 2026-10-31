@@ -1103,3 +1103,10 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   hover grey 28 to 34, active 36 to 47); the other hover rows move to the attribute.
 - **Q211:** the comment-pin is rebuilt the SDK way: the pin button itself is the auto surface and carries
   `data-et-surface-interactive`; the face is no separate surface element. The hand-built Q200 tint goes.
+
+**Floating borders (Tom, 2026-10-31, Q212).**
+
+- **Q212:** every floating element in Studio takes the SDK subtle overlay border, like the Q202 popover. The zoom
+  chip drops `border-et-surface-interaction` for it; its surface step (canvas 15 to chip 32) stays. Q201 now covers
+  only real control borders (shell-main, inbox). Hand-drawn floating panels (project picker `shell-main.ts:74`,
+  inbox comment popover `inbox.ts:217`) move to the SDK `menu()` and `anchoredDialog()` renderers under Q208.
