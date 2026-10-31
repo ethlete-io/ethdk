@@ -299,7 +299,17 @@ The design server answers the same list as JSON: `GET /__design/open-points?prod
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
 `{ part, drawn, points }`. Contrasts and missing control states need a draw, so only `&draw=true` with a `part`
 lists them; it draws that part as `check --complete` does, which takes seconds. A bad parameter answers 400, an
-unknown part 404, and a draw that cannot run 503.
+unknown part 404, and a draw that cannot run 503. The one-part answer also holds the part `hash` and its `ready`
+mark, or `null`.
+
+A part is ready only when its open-point list is empty.
+`et design ready components/chip --product app-a --by tom` draws the part, prints its open points and exits 1 while
+there are any; otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
+(the base's file for a part the product takes from its base). Any edit of the part changes its hash, and the mark
+then reads as not ready. Studio sends `POST /__design/part-ready?product=` with `{ part, hash, by }`: 400 without
+`by` or `hash`, 404 for an unknown part, 409 when the part changed since `hash`, 422 with `{ error, points }` while it
+has open points, 503 when it cannot draw. `et design check` prints a `READY <product>: <parts>` line after the open
+points when a mark holds.
 
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding

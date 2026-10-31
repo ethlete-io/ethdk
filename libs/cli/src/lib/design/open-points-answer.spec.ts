@@ -49,7 +49,7 @@ describe('openPointsAnswer', () => {
     });
     expect(await openPointsAnswer(ask(target, '/?product=app-a&part=pages/home'))).toEqual({
       status: 200,
-      body: { part: 'pages/home', drawn: false, points: [] },
+      body: { part: 'pages/home', hash: expect.any(String), ready: null, drawn: false, points: [] },
     });
     expect(drawnFindingsOf).not.toHaveBeenCalled();
   });
@@ -61,6 +61,8 @@ describe('openPointsAnswer', () => {
       status: 200,
       body: {
         part: 'components/chip',
+        hash: expect.any(String),
+        ready: null,
         drawn: true,
         points: [
           { kind: 'missing-state', control: 'remove' },

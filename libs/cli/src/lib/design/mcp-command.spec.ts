@@ -69,6 +69,7 @@ describe('et design mcp', () => {
       'motion_shots',
       'sketch_new',
       'sketch_report',
+      'part_ready',
       'sketch_ready',
       'sketch_merge',
       'sketch_discard',
@@ -85,6 +86,7 @@ describe('et design mcp', () => {
     expect(tools['call']).toEqual(['call', 'variant']);
     expect(tools['motion_shots']).toEqual(['part', 'motion']);
     expect(tools['sketch_ready']).toEqual(['part', 'by']);
+    expect(tools['part_ready']).toEqual(['part', 'by']);
     expect(tools['sketch_variant']).toEqual(['part', 'variant', 'from', 'by']);
     expect(tools['comment_reply']).toEqual(['id', 'text', 'by']);
   });

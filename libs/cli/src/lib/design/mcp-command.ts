@@ -197,6 +197,13 @@ export const MCP_TOOLS: ToolSpec[] = [
     values: [{ name: 'variant', flag: '--variant', description: 'The variant key.', required: true }, BY],
   },
   {
+    name: 'part_ready',
+    description: 'Mark a part ready. It draws the part and refuses while the part has open points.',
+    command: ['ready'],
+    positional: [PART],
+    values: [BY],
+  },
+  {
     name: 'sketch_ready',
     description: 'Mark a sketch ready for the user to pick.',
     command: ['sketch', 'ready'],

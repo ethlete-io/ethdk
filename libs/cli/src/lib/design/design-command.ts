@@ -17,6 +17,7 @@ import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
+import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
@@ -98,6 +99,10 @@ const helpOf = (invocation: string) =>
     "  Record a direct edit of a merged part that the user approved without a sketch: writes the part's hash to",
     '  merged.json, so check stops warning of it, and logs who accepted it and why in accepted.json. Refuses an unknown',
     '  part, a part with an open sketch, and a part with no change outside a sketch.',
+    '',
+    `${invocation} ${READY_USAGE}`,
+    '  Mark a part ready in .ethlete/design/<product>/ready.json. It draws the part and refuses with its open points',
+    '  while it has any. The mark drops when the part changes.',
     '',
     `${invocation} ${COMPLETE_USAGE}`,
     '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover and',
@@ -282,6 +287,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designComplete({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'ready') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designReady({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'part') {

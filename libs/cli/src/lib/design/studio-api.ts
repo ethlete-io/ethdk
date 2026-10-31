@@ -26,7 +26,7 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
-import { drawnFindingsOf } from './system/drawn-open-points';
+import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
@@ -82,6 +82,7 @@ export const EXCEPTIONS_PATH = '/__design/exceptions';
 export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
+export const PART_READY_PATH = '/__design/part-ready';
 
 export type Answer = { status: number; body: unknown };
 
@@ -756,11 +757,9 @@ const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer =
 };
 
 const drawnPointsOf = async ({ asked, config, product }: Found, part: string) => {
-  const findings = await drawnFindingsOf({ target: asked.target, config, product, parts: [part] });
+  const points = await drawnPartPointsOf({ target: asked.target, config, product, part });
 
-  return 'unavailable' in findings
-    ? failure(503, `cannot draw ${part}: ${findings.unavailable}`)
-    : partPointsOf(readOpenPoints(product, findings), part);
+  return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
 };
 
 /**
@@ -785,5 +784,41 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
   const points = draw === 'true' ? await drawnPointsOf(found, part) : partPointsOf(readOpenPoints(found.product), part);
 
-  return Array.isArray(points) ? { status: 200, body: { part, drawn: draw === 'true', points } } : points;
+  if (!Array.isArray(points)) return failure(points.status, points.error);
+
+  const located = readyPartOf({ product: found.product, part });
+  const hash = typeof located === 'string' ? null : located.hash;
+  const ready = readyMarkOf({ product: found.product, part });
+
+  return { status: 200, body: { part, hash, ready, drawn: draw === 'true', points } };
+});
+
+/**
+ * POST `?product=`, body `{ part, hash, by }`: marks a part ready at the hash Studio showed. It draws the part and
+ * refuses with 422 and the `points` while its open-point list is not empty.
+ */
+export const partReadyAnswer = withProduct('POST', async (found) => {
+  const body = await bodyOf(found.asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const part = knownPartOf(found.product, body['part']);
+
+  if (typeof part !== 'string') return part;
+
+  const marked = await markPartReady({
+    product: found.product,
+    part,
+    hash: body['hash'],
+    by: body['by'],
+    pointsOf: () => drawnPointsOf(found, part),
+  });
+
+  if ('status' in marked)
+    return {
+      status: marked.status,
+      body: { error: marked.error, ...(marked.points ? { points: marked.points } : {}) },
+    };
+
+  return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
 });
