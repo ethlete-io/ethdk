@@ -1151,11 +1151,19 @@ export const seeFrame = (options: {
     const y = [box.top + 1, box.top + box.height / 2, box.bottom - 1];
     const points = [[x[1], y[1]], [x[0], y[0]], [x[2], y[0]], [x[0], y[2]], [x[2], y[2]]];
     let hit = false;
-    for (const [px, py] of points) {
-      const top = document.elementFromPoint(px, py);
-      if (top === null) return false;
-      if (element.contains(top)) return false;
-      hit = true;
+    const inline = element.style.getPropertyValue('pointer-events');
+    const priority = element.style.getPropertyPriority('pointer-events');
+    element.style.setProperty('pointer-events', 'auto', 'important');
+    try {
+      for (const [px, py] of points) {
+        const top = document.elementFromPoint(px, py);
+        if (top === null) return false;
+        if (element.contains(top)) return false;
+        hit = true;
+      }
+    } finally {
+      if (inline) element.style.setProperty('pointer-events', inline, priority);
+      else element.style.removeProperty('pointer-events');
     }
     return hit;
   };
