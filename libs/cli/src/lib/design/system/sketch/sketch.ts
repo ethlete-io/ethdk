@@ -975,7 +975,7 @@ export const addVariant = (options: {
       ]
     : sketch.rounds;
 
-  cpSync(variantDirOf(sketch, from), variantDirOf(sketch, variant), { recursive: true });
+  cpSync(variantDirOf(sketch, from), variantDirOf(sketch, variant), { recursive: true, verbatimSymlinks: true });
   mkdirSync(resolve(variantDirOf(sketch, variant), ASSETS_FOLDER), { recursive: true });
 
   const { decision: _decision, ...undecided } = sketch;

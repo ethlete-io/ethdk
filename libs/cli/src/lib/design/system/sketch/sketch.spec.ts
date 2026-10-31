@@ -542,6 +542,21 @@ describe('addVariant', () => {
       sketch: { layer: 'elements', name: 'hero' },
     }) as Sketch;
 
+  it('keeps relative links in variant shared files pointing into the copied variant', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const shared = join(sketch.dir, 'a/shared');
+
+    mkdirSync(shared);
+    writeFileSync(join(shared, 'data.ts'), 'export const data = 1;\n');
+    symlinkSync('data.ts', join(shared, 'linked.ts'));
+    addVariant({ sketch, variant: 'c', from: 'a' });
+    writeFileSync(join(sketch.dir, 'c/shared/data.ts'), 'export const data = 2;\n');
+
+    expect(readFileSync(join(sketch.dir, 'c/shared/linked.ts'), 'utf8')).toBe('export const data = 2;\n');
+    expect(readFileSync(join(shared, 'linked.ts'), 'utf8')).toBe('export const data = 1;\n');
+  });
+
   it('copies a variant into the running round, back to in progress and without the pick', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
