@@ -57,6 +57,11 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     `design-explore:painted`, timeout fallback); then Q92 for non-grid frames (Light then Dark side by side, stacked
     when too wide; legacy call shots stay), then 1e.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
+  - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
+    first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
+    sdk `colors.css` paints `body` with `--et-surface-background-solid`, and the live frame paints the same, so shot and
+    live frame match. Not seen in Studio; motion and asset shots unchanged. `et design` honours `DE_PORT` outside
+    Studio (`67f8d7924`).
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
   8. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice.
