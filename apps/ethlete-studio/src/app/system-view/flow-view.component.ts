@@ -93,6 +93,7 @@ export class FlowViewComponent {
   public sketches = input<ListedSketch[]>([]);
   public epoch = input(0);
   public revision = input(0);
+  public view = input(0);
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
@@ -125,6 +126,7 @@ export class FlowViewComponent {
       sketches: this.sketches(),
       epoch: this.epoch(),
       revision: this.revision(),
+      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     }),

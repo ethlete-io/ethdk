@@ -7,6 +7,7 @@ import {
   followedSizes,
   frameMessageOf,
   pagePointOfCrop,
+  withActiveRank,
   withScheme,
 } from './canvas-frame';
 
@@ -157,6 +158,18 @@ describe('a crop of two areas', () => {
       height: 10,
     });
     expect(cropRectOf(crop, { x: 1000, y: 10, width: 10, height: 5 })).toBeNull();
+  });
+});
+
+describe('withActiveRank', () => {
+  it('ranks a visible shot active only for the active frame', () => {
+    const url = 'http://h/__design/shot?part=p&view=5&rank=visible&priority=low';
+
+    expect(withActiveRank(url, true)).toBe('http://h/__design/shot?part=p&view=5&rank=active&priority=low');
+    expect(withActiveRank(url, false)).toBe(url);
+    expect(withActiveRank('http://h/__design/shot?part=p&priority=low', true)).toBe(
+      'http://h/__design/shot?part=p&priority=low',
+    );
   });
 });
 

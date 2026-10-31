@@ -177,6 +177,11 @@ export const frameUrl = ({ port, slug, variant, epoch, revision, surface, color 
   (epoch ? `&epoch=${epoch}` : '') +
   (revision ? `&revision=${revision}` : '');
 
+export type ShotRank = 'active' | 'visible';
+
+export const shotRankQuery = ({ view, rank }: { view?: number; rank?: ShotRank }) =>
+  view ? `&view=${view}&rank=${rank ?? 'visible'}` : '';
+
 const schemeQuery = () => {
   const scheme = preferredScheme();
 
@@ -187,8 +192,13 @@ const schemeQuery = () => {
  * The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`.
  * The design server draws it after every shot asked without `priority=low`.
  */
-export const callShotUrl = ({ width, ...address }: FrameAddress & { width: number }) =>
-  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}${schemeQuery()}&priority=low`;
+export const callShotUrl = ({
+  width,
+  view,
+  rank,
+  ...address
+}: FrameAddress & { width: number; view?: number; rank?: ShotRank }) =>
+  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}${schemeQuery()}${shotRankQuery({ view, rank })}&priority=low`;
 
 export type DesignRoots = {
   /** The folder a scan walks. Empty until the user names one. */
@@ -298,6 +308,10 @@ export type PartAddress = {
   epoch?: number;
   /** Changes with each design change, so the frame and its shot draw anew. */
   revision?: number;
+  /** Raised on every view change; the design server draws the highest one first. */
+  view?: number;
+  /** `active` for the frame being worked in, `visible` for a shown cell. */
+  rank?: ShotRank;
   surface?: string;
   color?: string;
   /** The token (without `--`) the page paints its background with, in place of the product's page fill. */
@@ -340,6 +354,7 @@ export const partShotUrl = (address: PartAddress & { preset?: string; width?: nu
   (address.epoch ? `&epoch=${address.epoch}` : '') +
   (address.revision ? `&revision=${address.revision}` : '') +
   schemeQuery() +
+  shotRankQuery(address) +
   '&priority=low';
 
 /** A call of the old design-call workflow, as the design server lists it. One that fails to load carries its error. */

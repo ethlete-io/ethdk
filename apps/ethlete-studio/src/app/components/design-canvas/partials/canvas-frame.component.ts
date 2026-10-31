@@ -43,6 +43,7 @@ import {
   followedSizes,
   frameMessageOf,
   schemeCopiesOf,
+  withActiveRank,
   withScheme,
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
@@ -358,7 +359,9 @@ export class CanvasFrameComponent {
 
   private pageSrc = computed(() => this.schemed(this.frame().src, this.firstScheme()));
 
-  protected pageShot = computed(() => this.schemed(this.frame().screenshot ?? '', this.firstScheme()));
+  private frameShot = computed(() => withActiveRank(this.frame().screenshot ?? '', this.active()));
+
+  protected pageShot = computed(() => this.schemed(this.frameShot(), this.firstScheme()));
 
   private laterSources = computed(
     () =>
@@ -367,7 +370,7 @@ export class CanvasFrameComponent {
         .map((copy) => ({
           ...copy,
           src: this.schemed(this.frame().src, copy.scheme),
-          shot: this.schemed(this.frame().screenshot ?? '', copy.scheme),
+          shot: this.schemed(this.frameShot(), copy.scheme),
         })),
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );

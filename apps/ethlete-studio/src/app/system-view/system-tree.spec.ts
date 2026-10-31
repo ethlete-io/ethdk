@@ -208,6 +208,19 @@ describe('callFramesOf', () => {
     );
   });
 
+  it('asks a shot of the shown view with the view and a visible rank, and none without a view', () => {
+    const shot = (view?: number) => callFramesOf({ port: 1, call: call(), view })[0]?.screenshot;
+
+    expect(shot(1700)).toBe(
+      'http://localhost:1/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&width=960&view=1700&rank=visible&priority=low',
+    );
+    expect(shot(1701)).toContain('&view=1701&');
+    expect(shot()).not.toContain('view=');
+    expect(framesOf({ port: 4402, product: product(), part: part(), view: 9 })[0]?.screenshot).toContain(
+      '&view=9&rank=visible&priority=low',
+    );
+  });
+
   it('falls back to 1280 without a width and fails one frame for a call that does not load', () => {
     expect(callFramesOf({ port: 1, call: call({ frameWidth: 0 }) })[0]).toMatchObject({
       width: 1280,

@@ -607,6 +607,7 @@ export class SketchViewComponent {
   public part = input<ListedPart | null>(null);
   public epoch = input(0);
   public revision = input(0);
+  public view = input(0);
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
@@ -700,6 +701,7 @@ export class SketchViewComponent {
     openStates: this.openStates(),
     epoch: this.epoch(),
     revision: this.revision(),
+    view: this.view(),
     surface: this.surface(),
     color: this.color(),
   }));

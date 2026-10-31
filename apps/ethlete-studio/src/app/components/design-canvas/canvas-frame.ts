@@ -213,6 +213,9 @@ export const withScheme = (url: string, scheme: ColorScheme) => {
   return `${bare}${bare.includes('?') ? '&' : '?'}scheme=${scheme}`;
 };
 
+export const withActiveRank = (url: string, active: boolean) =>
+  active ? url.replace(/([?&])rank=visible(?=&|$)/u, '$1rank=active') : url;
+
 /** The frames that take comments: each cell of a grid in place of its frame. */
 export const placeableFramesOf = (frames: readonly CanvasFrame[]): CanvasFrame[] =>
   frames.flatMap((frame) =>

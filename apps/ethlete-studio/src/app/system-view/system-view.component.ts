@@ -390,6 +390,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [part]="shown.part"
             [epoch]="epoch()"
             [revision]="sketchRevision()"
+            [view]="view()"
             [surface]="surface()"
             [color]="color()"
             [cameraKey]="cameraKey()"
@@ -413,6 +414,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [sketches]="sketches()"
             [epoch]="epoch()"
             [revision]="shown.revision"
+            [view]="view()"
             [surface]="surface()"
             [color]="color()"
             [cameraKey]="cameraKey()"
@@ -903,22 +905,6 @@ export class SystemViewComponent {
     ].filter((theme) => theme.names.length > 1);
   });
 
-  protected callFrames = computed(() => {
-    const port = this.port();
-    const call = this.call();
-
-    if (!port || !call) return [];
-
-    return callFramesOf({
-      port,
-      call,
-      epoch: this.epoch(),
-      revision: this.callsRevision(),
-      surface: this.surface(),
-      color: this.color(),
-    });
-  });
-
   private nodes = computed(() => {
     const entries = new Map<string, TreeEntry>();
     const counts = new Map<string, number>();
@@ -1008,6 +994,28 @@ export class SystemViewComponent {
     return part ? `${this.product()?.name} ${part.key}` : null;
   });
 
+  public view = linkedSignal<string | null, number>({
+    source: this.cameraKey,
+    computation: (_key, previous) => Math.max(Date.now(), (previous?.value ?? 0) + 1),
+  });
+
+  protected callFrames = computed(() => {
+    const port = this.port();
+    const call = this.call();
+
+    if (!port || !call) return [];
+
+    return callFramesOf({
+      port,
+      call,
+      epoch: this.epoch(),
+      revision: this.callsRevision(),
+      view: this.view(),
+      surface: this.surface(),
+      color: this.color(),
+    });
+  });
+
   protected restoredCamera = computed(() => {
     const key = this.cameraKey();
 
@@ -1032,6 +1040,7 @@ export class SystemViewComponent {
         sketch: null,
         errored: failsToLoad(part.listed.problems),
       }),
+      view: this.view(),
       surface: this.surface(),
       color: this.color(),
     });
