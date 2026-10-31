@@ -795,6 +795,11 @@ machen".
 - Q180 icon-only tabs (Tom, 2026-10-31, from his tabs comment "es fehlen varianten mit icons"): `et-tab` gets an
   optional `ariaLabel` input, bound to the trigger button, so an icon-only tab has an accessible name. Then the tabs
   sketch adds icon-only states next to `icons` and `primary-icons` (`ad6cf7701`). Changeset and tabs docs guide.
+- Q183 new SDK looks after the MVP (Tom, 2026-10-31): of the Q182 audit, only the scale rows (sizes, density,
+  item sizes; lead merges under Q172) and new-look options that the Studio app itself uses come now. Every other
+  new-look option (for example bracket double-elimination, tree selection modes) goes to the post-MVP roadmap and
+  stays visible as an open point on its part. Tom also: the SDK builder makes no brand-new components for now, only
+  work on the existing ones.
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
