@@ -1,6 +1,29 @@
 import ts from 'typescript';
 
-const sourceFileOf = (source: string) => ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
+const PARSED_LIMIT = 512;
+const parsed = new Map<string, ts.SourceFile>();
+
+/** The syntax tree of a TS source, parsed once per text and shared by every caller, so never mutate it. */
+export const sourceFileOf = (source: string): ts.SourceFile => {
+  const known = parsed.get(source);
+
+  if (known) {
+    parsed.delete(source);
+    parsed.set(source, known);
+
+    return known;
+  }
+
+  const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
+
+  parsed.set(source, file);
+
+  const oldest = parsed.size > PARSED_LIMIT ? parsed.keys().next().value : undefined;
+
+  if (oldest !== undefined) parsed.delete(oldest);
+
+  return file;
+};
 
 const nodesOf = (source: string) => {
   const nodes: ts.Node[] = [];

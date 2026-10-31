@@ -46,9 +46,15 @@ const droppedStatesOf = (options: {
 };
 
 /** The rule problems of each variant of a sketch laid over the product, and the states it drops from a part. */
-export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: Sketch }): VariantProblems[] => {
+export const variantProblemsOf = (options: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  productProblems?: Problem[];
+}): VariantProblems[] => {
   const keyOf = (dir: string, problem: Problem) => `${problem.rule} ${relative(dir, problem.file)}: ${problem.message}`;
-  const had = new Set(ruleProblemsOf(options.product).map((problem) => keyOf(options.product.dir, problem)));
+  const had = new Set(
+    (options.productProblems ?? ruleProblemsOf(options.product)).map((problem) => keyOf(options.product.dir, problem)),
+  );
 
   return options.sketch.variants.map((variant) => {
     const overlaid = overlaySketch({ ...options, variant });
@@ -105,12 +111,15 @@ export const variantWarningsOf = (options: {
  */
 export const openSketchProblemsOf = (product: ResolvedProduct) => {
   const sketches = listSketches({ productDir: product.dir, product: product.name });
+  const productProblems = ruleProblemsOf(product);
 
   return {
     unreadable: sketches.flatMap((sketch): Problem[] =>
       typeof sketch === 'string' ? [{ rule: 'SKETCH', file: product.dir, message: sketch }] : [],
     ),
-    variants: sketches.flatMap((sketch) => (typeof sketch === 'string' ? [] : variantProblemsOf({ product, sketch }))),
+    variants: sketches.flatMap((sketch) =>
+      typeof sketch === 'string' ? [] : variantProblemsOf({ product, sketch, productProblems }),
+    ),
   };
 };
 

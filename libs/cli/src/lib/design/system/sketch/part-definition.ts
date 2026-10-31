@@ -1,7 +1,8 @@
 import ts from 'typescript';
+import { sourceFileOf } from '../ts-source';
 
 const definitionOf = (source: string) => {
-  const file = ts.createSourceFile('part.ts', source, ts.ScriptTarget.Latest, true);
+  const file = sourceFileOf(source);
   let found: ts.ObjectLiteralExpression | null = null;
   const visit = (node: ts.Node) => {
     if (found) return;
