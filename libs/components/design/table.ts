@@ -250,11 +250,18 @@ const body = (options: TableMockOptions) => {
   return options.rows.map(bodyRow(options)).join('');
 };
 
-const scrollFades = (scrolled: TableMockOptions['scrolled']) =>
-  `<div class="et-table-scroll-fades" role="presentation" aria-hidden="true">` +
-  `<div class="et-table-scroll-fade et-table-scroll-fade--start${scrolled?.inlineStart ? ' et-table-scroll-fade--visible' : ''}"></div>` +
-  `<div class="et-table-scroll-fade et-table-scroll-fade--end${scrolled?.inlineEnd ? ' et-table-scroll-fade--visible' : ''}"></div>` +
-  `</div>`;
+const scrollFades = (options: TableMockOptions) => {
+  const pinned = (side: 'start' | 'end') => options.columns.some((column) => column.sticky?.side === side);
+  const fade = (side: 'start' | 'end', scrolled: boolean | undefined) =>
+    `<div class="et-table-scroll-fade et-table-scroll-fade--${side}${scrolled && !pinned(side) ? ' et-table-scroll-fade--visible' : ''}"${styleAttr(`inset-inline-${side}: 0px`)}></div>`;
+
+  return (
+    `<div class="et-table-scroll-fades" role="presentation" aria-hidden="true">` +
+    fade('start', options.scrolled?.inlineStart) +
+    fade('end', options.scrolled?.inlineEnd) +
+    `</div>`
+  );
+};
 
 /** Draws `<et-table>` with its header, body rows and the built-in features as a static snapshot of one state. */
 export const table = (options: TableMockOptions) => {
@@ -289,7 +296,7 @@ export const table = (options: TableMockOptions) => {
     `<div class="et-table-header-row" role="row">${leadHeaderCells(options)}${options.columns.map(headerCell).join('')}</div>` +
     busy +
     body(options) +
-    scrollFades(options.scrolled) +
+    scrollFades(options) +
     `</div></et-table>`
   );
 };
