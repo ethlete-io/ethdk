@@ -1,6 +1,6 @@
 # Ethlete Studio: motion (slice 9)
 
-Slice 9 of `plans/ethlete-studio/design-system.md`. Motion is a tool that extends components and
+Slice 9 of `plans/ethlete-studio/design-system.md` (slice list in `design-system/rules.md`). Motion is a tool that extends components and
 elements: named motions on parts, controlled time, a timeline and a screenshot per keyframe.
 
 ## Decisions (2026-10-27)
@@ -153,7 +153,7 @@ Each slice gets an "in progress" note here when it starts.
   `element.animate` plus a seeded step, and a `viewTransition: true` motion (old/new cross-fade visible in the sheet).
   Not verified: WebKit, a real product part, `--variant`.
 - Open points (recommendation after each):
-  - The MCP tool: no MCP server exists yet (`design-system.md` slice 8 is not built). Build `et design mcp` first and add a
+  - The MCP tool: no MCP server exists yet (`design-system/rules.md` slice 8 is not built). Build `et design mcp` first and add a
     `motion_shots` tool over `designMotion`'s core that returns the sheet image and the JSON.
   - Token names in tracks ("token name where there is one"): not done. Match each track's duration and easing against the
     foundations motion tokens computed on `:root` in the frame and add `durationToken`/`easingToken`; build it with the
