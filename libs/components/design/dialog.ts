@@ -147,7 +147,7 @@ const body = (content: string, dividers: DialogMockOptions['dividers'] = false) 
     dividers === 'dynamic' && 'et-scrollable-body--is-at-start',
   ].filter(Boolean);
 
-  return `<div class="${classes.join(' ')}"><div class="et-overlay-body-container">${content}</div></div>`;
+  return `<div class="${classes.join(' ')}"><div class="et-overlay-body-container"><div class="et-overlay-body-start-element"></div>${content}<div class="et-overlay-body-end-element"></div></div></div>`;
 };
 
 /**
