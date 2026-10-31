@@ -145,10 +145,10 @@
         }
       }
 
-      &:active {
+      &:not([disabled], [aria-disabled='true']):active {
         --_et-button-background: color-mix(
           in srgb,
-          var(--et-theme-color-primary-solid) 84%,
+          var(--et-theme-color-primary-solid) 96%,
           var(--et-theme-color-on-primary-solid)
         );
       }
