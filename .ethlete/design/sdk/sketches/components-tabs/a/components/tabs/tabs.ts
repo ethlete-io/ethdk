@@ -21,6 +21,12 @@ const WITH_ICONS = [
   { label: `${icon('et-clock')}Activity` },
   { label: `${icon('et-pencil')}Settings` },
 ];
+const ICON_ONLY = [
+  { label: icon('et-grid-2x2'), name: 'Overview' },
+  { label: icon('et-clock'), name: 'Activity' },
+  { label: icon('et-pencil'), name: 'Settings' },
+];
+const ICON_ONLY_LABELS = Object.fromEntries(ICON_ONLY.map(({ name }, index) => [index, `aria-label="${name}"`]));
 
 const { states, grid } = interactionRows(
   {
@@ -44,6 +50,8 @@ export default definePart({
     primary: { tabs: TABS, variant: 'primary' },
     icons: { tabs: WITH_ICONS },
     'primary-icons': { tabs: WITH_ICONS, variant: 'primary' },
+    'icon-only': { tabs: ICON_ONLY, triggerAttributes: ICON_ONLY_LABELS },
+    'primary-icon-only': { tabs: ICON_ONLY, triggerAttributes: ICON_ONLY_LABELS, variant: 'primary' },
     'no-divider': { tabs: TABS, divider: false },
     vertical: { tabs: TABS, orientation: 'vertical' },
     panel: { tabs: TABS, panel: '<p>Three open tasks, two of them due this week.</p>' },
@@ -57,7 +65,9 @@ export default definePart({
     drawing({
       body: tabs({
         ...props,
-        triggerAttributes: forced && { [forced.tab]: `data-et-force="${forced.interaction}"` },
+        triggerAttributes: forced
+          ? { ...props.triggerAttributes, [forced.tab]: `data-et-force="${forced.interaction}"` }
+          : props.triggerAttributes,
       }).replaceAll('role="tab"', 'data-et-control="tab" role="tab"'),
       styles: [tabsStyles, edge].join('\n'),
     }),
