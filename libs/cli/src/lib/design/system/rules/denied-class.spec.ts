@@ -67,12 +67,17 @@ describe('deniedClassesOf', () => {
       part('<div class="hover:bg-surface/50 text-surface-sunken flex" style="color: var(--accent-text)"></div>'),
     );
     write(target, 'acme/pages/home/home.css', '.acme-home { border-color: var( --accent); }');
-    write(target, 'acme/pages/home/shared/row.ts', `export const row = 'md:!border-surface-raised';\n`);
+    write(
+      target,
+      'acme/pages/home/shared/row.ts',
+      `export const row = 'md:!border-surface-raised hover:text-(--accent-hover)';\n`,
+    );
 
     expect(linesOf(target)).toEqual([
       'DENIED-CLASS home.ts: `bg-surface` is denied in this product - use the et-surface tokens of a data-et-surface scope',
       'DENIED-CLASS home.ts: `var(--accent-text)` is denied in this product - use --et-theme-color-*',
       'DENIED-CLASS row.ts: `border-surface-raised` is denied in this product - use the et-surface tokens of a data-et-surface scope',
+      'DENIED-CLASS row.ts: `var(--accent-hover)` is denied in this product - use --et-theme-color-*',
       'DENIED-CLASS home.css: `var(--accent)` is denied in this product - use --et-theme-color-*',
     ]);
   });

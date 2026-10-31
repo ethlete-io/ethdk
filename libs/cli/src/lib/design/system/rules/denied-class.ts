@@ -48,7 +48,7 @@ const utilityOf = (candidate: string) => {
     .replace(/\/(?:\d+|\[[^\]]*\]|\([^)]*\))$/u, '');
 };
 
-const varsIn = (text: string) => [...text.matchAll(/var\(\s*(--[\w-]+)/gu)].map(([, name]) => `var(${name})`);
+const varsIn = (text: string) => [...text.matchAll(/(?:var\(\s*|-\()(--[\w-]+)/gu)].map(([, name]) => `var(${name})`);
 
 const denialOf = (denials: Denial[], used: string) => denials.find(({ test }) => test.test(used));
 
