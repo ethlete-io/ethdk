@@ -734,5 +734,12 @@
     "note": "Q190 (Tom): plain surface hover uses bg-surface-hover; lead call ethlete-sdk-76, mechanical swap",
     "hash": "1f4c91eb3ad1096c",
     "at": "2026-10-31T16:29:30.148Z"
+  },
+  {
+    "part": "elements/canvas-frames",
+    "by": "claude-opus-5-5",
+    "note": "Q191 CLIPPED skip",
+    "hash": "090e382e54fc3a42",
+    "at": "2026-10-31T16:51:16.329Z"
   }
 ]

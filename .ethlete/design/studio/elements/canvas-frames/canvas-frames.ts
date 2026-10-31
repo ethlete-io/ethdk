@@ -91,7 +91,7 @@ export const canvasFrame = (name: string, body: string, width = '') =>
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
 export const canvasView = async (frames: string[], zoom: string) => {
   const chip = await zoomChip.render({ percent: parseFloat(zoom), class: 'absolute right-space-3 bottom-space-3' });
-  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden">
+  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden" data-et-skip="CLIPPED">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
     ${chip.body}
   </div>`;

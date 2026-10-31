@@ -110,7 +110,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
       section: 'System',
       product: 'studio',
       side: tree.body,
-      content: html`<div class="absolute inset-y-0 left-0 right-86" data-et-skip="CLIPPED">${frames.body}</div>
+      content: html`<div class="absolute inset-y-0 left-0 right-86">${frames.body}</div>
         ${await inspector(clear ? nothingOpen : buttonPoints)}`,
     });
 
