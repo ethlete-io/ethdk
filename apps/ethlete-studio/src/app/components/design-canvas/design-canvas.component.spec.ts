@@ -317,6 +317,82 @@ describe('DesignCanvasComponent', () => {
     expect(reported.at(-1)).toBeNull();
   });
 
+  describe('when the canvas width changes', () => {
+    const setup = async () => {
+      const size = { width: 1200, height: 1000 };
+      const resized: (() => void)[] = [];
+      let host: unknown = null;
+
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this === host ? size.width : 0;
+      });
+      vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        return this === host ? size.height : 0;
+      });
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(callback: ResizeObserverCallback) {
+            resized.push(() => callback([{ target: this.target } as ResizeObserverEntry], this as never));
+          }
+          private target: Element | null = null;
+          observe(target: Element) {
+            this.target = target;
+          }
+          disconnect() {
+            return undefined;
+          }
+        },
+      );
+
+      const fixture = await render([{ ...FITTED, id: 'a', width: 1000, height: 600 }]);
+
+      host = fixture.nativeElement;
+      resized.forEach((resize) => resize());
+      await fixture.whenStable();
+
+      const resizeTo = async (width: number) => {
+        size.width = width;
+        resized.forEach((resize) => resize());
+        await fixture.whenStable();
+      };
+
+      return { canvas: fixture.componentInstance, resizeTo };
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('fits the view again while it is still fitted', async () => {
+      const { canvas, resizeTo } = await setup();
+      const before = canvas.camera().zoom;
+
+      await resizeTo(600);
+
+      expect(canvas.camera().zoom).toBeLessThan(before);
+    });
+
+    it('keeps the zoom the user set, and fits again after a fit', async () => {
+      const { canvas, resizeTo } = await setup();
+
+      canvas['zoomBy'](0.5);
+      const zoomed = canvas.camera();
+
+      await resizeTo(600);
+
+      expect(canvas.camera()).toEqual(zoomed);
+
+      canvas.fitAll();
+      const fitted = canvas.camera().zoom;
+
+      await resizeTo(300);
+
+      expect(canvas.camera().zoom).toBeLessThan(fitted);
+    });
+  });
+
   it('keeps a focused frame in view when the canvas shrinks, until the user moves the camera', async () => {
     const size = { width: 1200, height: 1000 };
     const resized: (() => void)[] = [];
@@ -989,5 +1065,32 @@ describe('DesignCanvasComponent', () => {
 
       expect(picks).toEqual([{ frameId: 'a', point: { x: 500, y: 300 } }]);
     });
+  });
+
+  it('selects the cell clicked in a grid frame, keeps it on a second click, and moves it to another cell', async () => {
+    const cell = (id: string) => ({ id, row: 'filled', column: id, label: id, src: 'about:blank', width: 100 });
+    const fixture = await render([
+      {
+        id: 'grid',
+        src: '',
+        label: 'grid',
+        grid: { columns: ['a', 'b'], rows: ['filled'], cells: [cell('a'), cell('b')] },
+      },
+    ]);
+    const host = fixture.nativeElement as HTMLElement;
+    const click = (id: string) =>
+      host.querySelector(`[data-cell-id="${id}"]`)?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    click('a');
+    expect([fixture.componentInstance.selectedId(), fixture.componentInstance.selectedCellId()]).toEqual(['grid', 'a']);
+
+    click('a');
+    expect(fixture.componentInstance.selectedCellId()).toBe('a');
+
+    click('b');
+    expect(fixture.componentInstance.selectedCellId()).toBe('b');
+
+    fixture.componentInstance.selectedId.set(null);
+    expect(fixture.componentInstance.selectedCellId()).toBeNull();
   });
 });
