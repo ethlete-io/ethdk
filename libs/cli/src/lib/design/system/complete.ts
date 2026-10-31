@@ -86,15 +86,15 @@ type ControlKind = {
   adds?: string[];
   noActive?: boolean;
   selects?: boolean;
-  options?: boolean;
+  options?: { interactions: string[]; selected: boolean };
   virtualFocus?: boolean;
 };
 
 const KINDS: Record<string, ControlKind> = {
   disclosure: { surface: 'body', closed: 'collapsed' },
   button: { adds: ['active'] },
-  select: { surface: 'open', options: true },
-  menu: { surface: 'open', options: true },
+  select: { surface: 'open', options: { interactions: ['hover', 'focus-visible'], selected: true } },
+  menu: { surface: 'open', options: { interactions: ['hover', 'focus-visible', 'active'], selected: false } },
   row: { selects: true, virtualFocus: true },
   field: { noActive: true },
   tooltip: { surface: 'tooltip' },
@@ -520,14 +520,19 @@ const keyboardActiveGapOf = (options: {
   return `state ${compared[0]?.state} marks an option active by ${KEYBOARD_ACTIVE}, but it looks the same as a plain option - give the active option its own look`;
 };
 
-const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [string, string][] => {
-  const { frames, surfaceId } = options;
+const optionGapsOf = (options: {
+  frames: SeenFrame[];
+  surfaceId: string;
+  interactions: string[];
+  selected: boolean;
+}): [string, string][] => {
+  const { frames, surfaceId, interactions } = options;
   const shownIn = (frame: SeenFrame) =>
     frame.surfaces.filter((seen) => seen.id === surfaceId && seen.shown).flatMap((seen) => seen.options ?? []);
   const what = `an option in ${surfaceId}`;
   const gaps: [string, string][] = [];
 
-  for (const interaction of ['hover', 'focus-visible']) {
+  for (const interaction of interactions) {
     const forced = frames.flatMap((frame) =>
       shownIn(frame).flatMap((option) =>
         option.forced
@@ -541,6 +546,8 @@ const optionGapsOf = (options: { frames: SeenFrame[]; surfaceId: string }): [str
 
     if (missing) gaps.push([`option-${interaction}`, missing]);
   }
+
+  if (!options.selected) return gaps;
 
   const seen = frames
     .filter((frame) => frame.interaction === null)
@@ -611,7 +618,8 @@ const requirementGapsOf = (options: {
 
   if (kind.surface) gaps.push(...surfaceGapsOf({ ...options, surface: kind.surface, closed: kind.closed }));
 
-  if (own && kind.options && kind.surface) gaps.push(...optionGapsOf({ frames, surfaceId: `${id}.${kind.surface}` }));
+  if (own && kind.options && kind.surface)
+    gaps.push(...optionGapsOf({ frames, surfaceId: `${id}.${kind.surface}`, ...kind.options }));
 
   return gaps;
 };

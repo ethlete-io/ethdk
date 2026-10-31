@@ -731,7 +731,9 @@ describe('completenessGapsOf', () => {
     const select = { kind: 'select', input: [], surfaces: { open: 'open' } };
 
     expect(gapsOf(select, full)).toEqual([]);
-    expect(gapsOf({ ...select, kind: 'menu' }, full)).toEqual([]);
+    expect(gapsOf({ ...select, kind: 'menu' }, full)).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-active - no state draws an option in more.open active - force active on it, e.g. with forceInteraction',
+    ]);
     expect(
       gapsOf(select, [frame('rest'), frame('open', { surfaces: shown([{ selected: false, look: 'a', forced: [] }]) })]),
     ).toEqual([
@@ -766,7 +768,7 @@ describe('completenessGapsOf', () => {
       }),
     ];
 
-    expect(gapsOf({ ...select, kind: 'menu' }, keyboardOf('teal'))).toEqual([]);
+    expect(gapsOf(select, keyboardOf('teal'))).toEqual([]);
     expect(gapsOf(select, keyboardOf('white'))).toEqual([
       'REQUIREMENT-MISSING components/a.more.option-focus-visible - state open marks an option active by aria-activedescendant or data-active-source="keyboard", but it looks the same as a plain option - give the active option its own look',
     ]);
@@ -792,6 +794,27 @@ describe('completenessGapsOf', () => {
         'pages/a',
       ),
     ).toEqual([]);
+  });
+
+  it('requires hover, focus and active of a menu item, but no selected one', () => {
+    const gapsOf = (options: NonNullable<SeenFrame['surfaces'][number]['options']>) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: { more: { kind: 'menu', input: [], surfaces: { open: 'open' } } },
+        states: ['rest', 'open'],
+        frames: [frame('rest'), frame('open', { surfaces: [{ id: 'more.open', shown: true, options }] })],
+        reviewed: true,
+      }).map(completenessGapLineOf);
+    const item = (interaction?: string) => ({
+      selected: false,
+      look: interaction ?? 'white',
+      forced: interaction ? [{ interaction, differs: true }] : [],
+    });
+
+    expect(gapsOf([item(), item('hover'), item('focus-visible'), item('active')])).toEqual([]);
+    expect(gapsOf([item(), item('hover'), item('focus-visible')])).toEqual([
+      'REQUIREMENT-MISSING components/a.more.option-active - no state draws an option in more.open active - force active on it, e.g. with forceInteraction',
+    ]);
   });
 
   it('requires the visible tooltip of a tooltip control in its host', () => {
