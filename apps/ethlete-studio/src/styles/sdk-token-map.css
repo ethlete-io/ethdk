@@ -33,3 +33,7 @@ et-form-field {
 .et-tree {
   --et-tree-node-radius: var(--radius-control-md);
 }
+
+.et-surface-interactive {
+  --color-et-surface-interaction: rgb(var(--et-surface-interaction-rgb));
+}
