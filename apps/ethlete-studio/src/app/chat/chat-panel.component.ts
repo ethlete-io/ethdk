@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -15,6 +16,7 @@ import {
   TextareaDirective,
 } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { ChatBlock, parseChatMarkdown } from './chat-markdown';
 import { injectChatStore } from './chat-store';
 import { chipOf, injectViewContext } from './view-context';
 
@@ -80,7 +82,7 @@ import { chipOf, injectViewContext } from './view-context';
         }
 
         <ol #list class="m-0 flex min-h-0 grow list-none flex-col gap-2 overflow-auto p-0" data-chat-messages>
-          @for (entry of store.entries(); track $index) {
+          @for (entry of store.entries(); track $index; let index = $index) {
             @switch (entry.kind) {
               @case ('prompt') {
                 <li
@@ -94,7 +96,52 @@ import { chipOf, injectViewContext } from './view-context';
                 </li>
               }
               @case ('message') {
-                <li class="whitespace-pre-wrap" data-chat-entry="message">{{ entry.text }}</li>
+                <li class="flex flex-col gap-2" data-chat-entry="message">
+                  @for (block of blocks()[index] ?? []; track $index) {
+                    @switch (block.kind) {
+                      @case ('code') {
+                        <pre
+                          [attr.data-language]="block.language || null"
+                          class="m-0 overflow-x-auto rounded-md bg-surface-raised p-2 font-mono text-mono text-text"
+                          data-chat-code-block
+                        ><code>{{ block.text }}</code></pre>
+                      }
+                      @case ('list') {
+                        @if (block.ordered) {
+                          <ol [attr.start]="block.start" class="m-0 flex list-decimal flex-col gap-1 pl-5">
+                            @for (item of block.items; track $index) {
+                              <li class="whitespace-pre-wrap">
+                                <ng-container
+                                  [ngTemplateOutlet]="inlines"
+                                  [ngTemplateOutletContext]="{ $implicit: item }"
+                                />
+                              </li>
+                            }
+                          </ol>
+                        } @else {
+                          <ul class="m-0 flex list-disc flex-col gap-1 pl-5">
+                            @for (item of block.items; track $index) {
+                              <li class="whitespace-pre-wrap">
+                                <ng-container
+                                  [ngTemplateOutlet]="inlines"
+                                  [ngTemplateOutletContext]="{ $implicit: item }"
+                                />
+                              </li>
+                            }
+                          </ul>
+                        }
+                      }
+                      @case ('paragraph') {
+                        <p class="m-0 whitespace-pre-wrap">
+                          <ng-container
+                            [ngTemplateOutlet]="inlines"
+                            [ngTemplateOutletContext]="{ $implicit: block.inlines }"
+                          />
+                        </p>
+                      }
+                    }
+                  }
+                </li>
               }
               @case ('action') {
                 <li class="font-mono text-mono break-words text-text-muted" data-chat-entry="action">
@@ -118,6 +165,22 @@ import { chipOf, injectViewContext } from './view-context';
             }
           }
         </ol>
+
+        <ng-template #inlines let-items>
+          @for (part of items; track $index) {
+            @switch (part.kind) {
+              @case ('code') {
+                <code class="rounded-sm bg-surface-raised px-1 font-mono text-mono">{{ part.text }}</code>
+              }
+              @case ('bold') {
+                <strong>{{ part.text }}</strong>
+              }
+              @default {
+                {{ part.text }}
+              }
+            }
+          }
+        </ng-template>
 
         @if (chip(); as chip) {
           <div
@@ -194,14 +257,21 @@ import { chipOf, injectViewContext } from './view-context';
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS, TEXTAREA_IMPORTS, ProvideColorDirective],
+  imports: [
+    NgTemplateOutlet,
+    BUTTON_IMPORTS,
+    FORM_FIELD_IMPORTS,
+    SELECT_IMPORTS,
+    TEXTAREA_IMPORTS,
+    ProvideColorDirective,
+  ],
   host: { class: 'flex min-h-0 shrink-0' },
 })
 export class ChatPanelComponent {
   protected store = injectChatStore();
   protected viewContext = injectViewContext();
   protected errorTheme = injectSemanticColorTheme('error');
-  private list = viewChild<ElementRef<HTMLElement>>('list');
+  public list = viewChild<ElementRef<HTMLElement>>('list');
   private promptField = viewChild(TextareaDirective);
   protected chip = computed(() => {
     const context = this.viewContext.shown();
@@ -209,6 +279,9 @@ export class ChatPanelComponent {
     return context ? chipOf(context) : null;
   });
   protected prompt = signal('');
+  protected blocks = computed<ChatBlock[][]>(() =>
+    this.store.entries().map((entry) => (entry.kind === 'message' ? parseChatMarkdown(entry.text) : [])),
+  );
 
   constructor() {
     afterRenderEffect(() => {

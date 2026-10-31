@@ -2,21 +2,26 @@ import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { NEVER, of } from 'rxjs';
-import type { AgentRequest } from '../../host/agent';
+import { Observable, of } from 'rxjs';
+import type { AgentEvent, AgentRequest } from '../../host/agent';
 import { THEMES } from '../../themes';
 import { AppComponent } from '../app.component';
 import { ChatPanelComponent } from './chat-panel.component';
 import { injectViewContext } from './view-context';
 
-const host = vi.hoisted(() => ({ run: vi.fn<(request: AgentRequest) => void>() }));
+const host = vi.hoisted(() => ({
+  run: vi.fn<(request: AgentRequest) => void>(),
+  emit: vi.fn<(event: AgentEvent) => void>(),
+}));
 
 vi.mock('../../host/agent', () => ({
   agentList$: () => of([{ id: 'claude', label: 'Claude Code', binary: 'claude', version: '1', suggestedModels: [] }]),
   agentRun$: (request: AgentRequest) => {
     host.run(request);
 
-    return NEVER;
+    return new Observable<AgentEvent>((subscriber) => {
+      host.emit.mockImplementation((event) => subscriber.next(event));
+    });
   },
 }));
 
@@ -164,5 +169,46 @@ describe('ChatPanelComponent', () => {
     expect(host.run.mock.calls[0]?.[0]).toMatchObject({ prompt: 'Plain.' });
     expect(element(fixture).querySelector('[data-chat-entry-context]')).toBeNull();
     expect(chip()).not.toBeNull();
+  });
+
+  it('renders agent messages as a markdown subset and nothing else', async () => {
+    const fixture = await render();
+
+    await open(fixture);
+    await type(fixture, 'Hi');
+    element(fixture).querySelector<HTMLButtonElement>('[data-chat-send]')?.click();
+    await fixture.whenStable();
+    host.emit({
+      kind: 'message',
+      text: [
+        'Use `yarn build` and **carefully** <b>raw</b> [l](http://x)',
+        '',
+        '- one',
+        '- two',
+        '',
+        '2. first',
+        '3. second',
+        '',
+        '```ts',
+        'const a = "<i>x</i>";',
+        '```',
+      ].join('\n'),
+    });
+    await fixture.whenStable();
+
+    const message = element(fixture).querySelector('[data-chat-entry="message"]');
+
+    expect(message?.querySelector('p code')?.textContent).toBe('yarn build');
+    expect(message?.querySelector('p strong')?.textContent).toBe('carefully');
+    expect(message?.querySelector('p')?.textContent).toContain('<b>raw</b> [l](http://x)');
+    expect(message?.querySelector('b, a, i')).toBeNull();
+    expect([...(message?.querySelectorAll('ul > li') ?? [])].map((li) => li.textContent?.trim())).toEqual([
+      'one',
+      'two',
+    ]);
+    expect(message?.querySelector('ol')?.getAttribute('start')).toBe('2');
+    expect(message?.querySelectorAll('ol > li')).toHaveLength(2);
+    expect(message?.querySelector('pre')?.getAttribute('data-language')).toBe('ts');
+    expect(message?.querySelector('pre code')?.textContent).toBe('const a = "<i>x</i>";');
   });
 });
