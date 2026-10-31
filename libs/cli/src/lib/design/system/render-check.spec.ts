@@ -4,7 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
-import { renderIssueLineOf, renderIssuesOf } from './render-check';
+import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './render-check';
 
 const PARTS: Record<string, { body: string; extra?: string; css?: string; states?: string }> = {
   'pages/tall': { body: '<div style="height: 300px; border: 1px solid">Tall</div>' },
@@ -302,4 +302,35 @@ export default definePart({
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant ?? 'base'}`)).toEqual(['OVERFLOW a']);
   }, 120_000);
+});
+
+describe('groupedIssueLinesOf', () => {
+  const issue = (variant: string, state: string, detail: string) => ({
+    rule: 'CONTRAST',
+    product: 'studio',
+    part: 'pages/inbox',
+    state,
+    size: 'desktop',
+    path: 'nav.rail',
+    detail,
+    sketch: { target: 'elements/shell', variant },
+  });
+
+  it('prints a finding that repeats across states, schemes and variants once, with where it was found', () => {
+    const light = 'border 1.63:1 in the light scheme, needs 3.00:1';
+    const dark = 'border 1.63:1 in the dark scheme, needs 3.00:1';
+
+    expect(
+      groupedIssueLinesOf([
+        issue('a', 'open', light),
+        issue('a', 'open', dark),
+        issue('a', 'empty', light),
+        issue('b', 'open', light),
+        issue('b', 'open', 'border 2.10:1 in the light scheme, needs 3.00:1'),
+      ]),
+    ).toEqual([
+      'elements/shell a, b: CONTRAST studio pages/inbox open, empty at desktop: nav.rail - border 1.63:1 in the light and dark scheme, needs 3.00:1 (4 times)',
+      'elements/shell b: CONTRAST studio pages/inbox open at desktop: nav.rail - border 2.10:1 in the light scheme, needs 3.00:1',
+    ]);
+  });
 });

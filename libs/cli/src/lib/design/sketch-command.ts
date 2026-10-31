@@ -17,7 +17,7 @@ import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNa
 import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
-import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
+import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
   addVariant,
@@ -806,9 +806,7 @@ const renderedVariantsOf = async ({
     rendered.warnings.forEach((issue) =>
       console.warn(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: WARNING ${renderIssueLineOf(issue)}`),
     );
-    rendered.issues.forEach((issue) =>
-      console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
-    );
+    groupedIssueLinesOf(rendered.issues).forEach((line) => console.error(line));
   }
 
   return rendered;

@@ -67,6 +67,40 @@ export type RenderedGrid = Pick<RenderIssue, 'product' | 'part' | 'sketch'> & { 
 export const renderIssueLineOf = (issue: RenderIssue) =>
   `${issue.rule} ${issue.product} ${issue.part} ${issue.state} at ${issue.size}: ${issue.path} - ${issue.detail}`;
 
+const SCHEME_IN_DETAIL = / in the (light|dark) scheme/u;
+
+/** The render issues as lines, one per finding that repeats across states, sizes, schemes and variants, with where it was found. */
+export const groupedIssueLinesOf = (issues: RenderIssue[]) => {
+  const groups = new Map<string, { first: RenderIssue; issues: RenderIssue[] }>();
+
+  for (const issue of issues) {
+    const key = JSON.stringify([
+      issue.sketch?.target ?? '',
+      issue.rule,
+      issue.product,
+      issue.part,
+      issue.path,
+      issue.detail.replace(SCHEME_IN_DETAIL, ''),
+    ]);
+    const group = groups.get(key) ?? { first: issue, issues: [] };
+
+    group.issues.push(issue);
+    groups.set(key, group);
+  }
+
+  const listOf = (values: string[]) => [...new Set(values)].join(', ');
+
+  return [...groups.values()].map(({ first, issues: found }) => {
+    const schemes = [...new Set(found.flatMap((issue) => SCHEME_IN_DETAIL.exec(issue.detail)?.[1] ?? []))];
+    const detail = first.detail.replace(SCHEME_IN_DETAIL, ` in the ${schemes.join(' and ')} scheme`);
+    const variants = listOf(found.map((issue) => issue.sketch?.variant ?? ''));
+    const where = `${listOf(found.map((issue) => issue.state))} at ${listOf(found.map((issue) => issue.size))}`;
+    const times = found.length > 1 ? ` (${found.length} times)` : '';
+
+    return `${first.sketch?.target ?? ''} ${variants}: ${first.rule} ${first.product} ${first.part} ${where}: ${first.path} - ${detail}${times}`;
+  });
+};
+
 const SINGLE_LINE =
   'button, [role="button"], [role="tab"], [role="switch"], [role="menuitem"], [data-wireframe="button"], ' +
   '[data-wireframe="badge"], [data-wireframe="tabs"], [data-wireframe="segmented"], [data-wireframe="select"]';

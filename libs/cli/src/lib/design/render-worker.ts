@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { missingPackageMessage } from './missing-package';
 import { buildFields } from './render-fields';
-import { keepCustomPropertyCase, shimMutationObserver } from './ssr-shims';
+import { keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
 import { parentPort, workerData } from 'worker_threads';
 import {
   entryOfBuilt,
@@ -92,6 +92,7 @@ const shimLayout = (server: { ɵDominoAdapter: { makeCurrent: () => void } }) =>
   server.ɵDominoAdapter.makeCurrent();
   (globalThis as { window?: unknown }).window ??= globalThis;
   shimMutationObserver(globalThis);
+  quietDevModeNotice(console);
   keepCustomPropertyCase(globalThis.Element.prototype);
 
   const element = globalThis.Element as typeof Element | undefined;

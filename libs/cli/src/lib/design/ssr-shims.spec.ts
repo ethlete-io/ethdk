@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { keepCustomPropertyCase, shimMutationObserver } from './ssr-shims';
+import { describe, expect, it, vi } from 'vitest';
+import { keepCustomPropertyCase, quietDevModeNotice, shimMutationObserver } from './ssr-shims';
 
 const serverRender = async (template: string) => {
   await import('@angular/compiler');
@@ -90,4 +90,24 @@ describe('shimMutationObserver', () => {
     shimMutationObserver(withOne);
     expect(withOne.MutationObserver).toBe(existing);
   });
+});
+
+describe('quietDevModeNotice', () => {
+  it('drops the development mode line of each render and keeps every other log', async () => {
+    const original = console.log;
+    const log = vi.fn();
+
+    console.log = log;
+
+    try {
+      quietDevModeNotice(console);
+      await serverRender('<p>hi</p>');
+      await serverRender('<p>again</p>');
+      console.log('kept');
+    } finally {
+      console.log = original;
+    }
+
+    expect(log.mock.calls).toEqual([['kept']]);
+  }, 30_000);
 });
