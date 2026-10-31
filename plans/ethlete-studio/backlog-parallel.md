@@ -1130,3 +1130,14 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   from the import graph of the Studio parts (as the token check reads imported SDK design modules since
   `cb1d48d58`), so it stays current with no list to maintain; no `hideBaseParts` entry. The parts stay reachable and
   every check still runs on them. Builder 57 builds it after pilot slice 1.
+- **Q219 (Tom, 2026-10-31):** the `pages/sketches` inventory shows three red (undeclared) controls: `studio-menu` (rail
+  logo), the round picker `et-form-field`, and `pin`. Under the control-ownership rule (2026-10-30) they should belong
+  to the embedded parts (shell-main, sdk form-field, comment-pin). The builder finds the cause after pilot slice 1,
+  before Q218: a tool gap gets a tool fix; a page that draws the controls itself gets a sketch round that embeds the
+  real parts.
+- **Q220 (Tom, 2026-10-31):** the Tailwind canonical-class warnings (`w-[1440px]` to `w-360`, `size-[22px]` to
+  `size-5.5`, `before:w-[3px]` to `before:w-0.75`) are fixed in one mechanical pass (`canonicalizeCandidates`). Shot
+  diff 0 per part, then `design accept`, no sketch. A part whose shot changes goes through a sketch round.
+- **Q221 (Tom, 2026-10-31):** the 11 Studio CLASS-GLUED-INTERPOLATION warnings (`07145ced7`, `23870448c`) change the
+  look, so each is fixed in a sketch round of the part it belongs to; inbox and shell-main inside the pilot. No edit
+  outside a sketch.
