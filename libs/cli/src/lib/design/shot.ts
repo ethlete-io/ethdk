@@ -154,6 +154,8 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>, imports: Styleshe
   return [...seen].flatMap((module) => (module.id ? [module.id] : []));
 };
 
+const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
+
 /** One state of a part as a frame draws it: at a product preset, at a container width, or fitted to its content. */
 export type PartAddress = {
   product: string;
@@ -278,10 +280,10 @@ export const createPartShooter = (options: {
         };
         const png = await (
           crop
-            ? page.screenshot({ type: 'png', fullPage: true, clip: crop, timeout: DRAW_TIMEOUT_MS })
+            ? page.screenshot({ ...SHOT_OPTIONS, clip: crop })
             : rootBox
-              ? page.screenshot({ type: 'png', fullPage: true, clip: rootBox, timeout: DRAW_TIMEOUT_MS })
-              : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
+              ? page.screenshot({ ...SHOT_OPTIONS, clip: rootBox })
+              : page.screenshot(SHOT_OPTIONS)
         ).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
 

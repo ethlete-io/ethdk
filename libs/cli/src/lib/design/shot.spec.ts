@@ -379,6 +379,24 @@ describe('createPartShooter', () => {
     ]);
   });
 
+  it('draws a part and a call on a transparent page in either colour scheme, as a live frame does', async () => {
+    const { shots } = acme();
+    const part = 'product=acme&part=components/card&state=long';
+
+    for (const query of [
+      `${part}&scheme=dark`,
+      `${part}&scheme=light`,
+      `${part}&preset=phone`,
+      `${part}&clip=2,3,40,10`,
+    ]) {
+      expect(await ask(shots, query)).toMatchObject({ status: 200 });
+      expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+    }
+
+    expect(await ask(shots, 'call=acme/login&variant=a&width=1280')).toMatchObject({ status: 200 });
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+  });
+
   it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 

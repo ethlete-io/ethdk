@@ -212,6 +212,8 @@ const drawDiffs = (diff: string) => `(async (diffPixelsOf) => {
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
     const context = canvas.getContext('2d');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0);
     return context.getImageData(0, 0, canvas.width, canvas.height);
   };
@@ -249,6 +251,8 @@ const changedBoxesIn = (diff: string, urls: string[]) => `(async ([before, after
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
     const context = canvas.getContext('2d');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0);
     return context.getImageData(0, 0, canvas.width, canvas.height);
   };
