@@ -100,6 +100,21 @@ const FAB_STORY_ID = 'components-actions-button-fab--default';
 const WINDOW_CONTROL_STORY_ID = 'components-actions-button-window-control--default';
 const CHECKBOX_STORY_ID = 'components-forms-checkbox--default';
 
+test('filled icon buttons have a round shape and inset themed edge', async ({ page }) => {
+  const root = await openStory(page, ICON_STORY_ID);
+  const button = root.locator('button[et-icon-button][data-variant="filled"]').first();
+  const styles = await button.evaluate((el) => {
+    const style = getComputedStyle(el);
+
+    return { radius: style.borderRadius, shadow: style.boxShadow, width: style.width, height: style.height };
+  });
+
+  expect(styles.width).toBe(styles.height);
+  expect(parseFloat(styles.radius)).toBeGreaterThanOrEqual(parseFloat(styles.width) / 2);
+  expect(styles.shadow).toContain('inset');
+  expect(styles.shadow).toContain(await colorIn(button, 'var(--et-theme-color-ink-solid)'));
+});
+
 async function backgroundOf(locator: Locator): Promise<string> {
   return locator.evaluate((el) => getComputedStyle(el).backgroundColor);
 }

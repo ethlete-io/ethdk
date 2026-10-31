@@ -42,6 +42,8 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 - `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons - the single-icon flavors don't have it).
 - `pressedColor` (surface / icon buttons) swaps the color theme while the button is `pressed` - see below.
 
+Icon buttons are round by default. Their `filled` variant has an inset edge and uses the active theme color on hover.
+
 ### The surface color
 
 `color="surface"` resolves the button's colors from the [surface](/core/theming) it sits on instead of
@@ -178,7 +180,7 @@ One thing that stays your job: icon-only buttons have no text content, so always
 
 Base override tokens, all read by the surface button (`et-button`); the other flavors read only the ones their shape uses - the text button takes no padding or radius, and the icon button and FAB size themselves from their own tokens (below): `--et-button-border-radius`, `--et-button-border-width`, `--et-button-font-size`, `--et-button-font-weight`, `--et-button-gap`, `--et-button-icon-size` (the icon's font size, `1em` by default), `--et-button-line-height`, `--et-button-padding`, `--et-button-opacity-disabled`, `--et-button-cursor`, `--et-button-shadow` (a `box-shadow` value; the FAB sets it per variant).
 
-Surface, FAB and icon button also share one opacity-ramp recipe for their outline/tonal/transparent variants: `--et-button-variant-opacity-hover-delta` (default `0.08`), `--et-button-variant-opacity-focus-delta` (default `0.12`) and `--et-button-variant-opacity-active-delta` (default `0.16`) are added to (or, for the icon button's filled variant, subtracted from) each variant's resting `--et-theme-color-primary-opacity` to get its hover/focus/active tint.
+Surface, FAB and icon button also share one opacity-ramp recipe for their outline/tonal/transparent variants: `--et-button-variant-opacity-hover-delta` (default `0.08`), `--et-button-variant-opacity-focus-delta` (default `0.12`) and `--et-button-variant-opacity-active-delta` (default `0.16`) are added to each variant's resting `--et-theme-color-primary-opacity` to get its hover/focus/active tint. The filled icon button subtracts the focus delta for its focus tint.
 
 The two icon-shaped flavors size themselves from their own tokens instead of `padding`: the icon button takes `--et-icon-button-size` (diameter), `--et-icon-button-icon-size` and `--et-icon-button-border-radius`; the FAB takes `--et-fab-size` (collapsed diameter), `--et-fab-icon-size`, `--et-fab-label-font-size` and `--et-fab-contents-gap`. The split button adds `--et-split-button-divider-color`. The window-control button's `kind: 'close'` state colours come from `--et-window-control-button-close-background`, `--et-window-control-button-close-background-active` and `--et-window-control-button-close-color` (defaults: a Windows-style red with white text).
 
