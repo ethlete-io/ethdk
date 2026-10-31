@@ -939,12 +939,9 @@ export const SDK_CONTROLS = [
   'et-toggletip',
 ];
 
-const LIKELY_CONTROLS = [
-  ...SDK_CONTROLS,
-  ...NATIVE_CONTROLS,
-  '[tabindex]',
-  ...INTERACTIVE_ROLES.map((role) => `[role="${role}"]`),
-];
+const PLAIN_CONTROLS = [...NATIVE_CONTROLS, '[tabindex]', ...INTERACTIVE_ROLES.map((role) => `[role="${role}"]`)];
+
+const LIKELY_CONTROLS = [...SDK_CONTROLS, ...PLAIN_CONTROLS];
 
 const LOOK_PROPERTIES = [...COLOUR_PROPERTIES, 'opacity', 'box-shadow', 'font-weight', 'text-decoration-line'];
 
@@ -956,6 +953,8 @@ const FOCUS_CONTAINER = COMPOSITE_ROLES.flatMap((role) => [
   `[role="${role}"][tabindex="-1"]`,
   `[role="${role}"][aria-activedescendant]`,
 ]).join(', ');
+
+export const PLAIN_CONTROL_SELECTOR = `:is(${PLAIN_CONTROLS.join(', ')}):not(${FOCUS_CONTAINER})`;
 
 const discoverControls = `((root) => {
   const LIKELY = ${JSON.stringify(LIKELY_CONTROLS)};

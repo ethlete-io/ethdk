@@ -327,7 +327,10 @@ describe('renderIssuesOf', () => {
     writeFileSync(join(dir, 'same/components/bar/bar.ts'), source.replace('>Save<', '>Keep<'));
     writeFileSync(
       join(dir, 'added/components/bar/bar.ts'),
-      source.replace('</div>', '<input class="bar-name" placeholder="Name" /></div>'),
+      source.replace(
+        '</div>',
+        '<input class="bar-name" placeholder="Name" /><details><summary>More</summary></details><div class="bar-focus" tabindex="0">Pick</div><div role="listbox" tabindex="-1">Rows</div></div>',
+      ),
     );
     writeFileSync(join(dir, 'added/components/fresh/fresh.ts'), source);
 
@@ -351,6 +354,8 @@ describe('renderIssuesOf', () => {
     expect(linesOf(rendered.warnings)).toEqual(['- components/bar: button "Save"', '- components/bar: span "On"']);
     expect(linesOf(rendered.issues)).toEqual([
       'added components/bar: input.bar-name "Name"',
+      'added components/bar: summary "More"',
+      'added components/bar: div.bar-focus "Pick"',
       'added components/fresh: button "Save"',
       'added components/fresh: span "On"',
     ]);

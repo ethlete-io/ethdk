@@ -9,7 +9,13 @@ import {
   contrastExceptionsOf,
   contrastPairsOf,
 } from './contrast-check';
-import { controlStateGapsOf, isInteractionState, isControlPart, SDK_CONTROLS } from './complete';
+import {
+  controlStateGapsOf,
+  isInteractionState,
+  isControlPart,
+  PLAIN_CONTROL_SELECTOR,
+  SDK_CONTROLS,
+} from './complete';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -116,16 +122,7 @@ const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
-const CONTROL_INPUTS = [
-  'button',
-  'a[href]',
-  'input:not([type="hidden"])',
-  'select',
-  'textarea',
-  ...['button', 'checkbox', 'combobox', 'menuitem', 'option', 'radio', 'slider', 'switch', 'tab', 'textbox'].map(
-    (role) => `[role="${role}"]`,
-  ),
-].join(', ');
+const CONTROL_INPUTS = PLAIN_CONTROL_SELECTOR;
 
 const inspectFrame = (options: {
   fixed: boolean;
