@@ -3,6 +3,7 @@ import { Browser } from '../thumb';
 import {
   declaredControlsOf,
   findingKeyOf,
+  FoundControl,
   FrameAddress,
   FrameBox,
   inventoryIdsOf,
@@ -21,8 +22,11 @@ import {
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { SystemModules } from './system-modules';
 
-/** `declared` is marked and declared; `undeclared` (red) is a control without a declaration; `unclassified` (amber) only looks interactive. */
-export type InventoryStatus = 'declared' | 'undeclared' | 'unclassified';
+/**
+ * `declared` is marked and declared; `owned` is drawn by the embedded part `owner`, which declares it; `undeclared`
+ * (red) is a control without a declaration; `unclassified` (amber) only looks interactive.
+ */
+export type InventoryStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
 
 /** One numbered control in a rest frame. A control keeps its number in every frame that draws it. */
 export type InventoryControl = {
@@ -32,6 +36,7 @@ export type InventoryControl = {
   kind: string;
   inputs: string[];
   surfaces: string[];
+  owner: string | null;
   states: number;
   box: FrameBox | null;
 };
@@ -62,10 +67,19 @@ const shotOf = (options: { product: string; part: string; address: FrameAddress 
   return `${SHOT_PATH}?${search.toString()}`;
 };
 
+const isOpen = (status: InventoryStatus) => status === 'undeclared' || status === 'unclassified';
+
 const byPlace = (a: { box: FrameBox | null }, b: { box: FrameBox | null }) =>
   (a.box?.y ?? Infinity) - (b.box?.y ?? Infinity) || (a.box?.x ?? Infinity) - (b.box?.x ?? Infinity);
 
-/** Numbers the declared, undeclared and unclassified controls each rest frame draws, top to bottom. */
+/** A control an embedded part draws that no marked control of the frame already stands for. */
+const isOwnedOf = (frame: SeenFrame) => (found: FoundControl) =>
+  found.kind === 'control' &&
+  (found.owner ?? null) !== null &&
+  found.marked === null &&
+  !found.within.some((id) => frame.controls.some((control) => control.id === id));
+
+/** Numbers the declared, owned, undeclared and unclassified controls each rest frame draws, top to bottom. */
 export const inventoryFramesOf = (options: {
   product: string;
   part: string;
@@ -89,9 +103,20 @@ export const inventoryFramesOf = (options: {
           kind: known?.kind ?? '',
           inputs: known?.input ?? [],
           surfaces: Object.keys(known?.surfaces ?? {}),
+          owner: null,
           box: control.box ?? null,
         };
       }),
+      ...(frame.found ?? []).filter(isOwnedOf(frame)).map((found) => ({
+        key: `owned ${found.owner} ${found.path}`,
+        id: found.path,
+        status: 'owned' as const,
+        kind: found.what,
+        inputs: [],
+        surfaces: [],
+        owner: found.owner ?? null,
+        box: found.box ?? null,
+      })),
       ...(frame.found ?? []).filter(isFinding).map((found) => ({
         key: findingKeyOf(found),
         id: found.path,
@@ -99,6 +124,7 @@ export const inventoryFramesOf = (options: {
         kind: found.what,
         inputs: [],
         surfaces: [],
+        owner: null,
         box: found.box ?? null,
       })),
     ].sort(byPlace),
@@ -162,7 +188,7 @@ export const inventoryOf = async (options: {
   const state = inventoryStateOf({ approval: approval ?? undefined, ids, hash: sight.hash });
   const findings = new Set(
     frames.flatMap((frame) =>
-      frame.controls.filter((control) => control.status !== 'declared').map((control) => control.number),
+      frame.controls.filter((control) => isOpen(control.status)).map((control) => control.number),
     ),
   ).size;
 

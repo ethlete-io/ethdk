@@ -125,10 +125,75 @@ describe('inventoryFramesOf', () => {
         kind: 'disclosure',
         inputs: ['pointer'],
         surfaces: ['body'],
+        owner: null,
         states: 2,
         box: box(50),
       },
     ]);
+  });
+
+  it('lists the controls an embedded part draws as owned, so a page of owned buttons shows them and stays approvable', () => {
+    const box = (y: number) => ({ x: 0, y, width: 10, height: 10 });
+    const owned = (path: string, y: number) => ({
+      kind: 'control' as const,
+      what: 'button',
+      path,
+      marked: null,
+      within: [],
+      owner: 'components/button',
+      box: box(y),
+    });
+    const frames = inventoryFramesOf({
+      product: 'app-a',
+      part: 'pages/start',
+      controls: undefined,
+      frames: [
+        {
+          state: 'empty',
+          interaction: null,
+          controls: [],
+          surfaces: [],
+          found: [owned('main > et-button.open', 10), owned('main > et-button.other', 30)],
+        },
+      ],
+      addresses: [{ state: 'empty', preset: 'desktop', width: null }],
+    });
+
+    expect(frames[0]?.controls.map(({ number, id, status, kind, owner }) => [number, id, status, kind, owner])).toEqual(
+      [
+        [1, 'main > et-button.open', 'owned', 'button', 'components/button'],
+        [2, 'main > et-button.other', 'owned', 'button', 'components/button'],
+      ],
+    );
+  });
+
+  it('does not list an owned control twice inside a marked control of the page', () => {
+    const frames = inventoryFramesOf({
+      product: 'app-a',
+      part: 'pages/home',
+      controls: { picker: { kind: 'select', input: ['pointer'] } },
+      frames: [
+        {
+          state: 'rest',
+          interaction: null,
+          controls: [{ id: 'picker', forced: [] }],
+          surfaces: [],
+          found: [
+            {
+              kind: 'control',
+              what: 'button',
+              path: 'main > button',
+              marked: null,
+              within: ['picker'],
+              owner: 'components/select',
+            },
+          ],
+        },
+      ],
+      addresses: [{ state: 'rest', preset: 'desktop', width: null }],
+    });
+
+    expect(frames[0]?.controls.map(({ id, status }) => [id, status])).toEqual([['picker', 'declared']]);
   });
 });
 

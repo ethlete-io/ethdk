@@ -116,7 +116,8 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
               <span class="flex min-w-0 flex-col">
                 <span class="font-mono break-all text-text">{{ control.id }}</span>
                 <span class="text-text-muted">
-                  {{ control.status }} · {{ control.kind }} · {{ control.states }}
+                  {{ control.owner ? 'owned by ' + control.owner : control.status }} · {{ control.kind }} ·
+                  {{ control.states }}
                   {{ control.states === 1 ? 'state' : 'states' }}
                 </span>
                 @if (control.inputs.length) {

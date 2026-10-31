@@ -2,8 +2,11 @@ import { fromFetch } from 'rxjs/fetch';
 import { Observable, from, map, switchMap } from 'rxjs';
 import { ProductAddress, designAnswer$, designJson } from './design';
 
-/** `declared` is green; `undeclared` (red) has no declaration; `unclassified` (amber) only looks interactive. */
-export type InventoryStatus = 'declared' | 'undeclared' | 'unclassified';
+/**
+ * `declared` is green; `owned` is drawn and declared by the embedded part `owner`; `undeclared` (red) has no
+ * declaration; `unclassified` (amber) only looks interactive.
+ */
+export type InventoryStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
 
 /** In the shot's own pixels. */
 export type InventoryBox = { x: number; y: number; width: number; height: number };
@@ -16,6 +19,7 @@ export type InventoryControl = {
   kind: string;
   inputs: string[];
   surfaces: string[];
+  owner: string | null;
   states: number;
   box: InventoryBox | null;
 };

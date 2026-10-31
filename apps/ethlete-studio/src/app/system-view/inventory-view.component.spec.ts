@@ -12,6 +12,7 @@ const control = (number: number, id: string, status: InventoryControl['status'])
   kind: 'button',
   inputs: ['pointer'],
   surfaces: ['raised'],
+  owner: status === 'owned' ? 'components/button' : null,
   states: 3,
   box: { x: number * 100, y: 10, width: 50, height: 20 },
 });
@@ -20,7 +21,7 @@ const inventoryOf = (controls: InventoryControl[]): Inventory => ({
   part: 'pages/merge',
   hash: 'h1',
   ids: controls.map((listed) => listed.id),
-  findings: controls.filter((listed) => listed.status !== 'declared').length,
+  findings: controls.filter((listed) => listed.status === 'undeclared' || listed.status === 'unclassified').length,
   approval: null,
   state: { state: 'none' },
   reason: null,
@@ -115,6 +116,15 @@ describe('InventoryViewComponent', () => {
       providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
     });
     expect(approveButton((await render(inventoryOf([control(1, 'row', 'unclassified')]))).element).disabled).toBe(true);
+  });
+
+  it('lists a control an embedded part owns with its owner and keeps approve enabled', async () => {
+    const { element } = await render(inventoryOf([control(1, 'main > et-button', 'owned')]));
+    const entry = element.querySelector<HTMLElement>('[data-inventory-entry]');
+
+    expect(entry?.dataset['status']).toBe('owned');
+    expect(entry?.textContent).toContain('owned by components/button');
+    expect(approveButton(element).disabled).toBe(false);
   });
 
   it('posts the part, the shown hash and the designer, and shows the approval', async () => {

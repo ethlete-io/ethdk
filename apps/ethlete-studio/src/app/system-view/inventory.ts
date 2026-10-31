@@ -13,6 +13,7 @@ export const INVENTORY_APPROVER = 'designer';
 /** `null` keeps the default (brand, green) theme. */
 export const INVENTORY_TONES: Record<InventoryStatus, ColorThemeType | null> = {
   declared: null,
+  owned: null,
   undeclared: 'error',
   unclassified: 'warning',
 };
@@ -30,7 +31,9 @@ export const inventoryControlsOf = (inventory: Inventory): InventoryControl[] =>
 
 /** Why the approve button is off, or `null` when the inventory can be approved. */
 export const approveBlockOf = (inventory: Inventory): string | null => {
-  const open = inventoryControlsOf(inventory).filter((control) => control.status !== 'declared').length;
+  const open = inventoryControlsOf(inventory).filter(
+    (control) => control.status === 'undeclared' || control.status === 'unclassified',
+  ).length;
 
   if (open > 0 || inventory.findings > 0)
     return `${Math.max(open, inventory.findings)} control(s) are undeclared or unclassified`;
