@@ -1238,5 +1238,12 @@
     "note": "Q164 controls declared, invisible (0/255)",
     "hash": "93a2fcc04810db4c",
     "at": "2026-10-31T19:58:03.433Z"
+  },
+  {
+    "part": "pages/merge",
+    "by": "claude-opus-5-5",
+    "note": "UNDEFINED-CLASS: drop the dead mg-d-merge class, invisible (0/255)",
+    "hash": "2e67dc264c81d2c8",
+    "at": "2026-10-31T19:58:47.840Z"
   }
 ]

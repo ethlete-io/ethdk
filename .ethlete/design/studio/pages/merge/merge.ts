@@ -65,7 +65,7 @@ const panelOf = (unchanged: boolean) =>
       ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
     </div>
     <span class="flex-1"></span>
-    <div class="mg-d-merge flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">${merge.body}</div>
+    <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">${merge.body}</div>
   </div>`;
 
 export default definePart<Props>({
