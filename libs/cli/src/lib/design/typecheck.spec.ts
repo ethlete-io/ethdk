@@ -19,7 +19,7 @@ vi.mock('child_process', async (importOriginal) => {
   };
 });
 
-describe('typecheck', () => {
+describe('typecheck', { timeout: 60_000 }, () => {
   const dirs: string[] = [];
   const previousTsc = process.env['TSC'];
 

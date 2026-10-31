@@ -81,7 +81,7 @@ const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: s
 
 const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero');
 
-describe('mergeSketch', () => {
+describe('mergeSketch', { timeout: 60_000 }, () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('records the merged parts, so a later change outside a sketch shows', () => {

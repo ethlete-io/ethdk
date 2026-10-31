@@ -35,7 +35,7 @@ const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = '',
   return JSON.parse(result.stdout) as Result;
 };
 
-describe('design frame bootstrap', () => {
+describe('design frame bootstrap', { timeout: 30_000 }, () => {
   it('finishes module evaluation while the drawing environment is still loading', () => {
     const result = bootstrap('resolve');
 

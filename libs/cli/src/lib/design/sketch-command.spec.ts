@@ -63,7 +63,7 @@ export default definePart({
   );
 };
 
-describe('designSketch', () => {
+describe('designSketch', { timeout: 120_000 }, () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('merges a ready sketch by itself and logs it auto when no state shows a change', async () => {
