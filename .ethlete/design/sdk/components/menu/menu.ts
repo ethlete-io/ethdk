@@ -83,9 +83,10 @@ export default definePart({
   controls: {
     item: { kind: 'row', input: ['pointer', 'keyboard'], disabled: true },
   },
+  frame: (body) => `<div class="menu-frame">${body}</div>`,
   render: ({ rows, forced }: Props) =>
     drawing({
-      body: `<div class="menu-frame">${menu({ rows: withForced(rows, forced), color: 'brand' })}</div>`,
+      body: menu({ rows: withForced(rows, forced), color: 'brand' }),
       styles: [menuStyles, edge].join('\n'),
     }),
 });

@@ -78,9 +78,10 @@ export default definePart({
     ],
   },
   widths: [320, 360, 640],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${slider(props.field)}</div>`,
+      body: slider(props.field),
       styles: [sliderStyles, frame].join('\n'),
     }),
 });

@@ -79,9 +79,10 @@ export default definePart({
     close: { kind: 'button', input: ['pointer', 'keyboard'] },
     action: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="banner-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="banner-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [bannerStyles, frame].join('\n'),
     }),
 });

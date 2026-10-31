@@ -67,10 +67,11 @@ export default definePart({
     'focus-visible': { card: { ...finished, interactive: true, force: 'focus-visible' } },
   },
   widths: [280, 480, 720],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
       // Lib bug: et-match-score clips its 25px digit box to 24px (overflow: hidden at line-height 1.2), reported.
-      body: `<div class="t-frame">${matchCard(props.card)}</div>`,
+      body: matchCard(props.card),
       styles: [matchStyles, frame].join('\n'),
     }),
 });

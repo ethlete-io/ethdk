@@ -30,9 +30,14 @@ export default definePart({
   controls: {
     action: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${streamPlayerSlot({ state: props.state, player: VIDEO, buttonAttributes: buttonAttributes(props.button) }).replace('<et-spinner ', '<et-spinner data-et-skip="CLIPPED" ')}</div>`,
+      body: streamPlayerSlot({
+        state: props.state,
+        player: VIDEO,
+        buttonAttributes: buttonAttributes(props.button),
+      }).replace('<et-spinner ', '<et-spinner data-et-skip="CLIPPED" '),
       styles: [streamStyles, frame].join('\n'),
     }),
 });

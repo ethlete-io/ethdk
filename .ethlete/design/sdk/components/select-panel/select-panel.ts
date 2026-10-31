@@ -116,9 +116,10 @@ export default definePart({
   controls: {
     option: { kind: 'row', input: ['pointer', 'keyboard'], disabled: true },
   },
+  frame: (body) => `<div class="select-panel-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="select-panel-frame">${props.panel ? groupedPanel(props) : singleOption(props)}</div>`,
+      body: props.panel ? groupedPanel(props) : singleOption(props),
       styles: [selectStyles, styles].join('\n'),
     }),
 });

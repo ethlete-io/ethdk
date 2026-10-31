@@ -88,9 +88,10 @@ export default definePart({
     'error-bare': { error: 'bare' },
   },
   widths: [480],
+  frame: (body) => `<div class="picture-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="picture-frame">${body(props)}</div>`,
+      body: body(props),
       styles: [skeletonStyles, pictureStyles, frame].join('\n'),
     }),
 });

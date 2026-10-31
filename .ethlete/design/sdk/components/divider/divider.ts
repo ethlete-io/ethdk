@@ -35,9 +35,10 @@ export default definePart({
     list: { set: 'list' },
   },
   widths: [480],
+  frame: (body) => `<div class="divider-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="divider-frame">${body(props)}</div>`,
+      body: body(props),
       styles: [dividerStyles, frame].join('\n'),
     }),
 });

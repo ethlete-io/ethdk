@@ -68,13 +68,14 @@ export default definePart({
     'long-title': { layout: 'spans', actions: true, longTitle: true },
   },
   widths: [480],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${grid({
+      body: grid({
         items: itemsOf(props),
         actions: props.actions,
         ghost: props.drag ? { col: 1, row: 1, colSpan: 1, rowSpan: 1 } : undefined,
-      })}</div>`,
+      }),
       styles: [gridStyles, frame].join('\n'),
     }),
 });

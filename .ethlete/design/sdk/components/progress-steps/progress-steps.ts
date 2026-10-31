@@ -83,9 +83,10 @@ export default definePart({
     complete: { kind: 'button', input: ['pointer', 'keyboard'] },
     upcoming: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="progress-steps-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="progress-steps-frame">${steps(props)}</div>`,
+      body: steps(props),
       styles: [progressStepsStyles, frame].join('\n'),
     }),
 });

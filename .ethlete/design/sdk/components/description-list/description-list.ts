@@ -45,9 +45,10 @@ export default definePart({
     'grouped-stacked': { items: GROUPED, variant: 'stacked' },
   },
   widths: [480],
+  frame: (body) => `<div class="description-list-frame">${body}</div>`,
   render: ({ variant, items = STORY }: Props) =>
     drawing({
-      body: `<div class="description-list-frame">${descriptionList({ items, variant })}</div>`,
+      body: descriptionList({ items, variant }),
       styles: [descriptionListStyles, frame].join('\n'),
     }),
 });

@@ -56,9 +56,10 @@ export default definePart({
     ],
   },
   widths: [320, 360, 640],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${otpInput(props.field)}</div>`,
+      body: otpInput(props.field),
       styles: [otpInputStyles, frame].join('\n'),
     }),
 });

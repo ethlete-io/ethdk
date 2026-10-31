@@ -48,9 +48,10 @@ export default definePart({
   controls: {
     action: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="empty-state-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="empty-state-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [emptyStateStyles, frame].join('\n'),
     }),
 });

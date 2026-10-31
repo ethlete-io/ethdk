@@ -73,9 +73,10 @@ export default definePart({
     link: { kind: 'button', input: ['pointer', 'keyboard'] },
     overflow: { kind: 'disclosure', input: ['pointer', 'keyboard'], surfaces: { body: 'overflow-open' } },
   },
+  frame: (body) => `<div class="breadcrumb-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="breadcrumb-frame">${props.long ? longMarkup(props) : breadcrumb({ crumbs: shortTrail(props) })}</div>`,
+      body: props.long ? longMarkup(props) : breadcrumb({ crumbs: shortTrail(props) }),
       styles: [breadcrumbStyles, frame].join('\n'),
     }),
 });

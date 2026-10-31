@@ -60,9 +60,10 @@ export default definePart({
   },
   checks: { skip: ['CLIPPED'] },
   widths: [480],
+  frame: (body) => `<div class="loader-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="loader-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [loaderStyles, frame].join('\n'),
     }),
 });

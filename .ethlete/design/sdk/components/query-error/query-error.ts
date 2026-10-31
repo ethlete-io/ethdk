@@ -112,9 +112,10 @@ export default definePart({
   controls: {
     retry: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="query-error-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="query-error-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [queryErrorStyles, frame].join('\n'),
     }),
 });

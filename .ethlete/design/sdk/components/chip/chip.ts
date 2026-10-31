@@ -68,9 +68,10 @@ export default definePart({
     chip: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
     remove: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
   },
+  frame: (body) => `<div class="chip-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="chip-frame">${props.row ? chipRow(ROW.map((each) => draw(each))) : draw(props)}</div>`,
+      body: props.row ? chipRow(ROW.map((each) => draw(each))) : draw(props),
       styles: [chipStyles, frame].join('\n'),
     }),
 });

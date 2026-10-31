@@ -42,9 +42,10 @@ export default definePart({
     static: { form: 'card', animated: false },
   },
   widths: [480],
+  frame: (body) => `<div class="skeleton-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="skeleton-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [skeletonStyles, frame].join('\n'),
     }),
 });

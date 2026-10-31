@@ -90,9 +90,10 @@ export default definePart({
     'pie-long-label': { kind: 'pie', longLabel: true },
   },
   widths: [480],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [chartStyles, frame].join('\n'),
     }),
 });

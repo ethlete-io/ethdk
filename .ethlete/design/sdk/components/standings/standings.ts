@@ -122,9 +122,10 @@ export default definePart({
     'pick-locked': { view: 'pick', locked: true },
   },
   widths: [480, 800],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${props.view === 'table' ? table(props) : pick(props)}</div>`,
+      body: props.view === 'table' ? table(props) : pick(props),
       styles: [standingsStyles, frame].join('\n'),
     }),
 });

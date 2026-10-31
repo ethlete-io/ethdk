@@ -152,9 +152,10 @@ export default definePart({
     'align-center': { center: true },
   },
   widths: [480],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [tableStyles, frame].join('\n'),
     }),
 });

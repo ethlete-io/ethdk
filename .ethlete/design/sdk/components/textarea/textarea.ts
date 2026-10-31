@@ -54,11 +54,12 @@ export default definePart({
     'size-lg': message({ value: VALUE, size: 'lg' }),
   },
   widths: [320, 360, 640],
+  frame: (body, props) => `<div class="t-frame${props.scrolled ? ' t-scrolled' : ''}">${body}</div>`,
   render: (props: Props) =>
     drawing({
       body: props.scrolled
-        ? `<div class="t-frame t-scrolled">${textareaField(props.field).replace('<div class="et-form-field-control-frame"', '$& data-et-skip="CLIPPED"')}</div>`
-        : `<div class="t-frame">${textareaField(props.field)}</div>`,
+        ? textareaField(props.field).replace('<div class="et-form-field-control-frame"', '$& data-et-skip="CLIPPED"')
+        : textareaField(props.field),
       styles: [textareaFieldStyles, frame].join('\n'),
     }),
 });

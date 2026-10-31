@@ -66,9 +66,10 @@ export default definePart({
     'single-slide': { count: 1 },
   },
   widths: [480],
+  frame: (body) => `<div class="carousel-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="carousel-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [carouselStyles, frame].join('\n'),
     }),
 });

@@ -79,9 +79,10 @@ export default definePart({
   controls: Object.fromEntries(
     BUTTONS.map(({ control }) => [control, { kind: 'button', input: ['pointer', 'keyboard'] }]),
   ),
+  frame: (body) => `<div class="toolbar-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="toolbar-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [toolbarStyles, frame].join('\n'),
     }),
 });

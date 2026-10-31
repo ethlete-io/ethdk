@@ -67,12 +67,13 @@ export default definePart({
     },
   },
   widths: [480],
+  frame: (body) => `<div class="avatar-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="avatar-frame">${avatarRow([
+      body: avatarRow([
         ...(props.avatars ?? []).map((each) => avatar(each)),
         ...(props.groups ?? []).map((each) => avatarGroup(each.avatars, each.maxVisible)),
-      ])}</div>`,
+      ]),
       styles: [avatarStyles, frame].join('\n'),
     }),
 });

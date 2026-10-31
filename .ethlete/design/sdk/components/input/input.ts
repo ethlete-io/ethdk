@@ -71,9 +71,10 @@ export default definePart({
     'align-center': email({ value: VALUE, textAlign: 'center' }),
   },
   widths: [320, 360, 640],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${textInput(props.field)}</div>`,
+      body: textInput(props.field),
       styles: [textInputStyles, frame].join('\n'),
     }),
 });

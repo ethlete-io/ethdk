@@ -485,5 +485,299 @@
     "note": "merged without a pick: allowed by Q242",
     "hash": "c61b05dccf5899dc",
     "at": "2026-10-31T22:45:47.010Z"
+  },
+  {
+    "part": "components/accordion",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "e8aee655bae00a4e",
+    "at": "2026-10-31T22:52:10.074Z"
+  },
+  {
+    "part": "components/anchored-dialog",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "02e3cce0bd8f11b6",
+    "at": "2026-10-31T22:52:10.075Z"
+  },
+  {
+    "part": "components/avatar",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "1252da777499aba9",
+    "at": "2026-10-31T22:52:10.084Z"
+  },
+  {
+    "part": "components/badge",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "c5987a95f8f0899c",
+    "at": "2026-10-31T22:52:10.084Z"
+  },
+  {
+    "part": "components/banner",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "304a4eca399be5df",
+    "at": "2026-10-31T22:52:10.084Z"
+  },
+  {
+    "part": "components/bracket",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "619e74fa7a872701",
+    "at": "2026-10-31T22:52:10.085Z"
+  },
+  {
+    "part": "components/breadcrumb",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "2dbb6a7bb9615c19",
+    "at": "2026-10-31T22:52:10.085Z"
+  },
+  {
+    "part": "components/calendar",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "8785c8cdfa63539a",
+    "at": "2026-10-31T22:52:10.085Z"
+  },
+  {
+    "part": "components/card",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "6aa9b5fa24781dfb",
+    "at": "2026-10-31T22:52:10.085Z"
+  },
+  {
+    "part": "components/carousel",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "9ffe4c38855ebd5e",
+    "at": "2026-10-31T22:52:10.085Z"
+  },
+  {
+    "part": "components/chart",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "ac3f5741017eb4dc",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/chip",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "33788c7f782dfa16",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/copy-button",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "11d4ec41b64ab055",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/description-list",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "039eb367dca8ed8b",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/dialog",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "fae8a8006ea0d4d3",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/divider",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "bae2ad95922465b0",
+    "at": "2026-10-31T22:52:10.086Z"
+  },
+  {
+    "part": "components/empty-state",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "82096f95c2172edb",
+    "at": "2026-10-31T22:52:10.087Z"
+  },
+  {
+    "part": "components/floating-action",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "10a89705a6724bc2",
+    "at": "2026-10-31T22:52:10.087Z"
+  },
+  {
+    "part": "components/grid",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "58b5adc87403095e",
+    "at": "2026-10-31T22:52:10.087Z"
+  },
+  {
+    "part": "components/input",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "a9df86f7dd61216c",
+    "at": "2026-10-31T22:52:10.088Z"
+  },
+  {
+    "part": "components/kbd",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "0e92b58d17de3983",
+    "at": "2026-10-31T22:52:10.088Z"
+  },
+  {
+    "part": "components/loader",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "5bddc349d01016df",
+    "at": "2026-10-31T22:52:10.088Z"
+  },
+  {
+    "part": "components/masonry",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "e966715c2172c6ec",
+    "at": "2026-10-31T22:52:10.088Z"
+  },
+  {
+    "part": "components/match",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "7f8a33e5ad380ec5",
+    "at": "2026-10-31T22:52:10.089Z"
+  },
+  {
+    "part": "components/menu",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "9d82ebbe192d70b7",
+    "at": "2026-10-31T22:52:10.089Z"
+  },
+  {
+    "part": "components/notification",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "5a05c3ef09a0a214",
+    "at": "2026-10-31T22:52:10.089Z"
+  },
+  {
+    "part": "components/otp-input",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "541080526b4c9356",
+    "at": "2026-10-31T22:52:10.089Z"
+  },
+  {
+    "part": "components/pagination",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "aae2006c76f4a069",
+    "at": "2026-10-31T22:52:10.089Z"
+  },
+  {
+    "part": "components/picture",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "fd789db9d6ae6a88",
+    "at": "2026-10-31T22:52:10.090Z"
+  },
+  {
+    "part": "components/progress-steps",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "0d136d12b1e1a3cd",
+    "at": "2026-10-31T22:52:10.090Z"
+  },
+  {
+    "part": "components/query-error",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "d45b0523e12050af",
+    "at": "2026-10-31T22:52:10.090Z"
+  },
+  {
+    "part": "components/scheduler",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "692d47741cd986bb",
+    "at": "2026-10-31T22:52:10.090Z"
+  },
+  {
+    "part": "components/scrollbar",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "92318d9633c7b8e3",
+    "at": "2026-10-31T22:52:10.091Z"
+  },
+  {
+    "part": "components/select-panel",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "1a6eb0c5be0f1040",
+    "at": "2026-10-31T22:52:10.091Z"
+  },
+  {
+    "part": "components/skeleton",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "4540a543b4126962",
+    "at": "2026-10-31T22:52:10.091Z"
+  },
+  {
+    "part": "components/slider",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "a92b6bea21a6f5fd",
+    "at": "2026-10-31T22:52:10.091Z"
+  },
+  {
+    "part": "components/standings",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "46256b5151c3d9d9",
+    "at": "2026-10-31T22:52:10.091Z"
+  },
+  {
+    "part": "components/stat-tile",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "e9fae2c8fab9eab1",
+    "at": "2026-10-31T22:52:10.092Z"
+  },
+  {
+    "part": "components/stream",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "17760abcf3d4d98c",
+    "at": "2026-10-31T22:52:10.092Z"
+  },
+  {
+    "part": "components/table",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "c5df0dfe12037f23",
+    "at": "2026-10-31T22:52:10.092Z"
+  },
+  {
+    "part": "components/textarea",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "4470095a68da034a",
+    "at": "2026-10-31T22:52:10.092Z"
+  },
+  {
+    "part": "components/toolbar",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
+    "hash": "8963a8ba9a488f1b",
+    "at": "2026-10-31T22:52:10.093Z"
   }
 ]

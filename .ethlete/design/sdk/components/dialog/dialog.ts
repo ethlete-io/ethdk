@@ -70,9 +70,10 @@ export default definePart({
     cancel: { kind: 'button', input: ['pointer', 'keyboard'] },
     confirm: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="dialog-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="dialog-frame">${overlayBackdrop(render(props))}</div>`,
+      body: overlayBackdrop(render(props)),
       styles: [dialogStyles, edge].join('\n'),
     }),
 });

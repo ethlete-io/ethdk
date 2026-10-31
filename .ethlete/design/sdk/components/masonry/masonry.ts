@@ -29,14 +29,15 @@ export default definePart({
     rtl: { items: 'rest', columnWidth: 130, dir: 'rtl' },
   },
   widths: [480],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${masonry({
+      body: masonry({
         items: ITEMS[props.items],
         width: props.width,
         columnWidth: props.columnWidth,
         dir: props.dir,
-      })}</div>`,
+      }),
       styles: [masonryStyles, frame].join('\n'),
     }),
 });

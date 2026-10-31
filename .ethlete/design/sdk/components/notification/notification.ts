@@ -98,9 +98,10 @@ export default definePart({
     action: { kind: 'button', input: ['pointer', 'keyboard'] },
     secondary: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="notification-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="notification-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [notificationStyles, edge].join('\n'),
     }),
 });

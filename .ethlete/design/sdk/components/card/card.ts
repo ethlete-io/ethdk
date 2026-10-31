@@ -53,9 +53,10 @@ export default definePart({
     cancel: { kind: 'button', input: ['pointer', 'keyboard'] },
     confirm: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="card-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="card-frame">${card({ variant: props.variant, content: content(props) })}</div>`,
+      body: card({ variant: props.variant, content: content(props) }),
       styles: [cardStyles, frame].join('\n'),
     }),
 });

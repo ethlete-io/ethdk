@@ -67,9 +67,10 @@ export default definePart({
   controls: {
     item: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
   },
+  frame: (body) => `<div class="pagination-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="pagination-frame">${pagination({ ...props, items: items(props) })}</div>`,
+      body: pagination({ ...props, items: items(props) }),
       styles: [paginationStyles, edge].join('\n'),
     }),
 });

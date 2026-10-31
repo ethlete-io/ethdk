@@ -56,9 +56,13 @@ export default definePart({
     shipping: { kind: 'button', input: ['pointer', 'keyboard'] },
     archive: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="accordion-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="accordion-frame">${accordionGroup(items(props)).replaceAll('inert=""><div class="et-accordion-panel-clip"', 'inert=""><div data-et-skip="CLIPPED" class="et-accordion-panel-clip"')}</div>`,
+      body: accordionGroup(items(props)).replaceAll(
+        'inert=""><div class="et-accordion-panel-clip"',
+        'inert=""><div data-et-skip="CLIPPED" class="et-accordion-panel-clip"',
+      ),
       styles: [accordionStyles, frame].join('\n'),
     }),
 });

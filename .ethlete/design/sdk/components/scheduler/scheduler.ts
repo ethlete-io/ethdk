@@ -231,9 +231,10 @@ export default definePart({
     agenda: { view: 'agenda' },
   },
   widths: [560, 800, 1200],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${skipClipped(render(props))}</div>`,
+      body: skipClipped(render(props)),
       styles: [schedulerStyles, frame].join('\n'),
     }),
 });

@@ -33,7 +33,7 @@ const filter = (apply: string) => `<header class="anchored-dialog-header"><span>
 
 export default definePart({
   note: 'An open popover anchored to its trigger: surface pane, arrow, free content',
-  madeBy: ['claude-sonnet-5-5'],
+  madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   states: {
     'open-points': { kind: 'open-points', modal: false },
     filter: { kind: 'filter', placement: 'bottom-start' },
@@ -45,20 +45,20 @@ export default definePart({
     option: { kind: 'row', input: ['pointer', 'keyboard'] },
     apply: { kind: 'button', part: 'components/button' },
   },
+  frame: (body, { placement = 'bottom-end' }) =>
+    `<div class="anchored-dialog-frame" style="--anchored-dialog-justify:${placement.endsWith('start') ? 'flex-start' : 'flex-end'}"><div data-et-anchor>${body}</div></div>`,
   render: async ({ kind = 'open-points', content, label, placement = 'bottom-end', arrow, modal = true }: Props) => {
     const apply = await button.render({ label: 'Apply', variant: 'filled' });
     const pane = content ?? (kind === 'filter' ? filter(apply.body) : openPoints());
 
     return drawing({
-      body: `<div class="anchored-dialog-frame" style="--anchored-dialog-justify:${placement.endsWith('start') ? 'flex-start' : 'flex-end'}"><div data-et-anchor>${anchoredDialog(
-        {
-          label: label ?? (kind === 'filter' ? 'Filter' : 'Open points'),
-          placement,
-          arrow,
-          modal,
-          content: pane,
-        },
-      )}</div></div>`,
+      body: anchoredDialog({
+        label: label ?? (kind === 'filter' ? 'Filter' : 'Open points'),
+        placement,
+        arrow,
+        modal,
+        content: pane,
+      }),
       styles: [anchoredDialogStyles, apply.styles, edge].join('\n'),
     });
   },

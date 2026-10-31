@@ -115,9 +115,10 @@ export default definePart({
     'auto-hidden': { layout: 'vertical', visible: false },
   },
   widths: [480],
+  frame: (body, props) => `<div class="scrollbar-frame"${props.layout === 'rtl' ? ' dir="rtl"' : ''}>${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="scrollbar-frame"${props.layout === 'rtl' ? ' dir="rtl"' : ''}><div class="scrollbar-wrapper">${render(props)}</div></div>`,
+      body: `<div class="scrollbar-wrapper">${render(props)}</div>`,
       styles: [scrollbarStyles, frame].join('\n'),
     }),
 });

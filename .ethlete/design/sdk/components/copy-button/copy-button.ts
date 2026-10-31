@@ -51,9 +51,10 @@ export default definePart({
     icon: { kind: 'button', input: ['pointer', 'keyboard'] },
     text: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
+  frame: (body) => `<div class="copy-button-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="copy-button-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [copyButtonStyles, frame].join('\n'),
     }),
 });

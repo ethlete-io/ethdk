@@ -44,9 +44,10 @@ export default definePart({
     'outline-sizes': sizes('outline'),
   },
   widths: [480],
+  frame: (body) => `<div class="badge-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="badge-frame">${badgeRow(props.badges.map((each) => badge(each)))}</div>`,
+      body: badgeRow(props.badges.map((each) => badge(each))),
       styles: [badgeStyles, frame].join('\n'),
     }),
 });

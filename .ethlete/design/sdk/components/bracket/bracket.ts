@@ -135,9 +135,10 @@ export default definePart({
     ],
   },
   widths: [1040, 1680],
+  frame: (body) => `<div class="t-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [bracketStyles, frame].join('\n'),
     }),
 });

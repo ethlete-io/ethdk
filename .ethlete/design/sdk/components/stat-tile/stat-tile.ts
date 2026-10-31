@@ -76,9 +76,10 @@ export default definePart({
     loading: { form: 'loading' },
   },
   widths: [480],
+  frame: (body) => `<div class="stat-tile-frame">${body}</div>`,
   render: ({ form }: Props) =>
     drawing({
-      body: `<div class="stat-tile-frame">${card({ content: statTile(FORMS[form]) })}</div>`,
+      body: card({ content: statTile(FORMS[form]) }),
       styles: [cardStyles, statTileStyles, frame].join('\n'),
     }),
 });

@@ -49,9 +49,10 @@ export default definePart({
     'shortcut-list-other': { form: 'shortcut-list', platform: 'other' },
   },
   widths: [480],
+  frame: (body) => `<div class="kbd-frame">${body}</div>`,
   render: (props: Props) =>
     drawing({
-      body: `<div class="kbd-frame">${render(props)}</div>`,
+      body: render(props),
       styles: [kbdStyles, frame].join('\n'),
     }),
 });
