@@ -711,6 +711,19 @@ that missed the handoff; renumbered here because Q104/Q105 were already taken.
   against the rail; the rail itself may stay light (a dark rail takes the fill's contrast away).
 - Q126: an invalid slider gets no own mark; the error text under the field carries it, like every form field.
 
+### Global Studio chat decisions (Tom, 2026-10-31)
+
+Follows Q120. Built on products, parts, sketches and variants; nothing on legacy calls.
+
+- Q127: like Copilot, every message carries the current view as context automatically: product, part, sketch,
+  variant, and the selection when one exists (a clicked frame or state). A chip above the input shows it; one click
+  removes it.
+- Q128: the agent navigates smartly. If Tom asked for something on view X and is still on X (waiting), Studio opens
+  the result directly. If Tom has moved on to other work, the chat shows a link instead. The chat stays open either
+  way.
+- Q129: the chat is a collapsible panel on the right that survives navigation. The `/agent` page goes away.
+- Q130: one running chat with a "New chat" button; a list of old chats only when Tom asks for it.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
