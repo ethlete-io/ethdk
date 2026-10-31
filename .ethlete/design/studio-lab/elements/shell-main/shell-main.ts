@@ -9,6 +9,7 @@ const LINKS = [
 
 export default definePart<Props>({
   note: 'The main shell of the lab app: a top bar with the app name, its sections and a Log in button (or the signed-in user) around the page content.',
+  madeBy: ['claude-sonnet-5-5'],
   states: {
     library: { active: 'library', content: '' },
     watchlist: { active: 'watchlist', content: '' },
@@ -17,7 +18,7 @@ export default definePart<Props>({
   render: ({ active, content, user }) =>
     drawing({
       body: `<div class="lab-shell"><header class="lab-shell-bar"><strong>Filmbox</strong><nav>${LINKS.map(
-        (link) => `<span class="lab-shell-link${link.key === active ? ' is-active' : ''}">${link.label}</span>`,
+        (link) => `<span class="lab-shell-link ${link.key === active ? 'is-active' : ''}">${link.label}</span>`,
       ).join('')}</nav>${
         user
           ? `<span class="lab-shell-user">${user}</span>`

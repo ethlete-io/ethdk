@@ -38,7 +38,7 @@ const pair = (label: string, fill: string, ink: string, fixed: boolean) => {
   const ratio = contrastRatio(fill, ink);
 
   return html`<span class="sdk-pair" style="background: rgb(${fill}); color: rgb(${ink})">Aa</span>
-    <span class="sdk-pair-label${fixed ? ' sdk-fixed' : ''}">${label}</span>
+    <span class="sdk-pair-label ${fixed ? 'sdk-fixed' : ''}">${label}</span>
     <code class="sdk-value">${fill} / ${ink}</code>
     <strong class="sdk-ratio" data-pass="${ratio >= AA}"
       >${ratio.toFixed(2)}:1 ${ratio >= AA ? 'AA' : 'below AA'}</strong

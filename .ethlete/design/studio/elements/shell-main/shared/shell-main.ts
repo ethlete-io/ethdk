@@ -48,7 +48,7 @@ const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
 };
 
 const railItem = (inner: string, label: string, active: boolean, kind: RailKind, panelHidden = false) =>
-  `<div class="st-shell-slot relative flex justify-center w-full${active ? ` before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${control(
+  `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${control(
     `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
     RAIL_CONTROLS[kind],
   )}</div>`;
@@ -94,7 +94,7 @@ const PROJECT_ROWS: MenuMockRow[] = [
 
 const picker = (placement: 'above' | 'beside', projectMenu: string) =>
   html`<div
-    class="st-project-picker absolute box-border w-62 [&>.menu-frame]:contents! shadow-none${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 [&>.menu-frame]:contents! shadow-none ${placement === 'above' ? 'left-space-3' : 'bottom-space-3'}"
     data-placement="${placement}"
     data-et-surface="project.open"
   >

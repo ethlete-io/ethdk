@@ -67,7 +67,7 @@ const items = ({ markers, themedDots, time = true, compact, long, count = EVENTS
 
 export default definePart({
   note: 'Decided rules only',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     default: {},
     'with-markers': { markers: true },
@@ -81,7 +81,7 @@ export default definePart({
   widths: [480],
   render: (props: Props) =>
     drawing({
-      body: `<div class="timeline-frame${props.compact ? ' timeline-frame--compact' : ''}">${timeline({ items: items(props) })}</div>`,
+      body: `<div class="timeline-frame ${props.compact ? 'timeline-frame--compact' : ''}">${timeline({ items: items(props) })}</div>`,
       styles: [timelineStyles, frame].join('\n'),
     }),
 });

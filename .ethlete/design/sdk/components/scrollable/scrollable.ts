@@ -94,7 +94,7 @@ const render = (props: Props) => {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     'horizontal-start': {},
     'horizontal-middle': { position: 'middle' },
@@ -127,7 +127,7 @@ export default definePart({
   widths: [480],
   render: (props: Props) =>
     drawing({
-      body: `<div class="scrollable-frame${props.itemSize ? ' scrollable-frame--sized' : ''}">${render(props)}</div>`,
+      body: `<div class="scrollable-frame ${props.itemSize ? 'scrollable-frame--sized' : ''}">${render(props)}</div>`,
       styles: [scrollableStyles, frame].join('\n'),
     }),
 });

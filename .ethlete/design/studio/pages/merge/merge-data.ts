@@ -41,10 +41,10 @@ export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
 
 export const rowCaption = (row: Row, stacked = false) =>
   html`<span
-    class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap${stacked ? ' flex-wrap gap-y-0' : ''}"
+    class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap ${stacked ? 'flex-wrap gap-y-0' : ''}"
     ><span class="text-et-surface font-code">${row.part}</span><span class="text-et-surface-muted">${row.state}</span
     ><span
-      class="text-et-surface-muted text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
+      class="text-et-surface-muted text-(length:--text-xs) ${stacked ? 'basis-full' : "before:content-['·'] before:mr-space-2"}"
       >${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span
     ></span
   >`;
