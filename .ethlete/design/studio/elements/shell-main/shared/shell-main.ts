@@ -94,7 +94,7 @@ const PROJECT_ROWS: MenuMockRow[] = [
 
 const picker = (placement: 'above' | 'beside', projectMenu: string) =>
   html`<div
-    class="st-project-picker absolute box-border w-62 [&>.menu-frame]:contents! shadow-none ${placement === 'above' ? 'left-space-3' : 'bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 shadow-none ${placement === 'above' ? 'left-space-3' : 'bottom-space-3'}"
     data-placement="${placement}"
     data-et-surface="project.open"
   >
