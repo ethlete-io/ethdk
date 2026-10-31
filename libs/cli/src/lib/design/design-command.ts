@@ -122,6 +122,8 @@ const helpOf = (invocation: string) =>
     '  Draw each state of a linked part with a current go, or the one --state names, and shoot the',
     '  [data-design-harness-host] element of <url>/__design-harness?part=&state=&props= in the same Chromium. Prints ok,',
     '  DIFF <n> px or SIZE per state at tolerance 0 and keeps the pictures of a failing state in a temp folder.',
+    '  A component or element is fitted to its content; a page draws at --preset (default: the first preset of the',
+    '  product) and its harness url adds layout=page, so the host fills that viewport.',
     '  Without --url it starts the dev server of the harness app on a free port and stops it afterwards; exits 1',
     '  unless every state is ok.',
     '',

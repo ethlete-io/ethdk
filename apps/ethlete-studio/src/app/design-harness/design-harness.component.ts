@@ -46,7 +46,9 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
     @if (current && 'error' in current) {
       <p>{{ current.error }}</p>
     } @else {
-      <div class="flow-root w-fit" data-design-harness-host><ng-container #outlet /></div>
+      <div [class]="page ? 'block min-h-screen w-screen' : 'flow-root w-fit'" data-design-harness-host>
+        <ng-container #outlet />
+      </div>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -55,6 +57,7 @@ export class DesignHarnessComponent {
   private platformLocation = inject(PlatformLocation);
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   protected state = toSignal(stateOf$(this.platformLocation.search));
+  protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
 
   constructor() {
     effect(() => {

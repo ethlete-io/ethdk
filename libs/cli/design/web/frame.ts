@@ -2,6 +2,7 @@ import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from 
 import { Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
+import { fitRoot } from './frame-fit';
 import { pinScheme } from './frame-scheme';
 import { watchSurfaces } from './frame-surfaces';
 import surfaceInteractiveCss from './surface-interactive.css?inline';
@@ -51,11 +52,7 @@ if (fill) paintFill(document.body, fill);
 const scheme = params.get('scheme');
 
 if (scheme === 'light' || scheme === 'dark') pinScheme(document, scheme);
-if (fit) {
-  document.documentElement.style.overflow = 'hidden';
-  root.style.width = 'max-content';
-  root.style.padding = '16px';
-}
+if (fit) fitRoot(root, { padded: !params.has('bare') });
 
 const markFailed = (message: string) => {
   errored = true;

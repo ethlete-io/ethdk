@@ -4,9 +4,18 @@ export const HARNESS_PATH = '/__design-harness';
 
 export const HARNESS_HOST_SELECTOR = '[data-design-harness-host]';
 
-/** The app's harness page that mounts the component of `part` with the `props` of `state`, under the dev server `url`. */
-export const harnessUrlOf = (options: { url: string; part: string; state: string; props: unknown }) =>
-  `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}`;
+/**
+ * The app's harness page that mounts the component of `part` with the `props` of `state`, under the dev server `url`.
+ * With `layout: 'page'` the harness host fills the viewport, otherwise it fits its content.
+ */
+export const harnessUrlOf = (options: {
+  url: string;
+  part: string;
+  state: string;
+  props: unknown;
+  layout?: 'page' | null;
+}) =>
+  `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}${options.layout ? `&layout=${options.layout}` : ''}`;
 
 export type Pixels = { width: number; height: number; data: Buffer };
 

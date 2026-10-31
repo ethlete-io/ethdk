@@ -235,11 +235,13 @@ export type PartAddress = {
   sketch: SketchVariant | null;
   interaction: string | null;
   props?: SketchVariant | null;
+  /** Fits the state to its content without the frame padding, as the app's harness host draws it. */
+  bare?: boolean;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction, props } = options;
+  const { system, product, part, state, preset, width, sketch, interaction, props, bare } = options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -264,13 +266,14 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       interaction,
       props?.target,
       props?.variant,
+      ...(bare ? ['bare'] : []),
     ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
       product,
       part,
       state,
-      ...(size ? {} : { fit: '' }),
+      ...(size ? {} : { fit: '', ...(bare ? { bare: '' } : {}) }),
       ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
       ...(interaction ? { interaction } : {}),
       ...(props ? { props: props.target, 'props-variant': props.variant } : {}),

@@ -7,7 +7,7 @@ import { chromium, type Browser } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
-import { comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
+import { compareFrameOf, comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import { comparePngs, decodePng, encodePng, harnessUrlOf, Pixels } from './part-compare';
 import { markPartGo } from './part-go';
@@ -119,6 +119,38 @@ describe('part compare', () => {
     );
   });
 
+  it('asks the app host to fill the viewport for a page', () => {
+    expect(
+      harnessUrlOf({ url: 'http://localhost:4300', part: 'pages/inbox', state: 'a', props: {}, layout: 'page' }),
+    ).toBe('http://localhost:4300/__design-harness?part=pages%2Finbox&state=a&props=%7B%7D&layout=page');
+  });
+
+  it('draws a page at a product preset, the first by default, and any other part fitted', () => {
+    const presets = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
+
+    expect(compareFrameOf({ presets, part: 'pages/inbox', preset: null })).toEqual({
+      preset: 'desktop',
+      size: { width: 1440, height: 900 },
+      layout: 'page',
+    });
+    expect(compareFrameOf({ presets, part: 'pages/inbox', preset: 'phone' })).toEqual({
+      preset: 'phone',
+      size: { width: 390, height: 844 },
+      layout: 'page',
+    });
+    expect(compareFrameOf({ presets, part: 'pages/inbox', preset: 'tablet' })).toBe(
+      'the product has no preset "tablet" - its presets: desktop, phone',
+    );
+    expect(compareFrameOf({ presets, part: 'components/chip', preset: null })).toEqual({
+      preset: null,
+      size: null,
+      layout: null,
+    });
+    expect(compareFrameOf({ presets, part: 'components/chip', preset: 'phone' })).toBe(
+      '--preset applies to a pages part only, components/chip is fitted to its content',
+    );
+  });
+
   it('decodes every PNG row filter and round-trips its own PNGs', () => {
     const pixels = pixelsOf(5, 10, (x, y) => ((x * 53 + y * 31) << 24) | ((x * y * 17) << 16) | ((y * 7) << 8) | 255);
 
@@ -220,7 +252,11 @@ describe('part compare', () => {
     markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
 
     expect(await compare(['--url', 'http://localhost:9', '--state', 'default'])).toBe(0);
-    expect(shoot).toHaveBeenCalledWith(expect.objectContaining({ url: 'http://localhost:9', only: 'default' }));
+    expect(shoot).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'http://localhost:9', only: 'default', preset: null }),
+    );
+    expect(await compare(['--url', 'http://localhost:9', '--preset', 'phone'])).toBe(0);
+    expect(shoot).toHaveBeenLastCalledWith(expect.objectContaining({ preset: 'phone' }));
 
     shoot.mockResolvedValueOnce('the harness page http://localhost:9/__design-harness did not load');
     lines.length = 0;
@@ -273,9 +309,11 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.startsWith('/__design-harness')
-          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-          : '<body>no harness</body>',
+        request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+          ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+          : request.url?.startsWith('/__design-harness')
+            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+            : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -296,6 +334,18 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('shoots a page host in the viewport of the preset size', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'pages/inbox', state: 'a', props: {}, layout: 'page' }),
+      size: { width: 40, height: 30 },
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(40, 30, () => BLUE));
   });
 
   it('names the url when the page has no host element', async (context) => {

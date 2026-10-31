@@ -61,6 +61,7 @@ const modules = {
   },
   '../motion-runtime': { runRules: () => undefined, stepMotion: () => undefined },
   '../motion-tokens': { rootTokensOf: () => ({}), withTokenNames: (track) => track },
+  './frame-fit': { fitRoot: () => undefined },
   './frame-fill': { paintFill: (body, fill) => body.setAttribute('data-fill', fill) },
   './frame-scheme': { pinScheme: () => undefined },
   './frame-surfaces': { watchSurfaces: () => undefined },

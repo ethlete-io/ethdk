@@ -38,6 +38,18 @@ describe('DesignHarnessComponent', () => {
     expect(element.textContent?.trim()).toBe('Tag x');
   });
 
+  it('fits the host to its content, and fills the viewport with it for a page layout', async () => {
+    const fitted = await render('?part=components%2Fchip&state=a&props=%7B%7D');
+
+    expect(fitted.querySelector('[data-design-harness-host]')?.className).toBe('flow-root w-fit');
+
+    TestBed.resetTestingModule();
+
+    const page = await render('?part=components%2Fchip&state=a&props=%7B%7D&layout=page');
+
+    expect(page.querySelector('[data-design-harness-host]')?.className).toBe('block min-h-screen w-screen');
+  });
+
   it('shows only an error text for an unknown part', async () => {
     const element = await render('?part=x&state=y&props=%7B%7D');
 

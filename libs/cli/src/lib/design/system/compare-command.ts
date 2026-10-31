@@ -3,7 +3,7 @@ import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { chromiumOf } from '../browser';
-import { DesignConfig } from '../paths';
+import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
@@ -16,7 +16,8 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
-export const COMPARE_USAGE = 'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>]';
+export const COMPARE_USAGE =
+  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>]';
 
 export type StateShot = { state: string; design: Buffer; app: Buffer };
 
@@ -27,6 +28,7 @@ export type ShootStates = (options: {
   part: string;
   url: string;
   only: string | null;
+  preset?: string | null;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
 
 export type ComparePart = (options: {
@@ -36,6 +38,7 @@ export type ComparePart = (options: {
   part: string;
   url: string;
   only: string | null;
+  preset?: string | null;
   shoot?: ShootStates;
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
 
@@ -43,11 +46,40 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
 class HarnessError extends Error {}
 
-/** A PNG of the harness host element at `url`, in the viewport and device scale the design frame of a fitted part uses. */
-export const harnessShotOf = async (options: { browser: Browser; url: string; timeout?: number }) => {
+/**
+ * How compare draws a part: a page at a product preset, the asked one or the first, with the harness host filling
+ * its viewport; any other part fitted to its content.
+ */
+export const compareFrameOf = (options: {
+  presets: Record<string, DesignPreset>;
+  part: string;
+  preset: string | null;
+}): { preset: string | null; size: DesignPreset | null; layout: 'page' | null } | string => {
+  const { presets, part } = options;
+
+  if (!part.startsWith('pages/'))
+    return options.preset === null
+      ? { preset: null, size: null, layout: null }
+      : `--preset applies to a pages part only, ${part} is fitted to its content`;
+
+  const preset = options.preset ?? Object.keys(presets)[0] ?? '';
+  const size = Object.keys(presets).includes(preset) ? presets[preset] : undefined;
+
+  return size
+    ? { preset, size, layout: 'page' }
+    : `the product has no preset "${preset}" - its presets: ${Object.keys(presets).join(', ')}`;
+};
+
+/** A PNG of the harness host element at `url`, in the viewport of `size` (a fitted frame's without) at device scale 1. */
+export const harnessShotOf = async (options: {
+  browser: Browser;
+  url: string;
+  size?: DesignPreset | null;
+  timeout?: number;
+}) => {
   const { browser, url } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
-  const context = await browser.newContext({ viewport: viewportOf(null), deviceScaleFactor: 1 });
+  const context = await browser.newContext({ viewport: viewportOf(options.size ?? null), deviceScaleFactor: 1 });
 
   try {
     const page = await context.newPage();
@@ -72,7 +104,10 @@ export const harnessShotOf = async (options: { browser: Browser; url: string; ti
 };
 
 /** Draws each state of a part, or the `only` one, as its design frame and as the app's harness page, in one Chromium. */
-export const shootStates: ShootStates = async ({ target, config, product, part, url, only }) => {
+export const shootStates: ShootStates = async ({ target, config, product, part, url, only, preset }) => {
+  const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
+
+  if (typeof frame === 'string') return frame;
   if (!(await chromiumOf(target))) return 'compare needs playwright or playwright-core in the checkout';
 
   const queue = createDrawQueue({ target });
@@ -105,14 +140,19 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
         product: product.name,
         part,
         state,
-        preset: null,
+        preset: frame.preset,
         width: null,
         sketch: null,
         interaction: null,
+        bare: true,
         params: new URLSearchParams(),
       });
       const app = await queue.run((browser) =>
-        harnessShotOf({ browser, url: harnessUrlOf({ url, part, state, props: states[state] }) }),
+        harnessShotOf({
+          browser,
+          url: harnessUrlOf({ url, part, state, props: states[state], layout: frame.layout }),
+          size: frame.size,
+        }),
       );
 
       shots.push({ state, design: design.png, app });
@@ -172,7 +212,7 @@ export const designCompare = async (options: {
   start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product', '--url', '--state']);
+  const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset']);
 
   if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);
@@ -221,6 +261,7 @@ export const designCompare = async (options: {
         part: task.part,
         url,
         only: args.values['--state'] ?? null,
+        preset: args.values['--preset'] ?? null,
         shoot: options.shoot,
       }),
   });

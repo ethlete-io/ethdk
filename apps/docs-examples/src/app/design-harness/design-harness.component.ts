@@ -46,7 +46,14 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
     @if (current && 'error' in current) {
       <p>{{ current.error }}</p>
     } @else {
-      <div [style]="{ display: 'flow-root', width: 'fit-content' }" data-design-harness-host>
+      <div
+        [style]="
+          page
+            ? { display: 'block', width: '100vw', minHeight: '100vh' }
+            : { display: 'flow-root', width: 'fit-content' }
+        "
+        data-design-harness-host
+      >
         <ng-container #outlet />
       </div>
     }
@@ -57,6 +64,7 @@ export class DesignHarnessComponent {
   private platformLocation = inject(PlatformLocation);
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   protected state = toSignal(stateOf$(this.platformLocation.search));
+  protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
 
   constructor() {
     effect(() => {

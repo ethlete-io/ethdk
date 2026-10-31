@@ -238,6 +238,28 @@ describe('createPartShooter', () => {
     );
   });
 
+  it('fits a bare state without the frame padding, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    await shots.pictureOf({ ...address, bare: true });
+    await shots.pictureOf({ ...address, bare: true });
+
+    expect(drawnUrls()).toHaveLength(2);
+    expect(new URL(drawnUrls()[0] ?? '').searchParams.has('bare')).toBe(false);
+    expect(new URL(drawnUrls()[1] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=&bare=');
+  });
+
   it('passes the interaction to the frame and keeps one picture per interaction', async () => {
     const { shots } = acme();
 
