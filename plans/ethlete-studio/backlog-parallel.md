@@ -1141,3 +1141,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q221 (Tom, 2026-10-31):** the 11 Studio CLASS-GLUED-INTERPOLATION warnings (`07145ced7`, `23870448c`) change the
   look, so each is fixed in a sketch round of the part it belongs to; inbox and shell-main inside the pilot. No edit
   outside a sketch.
+- After the MVP (pilot slice 1 tool gap, 2026-10-31): no CLI command prints the rendered HTML of a part or of its
+  implementation; the pilot dumped it with its own Playwright script. A `design dom <part>` (or a compare flag) would
+  remove that step.
