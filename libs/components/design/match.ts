@@ -4,6 +4,8 @@ import participantBase from '../src/lib/match/match-participant.component.css?in
 import scoreBase from '../src/lib/match/match-score.component.css?inline';
 
 export type MatchMockParticipant = {
+  /** The participant id the card puts on its side as `data-participant-id`, which the bracket's journey highlight reads. */
+  id?: string;
   name: string;
   code?: string;
   subtitle?: string;
@@ -32,6 +34,8 @@ export type MatchMockOptions = {
   liveColor?: string;
   /** A design marker on the host, e.g. `hover` or `focus-visible`. */
   force?: string;
+  /** Extra classes on the host, e.g. the class a bracket cell gives its card. */
+  className?: string;
   /** Extra attributes on the host, e.g. a style or design markers. */
   attributes?: string;
 };
@@ -100,7 +104,9 @@ export const matchCard = (options: MatchMockOptions) => {
         ? `<span class="et-match-card-outcome" aria-hidden="true">${outcomeFor(options, key)}</span>`
         : '';
 
-    return `<div class="et-match-card-side" data-side="${key}">${participant({ value, compact, showSeed: !!options.showSeeds })}${result}</div>`;
+    const participantId = value?.id ? ` data-participant-id="${value.id}"` : '';
+
+    return `<div class="et-match-card-side" data-side="${key}"${participantId}>${participant({ value, compact, showSeed: !!options.showSeeds })}${result}</div>`;
   };
 
   const games = options.gameScores?.length
@@ -119,5 +125,7 @@ export const matchCard = (options: MatchMockOptions) => {
     ` aria-label="${homeName} vs ${awayName}"`,
   ].join('');
 
-  return `<${tag} class="et-match-card et-focus-ring"${hostAttributes} ${options.attributes ?? ''}><div class="et-match-card-content">${meta}<div class="et-match-card-sides">${side('home')}<span class="et-match-card-versus" aria-hidden="true">${drawsScore || drawsOutcome ? SEPARATOR.trim() : 'vs'}</span>${side('away')}</div>${games}</div></${tag}>`;
+  const classes = ['et-match-card', options.className, 'et-focus-ring'].filter(Boolean).join(' ');
+
+  return `<${tag} class="${classes}"${hostAttributes} ${options.attributes ?? ''}><div class="et-match-card-content">${meta}<div class="et-match-card-sides">${side('home')}<span class="et-match-card-versus" aria-hidden="true">${drawsScore || drawsOutcome ? SEPARATOR.trim() : 'vs'}</span>${side('away')}</div>${games}</div></${tag}>`;
 };
