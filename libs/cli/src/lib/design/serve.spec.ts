@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
-import { serveDesign } from './serve';
+import { createDesignServer, serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -153,6 +153,19 @@ describe('serveDesign', () => {
 
     expect(real(created[0]?.cacheDir)).not.toBe(real(created[1]?.cacheDir));
     expect(real(created[0]?.cacheDir)).toBe(real(created[2]?.cacheDir));
+  });
+
+  it("keeps a command's Vite cache apart from the user's server, so a command never deletes its optimized deps", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const config = readConfig(target) ?? {};
+
+    await serveDesign({ target });
+    await createDesignServer({ target, config, listen: false });
+    await createDesignServer({ target, config, listen: true, port: 0 });
+
+    expect(created[1]?.cacheDir).not.toBe(created[0]?.cacheDir);
+    expect(created[2]?.cacheDir).not.toBe(created[0]?.cacheDir);
   });
 
   it('keeps serving the frame assets it started with when the package is rebuilt', async () => {

@@ -742,8 +742,8 @@ const freePortOf = () =>
 /**
  * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
  * middleware mode only to load design modules for a command. With `port`, it listens there instead
- * (0 picks a free one), quiet, unwatched and with a dependency cache of its own, so a command can draw
- * while the user's server runs.
+ * (0 picks a free one), quiet and unwatched. Only the user's server uses the checkout's dependency cache,
+ * so a command can draw while that server runs.
  */
 export const createDesignServer = async (options: {
   target: string;
@@ -803,7 +803,7 @@ export const createDesignServer = async (options: {
         ],
       },
     },
-    cacheDir: viteCacheOf(target, own ? 'vite-check' : 'vite'),
+    cacheDir: viteCacheOf(target, listen && !own ? 'vite' : 'vite-check'),
     resolve: {
       alias: [
         { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
