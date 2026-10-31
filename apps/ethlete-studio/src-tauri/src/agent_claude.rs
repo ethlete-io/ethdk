@@ -1,14 +1,48 @@
+use std::path::Path;
+
 use serde_json::Value;
 
 use crate::agent::{detail, AgentCli, AgentEvent, AgentRequest, ToolServer};
+use crate::design_server::cli_entry;
 
 pub struct ClaudeCli;
 
-const STUDIO_BRIEF: &str = "You work in Ethlete Studio on the design system in `.ethlete/design/<product>/`. \
-After each change to a part, run `npx et design check` and fix every problem it names, then draw the part with \
-`npx et design shot <layer>/<name> --states` and look at the picture. Files under `.ethlete/` need no changeset. \
-For type, use the product tokens from the `foundations/type` part, for example `text-ui-sm`, `font-ui-medium` and \
-`font-ui-strong`, never raw font classes such as `text-sm` or `font-semibold`.";
+fn shell_quoted(path: &Path) -> String {
+    let text = path.to_string_lossy();
+
+    if text.chars().all(|c| c.is_ascii_alphanumeric() || "/._-+@:".contains(c)) {
+        return text.into_owned();
+    }
+
+    format!("'{}'", text.replace('\'', "'\\''"))
+}
+
+fn et_command(entry: Option<&Path>) -> String {
+    entry.map_or_else(|| "npx et".to_owned(), |entry| format!("node {}", shell_quoted(entry)))
+}
+
+fn studio_brief(entry: Option<&Path>) -> String {
+    let et = et_command(entry);
+
+    format!(
+        "You work in Ethlete Studio on the design system in `.ethlete/design/<product>/`. \
+After you change a part, run `{et} design check` and fix the problems it names in the parts you changed, not every problem, \
+then draw the part with `{et} design shot <layer>/<name> --states` and look at the picture. \
+A change to a merged part goes through a sketch: open one with `{et} design sketch new`. \
+Files under `.ethlete/` need no changeset. For type, use the `text-ui-*` and `font-ui-*` utilities, for example \
+`text-ui-sm`, `font-ui-medium` and `font-ui-strong`, which the product stylesheet defines, \
+never raw font classes such as `text-sm` or `font-semibold`."
+    )
+}
+
+fn allowed_commands(entry: Option<&Path>) -> Vec<String> {
+    let et = et_command(entry);
+
+    ["check", "shot", "sketch new"]
+        .iter()
+        .map(|command| format!("Bash({et} design {command}:*)"))
+        .collect()
+}
 
 impl AgentCli for ClaudeCli {
     fn id(&self) -> &'static str {
@@ -54,13 +88,17 @@ impl AgentCli for ClaudeCli {
         }
 
         if tools.is_none() {
+            let entry = cli_entry(Path::new(&request.cwd));
+
             arguments.push("--append-system-prompt".to_owned());
-            arguments.push(STUDIO_BRIEF.to_owned());
+            arguments.push(studio_brief(entry.as_deref()));
+            // The user's own settings and CLAUDE.md steer a chat run away from the design brief.
+            arguments.push("--setting-sources".to_owned());
+            arguments.push("project".to_owned());
             // The permission mode accepts edits only, so a run in print mode is refused every
             // command the brief names.
             arguments.push("--allowedTools".to_owned());
-            arguments.push("Bash(npx et design check:*)".to_owned());
-            arguments.push("Bash(npx et design shot:*)".to_owned());
+            arguments.extend(allowed_commands(entry.as_deref()));
         }
 
         if let Some(tools) = tools {
@@ -223,20 +261,100 @@ mod tests {
             .position(|argument| argument == "--append-system-prompt");
         let brief = &arguments[at.expect("the brief is passed") + 1];
 
-        assert!(brief.contains("npx et design check"));
+        assert!(brief.contains("design check"));
         assert!(brief.contains("font-ui-medium"));
     }
 
     #[test]
-    fn a_chat_run_may_run_the_check_and_the_shot_the_brief_names() {
+    fn the_brief_runs_the_commands_through_the_entry() {
+        let brief = studio_brief(Some(Path::new("/repo/dist/et.js")));
+
+        assert!(brief.contains("`node /repo/dist/et.js design check`"));
+        assert!(brief.contains("`node /repo/dist/et.js design shot <layer>/<name> --states`"));
+        assert!(brief.contains("`node /repo/dist/et.js design sketch new`"));
+        assert!(!brief.contains("npx et"));
+    }
+
+    #[test]
+    fn the_brief_falls_back_to_npx_without_an_entry() {
+        assert!(studio_brief(None).contains("`npx et design check`"));
+    }
+
+    #[test]
+    fn the_brief_sends_a_merged_part_through_a_sketch_and_limits_the_fixes() {
+        let brief = studio_brief(None);
+
+        assert!(brief.contains("A change to a merged part goes through a sketch"));
+        assert!(brief.contains("in the parts you changed, not every problem"));
+    }
+
+    #[test]
+    fn the_brief_names_the_ui_type_utilities_the_product_defines() {
+        let brief = studio_brief(None);
+
+        assert!(brief.contains("`text-ui-*` and `font-ui-*`"));
+        assert!(brief.contains("which the product stylesheet defines"));
+        assert!(!brief.contains("foundations/type"));
+    }
+
+    #[test]
+    fn a_path_with_a_space_is_quoted_in_the_command_and_the_rule() {
+        let entry = Path::new("/my repo/et it's.js");
+
+        assert!(studio_brief(Some(entry)).contains("`node '/my repo/et it'\\''s.js' design check`"));
+        assert_eq!(
+            allowed_commands(Some(entry))[0],
+            "Bash(node '/my repo/et it'\\''s.js' design check:*)"
+        );
+    }
+
+    #[test]
+    fn the_allowed_commands_follow_the_entry() {
+        assert_eq!(
+            allowed_commands(Some(Path::new("/repo/et.js"))),
+            [
+                "Bash(node /repo/et.js design check:*)",
+                "Bash(node /repo/et.js design shot:*)",
+                "Bash(node /repo/et.js design sketch new:*)",
+            ]
+        );
+    }
+
+    #[test]
+    fn the_allowed_commands_fall_back_to_npx_without_an_entry() {
+        assert_eq!(
+            allowed_commands(None),
+            [
+                "Bash(npx et design check:*)",
+                "Bash(npx et design shot:*)",
+                "Bash(npx et design sketch new:*)",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_chat_run_allows_the_commands_of_its_brief() {
         let arguments = ClaudeCli.arguments(&asking("draw it", None), None);
         let at = arguments.iter().position(|argument| argument == "--allowedTools");
         let allowed = &arguments[at.expect("tools are allowed") + 1..];
+        let entry = cli_entry(Path::new("."));
 
-        assert!(allowed.starts_with(&[
-            "Bash(npx et design check:*)".to_owned(),
-            "Bash(npx et design shot:*)".to_owned()
-        ]));
+        assert!(allowed.starts_with(&allowed_commands(entry.as_deref())));
+    }
+
+    #[test]
+    fn a_chat_run_loads_project_settings_only() {
+        let arguments = ClaudeCli.arguments(&asking("draw it", None), None);
+        let at = arguments.iter().position(|argument| argument == "--setting-sources");
+
+        assert_eq!(at.map(|at| arguments[at + 1].as_str()), Some("project"));
+    }
+
+    #[test]
+    fn a_call_run_keeps_its_setting_sources() {
+        assert!(!ClaudeCli
+            .arguments(&asking("draw it", None), Some(&serving()))
+            .contains(&"--setting-sources".to_owned()));
     }
 
     #[test]
