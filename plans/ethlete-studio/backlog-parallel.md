@@ -1043,3 +1043,13 @@ in the tool and in the repo, where every person and every agent meets it:
   `theming` skill, because the sync emits that skill only for consumers.
 - Verified: the specs of both rules and both texts. Not verified: `et design check` on the real product, which
   writes into `.ethlete/design`.
+
+### Surface migration look calls (Tom, 2026-10-31, Q199-Q201)
+
+- **Q199, sunken prompt box:** the prompt box in `pages/system` and `pages/flows` takes the SDK sunken surface token and
+  is solid dark (rgb 15); the dotted grid no longer shows through. The two held lines drop the own
+  `bg-surface-sunken` class.
+- **Q200, comment-pin hover:** the pin uses the SDK interaction tint on its own surface, so hover and pressed get
+  lighter than rest, like every other part. Then delete the own `--surface-hover` and `--surface-pressed` tokens.
+- **Q201, interaction border:** `border-et-surface-interaction` keeps the real interaction grey (rgb 164) in zoom-chip,
+  shell-main and inbox. The near-white border before 71beccb12 was a missing token, not a look.
