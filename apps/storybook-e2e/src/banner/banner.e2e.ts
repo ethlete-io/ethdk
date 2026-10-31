@@ -20,6 +20,7 @@ interface Rgba {
 
 interface BannerColors {
   primary: Rgba;
+  ink: Rgba;
   background: Rgba;
   border: Rgba;
   icon: Rgba;
@@ -40,6 +41,8 @@ function bannerColors(banner: Locator): Promise<BannerColors> {
     probe.style.color = 'var(--et-theme-color-primary-solid)';
     host.append(probe);
     const primary = getComputedStyle(probe).color;
+    probe.style.color = 'var(--et-theme-color-ink-solid)';
+    const ink = getComputedStyle(probe).color;
     probe.remove();
 
     const style = getComputedStyle(host);
@@ -47,6 +50,7 @@ function bannerColors(banner: Locator): Promise<BannerColors> {
 
     return {
       primary: parse(primary),
+      ink: parse(ink),
       background: parse(style.backgroundColor),
       border: parse(style.borderTopColor),
       icon: parse(icon ? getComputedStyle(icon).color : ''),
@@ -70,12 +74,14 @@ async function primaryOf(page: Page, storyId: string): Promise<string> {
 
 test.describe('banner / tint', () => {
   for (const storyId of [INFO_STORY_ID, SUCCESS_STORY_ID, WARNING_STORY_ID, ERROR_STORY_ID]) {
-    test(`the fill and border are a light wash of the resolved primary for "${storyId}"`, async ({ page }) => {
+    test(`the fill is a light wash of the resolved primary and the border its ink for "${storyId}"`, async ({
+      page,
+    }) => {
       const root = await openStory(page, storyId);
       const colors = await bannerColors(root.locator(BANNER));
 
       expectTintOf(colors.background, colors.primary, 0.08);
-      expectTintOf(colors.border, colors.primary, 0.24);
+      expect(colors.border).toEqual(colors.ink);
     });
   }
 

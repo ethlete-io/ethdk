@@ -245,6 +245,11 @@
         color 120ms ease,
         opacity 120ms ease;
 
+      &[data-active]:focus-visible {
+        outline: 2px solid var(--et-theme-color-ink-solid);
+        outline-offset: -2px;
+      }
+
       /* the roving focus is applied programmatically on mouse-open too, so :focus-visible (instead
        of [data-active] alone) keeps the highlight from appearing without a hover or keyboard
        interaction; a trigger whose submenu is open stays highlighted the whole time, and an item

@@ -19,6 +19,7 @@ interface BadgeChrome {
   borderColor: string;
   borderWidth: string;
   primaryOpacity: string;
+  ink: string;
 }
 
 interface BadgeMetrics {
@@ -35,6 +36,11 @@ interface BadgeMetrics {
 function readChrome(badge: Locator): Promise<BadgeChrome> {
   return badge.evaluate((el) => {
     const style = getComputedStyle(el);
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--et-theme-color-ink-solid)';
+    el.append(probe);
+    const ink = getComputedStyle(probe).color;
+    probe.remove();
 
     return {
       background: style.backgroundColor,
@@ -42,6 +48,7 @@ function readChrome(badge: Locator): Promise<BadgeChrome> {
       borderColor: style.borderColor,
       borderWidth: style.borderWidth,
       primaryOpacity: style.getPropertyValue('--et-theme-color-primary-opacity').trim(),
+      ink,
     };
   });
 }
@@ -206,17 +213,17 @@ test.describe('badge / structure', () => {
     expect(bySize('lg')).toEqual(['12px', '12px']);
   });
 
-  test('the default variant is tonal: a tinted fill, no visible border', async ({ page }) => {
+  test('the default variant is tonal: a tinted fill inside an ink border', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const chrome = await readChrome(root.locator(BADGE).first());
 
     expect(chrome.primaryOpacity).toBe('0.16');
     expect(chrome.background).toContain('rgba');
     expect(chrome.background).not.toBe(TRANSPARENT);
-    expect(chrome.borderColor).toBe(TRANSPARENT);
+    expect(chrome.borderColor).toBe(chrome.ink);
   });
 
-  test('filled is a solid fill with the on-primary ink and no border', async ({ page }) => {
+  test('filled is a solid fill with the on-primary ink inside an ink border', async ({ page }) => {
     const root = await openStory(page, FILLED_STORY_ID);
     const badge = root.locator(BADGE).first();
 
@@ -227,7 +234,7 @@ test.describe('badge / structure', () => {
     expect(chrome.primaryOpacity).toBe('1');
     expect(chrome.background).not.toContain('rgba');
     expect(chrome.background).not.toBe(TRANSPARENT);
-    expect(chrome.borderColor).toBe(TRANSPARENT);
+    expect(chrome.borderColor).toBe(chrome.ink);
   });
 
   test('outline is a transparent fill behind a coloured border', async ({ page }) => {

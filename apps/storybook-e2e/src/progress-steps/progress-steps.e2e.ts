@@ -22,6 +22,7 @@ interface StepGeometry {
   label: Rect;
   connector: (Rect & { color: string }) | null;
   primary: string;
+  ink: string;
   border: string;
 }
 
@@ -86,6 +87,7 @@ function readSteps(page: Page): Promise<StepGeometry[]> {
         label: rect(step.querySelector('.et-progress-step-label') ?? step),
         connector,
         primary: resolve(step, 'var(--et-theme-color-primary-solid)'),
+        ink: resolve(step, 'var(--et-theme-color-ink-solid)'),
         border: resolve(step, 'var(--et-surface-border-solid)'),
       };
     });
@@ -168,28 +170,26 @@ test.describe('progress-steps / layout', () => {
     expect(stepAt(steps, steps.length - 1).connector).toBeNull();
   });
 
-  test('a completed step fills its connector with the primary colour, the current one leaves it a border', async ({
-    page,
-  }) => {
+  test('a completed step fills its connector with the ink, the current one leaves it a border', async ({ page }) => {
     await openStory(page, DEFAULT_STORY_ID);
     const steps = await readSteps(page);
     const complete = stepAt(steps, 0);
     const current = stepAt(steps, 2);
 
     expect(complete.state).toBe('complete');
-    expect(complete.connector?.color).toBe(complete.primary);
+    expect(complete.connector?.color).toBe(complete.ink);
     expect(current.state).toBe('current');
     expect(current.connector?.color).toBe(current.border);
     expect(current.connector?.color).not.toBe(current.primary);
   });
 
-  test('a failed step colours its connector with its own theme', async ({ page }) => {
+  test('a failed step colours its connector with the ink of its own theme', async ({ page }) => {
     await openStory(page, OUTCOMES_STORY_ID);
     const steps = await readSteps(page);
     const success = stepAt(steps, 0);
     const error = stepAt(steps, 2);
 
-    expect(error.connector?.color).toBe(error.primary);
+    expect(error.connector?.color).toBe(error.ink);
     expect(error.connector?.color).not.toBe(success.connector?.color);
   });
 

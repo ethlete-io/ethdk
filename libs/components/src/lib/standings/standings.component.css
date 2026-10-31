@@ -115,11 +115,12 @@
   }
 
   .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position']) {
-    box-shadow: inset var(--et-standings-zone-bar-width) 0 0 var(--et-theme-color-primary-solid, currentColor);
+    box-shadow: inset var(--et-standings-zone-bar-width) 0 0
+      light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
 
     &:dir(rtl) {
       box-shadow: inset calc(var(--et-standings-zone-bar-width) * -1) 0 0
-        var(--et-theme-color-primary-solid, currentColor);
+        light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
     }
   }
 
@@ -194,7 +195,7 @@
     flex: none;
     inline-size: 10px;
     block-size: 3px;
-    background: var(--et-theme-color-primary-solid, currentColor);
+    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
     border-radius: 2px;
   }
 }
