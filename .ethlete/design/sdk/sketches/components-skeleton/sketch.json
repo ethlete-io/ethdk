@@ -1,0 +1,29 @@
+{
+  "target": "components/skeleton",
+  "status": "ready",
+  "createdAt": "2026-10-31T02:43:23.913Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Skeleton baseline",
+      "note": "First drawing of the SDK skeleton (et-skeleton), drawn by its mock from @ethlete/components/design on the page: bones filled with --et-surface-interaction-solid at 12% over the page, 4px radius, 8px gap, text bones 0.85em in a 1.4em line, round circles; the shimmer (the same token at 16% in a 90deg gradient, 1400ms) is held still at the middle of its sweep. States: the story card, three text lines, the bare shapes, a bare text bone inside a sentence (no shimmer, as in the story) and the card without the shimmer (animated off, also what reduced motion shows). Q98, numbers only: the fill is 1.16:1 against the page light, 1.22:1 dark; the shimmer peak is 1.22:1 against the fill light, 1.32:1 dark (1.41 / 1.60 against the page). In light the shimmer is a darker band, not a highlight, because the interaction token is dark there. A skeleton is not interactive and carries no text, so 1.4.11 does not ask 3:1 of it; the visually hidden status label is the announcement. No decided rule applies: the skeleton has no focus ring (Q88), no mint (Q99) and no edge, so no variant b and no Q102. Variant a alone shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, alone in this round: no decided rule applies (no focus ring, no mint, no edge). Q98 open: fill 1.16:1 / 1.22:1 against the page, shimmer peak 1.22:1 / 1.32:1 against the fill, light / dark; in light the shimmer darkens the bone."
+    }
+  }
+}

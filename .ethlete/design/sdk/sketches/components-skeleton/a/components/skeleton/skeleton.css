@@ -1,0 +1,22 @@
+.skeleton-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+  line-height: 1.4;
+}
+
+.skeleton-frame > .et-skeleton {
+  max-inline-size: 42rem;
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.skeleton-text {
+  margin: 0;
+  max-inline-size: 42rem;
+}
