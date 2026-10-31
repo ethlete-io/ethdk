@@ -212,7 +212,13 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     `part-go.spec.ts`, system/mcp/open-points specs, tsc, lint. Not verified: the `serve.ts` route in a running
     server.
   - `sketch report` refuses a ready sketch without `--reopen` (`b199b7164`).
-  - Next: 3b task, then 3c compare (Tom Q194/Q195).
+  - 3b task, in progress (builder ethlete-sdk-57): `et design task <part> --product` and `--verify [<rev>]`.
+    Builder defaults (safe to undo): the inputs are the `states` props; `implemented.json` also keeps a props hash
+    per state, so task lists added and changed states, and "all states" when only render or styles changed; the
+    diff of `--verify` is the files of a commit or range (default `HEAD`), because the shared tree holds other
+    sessions' edits; a route-only page part is refused until 3c adds its component link (Q195); `--verify` records
+    nothing until 3c compare exists.
+  - Next: 3c compare (Tom Q194/Q195).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
