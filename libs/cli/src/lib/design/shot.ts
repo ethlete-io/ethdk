@@ -120,6 +120,7 @@ type Frame = {
   scale: number;
   crop: Crop | null;
   scheme: 'dark' | 'light' | null;
+  emptySlots: boolean;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -223,6 +224,8 @@ export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: S
   return [...seen].flatMap((module) => (module.file && isAbsolute(module.file) ? [module.file] : []));
 };
 
+const EMPTY_SLOTS = "document.querySelectorAll('[data-et-projected]').forEach((slot) => slot.replaceChildren())";
+
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
 
 /** One state of a part as a frame draws it: at a product preset, at a container width, or fitted to its content. */
@@ -237,11 +240,13 @@ export type PartAddress = {
   props?: SketchVariant | null;
   /** Fits the state to its content without the frame padding, as the app's harness host draws it. */
   bare?: boolean;
+  /** Empties every `slot()` region before the shot, as the app's harness host projects no content into it. */
+  emptySlots?: boolean;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction, props, bare } = options;
+  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots } = options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -267,6 +272,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       props?.target,
       props?.variant,
       ...(bare ? ['bare'] : []),
+      ...(emptySlots ? ['empty-slots'] : []),
     ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
@@ -280,6 +286,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     }),
     size: size ?? null,
     clip: !preset,
+    emptySlots: emptySlots ?? false,
   };
 };
 
@@ -320,6 +327,8 @@ export const createPartShooter = (options: {
         await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
         await page.evaluate(settled);
         await page.evaluate(finished);
+
+        if (frame.emptySlots) await page.evaluate(EMPTY_SLOTS);
 
         const overlay = page.locator('vite-error-overlay');
 
@@ -400,6 +409,7 @@ export const createPartShooter = (options: {
     params: URLSearchParams;
     size: Size | null;
     clip?: boolean;
+    emptySlots?: boolean;
     want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
@@ -445,7 +455,15 @@ export const createPartShooter = (options: {
 
       return gone
         ? Promise.reject(gone)
-        : draw(browser, { search, size: options.size, clip: options.clip ?? false, scale, crop, scheme });
+        : draw(browser, {
+            search,
+            size: options.size,
+            clip: options.clip ?? false,
+            scale,
+            crop,
+            scheme,
+            emptySlots: options.emptySlots ?? false,
+          });
     }, options.want);
 
     const { address } = options;

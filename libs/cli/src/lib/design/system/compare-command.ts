@@ -145,6 +145,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
         sketch: null,
         interaction: null,
         bare: true,
+        emptySlots: true,
         params: new URLSearchParams(),
       });
       const app = await queue.run((browser) =>

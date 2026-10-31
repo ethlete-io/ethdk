@@ -169,6 +169,13 @@ type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
  */
 export const forceInteraction = (markup: string, interaction: Interaction) => forceBody(markup, interaction);
 
+/**
+ * The attribute that marks an element as the region `name` whose content the implementing component projects with
+ * `<ng-content>`, e.g. `<main ${slot('canvas')}>`. `design compare` empties it in the design picture, as the harness
+ * projects nothing.
+ */
+export const slot = (name: string) => `data-et-projected="${name}"`;
+
 const finished = (
   drawn: Drawing,
   { styles, interaction }: { styles?: string; interaction?: Interaction },

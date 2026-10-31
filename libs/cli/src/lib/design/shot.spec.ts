@@ -260,6 +260,37 @@ describe('createPartShooter', () => {
     expect(new URL(drawnUrls()[1] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=&bare=');
   });
 
+  it('empties the slot regions before the shot when asked, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: 'phone',
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+    const emptied = () =>
+      evaluate.mock.calls.filter(
+        ([script]) => script.includes('[data-et-projected]') && script.includes('replaceChildren'),
+      );
+
+    await shots.pictureOf(address);
+
+    expect(emptied()).toHaveLength(0);
+
+    await shots.pictureOf({ ...address, emptySlots: true });
+    await shots.pictureOf({ ...address, emptySlots: true });
+
+    expect(drawnUrls()).toHaveLength(2);
+    expect(emptied()).toHaveLength(1);
+    expect(evaluate.mock.invocationCallOrder[evaluate.mock.calls.indexOf(emptied()[0]!)]).toBeLessThan(
+      screenshot.mock.invocationCallOrder[1]!,
+    );
+  });
+
   it('passes the interaction to the frame and keeps one picture per interaction', async () => {
     const { shots } = acme();
 

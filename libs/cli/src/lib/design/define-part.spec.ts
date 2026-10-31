@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definePart, drawing, forceInteraction } from '../../../design/define-part';
+import { definePart, drawing, forceInteraction, slot } from '../../../design/define-part';
 import { markPart } from '../../../design/mark-part';
 
 type Props = { label: string };
@@ -179,5 +179,11 @@ describe('definePart', () => {
 
     expect(Object.keys(moving.motions ?? {})).toEqual(['fold']);
     expect(button.motions).toBeUndefined();
+  });
+});
+
+describe('slot', () => {
+  it('marks an element as a projected region that compare empties', () => {
+    expect(`<main ${slot('canvas')}>`).toBe('<main data-et-projected="canvas">');
   });
 });
