@@ -72,6 +72,10 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   only `states`. The builder migrates the design data of both products (studio, sdk), with `et design check` as the
   guide. Reason: point 8 gave about 3,750 motion points per product, mostly pairs of showcase variants that never
   animate into each other.
+- Q175 which borders need 3:1 (Tom, 2026-10-31): only borders that identify a control (control boundaries, focus,
+  state, and the frame that wraps a control such as the form-field) are measured, as WCAG 1.4.11 asks. Decorative
+  panel, card and swatch borders give no finding. Icons stay as built. Tom: "we do not tell a designer that they may
+  only build high-contrast apps" - the check enforces the WCAG minimum, never more.
 
 ## Not decided
 
