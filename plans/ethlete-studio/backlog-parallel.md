@@ -953,3 +953,17 @@ A session that stops at the Claude usage limit saves a handoff but cannot clear 
 hit the same limit. Tom then has to resume each session by hand after the reset. Wanted: a way to schedule the
 restart for a time (for example `restart <name> --at <time> '<prompt>'`), and a rule in the handoff skill that a
 session at the limit schedules its own restart for the reset time. Tooling gap, after the current builder queue.
+
+### Path to the new Studio UI (Tom, 2026-10-31, Q189)
+
+Tom wants to use the new Studio UI soon instead of the patched current one. Builder `ethlete-sdk-57` order:
+
+1. Friction slice B (small, as queued).
+2. Close the MVP tooling: the open-point list per part with "ready" refused while it is not empty (Q155, Q156;
+   slice 3) and the part-to-component link (Q157).
+3. Go, task and compare (Q158-Q160) with the merged `elements/shell-main` (variant b) and `pages/inbox` (variant d)
+   as the first pilot. Their implementation in `apps/ethlete-studio` starts only through this flow; this decision
+   is Tom's go for these two parts (Q153).
+4. After that: Q174, `sketch report --reopen`, Q173 migration, slice 4, the scheduled restart.
+
+Known design gap: the global chat panel was built without a Studio design.
