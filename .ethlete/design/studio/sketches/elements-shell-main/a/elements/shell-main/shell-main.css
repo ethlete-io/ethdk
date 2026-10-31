@@ -1,0 +1,106 @@
+@layer components {
+  .st-shell {
+    grid-template-columns: 64px 248px 1fr;
+    width: 1440px;
+    height: 900px;
+  }
+
+  .st-shell[data-floating] {
+    grid-template-columns: 64px 1fr;
+  }
+
+  .st-shell-stage .st-shell-content {
+    --st-shell-inset-left: calc(248px + var(--space-3));
+  }
+
+  .st-shell-stage .st-shell-side {
+    width: 248px;
+    border: 0;
+    box-shadow:
+      inset 0 0 0 1px var(--surface-border),
+      0 12px 32px var(--surface-shadow);
+  }
+
+  .st-shell-rail {
+    border-right: 1px solid var(--surface-border);
+  }
+
+  .st-shell-sep {
+    width: 24px;
+    height: 1px;
+  }
+
+  .st-shell-bubble {
+    width: 40px;
+    height: 40px;
+  }
+
+  .st-shell-slot[data-active]::before {
+    top: 8px;
+    width: 3px;
+    height: 24px;
+    border-radius: 0 3px 3px 0;
+    content: '';
+  }
+
+  .st-shell-slot[data-kind='product'] .st-shell-bubble {
+    width: 36px;
+    height: 36px;
+    margin: 2px 0;
+  }
+
+  .st-shell-slot[data-kind='product'][data-active] .st-shell-bubble {
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+  }
+
+  .st-shell-slot[data-kind='product'][data-active]::before {
+    top: 10px;
+    height: 20px;
+  }
+
+  .st-shell-slot[data-kind='all'] .st-shell-bubble {
+    width: 36px;
+    height: 36px;
+    margin-top: 2px;
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+  }
+
+  .st-shell-side {
+    border-right: 1px solid var(--surface-border);
+  }
+
+  .st-shell-side-head {
+    height: 48px;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .st-shell-collapse {
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+  }
+
+  .st-shell-side-foot {
+    border-top: 1px solid var(--surface-border);
+  }
+
+  .st-shell-project {
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+    font: inherit;
+  }
+
+  .st-shell-project-badge {
+    width: 22px;
+    height: 22px;
+  }
+
+  .st-shell-content {
+    background-image: radial-gradient(circle, var(--surface-border) 1px, transparent 1.2px);
+    background-size: 16px 16px;
+    background-position: 8px 8px;
+  }
+
+  .st-shell[data-panel='hidden'] .st-shell-stage .st-shell-content {
+    --st-shell-inset-left: 0px;
+  }
+}
