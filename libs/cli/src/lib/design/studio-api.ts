@@ -26,6 +26,8 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
+import { drawnFindingsOf } from './system/drawn-open-points';
+import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -79,6 +81,7 @@ export const INVENTORY_APPROVE_PATH = '/__design/inventory-approve';
 export const EXCEPTIONS_PATH = '/__design/exceptions';
 export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
+export const OPEN_POINTS_PATH = '/__design/open-points';
 
 export type Answer = { status: number; body: unknown };
 
@@ -742,4 +745,45 @@ export const exceptionApproveAnswer = withProduct('POST', async ({ asked, produc
   const approved = approveException({ product, key: body['key'], by: body['by'] });
 
   return 'error' in approved ? failure(approved.status, approved.error) : { status: 200, body: approved };
+});
+
+const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer => {
+  if (typeof part !== 'string' || part === '') return failure(400, 'part is required');
+
+  return product.parts.some((candidate) => partKeyOf(candidate) === part)
+    ? part
+    : failure(404, `product "${product.name}" has no part "${part}"`);
+};
+
+const drawnPointsOf = async ({ asked, config, product }: Found, part: string) => {
+  const findings = await drawnFindingsOf({ target: asked.target, config, product, parts: [part] });
+
+  return 'unavailable' in findings
+    ? failure(503, `cannot draw ${part}: ${findings.unavailable}`)
+    : partPointsOf(readOpenPoints(product, findings), part);
+};
+
+/**
+ * GET `?product=&part=&draw=`: the open points of one part, or of every part without `part`. Contrasts and missing
+ * control states need a draw: only `draw=true` with a `part` lists them, and `drawn` says whether they are in.
+ */
+export const openPointsAnswer = withProduct('GET', async (found) => {
+  const { url } = found.asked;
+  const draw = url.searchParams.get('draw');
+  const asked = url.searchParams.get('part');
+
+  if (draw !== null && draw !== 'true' && draw !== 'false') return failure(400, 'draw is true or false');
+  if (asked === null) {
+    if (draw === 'true') return failure(400, 'draw needs a part');
+
+    return { status: 200, body: { drawn: false, parts: readOpenPoints(found.product) } };
+  }
+
+  const part = knownPartOf(found.product, asked);
+
+  if (typeof part !== 'string') return part;
+
+  const points = draw === 'true' ? await drawnPointsOf(found, part) : partPointsOf(readOpenPoints(found.product), part);
+
+  return Array.isArray(points) ? { status: 200, body: { part, drawn: draw === 'true', points } } : points;
 });

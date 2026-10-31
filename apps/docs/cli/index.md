@@ -295,6 +295,12 @@ finding in a part the product takes from its base, before or in the render, does
 counts them, for example `94 findings in base product sdk (UTILITY-CSS 94) - they do not block this product; run et design check --product sdk for the base's own`. A part the product
 overrides is checked as its own.
 
+The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
+open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
+`{ part, drawn, points }`. Contrasts and missing control states need a draw, so only `&draw=true` with a `part`
+lists them; it draws that part as `check --complete` does, which takes seconds. A bad parameter answers 400, an
+unknown part 404, and a draw that cannot run 503.
+
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
 names the scheme, for example `2.1:1 in the dark scheme`. Any other product is measured once.

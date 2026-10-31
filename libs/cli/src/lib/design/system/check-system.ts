@@ -1,10 +1,10 @@
 import { dirname, relative } from 'path';
 import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
-import { isMissingStateGap, partsCompletenessOf } from './complete';
+import { partsCompletenessOf } from './complete';
 import { OpenPointsInput, openPointsText } from './open-points';
 import { Problem } from './problem';
-import { readOpenPoints } from './read-open-points';
+import { contrastsOf, missingStatesOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
@@ -192,21 +192,7 @@ export const checkSystem = (options: CheckOptions) => {
   return code;
 };
 
-const contrastsOf = (issues: RenderIssue[]): NonNullable<OpenPointsInput['contrasts']> => {
-  const seen = new Set<string>();
-
-  return issues.flatMap(({ rule, part, state, path }) => {
-    const key = `${part} ${state} ${path}`;
-
-    if (rule !== 'CONTRAST' || seen.has(key)) return [];
-
-    seen.add(key);
-
-    return [{ part, state, path }];
-  });
-};
-
-const missingStatesOf = async (
+const drawnMissingStatesOf = async (
   options: CheckOptions & { product: ResolvedProduct },
 ): Promise<NonNullable<OpenPointsInput['missingStates']>> => {
   const parts = options.product.parts
@@ -222,14 +208,7 @@ const missingStatesOf = async (
 
   for (const hint of [...checked.hints.values()].flat()) console.log(hint);
 
-  return [...checked.gaps].flatMap(([part, gaps]) =>
-    typeof gaps === 'string'
-      ? []
-      : [...new Set(gaps.filter(isMissingStateGap).map((gap) => gap.target.slice(part.length + 1)))].map((control) => ({
-          part,
-          control,
-        })),
-  );
+  return missingStatesOf(checked.gaps);
 };
 
 const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null }) => {
@@ -246,7 +225,7 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
         ? {}
         : {
             contrasts: contrastsOf(rendered.filter((issue) => issue.product === name && issue.sketch === null)),
-            missingStates: options.complete ? await missingStatesOf({ ...options, product }) : undefined,
+            missingStates: options.complete ? await drawnMissingStatesOf({ ...options, product }) : undefined,
           };
 
     openPointsText(name, readOpenPoints(product, findings)).forEach((line) => console.log(line));
