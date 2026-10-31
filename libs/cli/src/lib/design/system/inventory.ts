@@ -28,7 +28,10 @@ import { SystemModules } from './system-modules';
  */
 export type InventoryStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
 
-/** One numbered control in a rest frame. A control keeps its number in every frame that draws it. */
+/**
+ * One numbered control in a rest frame. A control keeps its number in every frame that draws it. `covered` is set
+ * when another element is on top at its centre and all four corners.
+ */
 export type InventoryControl = {
   number: number;
   id: string;
@@ -40,6 +43,7 @@ export type InventoryControl = {
   owner: string | null;
   states: number;
   box: FrameBox | null;
+  covered: boolean;
 };
 
 /** A rest frame of a page, the URL of its picture and the controls it draws, in its pixels. */
@@ -106,6 +110,7 @@ export const inventoryFramesOf = (options: {
           surfaces: Object.keys(known?.surfaces ?? {}),
           owner: null,
           box: control.box ?? null,
+          covered: control.covered ?? false,
         };
       }),
       ...(frame.found ?? []).filter(isOwnedOf(frame)).map((found) => ({
@@ -118,6 +123,7 @@ export const inventoryFramesOf = (options: {
         surfaces: [],
         owner: found.owner ?? null,
         box: found.box ?? null,
+        covered: found.covered ?? false,
       })),
       ...(frame.found ?? []).filter(isFinding).map((found) => ({
         key: findingKeyOf(found),
@@ -129,6 +135,7 @@ export const inventoryFramesOf = (options: {
         surfaces: [],
         owner: null,
         box: found.box ?? null,
+        covered: found.covered ?? false,
       })),
     ].sort(byPlace),
   );

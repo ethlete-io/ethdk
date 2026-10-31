@@ -16,6 +16,7 @@ const control = (number: number, id: string, status: InventoryControl['status'])
   owner: status === 'owned' ? 'components/button' : null,
   states: 3,
   box: { x: number * 100, y: 10, width: 50, height: 20 },
+  covered: false,
 });
 
 const inventoryOf = (controls: InventoryControl[]): Inventory => ({
@@ -83,6 +84,22 @@ describe('InventoryViewComponent', () => {
   });
 
   afterEach(() => vi.unstubAllGlobals());
+
+  it('lists a covered control as covered, with no outline or badge on the shot', async () => {
+    const { element } = await render(
+      inventoryOf([control(1, 'save', 'declared'), { ...control(2, 'under', 'declared'), covered: true }]),
+    );
+
+    expect(
+      [...element.querySelectorAll<HTMLElement>('[data-inventory-box]')].map((box) => box.dataset['inventoryBox']),
+    ).toEqual(['1']);
+
+    const entries = [...element.querySelectorAll<HTMLElement>('[data-inventory-entry]')];
+
+    expect(entries).toHaveLength(2);
+    expect(entries[0]?.textContent).not.toContain('covered');
+    expect(entries[1]?.textContent).toContain('covered');
+  });
 
   it('numbers each control on the shot and in the list, coloured by its status', async () => {
     const { element } = await render(

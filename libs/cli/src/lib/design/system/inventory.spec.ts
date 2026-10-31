@@ -129,6 +129,7 @@ describe('inventoryFramesOf', () => {
         owner: null,
         states: 2,
         box: box(50),
+        covered: false,
       },
     ]);
   });

@@ -23,6 +23,7 @@ export type InventoryControl = {
   owner: string | null;
   states: number;
   box: InventoryBox | null;
+  covered: boolean;
 };
 
 /** A rest frame of a page; `shot` is a server path to its picture. */

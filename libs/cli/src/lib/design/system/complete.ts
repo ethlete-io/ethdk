@@ -38,6 +38,7 @@ export type FoundControl = {
   within: string[];
   owner?: string | null;
   box?: FrameBox | null;
+  covered?: boolean;
 };
 
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
@@ -70,6 +71,7 @@ export type SeenFrame = {
     look?: string;
     keyboard?: boolean;
     box?: FrameBox | null;
+    covered?: boolean;
   }[];
   surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
   found?: FoundControl[];
@@ -1038,7 +1040,7 @@ const discoverControls = `((root) => {
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
-      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), label: labelOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), label: labelOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element), covered: isCovered(element) });
       continue;
     }
     const cursor = getComputedStyle(element).cursor;
@@ -1048,7 +1050,7 @@ const discoverControls = `((root) => {
     for (let at = element; at && !inControl; at = at.parentElement) inControl = at.hasAttribute('data-et-control') || isLikely(at);
     if (inControl) continue;
     const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
-    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), label: labelOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
+    found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), label: labelOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element), covered: isCovered(element) });
   }
   return found;
 })`;
@@ -1125,7 +1127,7 @@ const controlPartsOf = `((control) => [
   ...[...control.querySelectorAll('[data-et-control-part]')].filter((part) => part.parentElement.closest('[data-et-control]') === control),
 ])`;
 
-const seeFrame = (options: {
+export const seeFrame = (options: {
   discover: boolean;
   part: string;
   ownCss: string[];
@@ -1141,6 +1143,21 @@ const seeFrame = (options: {
     return box.width > 0 && box.height > 0
       ? { x: Math.round(box.left - ORIGIN.left), y: Math.round(box.top - ORIGIN.top), width: Math.round(box.width), height: Math.round(box.height) }
       : null;
+  };
+  const isCovered = (element) => {
+    const box = element.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return false;
+    const x = [box.left + 1, box.left + box.width / 2, box.right - 1];
+    const y = [box.top + 1, box.top + box.height / 2, box.bottom - 1];
+    const points = [[x[1], y[1]], [x[0], y[0]], [x[2], y[0]], [x[0], y[2]], [x[2], y[2]]];
+    let hit = false;
+    for (const [px, py] of points) {
+      const top = document.elementFromPoint(px, py);
+      if (top === null) return false;
+      if (element.contains(top)) return false;
+      hit = true;
+    }
+    return hit;
   };
   const OWN = ${JSON.stringify(options.part)};
   const CONTROL_PARTS = ${JSON.stringify(options.controlParts)};
@@ -1243,6 +1260,7 @@ const seeFrame = (options: {
       disabled: parts.some(isDisabled),
       keyboard: parts.some(isKeyboard),
       frameBox: frameBoxOf(element),
+      covered: isCovered(element),
       ...tagged(element),
     };
   });
@@ -1290,7 +1308,13 @@ type Tagged = {
 type Seen =
   | { refused: string }
   | {
-      controls: (Tagged & { id: string; disabled: boolean; keyboard: boolean; frameBox: FrameBox | null })[];
+      controls: (Tagged & {
+        id: string;
+        disabled: boolean;
+        keyboard: boolean;
+        frameBox: FrameBox | null;
+        covered: boolean;
+      })[];
       surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean; keyboard: boolean })[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
@@ -1398,6 +1422,7 @@ const seeFrames = async (options: {
           look: control.look,
           ...(control.keyboard ? { keyboard: true } : {}),
           box: control.frameBox,
+          ...(control.covered ? { covered: true } : {}),
         });
 
       for (const surface of found.surfaces) {

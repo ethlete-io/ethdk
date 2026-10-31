@@ -75,20 +75,22 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
                 @if (sizes()[frame.shot]; as size) {
                   @for (control of frame.controls; track $index) {
                     @if (control.box; as box) {
-                      <div
-                        [etProvideColor]="themeOf(control.status)"
-                        [style]="BOX_STYLE_OF(box, size)"
-                        [attr.data-inventory-box]="control.number"
-                        [attr.data-status]="control.status"
-                        [title]="control.id"
-                        class="pointer-events-none absolute border-2 border-(--et-theme-color-primary-solid)"
-                      >
-                        <span
-                          class="absolute -top-2 -left-2 rounded-full bg-(--et-theme-color-primary-solid) px-1 font-mono text-[1rem] leading-4 text-(--et-theme-color-on-primary-solid)"
+                      @if (!control.covered) {
+                        <div
+                          [etProvideColor]="themeOf(control.status)"
+                          [style]="BOX_STYLE_OF(box, size)"
+                          [attr.data-inventory-box]="control.number"
+                          [attr.data-status]="control.status"
+                          [title]="control.id"
+                          class="pointer-events-none absolute border-2 border-(--et-theme-color-primary-solid)"
                         >
-                          {{ control.number }}
-                        </span>
-                      </div>
+                          <span
+                            class="absolute -top-2 -left-2 rounded-full bg-(--et-theme-color-primary-solid) px-1 font-mono text-[1rem] leading-4 text-(--et-theme-color-on-primary-solid)"
+                          >
+                            {{ control.number }}
+                          </span>
+                        </div>
+                      }
                     }
                   }
                 }
@@ -119,7 +121,8 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
                 }
                 <span class="font-mono break-all text-text">{{ control.id }}</span>
                 <span class="text-text-muted">
-                  {{ control.owner ? 'owned by ' + control.owner : control.status }} · {{ control.kind }} ·
+                  {{ control.owner ? 'owned by ' + control.owner : control.status
+                  }}{{ control.covered ? ' · covered' : '' }} · {{ control.kind }} ·
                   {{ control.states }}
                   {{ control.states === 1 ? 'state' : 'states' }}
                 </span>

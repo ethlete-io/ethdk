@@ -18,12 +18,17 @@ export const INVENTORY_TONES: Record<InventoryStatus, ColorThemeType | null> = {
   unclassified: 'warning',
 };
 
-/** Every control once, by its number, from all rest frames. */
+/** Every control once, by its number, from all rest frames; it is covered only when every frame covers it. */
 export const inventoryControlsOf = (inventory: Inventory): InventoryControl[] => {
   const byNumber = new Map<number, InventoryControl>();
 
   for (const frame of inventory.frames) {
-    for (const control of frame.controls) if (!byNumber.has(control.number)) byNumber.set(control.number, control);
+    for (const control of frame.controls) {
+      const known = byNumber.get(control.number);
+
+      if (!known) byNumber.set(control.number, control);
+      else if (known.covered && !control.covered) byNumber.set(control.number, { ...known, covered: false });
+    }
   }
 
   return [...byNumber.values()].sort((a, b) => a.number - b.number);
