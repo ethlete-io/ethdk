@@ -1169,3 +1169,9 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
      top repeated reads), run weekly; the result goes to the grill session.
   6. `design check` gets a `--part <key>` filter and a one-line-per-part summary (with Q184).
      Rejected: pinging idle sessions to keep the cache warm costs more than it saves.
+- **Q228 (Tom, 2026-10-31):** the SDK system gets a small `components/anchored-dialog` part (modelled on `menu` and
+  `dialog`). Then one sketch round each for `pages/system` (open-points popover, `system.ts:89`) and `pages/inbox`
+  (filter popover, `inbox.ts:222`) embeds it instead of the direct `anchoredDialog()` mock call. Not proven to block
+  the inventory; order: after pilot slice 2, before Q218. The other direct mock calls follow Q219: sketch rounds for
+  `pages/sketches` and `pages/flows` (form-field + select), `pages/merge` "Changed" rows; shell-main `menu()` in
+  pilot slice 2.
