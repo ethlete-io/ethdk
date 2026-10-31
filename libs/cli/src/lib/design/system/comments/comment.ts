@@ -381,6 +381,13 @@ export const threadStateOf = (comment: Pick<DesignComment, 'replies'>): ThreadSt
   return last.question ? 'question' : 'answered';
 };
 
+/** Whether a thread still waits on an answer: it has no reply yet, or its last entry asks a question. */
+export const awaitsAnswer = (comment: Pick<DesignComment, 'replies'>) => {
+  const last = comment.replies[comment.replies.length - 1];
+
+  return last === undefined || !!last.question || last.text.trim().endsWith('?');
+};
+
 export const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
   const { products, id } = options;
 
@@ -567,7 +574,8 @@ export const commentsOnSketch = (options: {
   );
 
 /**
- * Marks the open comments on the variants of a sketch, or only those on `variant`, as addressed for `reason`. `round`
+ * Marks the open comments on the variants of a sketch, or only those on `variant`, as addressed for `reason`; a merge
+ * skips a thread that still awaits an answer. `round`
  * is the key of the round a `round` answer started; without `author` the user addressed them. Answers with the addressed comments.
  */
 export const addressSketchComments = (options: {
@@ -587,5 +595,6 @@ export const addressSketchComments = (options: {
     sketch,
   })
     .filter((comment) => variant === undefined || comment.sketch?.variant === variant)
+    .filter((comment) => options.reason !== 'merge' || !awaitsAnswer(comment))
     .map((comment) => withAddressed(comment, addressed));
 };

@@ -80,6 +80,14 @@ const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: s
     comment: { part: 'elements/hero', state: 'default', size: 'phone', text: 'Bigger.', ...(sketch ? { sketch } : {}) },
   }) as DesignComment;
 
+const agentReply = (product: ReturnType<typeof resolveAcme>, comment: DesignComment, text: string) =>
+  replyToComment({
+    products: [{ name: product.name, dir: product.dir }],
+    id: comment.id,
+    by: 'agent',
+    author: 'gpt-5.6-sol',
+    text,
+  });
 const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero');
 
 describe('mergeSketch', { timeout: 60_000 }, () => {
@@ -349,18 +357,36 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     const onSketch = commentOn(found.product, { target: 'elements/hero', variant: 'a' });
     const onPart = commentOn(found.product);
 
-    replyToComment({
-      products: [{ name: found.product.name, dir: found.product.dir }],
-      id: onSketch.id,
-      by: 'agent',
-      author: 'gpt-5.6-sol',
-      text: 'Bigger how?',
-    });
+    agentReply(found.product, onSketch, 'Made it bigger.');
 
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
     expect(addressedOf(onSketch)).toMatchObject({ by: 'user', reason: 'merge' });
     expect(addressedOf(onPart)).toBeUndefined();
     expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: found.sketch })).toEqual([]);
+  }, 120_000);
+
+  it('keeps a thread on the sketch open that has no reply yet or whose last entry asks a question', () => {
+    const target = acme();
+    const found = readySketch(target);
+    const sketchTarget = { target: 'elements/hero', variant: 'a' };
+    const unanswered = commentOn(found.product, sketchTarget);
+    const asked = commentOn(found.product, sketchTarget);
+    const askedByFlag = commentOn(found.product, sketchTarget);
+
+    agentReply(found.product, asked, 'Bigger how? ');
+    replyToComment({
+      products: [{ name: found.product.name, dir: found.product.dir }],
+      id: askedByFlag.id,
+      by: 'agent',
+      author: 'gpt-5.6-sol',
+      text: 'Which size do you mean.',
+      question: true,
+    });
+
+    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
+    expect(addressedOf(unanswered)).toBeUndefined();
+    expect(addressedOf(asked)).toBeUndefined();
+    expect(addressedOf(askedByFlag)).toBeUndefined();
   }, 120_000);
 
   it('resolves the addressed comments on the sketch and on the merged part, and leaves the open ones addressed only', () => {
@@ -378,6 +404,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     addressed(found.product, addressedOnSketch);
     addressed(found.product, addressedOnPart);
     addressed(found.product, addressedElsewhere);
+    agentReply(found.product, openOnSketch, 'Made it bigger.');
 
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
     expect(resolvedOf(addressedOnSketch)).toMatchObject({

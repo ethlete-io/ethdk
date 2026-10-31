@@ -305,7 +305,7 @@ the shape of its layer.
 
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged; no implements`. A point is a
-comment the user has not resolved (an answered one too), a sketch on the part that is not merged yet, or a part
+comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), a sketch on the part that is not merged yet, or a part
 outside `foundations/` without `implements`. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
@@ -414,8 +414,9 @@ sketch the user has not picked in, only when `<key>` is its one live (not reject
 go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.
 
 `et design sketch merge` and `sketch discard` resolve the addressed comments on the sketch's
-variants, and a merge also those addressed comments of the merged parts that have no sketch; open
-comments stay open. `et design comment resolve-ended [--product <product>]` resolves the addressed
+variants, and a merge also those addressed comments of the merged parts that have no sketch; the open
+comments on the variants become addressed. A merge leaves a thread open when it has no reply yet or its
+last entry asks a question. `et design comment resolve-ended [--product <product>]` resolves the addressed
 comments whose sketch no longer exists.
 
 Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS

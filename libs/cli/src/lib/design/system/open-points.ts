@@ -211,7 +211,13 @@ const groupText = (kind: OpenPointKind, points: OpenPoint[]) => {
   if (kind === 'missing-motion') return missingMotionText(points);
 
   if (kind === 'open-comment') {
-    const ids = points.map((point) => (point.kind === 'open-comment' ? point.comment : ''));
+    const ids = points.map((point) =>
+      point.kind !== 'open-comment'
+        ? ''
+        : point.answered
+          ? `${point.comment} addressed, waits on the user`
+          : point.comment,
+    );
 
     return `${ids.length} open comment${ids.length === 1 ? '' : 's'} (${ids.join(', ')})`;
   }

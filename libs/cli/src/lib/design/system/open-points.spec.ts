@@ -172,13 +172,13 @@ describe('openPointsText', () => {
           { targets: ['components/a'], status: 'in progress', decision: null },
           { targets: ['components/b'], status: 'ready', decision: 'pick' },
         ],
-        comments: [comment('c-1', 'components/a'), comment('c-2', 'components/a')],
+        comments: [comment('c-1', 'components/a'), comment('c-2', 'components/a', { answered: true })],
       }),
     );
 
     expect(openPointsText('acme', list)).toEqual([
       'OPEN POINTS acme: 5 in 2 parts',
-      '  components/a: 2 open comments (c-1, c-2); sketch in progress; no implements',
+      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch in progress; no implements',
       '  components/b: sketch picked, not merged',
     ]);
   });
