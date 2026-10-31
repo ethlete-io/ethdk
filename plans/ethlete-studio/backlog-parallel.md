@@ -945,3 +945,11 @@ Builder: `ethlete-sdk-57`, a small slice after the running ones. Built in 6300da
 Builders now start Codex through `codex-agent.mjs` (a blocking background command that returns only the final
 message). The alternative is a Codex tmux session reached through the `ethlete-agent-sessions` mailbox. Tom wants to
 weigh which makes more sense later; keep the wrapper until then. Needs its own grill round, no build now.
+
+### Open point: restart a session after the usage limit resets (Tom, 2026-10-31)
+
+A session that stops at the Claude usage limit saves a handoff but cannot clear and resume itself: the
+`ethlete-agent-sessions` `restart` command types `/clear` and the resume prompt at once, and the fresh session would
+hit the same limit. Tom then has to resume each session by hand after the reset. Wanted: a way to schedule the
+restart for a time (for example `restart <name> --at <time> '<prompt>'`), and a rule in the handoff skill that a
+session at the limit schedules its own restart for the reset time. Tooling gap, after the current builder queue.
