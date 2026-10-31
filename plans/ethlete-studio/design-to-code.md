@@ -92,8 +92,22 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
    not count. `et design check` prints them after the problems; the exit code is unchanged. Studio API not touched.
    Verified: 419 cli design tests, tsc, lint; the new check specs fail without the change; one real check run.
    Not built: a new-part sketch has no part to attach to; routes are not checked against the router.
-2. In progress (2026-10-31): point 1 missing state (Q164: `design complete` control failures, plus "no controls declared" for a
-   component part; pages exempt), point 2 contrast, point 8 missing
-   transition or motion.
+2. Built (`02a6049bc`, `97ab889ed`, `8b5b314d3`, `f8d126bd5`):
+   - Missing state: every check prints "no controls declared" for a component part. The per-control gaps
+     (`CONTROL-UNDRAWN`, `CONTROL-GRID-MISSING`, `REQUIREMENT-MISSING` of `completenessGapsOf`) need a full draw per
+     part, so they print only with `et design check --complete`. `partsCompletenessOf` draws many parts with one
+     server and browser. Pages and foundations are exempt.
+   - Contrast: the render check's `CONTRAST` findings per part. Text keeps the WCAG large-text rule (Q170). New
+     3:1 measure (Q169, Q175): borders only of controls (native inputs, `[data-et-control]`, control roles) and of
+     the nearest bordered ancestor that wraps a control inside its part; icons (`svg` fill or stroke, best paint
+     counts). Disabled, invisible and excepted elements are skipped.
+   - Missing motion (Q168): every ordered pair of `states`, static, on every check. A pair with a `focus` state is
+     exempt. A loop is a motion with `from === to`; an ongoing-work state (name contains loading, pending, busy,
+     progress, indeterminate or spinner) needs one. `definePart({ unreachable: [{ from, to, reason }] })` drops a
+     pair; rules `MOTION-UNREACHABLE-STATE`, `-REASON`, `-LITERAL`. Foundations are exempt.
+   - Verified: specs that fail without each change, the design folder (916 tests), both tsc configs, lint.
+     Not verified: a full `check --complete` run on a real product, and its run time.
+   - Known: about 3,750 motion points per product, because `states` holds showcase variants. Q173 moves them out.
+     `changed-parts.spec.ts` has a timing test that fails sometimes under load.
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
