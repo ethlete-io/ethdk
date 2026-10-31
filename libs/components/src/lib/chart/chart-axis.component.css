@@ -12,6 +12,7 @@
     }
 
     &:where([data-orientation='horizontal']) {
+      container-type: inline-size;
       justify-items: start;
 
       .et-chart-axis-label {
@@ -20,10 +21,9 @@
 
       .et-chart-axis-label:where([data-extent]) {
         box-sizing: border-box;
-        inline-size: var(--_et-chart-axis-extent);
+        max-inline-size: var(--_et-chart-axis-extent);
         padding-inline: 2px;
-        text-align: center;
-        translate: calc(var(--_et-chart-axis-position) - var(--_et-chart-axis-extent) / 2) 0;
+        translate: clamp(0px, calc(var(--_et-chart-axis-position) - 50%), calc(100cqi - 100%)) 0;
       }
     }
 
