@@ -761,6 +761,10 @@ machen".
   light rest (4.83). The error hover is `light-dark(primary -hover, ink-active)`: 6.47 light / 4.76 dark, a small
   step over rest (4.83 / 3.71) per Q111. Also for dropzone and switch (their error border lost on hover; same bug as
   the Q100 checkbox, lead call).
+- Q152 merge after a chat decision (Tom, 2026-10-31): when Tom decides a sketch detail in the grill chat, the builder
+  merges that sketch per the decision (draw the combined variant first if none exists), then builds the lib change.
+  Tom does not merge it again in Studio. Rounds he has not decided in chat still wait for his merge in Studio. Applies
+  now to: floating-action variant d (Q138), input r2 and textarea r2 (Q140-Q144).
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
