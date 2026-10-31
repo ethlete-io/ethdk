@@ -71,6 +71,7 @@
   --color-surface-raised: var(--surface-raised);
   --color-surface-overlay: var(--surface-overlay);
   --color-surface-border: var(--surface-border);
+  --color-surface-hover: var(--surface-hover);
   --color-surface-pressed: var(--surface-pressed);
   --color-surface-shadow: var(--surface-shadow);
   --color-text: var(--text);

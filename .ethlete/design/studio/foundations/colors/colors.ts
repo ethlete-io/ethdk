@@ -29,7 +29,10 @@ const pairs = [
 const fillsOf = (kind: string) => [`--${kind}`, `--${kind}-hover`, `--${kind}-active`];
 
 const ratiosOf = (name: string): { on: string[]; needs: number | null; ink: boolean } | null => {
-  if (/^surface(-raised|-overlay|-pressed|-shadow)?$/.test(name) || /^(accent|warning|danger)-subtle$/.test(name))
+  if (
+    /^surface(-raised|-overlay|-hover|-pressed|-shadow)?$/.test(name) ||
+    /^(accent|warning|danger)-subtle$/.test(name)
+  )
     return null;
   const onDisabled = /^on-(accent|warning|danger)-disabled$/.exec(name);
   if (onDisabled) return { on: [`--${onDisabled[1]}-disabled`], needs: null, ink: true };

@@ -9,6 +9,7 @@ body {
   --surface-raised: oklch(0.245 0 0);
   --surface-overlay: oklch(0.29 0 0);
   --surface-border: oklch(0.34 0 0);
+  --surface-hover: color-mix(in oklch, var(--text) 6%, transparent);
   --surface-pressed: color-mix(in oklch, var(--text) 10%, transparent);
   --surface-shadow: oklch(0 0 0 / 0.5);
   --text: oklch(0.94 0 0);
