@@ -212,12 +212,15 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     `part-go.spec.ts`, system/mcp/open-points specs, tsc, lint. Not verified: the `serve.ts` route in a running
     server.
   - `sketch report` refuses a ready sketch without `--reopen` (`b199b7164`).
-  - 3b task, in progress (builder ethlete-sdk-57): `et design task <part> --product` and `--verify [<rev>]`.
-    Builder defaults (safe to undo): the inputs are the `states` props; `implemented.json` also keeps a props hash
-    per state, so task lists added and changed states, and "all states" when only render or styles changed; the
-    diff of `--verify` is the files of a commit or range (default `HEAD`), because the shared tree holds other
-    sessions' edits; a route-only page part is refused until 3c adds its component link (Q195); `--verify` records
-    nothing until 3c compare exists.
+  - 3b task, built (`95219930b`): `et design task <part> --product` prints go hash, link, the `states` props as
+    inputs, new and changed states against `implemented.json` (`{ [part]: { hash, at, states } }`, a sorted-key
+    props hash per state; "all states" when only render or styles changed), allowed files and "compare green".
+    Refuses an unlinked or route-only part (Q195, comes with 3c), no go, or a stale go. `--verify [<rev>]` checks
+    the files of a commit or range (default `HEAD`; the shared tree holds other sessions' edits) against the
+    allowed files (implements folder; sdk adds `.changeset/*.md`, `apps/docs/components/**`) and records nothing
+    until 3c; `markImplemented` is exported for 3c. Verified: `part-task.spec.ts`, go and open-point specs, tsc,
+    lint, a real refusal (no part has a link yet) and the success and verify paths in a temp repo. Not verified:
+    the sdk product, a root commit for `--verify`.
   - Next: 3c compare (Tom Q194/Q195).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
