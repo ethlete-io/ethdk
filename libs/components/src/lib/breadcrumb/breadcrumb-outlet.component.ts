@@ -52,19 +52,13 @@ import { BREADCRUMB_OUTLET_TOKEN } from './headless/breadcrumb-outlet.token';
       <div #unsupportedContent class="et-breadcrumb-outlet-unsupported" hidden><ng-content /></div>
     }
   `,
+  styleUrl: './breadcrumb-outlet.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [BreadcrumbComponent, NgTemplateOutlet],
   providers: [{ provide: BREADCRUMB_OUTLET_TOKEN, useExisting: BreadcrumbOutletComponent }],
   host: {
     class: 'et-breadcrumb-outlet',
   },
-  styles: `
-    @layer components {
-      .et-breadcrumb-outlet {
-        display: block;
-      }
-    }
-  `,
 })
 export class BreadcrumbOutletComponent {
   protected manager = injectBreadcrumbManager();
