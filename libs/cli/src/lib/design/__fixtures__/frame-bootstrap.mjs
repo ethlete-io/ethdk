@@ -53,6 +53,12 @@ const modules = {
     placeOverlays: () => undefined,
     fitOutOfFlow: () => undefined,
   },
+  '../define-part': {
+    drawState: (part, props) =>
+      Promise.resolve(part.render(props)).then((drawn) =>
+        part.frame ? { ...drawn, body: part.frame(drawn.body, props) } : drawn,
+      ),
+  },
   '../embed-page': { applyEmbed: () => undefined, fitEmbed: () => undefined },
   '../motion-drive': {
     createMotionDriver: () => ({ handle: () => Promise.resolve() }),
