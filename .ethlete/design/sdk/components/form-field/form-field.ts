@@ -1,11 +1,19 @@
-import { formField, formFieldStyles, input, textarea } from '@ethlete/components/design/form-field';
+import {
+  formField,
+  formFieldStyles,
+  input,
+  textarea,
+  type FormFieldMockOptions,
+} from '@ethlete/components/design/form-field';
 import { definePart, drawing, interactionRows } from '@design-system';
 
 type FieldInteraction = 'hover' | 'focus-visible';
 
 type FieldControl = 'input' | 'textarea';
 
-type Props = {
+type Axes = Pick<FormFieldMockOptions, 'appearance' | 'fill' | 'labelMode' | 'size'>;
+
+type Props = Axes & {
   control?: FieldControl;
   value?: string;
   hint?: string;
@@ -17,6 +25,21 @@ type Props = {
 
 const multiLine = 'Ada Lovelace\nAnalytical Engine notes';
 
+const axisRow: Props = { value: 'Ada Lovelace' };
+
+const AXES = {
+  appearance: ['box', 'underline'],
+  fill: ['transparent', 'filled'],
+  labelMode: ['static', 'inline', 'floating-inside', 'floating-outside'],
+  size: ['sm', 'md', 'lg'],
+} as const satisfies { [K in keyof Axes]-?: readonly NonNullable<Axes[K]>[] };
+
+const axisRows = Object.fromEntries(
+  Object.entries(AXES).flatMap(([axis, values]) =>
+    values.map((value) => [`${axis}-${value}`, { ...axisRow, [axis]: value }]),
+  ),
+) as Record<string, Props>;
+
 const { states, grid } = interactionRows(
   {
     empty: { hint: 'Shown on your profile' },
@@ -25,6 +48,7 @@ const { states, grid } = interactionRows(
     'textarea-empty': { control: 'textarea', hint: 'Shown on your profile' },
     'textarea-filled': { control: 'textarea', value: multiLine },
     'textarea-error': { control: 'textarea', error: 'This field is required' },
+    ...axisRows,
   } satisfies Record<string, Props>,
   {
     interactions: ['hover', 'focus-visible'],
