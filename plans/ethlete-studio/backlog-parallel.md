@@ -1087,3 +1087,12 @@ every child inherits it; parts read only `--et-theme-color-*` and set no `et-col
 theme type (kit attribute resolved like `injectSemanticColorTheme`), never by name; today `pages/system` and
 `components/tree-row` hand-pick `et-color--warning`. The auto-surface resolver also applies the new surface's
 `colorThemeVariants` swap. `DENIED-CLASS` later denies `et-color--*` in parts too.
+
+**Auto-surface results and the overlay pane (Tom, 2026-10-31, Q207-Q208).**
+
+- **Q207:** Tom accepts the elevations the system computes on the 11 visible parts (comment-pin, shell-project-option,
+  shell-project-switch, zoom-chip, canvas-frames, shell-main, flows, inbox, merge, sketches, system). If a spot looks
+  wrong, the structure changes, never a hand-picked elevation.
+- **Q208:** the design kit gets a way for `ng(...)` or the frame to render an open SDK overlay pane, so the
+  open-points popover (Q202) and every later popover, dialog or sheet in a part draw the real overlay container
+  chrome. No hand-built overlay `div`.
