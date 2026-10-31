@@ -47,15 +47,25 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   fading: {
     body: '<p class="fade" style="margin: 0">Fading in</p><style>.fade { transition: opacity 10s; } @starting-style { .fade { opacity: 0; } }</style>',
   },
-  'border-low': { body: '<div style="width: 40px; height: 20px; border: 1px solid #ccc"></div>' },
-  'border-ok': { body: '<div style="width: 40px; height: 20px; border: 1px solid #767676"></div>' },
-  'border-filled': { body: '<div style="width: 40px; height: 20px; background: #000; border: 1px solid #222"></div>' },
-  'border-transparent': { body: '<div style="width: 40px; height: 20px; border: 1px solid transparent"></div>' },
+  'border-low': { body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid #ccc"></button>' },
+  'border-decorative': { body: '<div style="width: 40px; height: 20px; border: 1px solid #ccc"></div>' },
+  'border-frame': {
+    body: '<div style="padding: 4px; border: 1px solid #ccc"><input style="border: 0; outline: 0"></div>',
+  },
+  'border-ok': {
+    body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid #767676"></button>',
+  },
+  'border-filled': {
+    body: '<button type="button" style="width: 40px; height: 20px; background: #000; border: 1px solid #222"></button>',
+  },
+  'border-transparent': {
+    body: '<button type="button" style="width: 40px; height: 20px; border: 1px solid transparent"></button>',
+  },
   'border-disabled': {
     body: '<div style="padding: 4px; border: 1px solid #ccc"><input disabled style="border: 1px solid #ccc"></div>',
   },
   'border-excepted': {
-    body: '<div><div class="line" style="height: 20px; border-bottom: 1px solid #ccc"></div></div>',
+    body: '<div><button type="button" class="line" style="height: 20px; border-bottom: 1px solid #ccc"></button></div>',
     extra: "contrast: { exceptions: [{ selector: '.line', reason: 'decorative divider' }] },",
   },
   'icon-low': {
@@ -122,8 +132,10 @@ describe('contrast check', () => {
       .sort();
 
     expect(found).toEqual([
-      'components/border-low default div[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
-      'components/border-low other div[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-frame default div[data-et-part=components/border-frame] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-frame other div[data-et-part=components/border-frame] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-low default button[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-low other button[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/composited default div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/composited other div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/enabled-label default div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',

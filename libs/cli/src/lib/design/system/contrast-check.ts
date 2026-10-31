@@ -225,12 +225,10 @@ export const CONTRAST_STATEMENTS = `
         detail: kind + ' ' + shown(ratio) + inScheme + ', needs ' + shown(${CONTRAST_NON_TEXT}) + ' (non-text); on purpose: definePart({ contrast: { exceptions: [{ selector, reason }] } })',
       });
     };
-    for (const element of [root, ...root.querySelectorAll('*')]) {
-      if (element.closest('svg, style, script, template')) continue;
+    const bordersOf = (element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
-      if (box.width <= 1 || box.height <= 1) continue;
-      const sides = ['Top', 'Right', 'Bottom', 'Left'].flatMap((side) => {
+      return ['Top', 'Right', 'Bottom', 'Left'].flatMap((side) => {
         const width = parseFloat(style['border' + side + 'Width']) || 0;
         if (width <= 0 || ['none', 'hidden'].includes(style['border' + side + 'Style'])) return [];
         const color = rgbaOf(style['border' + side + 'Color']);
@@ -239,6 +237,23 @@ export const CONTRAST_STATEMENTS = `
         const y = side === 'Top' ? box.top + width / 2 : side === 'Bottom' ? box.bottom - width / 2 : box.top + box.height / 2;
         return [{ color, point: { x, y } }];
       });
+    };
+    const controlSelector = 'input:not([type="hidden"]), select, textarea, button, [data-et-control], [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="option"], [role="textbox"], [role="combobox"], [role="slider"], [role="menuitem"]';
+    const frameSelector = 'input:not([type="hidden"]), [data-et-control]';
+    const frames = new Set();
+    for (const control of root.querySelectorAll(frameSelector)) {
+      for (let at = control; at && at !== root.parentElement; at = at.parentElement) {
+        if (bordersOf(at).length === 0) continue;
+        if (at !== control) frames.add(at);
+        break;
+      }
+    }
+    for (const element of [root, ...root.querySelectorAll('*')]) {
+      if (element.closest('svg, style, script, template')) continue;
+      if (!element.matches(controlSelector) && !frames.has(element)) continue;
+      const box = element.getBoundingClientRect();
+      if (box.width <= 1 || box.height <= 1) continue;
+      const sides = bordersOf(element);
       if (sides.length === 0 || skipped(element)) continue;
       const ground = chainOf(element).length - 1;
       const fill = contrastOf(element, { x: box.left + box.width / 2, y: box.top + box.height / 2 }, null, ground);

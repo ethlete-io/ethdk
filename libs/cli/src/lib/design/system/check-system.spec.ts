@@ -308,7 +308,7 @@ describe('checkDesign', () => {
       hero,
       readFileSync(hero, 'utf8').replace(
         '<h1>${film.title}</h1>',
-        '<h1>${film.title}</h1><div style="height: 8px; border: 1px solid var(--acme-surface)"></div>',
+        '<h1>${film.title}</h1><button type="button" style="height: 8px; border: 1px solid var(--acme-surface)"></button>',
       ),
     );
 
