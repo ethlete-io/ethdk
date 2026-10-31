@@ -16,12 +16,12 @@ const perLine = 4;
 const restOnly = (row: GridRow) => row.cells.every((cell, index) => index === 0 || cell === undefined);
 
 const label = (text: string, extra = '') =>
-  `<span class="st-sgrid-label self-end pb-1 font-code${extra}">${text}</span>`;
+  `<span class="st-sgrid-label self-end pb-1 font-code ${extra}">${text}</span>`;
 
 type Place = NonNullable<StateGridOptions['place']>;
 
 const cell = (place: Place) => (body: string | undefined) =>
-  `<div class="st-sgrid-cell py-space-2 px-space-1 bg-et-surface-bg${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
+  `<div class="st-sgrid-cell py-space-2 px-space-1 bg-et-surface-bg ${place === 'center' ? 'grid place-items-center' : ''}">${body ?? ''}</div>`;
 
 const tableRow =
   (place: Place) =>
@@ -32,7 +32,7 @@ const packedLine = (place: Place) => (rows: GridRow[], index: number) => {
   const blanks = '<span></span>'.repeat(perLine - rows.length);
   return (
     '<span></span>' +
-    rows.map((row) => label(row.label, index === 0 ? ' pt-0' : '')).join('') +
+    rows.map((row) => label(row.label, index === 0 ? 'pt-0' : '')).join('') +
     blanks +
     '<span></span>' +
     rows.map((row) => cell(place)(row.cells[0])).join('') +
