@@ -114,7 +114,7 @@ export default definePart({
   },
   render: (props: Props) =>
     drawing({
-      body: `<div class="query-error-frame"${props.shape === 'long' ? ' data-et-skip="OVERFLOW"' : ''}>${render(props)}</div>`,
+      body: `<div class="query-error-frame">${render(props)}</div>`,
       styles: [queryErrorStyles, frame].join('\n'),
     }),
 });
