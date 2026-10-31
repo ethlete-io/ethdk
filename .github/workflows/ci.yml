@@ -94,6 +94,8 @@ jobs:
         with:
           nx-cache-key: test
 
+      - run: yarn playwright install --with-deps chromium
+
       - run: yarn nx run-many -t test
 
   build:

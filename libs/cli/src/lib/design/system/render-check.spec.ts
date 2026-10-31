@@ -8,6 +8,12 @@ import { completenessOf } from './complete';
 import { resolveProduct } from './resolve-product';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './render-check';
 
+const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {
+  if (process.env.CI) throw new Error(`No browser in CI: ${reason}`);
+
+  return context.skip(reason);
+};
+
 const PARTS: Record<string, { body: string; extra?: string; css?: string; states?: string }> = {
   'pages/tall': { body: '<div style="height: 300px; border: 1px solid">Tall</div>' },
   'components/cut': {
@@ -151,7 +157,7 @@ describe('renderIssuesOf', () => {
       ),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(
       rendered.warnings.filter((issue) => issue.rule === 'OPTION-VALUE-MISSING').map((issue) => issue.detail),
@@ -181,7 +187,7 @@ describe('renderIssuesOf', () => {
 
     const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part} ${issue.size}`).sort()).toEqual([
       'CLIPPED components/cut fitted',
@@ -244,7 +250,7 @@ describe('renderIssuesOf', () => {
 
     const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part}: ${issue.detail.split(';')[0]}`)).toEqual([
       expect.stringMatching(/^CONTRAST components\/mode: "Selected" 1\.\d+:1 in the dark scheme, needs 4\.50:1$/),
@@ -297,7 +303,7 @@ describe('renderIssuesOf', () => {
       ].map((sketch) => ({ product: 'shop', sketch, parts: null })),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(
       rendered.issues
@@ -344,7 +350,7 @@ describe('renderIssuesOf', () => {
       })),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     const linesOf = (found: typeof rendered.issues) =>
       found
@@ -399,7 +405,7 @@ describe('renderIssuesOf', () => {
       })),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(
       rendered.issues.filter((issue) => issue.rule === 'CONTROL-STATE').map((issue) => issue.sketch?.variant),
@@ -446,7 +452,7 @@ describe('renderIssuesOf', () => {
       })),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant}`)).toEqual(['CLIPPED a']);
   }, 120_000);
@@ -490,7 +496,7 @@ export default definePart({
       })),
     });
 
-    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
 
     expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant ?? 'base'}`)).toEqual(['OVERFLOW a']);
   }, 120_000);

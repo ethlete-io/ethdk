@@ -8,7 +8,9 @@ describe('paintFill', () => {
   let browser: Browser | undefined;
 
   beforeAll(async () => {
-    browser = await chromium.launch().catch(() => undefined);
+    browser = await chromium.launch().catch((error: unknown) => {
+      if (process.env.CI) throw error;
+    });
   });
 
   afterAll(() => browser?.close());

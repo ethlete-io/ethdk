@@ -19,9 +19,15 @@ describe('covered controls in the frame discovery', () => {
   beforeAll(async () => {
     const loaded = await chromiumOf(process.cwd());
 
-    if (!loaded) return;
+    if (!loaded) {
+      if (process.env.CI) throw new Error('No playwright in CI');
 
-    const browser = await loaded.chromium.launch().catch(() => undefined);
+      return;
+    }
+
+    const browser = await loaded.chromium.launch().catch((error: unknown) => {
+      if (process.env.CI) throw error;
+    });
 
     if (!browser) return;
 
