@@ -76,6 +76,11 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   state, and the frame that wraps a control such as the form-field) are measured, as WCAG 1.4.11 asks. Decorative
   panel, card and swatch borders give no finding. Icons stay as built. Tom: "we do not tell a designer that they may
   only build high-contrast apps" - the check enforces the WCAG minimum, never more.
+- Q176 Studio interaction colours (Tom, 2026-10-31): the Studio Tailwind theme gets the surface interaction colours
+  (hover, pressed), so `hover:`/`active:` utilities draw in Studio sketches. `et design complete` names an unknown
+  utility class instead of reporting "draws no different pixel".
+- Q177 menu vs select (Tom, 2026-10-31): the Q164 control table splits kind `menu` (action items: hover, focus,
+  active; no selected) from `select`/`listbox` (selected look required).
 
 ## Not decided
 
