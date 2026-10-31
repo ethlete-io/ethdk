@@ -97,6 +97,10 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Hint (does not block): a state whose pixel difference to the base state covers less than about 10 % of the
     frame reports "extract the changed element as its own part", for example a small badge that changes on a big
     card.
+- Q185 old merged states under the control-state rule (Tom, 2026-10-31): interaction states that were already merged
+  on a non-control part (sdk carousel, scrollable, match, table, bracket) are reported as an open point on the part
+  but do not block a round that adds no new such state. A newly added violation stays a blocking error. Extracting
+  the controls of those five sdk parts comes after the MVP (Studio uses none of them).
 - Q182 a part shows every option value of its mock (Tom, 2026-10-31): the merged sdk button part shows only `md` and
   one `sm` row, while the lib has `xs`-`xl`; the sketch agent picked the values and no check caught it.
   - Tool check (error, blocks `ready` and `complete`): every mock option with a literal union type (for example
