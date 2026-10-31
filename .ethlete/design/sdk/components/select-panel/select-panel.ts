@@ -105,6 +105,7 @@ const { states, grid } = interactionRows(
 
 export default definePart({
   note: 'The SDK select option and open panel, shared by select, page-size-select and phone-input, drawn by the mocks from @ethlete/components/design.',
+  madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
     'panel-grouped': { panel: true },
