@@ -84,3 +84,15 @@
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo. As built (2026-10-31): colors, type, spacing and motion already used `tokenSheet`; `logoSheet({ marks })` added in db8121f27 (spec, docs, cli minor changeset); studio `foundations/logo` `sizes` moved onto it through a sketch, auto-merged with "No visible change in any state" (3a7fc6aa0). The `sidebar` view stays a product drawing; agent-logos unchanged (lead decision).
   8. Agent-rules skill for `et design mcp`. Q59: live-frame drive and token names on tracks, a later motion slice. As built: "The `ethlete-design` MCP server" section in `design-exploration/SKILL.md` (tools by job, `sketch_report` before each edit, `sketch_ready` render check).
+
+## Parallel builder slices (builder 57, 2026-10-31)
+
+- As built: Q227.4 size budget guard `yarn lint:size` (tools/scripts/size-budget.json) in pre-push and ci.yml
+  (cb29b8928); Q227.5 `yarn tokens:report [--days N]` (37a129a3a). Specs pass and bite; pre-push passed.
+- As built: pages/merge "Changed" rows declared as `row` control (c3d2c6d73). Inventory findings 2 -> 0; sketch
+  auto-merged. Compare image not seen.
+- As built: Q228 SDK part `components/anchored-dialog` (0cf269106). Shots open-points and filter seen on :4402. Open:
+  Q-a content slot, Q-b SDK button/checkbox in the filter state (with Tom).
+- Item 7 became Q235 (single-round canvas + header et-select in sketch-view): in progress.
+- In progress: shell-main b round + Q234; Q224 pages/inventory + view coverage + `design check --part`; Q236 covered
+  controls.
