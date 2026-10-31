@@ -116,14 +116,15 @@ const restartLog = (message) => {
 
 /**
  * Waits until the agent ended its turn and nobody types in its prompt, twice in a row; `false` after the time limit.
+ * With `allowBusy`, a running turn does not block, since Claude Code queues input typed during a turn.
  * Each change of the reason it waits is logged to `restart.log` next to the mailbox.
  */
-const waitForQuiet = (session, limitMs = RESTART_WAIT_MS) => {
+const waitForQuiet = (session, limitMs = RESTART_WAIT_MS, allowBusy = false) => {
   const end = Date.now() + limitMs;
   let quiet = 0;
   let reason = '';
   while (Date.now() < end) {
-    const busy = busyLine(session);
+    const busy = allowBusy ? null : busyLine(session);
     const draft = busy === null ? draftLine(session) : null;
     const next = busy !== null ? `busy: ${busy.trim()}` : draft !== null ? `draft: ${draft}` : '';
     if (next !== reason) restartLog(`${session} ${next ? `waits, ${next}` : 'is quiet'}`);
@@ -353,7 +354,7 @@ if (command === 'send' && sender) {
       sleep(ENTER_DELAY_MS);
       type('Enter');
       sleep(RESTART_CLEAR_MS);
-      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS)) {
+      if (waitForQuiet(session, RESTART_CLEAR_WAIT_MS, true)) {
         type('-l', words.join(' '));
         sleep(ENTER_DELAY_MS);
         type('Enter');
@@ -361,13 +362,13 @@ if (command === 'send' && sender) {
         const saved = join(dirname(mailbox), `restart.prompt.${session}.txt`);
         writeFileSync(saved, `${words.join(' ')}\n`);
         restartLog(
-          `${session} not quiet ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
+          `${session} prompt not empty ${RESTART_CLEAR_WAIT_MS / 1000}s after the clear, prompt not typed, saved to ${saved}`,
         );
         tmux(
           'display-message',
           '-t',
           `=${session}:`,
-          `restart: pane not quiet after the clear, prompt not typed. Saved to ${saved}`,
+          `restart: prompt not empty after the clear, prompt not typed. Saved to ${saved}`,
         );
         process.exitCode = 1;
       }

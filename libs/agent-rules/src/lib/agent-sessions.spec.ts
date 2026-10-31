@@ -266,12 +266,13 @@ describe('agent-sessions', () => {
   );
 
   it.skipIf(!hasTmux)(
-    'saves the prompt and logs why when the pane stays busy after the clear',
+    'types the prompt when a message wakes the session right after the clear',
     async () => {
       const agent = `claude-busy-${process.pid}`;
       const scoped = `${agent}@${basename(dir)}`;
+      const log = join(dir, 'pane.log');
 
-      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line; echo "esc to interrupt"; cat']);
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, `read line; echo "esc to interrupt"; cat > ${log}`]);
 
       try {
         run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
@@ -279,7 +280,29 @@ describe('agent-sessions', () => {
           AGENT_RESTART_CLEAR_WAIT_MS: '3000',
         });
 
-        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, busy: esc to interrupt/);
+        await expect.poll(() => readFileSync(log, 'utf8'), { timeout: 5_000, interval: 250 }).toContain('resume slug');
+      } finally {
+        spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
+      }
+    },
+    30_000,
+  );
+
+  it.skipIf(!hasTmux)(
+    'saves the prompt and logs why when the prompt holds typed text after the clear',
+    async () => {
+      const agent = `claude-draft-${process.pid}`;
+      const scoped = `${agent}@${basename(dir)}`;
+
+      spawnSync('tmux', ['new-session', '-d', '-s', scoped, 'read line; echo "❯ half a sentence"; cat']);
+
+      try {
+        run(['restart', agent, '--now', '--after', '0', 'resume', 'slug'], undefined, {
+          TMUX_PANE: paneOf(scoped),
+          AGENT_RESTART_CLEAR_WAIT_MS: '3000',
+        });
+
+        expect(readFileSync(join(dir, 'restart.log'), 'utf8')).toMatch(/waits, draft: half a sentence/);
         expect(readFileSync(join(dir, `restart.prompt.${scoped}.txt`), 'utf8')).toBe('resume slug\n');
       } finally {
         spawnSync('tmux', ['kill-session', '-t', `=${scoped}`]);
