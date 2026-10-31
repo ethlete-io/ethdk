@@ -1,0 +1,14 @@
+{
+  "pages/inbox": {
+    "ids": [
+      "comment",
+      "pin",
+      "resolved",
+      "row",
+      "send"
+    ],
+    "hash": "ee3d99940358a87d",
+    "by": "designer",
+    "at": "2026-10-31T23:08:09.494Z"
+  }
+}
