@@ -230,6 +230,10 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   part; Tom sees each in Studio and merges. The MVP measure is `design check --product studio --complete` from now on.
 - **Go in advance (Tom, 2026-11-01):** Tom gave the go for the six Q247-linked parts in advance in chat; the grill
   session ran `design go ... --by tom` for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, pages/merge.
+- **Auto-merge forecast on sketches (Tom, 2026-11-01), after the MVP:** a sketch that will very likely be merged
+  automatically (for example no change to a selected or hover state, `sketch check` clean) gets a visible mark in
+  Studio and in the builder's report, so Tom can tell at a glance which sketches need his merge and which do not.
+  What counts as "very likely" comes from the rules the CLI already uses to skip the auto-merge.
 - **System lessons from the MVP push (Tom, 2026-11-01), after the MVP:** Tom wants the system fixed so that these
   cannot happen again. Findings from 2026-10-31/11-01:
   - Plain `design check` hid missing states and contrast findings that only `design ready` draws; one measure must
