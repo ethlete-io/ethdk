@@ -186,7 +186,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   primary 96% with on-primary: a slight darkening of rest, lighter than hover, about 5.2:1; danger active follows.
   The port to `libs/components/src/lib/button/button.component.css` derives from the theme token like the lib does
   and guards the rule with `:not([disabled], [aria-disabled='true'])`, so a loading button never flashes on Space.
-- **Q244 (Tom, 2026-10-31):** when a sketch targets more than one part, the sketch head in Studio shows the round
+- **Q244 (Tom, 2026-10-31), after the MVP (scope check):** when a sketch targets more than one part, the sketch head in Studio shows the round
   title as its title (for example "Demo frame out of render"), with "<n> parts" below it that expands to the target
   list. A one-part sketch keeps the part name. Today the head shows only the first target, so the 42-part Q241
   sketch reads as a `components/accordion` sketch.
