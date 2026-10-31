@@ -684,10 +684,11 @@ export const reportSketch = (options: {
   if (!sketch.variants.includes(variant))
     return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ') || 'none'}`;
   if (author.trim() === '') return 'a report needs --by <model id>';
-  if (sketch.status !== 'in progress')
-    return `${sketch.target} is ${sketch.status}, not in progress - Studio shows a report only while the sketch is in progress, so nothing was recorded`;
+  if (sketch.status === 'ready' && sketch.decision)
+    return `${sketch.target} is decided (${sketch.decision.kind}) - a report would reopen it, so nothing was recorded`;
 
-  const reported = withAuthor({ sketch, variant, author });
+  const open: Sketch = sketch.status === 'ready' ? { ...sketch, status: 'in progress' } : sketch;
+  const reported = withAuthor({ sketch: open, variant, author });
 
   if (reported !== sketch) writeSketchFile(reported);
 

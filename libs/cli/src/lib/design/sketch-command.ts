@@ -485,7 +485,9 @@ const reported = (context: Context) =>
 
     if (typeof reported === 'string') return fail(reported);
 
-    console.log(`reported on ${sketch.target} variant ${variant}: ${message}`);
+    console.log(
+      `reported on ${sketch.target} variant ${variant}: ${message}${sketch.status === 'ready' ? ' - back in progress, mark it ready again when done' : ''}`,
+    );
 
     return 0;
   });

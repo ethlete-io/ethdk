@@ -292,12 +292,32 @@ describe('status', () => {
     expect(markSketchReady({ checkout: target, sketch: ready as Sketch })).toBe(
       'elements/hero is ready, not in progress',
     );
+  });
+
+  it('moves a ready sketch back to in progress on a report, but refuses a decided one', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
+
+    const reopened = reportSketch({
+      checkout: target,
+      sketch: ready,
+      variant: 'a',
+      author: 'gpt-5.6-sol',
+      message: 'fix',
+    });
+
+    expect((reopened as Sketch).status).toBe('in progress');
+    expect(sketchJson(target, 'elements-hero')['status']).toBe('in progress');
+    expect(readSketchReport({ checkout: target, sketch })?.message).toBe('fix');
+
+    const again = markSketchReady({ checkout: target, sketch: reopened as Sketch }) as Sketch;
+    const decided = decideSketch({ sketch: again, decision: { kind: 'pick', variant: 'a' } }) as Sketch;
+
     expect(
-      reportSketch({ checkout: target, sketch: ready as Sketch, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
-    ).toBe(
-      'elements/hero is ready, not in progress - Studio shows a report only while the sketch is in progress, so nothing was recorded',
-    );
-    expect(existsSync(path)).toBe(false);
+      reportSketch({ checkout: target, sketch: decided, variant: 'a', author: 'gpt-5.6-sol', message: 'late' }),
+    ).toBe('elements/hero is decided (pick) - a report would reopen it, so nothing was recorded');
+    expect(sketchJson(target, 'elements-hero')['status']).toBe('ready');
   });
 
   it('keeps the authors of each variant in the order of their first report, without duplicates', () => {
