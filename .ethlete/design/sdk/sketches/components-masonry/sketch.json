@@ -1,0 +1,29 @@
+{
+  "target": "components/masonry",
+  "status": "ready",
+  "createdAt": "2026-10-31T06:05:51.626Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Masonry baseline",
+      "note": "The SDK masonry (etMasonry, etMasonryItem), first drawing, drawn by its mock from @ethlete/components/design/masonry with the real masonry-styles CSS. Items are packed by a copy of the lib's maths (column count from the container width and the columnWidth minimum, greedy shortest-column placement), settled and positioned (data-settled, data-positioned). Framed as a 480px page with 16px padding; 448px content, gap 16 (the default). The lib draws nothing visual: its CSS is absolute positioning, the RTL flip, the fade-in on first placement and the move transition, so the tiles (title, muted height line, 8px radius, next surface elevation) are demo content drawn by the mock, not lib design. States: rest (columnWidth 130, a consumer value: 3 columns of 138.67px, eight tiles 110-180 high), uneven (same columns, nine tiles 60-260 high: the ragged bottom edge), narrow (the same tiles in a 280px container: 2 columns of 132px, the count comes from the container, not a media query), single-column (the default columnWidth 250 at 448px: 1 column of 448px), rtl (rest with dir=rtl: column 0 on the right). Static snapshot: the appear fade and the move transition drawn at rest. No focus, hover, loading or empty state exists in the lib (an empty masonry is 0px high), so none is drawn. Numbers (light / dark), from shot pixels at scale 2, demo tiles only: tile fill vs page 1.14 / 1.18; tile title vs fill 15.73 / 14.50, muted line 6.86 / 5.86. Q98 numbers only: no edge, the fill alone sets the tile off the page. No decided rule arises: no focus ring (Q88), no mint mark or fill (Q99a, Q102), no button (Q101). Variant a only. Later rounds, left out here: the appear fade and move timing tokens (--et-masonry-appear-duration, -move-duration, -move-easing), the infinite-scroll append, per-breakpoint columnWidth and gap maps."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is, and the only variant: the lib draws no colour, edge or state, so no decided rule arises. Demo tile fill vs page 1.14 / 1.18; packing as the lib does it at 3, 2 and 1 columns and in RTL."
+    }
+  }
+}
