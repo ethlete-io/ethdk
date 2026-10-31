@@ -765,6 +765,11 @@ machen".
   merges that sketch per the decision (draw the combined variant first if none exists), then builds the lib change.
   Tom does not merge it again in Studio. Rounds he has not decided in chat still wait for his merge in Studio. Applies
   now to: floating-action variant d (Q138), input r2 and textarea r2 (Q140-Q144).
+- Q153 MVP end (Tom, 2026-10-31): the MVP ends when the Studio designs are ready and merged. No implementation of a
+  Studio design in `apps/ethlete-studio` without Tom's explicit go. Tom: many points are still not fully defined,
+  and the tooling should say so. Open plan (grill next): the system that turns a design into Angular components,
+  updates them, and checks that they match the current design. "Das System muss machen was geht, der Agent hat
+  sonst zu viel Freiraum."
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
