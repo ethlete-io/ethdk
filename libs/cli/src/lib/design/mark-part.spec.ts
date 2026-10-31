@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markBody, markPart, markSlot } from '../../../design/mark-part';
+import { forceBody, markBody, markPart, markSlot } from '../../../design/mark-part';
 
 describe('markBody', () => {
   it('marks the first element', () => {
@@ -28,6 +28,25 @@ describe('markBody', () => {
   it('leaves a body that starts with text or holds no element alone', () => {
     expect(markBody('Hello <b>you</b>', 'components/text')).toBe('Hello <b>you</b>');
     expect(markBody('<style>.a {}</style>', 'components/text')).toBe('<style>.a {}</style>');
+  });
+});
+
+describe('forceBody', () => {
+  it('forces an interaction on an enabled element', () => {
+    expect(forceBody('<button class="b" data-disabled-look>Go</button>', 'active')).toBe(
+      '<button data-et-force="active" class="b" data-disabled-look>Go</button>',
+    );
+  });
+
+  it('keeps a disabled element at rest', () => {
+    for (const interaction of ['hover', 'active', 'focus-visible'] as const) {
+      expect(forceBody('<button class="b" disabled aria-disabled="true">Go</button>', interaction)).toBe(
+        '<button class="b" disabled aria-disabled="true">Go</button>',
+      );
+      expect(forceBody('<a class="b" aria-disabled="true">Go</a>', interaction)).toBe(
+        '<a class="b" aria-disabled="true">Go</a>',
+      );
+    }
   });
 });
 

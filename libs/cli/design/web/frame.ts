@@ -161,7 +161,7 @@ const force = (element: Element, name: string) => {
   if (name === 'disabled') {
     element.setAttribute('disabled', '');
     element.setAttribute('aria-disabled', 'true');
-  } else {
+  } else if (!element.hasAttribute('disabled') && element.getAttribute('aria-disabled') !== 'true') {
     element.setAttribute('data-et-force', name);
   }
 };

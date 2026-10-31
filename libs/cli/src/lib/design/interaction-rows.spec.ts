@@ -27,6 +27,16 @@ describe('interactionRows', () => {
     });
   });
 
+  it('draws a disabled row only at rest', () => {
+    const rows = interactionRows(
+      { save: { label: 'a' }, off: { label: 'b', disabled: true } },
+      { interactions: ['hover', 'active'], force: (props, interaction) => ({ ...props, interaction }) },
+    );
+
+    expect(Object.keys(rows.states)).toEqual(['save', 'save-hover', 'save-active', 'off']);
+    expect(rows.grid.rows.off).toEqual({ rest: 'off' });
+  });
+
   it('keeps the built state names in the type of a part', () => {
     const part = definePart({ note: 'n', ...built, render: ({ label }: Props) => ({ body: label, styles: '' }) });
     const hovered: Props = part.states['count-hover'];

@@ -37,11 +37,19 @@ export const markBody = (body: string, key: string) => {
   return `${body.slice(0, valueEnd)} ${key}${body.slice(valueEnd)}`;
 };
 
-/** Forces `interaction` on the first element of `body` the way a frame forces it on the root of a part. */
+const DISABLED_ATTRIBUTE = /\s(?:disabled(?=[\s=/>]|$)|aria-disabled\s*=\s*["']?true\b)/i;
+
+const isDisabledMarkup = (attributes: string) => DISABLED_ATTRIBUTE.test(attributes);
+
+/**
+ * Forces `interaction` on the first element of `body` the way a frame forces it on the root of a part. A disabled
+ * element stays at rest: it gets no forced hover, active or focus-visible.
+ */
 export const forceBody = (body: string, interaction: Interaction) => {
   const attributesAt = attributesAtOf(body);
 
   if (attributesAt === null) return body;
+  if (interaction !== 'disabled' && isDisabledMarkup(ATTRIBUTES.exec(body.slice(attributesAt))?.[0] ?? '')) return body;
 
   const forced = interaction === 'disabled' ? ' disabled aria-disabled="true"' : ` data-et-force="${interaction}"`;
 
