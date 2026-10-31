@@ -229,7 +229,10 @@ yarn nx g @ethlete/components:migrate-grid-engine-internals
 `--et-grid-item-radius` (default `0`) and `--et-grid-item-bg` (default
 `--et-surface-background-solid`) for its own box, and `--et-grid-item-resize-handle-color`
 (default `--et-surface-color-solid`) for the resize handles. The default item toolbar exposes
-`--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides.
+`--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides. An item with
+actions pads its content's end by `--et-grid-item-actions-reserve` (default fits the default
+remove button), so a long title ends before the actions; raise it for a wider custom actions
+component.
 
 ## Error codes
 

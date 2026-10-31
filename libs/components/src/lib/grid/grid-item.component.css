@@ -152,6 +152,10 @@
     min-height: 0;
   }
 
+  .et-grid-item:has(> .et-grid-item__actions:not(:empty)) > .et-grid-item__content {
+    padding-inline-end: var(--et-grid-item-actions-reserve, calc(2.4rem + 12px));
+  }
+
   .et-grid:not(.et-grid--readonly) .et-grid-item__content {
     cursor: grab;
     user-select: none;
