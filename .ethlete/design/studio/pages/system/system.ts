@@ -20,19 +20,17 @@ import {
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
 const ghostBox =
-  '<span class="block w-15 h-10 rounded-sm outline outline-(--et-surface-border-solid) et-surface--dark bg-(--et-surface-background-solid)"></span>';
+  '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border et-surface--dark bg-et-surface-bg"></span>';
 
 const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-(--st-shell-inset-left)">
   <div class="w-2xl flex flex-col items-center gap-space-4 text-center text-ui-sm">
     <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">${ghostBox}${ghostBox}${ghostBox}${ghostBox}</div>
-    <p class="m-0 text-(--et-surface-color-solid) font-ui-strong text-ui-md">Noch keine Teile</p>
-    <p class="m-0 text-(--et-surface-color-muted-solid)">
+    <p class="m-0 text-et-surface font-ui-strong text-ui-md">Noch keine Teile</p>
+    <p class="m-0 text-et-surface-muted">
       Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent
       zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:
     </p>
-    <p
-      class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-(--et-surface-background-solid) text-(--et-surface-color-solid) text-ui-sm"
-    >
+    <p class="m-0 p-space-3 rounded-(--radius-control-md) et-surface--dark bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
     ${copy.body}
@@ -43,7 +41,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean) => {
   const count = open.points.length;
   const drawn = await button.render({
     label: count ? `${count} offen` : 'Nichts offen',
-    icon: count ? icon('warning', { size: 14, cls: 'text-(--warning)' }) : checkIcon(14),
+    icon: count ? icon('warning', { size: 14, cls: 'et-color--warning text-et-theme' }) : checkIcon(14),
     variant: 'outline',
     size: 'sm',
     pressed,
@@ -100,9 +98,7 @@ const popover = (open: PartOpenPoints) => {
   </div>`;
 };
 
-const emptySide = html`<p class="px-space-3 py-space-2 text-(--et-surface-color-muted-solid) text-ui-sm">
-  Noch keine Teile.
-</p>`;
+const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Teile.</p>`;
 
 export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?: boolean; closed?: boolean }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
