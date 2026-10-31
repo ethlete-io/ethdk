@@ -1,0 +1,6 @@
+@media (prefers-color-scheme: dark) {
+  .sdk-highlight {
+    --et-surface-highlight-solid: color-mix(in srgb, var(--et-surface-color-solid) 18%, transparent);
+    --sdk-elevation-highlight: inset 0 0.1rem 0 0 var(--et-surface-highlight-solid);
+  }
+}

@@ -1,0 +1,101 @@
+.sdk-elevation {
+  box-sizing: border-box;
+  width: max-content;
+  padding: 4rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+.sdk-elevation-row {
+  display: flex;
+  gap: 4rem;
+  align-items: flex-start;
+}
+
+.sdk-elevation-card,
+.sdk-elevation-panel,
+.sdk-elevation-pane-panel {
+  --sdk-elevation-edge: var(--et-surface-border-solid);
+  --sdk-elevation-highlight: 0 0 0 0 transparent;
+
+  box-sizing: border-box;
+  border: 0.1rem solid var(--sdk-elevation-edge);
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  box-shadow: var(--sdk-elevation-highlight), var(--sdk-elevation-shadow);
+}
+
+.sdk-elevation-card {
+  --sdk-elevation-shadow:
+    0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb) / 0.2), 0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb) / 0.12);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 20rem;
+  padding: 1.6rem;
+  border-radius: 1.2rem;
+}
+
+.sdk-elevation-panel {
+  --sdk-elevation-shadow:
+    0 0.6rem 1.2rem rgb(var(--et-shadow-color-rgb) / 0.22), 0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb) / 0.14);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 28rem;
+  padding: 2rem;
+  border-radius: 1.6rem;
+}
+
+.sdk-elevation-pane-panel {
+  --sdk-elevation-shadow: var(--et-anchored-panel-shadow, 0 1rem 2.4rem rgb(var(--et-shadow-color-rgb) / 0.16));
+
+  width: 22rem;
+}
+
+.sdk-elevation-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.sdk-elevation-label {
+  color: var(--et-surface-color-muted-solid);
+  font-size: 1.2rem;
+}
+
+.sdk-elevation-muted {
+  color: var(--et-surface-color-muted-solid);
+}
+
+.sdk-elevation-line {
+  height: 3.2rem;
+  margin-top: 0.8rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+}
+
+.sdk-elevation-line--short {
+  width: 60%;
+  margin-top: 0;
+}
+
+.sdk-elevation-stack {
+  position: relative;
+  width: 40rem;
+  height: 30rem;
+}
+
+.sdk-elevation-stack .sdk-elevation-panel {
+  width: 32rem;
+  height: 22rem;
+}
+
+.sdk-elevation-pane--over {
+  position: absolute;
+  top: 12rem;
+  left: 16rem;
+}

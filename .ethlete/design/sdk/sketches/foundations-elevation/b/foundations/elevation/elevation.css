@@ -1,0 +1,22 @@
+@media (prefers-color-scheme: dark) {
+  .sdk-dark-shadow--card {
+    --et-elevation-shadow-resting:
+      0 0 0 0.1rem rgb(var(--et-shadow-color-rgb) / 0.5), 0 0.2rem 0.4rem rgb(var(--et-shadow-color-rgb) / 0.6),
+      0 0.6rem 1.6rem rgb(var(--et-shadow-color-rgb) / 0.5);
+    --sdk-elevation-shadow: var(--et-elevation-shadow-resting);
+  }
+
+  .sdk-dark-shadow--panel {
+    --et-elevation-shadow-raised:
+      0 0 0 0.1rem rgb(var(--et-shadow-color-rgb) / 0.5), 0 0.4rem 0.8rem rgb(var(--et-shadow-color-rgb) / 0.6),
+      0 1.2rem 3.2rem rgb(var(--et-shadow-color-rgb) / 0.6);
+    --sdk-elevation-shadow: var(--et-elevation-shadow-raised);
+  }
+
+  .sdk-dark-shadow--pane {
+    --et-anchored-panel-shadow:
+      0 0 0 0.1rem rgb(var(--et-shadow-color-rgb) / 0.5), 0 0.4rem 0.8rem rgb(var(--et-shadow-color-rgb) / 0.6),
+      0 1.6rem 4rem rgb(var(--et-shadow-color-rgb) / 0.7);
+    --sdk-elevation-shadow: var(--et-anchored-panel-shadow);
+  }
+}
