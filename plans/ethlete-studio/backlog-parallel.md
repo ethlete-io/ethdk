@@ -443,6 +443,22 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   `foundations/icons` with the construction view on candidate grids, and Tom picks the grid. Then the icons not on it
   are redrawn in `libs/components` (for example the Font Awesome chevron, check and times), with a changeset.
 
+### Form-field variant rows and SDK design shipping decisions (2026-10-31)
+
+- Q81: the sdk form-field variant rows (sketch r1) take variant b, the fields with the value "Ada Lovelace".
+- Q82: the grid gets row-group headers, for example "Size" over `size-sm`, `size-md`, `size-lg`. Built by
+  `ethlete-sdk-57`.
+- Q83: `fill-filled` looks the same as `fill-transparent` on the light surface. `ethlete-sdk-33` finds the cause and
+  shows Tom candidate light-mode fills in a sketch round; Tom picks the colour.
+- Q84: a forced `focus-visible` state also sets `:focus-within` on the ancestors, so a floating label floats as in the
+  real app. Built by `ethlete-sdk-57`.
+- Q85: shipping the sdk design product (Q73). `ethlete-sdk-33` copies `.ethlete/design/sdk` into the package as
+  `design/sdk/` (without `tsconfig.json`, `sketches/`, `comments/`, `accepted.json`, `merged.json`) plus a
+  `design/config.json` with `products.sdk`, after the select-panel slice. `ethlete-sdk-57` makes the CLI default
+  `render.packages` to `node_modules` when the repo has no `dist/libs` (a consumer only sets `"base"`), writes no
+  generated `tsconfig.json` into a base outside the repo, and resolves `@system/*` for a base in `node_modules`. Then
+  `ethlete-sdk-33` tests a consumer against a packed tarball.
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
