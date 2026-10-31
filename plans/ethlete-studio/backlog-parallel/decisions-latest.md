@@ -223,3 +223,10 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   the MVP.
 - **Q248 (2026-11-01), after the MVP with the extraction:** `elements/canvas-frames` -> `canvas-frame-grid.component.ts`;
   `studio-view.component.ts` gets `elements/shell-main` as its part. Recommended, not yet confirmed by Tom.
+- **Q249 (Tom, 2026-11-01), MVP:** the missing interaction states of the declared controls get drawn with the
+  existing row, option and menu styles, no new look: tree-row (row, row.selected, row.selected-hover), part-tree
+  (row), shell-project-option (option.selected-hover), shell-main (section, product, products: hover, active,
+  focus-visible), canvas-frames (out, reset, in, fit; plus its open default contrast finding). One sketch round per
+  part; Tom sees each in Studio and merges. The MVP measure is `design check --product studio --complete` from now on.
+- **Go in advance (Tom, 2026-11-01):** Tom gave the go for the six Q247-linked parts in advance in chat; the grill
+  session ran `design go ... --by tom` for tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, pages/merge.
