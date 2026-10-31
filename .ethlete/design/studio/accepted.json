@@ -1441,5 +1441,33 @@
     "note": "Q246 decided by Tom",
     "hash": "ee3d99940358a87d",
     "at": "2026-10-31T23:06:36.286Z"
+  },
+  {
+    "part": "pages/system",
+    "by": "claude-sonnet-5-5",
+    "note": "implements link (MVP gap)",
+    "hash": "e82726307d35bbd4",
+    "at": "2026-10-31T23:09:05.405Z"
+  },
+  {
+    "part": "pages/flows",
+    "by": "claude-sonnet-5-5",
+    "note": "implements link (MVP gap)",
+    "hash": "142b826a05d31fbb",
+    "at": "2026-10-31T23:09:06.924Z"
+  },
+  {
+    "part": "pages/sketches",
+    "by": "claude-sonnet-5-5",
+    "note": "implements link (MVP gap)",
+    "hash": "16fe088b5d526705",
+    "at": "2026-10-31T23:09:08.371Z"
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-sonnet-5-5",
+    "note": "declare controls",
+    "hash": "a87826a30b366cf1",
+    "at": "2026-10-31T23:09:09.832Z"
   }
 ]

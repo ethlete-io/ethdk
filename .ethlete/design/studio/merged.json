@@ -9,7 +9,7 @@
   "components/zoom-chip": "dfb696249164c628",
   "elements/canvas-frames": "d08233dfef60c684",
   "elements/part-tree": "93a2fcc04810db4c",
-  "elements/shell-main": "e3414f714d500e68",
+  "elements/shell-main": "a87826a30b366cf1",
   "elements/studio-menu": "bcdb97275792be3b",
   "foundations/agent-logos": "da1df24471b4c6b7",
   "foundations/colors": "bc0d499f48f9253f",
@@ -18,11 +18,11 @@
   "foundations/motion": "7d6fb324da3cced7",
   "foundations/spacing": "b8821653c3476a2d",
   "foundations/type": "55cbe2495f74530a",
-  "pages/flows": "60aecaaaa21b4241",
+  "pages/flows": "142b826a05d31fbb",
   "pages/inbox": "ee3d99940358a87d",
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "282517ae0a0b86af",
-  "pages/sketches": "201f5b2679aa4c1f",
+  "pages/sketches": "16fe088b5d526705",
   "pages/start": "28fd542da5c7fc82",
-  "pages/system": "ce4c78fde9148590"
+  "pages/system": "e82726307d35bbd4"
 }

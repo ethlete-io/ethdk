@@ -111,6 +111,7 @@ const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted tex
 export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?: boolean; closed?: boolean }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
+  implements: { route: '/', component: 'apps/ethlete-studio/src/app/system-view/system-view.component.ts' },
   states: {
     part: {},
     empty: { empty: true },
