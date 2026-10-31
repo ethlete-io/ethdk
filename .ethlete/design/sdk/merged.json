@@ -2,8 +2,10 @@
   "components/button": "ef27bebcfef3d8c3",
   "components/floating-action": "10a89705a6724bc2",
   "components/form-field": "2f5692b326f3432a",
+  "components/input": "de666348456d04ca",
   "components/select": "3915f5657c75ef8b",
   "components/select-panel": "02b5ecfc4ba38913",
+  "components/textarea": "e340122cf7959877",
   "components/tree": "6ec6cc2953065201",
   "foundations/colors": "417ee640702da3c3",
   "foundations/icons": "0d29d1abcb0254cd"

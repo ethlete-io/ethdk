@@ -89,5 +89,19 @@
     "note": "merged without a pick: allowed by Q152 plans/ethlete-studio/backlog-parallel.md (Q138)",
     "hash": "10a89705a6724bc2",
     "at": "2026-10-31T12:48:49.985Z"
+  },
+  {
+    "part": "components/input",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q152 plans/ethlete-studio/backlog-parallel.md (Q140-Q144)",
+    "hash": "de666348456d04ca",
+    "at": "2026-10-31T13:00:46.934Z"
+  },
+  {
+    "part": "components/textarea",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q152 plans/ethlete-studio/backlog-parallel.md (Q140-Q144)",
+    "hash": "e340122cf7959877",
+    "at": "2026-10-31T13:00:47.693Z"
   }
 ]
