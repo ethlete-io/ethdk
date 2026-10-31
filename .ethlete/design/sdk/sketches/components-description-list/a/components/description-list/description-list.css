@@ -1,7 +1,0 @@
-.description-list-frame {
-  max-inline-size: 42rem;
-  padding: 3.2rem;
-  background: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
-  font-family: var(--et-font-sans, sans-serif);
-}

@@ -103,5 +103,236 @@
     "note": "merged without a pick: allowed by Q152 plans/ethlete-studio/backlog-parallel.md (Q140-Q144)",
     "hash": "e340122cf7959877",
     "at": "2026-10-31T13:00:47.693Z"
+  },
+  {
+    "part": "components/avatar",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "19759f75b493f4ae",
+    "at": "2026-10-31T13:25:25.703Z"
+  },
+  {
+    "part": "components/badge",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "d8fc3c4cdf231487",
+    "at": "2026-10-31T13:25:31.651Z"
+  },
+  {
+    "part": "components/banner",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "0262c443ee139e8a",
+    "at": "2026-10-31T13:25:32.902Z"
+  },
+  {
+    "part": "components/breadcrumb",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "2c89edad01a68fe5",
+    "at": "2026-10-31T13:25:33.925Z"
+  },
+  {
+    "part": "components/calendar",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "c8a4a9b2e66b7023",
+    "at": "2026-10-31T13:25:35.223Z"
+  },
+  {
+    "part": "components/card",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "1bddba703f7c12fc",
+    "at": "2026-10-31T13:25:36.511Z"
+  },
+  {
+    "part": "components/carousel",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "dc7899cd298f5600",
+    "at": "2026-10-31T13:25:37.677Z"
+  },
+  {
+    "part": "components/chip",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "bc038d45ae887187",
+    "at": "2026-10-31T13:25:39.038Z"
+  },
+  {
+    "part": "components/copy-button",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "a83c33a6d57b2675",
+    "at": "2026-10-31T13:25:41.752Z"
+  },
+  {
+    "part": "components/dialog",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "456c29d64cdf631d",
+    "at": "2026-10-31T13:25:44.398Z"
+  },
+  {
+    "part": "components/empty-state",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "e9b939860586590a",
+    "at": "2026-10-31T13:25:46.997Z"
+  },
+  {
+    "part": "components/grid",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "7cceb70120d56c6a",
+    "at": "2026-10-31T13:25:49.032Z"
+  },
+  {
+    "part": "components/loader",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "e33f0439b02a0c1b",
+    "at": "2026-10-31T13:25:50.747Z"
+  },
+  {
+    "part": "components/match",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "f7c6bcd3bfc162ae",
+    "at": "2026-10-31T13:25:52.399Z"
+  },
+  {
+    "part": "components/menu",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "f5beed5cbc682af6",
+    "at": "2026-10-31T13:25:53.991Z"
+  },
+  {
+    "part": "components/pagination",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "79280214de615ac7",
+    "at": "2026-10-31T13:25:55.427Z"
+  },
+  {
+    "part": "components/progress-steps",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "784478401d156e3e",
+    "at": "2026-10-31T13:25:57.197Z"
+  },
+  {
+    "part": "components/query-error",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "45d96388a85db3af",
+    "at": "2026-10-31T13:25:58.981Z"
+  },
+  {
+    "part": "components/scrollable",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "301ecb520d439f3b",
+    "at": "2026-10-31T13:26:00.449Z"
+  },
+  {
+    "part": "components/standings",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "831e691d6cdb7f84",
+    "at": "2026-10-31T13:26:01.953Z"
+  },
+  {
+    "part": "components/stat-tile",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "1aab536b1f455a0d",
+    "at": "2026-10-31T13:26:03.439Z"
+  },
+  {
+    "part": "components/stream",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "da19ebbede187cb6",
+    "at": "2026-10-31T13:26:05.037Z"
+  },
+  {
+    "part": "components/table",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "203f8d52d6e39ce1",
+    "at": "2026-10-31T13:26:06.503Z"
+  },
+  {
+    "part": "components/timeline",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "6a0bc539efd320a4",
+    "at": "2026-10-31T13:26:07.889Z"
+  },
+  {
+    "part": "components/toolbar",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "52ab5acd9247359b",
+    "at": "2026-10-31T13:26:09.370Z"
+  },
+  {
+    "part": "components/description-list",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "34aa7b6809bde589",
+    "at": "2026-10-31T13:26:10.495Z"
+  },
+  {
+    "part": "components/divider",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "d0b5367fc00cab3e",
+    "at": "2026-10-31T13:26:11.676Z"
+  },
+  {
+    "part": "components/kbd",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "994b9443859fd881",
+    "at": "2026-10-31T13:26:12.882Z"
+  },
+  {
+    "part": "components/masonry",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "60c2cc20a08823f2",
+    "at": "2026-10-31T13:26:14.066Z"
+  },
+  {
+    "part": "components/picture",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "32a45fbbe29c0ce5",
+    "at": "2026-10-31T13:26:15.256Z"
+  },
+  {
+    "part": "components/scrollbar",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "7a156173faf54609",
+    "at": "2026-10-31T13:26:16.457Z"
+  },
+  {
+    "part": "components/skeleton",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "39ef1a44f3a36678",
+    "at": "2026-10-31T13:26:17.699Z"
+  },
+  {
+    "part": "foundations/icons",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Tom chat 2026-10-31, plans/ethlete-studio/backlog-parallel.md Q152",
+    "hash": "9159b49e97564072",
+    "at": "2026-10-31T13:26:18.892Z"
   }
 ]

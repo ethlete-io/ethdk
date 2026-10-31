@@ -1,8 +1,0 @@
-.banner-frame {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  padding: 2.4rem 1.6rem;
-  background: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
-}
