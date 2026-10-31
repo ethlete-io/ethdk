@@ -303,3 +303,17 @@ Each slice gets an "in progress" note here when it starts.
   0.986x and 0.249x (ratio 0.253); close resumed both at rate 1 (293 -> 510 ms after 250 ms) and they finished at
   140 px, opacity 1, step done, with the frame still live. Open: the part grid stayed `invisible` in that run (not
   revealed, before the fix too); not looked into.
+- Hidden part grid (2026-10-31): a test-setup artefact, not a Studio bug. The scratch copy's `node_modules/.design-explore`
+  was a symlink into the repo's, so Vite refused `frame.html` ("outside of Vite serving allow list") and each
+  `/__design/shot` request never answered (curl: no reply in 120 s). The four cell images stayed `slow`, no `loadEnd`,
+  the grid kept its loading dot. With a real `.design-explore` dir all four shots loaded and the grid revealed, also
+  after opening a keyframe (live cell, timeline driven). Open: a shot request that never answers keeps the grid hidden
+  forever; the reveal has no end of its own. Make `.design-explore`, `.vite*` and `.cache` real dirs in a scratch copy.
+- Follow-ups (2) and (3) (commit `cb415275c`): a change of preset or Reduced while the timeline is open activates and
+  focuses the new driven frame (`MotionCanvas.focusFrame`); opening focuses it too. `focusFrame` now keeps the frame in
+  view on canvas resizes until the user moves the camera (the timeline shrinks the canvas from 813 to 593 px).
+  Chromium, a page fixture with phone/desktop frames, zoomed so the driven frame sat at y = -1927: open put "closed
+  phone" live and in view (y 64, 390 px tall); desktop made "closed desktop" live and driven ("in the live frame"),
+  centred; Reduced kept it live and driven. Before the fix desktop left "closed phone" live and the timeline on images.
+  Not checked: a grid part with several presets (grid cells carry no preset, so they never retarget); the desktop page
+  element (both schemes) is 854 px tall in a 593 px canvas, only its first scheme copy is focused.
