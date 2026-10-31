@@ -757,6 +757,27 @@ machen".
 - Q139 error-theme hover tones (Tom, 2026-10-31, option b): a hover in the error state uses the theme's next stronger
   tone (`-active` instead of `-hover`), the same rule as Q101 for filled buttons. Today the checkbox error hover is
   2.77 on dark and the text-field hover ink about 2.8 on white. No theme generator change.
+
+### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
+
+From input r2 (`6760644ee`, checkbox/radio `93a856190`), textarea r2 (`478d57480`) and builder 57's dogfood run.
+Tom took every recommendation.
+
+- Q140 focus colour, input and textarea alike: the surface text colour (17.9 light / 17.2 dark) for the 2px focus
+  frame (input variant e, textarea variant d). The theme ink (5.48 light) loses to the light hover (6.69), against
+  Q111.
+- Q141 readonly signal: dashed frame (variant d). No lock icon; the lock already means "secret" on the API key field.
+- Q142 readonly focus: a 2px dashed frame in the focus colour (Q140). Today the lib draws no focus frame there.
+- Q143 rest frame: input and textarea use the same value, the input one (4.74 light / 6.94 dark).
+- Q144 textarea resize grip in the corner (variant d), so text scrolls to the frame edge (Q118).
+- Q145 Studio brief for the chat agent through `--append-system-prompt` in `agent_claude.rs`: how to check a change
+  (`et design check`, a shot), no changeset for design files, use the product type tokens. Rust edit, Studio restarts.
+- Q146 the brief points at the foundations/type part (`font-ui-medium`, `font-ui-strong`). No check warning yet; add
+  one only if the agent still uses raw font classes.
+- Q147 chat messages render a markdown subset: code, bold, lists. No tables, no images.
+- Q148 a click on a part grid cell selects that state; the context line names the state.
+- Q149 a sketch selection label reads like `pages/system · desktop (context)`, no repeats.
+- Q150 opening the chat keeps Tom's zoom; Studio re-fits only when the view was fitted before.
   As built (`f3727c4c8`): `libs/cli/src/lib/design/shot-store.ts`. An entry is keyed by the cli build stamp plus
   the memory cache key, and holds the picture, a scope string (drawn parts, fixtures, a listing of the shared
   directories) and the sha1 of every input file from the module graph (part, imports, product stylesheets, package
