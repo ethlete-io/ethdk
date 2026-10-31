@@ -1,0 +1,15 @@
+.sdk-tooltip-stage {
+  display: inline-block;
+  padding: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .et-tooltip-panel {
+    --et-surface-ring-solid: color-mix(in srgb, var(--et-surface-color-solid) 35%, var(--et-surface-background-solid));
+    --et-overlay-arrow-border: var(--et-surface-ring-solid);
+  }
+
+  .et-tooltip {
+    --_et-floating-tip-border: var(--et-surface-ring-solid);
+  }
+}

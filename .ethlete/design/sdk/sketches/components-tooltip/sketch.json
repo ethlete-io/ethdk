@@ -1,0 +1,39 @@
+{
+  "target": "components/tooltip",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:56:16.726Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Pane edge",
+      "note": "The tooltip pane fills with --et-surface-background-solid of the surface it inherits, so on the base surface the fill equals the base (1.00:1 in both schemes) and only the 1 px border and the shadow mark the edge. In light the border (229 on 255) is 1.26:1 but the shadow carries the edge. In dark the border (64 on 23) is 1.73:1 and the shadow can only darken 23 to 21, so the pane and arrow edge nearly vanish. Text on fill passes: 12.63:1 light, 13.33:1 dark. Every variant leaves the light scheme pixel-identical and changes no background colour; the arrow edge follows the pane border."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today's look: dark border --et-surface-border-solid 64, 1.73:1 against the base and the equal fill; light 229, 1.26:1 plus shadow."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Dark-only 1 px ring 77 = color-mix(--et-surface-color-solid 24 %, --et-surface-background-solid) on pane border and arrow: 2.12:1 against the base (today 1.73). The same --et-surface-ring-solid token as the foundations/elevation round, so tooltip and overlay panes share one dark edge; under the elevation round's own 2.61 because a tooltip mixes over the 23 base, not the 38 elevated fill."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Dark-only 1 px ring 102 = the same mix at 35 %: 3.1:1 against the base, the WCAG 1.4.11 line. Reads as a drawn outline next to the text, and departs from the 24 % elevation ring, so tooltips would get their own edge value."
+    }
+  }
+}
