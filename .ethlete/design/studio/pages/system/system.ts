@@ -1,3 +1,4 @@
+import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
@@ -84,18 +85,22 @@ const popover = (open: PartOpenPoints) => {
           >Jeder Zustand ist gezeichnet, verknüpft und besprochen.</span
         >
       </div>`;
-  return html`<div
-    class="absolute top-14 right-space-3 w-96 rounded-control-lg border border-et-surface-interaction et-surface--dark-elevated-2 bg-(--et-surface-background-solid) shadow-(--et-anchored-panel-shadow,0_10px_24px_rgb(var(--et-shadow-color-rgb,0_0_0)/0.16)) text-ui-sm"
-  >
-    <header
-      class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
-    >
-      <span class="text-(--et-surface-color-solid) font-ui-strong"
-        >${groups.length ? 'Offene Punkte' : 'Nichts offen'}</span
-      >
-      <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
-    </header>
-    ${list}
+  return html`<div class="absolute top-14 right-space-3">
+    ${anchoredDialog({
+      label: 'Offene Punkte',
+      modal: false,
+      content: html`<div class="w-96 text-ui-sm">
+        <header
+          class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
+        >
+          <span class="text-(--et-surface-color-solid) font-ui-strong"
+            >${groups.length ? 'Offene Punkte' : 'Nichts offen'}</span
+          >
+          <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
+        </header>
+        ${list}
+      </div>`,
+    })}
   </div>`;
 };
 
@@ -148,7 +153,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + tree.styles + frames.styles + toggle.styles,
+      styles: shell.styles + menu.styles + tree.styles + frames.styles + toggle.styles + anchoredDialogStyles,
     });
   },
 });
