@@ -9,7 +9,7 @@ import { resolveProduct } from './resolve-product';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './render-check';
 
 const skipWithoutBrowser = (context: { skip: (note?: string) => never }, reason: string) => {
-  if (process.env.CI) throw new Error(`No browser in CI: ${reason}`);
+  if (process.env['CI']) throw new Error(`No browser in CI: ${reason}`);
 
   return context.skip(reason);
 };

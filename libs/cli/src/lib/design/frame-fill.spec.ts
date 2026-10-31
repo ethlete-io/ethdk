@@ -9,7 +9,7 @@ describe('paintFill', () => {
 
   beforeAll(async () => {
     browser = await chromium.launch().catch((error: unknown) => {
-      if (process.env.CI) throw error;
+      if (process.env['CI']) throw error;
     });
   });
 
