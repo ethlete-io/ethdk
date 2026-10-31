@@ -14,7 +14,21 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { EMPTY, Observable, catchError, combineLatest, defer, filter, fromEvent, map, of, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  combineLatest,
+  defer,
+  filter,
+  fromEvent,
+  map,
+  of,
+  switchMap,
+  take,
+  tap,
+  timer,
+} from 'rxjs';
 import { ColorScheme, FrameCell, FrameGrid, FrameMessage, frameMessageOf, withScheme } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
@@ -24,6 +38,8 @@ type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 const cellKeyOf = (row: string, column: string) => JSON.stringify([row, column]);
 
 const settledKeyOf = (id: string, scheme: ColorScheme | null) => JSON.stringify([id, scheme]);
+
+export const LIVE_REVEAL_TIMEOUT_MS = 3000;
 
 const SCHEME_LABELS: Record<ColorScheme, string> = { light: 'Light', dark: 'Dark' };
 
@@ -66,11 +82,15 @@ export class CanvasFrameCellComponent {
   public cell = input.required<FrameCell>();
   public live = input(false);
   public scheme = input<ColorScheme | null>(null);
+  public revealLive = input(true);
   public loadEnd = output<void>();
+  public pageReadyChange = output<boolean>();
 
   private iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 
   private shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
+  private pageRevealed$ = toObservable(computed(() => this.live() && this.revealLive()));
 
   private src = computed(() => this.schemed(this.cell().src));
 
@@ -87,10 +107,18 @@ export class CanvasFrameCellComponent {
   constructor() {
     toObservable(this.page)
       .pipe(
+        tap(() => this.pageReadyChange.emit(false)),
         switchMap(({ iframe }) =>
           iframe
             ? combineLatest([this.reportedSizes$(iframe), paintedFrame$(iframe).pipe(filter(Boolean))]).pipe(
-                map(([size]) => size),
+                tap(() => this.pageReadyChange.emit(true)),
+                switchMap(([size]) =>
+                  this.pageRevealed$.pipe(
+                    filter(Boolean),
+                    take(1),
+                    map(() => size),
+                  ),
+                ),
               )
             : EMPTY,
         ),
@@ -109,6 +137,7 @@ export class CanvasFrameCellComponent {
         tap((image) => {
           if (image) this.size.set({ width: image.naturalWidth, height: image.naturalHeight });
           this.painted.set(false);
+          this.pageReadyChange.emit(false);
         }),
         takeUntilDestroyed(),
       )
@@ -206,7 +235,9 @@ export class CanvasFrameCellComponent {
                       [cell]="cell"
                       [scheme]="scheme"
                       [live]="cellLive(cell.id)"
+                      [revealLive]="liveRevealed()"
                       (loadEnd)="settle(cell.id, scheme)"
+                      (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
                     />
                   } @else if (drawnRows().has(row)) {
                     <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
@@ -249,7 +280,9 @@ export class CanvasFrameCellComponent {
                       [cell]="cell"
                       [scheme]="scheme"
                       [live]="cellLive(cell.id)"
+                      [revealLive]="liveRevealed()"
                       (loadEnd)="settle(cell.id, scheme)"
+                      (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
                     />
                   }
                 </div>
@@ -291,7 +324,9 @@ export class CanvasFrameCellComponent {
                   [cell]="cell"
                   [scheme]="scheme"
                   [live]="cellLive(cell.id)"
+                  [revealLive]="liveRevealed()"
                   (loadEnd)="settle(cell.id, scheme)"
+                  (pageReadyChange)="markReady({ id: cell.id, scheme }, $event)"
                 />
               } @else if (drawnRows().has(row)) {
                 <span class="font-code text-text-muted italic" data-grid-empty>not drawn</span>
@@ -374,6 +409,31 @@ export class CanvasFrameGridComponent {
     );
   });
 
+  private liveKeys = computed(() => {
+    const schemes = this.schemes();
+
+    return this.grid()
+      .cells.filter((cell) => this.cellLive(cell.id))
+      .flatMap((cell) => schemes.map((scheme) => settledKeyOf(cell.id, scheme)));
+  });
+
+  private liveRound = computed(() =>
+    this.live() ? [...this.liveKeys(), ...this.grid().cells.map((cell) => cell.src)].join('\n') : null,
+  );
+
+  private readyCells = signal<ReadonlySet<string>>(new Set());
+
+  private liveTimedOut = linkedSignal<string | null, boolean>({
+    source: () => this.liveRound(),
+    computation: () => false,
+  });
+
+  protected liveRevealed = computed(() => {
+    const ready = this.readyCells();
+
+    return this.liveTimedOut() || this.liveKeys().every((key) => ready.has(key));
+  });
+
   private observed = computed(() => {
     const table = this.table()?.nativeElement;
 
@@ -409,6 +469,14 @@ export class CanvasFrameGridComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    toObservable(this.liveRound)
+      .pipe(
+        switchMap((round) => (round === null ? EMPTY : timer(LIVE_REVEAL_TIMEOUT_MS))),
+        tap(() => this.liveTimedOut.set(true)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected cellLive(id: string) {
@@ -421,6 +489,21 @@ export class CanvasFrameGridComponent {
     const key = settledKeyOf(id, scheme);
 
     this.settledCells.update((settled) => (settled.has(key) ? settled : new Set(settled).add(key)));
+  }
+
+  protected markReady({ id, scheme }: { id: string; scheme: ColorScheme | null }, ready: boolean) {
+    const key = settledKeyOf(id, scheme);
+
+    this.readyCells.update((cells) => {
+      if (cells.has(key) === ready) return cells;
+
+      const next = new Set(cells);
+
+      if (ready) next.add(key);
+      else next.delete(key);
+
+      return next;
+    });
   }
 
   protected schemeLabelOf(scheme: ColorScheme | null) {

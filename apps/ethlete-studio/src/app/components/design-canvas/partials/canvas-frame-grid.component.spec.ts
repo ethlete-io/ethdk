@@ -2,7 +2,11 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { FrameCell, FrameGrid } from '../canvas-frame';
-import { CanvasFrameCellComponent, CanvasFrameGridComponent } from './canvas-frame-grid.component';
+import {
+  CanvasFrameCellComponent,
+  CanvasFrameGridComponent,
+  LIVE_REVEAL_TIMEOUT_MS,
+} from './canvas-frame-grid.component';
 
 const render = async (cell: FrameCell) => {
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -336,6 +340,104 @@ describe('CanvasFrameGridComponent', () => {
       await settle(fixture, 2, 'load');
 
       expect(fixture.nativeElement.querySelector('.invisible')).toBeNull();
+    });
+  });
+
+  describe('go live', () => {
+    const live = cells.slice(0, 2).map((cell) => ({ ...cell, screenshot: `/shot/${cell.id}.png` }));
+    let fixture: ComponentFixture<CanvasFrameGridComponent>;
+
+    const flush = async () => {
+      for (let tick = 0; tick < 4; tick++) await vi.advanceTimersByTimeAsync(20);
+    };
+
+    const paint = async (index: number) => {
+      const source = fixture.nativeElement.querySelectorAll('iframe')[index].contentWindow;
+
+      window.dispatchEvent(
+        new MessageEvent('message', { source, data: { type: 'design-explore:height', height: 80 } }),
+      );
+      window.dispatchEvent(new MessageEvent('message', { source, data: { type: 'design-explore:painted' } }));
+      await flush();
+    };
+
+    const pagesShown = () =>
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll('ethlete-canvas-frame-cell')].map((cell) => {
+        const page = cell.querySelector('iframe');
+
+        return !!page && !page.classList.contains('opacity-0') && !!cell.querySelector('img.opacity-0');
+      });
+
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+      TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+      fixture = TestBed.createComponent(CanvasFrameGridComponent);
+      fixture.componentRef.setInput('grid', { columns, rows, cells: live });
+      fixture.componentRef.setInput('live', true);
+      await flush();
+    });
+
+    afterEach(() => {
+      delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    });
+
+    it('keeps every shot until every live cell painted, then shows every page in one step', async () => {
+      await paint(0);
+
+      expect(pagesShown()).toEqual([false, false]);
+
+      await paint(1);
+
+      expect(pagesShown()).toEqual([true, true]);
+    });
+
+    it('keeps the shots of a grid that leaves live before every cell painted', async () => {
+      Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+        configurable: true,
+        value: () => new Promise<void>(() => undefined),
+      });
+      await paint(0);
+      fixture.componentRef.setInput('live', false);
+      await flush();
+
+      expect(pagesShown()).toEqual([false, false]);
+    });
+
+    it('waits only for the cells that go live', async () => {
+      fixture.componentRef.setInput('liveCells', new Set([cellAt('leaf', 'hover').id]));
+      await flush();
+      await paint(0);
+
+      expect(pagesShown()).toEqual([false, true]);
+    });
+
+    it('counts a cell that already shows its page when more cells go live', async () => {
+      fixture.componentRef.setInput('liveCells', new Set([cellAt('leaf', 'rest').id]));
+      await flush();
+      await paint(0);
+      fixture.componentRef.setInput('liveCells', null);
+      await flush();
+
+      expect(pagesShown()).toEqual([true, false]);
+
+      await paint(1);
+
+      expect(pagesShown()).toEqual([true, true]);
+    });
+
+    it('shows the pages that painted once a stuck cell runs out of time, the stuck one keeping its shot', async () => {
+      await paint(0);
+      await vi.advanceTimersByTimeAsync(LIVE_REVEAL_TIMEOUT_MS / 2);
+
+      expect(pagesShown()).toEqual([false, false]);
+
+      await vi.advanceTimersByTimeAsync(LIVE_REVEAL_TIMEOUT_MS);
+      await flush();
+
+      expect(pagesShown()).toEqual([true, false]);
     });
   });
 });
