@@ -1,0 +1,15 @@
+@layer components {
+  @container style(--et-surface-type: light) {
+    .et-tree:not(:where([aria-multiselectable])) .et-tree-node:where([data-selected]) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 32%, transparent);
+
+      &:not(:where([aria-disabled])):hover {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 38%, transparent);
+      }
+
+      &:not(:where([aria-disabled])):active {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 44%, transparent);
+      }
+    }
+  }
+}
