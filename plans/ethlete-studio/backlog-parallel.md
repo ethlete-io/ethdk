@@ -478,6 +478,12 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q86: Tom picks the light filled-field fill (Q83 round, a 250 / b 245 / c 240 / d 235) by merging a variant in
   Studio. A sketch-round pick is never a grill question. Tom merged c: the light elevated surface background is
   240 240 240.
+- Q90 (Q78): the product `config.json` lists generator-owned files, for example
+  `"generated": ["foundations/colors/colors.css"]`. The part hash skips them, so a `yarn sdk:tokens` run never marks
+  the part changed. A hand edit to `colors.ts` still does. CI `sdk:tokens:check` guards the generated file. Built by
+  `ethlete-sdk-57`.
+- Studio footer status (Tom, 2026-10-31): the footer gets a status line that shows the render queue (for example
+  queued, rendering, slow or failed shots), so a slow or blank canvas is visible as such. Built by `ethlete-sdk-57`.
 - Q87: the option check icon uses the ink token (in the light scheme the brand-on-light ink), not primary mint. Same
   rule as Q75.
 - Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
