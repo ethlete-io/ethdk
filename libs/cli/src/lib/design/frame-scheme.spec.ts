@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { pinnedMediaText } from '../../../design/web/frame-scheme';
 
 describe('pinnedMediaText', () => {
