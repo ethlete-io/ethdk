@@ -82,5 +82,12 @@
     "note": "Dark-scheme ink fix from Tom's tree comments, relayed by the grill session: the part drops a fixed -on-light colour class, so the ink follows the scheme.",
     "hash": "02b5ecfc4ba38913",
     "at": "2026-10-31T00:28:47.814Z"
+  },
+  {
+    "part": "components/floating-action",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q152 plans/ethlete-studio/backlog-parallel.md (Q138)",
+    "hash": "10a89705a6724bc2",
+    "at": "2026-10-31T12:48:49.985Z"
   }
 ]
