@@ -1,6 +1,5 @@
-import { relative } from 'path';
+import { dirname, relative } from 'path';
 import { DesignConfig } from '../paths';
-import { ProductSource } from './base';
 import { importProblemsOf } from './imports';
 import { isMissingStateGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput, openPointsText } from './open-points';
@@ -94,13 +93,27 @@ const warnChangedOutsideSketch = (product: ResolvedProduct) => {
     );
 };
 
-type Blocking = { rule: string; base: string | null };
+const isInBasePart = (product: ResolvedProduct, file: string) =>
+  product.parts.some((part) => part.origin === 'base' && !relative(dirname(part.file), file).startsWith('..'));
 
-const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: Blocking[] }) => {
+const isBasePartKey = (product: ResolvedProduct, key: string) =>
+  product.parts.find((part) => partKeyOf(part) === key)?.origin === 'base';
+
+const ownerPartOf = (issue: RenderIssue) =>
+  [...issue.path.matchAll(/\[data-et-part=([^\]]+)\]/gu)].pop()?.[1] ?? issue.part;
+
+const printBaseFindings = (product: ResolvedProduct, count: number) => {
+  if (count === 0 || !product.base) return;
+
+  console.log(
+    `${count} finding${count === 1 ? '' : 's'} in base product ${product.base.name} - run et design check --product ${product.base.name}`,
+  );
+};
+
+const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: string[] }) => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
-  let base: ProductSource | null = null;
   const report = (problem: Problem) => {
     const line = lineOf(target, problem);
 
@@ -112,10 +125,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: Block
 
     console.error(line);
     failed = true;
-    options.blocking?.push({
-      rule: problem.rule,
-      base: base && !relative(base.dir, problem.file).startsWith('..') ? base.name : null,
-    });
+    options.blocking?.push(problem.rule);
   };
 
   for (const name of products) {
@@ -129,16 +139,16 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: Block
 
     const product = resolveProduct({ target, name, config: entry });
 
-    base = product.base;
-
     if (options.warn) warnChangedOutsideSketch(product);
 
     goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
-    unusedSharedExportsOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
-    staleReplacesOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
-    tokenSelectorsOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
+    const isOwn = (problem: Problem) => !isInBasePart(product, problem.file);
+    const warnings = [...unusedSharedExportsOf(product), ...staleReplacesOf(product), ...tokenSelectorsOf(product)];
+    const problems = ruleProblemsOf(product);
 
-    ruleProblemsOf(product).forEach(report);
+    warnings.filter(isOwn).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
+    problems.filter(isOwn).forEach(report);
+    printBaseFindings(product, problems.filter((problem) => !isOwn(problem)).length);
 
     writeEditorTsconfig({ target, product });
 
@@ -160,7 +170,8 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: Block
 
 /**
  * Checks the design system of each named product: the rules, then `tsc --noEmit` over its
- * generated tsconfig. Prints one line per problem and `ok` when there is none.
+ * generated tsconfig. Prints one line per problem and `ok` when there is none. The problems of a part the
+ * product takes from its base are counted in one line and do not fail it.
  */
 export const checkSystem = (options: CheckOptions) => {
   const code = reportSystem(options);
@@ -234,15 +245,11 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
 const countsOf = (values: string[]) =>
   [...new Set(values)].map((value) => `${value} ${values.filter((other) => other === value).length}`).join(', ');
 
-const blockedRenderLineOf = (blocking: Blocking[]) => {
-  const inBase = blocking.flatMap((problem) => (problem.base ? [problem.base] : []));
-  const where = inBase.length > 0 ? `, ${inBase.length} of them in base ${[...new Set(inBase)].join(', ')}` : '';
-
-  return `RENDER CHECK NOT RUN - ${blocking.length} problem${blocking.length === 1 ? '' : 's'} above stop it (${countsOf(blocking.map((problem) => problem.rule))}${where}); the open points list no contrasts or missing states until they are fixed`;
-};
+const blockedRenderLineOf = (blocking: string[]) =>
+  `RENDER CHECK NOT RUN - ${blocking.length} problem${blocking.length === 1 ? '' : 's'} above stop it (${countsOf(blocking)}); the open points list no contrasts or missing states until they are fixed`;
 
 const renderSystem = async (options: CheckOptions): Promise<{ code: number; rendered: RenderIssue[] | null }> => {
-  const blocking: Blocking[] = [];
+  const blocking: string[] = [];
   const code = reportSystem({ ...options, warn: true, blocking });
 
   if (code !== 0) {
@@ -262,10 +269,27 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
     return { code: 0, rendered: null };
   }
 
-  rendered.warnings.forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
-  rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+  const resolved = options.products.flatMap((name) => {
+    const entry = options.config.products?.[name];
 
-  return { code: rendered.issues.length > 0 ? 1 : 0, rendered: rendered.issues };
+    return entry ? [resolveProduct({ target: options.target, name, config: entry })] : [];
+  });
+  const isInBase = (issue: RenderIssue) =>
+    resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));
+  const issues = rendered.issues.filter((issue) => !isInBase(issue));
+
+  rendered.warnings
+    .filter((issue) => !isInBase(issue))
+    .forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
+  issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+
+  for (const product of resolved)
+    printBaseFindings(
+      product,
+      rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).length,
+    );
+
+  return { code: issues.length > 0 ? 1 : 0, rendered: issues };
 };
 
 /**

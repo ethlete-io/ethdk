@@ -169,16 +169,31 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
-  it('says which problems stop the render, and how many of them are in the base', async () => {
+  it('leaves the problems of a base part to the base, and checks a part the product overrides as its own', async () => {
     const target = acme();
     const lines = output();
 
-    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
     writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { color: #000; }');
+    writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/button/button.css'), '.acme-button { color: #000; }');
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(lines.filter((line) => line.startsWith('RENDER CHECK'))).toEqual([
-      'RENDER CHECK NOT RUN - 2 problems above stop it (HARD-CODED-COLOUR 2, 1 of them in base acme-base); the open points list no contrasts or missing states until they are fixed',
+    expect(check(target, ['acme'])).toBe(0);
+    expect(lines).toEqual(['1 finding in base product acme-base - run et design check --product acme-base', 'ok']);
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.css'), '.acme-button { color: #fff; }');
+    lines.length = 0;
+
+    expect(check(target, ['acme'])).toBe(1);
+    expect(lines).toEqual([
+      expect.stringMatching(/^HARD-CODED-COLOUR .*acme\/components\/button\/button\.css: #fff/),
+      '1 finding in base product acme-base - run et design check --product acme-base',
+    ]);
+
+    lines.length = 0;
+
+    expect(check(target, ['acme-base'])).toBe(1);
+    expect(lines).toEqual([
+      expect.stringMatching(/^HARD-CODED-COLOUR .*acme-base\/components\/button\/button\.css: #000/),
+      expect.stringMatching(/^HARD-CODED-COLOUR .*acme-base\/components\/card\/card\.css: #000/),
     ]);
   }, 60_000);
 
@@ -194,7 +209,6 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings).toEqual([
       expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
-      expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
       expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
     ]);
     expect(lines.at(-1)).toBe('ok');
@@ -214,7 +228,6 @@ describe('checkDesign', () => {
       expect.stringMatching(
         /^WARNING UNUSED-EXPORT .*hero\/shared\/data\.ts: rows is exported, but nothing imports it/,
       ),
-      expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
       expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
     ]);
     expect(lines.at(-1)).toBe('ok');
@@ -316,6 +329,31 @@ describe('checkDesign', () => {
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
       '  elements/hero: 1 missing state (cta); 1 contrast under the rule (state default); no implements',
     ]);
+  }, 120_000);
+
+  it('leaves what the render finds in a base part to the base', async (context) => {
+    const target = acme();
+    const lines = output();
+    const card = join(target, DESIGN_DIR, 'acme-base/components/card/card.ts');
+
+    writeFileSync(
+      card,
+      readFileSync(card, 'utf8').replace(
+        '<h3>${title}</h3>',
+        '<h3>${title}</h3><p style="color: var(--acme-surface)">Faint</p>',
+      ),
+    );
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(code).toBe(0);
+    expect(withoutOpenPoints(lines).filter((line) => line.includes('components/card'))).toEqual([]);
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^\d+ findings? in base product acme-base - run et design check --product acme-base$/),
+    );
+    expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);
   }, 120_000);
 
   it('lists a border under the non-text contrast rule as a contrast', async (context) => {

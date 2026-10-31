@@ -290,8 +290,10 @@ outside `foundations/` without `implements`. Outside `foundations/`, every order
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
 a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
 motion: `no looping motion in loading`. The list does not change the exit code. When a check fails, the render step does not run and
-`RENDER CHECK NOT RUN` names the rules that stopped it and how many of the problems are in the base, so the list has no
-contrasts and no missing states.
+`RENDER CHECK NOT RUN` names the rules that stopped it, so the list has no contrasts and no missing states. A
+finding in a part the product takes from its base, before or in the render, does not fail the product: one line
+counts them, for example `94 findings in base product sdk - run et design check --product sdk`. A part the product
+overrides is checked as its own.
 
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding
