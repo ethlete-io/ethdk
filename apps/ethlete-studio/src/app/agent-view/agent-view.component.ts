@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { EMPTY, Subscription, catchError, finalize, of, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, agentList$, agentRun$ } from '../../host/agent';
+import { promptFor, toolsOf } from './agent-tools';
 import { workspaceRoot$ } from '../../host/workspace';
 
 @Component({
@@ -39,6 +40,20 @@ import { workspaceRoot$ } from '../../host/workspace';
           class="grow rounded border border-surface-border px-3 py-1 text-mono"
           placeholder="The checkout the agent works in"
         />
+        <input
+          [value]="call()"
+          (input)="call.set(typed($event))"
+          class="w-64 rounded border border-surface-border px-3 py-1 text-mono"
+          data-agent-call
+          placeholder="Call, e.g. studio/01-workbench"
+        />
+        <input
+          [value]="variant()"
+          (input)="variant.set(typed($event))"
+          class="w-24 rounded border border-surface-border px-3 py-1 text-mono"
+          data-agent-variant
+          placeholder="Variant"
+        />
         <select
           [value]="model()"
           [disabled]="!cli()"
@@ -56,6 +71,7 @@ import { workspaceRoot$ } from '../../host/workspace';
         [value]="prompt()"
         (input)="prompt.set(typed($event))"
         class="h-24 rounded border border-surface-border p-3"
+        data-agent-prompt
         placeholder="What should the agent do?"
       ></textarea>
 
@@ -64,6 +80,7 @@ import { workspaceRoot$ } from '../../host/workspace';
           [disabled]="running()"
           (click)="send()"
           class="rounded border border-surface-border px-3 py-1"
+          data-agent-send
           type="button"
         >
           Send
@@ -136,6 +153,8 @@ export class AgentViewComponent {
   protected cli = signal<AgentDescriptor | null>(null);
   protected model = signal('');
   protected cwd = signal('');
+  protected call = signal('');
+  protected variant = signal('');
   protected prompt = signal('');
   protected events = signal<AgentEvent[]>([]);
   protected running = signal(false);
@@ -160,16 +179,18 @@ export class AgentViewComponent {
 
     if (!cli || !cwd || !this.prompt().trim() || this.running()) return;
 
+    const tools = toolsOf(this.call(), this.variant());
+
     this.events.set([]);
     this.running.set(true);
 
     this.run = agentRun$({
       cli: cli.id,
       model: this.model() || null,
-      prompt: this.prompt(),
+      prompt: promptFor(this.prompt(), tools),
       cwd,
       resume: null,
-      tools: null,
+      tools,
     })
       .pipe(
         tap((event) => this.record(event)),
