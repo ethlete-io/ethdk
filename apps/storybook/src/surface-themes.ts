@@ -43,7 +43,7 @@ export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
       disabled: '180 180 180',
     },
   },
-  background: '250 250 250',
+  background: '240 240 240',
   color: '23 23 23',
   colorMuted: '82 82 82',
   colorSubtle: '161 161 161',

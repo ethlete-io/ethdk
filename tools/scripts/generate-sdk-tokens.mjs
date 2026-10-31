@@ -26,7 +26,9 @@ const {
   WARNING_ON_LIGHT_THEME,
   THEMES,
 } = await jiti.import(join(root, 'apps/storybook/src/themes.ts'));
-const { LIGHT_SURFACE, DARK_SURFACE } = await jiti.import(join(root, 'apps/storybook/src/surface-themes.ts'));
+const { LIGHT_SURFACE, LIGHT_ELEVATED_SURFACE, DARK_SURFACE, DARK_ELEVATED_SURFACE } = await jiti.import(
+  join(root, 'apps/storybook/src/surface-themes.ts'),
+);
 
 const themeNamed = (name) => {
   const theme = THEMES.find((candidate) => candidate.name === name);
@@ -49,7 +51,10 @@ const withValues = (theme) => {
   return values;
 };
 
-const surfaceThemes = [LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: true }));
+const surfaceThemes = [
+  ...[LIGHT_SURFACE, DARK_SURFACE].map((theme) => ({ ...withValues(theme), isDefault: true })),
+  ...[LIGHT_ELEVATED_SURFACE, DARK_ELEVATED_SURFACE].map(withValues),
+];
 const defaultColorThemes = [
   BRAND_THEME,
   DANGER_THEME,
@@ -113,6 +118,52 @@ ${inkOf(css, 'brand')}
 `;
 };
 
+const surfaceBodyOf = (css, name) => {
+  const body = css.match(new RegExp(`\\.et-surface--${name} \\{\\n([\\s\\S]*?)\\n\\s*\\}`))?.[1];
+
+  if (!body) throw new Error(`No .et-surface--${name} block`);
+
+  return body;
+};
+
+const withElevatedFill = (css) => {
+  const light = surfaceBodyOf(css, 'light-elevated');
+  const dark = surfaceBodyOf(css, 'dark-elevated');
+  const fill = '[data-et-surface-fill]';
+
+  return `${css}
+@layer base {
+  .et-surface--light${fill} {
+${light}
+  }
+
+  .et-surface--dark${fill} {
+${dark}
+  }
+
+  @media (prefers-color-scheme: light) {
+    .et-surface--inherited${fill} {
+${light}
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .et-surface--inherited${fill} {
+${dark}
+    }
+  }
+
+  :root.et-scheme--light .et-surface--inherited${fill} {
+${light}
+  }
+
+  :root.et-scheme--dark .et-surface--inherited${fill} {
+${dark}
+  }
+}
+`;
+};
+
 const BASE = `:root {
   --et-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --et-font-family-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -130,7 +181,7 @@ body {
 
 const header =
   '/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */';
-const source = `${header}\n${withLightSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes }))))}\n${BASE}`;
+const source = `${header}\n${withElevatedFill(withLightSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
 const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
 
 if (check) {

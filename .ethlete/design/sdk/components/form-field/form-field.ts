@@ -95,6 +95,6 @@ export default definePart<Props>({
         control,
         interaction,
       ),
-      styles: `${formFieldStyles}\n@media (prefers-color-scheme: light) { [data-et-surface-fill] { --et-surface-background: 240 240 240; } }`,
+      styles: formFieldStyles,
     }),
 });
