@@ -1,0 +1,26 @@
+@layer components {
+  .accent-on-light {
+    display: grid;
+    gap: 20px;
+    padding: 16px;
+    justify-items: start;
+  }
+
+  .accent-on-light-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .accent-on-light et-radio[aria-checked='true'] .et-radio-circle {
+    border-color: var(--et-theme-color-ink-solid);
+
+    &::after {
+      background-color: var(--et-theme-color-ink-solid);
+    }
+  }
+
+  .accent-on-light .et-selection-card:is([aria-checked='true'], :has([aria-checked='true'], [aria-checked='mixed'])) {
+    border-color: var(--et-theme-color-ink-solid);
+  }
+}

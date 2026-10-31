@@ -1,0 +1,37 @@
+@layer components {
+  .accent-on-light {
+    display: grid;
+    gap: 20px;
+    padding: 16px;
+    justify-items: start;
+  }
+
+  .accent-on-light-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .accent-on-light et-radio[aria-checked='true'] .et-radio-circle {
+    border-color: var(--et-theme-color-ink-solid);
+
+    &::after {
+      background-color: var(--et-theme-color-ink-solid);
+    }
+  }
+
+  .accent-on-light .et-selection-card:is([aria-checked='true'], :has([aria-checked='true'], [aria-checked='mixed'])) {
+    border-color: var(--et-theme-color-ink-solid);
+  }
+
+  .accent-on-light :is(et-checkbox, et-switch, et-segmented-button):is([aria-checked='true'], [aria-checked='mixed']) {
+    --et-theme-color-on-primary-solid: var(--et-surface-background-solid);
+  }
+
+  .accent-on-light et-checkbox:is([aria-checked='true'], [aria-checked='mixed']) .et-checkbox-box,
+  .accent-on-light et-switch[aria-checked='true'] .et-switch-track,
+  .accent-on-light et-segmented-button[aria-checked='true'] .et-segmented-button-bg {
+    background-color: var(--et-theme-color-ink-solid);
+    border-color: var(--et-theme-color-ink-solid);
+  }
+}
