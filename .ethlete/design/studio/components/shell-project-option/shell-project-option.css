@@ -4,10 +4,6 @@
     transition: var(--transition-state);
   }
 
-  .st-project-option:active {
-    background-color: var(--surface-pressed);
-  }
-
   .st-project-option:focus-visible {
     box-shadow: inset 0 0 0 1.5px var(--focus-ring);
   }

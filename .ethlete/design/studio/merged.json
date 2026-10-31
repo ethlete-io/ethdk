@@ -1,8 +1,8 @@
 {
   "components/comment-pin": "758700ef5e2d5dac",
-  "components/disclosure": "443b083753ec221e",
+  "components/disclosure": "a7d5221154cde31f",
   "components/shell-collapse": "de19d7a3eaa90210",
-  "components/shell-project-option": "f13c76bcbd07e2c8",
+  "components/shell-project-option": "8b6312ade65a25f5",
   "components/shell-project-switch": "c4af69d4d3fc68a8",
   "components/tree-row": "26f501621b293428",
   "components/zoom-chip": "3e20147c9058f52f",
@@ -19,7 +19,7 @@
   "foundations/type": "55cbe2495f74530a",
   "pages/flows": "9dcfa44c2d61beac",
   "pages/inbox": "0cece20e87e9a19f",
-  "pages/merge": "064c2738f55ead80",
+  "pages/merge": "1b65cea7bef41600",
   "pages/sketches": "276a63f4d7359694",
   "pages/start": "5be284500a37da1a",
   "pages/system": "6360b19a1d00b070"

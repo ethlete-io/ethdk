@@ -19,7 +19,7 @@ export const disclosureBodyClass =
 
 export const disclosure = ({ label, body, open, size = 'sm', interaction }: Props) => {
   const toggle = html`<button
-    class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 text-text-muted hover:text-text active:text-text active:rounded-control-sm focus-visible:text-text focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
+    class="st-disclosure flex w-full gap-space-2 px-space-2 py-space-1 border-0 text-text-muted hover:text-text active:bg-surface-pressed active:text-text active:rounded-control-sm focus-visible:text-text focus-visible:rounded-control-sm cursor-pointer ${size === 'xs' ? 'items-start text-start text-(length:--text-xs)' : 'items-center text-(length:--text-sm)'}"
     type="button"
     data-et-control="toggle"
     aria-expanded="${open}"
