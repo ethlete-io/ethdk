@@ -1,0 +1,17 @@
+.loader-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+.loader-row {
+  display: flex;
+  align-items: center;
+  gap: 2.4rem;
+}
+
+.loader-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
