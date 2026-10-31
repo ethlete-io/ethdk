@@ -638,6 +638,9 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - `sketch ready` vs render issues (found on description-list): ready runs only static checks, so a render OVERFLOW
   passes. Lead decision under Q96: ready runs the render check and refuses on a render issue, also one the product
   part already has, unless a `data-et-skip` mark names it; no browser prints "RENDER CHECK SKIPPED" and accepts.
+- Grid reveal with a hung shot (found in the 6b check): reveal waits only on image load or error, so a shot that
+  never answers hides the grid forever. Lead decision under Q96: reveal once every cell is loaded, failed, or in the
+  existing slow state (over 2 s), so the user sees per-cell slow marks.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
