@@ -1189,3 +1189,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - After the MVP (Tom, 2026-10-31): the Inventory view respects the frame viewport. Today a control outline that
   reaches past the frame edge (for example the zoom bar of a sketch page) makes the frame scroll; outlines must be
   clipped to the frame or drawn inside it, so they never add a scrollbar.
+- **Q233 (Tom, 2026-10-31), after the MVP:** the Inventory gets a second section "Assets" (logos, icons, images). An
+  asset from the foundations (for example `foundations/agent-logos`, `foundations/logo`) is listed as "owned by
+  foundations/<name>"; an inline SVG or image that does not come from the foundations is a finding.
