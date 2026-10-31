@@ -20,7 +20,7 @@ export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) =>
     variant: 'transparent',
     color: 'surface',
     size: 'sm',
-    class: 'w-full h-control-md justify-start gap-space-2 py-0 px-space-2 text-left',
+    class: 'w-full h-control-md justify-start gap-space-2 py-0 px-space-2 text-left [&>.et-button-contents]:flex-1',
   }).replace(
     /^<button /,
     `<button data-et-control="project" aria-haspopup="listbox" aria-expanded="${open}" data-can-animate `,

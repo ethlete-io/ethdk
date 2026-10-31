@@ -1,8 +1,8 @@
 import pickerStyles from './picker.css?inline';
 import { drawing, html } from '@design-system';
-import { button, buttonStyles } from '@ethlete/components/design/button';
+import { buttonStyles } from '@ethlete/components/design/button';
+import { menu, menuStyles } from '@ethlete/components/design/menu';
 import { shellCollapse, shellCollapseStyles } from '@system/components/shell-collapse';
-import { shellProjectOption, shellProjectOptionStyles } from '@system/components/shell-project-option';
 import { shellProjectSwitch, shellProjectSwitchStyles } from '@system/components/shell-project-switch';
 import { icon, type IconName } from '@system/foundations/icons';
 
@@ -71,23 +71,25 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
 
 const picker = (placement: 'above' | 'beside') =>
   html`<div
-    class="st-project-picker absolute box-border w-62 border border-et-surface-interaction p-space-1 rounded-control-lg bg-et-surface-bg${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
-    data-et-auto-surface
+    class="st-project-picker absolute box-border w-62 shadow-none${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
     data-placement="${placement}"
     data-et-surface="project.open"
   >
-    <div role="listbox" aria-label="Projekt auswählen">
-      ${shellProjectOption({ name: 'ethlete-sdk', selected: true })} ${shellProjectOption({ name: 'fut-frontend' })}
-      ${shellProjectOption({ name: 'design-playground' })}
-    </div>
-    <div class="st-project-picker-action mt-space-1 border-t border-et-surface-border pt-space-1 rounded-none">
-      ${button({
-        label: 'Projekt öffnen…',
-        variant: 'transparent',
-        size: 'sm',
-        class: 'h-control-md justify-start py-0 px-space-2',
-      })}
-    </div>
+    ${menu({
+      id: 'project-picker',
+      rows: [
+        {
+          kind: 'radio-group',
+          items: [
+            { kind: 'radio', label: 'ethlete-sdk', checked: true, active: true },
+            { kind: 'radio', label: 'fut-frontend' },
+            { kind: 'radio', label: 'design-playground' },
+          ],
+        },
+        { kind: 'separator' },
+        { label: 'Projekt öffnen…' },
+      ],
+    })}
   </div>`;
 
 const BASE: Props = { section: 'System', product: 'studio', side: '', content: '' };
@@ -106,7 +108,6 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
       part: 'components/shell-project-switch' as const,
       surfaces: { open: 'project-picker' as const },
     },
-    option: { kind: 'row' as const, part: 'components/shell-project-option' as const },
   },
   render: ({ product, section, content, side, panel, projectPicker, studio = '' }: Props) => {
     return drawing({
@@ -121,13 +122,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement) : ''}
         </div>
       </div>`,
-      styles:
-        styles +
-        pickerStyles +
-        buttonStyles +
-        shellCollapseStyles +
-        shellProjectSwitchStyles +
-        shellProjectOptionStyles,
+      styles: styles + pickerStyles + buttonStyles + shellCollapseStyles + shellProjectSwitchStyles + menuStyles,
     });
   },
 });

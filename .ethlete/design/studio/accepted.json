@@ -1273,5 +1273,33 @@
     "note": "Q197 surface input rename (76 GO): colours identical, swatch labels renamed",
     "hash": "da1df24471b4c6b7",
     "at": "2026-10-31T20:01:20.917Z"
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-opus-5-5",
+    "note": "Q215 Tom accepts the overlay round (menu picker, anchoredDialog popover, overlay border, chevron at row end)",
+    "hash": "0a11d7eb2757d91d",
+    "at": "2026-10-31T20:46:09.795Z"
+  },
+  {
+    "part": "pages/inbox",
+    "by": "claude-opus-5-5",
+    "note": "Q215 Tom accepts the overlay round (menu picker, anchoredDialog popover, overlay border, chevron at row end)",
+    "hash": "03b18b95c56928de",
+    "at": "2026-10-31T20:46:11.132Z"
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "claude-opus-5-5",
+    "note": "Q215 Tom accepts the overlay round (menu picker, anchoredDialog popover, overlay border, chevron at row end)",
+    "hash": "41d024f065cd3141",
+    "at": "2026-10-31T20:46:12.557Z"
+  },
+  {
+    "part": "components/shell-project-switch",
+    "by": "claude-opus-5-5",
+    "note": "Q215 Tom accepts the overlay round (menu picker, anchoredDialog popover, overlay border, chevron at row end)",
+    "hash": "9e909353e9de59b6",
+    "at": "2026-10-31T20:46:13.954Z"
   }
 ]

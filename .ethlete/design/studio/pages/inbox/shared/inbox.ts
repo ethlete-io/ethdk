@@ -1,4 +1,6 @@
 import { definePart, drawing, html, ng } from '@design-system';
+import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
+import { control } from '@ethlete/components/design/control';
 import { commentPinMark } from '@system/components/comment-pin';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
@@ -205,25 +207,30 @@ export const inbox = () =>
       pin: { kind: 'button' as const, part: 'components/comment-pin' },
       comment: { kind: 'field' as const, part: 'components/textarea' },
       send: { kind: 'button' as const, part: 'components/button' },
+      resolved: { kind: 'button' as const, part: 'components/switch' },
     },
     render: async ({ showResolved, openOn, draft, entry }) => {
       const controls = await ng(
-        `<div class="contents">
-        <span class="ib-control inline-flex"><et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" /></span>
-        ${
-          draft || entry
-            ? `<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
-                ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
-                <div data-et-auto-surface class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg bg-et-surface-bg">
-                  <div class="flex flex-col items-stretch p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
-                </div>
-              </div>`
-            : ''
-        }</div>`,
-        {
-          imports: ['SWITCH_IMPORTS', 'TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'],
-        },
+        `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" />`, 'resolved')}</span>`,
+        { imports: ['SWITCH_IMPORTS'] },
       );
+      const editor =
+        draft || entry
+          ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
+              ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
+              <div class="mt-1.25">
+                ${anchoredDialog({
+                  label: 'Kommentar',
+                  modal: false,
+                  placement: 'bottom-start',
+                  content: await ng(
+                    `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
+                    { imports: ['TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'] },
+                  ),
+                })}
+              </div>
+            </div>`
+          : '';
       const comments = COMMENTS.filter(
         (c) =>
           c.resolved ||
@@ -250,7 +257,7 @@ export const inbox = () =>
           class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
         >
           <span class="text-et-surface-muted">${unresolved} offen</span>
-          <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}</div>
+          <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}${editor}</div>
         </div>
         <div class="flex flex-col gap-px min-h-0 overflow-hidden p-space-2">
           ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
@@ -289,7 +296,7 @@ export const inbox = () =>
       return drawing({
         body: shell.body,
         setup: menu.setup,
-        styles: shell.styles + menu.styles + frames.styles + styles,
+        styles: shell.styles + menu.styles + frames.styles + anchoredDialogStyles + styles,
       });
     },
   });

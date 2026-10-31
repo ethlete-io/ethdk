@@ -39,7 +39,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex rounded-control-md border border-et-surface-interaction bg-et-surface-bg${
+        class="inline-flex rounded-control-md border border-(--et-overlay-surface-border-color,var(--et-surface-border-solid)) bg-et-surface-bg${
           props.class ? ` ${props.class}` : ''
         }"
         data-et-auto-surface
