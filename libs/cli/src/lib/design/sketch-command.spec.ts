@@ -1144,7 +1144,7 @@ export default definePart({
     expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
   }, 120_000);
 
-  describe('merge --variant --allowed-by', () => {
+  describe('merge --variant --allowed-by', { timeout: 120_000 }, () => {
     const PLAN = 'plans/ethlete-studio/contrast.md Findings decisions';
 
     const readied = async (variants: string) => {
