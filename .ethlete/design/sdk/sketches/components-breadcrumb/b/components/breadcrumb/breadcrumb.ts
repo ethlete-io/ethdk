@@ -18,13 +18,7 @@ type Props = {
 };
 
 const mark = (control: string, interaction?: Interaction) =>
-  [
-    `data-et-control="${control}"`,
-    interaction && `data-et-force="${interaction}"`,
-    interaction === 'focus-visible' && 'data-et-skip="CLIPPED"',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  [`data-et-control="${control}"`, interaction && `data-et-force="${interaction}"`].filter(Boolean).join(' ');
 
 const shortTrail = (props: Props): BreadcrumbMockCrumb[] => [
   { label: 'Home', href: '#' },
