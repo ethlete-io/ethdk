@@ -263,9 +263,11 @@ test.describe('button / focus ring press state', () => {
       const primary = await colorIn(button, 'var(--et-theme-color-primary-solid)');
 
       expect(ink).not.toBe(primary);
-      const outline = await button.evaluate((el) => getComputedStyle(el).outlineColor);
+      const expected = await colorIn(button, token);
 
-      expect(await colorIn(button, outline)).toBe(await colorIn(button, token));
+      await expect
+        .poll(async () => colorIn(button, await button.evaluate((el) => getComputedStyle(el).outlineColor)))
+        .toBe(expected);
     });
   }
 
