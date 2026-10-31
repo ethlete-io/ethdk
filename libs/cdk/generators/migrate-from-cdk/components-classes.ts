@@ -398,6 +398,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-grid-item--resizing',
   'et-grid-item--settling',
   'et-grid-item-default-actions__remove',
+  'et-grid-item-toolbar',
   'et-grid-item__actions',
   'et-grid-item__content',
   'et-icon',
