@@ -1175,3 +1175,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   the inventory; order: after pilot slice 2, before Q218. The other direct mock calls follow Q219: sketch rounds for
   `pages/sketches` and `pages/flows` (form-field + select), `pages/merge` "Changed" rows; shell-main `menu()` in
   pilot slice 2.
+- After the MVP (Tom, 2026-10-31): the rows of the open-points popover in `pages/system` (the "Offene Punkte" list
+  per part) become clickable. Until then they are plain rows and no inventory controls.
