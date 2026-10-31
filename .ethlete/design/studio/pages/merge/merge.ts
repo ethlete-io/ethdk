@@ -43,6 +43,7 @@ const crop: Row = {
 const listRow = (row: Row) =>
   html`<li
     class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-et-theme/20"
+    data-et-control="row"
     ${row === selected ? ' data-selected' : ''}
   >
     ${rowCaption(row, true)}
@@ -78,6 +79,7 @@ export default definePart<Props>({
   },
   controls: {
     toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } },
+    row: { kind: 'row', input: ['pointer'] },
   },
   render: async ({ unchanged }) => {
     const row = selected ?? CHANGED[0];
