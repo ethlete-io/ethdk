@@ -51,8 +51,11 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
     against `z-index: -1` fills (`c1a9ea834`, sdk-33 confirmed on accent-on-light); swap between shot and live page
     without a blank frame (`c96564d46`; blank frames grid live -> shot 5/6 -> 0/6 in Chromium, WebKit 1/6 -> 0/6;
     Tauri WebKitGTK not seen; grid cells still go live one by one, each without a blank).
-  - In progress: `design complete` knows a focus container (menu/listbox panel); then Q92 for non-grid frames (Light
-    then Dark side by side, stacked when too wide; legacy call shots stay), then 1e.
+  - Done: `design complete` knows a composite widget focus container (`5e71b7526`; sdk-33 dropped its menu
+    workaround in `b072b382a`, menu a/b design complete).
+  - In progress (2026-10-31): a grid goes live in one step (keep all shots until every live cell posted
+    `design-explore:painted`, timeout fallback); then Q92 for non-grid frames (Light then Dark side by side, stacked
+    when too wide; legacy call shots stay), then 1e.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
