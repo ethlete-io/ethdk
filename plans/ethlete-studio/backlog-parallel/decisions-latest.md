@@ -150,3 +150,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q239 (Tom, 2026-10-31), after the MVP:** the inventory lists every open overlay (popover, dialog, menu) as its own
   entry: "owned by components/<part>" when an SDK part draws it, a finding when it is an inline mock without a part
   (for example a direct `anchoredDialog()` call).
+- **`pages/inventory` sketch (Tom, 2026-10-31):** Tom merges it for the MVP, but the part needs a design rework after
+  the MVP. It joins the after-MVP inventory rows: canvas view, viewport clip, assets section (Q233), overlays (Q239).
