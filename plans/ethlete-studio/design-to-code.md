@@ -248,7 +248,7 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     Not verified: Studio served, a real `compare` against a harness, a non-empty map under module-boundary lint.
   - Q198 (a) and (b) built (backlog-parallel.md); (c) waits for the Q197 migration.
   - 3c-3 built (`8554ad508`): without `--url`, `compare` and `task --verify` run `nx run <project>:serve --port=<n>
-    --host=127.0.0.1` for `harness.app` as a detached process group on an OS-given free port (never 4221, 4400, 4402,
+--host=127.0.0.1` for `harness.app` as a detached process group on an OS-given free port (never 4221, 4400, 4402,
     4403, 4492), poll `/__design-harness` up to 300 s, and always stop the group (also on a failure and on SIGINT).
     The stale-map refusal and the git file check run before the start (`system/harness-server.ts`). Verified: specs,
     tsc, lint, a real docs-examples start and stop (ready in 18 s, no process left, also after Ctrl-C). Not verified:
