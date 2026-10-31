@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, linkedSignal, output, si
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, SLIDER_IMPORTS } from '@ethlete/components';
 import { EMPTY, animationFrames, map, pairwise, switchMap, tap } from 'rxjs';
-import { MotionAnswer, keyframeAt, trackBarOf } from '../../host/design-motion';
+import { MotionAnswer, keyframeAt, tokenLabelOf, trackBarOf } from '../../host/design-motion';
 
 export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
 
@@ -63,8 +63,10 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
           <li class="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-3 text-small" data-motion-track>
             <span class="flex min-w-0 flex-col">
               <span [title]="row.track.element" class="truncate font-mono text-text">{{ row.track.element }}</span>
-              <span [title]="row.track.easing" class="truncate text-text-muted">
-                {{ row.label }}, {{ row.track.duration }} ms, {{ row.track.easing }}
+              <span class="truncate text-text-muted">
+                {{ row.label }}, <span [title]="row.duration.title" data-motion-duration>{{ row.duration.shown }}</span
+                >,
+                <span [title]="row.easing.title" data-motion-easing>{{ row.easing.shown }}</span>
               </span>
             </span>
             <span class="relative h-3 rounded-sm bg-surface-border">
@@ -105,6 +107,8 @@ export class MotionTimelineComponent {
       track,
       label: [track.name, track.properties.join(', ') || track.kind].filter(Boolean).join(': '),
       bar: trackBarOf(track, this.answer().end),
+      duration: tokenLabelOf(`${track.duration} ms`, track.durationTokens),
+      easing: tokenLabelOf(track.easing, track.easingTokens),
     })),
   );
 

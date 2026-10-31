@@ -18,6 +18,10 @@ export type MotionTrack = {
   iterations: number | null;
   easing: string;
   end: number | null;
+  /** The foundations tokens whose value equals `duration`, in declaration order. */
+  durationTokens?: string[];
+  /** The foundations tokens whose value equals `easing`, in declaration order. */
+  easingTokens?: string[];
 };
 
 export type MotionKeyframe = { ms: number; src: string };
@@ -75,4 +79,16 @@ export const trackBarOf = (track: MotionTrack, end: number) => {
   const to = Math.min(track.end ?? length, length);
 
   return { left: (from / length) * 100, width: (Math.max(to - from, 0) / length) * 100 };
+};
+
+/** The first token name and a "+N" mark for N more tokens of the same value, or `raw` without one; `title` lists all. */
+export const tokenLabelOf = (raw: string, tokens: readonly string[] = []) => {
+  const [first] = tokens;
+
+  if (!first) return { shown: raw, title: raw };
+
+  return {
+    shown: tokens.length > 1 ? `${first} +${tokens.length - 1}` : first,
+    title: `${tokens.join(', ')}: ${raw}`,
+  };
 };

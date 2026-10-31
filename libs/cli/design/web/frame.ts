@@ -3,6 +3,7 @@ import { Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { pinScheme } from './frame-scheme';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
+import { rootTokensOf, withTokenNames } from '../motion-tokens';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
 import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
@@ -234,7 +235,17 @@ const exposeStepped = (options: { start: () => Promise<SteppedMotion>; interrupt
         }),
       seek: (ms: number) => steppedOf().seek(ms),
       bounds: () => steppedOf().bounds(),
-      timeline: () => ({ end: steppedOf().end(), tracks: steppedOf().tracks(), interrupt: options.interrupt }),
+      timeline: () => {
+        const tokens = rootTokensOf(document);
+
+        return {
+          end: steppedOf().end(),
+          tracks: steppedOf()
+            .tracks()
+            .map((track) => withTokenNames(track, tokens)),
+          interrupt: options.interrupt,
+        };
+      },
     },
   });
 };

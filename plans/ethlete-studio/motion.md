@@ -98,7 +98,7 @@ the model. They are no reference for correct behaviour: some of them are broken.
 4. `spring()` and `interrupt`. Done (2026-10-30), see "As built: slice 4".
 5. Flow lines. Done (2026-10-30), see "As built: slice 5".
 6. Q59, split into two slices (builder, 2026-10-31):
-   - 6a Token names on tracks. In progress (builder, 2026-10-31). The motion core matches each track's duration and
+   - 6a Token names on tracks. Done (2026-10-31), see "As built: slice 6a". The motion core matches each track's duration and
      easing against the foundations motion tokens computed on `:root` in the frame and adds `durationToken` and
      `easingToken`. The timeline shows the token name, with the raw value in the `title`.
    - 6b The timeline drives the live frame. A `postMessage` switch into the frame pauses every animation of
@@ -255,3 +255,20 @@ Each slice gets an "in progress" note here when it starts.
 - Not verified: WebKit; a flow line in Studio or MCP (neither exposes it yet); `play(ctx)` on a line (not supported, as decided);
   reduced motion runs the same View Transition unless the page's CSS changes it. `frame-bootstrap.spec.ts` fails on the
   uncommitted embed-page work of stream E, not on this change.
+
+## As built: slice 6a (2026-10-31, commit "feat(cli): Show motion token names on timeline tracks")
+
+- `design/motion-tokens.ts`: `rootTokensOf(document)` lists the custom properties declared on `:root` (or `html`) in the
+  frame's stylesheets, in declaration order, with their computed values; `withTokenNames(track, tokens)` adds
+  `durationTokens` and `easingTokens`. The frame's `etMotion.timeline()` applies it, so the tracks of `GET /__design/motion`,
+  `motion_shots` and `et design motion` carry the fields; a field without a match is left out.
+- Matching: a time compares in ms (`150ms` = `0.15s`); an easing is normalised (case, spaces, number spelling, keywords to
+  `cubic-bezier`, omitted `linear()` inputs filled in). A `spring()` token (`<n>ms linear(...)`) matches both. Tokens of
+  other values (`--transition-state`, sizes) are ignored.
+- Grill decision (Q59): every token of the same value is kept, in declaration order. The timeline shows the first name and
+  "+N" for N more; the `title` lists all names and the raw value (`tokenLabelOf` in `host/design-motion.ts`).
+- Bit: `motion-tokens.spec.ts` (ms/s, spacing, all matches in order, spring, no match); `motion-shot.spec.ts` in real
+  Chromium (a `:root` `2s` and a `cubic-bezier(.42, 0, 1, 1)` token name the `2000ms` and the `ease-in` tracks);
+  `motion-timeline.component.spec.ts` (token name, "+2", titles).
+- Verified: the specs, spec and app typecheck, eslint, `nx build cli`.
+- Not verified: Studio in a running app (no product in this repo declares motions); WebKit's easing spelling.

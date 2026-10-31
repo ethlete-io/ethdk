@@ -37,6 +37,8 @@ const ANSWER: MotionAnswer = {
       properties: ['opacity'],
       start: 0,
       end: null,
+      durationTokens: ['--duration-appear'],
+      easingTokens: ['--ease-out', '--ease-leave', '--ease-exit'],
     },
   ],
   keyframes: [0, 100, 200, 300, 400].map((ms) => ({ ms, src: `http://localhost:4999/k?frame=${ms}` })),
@@ -95,8 +97,17 @@ describe('MotionTimelineComponent', () => {
       [...element.querySelectorAll('[data-motion-track]')].map((row) => row.textContent?.replace(/\s+/gu, ' ').trim()),
     ).toEqual([
       '[data-et-key="panel"] opacity, transform, 200 ms, ease-out',
-      'div.scrim fade-in: opacity, 200 ms, ease-out',
+      'div.scrim fade-in: opacity, --duration-appear, --ease-out +2',
     ]);
+  });
+
+  it('shows the raw duration and easing, and every token name, in the title', async () => {
+    const { element } = await render(0);
+    const titlesOf = (selector: string) =>
+      [...element.querySelectorAll(selector)].map((span) => span.getAttribute('title'));
+
+    expect(titlesOf('[data-motion-duration]')).toEqual(['200 ms', '--duration-appear: 200 ms']);
+    expect(titlesOf('[data-motion-easing]')).toEqual(['ease-out', '--ease-out, --ease-leave, --ease-exit: ease-out']);
   });
 
   it('marks the picked speed', async () => {

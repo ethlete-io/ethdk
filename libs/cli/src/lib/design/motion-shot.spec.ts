@@ -12,6 +12,7 @@ import { createPartShooter } from './shot';
 import { createSystemModules } from './system/system-modules';
 
 const STYLES = [
+  ':root { --duration-long: 2s; --ease-enter: cubic-bezier(.42, 0, 1, 1); }',
   '.bar { width: 40px; height: 20px; background: rgb(0, 0, 0); transition: width 2000ms linear, background-color 1500ms ease-in; }',
   '.bar--open { width: 200px; }',
   '.bar--late { background: rgb(255, 0, 0); }',
@@ -84,7 +85,15 @@ const checkout = () => {
   return { target, config: readConfig(target) ?? {} };
 };
 
-type Track = { kind: string; properties: string[]; start: number; duration: number; easing: string };
+type Track = {
+  kind: string;
+  properties: string[];
+  start: number;
+  duration: number;
+  easing: string;
+  durationTokens?: string[];
+  easingTokens?: string[];
+};
 
 const isMissingBrowser = (error: unknown) => error instanceof Error && /chromium|playwright/i.test(error.message);
 
@@ -138,6 +147,14 @@ describe('createPartShooter motionOf', () => {
         expect.arrayContaining([
           { kind: 'transition', properties: ['width'], start: 0, duration: 2000 },
           { kind: 'transition', properties: ['background-color'], start: 1000, duration: 1500 },
+        ]),
+      );
+      expect(
+        tracks.map(({ properties, durationTokens, easingTokens }) => ({ properties, durationTokens, easingTokens })),
+      ).toEqual(
+        expect.arrayContaining([
+          { properties: ['width'], durationTokens: ['--duration-long'], easingTokens: undefined },
+          { properties: ['background-color'], durationTokens: undefined, easingTokens: ['--ease-enter'] },
         ]),
       );
       expect((reduced.tracks as Track[]).map((track) => track.properties)).toEqual([['background-color']]);
