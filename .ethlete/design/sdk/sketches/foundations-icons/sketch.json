@@ -1,0 +1,33 @@
+{
+  "target": "foundations/icons",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:32:39.901Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0182aa2840bc34e6",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "",
+      "note": "Q80: the one grid every SDK icon moves to. The construction view lays the whole set on the candidate grid, so the strokes off its lines show."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "24 px grid, 2 px padding. 26 icons are on it already; 28 need a redraw. At 16 px, the size menus and field affixes draw, one unit is 0.67 px, so thin details blur."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "16 px grid, 1 px padding. 16 icons are on it already; 38 need a redraw. Crisp at 16 px, the size menus and field affixes draw; at 24 px each unit is 1.5 px."
+    }
+  }
+}
