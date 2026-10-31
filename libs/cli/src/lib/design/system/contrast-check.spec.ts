@@ -47,6 +47,30 @@ const PARTS: Record<string, { body: string; extra?: string; setup?: string }> = 
   fading: {
     body: '<p class="fade" style="margin: 0">Fading in</p><style>.fade { transition: opacity 10s; } @starting-style { .fade { opacity: 0; } }</style>',
   },
+  'border-low': { body: '<div style="width: 40px; height: 20px; border: 1px solid #ccc"></div>' },
+  'border-ok': { body: '<div style="width: 40px; height: 20px; border: 1px solid #767676"></div>' },
+  'border-filled': { body: '<div style="width: 40px; height: 20px; background: #000; border: 1px solid #222"></div>' },
+  'border-transparent': { body: '<div style="width: 40px; height: 20px; border: 1px solid transparent"></div>' },
+  'border-disabled': {
+    body: '<div style="padding: 4px; border: 1px solid #ccc"><input disabled style="border: 1px solid #ccc"></div>',
+  },
+  'border-excepted': {
+    body: '<div><div class="line" style="height: 20px; border-bottom: 1px solid #ccc"></div></div>',
+    extra: "contrast: { exceptions: [{ selector: '.line', reason: 'decorative divider' }] },",
+  },
+  'icon-low': {
+    body: '<svg width="16" height="16" style="color: #ccc"><path d="M0 0h16v16H0z" fill="currentColor"/></svg>',
+  },
+  'icon-stroke-low': {
+    body: '<svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="#ddd" stroke-width="2"/></svg>',
+  },
+  'icon-ok': { body: '<svg width="16" height="16"><path d="M0 0h16v16H0z" fill="#555"/></svg>' },
+  'icon-hidden': {
+    body: '<div><svg width="16" height="16" style="opacity: 0"><path d="M0 0h16v16H0z" fill="#eee"/></svg></div>',
+  },
+  'icon-disabled': {
+    body: '<div><button disabled><svg width="16" height="16"><path d="M0 0h16v16H0z" fill="#eee"/></svg></button></div>',
+  },
   pairs: {
     body: '<p style="margin: 0">Tokens</p><style>:root { --ink: #999; --paper: #fff; --good: #000; }</style>',
     extra: "contrast: { pairs: [{ text: ['--ink', '--good'], on: ['--paper'] }] },",
@@ -82,7 +106,7 @@ export default definePart({
 };
 
 describe('contrast check', () => {
-  it('measures each text against its composited background, to 4.5:1 or 3:1 for large text, after its animations', async (context) => {
+  it('measures each text against its composited background, to 4.5:1 or 3:1 for large text, and each border and icon to 3:1, after its animations', async (context) => {
     const target = checkout();
     const rendered = await renderIssuesOf({
       target,
@@ -98,12 +122,18 @@ describe('contrast check', () => {
       .sort();
 
     expect(found).toEqual([
+      'components/border-low default div[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
+      'components/border-low other div[data-et-part=components/border-low] - border 1.61:1, needs 3.00:1 (non-text)',
       'components/composited default div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/composited other div[data-et-part=components/composited] > p - "Half" 3.95:1, needs 4.50:1',
       'components/enabled-label default div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',
       'components/enabled-label other div[data-et-part=components/enabled-label] > label - "Active" 1.61:1, needs 4.50:1',
       'components/helper default p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
       'components/helper other p[data-et-part=components/helper] - "Helper 4.48" 2.85:1, needs 4.50:1',
+      'components/icon-low default svg[data-et-part=components/icon-low] - icon 1.61:1, needs 3.00:1 (non-text)',
+      'components/icon-low other svg[data-et-part=components/icon-low] - icon 1.61:1, needs 3.00:1 (non-text)',
+      'components/icon-stroke-low default svg[data-et-part=components/icon-stroke-low] - icon 1.36:1, needs 3.00:1 (non-text)',
+      'components/icon-stroke-low other svg[data-et-part=components/icon-stroke-low] - icon 1.36:1, needs 3.00:1 (non-text)',
       'components/large-low default p[data-et-part=components/large-low] - "Pale" 2.32:1, needs 3.00:1 (large text)',
       'components/large-low other p[data-et-part=components/large-low] - "Pale" 2.32:1, needs 3.00:1 (large text)',
       'components/low default p[data-et-part=components/low] - "Low" 4.48:1, needs 4.50:1',

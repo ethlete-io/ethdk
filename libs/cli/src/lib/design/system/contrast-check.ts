@@ -15,6 +15,7 @@ export const schemesOf = (stylesheets: (string | null)[]): (ColorScheme | null)[
 
 const CONTRAST_NORMAL = 4.5;
 const CONTRAST_LARGE = 3;
+const CONTRAST_NON_TEXT = 3;
 
 const tokenNamesOf = (value: unknown) =>
   (Array.isArray(value) ? value : [value]).filter(
@@ -125,17 +126,17 @@ export const CONTRAST_STATEMENTS = `
       layers.sort((a, b) => a.z - b.z);
       return layers;
     };
-    const pixelOf = (chain, index, behind, text, under) => {
+    const pixelOf = (chain, index, behind, ink, under) => {
       const style = getComputedStyle(chain[index]);
       const filled = under[index].reduce((at, layer) => fade(over(layer.color, at), at, layer.opacity), over(rgbaOf(style.backgroundColor), behind));
-      const inner = index + 1 < chain.length ? pixelOf(chain, index + 1, filled, text, under) : text ? over(rgbaOf(style.color), filled) : filled;
+      const inner = index + 1 < chain.length ? pixelOf(chain, index + 1, filled, ink, under) : ink ? over(ink, filled) : filled;
       return fade(inner, behind, parseFloat(style.opacity));
     };
     const luminanceOf = (rgb) => {
       const [r, g, b] = rgb.map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
       return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
-    const ratioOf = (element, point) => {
+    const contrastOf = (element, point, ink, ground) => {
       const chain = chainOf(element);
       if (chain.some((at) => getComputedStyle(at).backgroundImage !== 'none')) return null;
       const under = chain.map(() => []);
@@ -147,9 +148,10 @@ export const CONTRAST_STATEMENTS = `
         under[index].push(layer);
       }
       const white = [1, 1, 1];
-      const [light, dark] = [luminanceOf(pixelOf(chain, 0, white, true, under)), luminanceOf(pixelOf(chain, 0, white, false, under))].sort((a, b) => b - a);
+      const [light, dark] = [luminanceOf(pixelOf(chain, 0, white, ink, under)), luminanceOf(pixelOf(ground ? chain.slice(0, ground) : chain, 0, white, null, under))].sort((a, b) => b - a);
       return (light + 0.05) / (dark + 0.05);
     };
+    const ratioOf = (element, point) => contrastOf(element, point, rgbaOf(getComputedStyle(element).color));
     const shown = (ratio) => ratio.toFixed(2) + ':1';
     const contrastSeen = new Set();
     const exempt = (element) => contrast.exceptions.some((selector) => {
@@ -205,6 +207,70 @@ export const CONTRAST_STATEMENTS = `
         detail: '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" ' + shown(ratio) + (options.contrast.scheme ? ' in the ' + options.contrast.scheme + ' scheme' : '') + ', needs ' + shown(limit) +
           (large ? ' (large text)' : '') + '; on purpose: definePart({ contrast: { exceptions: [{ selector, reason }] } })',
       });
+    }
+    const inScheme = options.contrast.scheme ? ' in the ' + options.contrast.scheme + ' scheme' : '';
+    const offWrapper = (element) => {
+      const controls = [...element.querySelectorAll('input, select, textarea, button')];
+      return controls.length > 0 && controls.every(offControl);
+    };
+    const skipped = (element) => element.closest(':disabled, [aria-disabled="true"], [inert]') !== null || inOffLabel(element) || offWrapper(element) || exempt(element) ||
+      getComputedStyle(element).visibility !== 'visible' || chainOf(element).some((at) => parseFloat(getComputedStyle(at).opacity) === 0);
+    const nonText = (kind, element, ratio) => {
+      const path = pathOf(element);
+      if (contrastSeen.has(kind + ' ' + path)) return;
+      contrastSeen.add(kind + ' ' + path);
+      found.push({
+        rule: 'CONTRAST',
+        path,
+        detail: kind + ' ' + shown(ratio) + inScheme + ', needs ' + shown(${CONTRAST_NON_TEXT}) + ' (non-text); on purpose: definePart({ contrast: { exceptions: [{ selector, reason }] } })',
+      });
+    };
+    for (const element of [root, ...root.querySelectorAll('*')]) {
+      if (element.closest('svg, style, script, template')) continue;
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      if (box.width <= 1 || box.height <= 1) continue;
+      const sides = ['Top', 'Right', 'Bottom', 'Left'].flatMap((side) => {
+        const width = parseFloat(style['border' + side + 'Width']) || 0;
+        if (width <= 0 || ['none', 'hidden'].includes(style['border' + side + 'Style'])) return [];
+        const color = rgbaOf(style['border' + side + 'Color']);
+        if (color[3] <= 0) return [];
+        const x = side === 'Left' ? box.left + width / 2 : side === 'Right' ? box.right - width / 2 : box.left + box.width / 2;
+        const y = side === 'Top' ? box.top + width / 2 : side === 'Bottom' ? box.bottom - width / 2 : box.top + box.height / 2;
+        return [{ color, point: { x, y } }];
+      });
+      if (sides.length === 0 || skipped(element)) continue;
+      const ground = chainOf(element).length - 1;
+      const fill = contrastOf(element, { x: box.left + box.width / 2, y: box.top + box.height / 2 }, null, ground);
+      if (fill === null || fill >= ${CONTRAST_NON_TEXT}) continue;
+      const ratios = sides.map(({ color, point }) => contrastOf(element, point, color, ground));
+      if (ratios.includes(null)) continue;
+      const lowest = Math.min(...ratios);
+      if (lowest < ${CONTRAST_NON_TEXT}) nonText('border', element, lowest);
+    }
+    const paintOf = (style, paint, opacity) => {
+      const value = style[paint];
+      if (!value || value === 'none' || value.startsWith('url(')) return null;
+      const [r, g, b, a] = rgbaOf(/currentcolor/i.test(value) ? style.color : value);
+      const alpha = a * (parseFloat(style[opacity]) || 0);
+      return alpha > 0 ? [r, g, b, alpha] : null;
+    };
+    for (const icon of [root, ...root.querySelectorAll('svg')]) {
+      if (icon.tagName.toLowerCase() !== 'svg' || icon.parentElement?.closest('svg') || skipped(icon)) continue;
+      const shapes = [...icon.querySelectorAll('path, circle, ellipse, line, polygon, polyline, rect, text, use')].filter((shape) => !shape.closest('defs, clipPath, mask, symbol, pattern, marker'));
+      const ratios = shapes.flatMap((shape) => {
+        const style = getComputedStyle(shape);
+        const box = shape.getBoundingClientRect();
+        if (style.visibility !== 'visible' || (box.width <= 0 && box.height <= 0)) return [];
+        const point = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+        const stroked = (parseFloat(style.strokeWidth) || 0) > 0;
+        return [paintOf(style, 'fill', 'fillOpacity'), stroked ? paintOf(style, 'stroke', 'strokeOpacity') : null]
+          .filter((ink) => ink !== null)
+          .map((ink) => contrastOf(shape, point, ink));
+      });
+      if (ratios.length === 0 || ratios.includes(null)) continue;
+      const best = Math.max(...ratios);
+      if (best < ${CONTRAST_NON_TEXT}) nonText('icon', icon, best);
     }
     for (const pair of contrast.pairs) {
       const missing = [pair.text, pair.on].filter((name) => getComputedStyle(root).getPropertyValue(name).trim() === '');
