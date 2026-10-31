@@ -33,7 +33,7 @@ const EMPTY: DescriptionListMockItem[] = [
 const GROUPED: DescriptionListMockItem[] = STORY.map((item) => ({ ...item, grouped: true }));
 
 export default definePart({
-  note: 'Today\'s look',
+  note: "Today's look",
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},

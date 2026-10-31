@@ -73,7 +73,7 @@ const body = ({ ratio = '16 / 9', caption = 'short', intrinsic, loading, error, 
 };
 
 export default definePart({
-  note: 'Today\'s look',
+  note: "Today's look",
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},

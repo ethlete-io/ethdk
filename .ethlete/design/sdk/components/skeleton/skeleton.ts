@@ -32,7 +32,7 @@ const render = ({ form, animated }: Props) => {
 };
 
 export default definePart({
-  note: 'Today\'s look',
+  note: "Today's look",
   madeBy: ['claude-opus-5-5'],
   states: {
     card: { form: 'card', animated: true },

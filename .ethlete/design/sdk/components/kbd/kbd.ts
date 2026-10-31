@@ -38,7 +38,7 @@ const render = ({ form, platform: p }: Props) => {
 };
 
 export default definePart({
-  note: 'Today\'s look',
+  note: "Today's look",
   madeBy: ['claude-opus-5-5'],
   states: {
     single: { form: 'single', platform: 'apple' },
