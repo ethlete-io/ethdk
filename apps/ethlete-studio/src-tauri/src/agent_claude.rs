@@ -4,6 +4,12 @@ use crate::agent::{detail, AgentCli, AgentEvent, AgentRequest, ToolServer};
 
 pub struct ClaudeCli;
 
+const STUDIO_BRIEF: &str = "You work in Ethlete Studio on the design system in `.ethlete/design/<product>/`. \
+After each change to a part, run `npx et design check` and fix every problem it names, then draw the part with \
+`npx et design shot <layer>/<name> --states` and look at the picture. Files under `.ethlete/` need no changeset. \
+For type, use the product tokens from the `foundations/type` part, for example `text-ui-sm`, `font-ui-medium` and \
+`font-ui-strong`, never raw font classes such as `text-sm` or `font-semibold`.";
+
 impl AgentCli for ClaudeCli {
     fn id(&self) -> &'static str {
         "claude"
@@ -45,6 +51,11 @@ impl AgentCli for ClaudeCli {
         if let Some(session) = &request.resume {
             arguments.push("--resume".to_owned());
             arguments.push(session.clone());
+        }
+
+        if tools.is_none() {
+            arguments.push("--append-system-prompt".to_owned());
+            arguments.push(STUDIO_BRIEF.to_owned());
         }
 
         if let Some(tools) = tools {
@@ -191,6 +202,25 @@ mod tests {
         assert!(!ClaudeCli
             .arguments(&asking("draw it", None), None)
             .contains(&"--mcp-config".to_owned()));
+    }
+
+    #[test]
+    fn a_chat_run_gets_the_studio_brief() {
+        let arguments = ClaudeCli.arguments(&asking("draw it", None), None);
+        let at = arguments
+            .iter()
+            .position(|argument| argument == "--append-system-prompt");
+        let brief = &arguments[at.expect("the brief is passed") + 1];
+
+        assert!(brief.contains("npx et design check"));
+        assert!(brief.contains("font-ui-medium"));
+    }
+
+    #[test]
+    fn a_call_run_gets_no_studio_brief() {
+        assert!(!ClaudeCli
+            .arguments(&asking("draw it", None), Some(&serving()))
+            .contains(&"--append-system-prompt".to_owned()));
     }
 
     #[test]
