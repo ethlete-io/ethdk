@@ -124,6 +124,17 @@ describe('serveDesign', () => {
     expect(created[0]?.server).toMatchObject({ strictPort: true });
   });
 
+  it('listens on DE_PORT when it is set, also when the Studio host did not start it', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.stubEnv('DE_PORT', '4498');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+    expect(created[0]?.server).toMatchObject({ port: 4498, strictPort: true });
+    vi.unstubAllEnvs();
+  });
+
   it('listens on the host it is given, or DE_HOST, and on Vite default otherwise', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = makeTarget({ port: 4999, defaultCall: 'app/one' });

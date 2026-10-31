@@ -884,17 +884,18 @@ export const serveDesign = async (options: { target: string; host?: string }): P
   snapshotPackage(target);
 
   const ownedByStudio = process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1';
+  const portPinned = ownedByStudio || !!Number(process.env['DE_PORT']);
   const server = await createDesignServer({
     target,
     config,
     listen: true,
     host,
-    listenOn: ownedByStudio ? undefined : await freePortOf(),
+    listenOn: portPinned ? undefined : await freePortOf(),
   });
 
   await server.listen();
   console.log(`design-explore: drawing ${target}`);
-  if (!ownedByStudio) {
+  if (!portPinned) {
     console.log(
       `design-explore: not started by Studio, so it listens on a free port and leaves ${portOf(config)} to Studio`,
     );
