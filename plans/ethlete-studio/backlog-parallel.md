@@ -745,6 +745,7 @@ machen".
   live only in memory, so a Studio restart (an edit under `src-tauri/**`) re-renders every part. The disk cache must
   keep shots across a restart and still invalidate on a render-path change (same rules as the in-memory key after
   the sha1 fix `42392387e`).
+  In progress (builder ethlete-sdk-57): a disk shot cache in `libs/cli` design, keyed like the memory cache.
 
 #### Build slices (builder ethlete-sdk-57)
 
