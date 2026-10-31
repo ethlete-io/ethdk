@@ -1,0 +1,20 @@
+{
+  "groups": [
+    { "name": "AGENTS.md", "files": ["AGENTS.md"], "budget": 24000 },
+    { "name": "skill", "glob": ".agents/skills/*/SKILL.md", "budget": 15000 },
+    {
+      "name": "plan index",
+      "files": [
+        "plans/ethlete-studio/design-system.md",
+        "plans/ethlete-studio/design-system-actions.md",
+        "plans/ethlete-studio/design-system-actions-fixed.md",
+        "plans/ethlete-studio/studio-wireframes-handoff.md"
+      ],
+      "budget": 6000
+    }
+  ],
+  "overrides": {
+    ".agents/skills/ethlete-timetrack/SKILL.md": 25000,
+    ".agents/skills/verify-in-mobile-emulator/SKILL.md": 20000
+  }
+}

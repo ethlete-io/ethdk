@@ -60,6 +60,7 @@ jobs:
       # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
+      - run: yarn lint:size
 
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
       - run: yarn docs:error-codes:check
