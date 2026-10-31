@@ -46,10 +46,33 @@
          reader cannot see. */
       visibility: hidden;
     }
+
+    .et-floating-action-trigger:where(
+        [data-floating-action-state='floating'],
+        [data-floating-action-state='hidden']
+      )::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow:
+        0 0.3rem 0.8rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.2),
+        0 0.1rem 0.3rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.12);
+    }
+
+    .et-floating-action-trigger:where([data-floating-action-state='floating'])::before {
+      opacity: 1;
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .et-floating-action {
+      .et-floating-action-trigger::before {
+        transition: opacity var(--et-floating-action-duration) var(--ease-3, ease-out);
+      }
+
       /* Scaling *in* is a keyframe rather than a transition: the first time the trigger detaches there is no
          previous scale to animate from. */
       .et-floating-action-trigger:where([data-floating-action-state='floating']) {
