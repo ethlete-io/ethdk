@@ -648,6 +648,32 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   the failed min size. Chromium, studio-lab `components/button` with the 5 solid light shots held: the grid revealed
   at ~2.3 s with those 5 cells "Rendering", the rest drawn; released, they swapped to loaded.
 
+### Input and textarea decisions (Tom, 2026-10-31)
+
+From input r1 (`da383db15`) and textarea r1 (`4bacbaf9b`). Asked in chat as Q104-Q116 by a fresh grill session
+that missed the handoff; renumbered here because Q104/Q105 were already taken.
+
+- Q106 (L1): `et-form-field > et-description` gets the same inline-start padding as hint and errors. Patch.
+- Q107 (L2): `.et-input-native::-webkit-search-cancel-button { appearance: none }`. Patch. No et- clear button until
+  a case needs one.
+- Q108: every input frame is at least 3:1 against its surface, also in error; error uses the full danger tone.
+  Follows Q42 (inputs keep their own 3:1 tokens).
+- Q109: the placeholder is at least 4.5:1 and still lighter than the value.
+- Q110: readonly needs a visible signal that is not only a colour; a dashed frame is the candidate.
+- Q111: focus is always the strongest input state: a 2px frame in ink or accent, no halo ring (focus stays on while
+  typing). Hover is a small step over rest, only on unfocused fields; a focused field does not change on hover.
+- Q112: a text prefix (for example "€", "https://") sits about 4px from the value; an icon prefix keeps the full
+  affix gap.
+- Q113: the required marker is not exempt (checkbox r1 only listed it as open). It needs 4.5:1, so the danger text
+  tone gets lighter in dark. Applies to all form fields.
+- Q114: rules Q108-Q113 are drawn first as an r2 round of input and textarea (plus checkbox and radio shots for the
+  danger text), then built in one lib commit after Tom merges.
+- Q115 (L3): textarea padding-block centres the first line like the input (13.5px at md). Patch; the changeset says a
+  rows=1 textarea grows by 15px.
+- Q116 (L4): `[data-resize='vertical']` gets `min-block-size: 1lh`. Patch.
+- Q117: keep the browser resize grip; draw its position (corner vs 13px inside) as an r2 variant.
+- Q118: no fade on scrolled textarea content; text scrolls to the frame edge like a native textarea (r2 variant).
+
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
