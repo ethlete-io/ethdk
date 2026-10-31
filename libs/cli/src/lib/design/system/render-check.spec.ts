@@ -198,7 +198,7 @@ describe('renderIssuesOf', () => {
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
     ]);
-    expect(rendered.warnings.map(renderIssueLineOf)).toEqual([
+    expect(rendered.warnings.filter((issue) => issue.rule !== 'CONTROL-PART-INPUT').map(renderIssueLineOf)).toEqual([
       'EMBED-SCALE shop components/embed-twice default at fitted: div[data-et-part=components/embed-twice] - scales an embedPage of scale 0.2 with transform matrix(0.5, 0, 0, 0.5, 0, 0), so the page shrinks twice: set the scale in one place',
       'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] - class "shop-gone" is defined by no stylesheet of the frame',
       'UNDEFINED-CLASS shop components/styled default at fitted: p[data-et-part=components/styled] > span.shop-ghost - class "shop-ghost" is defined by no stylesheet of the frame',
@@ -306,6 +306,53 @@ describe('renderIssuesOf', () => {
     ).toEqual([
       'added: extract the collapse as its own control part and draw this state there',
       'changed: extract the row as its own control part and draw this state there',
+    ]);
+  }, 120_000);
+
+  it('hints unmarked controls of merged parts and blocks only those a sketch adds', async (context) => {
+    const target = checkout({
+      'components/bar': {
+        body: '<div><button>Save</button><a href="#" data-et-control="link">More</a><span role="switch">On</span></div>',
+      },
+      'foundations/swatch': { body: '<div><button>Swatch</button></div>' },
+    });
+    const config = readConfig(target) ?? {};
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'components-bar');
+    const source = readFileSync(join(shop, 'components/bar/bar.ts'), 'utf8');
+
+    for (const variant of ['same', 'added']) mkdirSync(join(dir, variant, 'components/bar'), { recursive: true });
+    mkdirSync(join(dir, 'added/components/fresh'), { recursive: true });
+    writeFileSync(join(dir, 'sketch.json'), JSON.stringify({ target: 'components/bar', status: 'ready' }));
+    writeFileSync(join(dir, 'same/components/bar/bar.ts'), source.replace('>Save<', '>Keep<'));
+    writeFileSync(
+      join(dir, 'added/components/bar/bar.ts'),
+      source.replace('</div>', '<input class="bar-name" placeholder="Name" /></div>'),
+    );
+    writeFileSync(join(dir, 'added/components/fresh/fresh.ts'), source);
+
+    const rendered = await renderIssuesOf({
+      target,
+      config,
+      jobs: [null, ...['same', 'added'].map((variant) => ({ target: 'components/bar', variant }))].map((sketch) => ({
+        product: 'shop',
+        sketch,
+        parts: null,
+      })),
+    });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    const linesOf = (found: typeof rendered.issues) =>
+      found
+        .filter((issue) => issue.rule === 'CONTROL-PART-INPUT')
+        .map((issue) => `${issue.sketch?.variant ?? '-'} ${issue.part}: ${issue.detail.split(' is a control')[0]}`);
+
+    expect(linesOf(rendered.warnings)).toEqual(['- components/bar: button "Save"', '- components/bar: span "On"']);
+    expect(linesOf(rendered.issues)).toEqual([
+      'added components/bar: input.bar-name "Name"',
+      'added components/fresh: button "Save"',
+      'added components/fresh: span "On"',
     ]);
   }, 120_000);
 

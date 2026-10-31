@@ -552,6 +552,10 @@ fails it as `GRID`, in `design check` too.
 Interaction states (a state name whose last word is hover, focus, pressed, active or selected, such as `row-hover`) live only on a control
 part, one whose `controls` declare a control of a checked kind. On a shell, element or page they fail as
 `CONTROL-STATE`: declare the component's controls (Q164), or extract the button or row as its own control part and draw its states there.
+A drawn `button`, `a[href]`, `input`, `select`, `textarea` or control role without `data-et-control` on it or around
+it is `CONTROL-PART-INPUT`: no control check sees it. Wrap it in `control(markup, name)` from
+`@ethlete/components/design/control` and declare the name in `controls`; a sketch fails on one it adds,
+`design check` only warns of one a merged part already draws.
 `definePart({ interactions })` forces an interaction on the part's root only. To draw one element of the part
 hovered, focused, pressed or disabled, such as one row of a list, wrap that element's markup in
 `forceInteraction(markup, 'hover')` from `@design-system` inside `render`, driven by a prop; never write

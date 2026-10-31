@@ -9,7 +9,7 @@ import {
   contrastExceptionsOf,
   contrastPairsOf,
 } from './contrast-check';
-import { controlStateGapsOf, isInteractionState, isControlPart } from './complete';
+import { controlStateGapsOf, isInteractionState, isControlPart, SDK_CONTROLS } from './complete';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -50,6 +50,7 @@ type Frame = {
   skips: Record<string, string[]>;
   namespaces: string[];
   contrast: ContrastOptions;
+  controlInputs: boolean;
 };
 
 type PartModule = {
@@ -115,12 +116,24 @@ const ESCAPABLE = ['CLIPPED', 'WRAP'];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
+const CONTROL_INPUTS = [
+  'button',
+  'a[href]',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  ...['button', 'checkbox', 'combobox', 'menuitem', 'option', 'radio', 'slider', 'switch', 'tab', 'textbox'].map(
+    (role) => `[role="${role}"]`,
+  ),
+].join(', ');
+
 const inspectFrame = (options: {
   fixed: boolean;
   fit: boolean;
   skips: Record<string, string[]>;
   namespaces: string[];
   contrast: ContrastOptions;
+  part: string | null;
 }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
@@ -361,8 +374,29 @@ const inspectFrame = (options: {
     }
   }
 ${CONTRAST_STATEMENTS}
+  const ownedOf = (element) => {
+    const slotted = (element.getAttribute('data-et-slot') ?? '').split(' ').filter(Boolean);
+    for (let at = element; at && at !== root; at = at.parentElement)
+      for (const key of (at.getAttribute('data-et-part') ?? '').split(' ').filter(Boolean)) {
+        const index = slotted.indexOf(key);
+        if (index >= 0) slotted.splice(index, 1);
+        else return key === options.part;
+      }
+    return true;
+  };
+  if (options.part !== null)
+    for (const element of root.querySelectorAll(options.controlInputs)) {
+      if (element.getClientRects().length === 0 || element.closest('[data-et-control]') || !ownedOf(element)) continue;
+      if (element.matches('[role="option"], [role^="menuitem"]') && element.closest('[data-et-surface]')) continue;
+      const sdk = element.parentElement?.closest(options.sdkControls);
+      if (sdk && root.contains(sdk)) continue;
+      const text = (element.textContent.trim() || element.getAttribute('aria-label') || element.getAttribute('placeholder') || '').replace(/\\s+/g, ' ');
+      const cls = [...element.classList].find((name) => !/^et-(surface|color)--/.test(name));
+      const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
+      report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
+    }
   return found;
-})(${JSON.stringify({ ...options, escapable: ESCAPABLE })})`;
+})(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: CONTROL_INPUTS, sdkControls: SDK_CONTROLS.join(', ') })})`;
 
 const stringsOf = (value: unknown) =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
@@ -422,6 +456,7 @@ const inspect = async (options: { browser: Browser; base: string; frames: Frame[
           skips: frame.skips,
           namespaces: frame.namespaces,
           contrast: frame.contrast,
+          part: frame.controlInputs ? frame.address.part : null,
         }),
       )) as Found[];
       const { product, part, state, sketch } = frame.address;
@@ -472,6 +507,7 @@ export const renderIssuesOf = async (options: {
     const issues: RenderIssue[] = [];
     const grids: RenderedGrid[] = [];
     const gridWarnings: RenderIssue[] = [];
+    const baselines = new Map<string, Frame[]>();
     for (const { product, sketch, parts } of jobs) {
       const skips: Record<string, string[]> = {};
 
@@ -605,13 +641,52 @@ export const renderIssuesOf = async (options: {
           issues.push({ rule: 'CONTRAST', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
         );
 
-        const widths = widthsOf(definition?.widths);
-        const sizes: { preset: string | null; width: number | null }[] =
+        const sizesOf = (widths: number[], presets: Record<string, unknown>) =>
           part.layer === 'pages'
-            ? Object.keys(drawn.presets).map((preset) => ({ preset, width: null }))
+            ? Object.keys(presets).map((preset) => ({ preset, width: null }))
             : widths.length > 0
               ? widths.map((width) => ({ preset: null, width }))
               : [{ preset: null, width: null }];
+        const sizes: { preset: string | null; width: number | null }[] = sizesOf(
+          widthsOf(definition?.widths),
+          drawn.presets,
+        );
+        const controlInputs = part.layer !== 'foundations';
+        const baselineKey = JSON.stringify([product, key]);
+
+        if (merged && mergedPart && controlInputs && !baselines.has(baselineKey)) {
+          const mergedStates =
+            mergedDefinition?.states && typeof mergedDefinition.states === 'object'
+              ? Object.keys(mergedDefinition.states)
+              : [];
+
+          baselines.set(
+            baselineKey,
+            mergedStates.flatMap((state) =>
+              sizesOf(widthsOf(mergedDefinition?.widths), merged.presets).flatMap(({ preset, width }) => {
+                const address = { product, part: key, state, preset, width, sketch: null, interaction: null };
+                const frame = partFrameOf({ system, ...address });
+
+                return frame instanceof Error
+                  ? []
+                  : [
+                      {
+                        address,
+                        size: preset ?? (width ? `${width}px` : 'fitted'),
+                        search: frame.search.toString(),
+                        viewport: viewportOf(frame.size),
+                        fixed: frame.size?.height !== undefined,
+                        fit: frame.size === null,
+                        skips: {},
+                        namespaces,
+                        contrast: { exceptions: [], pairs: [], scheme: schemes[0] ?? null },
+                        controlInputs,
+                      },
+                    ];
+              }),
+            ),
+          );
+        }
 
         const measuresPairs = new Set<ColorScheme | null>();
 
@@ -632,6 +707,7 @@ export const renderIssuesOf = async (options: {
                 fit: frame.size === null,
                 skips,
                 namespaces,
+                controlInputs,
                 contrast: {
                   exceptions: exceptions.selectors,
                   pairs: measuresPairs.has(scheme) ? [] : pairs,
@@ -646,12 +722,32 @@ export const renderIssuesOf = async (options: {
     }
 
     const inspected = await queue.run((browser) => inspect({ browser, base, frames }));
+    const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
+    const sketchedInputs = inspected.filter((issue) => isInput(issue) && issue.sketch);
+    const compared = [...new Set(sketchedInputs.map((issue) => JSON.stringify([issue.product, issue.part])))];
+    const baseline = compared.flatMap((key) => baselines.get(key) ?? []);
+    const elementOf = (issue: RenderIssue) => JSON.stringify([issue.product, issue.part, issue.path]);
+    const existing = new Set(
+      (baseline.length > 0 ? await queue.run((browser) => inspect({ browser, base, frames: baseline })) : [])
+        .filter(isInput)
+        .map(elementOf),
+    );
+    const mergedInputs = inspected.filter((issue) => isInput(issue) && !issue.sketch);
 
-    issues.push(...inspected.filter((issue) => !WARNING_RULES.has(issue.rule)));
+    issues.push(
+      ...inspected.filter((issue) => !WARNING_RULES.has(issue.rule) && !isInput(issue)),
+      ...sketchedInputs.filter((issue) => !existing.has(elementOf(issue))),
+    );
 
     return {
       issues,
-      warnings: [...gridWarnings, ...firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule)))],
+      warnings: [
+        ...gridWarnings,
+        ...mergedInputs.filter(
+          (issue, index) => mergedInputs.findIndex((other) => elementOf(other) === elementOf(issue)) === index,
+        ),
+        ...firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule))),
+      ],
       grids,
       drawn: frames
         .filter(({ contrast }) => contrast.scheme !== 'dark')

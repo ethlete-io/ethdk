@@ -57,7 +57,7 @@ const wideHero = (target: string, attributes: string) => {
 export default definePart({
   note: 'A hero.',
   states: { default: {} },
-  render: () => drawing({ body: html\`<button ${attributes} style="width: 60px">Save the draft now</button>\`, styles: '' }),
+  render: () => drawing({ body: html\`<button data-et-control="save" ${attributes} style="width: 60px">Save the draft now</button>\`, styles: '' }),
 });
 `,
   );
@@ -1147,7 +1147,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 export default definePart({
   note: 'A hero.',
   states: { default: {} },
-  render: () => drawing({ body: html\`<button style="width: 60px">Save the draft now</button>\`, styles: '' }),
+  render: () => drawing({ body: html\`<button data-et-control="save" style="width: 60px">Save the draft now</button>\`, styles: '' }),
 });
 `,
     );

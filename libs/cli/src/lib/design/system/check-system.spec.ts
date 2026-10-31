@@ -195,6 +195,7 @@ describe('checkDesign', () => {
     expect(warnings).toEqual([
       expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
       expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
+      expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
@@ -214,6 +215,7 @@ describe('checkDesign', () => {
         /^WARNING UNUSED-EXPORT .*hero\/shared\/data\.ts: rows is exported, but nothing imports it/,
       ),
       expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
+      expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /),
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);

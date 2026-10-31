@@ -890,7 +890,7 @@ const INTERACTIVE_ROLES = [
   'treeitem',
 ];
 
-const SDK_CONTROLS = [
+export const SDK_CONTROLS = [
   '[et-button]',
   '[et-icon-button]',
   '[et-text-button]',
