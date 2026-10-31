@@ -154,3 +154,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   the MVP. It joins the after-MVP inventory rows: canvas view, viewport clip, assets section (Q233), overlays (Q239).
 - **Q240 (Tom, 2026-10-31):** an inventory control with several instances is marked "covered" in the list only when
   every instance is covered; covered instances still lose their outline in the frame.
+- **Inventory view audience (Tom, 2026-10-31), input for the after-MVP `pages/inventory` rework:** the view is too
+  technical. It reads like a debugging tool for Studio itself and is a useful CLI tool, but a designer without a code
+  background gets nothing from it (DOM paths, owner keys, state counts). The rework starts from that user: what
+  must a designer see and decide here, and what moves to the CLI or a debug-only view.
