@@ -41,8 +41,13 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
   4. Q64 done (`c70713442`): `fitOutOfFlow` skips a fixed element on all four edges. Q90 done (`9d8ae9723`).
-  - In progress (2026-10-31): 2c grid render speed (measure first), then Q92 side-by-side schemes; 2d `STALE-REPLACE`
-    on a function parameter in parallel.
+  - Done (2026-10-31, night): 2c grid speed - one reveal per grid (`5970825b3`), page clip + 8 draws at once
+    (`0e5f9e106`); 40-cell grid 1.4 s -> 0.75-0.9 s, PNG bytes identical; Rust not needed (Q94). `STALE-REPLACE` on a
+    parameter (`c8f060913`). Gone-sketch shots are 404 and leave the footer (`52e3c1812`, `7bd2e50e9`). Q60 one MCP
+    server (`932d95e07`, `ca45612b1`, `30bf2e496`, `26090ed81`); Studio chat sends call + variant as tools
+    (`8454ff6e0`, one real `claude` turn called `call`; Tauri window and `check` receipt not verified). Flaky timetrack
+    peer test was a listener race (`9bb3572a1`). Release published (cdk next.46, core next.71, components next.78).
+  - In progress: Q92 side-by-side schemes; then the view swap flicker fix, then 1e.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   6. Q78: a way to record a regenerated token part (`generate-sdk-tokens.mjs` rewrites sdk `foundations/colors/colors.css`) as merged, so `design check` stops the "changed outside a sketch" warning. A sketch does not fit: CI `sdk:tokens:check` forces the change in the same commit.
   7. Q79: one shared sheet helper per foundation kind in `@design-system` (`libs/cli/design`), like `tokenSheet`; products pass only data. First `iconSheet` with views `catalogue` and `construction` (pixel grid, centre lines, padding box from studio `foundations/icons/icons.ts`), grid size as input (sdk: 24 px, 16 px, Font Awesome 512 units). Studio and sdk icons use it; sdk-33 holds sdk icons until it lands. Then colors, type, spacing, motion, logo.
@@ -544,6 +549,10 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Generator bug: in foundations/colors `colors.css`, `.et-surface--default-dark` sits in both the dark and the
   dark-elevated blocks, so the dark-elevated values win. Grill decision: a round for Tom (a today, b fixed), not a
   silent fix, because tonight's merges were reviewed against today's look.
+- MCP from Studio chat wired in `8454ff6e0` (real haiku turn called `mcp__studio__call`; Tauri window not
+  verified). Open for Tom (Q97): Studio has no selected call/variant, so the /agent chat page has two text inputs,
+  Call and Variant. Builder recommendation: open the chat from a call's view with both filled in, and drop the
+  inputs.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
