@@ -1182,3 +1182,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   `.replace` on the select markup. Until then the workaround stays.
 - **Q231 (Tom, 2026-10-31), after the MVP:** the `pages/sketches` round picker stays the plain small SDK select. A
   borderless muted select look is a new SDK select look, in its own SDK sketch.
+- **Q229 (Tom, 2026-10-31):** inventory controls are keyed and numbered on DOM path + label, not on the DOM path
+  alone. On `pages/start`, "Repo öffnen" (no-repo) and "Prompt kopieren" (no-products) sit at the same path; today they
+  share number 1 and the list shows one row for both. After the fix each gets its own number and row.
