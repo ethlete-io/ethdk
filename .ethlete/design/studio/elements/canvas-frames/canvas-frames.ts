@@ -88,16 +88,22 @@ export const canvasFrameBox = (body: string, head = '') =>
 export const canvasFrame = (name: string, body: string, width = '') =>
   canvasFrameBox(body, canvasFrameHead(name, width));
 
+type ChipState = { target?: 'out' | 'reset' | 'in' | 'fit'; interaction?: 'hover' | 'active' | 'focus-visible' };
+
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
-export const canvasView = async (frames: string[], zoom: string) => {
-  const chip = await zoomChip.render({ percent: parseFloat(zoom), class: 'absolute right-space-3 bottom-space-3' });
+export const canvasView = async (frames: string[], zoom: string, chipState: ChipState = {}) => {
+  const chip = await zoomChip.render({
+    percent: parseFloat(zoom),
+    class: 'absolute right-space-3 bottom-space-3',
+    ...chipState,
+  });
   return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden" data-et-skip="CLIPPED">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
     ${chip.body}
   </div>`;
 };
 
-type Props = { part: string; states: string[]; zoom: string };
+type Props = { part: string; states: string[]; zoom: string } & ChipState;
 
 const buttonStates = {
   filled: { label: 'Save', variant: 'filled' },
@@ -122,8 +128,134 @@ export default definePart({
   note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
+  unreachable: [
+    {
+      from: 'default',
+      to: 'out',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'default',
+      to: 'reset',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'default',
+      to: 'in',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'default',
+      to: 'fit',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'out',
+      to: 'default',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'out',
+      to: 'reset',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'out',
+      to: 'in',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'out',
+      to: 'fit',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'reset',
+      to: 'default',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'reset',
+      to: 'out',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'reset',
+      to: 'in',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'reset',
+      to: 'fit',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'in',
+      to: 'default',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'in',
+      to: 'out',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'in',
+      to: 'reset',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'in',
+      to: 'fit',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'fit',
+      to: 'default',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'fit',
+      to: 'out',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'fit',
+      to: 'reset',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'fit',
+      to: 'in',
+      reason:
+        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+  ],
   states: {
     default: defaultFrames,
+    out: { ...defaultFrames, zoom: '25%', target: 'out', interaction: 'hover' },
+    reset: { ...defaultFrames, target: 'reset', interaction: 'hover' },
+    in: { ...defaultFrames, zoom: '250%', target: 'in', interaction: 'hover' },
+    fit: { ...defaultFrames, target: 'fit', interaction: 'hover' },
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },
@@ -132,7 +264,7 @@ export default definePart({
     in: ZOOM,
     fit: ZOOM,
   },
-  render: async ({ part, states, zoom }: Props) => {
+  render: async ({ part, states, zoom, target, interaction }: Props) => {
     const rows = await Promise.all(
       states.map(async (state) => {
         const base = buttonStates[state as keyof typeof buttonStates];
@@ -152,7 +284,7 @@ export default definePart({
       { cellWidth: '120px', place: 'center' },
     );
     return drawing({
-      body: await canvasView([canvasFrame(part, grid)], zoom),
+      body: await canvasView([canvasFrame(part, grid)], zoom, { target, interaction }),
       styles: canvasFrameStyles,
     });
   },
