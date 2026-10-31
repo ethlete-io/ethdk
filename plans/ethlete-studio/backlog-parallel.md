@@ -1192,9 +1192,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Q233 (Tom, 2026-10-31), after the MVP:** the Inventory gets a second section "Assets" (logos, icons, images). An
   asset from the foundations (for example `foundations/agent-logos`, `foundations/logo`) is listed as "owned by
   foundations/<name>"; an inline SVG or image that does not come from the foundations is a finding.
-- **Q234 (Tom, 2026-10-31):** the rail items of `elements/shell-main` (nav icons, S/T/D, "...") become embedded SDK
-  `components/button` parts (icon buttons) in the shell-main b round, so the inventory lists them as owned. Today they
-  are `div`/`span` bubbles with only a `title`, so discovery cannot find them; a `title` signal in the CLI was
-  rejected (status icons and swatches carry `title` too). The rail items keep their current look. The page may not
-  restyle an owned control, so if no SDK button look matches, the SDK button gets a matching variant (a new look,
-  so an SDK sketch round that Tom merges).
+- **Q234 (Tom, 2026-10-31):** the rail items of `elements/shell-main` (nav icons, S/T/D, "...") become plain
+  `<button type="button" aria-label="...">` elements in the shell-main b round, declared in the shell-main
+  `controls`, with their current look. They are not SDK button parts: the rail item is a Studio-only control, and
+  Tom rejected adding an SDK button variant just for it. Today they are `div`/`span` bubbles with only a `title`, so
+  discovery cannot find them; a `title` signal in the CLI was rejected (status icons and swatches carry `title` too).
