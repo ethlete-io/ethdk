@@ -80,6 +80,10 @@
       user-select: none;
     }
 
+    > et-label .et-label-required-marker {
+      color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+    }
+
     .et-otp-input-field {
       position: relative;
       inline-size: fit-content;
@@ -107,8 +111,8 @@
       user-select: none;
 
       &[data-caret] {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-        outline: 1px solid var(--et-theme-color-primary-solid, currentColor);
+        border-color: var(--et-theme-color-ink-solid, currentColor);
+        outline: 1px solid var(--et-theme-color-ink-solid, currentColor);
         outline-offset: -1px;
       }
 
@@ -121,7 +125,7 @@
         inline-size: 2px;
         block-size: 1.1em;
         border-radius: 1px;
-        background: var(--et-theme-color-primary-solid, currentColor);
+        background: var(--et-theme-color-ink-solid, currentColor);
         animation: et-otp-input-caret-blink 1.1s steps(2, jump-none) infinite;
       }
     }
@@ -159,6 +163,16 @@
 
     &[data-error] .et-otp-input-segment {
       border-color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    @media (hover: hover) {
+      &:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+        border-color: var(--et-surface-interaction-hover-solid);
+      }
+
+      &[data-error]:not(:has(.et-otp-input-native:read-only)):hover .et-otp-input-segment:not([data-caret]) {
+        border-color: var(--et-theme-color-ink-solid);
+      }
     }
 
     &:has(.et-otp-input-native:disabled) {

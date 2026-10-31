@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, openStory, pressKey, pressKeys, settle, tap } from '../support';
+import { boxOf, openStory, pressKey, pressKeys, setColorScheme, settle, tap } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
 const EMPTY_TEXT_STORY_ID = 'components-feedback-tooltip--empty-text';
@@ -259,4 +259,35 @@ test.describe('tooltip / chrome', () => {
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toHaveCSS('overflow', 'visible');
   });
+});
+
+test.describe('tooltip / scheme border', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover opens the tooltip');
+
+  for (const [scheme, expected] of [
+    ['light', 'var(--et-surface-border-solid, rgb(255 255 255 / 0.1))'],
+    ['dark', 'color-mix(in srgb, var(--et-surface-color-solid) 24%, var(--et-surface-background-solid))'],
+  ] as const) {
+    test(`the tooltip border follows the ${scheme} scheme`, async ({ page }) => {
+      const root = await openStory(page, STORY_ID);
+      await setColorScheme(root, scheme);
+      await root.getByRole('button', { name: 'Text tooltip' }).hover();
+
+      const tooltip = page.locator('.et-tooltip__surface');
+      await expect(page.locator('.et-tooltip-panel')).toHaveClass(/et-animation-enter-done/);
+
+      const want = await tooltip.evaluate((el, value) => {
+        const probe = document.createElement('span');
+        probe.style.colorScheme = getComputedStyle(el).colorScheme;
+        probe.style.border = `1px solid ${value}`;
+        el.appendChild(probe);
+        const color = getComputedStyle(probe).borderTopColor;
+        probe.remove();
+
+        return color;
+      }, expected);
+
+      await expect(tooltip).toHaveCSS('border-top-color', want);
+    });
+  }
 });
