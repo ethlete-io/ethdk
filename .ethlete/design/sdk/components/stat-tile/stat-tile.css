@@ -1,0 +1,15 @@
+.stat-tile-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+
+  > .et-card {
+    inline-size: 280px;
+  }
+}
+
+@layer components {
+  .et-stat-tile-sparkline-current {
+    stroke: var(--et-theme-color-ink-solid, currentColor);
+  }
+}

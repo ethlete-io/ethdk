@@ -1,0 +1,37 @@
+.picture-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-inline-size: 520px;
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+
+  .picture-error {
+    margin: 0;
+    color: var(--et-surface-color-muted-solid);
+    font-size: 1.2rem;
+  }
+
+  .picture-fit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 180px);
+    gap: 1.6rem;
+  }
+
+  .picture-fit-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--et-surface-color-muted-solid);
+  }
+
+  .picture-fit-cell .et-picture {
+    inline-size: 180px;
+    block-size: 120px;
+    outline: 1px dashed var(--et-surface-border-solid);
+  }
+}

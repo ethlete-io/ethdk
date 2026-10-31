@@ -1,0 +1,44 @@
+.carousel-frame {
+  padding: 2.4rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+
+  .carousel-slide {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    box-sizing: border-box;
+    block-size: 100%;
+    min-block-size: 200px;
+    padding: 2.4rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--et-surface-color-solid) 14%, transparent);
+    color: var(--et-surface-color-solid);
+  }
+
+  .carousel-slide p {
+    margin: 0;
+  }
+
+  .carousel-slide-title {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .carousel-slide-meta {
+    font-size: 1.2rem;
+  }
+}
+
+@layer components {
+  .et-carousel .et-focus-ring {
+    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+  }
+
+  .et-carousel .et-carousel-dot[data-active]::before,
+  .et-carousel .et-carousel-dot-progress-half::before {
+    background: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+  }
+}

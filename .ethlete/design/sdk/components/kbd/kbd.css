@@ -1,0 +1,25 @@
+.kbd-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+.kbd-text {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.6;
+}
+
+.kbd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  font-size: 1.3rem;
+}
+
+.kbd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.6rem;
+}
