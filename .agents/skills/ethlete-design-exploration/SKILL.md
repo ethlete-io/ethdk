@@ -600,6 +600,15 @@ you draw a part, look for it in this order, and draw new only when none of them 
 3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
    that the part is new.
 
+**Colours come from the two SDK theming systems, never from tokens of your own.** A raised or
+floating area sets a surface scope (`data-et-surface` or a surface scope class) and takes its
+background, text, border and interaction states from the `et-surface` tokens of that scope. An
+accent, a warning or a danger colour comes from the SDK colour theming (`--et-theme-color-*` under a
+colour theme scope). Foundations define only the inputs of these themes. Never add a tier class
+(`bg-surface-raised`), an accent utility or a `var(--accent)` to a part or to the product
+stylesheet. Read the theming skill of the SDK before the first colour in a drawing. `et design check` reports
+a denied class from the product's `deniedClasses` list in `config.json`.
+
 A part is one folder, `<product>/<layer>/<part>/`, with its drawing and states. Read the parts of
 the product before the first drawing of a session. **A part exists only because the user picked a
 sketch.** A `chosen` verdict in an old call is not enough. Never change a part's look without a
