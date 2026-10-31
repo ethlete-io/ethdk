@@ -562,6 +562,45 @@ describe('the design server for a design system', () => {
     expect(written).toEqual([': open\n\n', 'event: parts\ndata: {"revision":0,"all":false,"parts":[]}\n\n']);
   });
 
+  it('redraws the parts a rebuilt package file reaches once the rebuild settles, and drops its stale modules', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+
+    writeFileSync(configPath, JSON.stringify({ ...config, render: { packages: { '@kit/*': 'dist/libs/*' } } }));
+
+    const { handlers, watchers, modulesByFile, invalidated } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const built = join(target, 'dist/libs/kit/design/button.ts');
+    const part = productModuleIdOf({
+      file: join(target, DESIGN_DIR, 'acme/components/button/button.ts'),
+      product: 'acme',
+    });
+    const importer = { id: part, importers: new Set<never>() };
+
+    modulesByFile.set(built, [{ id: built, importers: new Set([importer]) as Set<never> }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('unlink')?.(built);
+    watchers.get('add')?.(join(target, 'dist/libs/kit/design/unused.ts'));
+    watchers.get('add')?.(built);
+    watchers.get('change')?.(built);
+
+    expect(invalidated).toEqual([]);
+    expect(written).toEqual([': open\n\n']);
+
+    await vi.waitFor(() => expect(invalidated).toEqual([built]));
+    expect(written).toHaveLength(2);
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({
+      revision: 1,
+      all: false,
+      parts: [{ product: 'acme', part: 'components/button' }],
+    });
+  });
+
   it('signals a call file change as calls and a sketch file change as sketches, and nothing else for either', async () => {
     const target = acme();
     const { handlers, watchers } = await serveAcme(target);

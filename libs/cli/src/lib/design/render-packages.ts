@@ -65,6 +65,14 @@ export const mapPackage = (options: {
   return null;
 };
 
+/** The checkout folders `render.packages` maps to, `dist/libs` for `@ethlete/*` → `dist/libs/*`, outside `node_modules`. */
+export const renderPackageDirsOf = (options: { target: string; packages: Record<string, string> }) =>
+  Object.entries(options.packages)
+    .map(([pattern, path]) =>
+      resolve(options.target, pattern.endsWith('*') && path.endsWith('/*') ? path.slice(0, -2) : path),
+    )
+    .filter((dir) => !dir.split(sep).includes('node_modules'));
+
 type ExportTarget = string | null | ExportTarget[] | { [condition: string]: ExportTarget };
 
 const CONDITIONS = ['node', 'import', 'default'];

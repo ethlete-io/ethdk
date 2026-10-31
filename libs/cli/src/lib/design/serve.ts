@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
+import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, relative, resolve, sep } from 'path';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
@@ -64,7 +65,7 @@ import {
 import { forceInteractionsPlugin } from './force-interactions';
 import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
-import { mappedSubpathOf, renderPackagesOf } from './render-packages';
+import { mappedSubpathOf, renderPackageDirsOf, renderPackagesOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
 import { createGeneratedStylesheets } from './generated-stylesheets';
 import { sketchStylesheetsPlugin } from './sketch-stylesheets';
@@ -106,6 +107,7 @@ import {
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
 
 const VIRTUAL = 'virtual:design-explore';
+const REBUILD_SETTLE_MS = 300;
 
 /** What a slug says about which project drew it: its first segment. */
 const projectOf = (slug: string) => slug.split('/')[0] ?? '';
@@ -544,7 +546,38 @@ const designExplore = ({
         !isSketchFile(designRoot, file) &&
         [designRoot, ...baseDirs].some((dir) => isInside(dir, file));
 
+      const packageDirs = () => renderPackageDirsOf({ target, packages: renderPackagesOf({ target, config }) });
+      const isPackageFile = (file: string) => packageDirs().some((dir) => isInside(dir, resolve(file)));
+      const modulesOf = (file: string) => [...(vite.moduleGraph.getModulesByFile(resolve(file)) ?? [])];
+      const rebuilt = new Set<string>();
+      let settling: AbortController | undefined;
+
+      const redrawRebuilt = () => {
+        const modules = [...rebuilt].flatMap(modulesOf);
+        const [file] = rebuilt;
+
+        rebuilt.clear();
+        if (!file || modules.length === 0) return;
+
+        const dependents = dependentIdsOf(modules, stylesheetImports);
+
+        for (const module of modules) vite.moduleGraph.invalidateModule(module);
+        redraw(changedPartsOf({ target, config, system, file, dependents }));
+      };
+
+      // A package build deletes its folder and writes it anew; a module stays stale unless it is
+      // invalidated once the new file is there, so `unlink` alone redraws nothing.
+      const packageChanged = (file: string) => {
+        if (modulesOf(file).length === 0) return;
+
+        rebuilt.add(resolve(file));
+        settling?.abort();
+        settling = new AbortController();
+        void delay(REBUILD_SETTLE_MS, undefined, { signal: settling.signal }).then(redrawRebuilt, () => undefined);
+      };
+
       const refresh = (file: string) => {
+        if (isPackageFile(file)) return;
         if (resolve(file) === configPath) return reloadConfig();
         if (isCommentFile(file)) return events.signal('comments');
         if (isNoteFile(file)) return events.signal('notes');
@@ -565,6 +598,7 @@ const designExplore = ({
       };
 
       const change = (file: string) => {
+        if (isPackageFile(file)) return packageChanged(file);
         if (resolve(file) === configPath) return reloadConfig();
         if (isCommentFile(file)) return events.signal('comments');
         if (isNoteFile(file)) return events.signal('notes');
@@ -725,10 +759,11 @@ const designExplore = ({
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
       vite.httpServer?.on('close', () => {
         events.close();
+        settling?.abort();
         void Promise.all([thumbs.close(), shots.close(), inventoryDraws.close()]);
       });
-      vite.watcher.add([designRoot, ...baseDirs]);
-      vite.watcher.on('add', refresh);
+      vite.watcher.add([designRoot, ...baseDirs, ...packageDirs()]);
+      vite.watcher.on('add', (file: string) => (isPackageFile(file) ? packageChanged(file) : refresh(file)));
       vite.watcher.on('unlink', refresh);
       vite.watcher.on('change', change);
     },
