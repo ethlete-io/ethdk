@@ -23,79 +23,10 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
       </div>
     }
   `,
+  styleUrl: './pip-slot-placeholder.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [PipBringBackDirective, ButtonComponent, IconDirective],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON)],
-  styles: `
-    @layer components {
-      @property --et-pip-slot-placeholder-gap {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 12px;
-      }
-
-      @property --et-pip-slot-placeholder-padding {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 16px;
-      }
-
-      @property --et-pip-slot-placeholder-icon-size {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 36px;
-      }
-
-      @property --et-pip-slot-placeholder-border-radius {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 0px;
-      }
-
-      @property --et-pip-slot-placeholder-message-size {
-        syntax: '<length>';
-        inherits: true;
-        initial-value: 14px;
-      }
-
-      @property --et-pip-slot-placeholder-message-weight {
-        syntax: '<number>';
-        inherits: true;
-        initial-value: 400;
-      }
-
-      @property --et-pip-slot-placeholder-message-line-height {
-        syntax: '<percentage>';
-        inherits: true;
-        initial-value: 150%;
-      }
-
-      et-pip-slot-placeholder {
-        display: contents;
-      }
-
-      .et-pip-slot-placeholder-overlay {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--et-surface-background-solid, inherit);
-        color: var(--et-surface-color-solid, inherit);
-        z-index: 20;
-      }
-
-      .et-pip-slot-placeholder-card {
-        --et-stream-overlay-card-gap: var(--et-pip-slot-placeholder-gap);
-        --et-stream-overlay-card-padding: var(--et-pip-slot-placeholder-padding);
-        --et-stream-overlay-card-icon-size: var(--et-pip-slot-placeholder-icon-size);
-        --et-stream-overlay-card-border-radius: var(--et-pip-slot-placeholder-border-radius);
-        --et-stream-overlay-card-description-size: var(--et-pip-slot-placeholder-message-size);
-        --et-stream-overlay-card-description-weight: var(--et-pip-slot-placeholder-message-weight);
-        --et-stream-overlay-card-description-line-height: var(--et-pip-slot-placeholder-message-line-height);
-      }
-    }
-  `,
 })
 export class PipSlotPlaceholderComponent {
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN);

@@ -6,6 +6,7 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
 @Component({
   selector: 'et-stream-player-loading',
   template: ` <et-spinner [diameter]="config.spinnerDiameter" [strokeWidth]="config.spinnerStrokeWidth" track /> `,
+  styleUrl: './stream-player-loading.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [SpinnerComponent],
   host: {
@@ -13,24 +14,6 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
     role: 'status',
     '[attr.aria-label]': 'labels().loading',
   },
-  styles: `
-    @layer components {
-      .et-stream-player-loading {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--et-surface-background-solid, inherit);
-        color: var(--et-surface-color-solid, inherit);
-        z-index: 1;
-
-        .et-spinner {
-          --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
-        }
-      }
-    }
-  `,
 })
 export class StreamPlayerLoadingComponent {
   protected labels = injectStreamLabels();

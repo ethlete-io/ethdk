@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import '../../../test-helpers';
 import { StreamPlayerLoadingComponent } from './stream-player-loading.component';
 
@@ -20,13 +22,21 @@ describe('StreamPlayerLoadingComponent', () => {
     expect(spinner).not.toBeNull();
   });
 
-  it('ships its styles inside the components cascade layer', () => {
-    fixture.detectChanges();
-    const css = Array.from(document.head.querySelectorAll('style'))
-      .map((style) => style.textContent ?? '')
-      .find((text) => text.includes('.et-stream-player-loading'));
+  it('wraps its whole stylesheet in the components cascade layer', () => {
+    const css = readFileSync(
+      fileURLToPath(import.meta.url).replace(/[^/]+$/, 'stream-player-loading.component.css'),
+      'utf8',
+    ).trim();
+    let depth = 0;
+    let layerCloseIndex = -1;
 
-    expect(css?.trim().startsWith('@layer components')).toBe(true);
+    for (let index = 0; index < css.length && layerCloseIndex < 0; index++) {
+      if (css[index] === '{') depth++;
+      if (css[index] === '}' && --depth === 0) layerCloseIndex = index;
+    }
+
+    expect(css.startsWith('@layer components {')).toBe(true);
+    expect(layerCloseIndex).toBe(css.length - 1);
     expect(css).toContain('position: absolute');
   });
 });
