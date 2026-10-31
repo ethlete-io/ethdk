@@ -10,6 +10,7 @@ import {
   RenderRequest,
   RenderResponse,
   RenderResult,
+  renderPackagesOf,
   RenderWorkerData,
 } from './render-packages';
 
@@ -45,7 +46,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   const { target, config } = options;
   const workerDataOf = (): RenderWorkerData => ({
     target,
-    packages: config.render?.packages ?? {},
+    packages: renderPackagesOf({ target, config }),
     modules: config.render?.modules ?? DEFAULT_RENDER_MODULES,
   });
   let startedWith = '';

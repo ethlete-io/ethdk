@@ -64,7 +64,7 @@ import {
 import { forceInteractionsPlugin } from './force-interactions';
 import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
-import { mappedSubpathOf } from './render-packages';
+import { mappedSubpathOf, renderPackagesOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
 import { createGeneratedStylesheets } from './generated-stylesheets';
 import { sketchStylesheetsPlugin } from './sketch-stylesheets';
@@ -385,7 +385,7 @@ const designExplore = ({
 
       return (
         system.resolveId(id, importer) ??
-        mappedSubpathOf({ specifier: id, packages: config.render?.packages ?? {}, target })
+        mappedSubpathOf({ specifier: id, packages: renderPackagesOf({ target, config }), target })
       );
     },
     load: (id: string) => {

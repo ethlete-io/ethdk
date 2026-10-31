@@ -72,6 +72,26 @@ In `.ethlete/design/config.json`, a product can hide parts inherited from its ba
 a product's own part with the same key remains available. `tokens` lists the parts whose CSS
 every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
 
+`base` can also point into `node_modules`, at a design product an installed package ships:
+
+```json
+{
+  "products": {
+    "app": { "base": "node_modules/@ethlete/components/design/sdk" }
+  }
+}
+```
+
+The base folder needs a `config.json` above it that declares the product under the folder's name. Its
+parts' `@system/*` imports resolve to the parts of the product that draws them. `et design` writes no
+`tsconfig.json` into a base outside the checkout or inside `node_modules`; the typecheck config it
+generates in `node_modules/.design-explore` covers the base parts.
+
+`render.packages` maps a package pattern to the checkout folder `ng()` and the drawings load it from.
+Left out, it defaults to `{ "@ethlete/*": "node_modules/@ethlete/*" }` in a checkout without `dist/libs`,
+so a consumer repo only sets `base`. A checkout that builds its own packages maps them, for example
+`{ "@ethlete/*": "dist/libs/*" }`.
+
 `generated` lists stylesheets a command generates from one part, for example SDK theme classes generated
 from a colours part:
 

@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'timers/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, sep } from 'path';
+import { DesignConfig } from './paths';
 import { FieldSpec } from './render-fields';
 
 export const DEFAULT_RENDER_MODULES = ['@ethlete/components', '@ethlete/core'];
@@ -20,6 +21,16 @@ export type RenderResult = { markup: string; styles: string[] } | { error: strin
 export type RenderResponse = RenderResult & { id: number; watched: Record<string, number> };
 
 export type MappedPackage = { dir: string; subpath: string };
+
+/**
+ * The configured `render.packages`, or, when a config sets none, `@ethlete/*` from the checkout's
+ * `node_modules` unless it builds its own into `dist/libs`.
+ */
+export const renderPackagesOf = (options: { target: string; config: DesignConfig | null }): Record<string, string> =>
+  options.config?.render?.packages ??
+  (existsSync(resolve(options.target, 'dist/libs')) ? {} : { '@ethlete/*': 'node_modules/@ethlete/*' });
+
+const isInstalled = (mapped: MappedPackage) => mapped.dir.split(sep).includes('node_modules');
 
 const packageNameLength = (specifier: string) => {
   const segments = specifier.split('/');
@@ -155,7 +166,7 @@ export const entryOfBuilt = (
   let announced = false;
 
   for (let found = builtEntryOf(mapped); !found; found = builtEntryOf(mapped)) {
-    if (now() >= deadline) return entryOf(mapped);
+    if (now() >= deadline || isInstalled(mapped)) return entryOf(mapped);
 
     if (!announced) announceWait(mapped, onWait);
     announced = true;
@@ -172,7 +183,7 @@ export const entryOfBuiltAsync = async (mapped: MappedPackage, options: BuildWai
   let announced = false;
 
   for (let found = builtEntryOf(mapped); !found; found = builtEntryOf(mapped)) {
-    if (now() >= deadline) return entryOf(mapped);
+    if (now() >= deadline || isInstalled(mapped)) return entryOf(mapped);
 
     if (!announced) announceWait(mapped, onWait);
     announced = true;

@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { isAbsolute, relative, resolve, sep } from 'path';
 import { typecheck, TypecheckResult } from '../typecheck';
 import { DRAWING_COMPILER_OPTIONS } from '../calls-tsconfig';
 import { installedAssetRoot, readConfig, workRootOf } from '../paths';
-import { typePathsOf } from '../render-packages';
+import { renderPackagesOf, typePathsOf } from '../render-packages';
 import {
   FIXTURES_SPECIFIER,
   partSpecifierOf,
@@ -39,12 +39,17 @@ export const typecheckProduct = (options: { target: string; product: ResolvedPro
 
 /**
  * Writes `tsconfig.json` into the product's own folder, the nearest tsconfig an editor finds for
- * its parts, so `@design-system` and `@system/*` resolve there. The file is gitignored.
+ * its parts, so `@design-system` and `@system/*` resolve there. The file is gitignored. A folder outside the
+ * checkout or inside a `node_modules` gets none.
  */
 export const writeEditorTsconfig = (options: { target: string; product: ResolvedProduct }) => {
-  if (!existsSync(options.product.dir)) return;
+  const { target, product } = options;
+  const inside = relative(target, product.dir);
 
-  writeFileSync(resolve(options.product.dir, 'tsconfig.json'), systemTsconfigText(options));
+  if (!existsSync(product.dir) || inside.startsWith('..') || isAbsolute(inside)) return;
+  if (inside.split(sep).includes('node_modules')) return;
+
+  writeFileSync(resolve(product.dir, 'tsconfig.json'), systemTsconfigText(options));
 };
 
 const systemTsconfigText = (options: { target: string; product: ResolvedProduct & SharedDirs }) => {
@@ -54,7 +59,7 @@ const systemTsconfigText = (options: { target: string; product: ResolvedProduct 
   const inlineCss = resolve(installedAssetRoot(), 'css-inline.d.ts');
   const assets = resolve(installedAssetRoot(), 'assets.d.ts');
   const kit = resolve(installedAssetRoot(), 'wireframe-kit.ts');
-  const typePaths = typePathsOf({ packages: readConfig(target)?.render?.packages ?? {}, target });
+  const typePaths = typePathsOf({ packages: renderPackagesOf({ target, config: readConfig(target) }), target });
   const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [part.file]]));
   const fixtures = product.fixtures ? [product.fixtures] : [];
   const productShared = productSharedDirsOf(product);
