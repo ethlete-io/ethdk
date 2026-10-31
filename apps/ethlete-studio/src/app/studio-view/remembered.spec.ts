@@ -48,6 +48,14 @@ describe('remembered view', () => {
     expect(rememberedView().openGroups).toBeUndefined();
   });
 
+  it('keeps whether the inventory is shown and drops a value that is no boolean', () => {
+    rememberView({ inventoryShown: true });
+    expect(rememberedView().inventoryShown).toBe(true);
+
+    localStorage.setItem(KEY, JSON.stringify({ inventoryShown: 'yes' }));
+    expect(rememberedView().inventoryShown).toBeUndefined();
+  });
+
   it('merges a patch into what was stored', () => {
     rememberView({ checkout: '/a', systemProduct: 'web' });
     rememberView({ systemProduct: 'app' });

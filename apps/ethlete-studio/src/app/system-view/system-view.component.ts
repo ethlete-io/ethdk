@@ -454,7 +454,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             @if (partShown.listed.layer === 'pages') {
               <button
                 [pressed]="inventoryShown()"
-                (click)="inventoryShown.set(!inventoryShown())"
+                (click)="toggleInventory()"
                 et-button
                 type="button"
                 variant="outline"
@@ -688,7 +688,7 @@ export class SystemViewComponent {
 
   protected transferError = signal('');
 
-  protected inventoryShown = signal(false);
+  protected inventoryShown = signal(rememberedView().inventoryShown ?? false);
 
   protected product = computed(() => {
     const products = this.products();
@@ -1241,6 +1241,13 @@ export class SystemViewComponent {
 
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
+  }
+
+  protected toggleInventory() {
+    const inventoryShown = !this.inventoryShown();
+
+    this.inventoryShown.set(inventoryShown);
+    rememberView({ inventoryShown });
   }
 
   protected showCreated(systemProduct: string) {

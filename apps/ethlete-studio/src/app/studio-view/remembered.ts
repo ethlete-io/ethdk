@@ -30,6 +30,8 @@ export type ViewState = {
   flowPresets: Record<string, string>;
   /** Whether the canvas shows the notes of a product, keyed by `themeKey`. */
   notesShown: Record<string, boolean>;
+  /** Whether a page shows its control inventory in place of the canvas. */
+  inventoryShown: boolean;
 };
 
 /**
@@ -237,6 +239,7 @@ export const rememberedView = (): Partial<ViewState> => {
       sketchViews,
       flowPresets,
       notesShown,
+      inventoryShown,
     } = stored as Partial<ViewState>;
 
     return {
@@ -253,6 +256,7 @@ export const rememberedView = (): Partial<ViewState> => {
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
       notesShown: openFlags(notesShown),
+      inventoryShown: typeof inventoryShown === 'boolean' ? inventoryShown : undefined,
     };
   } catch {
     return {};
