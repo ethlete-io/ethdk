@@ -40,10 +40,13 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   after the MVP, before the first implementation. The motion editor is not in the MVP. Tom: the global chat was not
   MVP either ("da haben wir nun schon den Salat"); keep the MVP strict.
 
+- Q164 state list (Tom, 2026-10-31): open point 1 reuses the control requirements of `et design complete`
+  (`libs/cli/src/lib/design/design-command.ts:96`); new kinds go into that table. A component part that declares no
+  `controls` gets the open point "no controls declared"; page parts are exempt.
+
 ## Not decided
 
 - Where the go and the released state are stored (builder call).
-- The state list per kind of component for open point 1.
 
 ## Build slices (builder ethlete-sdk-57)
 
