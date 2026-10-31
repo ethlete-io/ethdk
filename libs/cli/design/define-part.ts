@@ -6,6 +6,8 @@ export { css, drawing, html, ng } from './define-call';
 export type { Drawing } from './define-call';
 export { embedPage } from './embed-page';
 export type { EmbedPageOptions } from './embed-page';
+export { iconSheet } from './icon-sheet';
+export type { IconSheetIcon, IconSheetOptions } from './icon-sheet';
 export { interactionRows } from './interaction-rows';
 export type { InteractionRowsOptions } from './interaction-rows';
 export { spring } from './spring';

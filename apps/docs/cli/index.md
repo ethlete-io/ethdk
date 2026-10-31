@@ -163,6 +163,23 @@ export default definePart({
 });
 ```
 
+`iconSheet({ view, title, note, icons, sizes, size, columns })` draws a `foundations/icons` part the same way. `icons` lists
+`{ name, svg, grid?, padding? }`, `svg` being the raw asset. `view: 'catalogue'` shows every icon at each of `sizes` with its
+name; `view: 'construction'` shows each icon `size` px large on its grid, with the grid lines, the centre lines and the padding
+box (`padding` grid units, `grid / 8` by default). An icon's grid is `grid`, else the larger side of its viewBox; icons on
+different grids are drawn in one group per grid.
+
+```ts
+iconSheet({
+  view,
+  title: 'Icons',
+  icons: [
+    { name: 'check', svg: check },
+    { name: 'times', svg: times, grid: 512 },
+  ],
+});
+```
+
 A flow line (`<product>/flows/<name>.json`) animates when it has `"transition": "view"`. `et design motion flow <flow> <line>`
 draws the `from` page, then morphs it to the `to` page inside a same-document View Transition, stepped and shot like a motion, in
 the whole viewport of `--preset` (the product's first preset by default). The `to` page's styles, with its
