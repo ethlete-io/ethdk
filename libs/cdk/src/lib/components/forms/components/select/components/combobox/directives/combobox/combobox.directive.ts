@@ -137,6 +137,7 @@ export class ComboboxDirective implements OnInit {
   }
   private _initialValue$ = new BehaviorSubject<unknown>(null);
   private _hasReceivedSelectionValue = false;
+  private _hasTypedSinceSelectionSync = false;
 
   // TODO: Skipped for migration because:
   //  Accessor inputs cannot be migrated as they are too complex.
@@ -474,7 +475,7 @@ export class ComboboxDirective implements OnInit {
       this._debugValidateOptionAndInitialValueSchema();
     }
 
-    this._selectionModel.setSelectionFromValue$(this._input.value);
+    this._syncSelectionFromInputValue();
 
     const hasInitialControlValue = this._input.value !== null && this._input.value !== undefined;
 
@@ -492,6 +493,10 @@ export class ComboboxDirective implements OnInit {
             this._input._updateValue(value);
           }
 
+          if (this._selectionModel.isSyncingSelectionFromValue && value === null && this._hasTypedSinceSelectionSync) {
+            return;
+          }
+
           this._setFilterFromInputValue();
         }),
       )
@@ -500,7 +505,7 @@ export class ComboboxDirective implements OnInit {
     this._input.onExternalUpdate$
       .pipe(
         takeUntil(this._destroy$),
-        tap(() => this._selectionModel.setSelectionFromValue$(this._input.value)),
+        tap(() => this._syncSelectionFromInputValue()),
       )
       .subscribe();
   }
@@ -762,6 +767,7 @@ export class ComboboxDirective implements OnInit {
   _processInputEvent(event: Event) {
     const value = (event.target as HTMLInputElement).value;
 
+    this._hasTypedSinceSelectionSync = true;
     this._updateFilter(value);
   }
 
@@ -862,6 +868,11 @@ export class ComboboxDirective implements OnInit {
 
       this.userInteraction.emit();
     }
+  }
+
+  private _syncSelectionFromInputValue() {
+    this._hasTypedSinceSelectionSync = false;
+    this._selectionModel.setSelectionFromValue$(this._input.value);
   }
 
   private _initDispatchFilterChanges() {
