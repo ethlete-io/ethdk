@@ -1,6 +1,6 @@
-import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html } from '@design-system';
+import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
@@ -74,7 +74,7 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
   );
 };
 
-const popover = (open: PartOpenPoints) => {
+const popover = async (open: PartOpenPoints) => {
   const groups = groupsOf(open);
   const list = groups.length
     ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border-solid)">
@@ -85,23 +85,29 @@ const popover = (open: PartOpenPoints) => {
           >Jeder Zustand ist gezeichnet, verknüpft und besprochen.</span
         >
       </div>`;
-  return html`<div class="absolute top-14 right-space-3">
-    ${anchoredDialog({
-      label: 'Offene Punkte',
-      modal: false,
-      content: html`<div class="w-96 text-ui-sm">
-        <header
-          class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
+  const dialog = await anchoredDialog.render({
+    label: 'Offene Punkte',
+    modal: false,
+    content: html`<div class="w-96 text-ui-sm">
+      <header
+        class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
+      >
+        <span class="text-(--et-surface-color-solid) font-ui-strong"
+          >${groups.length ? 'Offene Punkte' : 'Nichts offen'}</span
         >
-          <span class="text-(--et-surface-color-solid) font-ui-strong"
-            >${groups.length ? 'Offene Punkte' : 'Nichts offen'}</span
-          >
-          <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
-        </header>
-        ${list}
-      </div>`,
-    })}
-  </div>`;
+        <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
+      </header>
+      ${list}
+    </div>`,
+  });
+  return {
+    body: html`<div
+      class="absolute top-14 right-space-3 [&_.anchored-dialog-frame]:bg-transparent! [&_.anchored-dialog-frame]:p-0! [&_.et-anchored-dialog-mock]:mt-0!"
+    >
+      ${dialog.body}
+    </div>`,
+    styles: dialog.styles,
+  };
 };
 
 const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Teile.</p>`;
@@ -116,7 +122,10 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     'points-closed': { closed: true },
     'nothing-open': { nothingOpen: true },
   },
-  controls: { 'open-points': { kind: 'button', part: 'components/button' } },
+  controls: {
+    'open-points': { kind: 'button', part: 'components/button' },
+    popover: { kind: 'disclosure', part: 'components/anchored-dialog', surfaces: { body: 'open-points' } },
+  },
   render: async ({ empty, manyStates, nothingOpen: clear, closed }) => {
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
@@ -139,6 +148,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     const frames = await canvasFrames.render(canvasFrames.states.default);
     const points = clear ? nothingOpen : buttonPoints;
     const toggle = await chip(points, !closed);
+    const dialog = closed ? undefined : await popover(points);
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
@@ -147,13 +157,13 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
       side: tree.body,
       content: html`${frames.body}
         <div class="absolute top-space-3 right-space-3">${toggle.body}</div>
-        ${closed ? '' : popover(points)}`,
+        ${dialog?.body ?? ''}`,
     });
 
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + tree.styles + frames.styles + toggle.styles + anchoredDialogStyles,
+      styles: shell.styles + menu.styles + tree.styles + frames.styles + toggle.styles + (dialog?.styles ?? ''),
     });
   },
 });
