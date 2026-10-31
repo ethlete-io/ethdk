@@ -478,5 +478,12 @@
     "hash": "f80aff4bf0d6c3b4",
     "at": "2026-10-31T22:07:20.294Z",
     "auto": true
+  },
+  {
+    "part": "components/button",
+    "by": "claude-sonnet-5-5",
+    "note": "merged without a pick: allowed by Q242",
+    "hash": "c61b05dccf5899dc",
+    "at": "2026-10-31T22:45:47.010Z"
   }
 ]

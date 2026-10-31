@@ -3,6 +3,14 @@
     --_et-focus-ring-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
   }
 
+  .et-button:where([data-variant='filled']):active {
+    --_et-button-background: color-mix(
+      in srgb,
+      rgb(var(--et-color-primary)) 96%,
+      var(--et-theme-color-on-primary-solid)
+    );
+  }
+
   .et-icon-button:where([data-variant='filled']) {
     --et-button-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
 
