@@ -425,7 +425,10 @@ A part inherited from the product's base is checked against the `merged.json` of
 The check also discovers controls in each state's rendered DOM, so leaving out a declaration does
 not pass. A native control (`button`, `a[href]`, `input`, `select`, `textarea`, `summary`,
 `[tabindex]`), an interactive ARIA role or a known SDK control (`et-select`, `[et-button]`, ...)
-without a `data-et-control` fails as `CONTROL-UNDECLARED`. A marker on a wrapper that is not a
+without a `data-et-control` fails as `CONTROL-UNDECLARED`. The focus container of a composite
+widget (role `menu`, `menubar`, `listbox`, `tree`, `treegrid`, `grid`, `tablist` or `radiogroup`
+with `tabindex="-1"` or `aria-activedescendant`) is not a control: it needs no declaration, and
+the items inside it are checked as controls. A marker on a wrapper that is not a
 control itself declares the controls inside it. An element with `cursor: pointer` or a matching
 `:hover` rule outside any control fails as `CONTROL-UNCLASSIFIED`. Controls inside a control that
 names a `part` belong to that part, and a page embedded with `embedPage` is not walked. A part

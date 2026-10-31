@@ -200,6 +200,12 @@ const PARTS: Record<string, FixturePart> = {
   },
   'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
   'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
+  'components/focus-containers': {
+    states: {
+      rest: '<div><div role="menu" tabindex="-1"><button type="button" role="menuitem">Copy</button></div><ul role="listbox" tabindex="0" aria-activedescendant="aa-one"><li role="option" id="aa-one">One</li></ul></div>',
+    },
+  },
+  'components/focusable-box': { states: { rest: '<div><div tabindex="-1">Box</div></div>' } },
   'components/pointer': {
     states: { rest: '<div><div style="cursor: pointer"><span>Go</span></div><div class="aa-card">Card</div></div>' },
   },
@@ -845,6 +851,13 @@ describe('completenessOf', () => {
     expect(plain).toEqual({ gaps: [] });
     expect(await lines('components/undeclared')).toEqual([
       'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with data-et-control and declare it in controls',
+    ]);
+    expect(await lines('components/focus-containers')).toEqual([
+      'CONTROL-UNDECLARED components/focus-containers - button at div > div > button in rest - mark it with data-et-control and declare it in controls',
+      'CONTROL-UNDECLARED components/focus-containers - li[role="option"] at div > ul > li in rest - mark it with data-et-control and declare it in controls',
+    ]);
+    expect(await lines('components/focusable-box')).toEqual([
+      'CONTROL-UNDECLARED components/focusable-box - div[tabindex] at div > div in rest - mark it with data-et-control and declare it in controls',
     ]);
     expect(await lines('components/pointer')).toEqual([
       'CONTROL-UNCLASSIFIED components/pointer - div with cursor: pointer at div > div in rest - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',

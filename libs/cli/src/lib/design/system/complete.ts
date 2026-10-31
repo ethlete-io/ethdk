@@ -796,9 +796,18 @@ const LOOK_PROPERTIES = [...COLOUR_PROPERTIES, 'opacity', 'box-shadow', 'font-we
 
 const OPTION_SELECTOR = '[role="option"], [role^="menuitem"], [data-et-option]';
 
+const COMPOSITE_ROLES = ['grid', 'listbox', 'menu', 'menubar', 'radiogroup', 'tablist', 'tree', 'treegrid'];
+
+const FOCUS_CONTAINER = COMPOSITE_ROLES.flatMap((role) => [
+  `[role="${role}"][tabindex="-1"]`,
+  `[role="${role}"][aria-activedescendant]`,
+]).join(', ');
+
 const discoverControls = `((root) => {
   const LIKELY = ${JSON.stringify(LIKELY_CONTROLS)};
   const likely = LIKELY.join(', ');
+  const container = ${JSON.stringify(FOCUS_CONTAINER)};
+  const isLikely = (element) => element.matches(likely) && !element.matches(container);
   const sdk = ${JSON.stringify(SDK_CONTROLS.join(', '))};
   const rendered = (element) => element.getClientRects().length > 0;
   const HOVER = /(?<!\\\\):hover(?![\\w-])/g;
@@ -857,7 +866,7 @@ const discoverControls = `((root) => {
   const markedOf = (element) => {
     if (element.hasAttribute('data-et-control')) return element.getAttribute('data-et-control');
     for (let at = element.parentElement; at && at !== root; at = at.parentElement) {
-      if (at.matches(likely)) return null;
+      if (isLikely(at)) return null;
       const id = markerOf(at, element);
       if (id !== null) return id;
     }
@@ -866,7 +875,7 @@ const discoverControls = `((root) => {
   const found = [];
   for (const element of root.querySelectorAll('*')) {
     if (!rendered(element)) continue;
-    const what = LIKELY.find((selector) => element.matches(selector));
+    const what = !element.matches(container) && LIKELY.find((selector) => element.matches(selector));
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
@@ -876,7 +885,9 @@ const discoverControls = `((root) => {
     const cursor = getComputedStyle(element).cursor;
     const pointer = cursor === 'pointer' && getComputedStyle(element.parentElement).cursor !== 'pointer';
     if (!pointer && !hovered.has(element)) continue;
-    if (element.closest('[data-et-control], ' + likely) !== null) continue;
+    let inControl = false;
+    for (let at = element; at && !inControl; at = at.parentElement) inControl = at.hasAttribute('data-et-control') || isLikely(at);
+    if (inControl) continue;
     const reason = [pointer ? 'cursor: pointer' : '', hovered.has(element) ? ':hover rule' : ''].filter(Boolean).join(' and ');
     found.push({ kind: 'unclassified', what: nameOf(element) + ' with ' + reason, path: pathOf(element), marked: null, within: [], owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element) });
   }
