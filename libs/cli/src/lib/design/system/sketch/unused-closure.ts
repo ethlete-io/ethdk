@@ -157,8 +157,12 @@ const argumentCountsOf = (nodes: ts.Node[], name: string) => {
   return counts.every((count) => count !== null) ? (counts as number[]) : null;
 };
 
-const unpassedParamsOf = (options: { scripts: { file: string; source: ts.SourceFile }[]; shared: string[] }) => {
-  const nodes = options.scripts.flatMap(({ source }) => nodesOf(source));
+const unpassedParamsOf = (options: {
+  scripts: { file: string; source: ts.SourceFile }[];
+  callers: { file: string; source: ts.SourceFile }[];
+  shared: string[];
+}) => {
+  const nodes = options.callers.flatMap(({ source }) => nodesOf(source));
 
   return options.scripts
     .filter(({ file }) => options.shared.some((dir) => file.startsWith(`${dir}${sep}`)))
@@ -226,15 +230,24 @@ export const unusedInVariantOf = (options: {
   const otherSources = otherParts.map((part) => part.source);
   const sharedDir = `${sharedDirOf(sketch)}${sep}`;
   const css = files.filter((file) => file.endsWith('.css'));
-  const sketchScripts = [
+  const sketchFiles = [
     ...new Set(
       sketch.variants.flatMap((variant) => closureOf({ sketch, variant }).filter((file) => file.endsWith('.ts'))),
     ),
-  ].map((file) => readFileSync(file, 'utf8'));
+  ];
+  const sketchScripts = sketchFiles.map((file) => readFileSync(file, 'utf8'));
+  const callers = sketchFiles.map((file, index) => ({
+    file,
+    source: ts.createSourceFile(file, sketchScripts[index] ?? '', ts.ScriptTarget.Latest, true),
+  }));
 
   return [
     ...scripts.flatMap(({ file, source }) => [...unusedImportsOf(file, source), ...unreferencedParamsOf(file, source)]),
-    ...unpassedParamsOf({ scripts, shared: [variantSharedDirOf(sketch, options.variant), sharedDirOf(sketch)] }),
+    ...unpassedParamsOf({
+      scripts,
+      callers,
+      shared: [variantSharedDirOf(sketch, options.variant), sharedDirOf(sketch)],
+    }),
     ...unusedClassesOf({
       css: css.filter((file) => !file.startsWith(sharedDir)),
       sources: [...scripts.map((script) => script.text), ...otherSources],

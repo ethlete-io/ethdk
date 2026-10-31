@@ -83,4 +83,20 @@ describe('unusedInVariantOf', () => {
       'UNUSED shared/inbox.css: styles .ib-gone, which nothing the variant draws uses - remove the rule',
     ]);
   });
+
+  it('counts the calls of every variant before a shared parameter is unused', () => {
+    const sketch = {
+      ...sketchWith({
+        'a/pages/inbox/inbox.ts': `import { icon } from '@shared/icon';\n\nexport const page = () => icon('x', 20);\n`,
+        'b/pages/inbox/inbox.ts': `import { icon } from '@shared/icon';\n\nexport const page = () => icon('x');\n`,
+        'shared/icon.ts': `export const icon = (name: string, size?: number, tone?: string) => \`\${name}\${size}\${tone}\`;\n`,
+      }),
+      variants: ['a', 'b'],
+    } as Sketch;
+    const linesOfVariant = (variant: string) =>
+      unusedInVariantOf({ product, sketch, variant }).map((problem) => problem.message);
+
+    expect(linesOfVariant('b')).toEqual(['no call of icon passes tone - remove the parameter']);
+    expect(linesOfVariant('a')).toEqual(['no call of icon passes tone - remove the parameter']);
+  });
 });
