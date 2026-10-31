@@ -743,6 +743,10 @@ machen".
   list, wireframes.
 - Q178 after the MVP (Tom, 2026-10-31): Studio shows only the SDK base parts the Studio product actually uses, not
   every SDK part.
+- Q184 after the MVP (Tom, 2026-10-31): a full performance investigation of Studio and the design server. The
+  renderer still freezes again and again after the merge-freeze fix (`373e73641`); Tom: "das darf nicht passieren,
+  die app fühlt sich dann nicht gut an und man muss lange warten". Measure where the main thread and the server
+  loop block (merges, sketch lists, shot rendering, reloads), then fix until Studio never freezes.
 - Q136 shot cache on disk (Tom, 2026-10-31, option b): build it now, before the view-context chip. Today the shots
   live only in memory, so a Studio restart (an edit under `src-tauri/**`) re-renders every part. The disk cache must
   keep shots across a restart and still invalidate on a render-path change (same rules as the in-memory key after
