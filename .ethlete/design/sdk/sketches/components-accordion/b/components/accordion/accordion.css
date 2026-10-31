@@ -1,0 +1,17 @@
+.accordion-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+.accordion-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+@layer components {
+  .et-accordion-trigger:focus-visible {
+    outline-color: var(--et-theme-color-ink-solid);
+  }
+}
