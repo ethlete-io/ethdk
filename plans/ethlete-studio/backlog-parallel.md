@@ -530,6 +530,10 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   until the new one has painted, then switch in one step. Queued for `ethlete-sdk-57`.
 - Grill decision (inside Q60): Studio chat sends `tools: null`, so the one MCP server never starts from Studio.
   Wire it now; the chat prompt names the call and the variant. Queued for `ethlete-sdk-57`.
+- Q93 round ready: sdk `components/tree` r1 "Light selected row tint" (`0a75f4f34`), builder pick b
+  (32/38/44 %, ink 4.74-4.56:1). A pure tint stops at about 1.2:1 against the panel (ink falls under 4.5:1 above
+  47 %). Grill decision: add variant d now (56-64 % tint with a darker selected-row ink), so Tom sees the full
+  range in one review.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
