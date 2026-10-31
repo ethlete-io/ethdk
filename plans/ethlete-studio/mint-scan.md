@@ -29,7 +29,7 @@ segmented, password, input suffix, color input and picker, rating.
 
 ## Text and icons
 
-Form-field label focused (`label.directive.css:17`, also fails 4.5:1 text), rating filled stars `:139-181`.
+Form-field required marker `*` (`label.directive.css:17`, also fails 4.5:1 text), rating filled stars `:139-181`.
 Carets in 8 inputs: not a WCAG 1.4.11 boundary, low priority.
 
 ## Rule options for Tom (Q99): in light, where may the brand mint mark a control?
@@ -49,3 +49,5 @@ after the rule. An overview sketch (choice-field card, switch, checkbox, radio) 
 
 Hover and error borders drawn in primary: error must resolve through the semantic error theme. Recommendation: fix
 as a lib bug with a changeset, independent of the mint rule.
+
+The overview sketch is sdk `components/accent-on-light` (a new part; variants a, b, c = the three rules, builder pick a, dark identical). A merge records the rule as a part; a discard after Tom's answer is fine too.
