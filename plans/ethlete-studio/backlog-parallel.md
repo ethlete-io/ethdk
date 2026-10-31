@@ -1053,3 +1053,12 @@ in the tool and in the repo, where every person and every agent meets it:
   lighter than rest, like every other part. Then delete the own `--surface-hover` and `--surface-pressed` tokens.
 - **Q201, interaction border:** `border-et-surface-interaction` keeps the real interaction grey (rgb 164) in zoom-chip,
   shell-main and inbox. The near-white border before 71beccb12 was a missing token, not a look.
+
+### The open-points popover is a real SDK overlay (Tom, 2026-10-31, Q202)
+
+The open-points popover in `pages/system` (under the "N offen" chip) was a hand-built panel: an
+`et-surface--dark-elevated-2` scope, an arbitrary background, the interaction border and an own shadow fallback. It
+did not follow the surface system. It is rendered through `ng(...)` as the real SDK anchored overlay, like
+`elements/studio-menu` renders the real `et-menu`, so surface, border (`--et-overlay-surface-border-color`), radius and
+shadow come from the SDK. The list inside stays. It reaches Tom as a one-variant sketch, because the look changes, and
+he merges it.
