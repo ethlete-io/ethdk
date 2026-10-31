@@ -54,5 +54,19 @@
     "hash": "ef27bebcfef3d8c3",
     "at": "2026-10-30T22:00:16.411Z",
     "auto": true
+  },
+  {
+    "part": "foundations/colors",
+    "by": "claude-opus-5-5",
+    "note": "Q90: colors.css is generated",
+    "hash": "417ee640702da3c3",
+    "at": "2026-10-31T00:23:17.042Z"
+  },
+  {
+    "part": "components/form-field",
+    "by": "claude-opus-5-5",
+    "note": "Q86 follow-up: the fill comes from the elevated surface tokens, the variant CSS is gone",
+    "hash": "1a99c8c95697d968",
+    "at": "2026-10-31T00:23:30.000Z"
   }
 ]

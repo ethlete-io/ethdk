@@ -54,7 +54,8 @@
           "width": 1440,
           "height": 900
         }
-      }
+      },
+      "generatedFiles": ["foundations/colors/colors.css"]
     },
     "studio": {
       "styles": [".ethlete/design/studio/styles.css"],
