@@ -1123,3 +1123,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   focusable region and a `region` control kind (today a component part such as `components/canvas-viewport` carries
   it); a `focusRingStyles` export in `@ethlete/components/design` (parts import all of `buttonStyles` today); public
   focus-ring tokens for offset, width and colour (today private `--_et-*` vars; an SDK API call for Tom).
+- **Q217 (Tom, 2026-10-31):** the floating zoom chip takes the SDK overlay shadow, so it is a floating panel under
+  Q216 (own surface step + shadow) and its border contrast findings go away. No rule change.
