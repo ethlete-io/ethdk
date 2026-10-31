@@ -211,3 +211,18 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
+
+### Go, task and compare decisions (Tom and lead, 2026-10-31, Q192-Q195)
+
+- Q192 order (lead, Q96): go does not need ready. "No go" and "go is stale" are open point 7, so they block ready.
+  Flow: design done, go, implement, compare green, ready.
+- Q193 allowed files (lead, Q96): the folder of the `implements` file (component, template, spec, CSS), plus for
+  `sdk` the changeset and the docs guide. `et design task --verify` rejects a diff outside them and records the
+  implemented design hash when compare is green.
+- Q194 compare render (Tom): a dev-only harness route in the app that owns the component
+  (`/__design-harness?part=&state=`). It mounts the `implements` component with the inputs the part declares per
+  state, on the app's own dev server, so real providers and fonts apply. Studio: `apps/ethlete-studio`; sdk:
+  `apps/docs-examples`. No Storybook path.
+- Q195 page parts (Tom): a page part links a presentational component (data in, events out) for compare, beside its
+  route link. The route container stays outside compare. The pilot builds `pages/inbox` and `elements/shell-main`
+  this way.
