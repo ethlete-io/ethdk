@@ -1,4 +1,14 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { basename, dirname, join, resolve } from 'path';
@@ -177,6 +187,26 @@ describe('serveDesign', () => {
 
     expect(created[1]?.cacheDir).not.toBe(created[0]?.cacheDir);
     expect(created[2]?.cacheDir).not.toBe(created[0]?.cacheDir);
+  });
+
+  it('gives commands that run at once a Vite cache each, and keeps the shared one for the next command', async () => {
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const config = readConfig(target) ?? {};
+
+    const one = await createDesignServer({ target, config, listen: false });
+    const two = await createDesignServer({ target, config, listen: true, port: 0 });
+    const [shared, apart] = [created[0]?.cacheDir ?? '', created[1]?.cacheDir ?? ''];
+
+    expect(apart).not.toBe(shared);
+
+    mkdirSync(apart, { recursive: true });
+    await two.close();
+    expect(existsSync(apart)).toBe(false);
+
+    await one.close();
+    await createDesignServer({ target, config, listen: false });
+
+    expect(created[2]?.cacheDir).toBe(shared);
   });
 
   it('keeps serving the frame assets it started with when the package is rebuilt', async () => {

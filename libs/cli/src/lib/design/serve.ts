@@ -94,6 +94,7 @@ import { DeclaredMotion, motionMiddleware } from './motion-endpoint';
 import {
   assetRoot,
   snapshotPackage,
+  claimViteCache,
   callsRootOf,
   configPathOf,
   DESIGN_DIR,
@@ -825,6 +826,7 @@ export const createDesignServer = async (options: {
 
   const baseDirs = system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []);
   const stylesheetImports: StylesheetImports = new Map();
+  const cache = listen && !own ? null : claimViteCache(target, 'vite-check');
 
   const server = await createServer({
     configFile: false,
@@ -847,7 +849,7 @@ export const createDesignServer = async (options: {
         ],
       },
     },
-    cacheDir: viteCacheOf(target, listen && !own ? 'vite' : 'vite-check'),
+    cacheDir: cache?.dir ?? viteCacheOf(target, 'vite'),
     resolve: {
       alias: [
         { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
@@ -873,6 +875,10 @@ export const createDesignServer = async (options: {
       fs: { allow: [target, here, ...baseDirs] },
     },
   });
+  const closing = server.close.bind(server);
+
+  server.close = () => closing().finally(() => cache?.release());
+
   const listening = server.listen.bind(server);
 
   server.listen = (...args: Parameters<typeof listening>) =>
