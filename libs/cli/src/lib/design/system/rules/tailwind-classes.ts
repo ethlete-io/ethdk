@@ -82,24 +82,44 @@ const literalOf = (node: ts.Node) => {
 };
 
 const RENDERER_MODULES = '@ethlete/components/design/';
+const SYSTEM_MODULES = '@system/';
 
 const rendererNamesOf = (file: ts.SourceFile) =>
   new Set(
-    file.statements.flatMap((statement) =>
-      ts.isImportDeclaration(statement) &&
-      ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text.startsWith(RENDERER_MODULES) &&
-      statement.importClause?.namedBindings &&
-      ts.isNamedImports(statement.importClause.namedBindings)
-        ? statement.importClause.namedBindings.elements.map((element) => element.name.text)
-        : [],
-    ),
+    file.statements.flatMap((statement) => {
+      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) return [];
+
+      const clause = statement.importClause;
+      const module = statement.moduleSpecifier.text;
+
+      if (!clause) return [];
+      if (module.startsWith(SYSTEM_MODULES))
+        return [
+          ...(clause.name ? [clause.name.text] : []),
+          ...(clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+            ? clause.namedBindings.elements.map((element) => element.name.text)
+            : []),
+        ];
+
+      return module.startsWith(RENDERER_MODULES) && clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+        ? clause.namedBindings.elements.map((element) => element.name.text)
+        : [];
+    }),
   );
+
+const calleeNameOf = (callee: ts.Expression) => {
+  if (ts.isIdentifier(callee)) return callee.text;
+  if (ts.isPropertyAccessExpression(callee) && callee.name.text === 'render' && ts.isIdentifier(callee.expression))
+    return callee.expression.text;
+
+  return null;
+};
 
 const isRendererOption = (node: ts.Node, renderers: Set<string>) => {
   const property = node.parent;
   const options = property?.parent;
   const call = options?.parent;
+  const callee = ts.isCallExpression(call) ? calleeNameOf(call.expression) : null;
 
   return (
     ts.isPropertyAssignment(property) &&
@@ -108,8 +128,8 @@ const isRendererOption = (node: ts.Node, renderers: Set<string>) => {
     ts.isObjectLiteralExpression(options) &&
     ts.isCallExpression(call) &&
     call.arguments.includes(options) &&
-    ts.isIdentifier(call.expression) &&
-    renderers.has(call.expression.text)
+    callee !== null &&
+    renderers.has(callee)
   );
 };
 

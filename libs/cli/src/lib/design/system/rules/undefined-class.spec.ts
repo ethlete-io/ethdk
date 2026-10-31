@@ -95,6 +95,23 @@ describe('undefinedClassesOf', { timeout: 30_000 }, () => {
     expect(messagesOf(target)).toEqual([`button.ts: ${report('bottom-start')}`]);
   });
 
+  it('reads the options of a system part render call as no classes, except class', () => {
+    const target = acme();
+    const call = (options: string) =>
+      `import anchoredDialog from '@system/components/anchored-dialog';\nexport const a = anchoredDialog.render({ ${options} });\n`;
+
+    write(target, 'acme/pages/home/home.ts', part('<div class="flex"></div>'));
+    write(
+      target,
+      'acme/pages/home/shared/dialog.ts',
+      call(`placement: 'bottom-start', content: '<div class="p-3"></div>'`),
+    );
+    expect(messagesOf(target)).toEqual([]);
+
+    write(target, 'acme/pages/home/shared/dialog.ts', call(`class: 'bottom-start'`));
+    expect(messagesOf(target)).toEqual([`dialog.ts: ${report('bottom-start')}`]);
+  });
+
   it('runs as part of design check', () => {
     const target = acme();
 
