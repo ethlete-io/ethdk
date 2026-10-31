@@ -1,6 +1,13 @@
 import { listComments } from './comments/comment';
 import { CompletenessGap, isMissingStateGap } from './complete';
-import { OpenPoint, openPointsOf, OpenPointsInput, PartOpenPoints, SKETCH_KINDS } from './open-points';
+import {
+  OpenPoint,
+  openPointsOf,
+  OpenPointsInput,
+  PartOpenPoints,
+  sketchAddedPointsOf,
+  SKETCH_KINDS,
+} from './open-points';
 import { RenderIssue } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { declaresControlsOf, motionRefsOf, partLinkOf, stateNamesOf, unreachableOf } from './sketch/part-definition';
@@ -92,14 +99,29 @@ export const missingStatesOf = (
         ),
   );
 
-/** The open points of `targets` as a sketch variant draws them, of the kinds the sketch closes itself. */
-export const sketchOpenPointsOf = (variant: ResolvedProduct, targets: string[]): PartOpenPoints[] =>
-  openPointsOf({
-    parts: partInputsOf(variant).filter((part) => targets.includes(part.key)),
-    comments: [],
-    sketches: [],
-  }).flatMap(({ part, points }) => {
-    const own = points.filter((point) => SKETCH_KINDS.includes(point.kind));
+/**
+ * The open points of `targets` as a sketch variant draws them, of the kinds the sketch closes itself, split into the
+ * ones the variant adds to the merged parts and the ones it inherits from them.
+ */
+export const sketchOpenPointsOf = ({
+  merged,
+  variant,
+  targets,
+}: {
+  merged: ResolvedProduct;
+  variant: ResolvedProduct;
+  targets: string[];
+}): { added: PartOpenPoints[]; inherited: PartOpenPoints[] } => {
+  const ownOf = (product: ResolvedProduct) =>
+    openPointsOf({
+      parts: partInputsOf(product).filter((part) => targets.includes(part.key)),
+      comments: [],
+      sketches: [],
+    }).flatMap(({ part, points }) => {
+      const own = points.filter((point) => SKETCH_KINDS.includes(point.kind));
 
-    return own.length > 0 ? [{ part, points: own }] : [];
-  });
+      return own.length > 0 ? [{ part, points: own }] : [];
+    });
+
+  return sketchAddedPointsOf(ownOf(merged), ownOf(variant));
+};

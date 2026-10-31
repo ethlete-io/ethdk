@@ -26,7 +26,7 @@ vi.mock('./system/render-check', async (importOriginal) => ({
 
 vi.mock('./system/read-open-points', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./system/read-open-points')>()),
-  sketchOpenPointsOf: vi.fn(() => []),
+  sketchOpenPointsOf: vi.fn(() => ({ added: [], inherited: [] })),
 }));
 
 const actualSketchOpenPoints = async () =>
@@ -121,19 +121,28 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
 
-  it('refuses ready while the variant has missing states or motions, not for its own unmerged sketch or a missing implements', async () => {
+  it('refuses ready on open points the variant adds and lists the ones the merged part already has', async () => {
     const target = acme();
     const lines = output();
     const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
-
     const actual = await actualSketchOpenPoints();
+    const inherited =
+      'NOTE components/button a: components/button: no controls declared; 2 missing motions (default -> long, long -> default) (inherited from the merged part)';
 
-    vi.mocked(sketchOpenPointsOf).mockImplementationOnce(actual).mockImplementationOnce(actual);
+    vi.mocked(sketchOpenPointsOf).mockImplementation(actual);
     newButton(target);
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace(
+        "long: { label: 'Play from the beginning' }",
+        "$&, wide: { label: 'Go' }",
+      ),
+    );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(inherited);
     expect(lines.at(-1)).toBe(
-      'components/button a: components/button: no controls declared; 2 missing motions (default -> long, long -> default)\ncomponents/button has open points the sketch can close - close them before ready',
+      'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)\ncomponents/button adds open points - close them before ready',
     );
     expect(
       findSketch({
@@ -143,15 +152,39 @@ describe('designSketch', { timeout: 120_000 }, () => {
       }),
     ).toMatchObject({ status: 'in progress' });
 
-    writeFileSync(
-      variantFile,
-      readFileSync(variantFile, 'utf8').replace(
-        "interactions: ['hover', 'focus-visible', 'active', 'disabled'],",
-        "interactions: ['hover', 'focus-visible', 'active', 'disabled'],\n  controls: { play: { kind: 'button', input: ['pointer'] } },\n  unreachable: [{ from: 'default', to: 'long', reason: 'a label' }, { from: 'long', to: 'default', reason: 'a label' }],",
-      ),
-    );
+    writeFileSync(variantFile, readFileSync(variantFile, 'utf8').replace(", wide: { label: 'Go' }", ''));
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(inherited);
+
+    vi.mocked(sketchOpenPointsOf).mockImplementation(() => ({ added: [], inherited: [] }));
+  });
+
+  it('refuses ready on every open point of a new part', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.mocked(sketchOpenPointsOf).mockImplementation(await actualSketchOpenPoints());
+    write(
+      target,
+      'new',
+      'components/new-part',
+      '--variants',
+      'a',
+      '--round',
+      'New',
+      '--note',
+      'new',
+      '--product',
+      'acme',
+    );
+
+    expect(await write(target, 'ready', 'components/new-part', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toMatch(
+      /^components\/new-part a: components\/new-part: no controls declared[^\n]*\ncomponents\/new-part adds open points - close them before ready$/,
+    );
+
+    vi.mocked(sketchOpenPointsOf).mockImplementation(() => ({ added: [], inherited: [] }));
   });
 
   it('refuses ready on a render issue and keeps the sketch in progress', async () => {

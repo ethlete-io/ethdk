@@ -107,6 +107,47 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
     return points.length > 0 ? [{ part: key, points }] : [];
   });
 
+const subjectOf = (point: OpenPoint) => {
+  switch (point.kind) {
+    case 'missing-state':
+      return point.control ?? '';
+    case 'contrast':
+      return `${point.state} ${point.path}`;
+    case 'missing-motion':
+      return `${point.from} -> ${point.to}`;
+    case 'open-comment':
+      return point.comment;
+    default:
+      return '';
+  }
+};
+
+const pointKeyOf = (part: string, point: OpenPoint) => `${part}\n${point.kind}\n${subjectOf(point)}`;
+
+const groupedOf = (pairs: { part: string; point: OpenPoint }[]): PartOpenPoints[] =>
+  [...new Set(pairs.map(({ part }) => part))].map((part) => ({
+    part,
+    points: pairs.filter((pair) => pair.part === part).map(({ point }) => point),
+  }));
+
+/**
+ * Splits the open points of a sketch variant into the ones it adds and the ones the merged parts already have,
+ * matched by part, kind and subject (control, state and path, or state pair). A part with no merged points adds all of
+ * its points.
+ */
+export const sketchAddedPointsOf = (
+  merged: PartOpenPoints[],
+  sketched: PartOpenPoints[],
+): { added: PartOpenPoints[]; inherited: PartOpenPoints[] } => {
+  const before = new Set(merged.flatMap(({ part, points }) => points.map((point) => pointKeyOf(part, point))));
+  const pairs = sketched.flatMap(({ part, points }) => points.map((point) => ({ part, point })));
+
+  return {
+    added: groupedOf(pairs.filter(({ part, point }) => !before.has(pointKeyOf(part, point)))),
+    inherited: groupedOf(pairs.filter(({ part, point }) => before.has(pointKeyOf(part, point)))),
+  };
+};
+
 const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) =>
   point.decision === 'pick'
     ? 'sketch picked, not merged'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openPointsOf, openPointsText, OpenPointsInput } from './open-points';
+import { openPointsOf, openPointsText, OpenPointsInput, sketchAddedPointsOf } from './open-points';
 
 const input = (overrides: Partial<OpenPointsInput>): OpenPointsInput => ({
   parts: [],
@@ -247,5 +247,56 @@ describe('openPointsText', () => {
       '  components/a: no motion collapsed -> expanded',
       '  components/b: 12 missing motions (rest -> hover, rest -> loading, rest -> disabled, hover -> rest, hover -> loading, hover -> disabled, +6 more); no looping motion in loading',
     ]);
+  });
+});
+
+describe('sketchAddedPointsOf', () => {
+  it('keeps the points the merged part already has apart, matched by part, kind and subject', () => {
+    expect(
+      sketchAddedPointsOf(
+        [
+          {
+            part: 'components/a',
+            points: [
+              { kind: 'missing-state', control: null },
+              { kind: 'missing-motion', from: 'rest', to: 'hover' },
+              { kind: 'contrast', state: 'rest', path: 'span' },
+            ],
+          },
+        ],
+        [
+          {
+            part: 'components/a',
+            points: [
+              { kind: 'missing-state', control: null },
+              { kind: 'missing-motion', from: 'rest', to: 'hover' },
+              { kind: 'missing-motion', from: 'hover', to: 'rest' },
+              { kind: 'contrast', state: 'rest', path: 'b' },
+            ],
+          },
+          { part: 'components/new', points: [{ kind: 'missing-motion', from: 'rest', to: 'hover' }] },
+        ],
+      ),
+    ).toEqual({
+      added: [
+        {
+          part: 'components/a',
+          points: [
+            { kind: 'missing-motion', from: 'hover', to: 'rest' },
+            { kind: 'contrast', state: 'rest', path: 'b' },
+          ],
+        },
+        { part: 'components/new', points: [{ kind: 'missing-motion', from: 'rest', to: 'hover' }] },
+      ],
+      inherited: [
+        {
+          part: 'components/a',
+          points: [
+            { kind: 'missing-state', control: null },
+            { kind: 'missing-motion', from: 'rest', to: 'hover' },
+          ],
+        },
+      ],
+    });
   });
 });

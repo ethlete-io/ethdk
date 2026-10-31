@@ -19,7 +19,7 @@ import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
-import { openPointsText } from './system/open-points';
+import { openPointsText, PartOpenPoints } from './system/open-points';
 import { sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
 import {
@@ -702,16 +702,26 @@ const readyRefusalOf = (
 
   if (problems.length > 0) return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
 
+  const pointLinesOf = (variant: string, list: PartOpenPoints[]) =>
+    openPointsText(product.name, list)
+      .slice(1)
+      .map((line) => `${sketch.target} ${variant}: ${line.trim()}`);
+
   const open = sketch.variants
     .filter((variant) => !rejectionOf(sketch, variant))
-    .flatMap((variant) =>
-      openPointsText(product.name, sketchOpenPointsOf(overlaySketch({ product, sketch, variant }), sketch.targets))
-        .slice(1)
-        .map((line) => `${sketch.target} ${variant}: ${line.trim()}`),
-    );
+    .flatMap((variant) => {
+      const { added, inherited } = sketchOpenPointsOf({
+        merged: product,
+        variant: overlaySketch({ product, sketch, variant }),
+        targets: sketch.targets,
+      });
 
-  if (open.length > 0)
-    return fail(`${open.join('\n')}\n${sketch.target} has open points the sketch can close - close them before ready`);
+      pointLinesOf(variant, inherited).forEach((line) => console.log(`NOTE ${line} (inherited from the merged part)`));
+
+      return pointLinesOf(variant, added);
+    });
+
+  if (open.length > 0) return fail(`${open.join('\n')}\n${sketch.target} adds open points - close them before ready`);
 
   const running = runningRoundOf(sketch);
 
