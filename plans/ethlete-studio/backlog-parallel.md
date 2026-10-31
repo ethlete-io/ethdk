@@ -763,11 +763,20 @@ machen".
 1. Q129, built (`d3003cfc3`): a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
    survives navigation. Follow-up messages resume the same agent session. The `/agent` page and its call inputs
    go away; the Rust call tools stay as they are, and the chat sends `tools: null`.
-2. Q127, in progress: a root view-context store that the system and sketch views write (product, part, sketch, variant,
+2. Q127, built (`9d6a2789d`): a root view-context store that the system and sketch views write (product, part, sketch, variant,
    selection). A chip above the input shows it; one click removes it for the next message.
 3. Q128, after the MVP (Studio MVP scope, 2026-10-31), not built now: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
    is still the one the message was sent from, Studio opens the result; otherwise the reply shows a link.
 4. Q130: a "New chat" button that clears the messages and the session. No list of old chats (grill, 2026-10-31).
+
+As built, slice 2 (`9d6a2789d`): `injectViewContext()` in `apps/ethlete-studio/src/app/chat/view-context.ts`. The
+system view writes product, part and the clicked frame (`DesignCanvasComponent.selectedId`); the sketch view writes
+sketch, sketch dir and the picked variant, and wins. A legacy call view writes nothing. `send` puts one line
+`Studio view: product …, part …, sketch … (dir …), variant …, selected frame ….` in front of the prompt; the chat
+shows the chip text muted above the user's own text. A removed chip stays away until the view changes or a message
+goes. Gaps: no part source path (`ListedPart` has none); the variant is the picked one, not the one looked at.
+Verified: 425 app tests, tsc, lint; the specs fail without the behaviour; a headless check with a faked design
+server showed the chip, the remove, and the preamble. Not verified with a real design server.
 
 As built, slice 1 (`d3003cfc3`): `injectChatStore()` in `apps/ethlete-studio/src/app/chat/chat-store.ts` (root
 provider) holds the CLI, the model, the entries, the session and the open flag. `ChatPanelComponent` sits beside
