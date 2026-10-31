@@ -85,7 +85,12 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
   - Done (2026-10-31): merge-preview frames draw Light + Dark (`075e48532`, `mergePreviewOf` sets `schemes`); the
     sketch matrix cells stay single (its "in context" page frames draw both since `aa6165ad5`). Data spec only, no
     render check.
-  - In progress (2026-10-31): a real Studio render of Q92 on own servers.
+  - Checked (2026-10-31): real Studio render of Q92 on own servers (scratch HEAD 2066f33b4 with `dist/libs`).
+    studio-lab `pages/library` and flow `add-a-film` side by side, studio 1440 px `used in` frames stacked; real
+    content in both copies, pins on the Light copy. Light and Dark copies are pixel-identical for studio and
+    studio-lab pages: their CSS has no `prefers-color-scheme`, so both draw dark (sdk part shots do differ). No
+    declared-width part exists to check. Defect: in narrow phone frames the frame label is clipped with no ellipsis
+    ("LIGHT pages/film-deta") - open, small.
   5. Q76: shots get a transparent page like live frames (both colour modes). Q69 landed in `395fd54b4`.
   - Done (2026-10-31): Q76 in `fe61aa1ff`. Shots use `omitBackground` (part and call shots); pixel diffs fill white
     first, so diff counts stay. Real call shot corner is alpha 0 in light and dark. sdk part shots stay opaque: the
