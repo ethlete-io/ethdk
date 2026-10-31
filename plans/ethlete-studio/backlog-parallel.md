@@ -726,7 +726,7 @@ Follows Q120. Built on products, parts, sketches and variants; nothing on legacy
 
 #### Build slices (builder ethlete-sdk-57)
 
-1. Q129, in progress: a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
+1. Q129, built (`d3003cfc3`): a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
    survives navigation. Follow-up messages resume the same agent session. The `/agent` page and its call inputs
    go away; the Rust call tools stay as they are, and the chat sends `tools: null`.
 2. Q127: a root view-context store that the system and sketch views write (product, part, sketch, variant,
@@ -734,6 +734,14 @@ Follows Q120. Built on products, parts, sketches and variants; nothing on legacy
 3. Q128: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
    is still the one the message was sent from, Studio opens the result; otherwise the reply shows a link.
 4. Q130: a "New chat" button that clears the messages and the session. No list of old chats (grill, 2026-10-31).
+
+As built, slice 1 (`d3003cfc3`): `injectChatStore()` in `apps/ethlete-studio/src/app/chat/chat-store.ts` (root
+provider) holds the CLI, the model, the entries, the session and the open flag. `ChatPanelComponent` sits beside
+the router outlet in `app.component.ts`, 420px wide when open. A follow-up message resumes the session; a CLI change
+clears it. The open flag is stored as `chatOpen` in the remembered view; the panel starts closed. The "New chat"
+button of slice 4 is in too. Verified: 419 app tests, spec and app typecheck, build, lint on the changed files;
+the resume spec and the panel specs fail without the behaviour. Not verified yet: the panel by eye (a headless
+check runs).
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
