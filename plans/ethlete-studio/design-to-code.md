@@ -87,6 +87,16 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   components/switch". Gaps of a kit part do not block the consuming page; they stay the kit part's own open points.
   No copies of kit parts in the consuming product (two sources drift). So a Studio page may keep an `et-switch`;
   in the pages/inbox round the switch, the toggle button (b) and the segment (c) are a variant pick by merge.
+- Q181 control states belong to control parts (Tom, 2026-10-31): sketch `elements/shell-main` rendered the whole
+  shell ~23 times only to show hover, focus, pressed and selected of the collapse button and of rows. Tom: "sowas
+  muss das tooling erkennen das darf nicht passieren". Two checks:
+  - Error (blocks the sketch and `complete`): interaction states (hover, focus/focus-visible, pressed/active,
+    selected) are allowed only on a control part (a part whose root is a control: button, row, option, the Q164
+    control kinds). On any other part (layout element, shell, page) such a state is an error that names the element
+    to extract as its own part. No threshold.
+  - Hint (does not block): a state whose pixel difference to the base state covers less than about 10 % of the
+    frame reports "extract the changed element as its own part", for example a small badge that changes on a big
+    card.
 
 ## Not decided
 
