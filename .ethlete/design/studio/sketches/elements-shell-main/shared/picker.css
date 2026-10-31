@@ -1,0 +1,10 @@
+@layer components {
+  .st-project-picker {
+    box-shadow: 0 12px 32px var(--surface-shadow);
+    bottom: calc(var(--space-3) + var(--control-md) + 3 * var(--space-2));
+  }
+
+  .st-project-picker[data-placement='beside'] {
+    left: calc(var(--space-3) + 248px + var(--space-2));
+  }
+}
