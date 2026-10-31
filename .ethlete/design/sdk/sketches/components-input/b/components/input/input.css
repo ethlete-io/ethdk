@@ -1,0 +1,24 @@
+.t-frame {
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.6rem;
+  padding: 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+@layer components {
+  et-form-field[data-text-shell]:is([data-focused], :has(:focus-visible)):not([data-readonly])
+    .et-form-field-control-frame {
+    border-color: var(--et-theme-color-ink-solid);
+  }
+
+  et-form-field et-label .et-label-required-marker {
+    color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
+  }
+
+  et-form-field > et-description {
+    padding-inline-start: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
+  }
+}

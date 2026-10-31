@@ -1,0 +1,39 @@
+{
+  "target": "components/input",
+  "status": "ready",
+  "createdAt": "2026-10-31T11:00:02.052Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Text input baseline",
+      "note": "The SDK text input (et-input inside et-form-field), first drawing, drawn by textInput() from @ethlete/components/design/input, which wraps formField() and input() from the form-field mock with the real markup and CSS: et-label with the required marker, the control frame with prefix and suffix affixes, et-description, the support row with hint and error; the box appearance, transparent fill, static label, md size; the brand theme, danger as the error theme. Hover is forced on the control frame, focus as data-focused plus focus-visible on the native input. Fixtures are fictional: Email, lena.hoffmann@example.com, placeholder name@example.com, hint We only use it to sign you in., description Your team sees this address on your profile., required with value lena.hoffmann@ and error Enter a valid email address.; API key with the lock and check icons; Website with https:// and .de text affixes; search, password, end-aligned amount with EUR, a mixed bulk-edit value, and an unlabelled field. Framed as a page with 16px padding at 320, 360 and 640. Numbers (light / dark), from shot pixels at scale 2 at 360, brand mint, a: rest frame (surface border) vs page 1.26 / 1.73, the only edge of an empty field; hover frame (surface-interaction-hover) 10.37 / 13.07; focus frame (primary) 1.33 / 13.50; error frame (danger at 50 %) 2.30 / 1.72, error hover (danger ink) 6.47 / 6.48; placeholder (46 % of the text colour) 3.00 / 4.48; required marker (brand primary) 1.33 / 13.50; readonly frame and text identical to filled (1.26 / 1.73, 17.93 / 17.18). Decided rules that arise: Q88 (focus in ink: the focus frame takes ink, the invalid one the danger ink) and Q99a (a mint mark on light takes ink: the required marker light-dark(ink, primary)). Lib bugs apart: (L1) et-description has no inline start padding: it starts at the frame edge, 13px left of the label, the value and the hint (Storybook Description at 360: description x 42, label, input and hint x 55); b and c draw it aligned. (L2) type search shows the Chromium native cancel button (an unthemed UA glyph) on focus, nothing in the lib styles it (shot in Storybook Input Default with type search, focused; a forced focus in a sketch does not draw it). Design: (1) WCAG 1.4.11: the rest frame 1.26 / 1.73 and the error frame 2.30 / 1.72 are under 3:1; c answers both. (2) Placeholder 3.00 in light, under 4.5:1; c draws it at 60 %, 4.67 / 6.77. (3) Readonly looks exactly like an editable filled field and gets neither hover nor focus; c proposes a dashed frame (my proposal, not a decided rule). (4) Hover (10.37 / 13.07) outshines the focus frame (5.48 / 13.50) in b and c, as on the otp input; in c the rest frame 4.74 sits close to the focus 5.48 in light, told apart by hue only. (5) A text prefix sits a full affix gap from the value (https://  example.com), so a URL prefix reads as a separate word. (6) The error marker 3.71 in dark, exempted as in checkbox r1. Later rounds, left out here: underline appearance, filled fill, the floating and inline label modes, sm and lg sizes, data-warning, the counter, the busy spinner, browser autofill colours, RTL and the support animation."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, the lib as is. On light the focus frame and the required marker are mint 1.33 vs page (dark 13.50); rest frame 1.26 / 1.73 and error frame 2.30 / 1.72, both under 3:1; placeholder 3.00 / 4.48; readonly identical to filled; et-description starts 13px left of the label and hint (L1)."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. a plus Q88 and Q99a, decided rules only, plus the L1 fix drawn. The focus frame in ink: light 5.48 vs page (was 1.33), dark the ink is the mint, 13.50 as today; the invalid one in the danger ink, 6.47 / 6.48. The required marker light-dark(ink, primary), light 5.48 (was 1.33). et-description takes the control inline padding plus the border width, so it lines up with the label, value and hint. Rest, error, placeholder and readonly unchanged. Picked because it applies only decided rules and a lib bug fix, so the text input reads like the otp input."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b plus four proposals, not decided rules: the rest frame in surface-interaction, 4.74 / 6.94 vs page (was 1.26 / 1.73); the error frame in the full danger primary, 4.83 / 3.71 (was 2.30 / 1.72), its hover and focus keep the danger ink 6.47 / 6.48; the placeholder at 60 % of the text colour, 4.67 / 6.77 (was 3.00 / 4.48); a dashed readonly frame so readonly no longer looks editable. In light the rest frame 4.74 sits close to the focus ink 5.48, told apart by hue only."
+    }
+  }
+}
