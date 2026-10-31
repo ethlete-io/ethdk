@@ -39,7 +39,7 @@ const render = ({ count = 5, longCaption = false, previous, next, playToggle, do
   );
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     'first-slide': {},
@@ -59,6 +59,7 @@ export default definePart({
     'play-toggle-hover': { active: 1, autoplay: true, playToggle: 'hover' },
     'play-toggle-focus-visible': { active: 1, autoplay: true, playToggle: 'focus-visible' },
     'multiple-items': { itemSize: 'half', slideGap: 16, active: 1 },
+    'item-size-third': { itemSize: 'third', slideGap: 16, active: 1 },
     'center-aligned': { itemSize: 'half', slideGap: 16, slideAlign: 'center', active: 2 },
     'no-controls': { active: 1, showControls: false },
     'long-caption': { longCaption: true },

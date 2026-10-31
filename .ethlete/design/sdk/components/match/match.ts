@@ -19,7 +19,7 @@ const finished: MatchMockOptions = {
 };
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     finished: { card: finished },
@@ -61,6 +61,8 @@ export default definePart({
       card: { home: HOME, status: 'scheduled', label: 'Final', startTime: '11/21/2026 7:00 PM' },
     },
     compact: { card: { ...finished, size: 'compact' } },
+    expanded: { card: { ...finished, size: 'expanded' } },
+    wide: { card: { ...finished, size: 'wide' } },
     hover: { card: { ...finished, interactive: true, force: 'hover' } },
     'focus-visible': { card: { ...finished, interactive: true, force: 'focus-visible' } },
   },

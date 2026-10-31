@@ -15,6 +15,7 @@ type Props = {
   interaction?: Interaction;
   italicDisabled?: boolean;
   tabStop?: Control;
+  size?: 'xs' | 'md' | 'lg' | 'xl';
 };
 
 const BUTTONS: { control: Control; icon: (typeof SDK_ICONS)[number]; label: string; pressed?: boolean }[] = [
@@ -55,11 +56,11 @@ const render = (props: Props) => {
     ? list.findIndex((item) => item.type === 'button' && item.attributes?.includes(`"${props.tabStop}"`))
     : undefined;
 
-  return toolbar({ items: list, orientation: props.orientation, tabStop });
+  return toolbar({ items: list, orientation: props.orientation, size: props.size, tabStop });
 };
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     default: {},
@@ -69,8 +70,12 @@ export default definePart({
     'focus-visible-unpressed': { interaction: 'focus-visible', forced: ['italic'], tabStop: 'italic' },
     disabled: { italicDisabled: true },
     vertical: { orientation: 'vertical' },
+    'size-xs': { size: 'xs' },
+    'size-md': { size: 'md' },
+    'size-lg': { size: 'lg' },
+    'size-xl': { size: 'xl' },
   },
-  widths: [480],
+  widths: [528],
   controls: Object.fromEntries(
     BUTTONS.map(({ control }) => [control, { kind: 'button', input: ['pointer', 'keyboard'] }]),
   ),

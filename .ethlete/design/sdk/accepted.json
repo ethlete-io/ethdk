@@ -370,5 +370,47 @@
     "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
     "hash": "67a4ce1d7b5efd52",
     "at": "2026-10-31T14:47:15.836Z"
+  },
+  {
+    "part": "components/carousel",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "3d157c4cddf02fe4",
+    "at": "2026-10-31T14:49:11.114Z"
+  },
+  {
+    "part": "components/match",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "7d3163079caa7cff",
+    "at": "2026-10-31T14:49:21.252Z"
+  },
+  {
+    "part": "components/table",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "71b0ecfd435ecfe0",
+    "at": "2026-10-31T14:49:35.352Z"
+  },
+  {
+    "part": "components/toolbar",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "9526633e3bfda654",
+    "at": "2026-10-31T14:49:43.604Z"
+  },
+  {
+    "part": "components/input",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "70999667b73e3e71",
+    "at": "2026-10-31T14:50:03.722Z"
+  },
+  {
+    "part": "components/textarea",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by Q172 plans/ethlete-studio/backlog-parallel.md (Q182)",
+    "hash": "4f8a0cdbacfee0e0",
+    "at": "2026-10-31T14:50:20.916Z"
   }
 ]

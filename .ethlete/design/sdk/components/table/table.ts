@@ -21,6 +21,8 @@ type Props = {
   longValue?: boolean;
   wide?: 'start' | 'scrolled';
   stickyHeader?: boolean;
+  density?: TableMockOptions['density'];
+  center?: boolean;
 };
 
 const PLAYERS: [string, string, string, string][] = [
@@ -36,15 +38,19 @@ const PLAYERS: [string, string, string, string][] = [
 
 const LONG = 'Hoffmann-Wiesenthal-Brandenburger-Lindqvist-Oberhausen';
 
-const columns = (sort: Props['sort'], header: Props['header']): TableColumnMock[] => [
+const columns = (
+  sort: Props['sort'],
+  header: Props['header'],
+  align: TableColumnMock['align'] = 'end',
+): TableColumnMock[] => [
   { header: 'Player', sortable: true, sort: sort ?? 'asc' },
   {
     header: 'Team',
     sortable: true,
     labelAttributes: header ? `data-et-force="${header}"` : undefined,
   },
-  { header: 'Goals', sortable: true, align: 'end' },
-  { header: 'Assists', align: 'end' },
+  { header: 'Goals', sortable: true, align },
+  { header: 'Assists', align },
 ];
 
 const WIDE_HEADERS = ['Team', 'Goals', 'Assists', 'Shots', 'Minutes', 'Cards'];
@@ -95,7 +101,8 @@ const render = (props: Props) => {
     errorColor: 'danger',
     tracks: 'minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr)',
     appearance: props.appearance,
-    columns: columns(props.sort, props.header),
+    density: props.density,
+    columns: columns(props.sort, props.header, props.center ? 'center' : undefined),
     rows: rows(props),
     selection: props.selection ? 'mixed' : undefined,
     expandable: props.expanded || props.expander !== undefined,
@@ -110,7 +117,7 @@ const render = (props: Props) => {
 };
 
 export default definePart({
-  note: 'Decided rules only',
+  note: 'scale of the decided shape, Q182, lead merge',
   madeBy: ['claude-opus-5-5'],
   states: {
     rest: {},
@@ -140,6 +147,9 @@ export default definePart({
     'wide-scroll': { wide: 'start' },
     'sticky-column': { wide: 'scrolled' },
     'sticky-header': { stickyHeader: true },
+    'density-sm': { density: 'sm' },
+    'density-lg': { density: 'lg' },
+    'align-center': { center: true },
   },
   widths: [480],
   render: (props: Props) =>
