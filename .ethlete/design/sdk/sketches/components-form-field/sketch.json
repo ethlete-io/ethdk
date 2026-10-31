@@ -1,0 +1,41 @@
+{
+  "target": "components/form-field",
+  "status": "ready",
+  "createdAt": "2026-10-31T00:06:46.672Z",
+  "baseline": {
+    "foundations/colors": "1d06df1d878ee2e2",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "1a99c8c95697d968",
+    "components/select": "3915f5657c75ef8b",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Light filled background",
+      "note": "Q83: the filled field takes the light-elevated surface; candidates for its background on white, border stays 229."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "250 250 250, the Storybook light-elevated value today."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "245 245 245."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "240 240 240."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "235 235 235."
+    }
+  }
+}
