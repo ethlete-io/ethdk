@@ -68,5 +68,19 @@
     "note": "Q86 follow-up: the fill comes from the elevated surface tokens, the variant CSS is gone",
     "hash": "1a99c8c95697d968",
     "at": "2026-10-31T00:23:30.000Z"
+  },
+  {
+    "part": "components/form-field",
+    "by": "claude-opus-5-5",
+    "note": "Dark-scheme ink fix from Tom's tree comments, relayed by the grill session: the part drops a fixed -on-light colour class, so the ink follows the scheme.",
+    "hash": "2f5692b326f3432a",
+    "at": "2026-10-31T00:28:47.635Z"
+  },
+  {
+    "part": "components/select-panel",
+    "by": "claude-opus-5-5",
+    "note": "Dark-scheme ink fix from Tom's tree comments, relayed by the grill session: the part drops a fixed -on-light colour class, so the ink follows the scheme.",
+    "hash": "02b5ecfc4ba38913",
+    "at": "2026-10-31T00:28:47.814Z"
   }
 ]

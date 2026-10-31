@@ -45,7 +45,7 @@ const { states, grid } = interactionRows(
 );
 
 export default definePart({
-  note: 'The SDK tree, drawn by its mock from @ethlete/components/design. Rows keep a roving tab stop, so a focused row draws the real :focus-visible ring. It sits on brand-on-light, as ink on a light surface does (Q51).',
+  note: 'The SDK tree, drawn by its mock from @ethlete/components/design. Rows keep a roving tab stop, so a focused row draws the real :focus-visible ring.',
   madeBy: ['claude-opus-5-5'],
   states: {
     ...states,
@@ -63,9 +63,7 @@ export default definePart({
         ...props,
         label: 'Files',
         rowAttributes: forced && { [forced.row]: `data-et-force="${forced.interaction}"` },
-      })
-        .replace('class="et-tree"', 'class="et-tree et-color--brand-on-light"')
-        .replaceAll('role="treeitem"', 'data-et-control="row" role="treeitem"'),
+      }).replaceAll('role="treeitem"', 'data-et-control="row" role="treeitem"'),
       styles: treeStyles,
     }),
 });

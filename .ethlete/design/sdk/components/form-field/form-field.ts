@@ -88,7 +88,7 @@ export default definePart<Props>({
         formField({
           id: 'name',
           label: 'Name',
-          errorColor: 'danger-on-light',
+          errorColor: 'danger',
           control: control === 'input' ? input({ value }) : textarea({ value }),
           ...field,
         }),

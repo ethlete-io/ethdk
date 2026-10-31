@@ -96,24 +96,45 @@ const inkOf = (css, theme) => {
   return ink.join('\n');
 };
 
-const withLightSchemeInk = (css) => {
-  const light = inkOf(css, 'brand-on-light');
+const schemeInkThemesOf = (css) => [...css.matchAll(/\.et-color--([\w-]+)-on-light \{/g)].map((match) => match[1]);
+
+const inkRule = (selectors, ink, depth) => {
+  const pad = ' '.repeat(depth);
+
+  return `${pad}${selectors.join(`,\n${pad}`)} {\n${ink.replace(/^/gm, `${pad}  `)}\n${pad}}`;
+};
+
+const withSchemeInk = (css) => {
+  const themes = schemeInkThemesOf(css);
+  const inkFor = (theme, scheme) => inkOf(css, scheme === 'light' ? `${theme}-on-light` : theme);
+  const rootOf = (theme, root) => (theme === 'brand' ? [root] : []);
+  const media = themes.map((theme) =>
+    inkRule([...rootOf(theme, ':root'), `.et-color--${theme}`], inkFor(theme, 'light'), 4),
+  );
+  const forced = (scheme) =>
+    themes.map((theme) =>
+      inkRule(
+        [...rootOf(theme, `:root.et-scheme--${scheme}`), `:where(:root.et-scheme--${scheme}) .et-color--${theme}`],
+        inkFor(theme, scheme),
+        2,
+      ),
+    );
+  const onSurface = (scheme) =>
+    themes.map((theme) =>
+      inkRule(
+        [`.et-surface--${scheme}.et-color--${theme}`, `.et-surface--${scheme} .et-color--${theme}`],
+        inkFor(theme, scheme),
+        2,
+      ),
+    );
 
   return `${css}
 @layer base {
   @media (prefers-color-scheme: light) {
-    :root {
-${light}
-    }
+${media.join('\n\n')}
   }
 
-  :root.et-scheme--light {
-${light}
-  }
-
-  :root.et-scheme--dark {
-${inkOf(css, 'brand')}
-  }
+${[...forced('light'), ...forced('dark'), ...onSurface('light'), ...onSurface('dark')].join('\n\n')}
 }
 `;
 };
@@ -181,7 +202,7 @@ body {
 
 const header =
   '/* Generated from libs/core/design/theme-css.ts by tools/scripts/generate-sdk-tokens.mjs. Rerun: yarn sdk:tokens */';
-const source = `${header}\n${withElevatedFill(withLightSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
+const source = `${header}\n${withElevatedFill(withSchemeInk(withShadowColor(withoutUtilityColors(themeCss({ surfaceThemes, colorThemes })))))}\n${BASE}`;
 const formatted = await format(source, { ...(await resolveConfig(file)), filepath: file });
 
 if (check) {

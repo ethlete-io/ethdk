@@ -52,7 +52,7 @@ const markOption = (markup: string, interaction?: OptionInteraction) =>
 const singleOption = ({ selected, disabled, interaction }: Props) =>
   selectPanel({
     id: 'single',
-    color: 'brand-on-light',
+    color: 'brand',
     content: markOption(
       selectOption(
         { value: 'review', label: 'In review', disabled },
@@ -84,7 +84,7 @@ const groupedPanel = ({ allSelected }: Props) => {
 
   return selectPanel({
     id: 'status',
-    color: 'brand-on-light',
+    color: 'brand',
     multiple: true,
     content:
       markOption(selectAllOption({ id: 'status-all', label: 'Select all', checked: allSelected || 'mixed' })) + groups,

@@ -385,16 +385,34 @@
 
 @layer base {
   @media (prefers-color-scheme: light) {
-    :root {
+    :root,
+    .et-color--brand {
       --et-color-primary-ink: 4 120 87;
       --et-color-primary-ink-hover: 6 95 70;
       --et-color-primary-ink-focus: 6 95 70;
       --et-color-primary-ink-active: 6 78 59;
       --et-color-primary-ink-disabled: 130 200 170;
     }
+
+    .et-color--danger {
+      --et-color-primary-ink: 185 28 28;
+      --et-color-primary-ink-hover: 153 27 27;
+      --et-color-primary-ink-focus: 153 27 27;
+      --et-color-primary-ink-active: 127 29 29;
+      --et-color-primary-ink-disabled: 220 150 150;
+    }
+
+    .et-color--warning {
+      --et-color-primary-ink: 146 64 14;
+      --et-color-primary-ink-hover: 120 53 15;
+      --et-color-primary-ink-focus: 120 53 15;
+      --et-color-primary-ink-active: 69 26 3;
+      --et-color-primary-ink-disabled: 220 170 120;
+    }
   }
 
-  :root.et-scheme--light {
+  :root.et-scheme--light,
+  :where(:root.et-scheme--light) .et-color--brand {
     --et-color-primary-ink: 4 120 87;
     --et-color-primary-ink-hover: 6 95 70;
     --et-color-primary-ink-focus: 6 95 70;
@@ -402,12 +420,99 @@
     --et-color-primary-ink-disabled: 130 200 170;
   }
 
-  :root.et-scheme--dark {
+  :where(:root.et-scheme--light) .et-color--danger {
+    --et-color-primary-ink: 185 28 28;
+    --et-color-primary-ink-hover: 153 27 27;
+    --et-color-primary-ink-focus: 153 27 27;
+    --et-color-primary-ink-active: 127 29 29;
+    --et-color-primary-ink-disabled: 220 150 150;
+  }
+
+  :where(:root.et-scheme--light) .et-color--warning {
+    --et-color-primary-ink: 146 64 14;
+    --et-color-primary-ink-hover: 120 53 15;
+    --et-color-primary-ink-focus: 120 53 15;
+    --et-color-primary-ink-active: 69 26 3;
+    --et-color-primary-ink-disabled: 220 170 120;
+  }
+
+  :root.et-scheme--dark,
+  :where(:root.et-scheme--dark) .et-color--brand {
     --et-color-primary-ink: 0 255 161;
     --et-color-primary-ink-hover: 0 255 161;
     --et-color-primary-ink-focus: 0 255 161;
     --et-color-primary-ink-active: 0 255 161;
     --et-color-primary-ink-disabled: 0 255 161;
+  }
+
+  :where(:root.et-scheme--dark) .et-color--danger {
+    --et-color-primary-ink: 248 113 113;
+    --et-color-primary-ink-hover: 252 165 165;
+    --et-color-primary-ink-focus: 252 165 165;
+    --et-color-primary-ink-active: 239 68 68;
+    --et-color-primary-ink-disabled: 153 75 75;
+  }
+
+  :where(:root.et-scheme--dark) .et-color--warning {
+    --et-color-primary-ink: 245 158 11;
+    --et-color-primary-ink-hover: 251 191 36;
+    --et-color-primary-ink-focus: 251 191 36;
+    --et-color-primary-ink-active: 217 119 6;
+    --et-color-primary-ink-disabled: 133 77 14;
+  }
+
+  .et-surface--light.et-color--brand,
+  .et-surface--light .et-color--brand {
+    --et-color-primary-ink: 4 120 87;
+    --et-color-primary-ink-hover: 6 95 70;
+    --et-color-primary-ink-focus: 6 95 70;
+    --et-color-primary-ink-active: 6 78 59;
+    --et-color-primary-ink-disabled: 130 200 170;
+  }
+
+  .et-surface--light.et-color--danger,
+  .et-surface--light .et-color--danger {
+    --et-color-primary-ink: 185 28 28;
+    --et-color-primary-ink-hover: 153 27 27;
+    --et-color-primary-ink-focus: 153 27 27;
+    --et-color-primary-ink-active: 127 29 29;
+    --et-color-primary-ink-disabled: 220 150 150;
+  }
+
+  .et-surface--light.et-color--warning,
+  .et-surface--light .et-color--warning {
+    --et-color-primary-ink: 146 64 14;
+    --et-color-primary-ink-hover: 120 53 15;
+    --et-color-primary-ink-focus: 120 53 15;
+    --et-color-primary-ink-active: 69 26 3;
+    --et-color-primary-ink-disabled: 220 170 120;
+  }
+
+  .et-surface--dark.et-color--brand,
+  .et-surface--dark .et-color--brand {
+    --et-color-primary-ink: 0 255 161;
+    --et-color-primary-ink-hover: 0 255 161;
+    --et-color-primary-ink-focus: 0 255 161;
+    --et-color-primary-ink-active: 0 255 161;
+    --et-color-primary-ink-disabled: 0 255 161;
+  }
+
+  .et-surface--dark.et-color--danger,
+  .et-surface--dark .et-color--danger {
+    --et-color-primary-ink: 248 113 113;
+    --et-color-primary-ink-hover: 252 165 165;
+    --et-color-primary-ink-focus: 252 165 165;
+    --et-color-primary-ink-active: 239 68 68;
+    --et-color-primary-ink-disabled: 153 75 75;
+  }
+
+  .et-surface--dark.et-color--warning,
+  .et-surface--dark .et-color--warning {
+    --et-color-primary-ink: 245 158 11;
+    --et-color-primary-ink-hover: 251 191 36;
+    --et-color-primary-ink-focus: 251 191 36;
+    --et-color-primary-ink-active: 217 119 6;
+    --et-color-primary-ink-disabled: 133 77 14;
   }
 }
 
