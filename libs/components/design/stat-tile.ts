@@ -1,5 +1,3 @@
-import { createLinePath, splitLineSegments } from '../src/lib/chart/headless/internals/chart-line';
-import { numberExtent } from '../src/lib/chart/headless/internals/chart-scale';
 import sparklineBase from '../src/lib/stat-tile/stat-tile-sparkline.component.css?inline';
 import statTileBase from '../src/lib/stat-tile/stat-tile.component.css?inline';
 import { skeleton, skeletonItem, skeletonStyles } from './skeleton';
@@ -36,6 +34,8 @@ const VIEW_WIDTH = 100;
 const VIEW_HEIGHT = 32;
 const VIEW_PADDING = 4;
 
+const round = (value: number) => Math.round(value * 100) / 100;
+
 const DELTA_ICONS = {
   up: 'M6 2 11 9H1Z',
   down: 'M6 10 1 3h10Z',
@@ -48,8 +48,8 @@ export const statTileStyles = /* @__PURE__ */ [skeletonStyles, statTileBase, spa
 /** Draws an `et-stat-tile-sparkline` with the geometry the component computes, as HTML. */
 export const statTileSparkline = (values: readonly (number | null)[]) => {
   const finite = values.filter((value): value is number => value !== null && Number.isFinite(value));
-  const [min, max] = numberExtent(finite);
-  const span = max - min;
+  const min = finite.length ? Math.min(...finite) : 0;
+  const span = (finite.length ? Math.max(...finite) : 0) - min;
   const step = values.length > 1 ? VIEW_WIDTH / (values.length - 1) : 0;
   const plotHeight = VIEW_HEIGHT - VIEW_PADDING * 2;
   const points = values.map((value, index) => {
@@ -59,10 +59,19 @@ export const statTileSparkline = (values: readonly (number | null)[]) => {
 
     return { x: values.length > 1 ? index * step : VIEW_WIDTH / 2, y: VIEW_PADDING + (1 - ratio) * plotHeight };
   });
+  const segments = points
+    .map((point) => (point ? `${round(point.x)},${round(point.y)}` : '|'))
+    .join(' ')
+    .split('|')
+    .map((segment) => segment.trim().split(' ').filter(Boolean))
+    .filter((segment) => segment.length > 1);
+  const line = segments
+    .map((segment) => segment.map((point, index) => `${index ? 'L' : 'M'}${point}`).join(''))
+    .join('');
   const current = [...points].reverse().find((point) => point !== null) ?? null;
   const dot = current ? `<path d="M${current.x},${current.y}h0" class="et-stat-tile-sparkline-current"></path>` : '';
 
-  return `<et-stat-tile-sparkline class="et-stat-tile-sparkline" aria-hidden="true"><svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" class="et-stat-tile-sparkline-svg" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${createLinePath(splitLineSegments(points))}" class="et-stat-tile-sparkline-line"></path>${dot}</svg></et-stat-tile-sparkline>`;
+  return `<et-stat-tile-sparkline class="et-stat-tile-sparkline" aria-hidden="true"><svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" class="et-stat-tile-sparkline-svg" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${line}" class="et-stat-tile-sparkline-line"></path>${dot}</svg></et-stat-tile-sparkline>`;
 };
 
 const loadingMarkup = () =>
