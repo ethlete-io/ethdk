@@ -22,7 +22,7 @@
     {
       "key": "r2",
       "title": "Input design rules",
-      "note": "Input design rules Q108-Q113 (plans/ethlete-studio/backlog-parallel.md, 23937188b), drawn on c with Q99a. New states: focus-hover, invalid-focus-hover, readonly-hover, text-prefix (€). Numbers (light / dark) from shot pixels at scale 2 at 360, brand mint: rest frame 4.74 / 6.94; hover 6.69 / 8.94; focus d theme ink 5.48 / 13.50, e surface text 17.93 / 17.18; error frame 4.83 / 3.71, error hover and focus danger ink 6.47 / 6.48; placeholder 4.67 / 6.77 vs value 17.93 / 17.18; required marker brand ink 5.48 / 13.50, in error danger ink 6.47 / 6.48 (was 3.71 in dark); error text already danger ink 6.47 / 6.48. Open choices: focus colour (d theme ink vs e surface text), readonly signal (d dashed frame vs f lock icon). Open point: a focused readonly field shows no focus frame in the lib (readonly is excluded from the focus rule), so a keyboard user sees no focus there; Q111 says focus is always the strongest state."
+      "note": "Input design rules Q108-Q113 (plans/ethlete-studio/backlog-parallel.md, 23937188b), drawn on c with Q99a. New states: focus-hover, invalid-focus-hover, readonly-hover, text-prefix (\u20ac). Numbers (light / dark) from shot pixels at scale 2 at 360, brand mint: rest frame 4.74 / 6.94; hover 6.69 / 8.94; focus d theme ink 5.48 / 13.50, e surface text 17.93 / 17.18; error frame 4.83 / 3.71, error hover and focus danger ink 6.47 / 6.48; placeholder 4.67 / 6.77 vs value 17.93 / 17.18; required marker brand ink 5.48 / 13.50, in error danger ink 6.47 / 6.48 (was 3.71 in dark); error text already danger ink 6.47 / 6.48. Open choices: focus colour (d theme ink vs e surface text), readonly signal (d dashed frame vs f lock icon). Open point: a focused readonly field shows no focus frame in the lib (readonly is excluded from the focus rule), so a keyboard user sees no focus there; Q111 says focus is always the strongest state."
     }
   ],
   "variantInfo": {
@@ -44,7 +44,7 @@
     "d": {
       "authors": ["claude-opus-5-5"],
       "round": "r2",
-      "note": "Pick. Rules Q108-Q113. Rest frame surface-interaction 4.74 / 6.94 vs page (Q108); hover a small step, 75 % interaction + 25 % text colour, 6.69 / 8.94, unfocused fields only; error frame full danger 4.83 / 3.71, error hover danger ink 6.47 / 6.48; placeholder 60 % of the text colour 4.67 / 6.77, value 17.93 / 17.18 (Q109); focus a 2px frame (1px border + 1px inset shadow, no layout shift, no halo), unchanged on hover (Q111); error focus 2px danger ink 6.47 / 6.48; a text prefix (€, https://) sits 4px from the value, an icon prefix keeps the 8px affix gap (Q112); required marker in the theme ink, brand 5.48 / 13.50, in error the danger ink 6.47 / 6.48 instead of the danger primary 3.71 in dark (Q113), so the contrast exception is gone. Focus frame in the theme ink, 5.48 / 13.50. Readonly: dashed frame at the rest tone (4.74 / 6.94), no hover. Cost: in light the hover frame (6.69) out-contrasts the focus ink (5.48); focus wins on width and hue only."
+      "note": "Pick. Rules Q108-Q113. Rest frame surface-interaction 4.74 / 6.94 vs page (Q108); hover a small step, 75 % interaction + 25 % text colour, 6.69 / 8.94, unfocused fields only; error frame full danger 4.83 / 3.71, error hover danger ink 6.47 / 6.48; placeholder 60 % of the text colour 4.67 / 6.77, value 17.93 / 17.18 (Q109); focus a 2px frame (1px border + 1px inset shadow, no layout shift, no halo), unchanged on hover (Q111); error focus 2px danger ink 6.47 / 6.48; a text prefix (\u20ac, https://) sits 4px from the value, an icon prefix keeps the 8px affix gap (Q112); required marker in the theme ink, brand 5.48 / 13.50, in error the danger ink 6.47 / 6.48 instead of the danger primary 3.71 in dark (Q113), so the contrast exception is gone. Focus frame in the theme ink, 5.48 / 13.50. Readonly: dashed frame at the rest tone (4.74 / 6.94), no hover. Cost: in light the hover frame (6.69) out-contrasts the focus ink (5.48); focus wins on width and hue only."
     },
     "e": {
       "authors": ["claude-opus-5-5"],
@@ -55,6 +55,11 @@
       "authors": ["claude-opus-5-5"],
       "round": "r2",
       "note": "d with readonly as a solid rest frame plus a lock icon in the suffix (muted affix at 78 %, about 4.6 / 5.3) instead of the dashed frame. Cost: the lock already means secret on the API key field, and it takes a suffix slot."
+    },
+    "g": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "Aligned variant Q140-Q144 for Tom's merge. e plus Q141-Q143 and the Q139 error hover. Q140: focus frame in the surface text colour, 2px, 17.93 / 17.18. Q141: readonly is a dashed frame at the rest tone, no lock icon, no hover. Q142: readonly focus is a 2px dashed frame in the Q140 focus colour (outline 2px dashed, offset -2px, over a transparent border, no layout shift); the lib draws none today. Q143: rest frame surface-interaction 4.74 / 6.94. Q139: error hover in the error theme's active ink tone (--et-color-primary-ink-active chain), as the lib since 798968a69. Hover step, full danger error frame, 60 % placeholder, 4px text prefix gap and required marker (theme ink, danger ink in error) as e. Frame vs page (light / dark), shot pixels at scale 2 at 360: rest 4.74 / 6.94; hover 6.69 / 8.94; focus 17.93 / 17.18; readonly 4.74 / 6.94; readonly focus 17.93 / 17.18; error 4.83 / 3.71; error hover 10.02 / 4.76."
     }
   }
 }
