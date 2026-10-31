@@ -231,6 +231,17 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     Lead changes (76, 2026-10-31): no hand-written registry; the part-to-component map comes from the `implements`
     links (generated, or resolved by the harness from the link; Q157 one source of truth). `--url` stays; without
     it, compare starts the app's dev server itself on a free port, never on 4221, 4402 or 4492 (3c-3).
+  - 3c-1 built (`490a2ae39`): `PartLink` `{ route, component }` for pages (rule and `task` accept it);
+    `harnessUrlOf` is the app contract (`/__design-harness?part=&state=&props=`, host `[data-design-harness-host]`);
+    `et design compare <part> --product --url [--state]` shoots the fitted design frame and the host at 1280x800,
+    scale 1, `omitBackground`, after `document.fonts.ready`, animations off; 0 px, size mismatch fails; failing
+    states write design, app and diff PNGs to a temp folder. `task --verify` needs `--url` and records
+    `implemented.json` only on green. PNG compare on Node `zlib`, no new dependency. Verified: specs (browser cases
+    skip without Chromium), tsc, lint, one real Chromium run against a static harness in a temp checkout. Not
+    verified: a real app harness (3c-2), the CLI from `dist`.
+  - 3c-2, in progress: products name their harness app in `.ethlete/design/config.json`; a CLI command generates
+    the part-to-lazy-component map from the `implements` links into that app; the app adds the dev-only
+    `/__design-harness` route.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
