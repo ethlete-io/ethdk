@@ -256,8 +256,9 @@ export const shotProductOf = (options: {
 const CROP_CHANGED = 'changed';
 
 /**
- * One crop per cluster of the pixels a variant cell changes from the merged cell of its state, in CSS pixels inside
- * the largest picture; empty when no variant changes a pixel.
+ * One crop per cluster of the pixels a variant cell changes from the merged cell of its state, or of the first merged
+ * state for a state the merged part does not draw, in CSS pixels inside the largest picture; empty when no variant
+ * changes a pixel.
  */
 export const changedCropsIn = async (options: {
   plan: Plan[][];
@@ -275,11 +276,12 @@ export const changedCropsIn = async (options: {
       return cell && 'png' in cell ? [[entry.address.state, cell.png] as const] : [];
     }),
   );
+  const firstMerged = merged.values().next().value;
   const pairs = sheet.flatMap((row, rowIndex) =>
     rowIndex === mergedIndex
       ? []
       : row.flatMap((cell, index) => {
-          const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '');
+          const before = merged.get(plan[rowIndex]?.[index]?.address.state ?? '') ?? firstMerged;
 
           return before && 'png' in cell ? [[before, cell.png] as const] : [];
         }),

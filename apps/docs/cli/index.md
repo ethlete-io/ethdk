@@ -345,8 +345,9 @@ element that fades in with `@starting-style` is drawn fully visible. An infinite
 running.
 
 A pixel comparison gives one box per cluster of changed pixels: changes closer than 16 pixels
-merge, and at most eight boxes remain. `et design shot <part> --variants --crop changed` writes one
-contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single cluster keeps
+merge, and at most eight boxes remain. `et design shot <part> --variants --crop changed` compares every
+drawn state of every shown variant with the merged part, a state the merged part does not draw with its first state,
+and writes one contact sheet per cluster (`<out>-area-1.png`, `<out>-area-2.png`, …; a single cluster keeps
 `<out>`), and Studio's changed area stacks one enlarged crop per cluster below the whole page.
 
 `--surface <name>` only puts the `et-surface--<name>` class on the frame root; the colour scheme

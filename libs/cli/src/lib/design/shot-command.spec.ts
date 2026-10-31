@@ -523,6 +523,39 @@ describe('changedCropsIn', () => {
     expect(boxOf).toHaveBeenCalledTimes(2);
   });
 
+  it('crops a state the merged part does not draw against the first merged state', async () => {
+    const rest = png(200, 100, 'a');
+    const variant = [png(200, 100, 'c'), png(200, 100, 'd')];
+    const plan = [
+      [
+        { label: 'rest', address: address('rest', null) },
+        { label: 'hover', address: address('hover', null), absent: true as const },
+      ],
+      [
+        { label: 'i rest', address: address('rest', 'i') },
+        { label: 'i hover', address: address('hover', 'i') },
+      ],
+    ];
+    const sheet = [
+      [
+        { label: 'rest', png: rest },
+        { label: 'hover', note: NEW_STATE_NOTE },
+      ],
+      (plan[1] ?? []).map((cell, index) => ({ label: cell.label, png: variant[index] as Buffer })),
+    ];
+    const boxOf = vi.fn(async (before: Buffer, after: Buffer) =>
+      before === rest && after === variant[0]
+        ? [{ x: 40, y: 20, width: 10, height: 10 }]
+        : before === rest && after === variant[1]
+          ? [{ x: 40, y: 20, width: 120, height: 60 }]
+          : [],
+    );
+
+    expect(await changedCropsIn({ plan, sheet, mergedIndex: 0, boxOf, scale: 1 })).toEqual([
+      { x: 24, y: 4, width: 152, height: 92 },
+    ]);
+  });
+
   it('gives no crop when no variant changes a pixel', async () => {
     const one = png(10, 10, 'a');
     const plan = [[{ label: 'rest', address: address('rest', null) }], [{ label: 'i', address: address('rest', 'i') }]];
