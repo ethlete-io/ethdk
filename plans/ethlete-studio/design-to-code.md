@@ -253,7 +253,9 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     The stale-map refusal and the git file check run before the start (`system/harness-server.ts`). Verified: specs,
     tsc, lint, a real docs-examples start and stop (ready in 18 s, no process left, also after Ctrl-C). Not verified:
     a real compare of a part (empty map), Studio served this way, the 300 s timeout, the CLI from `dist`.
-  - Next: the pilot (Studio `elements/shell-main` b, `pages/inbox` d through go, task and compare).
+  - Pilot, in progress (builder ethlete-sdk-57): the pilot (Studio `elements/shell-main` b, `pages/inbox` d through go, task and compare). Slice 1 `pages/inbox` d: implements link
+    `{ route: '', component: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts' }`, go, a
+    presentational component, harness map, compare, `task --verify`. Slice 2 `elements/shell-main` b with its controls.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
