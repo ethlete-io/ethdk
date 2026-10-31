@@ -1301,5 +1301,12 @@
     "note": "Q215 Tom accepts the overlay round (menu picker, anchoredDialog popover, overlay border, chevron at row end)",
     "hash": "9e909353e9de59b6",
     "at": "2026-10-31T20:46:13.954Z"
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "claude-opus-5-5",
+    "note": "Q217 Tom's call: the zoom chip takes the SDK overlay shadow",
+    "hash": "49893f828dc4020b",
+    "at": "2026-10-31T20:59:28.624Z"
   }
 ]
