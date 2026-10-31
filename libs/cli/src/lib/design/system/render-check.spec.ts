@@ -329,7 +329,7 @@ describe('renderIssuesOf', () => {
       join(dir, 'added/components/bar/bar.ts'),
       source.replace(
         '</div>',
-        '<input class="bar-name" placeholder="Name" /><details><summary>More</summary></details><div class="bar-focus" tabindex="0">Pick</div><div role="listbox" tabindex="-1">Rows</div></div>',
+        '<input class="bar-name" placeholder="Name" /><details><summary>More</summary></details><div class="bar-focus" tabindex="0">Pick</div><div role="listbox" tabindex="-1">Rows</div><div role="dialog" tabindex="-1">Pane</div></div>',
       ),
     );
     writeFileSync(join(dir, 'added/components/fresh/fresh.ts'), source);

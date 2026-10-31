@@ -949,10 +949,12 @@ const OPTION_SELECTOR = '[role="option"], [role^="menuitem"], [data-et-option]';
 
 const COMPOSITE_ROLES = ['grid', 'listbox', 'menu', 'menubar', 'radiogroup', 'tablist', 'tree', 'treegrid'];
 
-const FOCUS_CONTAINER = COMPOSITE_ROLES.flatMap((role) => [
-  `[role="${role}"][tabindex="-1"]`,
-  `[role="${role}"][aria-activedescendant]`,
-]).join(', ');
+const DIALOG_ROLES = ['dialog', 'alertdialog'];
+
+const FOCUS_CONTAINER = [
+  ...COMPOSITE_ROLES.flatMap((role) => [`[role="${role}"][tabindex="-1"]`, `[role="${role}"][aria-activedescendant]`]),
+  ...DIALOG_ROLES.map((role) => `[role="${role}"][tabindex="-1"]`),
+].join(', ');
 
 export const PLAIN_CONTROL_SELECTOR = `:is(${PLAIN_CONTROLS.join(', ')}):not(${FOCUS_CONTAINER})`;
 
