@@ -124,6 +124,12 @@ describe('context-warning Codex limits', () => {
     expect(output).toContain('272k long-context pricing boundary');
   });
 
+  it.each(['gpt-6.1-sol', 'gpt-6.1-terra'])('uses the 500k pricing boundary for %s', (model) => {
+    const output = runHook({ model, tokens: 400_000, window: 1_050_000 });
+
+    expect(output).toContain('500k long-context pricing boundary');
+  });
+
   it('uses the reported window for GPT-5.4 mini', () => {
     const output = runHook({ model: 'gpt-5.4-mini', tokens: 200_000, window: 400_000 });
 

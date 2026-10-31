@@ -138,6 +138,7 @@ PREMIUM_BOUNDARY = 200_000
 # Codex models whose long-context pricing starts above 272k input tokens. Models
 # without that pricing rule use their reported context window instead.
 CODEX_PREMIUM_BOUNDARIES = (
+    ("gpt-6.1", 500_000),
     ("gpt-5.6", 272_000),
     ("gpt-5.5", 272_000),
     ("gpt-5.4-mini", None),

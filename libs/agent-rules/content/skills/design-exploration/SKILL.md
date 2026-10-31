@@ -256,7 +256,7 @@ in progress) and `sketch release` it once the change is in.
 
 Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `variant`, `report`,
 `ready`, `rebase`, `merge`, `discard`, `inbox done` and `comment reply`. The id is the exact model
-id as free text, for example `claude-opus-5-5`, `gpt-5.6-sol` or `gemini-3-argon`. Studio shows it
+id as free text, for example `claude-opus-5-5`, `gpt-6.1-sol` or `gemini-3-argon`. Studio shows it
 on the variant, the reply and the part, so the user sees which model made what.
 
 **Never guess your id.** Use the one your prompt names. If your prompt names none and you do not

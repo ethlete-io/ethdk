@@ -1,6 +1,6 @@
 ---
 name: codex-subagent
-description: Delegate a task to a Codex agent (gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra, gpt-6-astra) instead of a Claude subagent - a second opinion from another model family, a review, or a cheap parallel lookup. Read before spawning a subagent when another model would answer better, and whenever the user says codex, GPT, or "second opinion".
+description: Delegate a task to a Codex agent (gpt-6-luna, gpt-6.1-terra, gpt-6.1-sol, gpt-6-astra) instead of a Claude subagent - a second opinion from another model family, a review, or a cheap parallel lookup. Read before spawning a subagent when another model would answer better, and whenever the user says codex, GPT, or "second opinion".
 kind: skill
 scope: both
 ---
@@ -24,7 +24,7 @@ only the final message, so one run costs you a few hundred tokens instead of the
 Below, `<skill-dir>` is the directory this file sits in.
 
 ```bash
-node <skill-dir>/codex-agent.mjs -m gpt-5.6-terra -e medium "<prompt>"
+node <skill-dir>/codex-agent.mjs -m gpt-6.1-terra -e medium "<prompt>"
 ```
 
 Options: `-m` model, `-e` effort (`low`, `medium`, `high`, `xhigh`), `-C` working root,
@@ -36,12 +36,12 @@ id and the log path. Read the log only when a run fails.
 
 ## Pick the model
 
-| Model           | The work it fits                                                                                                 |
-| --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `gpt-5.6-luna`  | Fast and cheap: a lookup, a grep, a question about one file.                                                     |
-| `gpt-5.6-terra` | Balanced agentic coding. The default for real work, and the wrapper's default.                                   |
-| `gpt-5.6-sol`   | A reliable workhorse for a straight task. It costs about what `fable` costs, so ask the user before you pick it. |
-| `gpt-6-astra`   | Complex, demanding work. The most expensive of the four, so ask the user before you pick it.                     |
+| Model           | The work it fits                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| `gpt-6-luna`    | Fast and cheap: a lookup, a grep, a question about one file.                                                 |
+| `gpt-6.1-terra` | Balanced agentic coding. The default for real work, and the wrapper's default.                               |
+| `gpt-6.1-sol`   | A reliable workhorse for a straight task. Its usage limit runs out fast, so ask the user before you pick it. |
+| `gpt-6-astra`   | Complex, demanding work. The most expensive of the four, so ask the user before you pick it.                 |
 
 Effort follows both the flag and the prompt. Pass `-e low` for a lookup and `-e high` for a
 hard bug. Say "keep it brief" in the prompt when you want a short answer.

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 
-const DEFAULT_MODEL = 'gpt-5.6-terra';
+const DEFAULT_MODEL = 'gpt-6.1-terra';
 const DEFAULT_TIMEOUT_SECONDS = 900;
 
 const USAGE = `Usage: node codex-agent.mjs [options] "<prompt>"
