@@ -1,0 +1,34 @@
+{
+  "target": "components/dialog",
+  "status": "ready",
+  "createdAt": "2026-10-31T01:38:29.524Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Dialog baseline",
+      "note": "First drawing of the SDK dialog, drawn by its mock from @ethlete/components/design over the visible backdrop: a dialog pane (dialogOverlayStrategy) with a title, a close et-icon-button (etOverlayClose; the SDK ships no header close button, apps compose it like this), a body and a footer with an outline Cancel and a filled Save; the confirm et-alert-dialog; a long body that scrolls between dynamic dividers. States: hover and focus-visible on the close button, focus-visible on both footer buttons and on both alert buttons. Today the focus ring of every button in the pane is the hovered mint (76 247 184): 1.20:1 against the light pane (dark 11.03:1), and the filled Save/Delete is a bare mint fill, 1.16:1 against the light pane (dark 11.40:1). Fixed numbers: title and body text 15.73:1 light, 14.50:1 dark; alert message (muted) 6.86:1 light, 5.86:1 dark; close icon in ink 4.81:1 light (6.74:1 hovered or focused), 11.40:1 dark; outline Cancel border and label 4.81:1 light, 11.40:1 dark; label on the mint fill 15.82:1. Pane 240 against the backdrop (32 % black over the page: 173 light, 16 dark) 1.96:1 light, 1.26:1 dark; the 1px pane border 1.11:1 against the light pane, 1.46:1 against the dark pane, 1.77:1 and 1.84:1 against the backdrop. Pane edges stay as today (Q98, open). Not this round's question: the close button's hover fill is 8 % mint, 1.02:1 against the light pane (dark 1.21:1), so in light only the icon darkening marks hover; the alert title size and the dialog title (apps style their own et-overlay-title; the mock draws it like the alert title, 18px 600); the 100px body min height that leaves the short dialog with a gap; button labels draw in the browser's button font in the mock. Variant b applies decided rules, not a new call: focus rings in --et-theme-color-ink-solid (Q88) and mint on light rule a (Q99), a mint fill gets a 1px inset ink edge. Variant a shows today for comparison."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: every focus ring in the pane (close, Cancel, Save, alert buttons) is the hovered mint, 1.20:1 against the light pane, 11.03:1 dark; under the 3:1 WCAG 1.4.11 asks in light. The filled Save and Delete are a bare mint fill, 1.16:1 against the light pane (dark 11.40:1); their labels carry them."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Decided rules Q88 and Q99, not a new call: every focus ring in the dialog is in --et-theme-color-ink-solid, 6.74:1 against the light pane (the focused ink), 11.40:1 dark. The filled Save and Delete keep the mint fill and get a 1px inset ink edge, 4.81:1 against the light pane and 4.13:1 against the fill (5.60:1 on the focused fill); in dark the ink is the mint, so the edge merges with the fill and the fill alone carries it at 11.40:1. Pane, text and backdrop as in a."
+    }
+  }
+}
