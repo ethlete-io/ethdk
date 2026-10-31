@@ -1,0 +1,29 @@
+{
+  "target": "components/description-list",
+  "status": "ready",
+  "createdAt": "2026-10-31T03:09:24.327Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Description list baseline",
+      "note": "First drawing of the SDK description list (dl[et-description-list]), drawn by its mock from @ethlete/components/design on the page, framed as its story does (420px wide, surface fill). It is a two-track grid of plain dt/dd: terms 14px in --et-surface-color-muted-solid, details 14px in --et-surface-color-solid. Inline (default): term column minmax(120px, max-content), 16px column gap, 8px row gap. Stacked: one column, term 2px above its detail, 8px between pairs. The lib has no dividers, no columns input, no fill or edge, and the story puts no links or actions in a value. States: default, stacked, long-value and long-value-stacked (an unbroken URL, a long email and a two-line term), empty-value (an empty dd collapses; the row keeps its term and the 8px gap), grouped and grouped-stacked (pairs wrapped in div). Lib bug shown in long-value: inline, an unbroken detail overflows the list (content 524px in a 480px frame) - the detail track is 1fr with an auto minimum and dd has no overflow-wrap; stacked wraps it. Numbers (light / dark): term text 7.81 / 6.94, detail text 17.93 / 17.18 against the page, both above 4.5. Q98: no fill, edge or divider exists; the list fill equals the page (1.00 / 1.00). No decided rule applies: no focus ring (Q88), no mint (Q99), so no variant b and no Q102. Variant a alone shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today, alone in this round: no decided rule applies (no focus ring, no mint, no edge). Term text 7.81:1 light, 6.94:1 dark; detail text 17.93 / 17.18. Q98: no divider or fill. Long unbroken values overflow the inline layout (lib bug)."
+    }
+  }
+}
