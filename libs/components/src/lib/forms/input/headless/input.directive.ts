@@ -79,13 +79,17 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
       this.mirrorOntoNativeHost(hostElement as HTMLInputElement, {
-        value: this.displayValue,
         placeholder: this.effectivePlaceholder,
         type: this.type,
         attributes: () => ({ autocomplete: this.autocomplete() || null }),
-        skip: () => this.nativeSyncSuppressed,
       });
     }
+
+    this.mirrorValueOntoNativeControl(this.nativeControl, {
+      value: this.displayValue,
+      model: this.value,
+      skip: () => this.nativeSyncSuppressed || this.composing(),
+    });
   }
 
   /** Suppresses the built-in native `(input)` sync - see `nativeSyncSuppressed`. */

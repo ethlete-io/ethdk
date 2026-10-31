@@ -64,12 +64,13 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
       this.mirrorOntoNativeHost(hostElement as HTMLInputElement, {
-        value: this.displayValue,
         placeholder: this.effectivePlaceholder,
         type: this.inputType,
         attributes: () => ({ autocomplete: this.autocomplete() || null }),
       });
     }
+
+    this.mirrorValueOntoNativeControl(this.nativeControl, { value: this.displayValue, model: this.value });
   }
 
   /** @internal Keeps the model in sync while typing into a standalone native host. */

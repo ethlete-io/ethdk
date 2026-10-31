@@ -73,6 +73,20 @@ describe('TextareaDirective static row attributes', () => {
   });
 });
 
+describe('TextareaComponent controlled reset', () => {
+  it('clears the native textarea when a value typed before any render is reset to empty', () => {
+    const driver = mountTextarea(StaticRowsTextareaTestHost);
+    const field = driver.field();
+
+    field.value = 'Typed before a render';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    driver.control.value.set('');
+    driver.tick();
+
+    expect(field.value).toBe('');
+  });
+});
+
 describe('TextareaDirective nullable bound field', () => {
   it('reads a null value as empty', () => {
     const driver = mountTextarea(NullableTextareaFieldTestHost);

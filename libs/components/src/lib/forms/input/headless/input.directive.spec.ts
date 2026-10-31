@@ -88,6 +88,20 @@ class NullableFieldTestHost {
 })
 class AriaLabelledbyOverrideTestHost {}
 
+describe('InputComponent controlled reset', () => {
+  it('clears the native input when a value typed before any render is reset to empty', () => {
+    const driver = mountInput(AriaLabelInputTestHost);
+    const field = driver.field();
+
+    field.value = 'Typed before a render';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    driver.control.value.set('');
+    driver.tick();
+
+    expect(field.value).toBe('');
+  });
+});
+
 describe('InputDirective', () => {
   describe('accessible name forwarding', () => {
     it('forwards a consumer aria-label onto the native input', () => {

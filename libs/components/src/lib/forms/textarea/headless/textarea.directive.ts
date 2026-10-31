@@ -97,10 +97,11 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
       this.nativeControl.set(hostElement as HTMLTextAreaElement);
       this.focusTarget.set(hostElement);
       this.mirrorOntoNativeHost(hostElement as HTMLTextAreaElement, {
-        value: this.displayValue,
         placeholder: this.effectivePlaceholder,
       });
     }
+
+    this.mirrorValueOntoNativeControl(this.nativeControl, { value: this.displayValue, model: this.value });
 
     effect(() => {
       const textarea = this.nativeControl();

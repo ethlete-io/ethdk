@@ -54,29 +54,36 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
   /** @internal The element `focus()` targets - the native control by default. */
   public focusTarget = signal<HTMLElement | null>(null);
 
+  /**
+   * @internal Keeps the native control's `value` in sync with the model. Writes whenever the DOM
+   * differs: a template `[value]` binding (or an effect on a computed display value) skips a reset
+   * back to the value it last saw, so a reset after an edit no render saw would never reach the DOM.
+   */
+  protected mirrorValueOntoNativeControl(
+    control: () => HTMLInputElement | HTMLTextAreaElement | null,
+    state: { value: () => string; model: () => unknown; skip?: () => boolean },
+  ) {
+    effect(() => {
+      const element = control();
+
+      state.model();
+      const value = state.value();
+
+      if (element && !state.skip?.() && element.value !== value) {
+        this.nativeHostRenderer.setProperty(element, 'value', value);
+      }
+    });
+  }
+
   /** @internal For a directive placed on the native element itself - a wrapper component binds these in its template. */
   protected mirrorOntoNativeHost(
     element: HTMLInputElement | HTMLTextAreaElement,
     state: {
-      value?: () => string;
       placeholder: () => string;
       type?: () => string;
       attributes?: () => Record<string, string | null>;
-      skip?: () => boolean;
     },
   ) {
-    const readValue = state.value;
-
-    if (readValue) {
-      effect(() => {
-        const value = readValue();
-
-        if (!state.skip?.() && element.value !== value) {
-          this.nativeHostRenderer.setProperty(element, 'value', value);
-        }
-      });
-    }
-
     const type = state.type;
 
     if (type) {
