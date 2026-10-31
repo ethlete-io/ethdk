@@ -256,13 +256,39 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(lines.filter((line) => line.startsWith('OPEN POINTS ') || line.startsWith('  '))).toEqual([
-      'OPEN POINTS acme: 4 in 3 parts',
-      '  components/button: 1 open comment (c-1); no implements',
-      '  components/card: no implements',
+      'OPEN POINTS acme: 7 in 4 parts',
+      '  components/button: no controls declared; 1 open comment (c-1); no implements',
+      '  components/card: no controls declared; no implements',
+      '  elements/hero: no controls declared',
       '  pages/home: no implements',
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
+
+  it('lists the contrasts the render found and, with --complete, the missing states', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8')
+        .replace(
+          'definePart<HeroProps>({',
+          "definePart<HeroProps>({ controls: { cta: { kind: 'button', input: ['pointer'] } },",
+        )
+        .replace('<h1>${film.title}</h1>', '<h1>${film.title}</h1><p style="color: var(--acme-surface)">Faint</p>'),
+    );
+
+    const code = await checkDesign({ target, argv: ['--product', 'acme', '--complete'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(code).toBe(1);
+    expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
+      '  elements/hero: 1 missing state (cta); 1 contrast under the rule (state default); no implements',
+    ]);
+  }, 120_000);
 
   it('fails on an implements path that does not exist', async () => {
     const target = acme();

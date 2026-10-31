@@ -176,6 +176,23 @@ export const interactionNamesOf = (source: string): string[] => {
   );
 };
 
+/**
+ * Whether a part file declares a control in `definePart({ controls: { … } })`, read without running it. A
+ * `controls` value that is not an object literal counts as declared, since it cannot be known.
+ */
+export const declaresControlsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find((candidate) => candidate.name && nameOf(candidate.name) === 'controls');
+
+  if (!property) return false;
+
+  return (
+    !ts.isPropertyAssignment(property) ||
+    !ts.isObjectLiteralExpression(property.initializer) ||
+    property.initializer.properties.length > 0
+  );
+};
+
 const literalOf = (node: ts.Expression | undefined) =>
   node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : null;
 

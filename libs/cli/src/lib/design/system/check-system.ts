@@ -1,13 +1,14 @@
 import { relative } from 'path';
 import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
-import { openPointsText } from './open-points';
+import { isMissingStateGap, partsCompletenessOf } from './complete';
+import { OpenPointsInput, openPointsText } from './open-points';
 import { Problem } from './problem';
 import { readOpenPoints } from './read-open-points';
-import { resolveProduct, ResolvedProduct } from './resolve-product';
+import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
-import { renderIssueLineOf, renderIssuesOf } from './render-check';
+import { RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
@@ -63,7 +64,7 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
-type CheckOptions = { target: string; config: DesignConfig; products: string[]; known?: string[] };
+type CheckOptions = { target: string; config: DesignConfig; products: string[]; known?: string[]; complete?: boolean };
 
 const typecheckOpenSketches = (options: { target: string; product: ResolvedProduct }): Problem[] =>
   listSketches({ productDir: options.product.dir, product: options.product.name }).flatMap((sketch) =>
@@ -158,46 +159,97 @@ export const checkSystem = (options: CheckOptions) => {
   return code;
 };
 
-const printOpenPoints = ({ target, config, products }: CheckOptions) => {
+const contrastsOf = (issues: RenderIssue[]): NonNullable<OpenPointsInput['contrasts']> => {
+  const seen = new Set<string>();
+
+  return issues.flatMap(({ rule, part, state, path }) => {
+    const key = `${part} ${state} ${path}`;
+
+    if (rule !== 'CONTRAST' || seen.has(key)) return [];
+
+    seen.add(key);
+
+    return [{ part, state, path }];
+  });
+};
+
+const missingStatesOf = async (
+  options: CheckOptions & { product: ResolvedProduct },
+): Promise<NonNullable<OpenPointsInput['missingStates']>> => {
+  const parts = options.product.parts
+    .filter((part) => part.layer !== 'pages' && part.layer !== 'foundations')
+    .map(partKeyOf);
+  const checked = await partsCompletenessOf({ ...options, parts });
+
+  if ('unavailable' in checked) {
+    console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
+
+    return [];
+  }
+
+  return [...checked.gaps].flatMap(([part, gaps]) =>
+    typeof gaps === 'string'
+      ? []
+      : [...new Set(gaps.filter(isMissingStateGap).map((gap) => gap.target.slice(part.length + 1)))].map((control) => ({
+          part,
+          control,
+        })),
+  );
+};
+
+const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null }) => {
+  const { target, config, products, rendered } = options;
+
   for (const name of products) {
     const entry = config.products?.[name];
 
     if (!entry) continue;
 
-    openPointsText(name, readOpenPoints(resolveProduct({ target, name, config: entry }))).forEach((line) =>
-      console.log(line),
-    );
+    const product = resolveProduct({ target, name, config: entry });
+    const findings =
+      rendered === null
+        ? {}
+        : {
+            contrasts: contrastsOf(rendered.filter((issue) => issue.product === name && issue.sketch === null)),
+            missingStates: options.complete ? await missingStatesOf({ ...options, product }) : undefined,
+          };
+
+    openPointsText(name, readOpenPoints(product, findings)).forEach((line) => console.log(line));
   }
 };
 
-const renderSystem = async (options: CheckOptions) => {
+const renderSystem = async (options: CheckOptions): Promise<{ code: number; rendered: RenderIssue[] | null }> => {
   const code = reportSystem({ ...options, warn: true });
 
-  if (code !== 0) return code;
+  if (code !== 0) return { code, rendered: null };
 
   const rendered = await renderIssuesOf({
     ...options,
     jobs: options.products.map((product) => ({ product, sketch: null, parts: null })),
   });
 
-  if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
-  else {
-    rendered.warnings.forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
-    rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+  if ('unavailable' in rendered) {
+    console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+
+    return { code: 0, rendered: null };
   }
 
-  return 'issues' in rendered && rendered.issues.length > 0 ? 1 : 0;
+  rendered.warnings.forEach((issue) => console.warn(`WARNING ${renderIssueLineOf(issue)}`));
+  rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+
+  return { code: rendered.issues.length > 0 ? 1 : 0, rendered: rendered.issues };
 };
 
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
  * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
- * It then lists the open points of each product's parts; they do not change the exit code.
+ * It then lists the open points of each product's parts, with the contrasts the drawing found and, with `complete`,
+ * the missing states of each component part as `design complete` draws them; they do not change the exit code.
  */
 export const checkSystemRendered = async (options: CheckOptions) => {
-  const code = await renderSystem(options);
+  const { code, rendered } = await renderSystem(options);
 
-  printOpenPoints(options);
+  await printOpenPoints({ ...options, rendered });
 
   if (code === 0) console.log('ok');
 

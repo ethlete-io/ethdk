@@ -642,6 +642,11 @@ const inventoryGapsOf = ({ part, inventory }: { part: string; inventory?: Invent
 
 export const completenessGapLineOf = (gap: CompletenessGap) => `${gap.code} ${gap.target} - ${gap.detail}`;
 
+const MISSING_STATE_CODES = ['CONTROL-UNDRAWN', 'CONTROL-GRID-MISSING', 'REQUIREMENT-MISSING'];
+
+/** Whether a gap is a declared control that no state draws, or that lacks a drawn interaction, look or surface. */
+export const isMissingStateGap = (gap: CompletenessGap) => MISSING_STATE_CODES.includes(gap.code);
+
 const NO_MOTION = '*, *::before, *::after { transition: none !important; animation: none !important; }';
 
 const PAD = 8;
@@ -1352,7 +1357,6 @@ export const completenessOf = async (options: {
   { gaps: CompletenessGap[]; exceptions?: ListedException[] } | { unavailable: string } | { problem: string }
 > => {
   const { target, config, product, part, sketch = null } = options;
-  const resolveChromium = options.chromiumOf ?? chromiumOf;
   const system = createSystemModules({ target, config });
   const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
 
@@ -1362,6 +1366,36 @@ export const completenessOf = async (options: {
         ? `variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product.name}" has no part "${part}"`
         : `product "${product.name}" has no part "${part}"`,
     };
+
+  const checked = await partsCompletenessOf({ ...options, parts: [part] });
+
+  if ('unavailable' in checked) return checked;
+
+  const gaps = checked.gaps.get(part) ?? [];
+
+  if (typeof gaps === 'string') return { problem: gaps };
+
+  return checked.exceptions.length > 0 ? { gaps, exceptions: checked.exceptions } : { gaps };
+};
+
+/**
+ * Checks each named part as `completenessOf` does, sharing one server, browser and cache, and answers the gaps of
+ * each part, or why it could not be checked as a string.
+ */
+export const partsCompletenessOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  parts: string[];
+  sketch?: SketchVariant | null;
+  chromiumOf?: typeof chromiumOf;
+}): Promise<
+  { gaps: Map<string, CompletenessGap[] | string>; exceptions: ListedException[] } | { unavailable: string }
+> => {
+  const { target, config, product, sketch = null } = options;
+  const resolveChromium = options.chromiumOf ?? chromiumOf;
+  const system = createSystemModules({ target, config });
+  const parts = (sketch ? system.drawnOf(product.name, sketch) : product)?.parts ?? [];
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -1441,11 +1475,11 @@ export const completenessOf = async (options: {
       return [...refused.map((detail) => ({ code: 'RENDER', target: key, detail })), ...excepted.gaps];
     };
 
-    const gaps = await gapsOfPart(part, []);
+    const gaps = new Map<string, CompletenessGap[] | string>();
 
-    if (typeof gaps === 'string') return { problem: gaps };
+    for (const part of options.parts) gaps.set(part, await gapsOfPart(part, []));
 
-    return exceptions.length > 0 ? { gaps, exceptions } : { gaps };
+    return { gaps, exceptions };
   } catch (error) {
     if (error instanceof ThumbUnavailableError) return { unavailable: error.message };
 

@@ -358,24 +358,32 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
 };
 
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
-  const { target, argv, invocation } = options;
+  const { target, invocation } = options;
+  const complete = options.argv.includes('--complete');
+  const argv = options.argv.filter((argument) => argument !== '--complete');
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
   const products = flags['--product'];
 
   if (products) {
     if (products.length === 0) {
-      console.error(`usage: ${invocation} check --product <name>…`);
+      console.error(`usage: ${invocation} check --product <name>… [--complete]`);
 
       return 2;
     }
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, complete });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystemRendered({ target, config, products: Object.keys(config.products) });
+    return checkSystemRendered({ target, config, products: Object.keys(config.products), complete });
+
+  if (complete) {
+    console.error(`usage: ${invocation} check [--product <name>…] --complete - --complete checks products only`);
+
+    return 2;
+  }
 
   const slug = flags['--call']?.[0];
   let failure = '';

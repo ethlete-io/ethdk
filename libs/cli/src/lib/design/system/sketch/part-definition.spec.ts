@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stateNamesOf, widthsOf, withMadeBy, withNote } from './part-definition';
+import { declaresControlsOf, stateNamesOf, widthsOf, withMadeBy, withNote } from './part-definition';
 
 const part = `import { definePart } from '@design-system';
 export default definePart({
@@ -56,5 +56,14 @@ describe('widthsOf', () => {
     expect(widthsOf(`export default definePart({ widths: [240, 520], states: {} });`)).toEqual([240, 520]);
     expect(widthsOf(`export default definePart({ states: {} });`)).toEqual([]);
     expect(widthsOf(`export default definePart({ widths: WIDTHS, states: {} });`)).toBeNull();
+  });
+});
+
+describe('declaresControlsOf', () => {
+  it('answers whether definePart declares a control', () => {
+    expect(declaresControlsOf(part)).toBe(false);
+    expect(declaresControlsOf(part.replace('render:', 'controls: {},\n  render:'))).toBe(false);
+    expect(declaresControlsOf(part.replace('render:', "controls: { a: { kind: 'button' } },\n  render:"))).toBe(true);
+    expect(declaresControlsOf(part.replace('render:', 'controls,\n  render:'))).toBe(true);
   });
 });
