@@ -749,7 +749,7 @@ machen".
    go away; the Rust call tools stay as they are, and the chat sends `tools: null`.
 2. Q127: a root view-context store that the system and sketch views write (product, part, sketch, variant,
    selection). A chip above the input shows it; one click removes it for the next message.
-3. Q128: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
+3. Q128, after the MVP (Studio MVP scope, 2026-10-31), not built now: during a run, Studio compares the frame revisions to find the part or sketch the run changed. If the view
    is still the one the message was sent from, Studio opens the result; otherwise the reply shows a link.
 4. Q130: a "New chat" button that clears the messages and the session. No list of old chats (grill, 2026-10-31).
 
