@@ -426,5 +426,12 @@
     "note": "Q102 lead call (ethlete-sdk-76): the filled icon button edge draws only in the light scheme, as every inset ink edge; lib 83b0a8ba6",
     "hash": "d9fb06adc1497d70",
     "at": "2026-10-31T15:18:35.903Z"
+  },
+  {
+    "part": "components/tabs",
+    "by": "claude-opus-5-5",
+    "note": "Q88 (Tom, global ring rule) wins over the merged tab-group ring: light-dark(ink, primary); lead call Q96 (ethlete-sdk-76)",
+    "hash": "965ae70a1a173a15",
+    "at": "2026-10-31T15:30:23.013Z"
   }
 ]

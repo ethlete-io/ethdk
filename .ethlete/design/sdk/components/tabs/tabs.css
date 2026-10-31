@@ -1,10 +1,10 @@
 @layer components {
   .et-tab-group__trigger {
-    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+    --_et-focus-ring-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
   }
 
   .et-tab-group__trigger:focus-visible .et-tab-group__trigger-content {
-    outline-color: var(--et-theme-color-ink-solid);
+    outline-color: light-dark(var(--et-theme-color-ink-solid), var(--et-theme-color-primary-solid));
   }
 
   .et-tab-group {
