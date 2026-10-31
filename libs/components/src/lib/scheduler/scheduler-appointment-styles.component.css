@@ -110,7 +110,9 @@
 
   .et-scheduler-appointment-chain-count {
     display: flex;
-    flex-shrink: 0;
+    overflow: hidden;
+    min-inline-size: 0;
+    flex-shrink: 100;
     align-items: center;
     gap: 2px;
     font-variant-numeric: tabular-nums;
