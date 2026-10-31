@@ -646,10 +646,6 @@ export const sketchRoundsOf = (sketch: ListedSketch, openRounds: Record<string, 
 /** The canvas column or column group key of a round. */
 export const roundColumnKeyOf = (round: string) => `round ${round}`;
 
-/** The open flag of every round, to remember; it names the newest round, so a later round folds the older ones again. */
-export const openRoundsOf = (rounds: ShownRound[]): Record<string, boolean> =>
-  Object.fromEntries(rounds.map((round) => [round.key, round.open]));
-
 /** The canvas row head key of a state no shown variant changes. */
 export const stateRowKeyOf = (state: string) => `${UNCHANGED_ROW} ${state}`;
 
@@ -812,7 +808,10 @@ export const sketchMatrixOf = ({
   const currentSection = !roundsGrouped ? undefined : firstOpen ? roundColumnKeyOf(firstOpen.key) : CURRENT;
   const sections = !roundsGrouped
     ? []
-    : [...(firstOpen ? [] : [CURRENT]), ...newestFirst.map((round) => roundColumnKeyOf(round.key))];
+    : [
+        ...(firstOpen ? [] : [CURRENT]),
+        ...newestFirst.filter((round) => round.open).map((round) => roundColumnKeyOf(round.key)),
+      ];
   const pending = new Set(sketch.status === 'in progress' ? (rounds.at(-1)?.variants ?? []) : []);
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
@@ -840,7 +839,6 @@ export const sketchMatrixOf = ({
       error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
     };
   };
-  const roundHeads: CanvasRowHead[] = [];
   const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): MatrixColumn[] => {
     const name = roundNameOf(round);
     const shownNote = [round.note, round.lost && `Lost: ${round.lost}`].filter(Boolean).join('\n\n');
@@ -849,25 +847,12 @@ export const sketchMatrixOf = ({
 
     if (round.variants.length === 0) return [];
     if (!roundsGrouped) return round.variants.map(variantColumnOf);
-    if (!round.open) {
-      const label = [name, round.variants.join(' ')].join(' · ');
-
-      roundHeads.push({
-        key: section,
-        label,
-        title: [`Open ${label}`, shownNote].filter(Boolean).join('\n\n'),
-        open: false,
-        section,
-        ...note,
-      });
-
-      return [];
-    }
+    if (!round.open) return [];
 
     const group = {
       key: section,
       label: name,
-      title: [`Fold ${name}`, shownNote].filter(Boolean).join('\n\n'),
+      ...(shownNote === '' ? {} : { title: shownNote }),
       ...note,
     };
 
@@ -1127,7 +1112,7 @@ export const sketchMatrixOf = ({
       size,
       interactions,
       interaction,
-      rowHeads: [...roundHeads, ...rowHeads],
+      rowHeads: rowHeads,
       sections,
     };
 
@@ -1149,7 +1134,7 @@ export const sketchMatrixOf = ({
     size,
     interactions,
     interaction,
-    rowHeads: [...roundHeads, ...rowHeads].map(inBand),
+    rowHeads: rowHeads.map(inBand),
     sections: [...(sections.length > 0 ? sections : [SKETCH_SECTION]), IN_CONTEXT],
   };
 };

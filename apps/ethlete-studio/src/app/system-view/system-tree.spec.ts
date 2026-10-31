@@ -14,7 +14,6 @@ import {
   mergePreviewOf,
   PENDING_LABEL,
   sketchMatrixOf,
-  openRoundsOf,
   sketchRoundsOf,
   stateRowKeyOf,
   treeOf,
@@ -978,30 +977,21 @@ describe('sketchMatrixOf', () => {
       variantInfo: { a: { round: 'r1' }, b: { round: 'r1', authors: ['gpt-5.6-sol'] }, c: { round: 'r2' } },
     });
 
-    it('shows each round as its own band, newest on top, and folds an older round into a row head with its title, note and variants', () => {
+    it('shows the open round as its band, and drops an older round with no head', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded });
 
-      expect(matrix.sections).toEqual(['round r2', 'round r1']);
+      expect(matrix.sections).toEqual(['round r2']);
       expect(matrix.columns).toEqual([
         { key: 'current', label: 'current', drawing: false, section: 'round r2' },
         {
           key: 'c',
           label: 'c',
           drawing: false,
-          group: { key: 'round r2', label: 'r2 · Combined', title: 'Fold r2 · Combined' },
+          group: { key: 'round r2', label: 'r2 · Combined' },
           section: 'round r2',
         },
       ]);
-      expect(matrix.rowHeads).toEqual([
-        {
-          key: 'round r1',
-          label: 'r1 · Pill or square · a b',
-          title: 'Open r1 · Pill or square · a b\n\nToo round',
-          note: 'Too round',
-          open: false,
-          section: 'round r1',
-        },
-      ]);
+      expect(matrix.rowHeads).toEqual([]);
       expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
     });
 
@@ -1026,12 +1016,12 @@ describe('sketchMatrixOf', () => {
       ]);
     });
 
-    it('puts the current column in a band of its own while every round is folded', () => {
+    it('puts the current column in a band of its own while no round is open', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: false, r2: false } });
 
-      expect(matrix.sections).toEqual(['current', 'round r2', 'round r1']);
+      expect(matrix.sections).toEqual(['current']);
       expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false, section: 'current' }]);
-      expect(matrix.rowHeads.map((head) => head.key)).toEqual(['round r2', 'round r1']);
+      expect(matrix.rowHeads).toEqual([]);
     });
 
     it('marks every frame of the newest round pending until the sketch is ready', () => {
@@ -1069,7 +1059,7 @@ describe('sketchMatrixOf', () => {
       ).toEqual(['rest', 'disabled']);
     });
 
-    it('opens and folds rounds as the user chose, and keeps a new round open', () => {
+    it('shows only the round the user chose, and keeps a new round open', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: false } });
 
       expect(matrix.columns.map((column) => [column.key, column.group?.label, column.group?.note])).toEqual([
@@ -1077,15 +1067,15 @@ describe('sketchMatrixOf', () => {
         ['a', 'r1 · Pill or square', 'Too round'],
         ['b', 'r1 · Pill or square', 'Too round'],
       ]);
-      expect(matrix.rowHeads.map((head) => [head.key, head.open])).toEqual([['round r2', false]]);
-      expect(matrix.sections).toEqual(['round r2', 'round r1']);
+      expect(matrix.rowHeads).toEqual([]);
+      expect(matrix.sections).toEqual(['round r1']);
       expect(matrix.columns[2]?.label).toBe('b · gpt-5.6-sol');
       expect(sketchRoundsOf(rounded, { r1: false }).map((round) => round.open)).toEqual([false, true]);
     });
 
     it('folds the older rounds again when a newer round came after the choice', () => {
       const third = { ...rounded, rounds: [...(rounded.rounds ?? []), { key: 'r3', title: 'Smaller', note: '' }] };
-      const chosen = openRoundsOf(sketchRoundsOf(rounded, { r1: true, r2: true }));
+      const chosen = { r1: true, r2: true };
 
       expect(sketchRoundsOf(rounded, chosen).map((round) => round.open)).toEqual([true, true]);
       expect(sketchRoundsOf(third, chosen).map((round) => round.open)).toEqual([false, false, true]);

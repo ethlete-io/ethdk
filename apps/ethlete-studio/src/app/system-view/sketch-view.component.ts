@@ -14,7 +14,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   Observable,
@@ -85,7 +85,6 @@ import {
   reportExpiryOf,
   roundColumnKeyOf,
   sketchMatrixOf,
-  openRoundsOf,
   sketchStateKeyOf,
   stateOfRowKey,
   stateRowKeyOf,
@@ -562,6 +561,22 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </div>
     }
 
+    @if (roundChoices().length > 0) {
+      <div class="flex items-center border-b border-(--et-surface-border-solid) px-4 py-2" data-round-picker>
+        <et-select
+          [value]="shownRoundKey()"
+          (valueChange)="pickRound($event)"
+          class="min-w-0 max-w-120"
+          size="sm"
+          aria-label="Round"
+        >
+          @for (choice of roundChoices(); track choice.key) {
+            <et-select-option [value]="choice.key" [label]="choice.label">{{ choice.label }}</et-select-option>
+          }
+        </et-select>
+      </div>
+    }
+
     <ethlete-design-canvas
       [frames]="notedFrames()"
       [columns]="canvasColumns()"
@@ -578,7 +593,6 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [sections]="showing() === 'merge' ? [] : matrix().sections"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
-      (columnToggle)="toggleRound($event)"
       (groupSwitch)="switchChangedAreaOfGroup($event)"
       (rowToggle)="toggleState($event)"
       class="min-h-0 flex-1"
@@ -592,6 +606,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    SELECT_IMPORTS,
     FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,
     CommentDraftComponent,
@@ -675,6 +690,20 @@ export class SketchViewComponent {
   private openRounds = linkedSignal(() =>
     this.remembered().roundsFor === this.current().createdAt ? (this.remembered().rounds ?? {}) : {},
   );
+
+  public shownRounds = computed(() => sketchRoundsOf(this.current(), this.openRounds()));
+
+  protected roundChoices = computed(() =>
+    this.shownRounds()
+      .map((round, index) => ({ round, index }))
+      .filter(({ round }) => round.variants.length > 0)
+      .map(({ round, index }) => ({
+        key: round.key,
+        label: [`Runde ${index + 1}`, round.title].filter(Boolean).join(' · '),
+      })),
+  );
+
+  protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
 
   private openStates = linkedSignal(() => this.remembered().states ?? {});
 
@@ -911,9 +940,7 @@ export class SketchViewComponent {
   protected interactionChoices = computed(() => [ALL, ...this.matrix().interactions]);
 
   private areaRounds = computed((): AreaRound[] => {
-    const open = sketchRoundsOf(this.current(), this.openRounds()).filter(
-      (round) => round.open && round.variants.length > 0,
-    );
+    const open = this.shownRounds().filter((round) => round.open && round.variants.length > 0);
     const newest = open.at(-1)?.key;
 
     return open.map((round) => ({
@@ -1054,25 +1081,16 @@ export class SketchViewComponent {
     if (round && shown) this.switchChangedArea(round.key, !shown.on);
   }
 
-  protected toggleRound(key: string) {
-    const shown = sketchRoundsOf(this.current(), this.openRounds());
-    const round = shown.find((candidate) => roundColumnKeyOf(candidate.key) === key);
+  protected pickRound(key: unknown) {
+    if (typeof key !== 'string') return;
 
-    if (!round) return;
-
-    const rounds = { ...openRoundsOf(shown), [round.key]: !round.open };
+    const rounds = Object.fromEntries(this.shownRounds().map((round) => [round.key, round.key === key]));
 
     this.openRounds.set(rounds);
     this.remember({ rounds, roundsFor: this.current().createdAt });
   }
 
   protected toggleState(key: string) {
-    if (sketchRoundsOf(this.current()).some((round) => roundColumnKeyOf(round.key) === key)) {
-      this.toggleRound(key);
-
-      return;
-    }
-
     const head = this.matrix().rowHeads.find((candidate) => candidate.key === key);
     const state = stateOfRowKey(key);
 
@@ -1231,9 +1249,8 @@ export class SketchViewComponent {
       interaction !== this.matrix().interaction &&
       this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
-    const shown = sketchRoundsOf(this.current(), this.openRounds());
-    const folded = shown.find((round) => !round.open && round.variants.includes(variant));
-    const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
+    const other = this.shownRounds().find((round) => !round.open && round.variants.includes(variant));
+    const rounds = other ? Object.fromEntries(this.shownRounds().map((round) => [round.key, round === other])) : null;
     const unfold = this.matrix().rowHeads.some((head) => !head.open && head.key === stateRowKeyOf(state));
     const states = unfold ? { ...this.openStates(), [state]: true } : null;
 

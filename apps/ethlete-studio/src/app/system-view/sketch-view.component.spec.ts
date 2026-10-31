@@ -848,6 +848,63 @@ describe('SketchViewComponent on a refused merge', () => {
     expect(refusal?.querySelector('[data-copy-rebase]')?.textContent?.trim()).toBe('Copied');
   });
 
+  it('renders one round at a time, the newest first, and switches it from the header select', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const rounded = {
+      ...SKETCH,
+      variants: ['a', 'b'],
+      rounds: [
+        { key: 'r1', title: 'First', note: '' },
+        { key: 'r2', title: 'Second', note: '' },
+      ],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r2' } },
+      targets: ['a', 'b'].map((variant) => ({ variant, states: ['default'], interactions: [] })),
+    } satisfies ListedSketch;
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', rounded);
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const canvas = fixture.debugElement.query(By.directive(DesignCanvasComponent))
+      .componentInstance as DesignCanvasComponent;
+    const columns = () => canvas.columns().map((column) => column.key);
+    const picker = () => (fixture.nativeElement as HTMLElement).querySelector('[data-round-picker] et-select');
+    const component = fixture.componentInstance as unknown as {
+      roundChoices: () => { key: string; label: string }[];
+      shownRoundKey: () => string;
+      pickRound: (key: string) => void;
+    };
+
+    expect(picker()).not.toBeNull();
+    expect(component.roundChoices().map((choice) => choice.label)).toEqual(['Runde 1 · First', 'Runde 2 · Second']);
+    expect(columns()).toEqual(['b']);
+
+    component.pickRound('r1');
+    await settle(fixture);
+
+    expect(component.shownRoundKey()).toBe('r1');
+    expect(columns()).toEqual(['a']);
+
+    fixture.componentRef.setInput('sketch', {
+      ...rounded,
+      variants: ['a', 'b', 'c'],
+      rounds: [...rounded.rounds, { key: 'r3', title: 'Third', note: '' }],
+      variantInfo: { ...rounded.variantInfo, c: { round: 'r3' } },
+      targets: ['a', 'b', 'c'].map((variant) => ({ variant, states: ['default'], interactions: [] })),
+    });
+    await settle(fixture);
+
+    expect(component.shownRoundKey()).toBe('r3');
+    expect(columns()).toEqual(['c']);
+  });
+
   it('crops the open round to its changed area, with a switch in its header that shows the whole page again', async () => {
     const asked: string[] = [];
 
