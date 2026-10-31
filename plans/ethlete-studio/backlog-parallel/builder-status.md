@@ -135,3 +135,10 @@
   - Q235 headless check: done, all four checks pass (one round, select lists rounds, opens newest, switches);
     `q235-verify.mjs` deleted.
   - Watch CI for 456dae1c3 or later: `gh run list --branch next --limit 5`.
+
+## Builder ethlete-sdk-4b (fresh context, 2026-10-31)
+
+- As built: CI browser specs (165155b6f). The `test` job in ci.yml installs Chromium. frame-fill, covered and
+  render-check specs throw under `CI` when no browser starts; locally they still skip. Local `CI=true nx test cli`:
+  1823 pass; `nx lint cli` clean. The GitHub run of the new step is not seen yet.
+- Waiting: Q243 (render-check rule for issues the merged part already shows) and Q242 pick, both with Tom.
