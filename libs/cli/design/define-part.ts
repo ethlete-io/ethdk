@@ -10,6 +10,8 @@ export { iconSheet } from './icon-sheet';
 export type { IconSheetIcon, IconSheetOptions } from './icon-sheet';
 export { interactionRows } from './interaction-rows';
 export type { InteractionRowsOptions } from './interaction-rows';
+export { logoSheet } from './logo-sheet';
+export type { LogoSheetMark, LogoSheetOptions } from './logo-sheet';
 export { spring } from './spring';
 export type { Spring } from './spring';
 export { svgAsset } from './svg-asset';

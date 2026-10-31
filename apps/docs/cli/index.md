@@ -205,6 +205,18 @@ iconSheet({
 });
 ```
 
+`logoSheet({ marks })` draws a `foundations/logo` part. Each mark `{ title, svg, sizes, onLight? }` gets a row under its
+`title`: the raw `svg` asset at each of `sizes` in px, and, when `onLight` lists sizes, the mark at those sizes on a light bar.
+
+```ts
+logoSheet({
+  marks: [
+    { title: 'Mark at app-icon sizes', svg: mark, sizes: [16, 32, 512], onLight: [16, 32] },
+    { title: 'Line mark in the rail', svg: markLine, sizes: [16, 24, 32] },
+  ],
+});
+```
+
 A flow line (`<product>/flows/<name>.json`) animates when it has `"transition": "view"`. `et design motion flow <flow> <line>`
 draws the `from` page, then morphs it to the `to` page inside a same-document View Transition, stepped and shot like a motion, in
 the whole viewport of `--preset` (the product's first preset by default). The `to` page's styles, with its
