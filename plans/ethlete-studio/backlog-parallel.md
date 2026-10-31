@@ -741,7 +741,7 @@ machen".
 - Q135 after the MVP, unless one blocks Tom while he designs Studio (then it is friction and in scope): CEF runtime,
   more motion work, the SDK catalog in Studio, existing-code import, the git-free designer workflow, the old-chats
   list, wireframes.
-- Q178 after the MVP (Tom, 2026-10-31): Studio shows only the SDK base parts the Studio product actually uses, not
+- Q178 (Tom, 2026-10-31; moved into the MVP by Q218): Studio shows only the SDK base parts the Studio product actually uses, not
   every SDK part.
 - Q184 after the MVP (Tom, 2026-10-31): a full performance investigation of Studio and the design server. The
   renderer still freezes again and again after the merge-freeze fix (`373e73641`); Tom: "das darf nicht passieren,
@@ -1125,3 +1125,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   focus-ring tokens for offset, width and colour (today private `--_et-*` vars; an SDK API call for Tom).
 - **Q217 (Tom, 2026-10-31):** the floating zoom chip takes the SDK overlay shadow, so it is a floating panel under
   Q216 (own surface step + shadow) and its border contrast findings go away. No rule change.
+- **Q218 (Tom, 2026-10-31, option a):** Q178 moves into the MVP. The Studio part tree puts the SDK base parts that no
+  Studio part imports into their own subtree ("Not used in Studio"), collapsed by default. The tool computes the set
+  from the import graph of the Studio parts (as the token check reads imported SDK design modules since
+  `cb1d48d58`), so it stays current with no list to maintain; no `hideBaseParts` entry. The parts stay reachable and
+  every check still runs on them. Builder 57 builds it after pilot slice 1.
