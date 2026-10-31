@@ -19,6 +19,7 @@ import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
 import { THEMING_TEXT } from './theming-text';
 import { ComparePart } from './compare-command';
+import { StartHarnessServer } from './harness-server';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
 
@@ -64,6 +65,7 @@ const task = (
   argv: string[],
   diff = vi.fn((): string[] => []),
   compare: ComparePart = vi.fn(async () => 'compare must not run'),
+  start: StartHarnessServer = vi.fn(async () => 'no server must start'),
 ) =>
   designTask({
     target,
@@ -72,6 +74,7 @@ const task = (
     load: async () => CHIP_STATES,
     diff,
     compare,
+    start,
   });
 
 describe('part task', () => {
@@ -222,9 +225,15 @@ describe('part task', () => {
 
     const inside = vi.fn(() => ['libs/chip/chip.component.ts', 'libs/chip/chip.component.css']);
 
-    expect(await task(target, ['--verify'], inside)).toBe(1);
-    expect(lines.join('\n')).toContain('needs --url');
-    expect(inside).not.toHaveBeenCalled();
+    const stop = vi.fn(async () => undefined);
+    const start = vi.fn(async () => ({ url: 'http://127.0.0.1:50001', stop }));
+    const started = vi.fn<ComparePart>(async () => ({ green: false, states: CHIP_STATES }));
+
+    expect(await task(target, ['--verify'], inside, started, start)).toBe(1);
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(started).toHaveBeenCalledWith(expect.objectContaining({ url: 'http://127.0.0.1:50001' }));
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(readImplemented(dir)).toEqual({});
 
     const red = vi.fn<ComparePart>(async () => ({ green: false, states: CHIP_STATES }));
 

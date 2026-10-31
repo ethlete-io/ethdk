@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
 import { comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
+import { StartHarnessServer } from './harness-server';
 import { comparePngs, decodePng, encodePng, harnessUrlOf, Pixels } from './part-compare';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
@@ -197,7 +198,7 @@ describe('part compare', () => {
     expect(lines).toEqual(['a ok']);
   });
 
-  it('refuses without a go or --url, and exits 0 only when every state is ok', async () => {
+  it('refuses without a go, and exits 0 only when every state is ok', async () => {
     const target = checkout();
     const lines = output();
     const shoot = vi.fn<ShootStates>(async () => ({
@@ -212,7 +213,7 @@ describe('part compare', () => {
         shoot,
       });
 
-    expect(await compare([])).toBe(2);
+    expect(await compare(['--state'])).toBe(2);
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines.join('\n')).toContain('has no go');
 
@@ -225,6 +226,40 @@ describe('part compare', () => {
     lines.length = 0;
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines).toEqual(['the harness page http://localhost:9/__design-harness did not load']);
+  });
+
+  it('without --url starts the harness app, compares against it and always stops it', async () => {
+    const target = checkout();
+    const lines = output();
+    const stop = vi.fn(async () => undefined);
+    const start = vi.fn<StartHarnessServer>(async () => ({ url: 'http://127.0.0.1:50001', stop }));
+    const shoot = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+    const compare = () =>
+      designCompare({ target, argv: ['components/chip', '--product', 'app-a'], invocation: 'et design', shoot, start });
+
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+
+    expect(await compare()).toBe(0);
+    expect(start).toHaveBeenCalledWith(expect.objectContaining({ target }));
+    expect(shoot).toHaveBeenCalledWith(expect.objectContaining({ url: 'http://127.0.0.1:50001' }));
+    expect(stop).toHaveBeenCalledTimes(1);
+
+    shoot.mockResolvedValueOnce('the harness page did not load');
+    expect(await compare()).toBe(1);
+    expect(stop).toHaveBeenCalledTimes(2);
+
+    shoot.mockRejectedValueOnce(new Error('chromium crashed'));
+    await expect(compare()).rejects.toThrow('chromium crashed');
+    expect(stop).toHaveBeenCalledTimes(3);
+
+    start.mockResolvedValueOnce('product "app-a" has no harness in config.json - pass --url <app dev server url>');
+    lines.length = 0;
+    expect(await compare()).toBe(1);
+    expect(lines.at(-1)).toContain('pass --url');
+    expect(stop).toHaveBeenCalledTimes(3);
   });
 });
 

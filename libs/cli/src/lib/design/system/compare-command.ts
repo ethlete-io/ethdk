@@ -8,6 +8,7 @@ import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
+import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { compareLineOf, comparePngs, HARNESS_HOST_SELECTOR, harnessUrlOf } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -15,7 +16,7 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
-export const COMPARE_USAGE = 'compare <layer>/<name> --product <name> --url <app dev server url> [--state <name>]';
+export const COMPARE_USAGE = 'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>]';
 
 export type StateShot = { state: string; design: Buffer; app: Buffer };
 
@@ -168,11 +169,12 @@ export const designCompare = async (options: {
   argv: string[];
   invocation: string;
   shoot?: ShootStates;
+  start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
   const args = argsOf(options.argv, ['--product', '--url', '--state']);
 
-  if (typeof args === 'string' || args.positional.length !== 1 || !args.values['--url']) {
+  if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);
 
     console.error(`usage: ${invocation} ${COMPARE_USAGE}`);
@@ -206,14 +208,21 @@ export const designCompare = async (options: {
     return 1;
   }
 
-  const compared = await comparePart({
+  const compared = await withHarnessUrl({
     target,
-    config,
     product,
-    part: task.part,
     url: args.values['--url'],
-    only: args.values['--state'] ?? null,
-    shoot: options.shoot,
+    start: options.start,
+    run: (url) =>
+      comparePart({
+        target,
+        config,
+        product,
+        part: task.part,
+        url,
+        only: args.values['--state'] ?? null,
+        shoot: options.shoot,
+      }),
   });
 
   if (typeof compared === 'string') {

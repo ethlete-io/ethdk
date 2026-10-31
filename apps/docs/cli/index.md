@@ -345,9 +345,9 @@ without an `implements` link, or with only a route link: add the `component` of 
 allowed files are the folder of that component.
 `.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
 when the part changed but no state's props did, the task lists all states. `--verify [<rev>]` checks the files of a
-commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. It needs
-`--url <app dev server url>`: when the files pass, it runs compare over all states, and only when every state is ok it
-records the part hash, the time and a props hash per state in `implemented.json`.
+commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. When the
+files pass, it runs compare over all states, on `--url` or a server it starts as compare does, and only when every
+state is ok it records the part hash, the time and a props hash per state in `implemented.json`.
 
 `et design compare components/chip --product app-a --url http://localhost:4200` compares each state of a part, or the
 one `--state` names, with the app. It refuses a part as `task` does. For each state it draws the design frame and
@@ -356,7 +356,9 @@ device scale, and shoots the `[data-design-harness-host]` element. The app owns 
 `implements` component with the state's props inside the host. Pixels compare at tolerance 0, and a size mismatch
 fails too. It prints one line per state, `default ok`, `removable DIFF 12 px` or `removable SIZE 120x32 vs 118x32`, and
 keeps the design, app and diff pictures of each failing state in a temp folder it prints. It exits 0 only when every
-state is ok, and names the URL when the page shows no host element. It never starts the app server.
+state is ok, and names the URL when the page shows no host element. Without `--url` it starts the dev server of the
+product's harness app (`nx run <project>:serve`) on a free port, waits until it serves `/__design-harness`, and stops
+it afterwards, also on failure or Ctrl-C.
 
 The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
 `"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and

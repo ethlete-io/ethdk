@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { createDesignServer } from '../serve';
 import { comparePart, ComparePart } from './compare-command';
 import { harnessStaleOf } from './harness-map';
+import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
   allowedFilesOf,
   filesOutsideOf,
@@ -18,7 +19,7 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
 
-export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>] --url <app dev server url>]';
+export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>] [--url <app dev server url>]]';
 
 type LoadStates = (options: { target: string; product: ResolvedProduct; file: string }) => Promise<unknown>;
 
@@ -57,7 +58,7 @@ const verifyOf = (argv: string[]) => {
 };
 
 /**
- * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>] --url`
+ * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>]`
  * checks the files of a commit or range against the files the task allows, runs compare, and records the part as
  * implemented when both pass.
  */
@@ -68,6 +69,7 @@ export const designTask = async (options: {
   load?: LoadStates;
   diff?: DiffFiles;
   compare?: ComparePart;
+  start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
@@ -109,14 +111,6 @@ export const designTask = async (options: {
   const allowed = allowedFilesOf({ product: product.name, component: task.component });
 
   if (rev !== null) {
-    const url = args.values['--url'];
-
-    if (!url) {
-      console.error(`task --verify needs --url <app dev server url> to run compare`);
-
-      return 1;
-    }
-
     const stale = harnessStaleOf({ target, product });
 
     if (stale !== null) {
@@ -148,13 +142,12 @@ export const designTask = async (options: {
 
     console.log(`${files.length} file${files.length === 1 ? '' : 's'} of ${range} inside the allowed files`);
 
-    const compared = await (options.compare ?? comparePart)({
+    const compared = await withHarnessUrl({
       target,
-      config,
       product,
-      part: task.part,
-      url,
-      only: null,
+      url: args.values['--url'],
+      start: options.start,
+      run: (url) => (options.compare ?? comparePart)({ target, config, product, part: task.part, url, only: null }),
     });
 
     if (typeof compared === 'string' || !compared.green) {
