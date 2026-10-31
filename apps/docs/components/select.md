@@ -481,7 +481,7 @@ Clicking anywhere on the form field's control frame - not just the trigger - ope
 
 ## Theming
 
-The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step.
+The trigger inherits the form field's chrome (border, focus ring, sizes, label modes - including floating labels). Colors come from the app-registered [surface/color theme systems](/core/theming); the panel re-applies the trigger location's theme context inside the overlay and elevates the surface one step. The check mark of a selected option and the keyboard-active outline use `--et-theme-color-ink-solid`, so both keep a 3:1 contrast on a light surface. A selected option shows only the check, with no fill.
 
 The clear button and the chevron render in the form field's [suffix slot](/components/forms#one-suffix-stack), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use - ahead of a consumer's own `[etInputSuffix]` and the busy spinner. Their size follows `--et-form-field-affix-icon-size`, so it tracks the field's `size` like every other control.
 

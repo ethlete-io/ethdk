@@ -61,7 +61,8 @@
       opacity 120ms ease;
 
     &:where([data-active][data-active-source='keyboard']) {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+      outline: 2px solid var(--et-theme-color-ink-solid, currentColor);
+      outline-offset: -2px;
     }
 
     @media (hover: hover) {
@@ -90,7 +91,7 @@
       flex: none;
       inline-size: var(--et-select-option-check-size);
       block-size: var(--et-select-option-check-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
+      color: var(--et-theme-color-ink-solid, currentColor);
       /* hidden via opacity, NOT visibility — an explicit `visibility: visible` would punch
          through the pane's positioning phase (`visibility: hidden`) and paint the check
          before the panel itself becomes visible */

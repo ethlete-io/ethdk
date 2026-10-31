@@ -72,6 +72,7 @@ const heightOf = (locator: Locator) => locator.evaluate((element) => element.get
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 const backgroundOf = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+const outlineStyleOf = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).outlineStyle);
 
 async function pressArrowDown(page: Page, times: number): Promise<void> {
   for (let press = 0; press < times; press++) await page.keyboard.press('ArrowDown');
@@ -427,7 +428,7 @@ test.describe('select / pointer', () => {
     const dragonfruit = page.getByRole('option', { name: 'Dragonfruit' });
 
     await expect(dragonfruit).toHaveAttribute('data-active', 'true');
-    await expect.poll(() => backgroundOf(dragonfruit)).not.toBe(TRANSPARENT);
+    await expect.poll(() => outlineStyleOf(dragonfruit)).toBe('solid');
 
     await page.mouse.click(listbox.x + listbox.width + 40, listbox.y + listbox.height / 2);
     await expect(page.getByRole('listbox')).toHaveCount(0);
@@ -577,7 +578,7 @@ test.describe('select / select all', () => {
     await expect(chips).toHaveCount(0);
   });
 
-  test('the mixed mark paints in the theme accent', async ({ page }) => {
+  test('the mixed mark paints in the theme ink', async ({ page }) => {
     const root = await openStory(page, SELECT_ALL_STORY_ID);
 
     await root.getByRole('combobox').click();
@@ -589,17 +590,17 @@ test.describe('select / select all', () => {
     const colors = await dash.evaluate((element) => {
       const probe = document.createElement('span');
 
-      probe.style.color = 'var(--et-theme-color-primary-solid)';
+      probe.style.color = 'var(--et-theme-color-ink-solid)';
       element.append(probe);
 
-      const accent = getComputedStyle(probe).color;
+      const ink = getComputedStyle(probe).color;
 
       probe.remove();
 
-      return { dash: getComputedStyle(element).backgroundColor, accent };
+      return { dash: getComputedStyle(element).backgroundColor, ink };
     });
 
-    expect(colors.dash).toBe(colors.accent);
+    expect(colors.dash).toBe(colors.ink);
   });
 });
 
