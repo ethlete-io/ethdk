@@ -198,3 +198,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   Its demo frame is two elements (`fa-frame > fa-page`), and the Q243 path normalisation assumes a one-element frame,
   so an old CONTROL-PART-INPUT issue looks new. Options: teach the normalisation multi-element frames, or keep
   `fa-page` in render. Recommendation: teach the normalisation, so every part follows the same frame rule.
+- **Q246 (Tom, 2026-11-01), MVP:** `pages/inbox` declares its comment rows as controls (a click selects the comment
+  and the canvas shows its frame), so the inventory numbers them. No visible change. Tom gives the new inbox go
+  after this round, because it changes the hash again. The open-point rows in `pages/system` stay after the MVP:
+  they are not clickable yet.
