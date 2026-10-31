@@ -44,6 +44,11 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   (`libs/cli/src/lib/design/design-command.ts:96`); new kinds go into that table. A component part that declares no
   `controls` gets the open point "no controls declared"; page parts are exempt.
 
+- Q165 foundations (Tom, 2026-10-31): foundations count as linked. They implement tokens, not a component, so they
+  never get the "unlinked" open point and can become ready.
+- Q166 sketch without a part (Tom, 2026-10-31): a sketch for a part that does not exist yet gets no open point. Leave
+  it until Studio lists sketches as their own entries.
+
 ## Not decided
 
 - Where the go and the released state are stored (builder call).
