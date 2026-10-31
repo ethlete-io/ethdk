@@ -63,6 +63,10 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   that follows the active tab by FLIP, a sidebar that morphs into a detailed state on hover and back on exit). A part
   may mark a pair as unreachable, with a reason; only such a pair gives no open point. Focus stays optional. The
   looping motion for ongoing work and "a colour change is enough" from Q167 stay.
+- Q169 contrast of frames and icons (Tom, 2026-10-31): the render check gets a 3:1 measure for borders and icon fills,
+  as a follow-up of slice 2. Today it measures text only.
+- Q170 large text (Tom, 2026-10-31): the WCAG large-text rule stays. Text from 24px, or from 18.66px bold, passes at
+  3:1; other text needs 4.5:1. This refines Q156.
 
 ## Not decided
 
