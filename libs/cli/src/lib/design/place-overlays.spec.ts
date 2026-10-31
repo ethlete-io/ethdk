@@ -177,6 +177,18 @@ describe('fitOutOfFlow', () => {
     expect([root.style.minHeight, root.style.minWidth]).toEqual(['228px', '384px']);
   });
 
+  it('skips a fixed backdrop on all four edges of the viewport', () => {
+    const root = open();
+    const backdrop = root.ownerDocument.createElement('div');
+
+    backdrop.setAttribute('style', 'position: fixed; top: 0; right: 0; bottom: 0; left: 0');
+    root.querySelector('.et-overlay-runtime-root')?.prepend(backdrop);
+    rect(backdrop, { top: 0, left: 0, width: 1280, height: 800 });
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.minHeight, root.style.minWidth]).toEqual(['244px', '400px']);
+  });
+
   it('leaves the root of a closed state at its own height, also after it was open', () => {
     const root = open();
 

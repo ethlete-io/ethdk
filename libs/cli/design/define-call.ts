@@ -247,8 +247,8 @@ export const placeOverlays = (root: HTMLElement) => {
 
 /**
  * Grows `root` to cover every absolutely or fixed positioned element inside it, such as an open
- * overlay pane, so a frame measured or shot from `root` shows them. Grows sideways too with
- * `sideways`. Safe to run again.
+ * overlay pane, so a frame measured or shot from `root` shows them. Skips a fixed element on all four
+ * edges of the viewport, such as a backdrop. Grows sideways too with `sideways`. Safe to run again.
  */
 export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) => {
   const view = root.ownerDocument.defaultView;
@@ -257,8 +257,13 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
 
   const box = root.getBoundingClientRect();
   const style = view.getComputedStyle(root);
+  const fillsViewport = (style: CSSStyleDeclaration) =>
+    style.position === 'fixed' &&
+    [style.top, style.right, style.bottom, style.left].every((edge) => parseFloat(edge) === 0);
   const outOfFlow = [...root.querySelectorAll('*')]
-    .filter((element) => ['absolute', 'fixed'].includes(view.getComputedStyle(element).position))
+    .map((element) => ({ element, style: view.getComputedStyle(element) }))
+    .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
+    .map(({ element }) => element)
     .map((element) => element.getBoundingClientRect())
     .filter((rect) => rect.width > 0 && rect.height > 0);
   const extentOf = ({ side, start, paddings }: { side: 'bottom' | 'right'; start: number; paddings: string[] }) => {
