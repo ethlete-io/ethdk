@@ -913,3 +913,17 @@ are content states, not the interaction coverage Q43 asked for.
 
 - **r2 ready (2026-10-30, 1534846c9):** variant b declares −, percent, + and Fit as button controls in 16 states;
   `design complete` passed in a scratch copy with b merged. Not checked by eye. Waits for Tom's merge in Studio.
+
+### Codex model table decisions (Tom, 2026-10-31, Q186)
+
+The `ethlete-codex-subagent` skill and its wrapper still name the 5.6 models. The current ids (from
+`~/.codex/models_cache.json`) replace them:
+
+- `gpt-6-luna`: lookups and greps.
+- `gpt-6.1-terra`: the default for real work, and the default of `codex-agent.mjs`.
+- `gpt-6.1-sol`: only after asking Tom; his Sol limit runs out fast.
+- `gpt-6-astra`: only after asking Tom.
+
+Drop `gpt-5.6-*` and `gpt-6-sol` from the skill. The context-warning hook gets a `gpt-6.1` entry with a 500k
+window (the 6 and 5.6 models keep 272k). Edit the source in `libs/agent-rules/content`, then `yarn agents:sync`.
+Builder: `ethlete-sdk-57`, a small slice after the running ones.
