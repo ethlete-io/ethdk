@@ -509,7 +509,22 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   a product without `tokens` takes the base's. Verified: `design check --product app` in `/tmp/q85-consumer` gives
   `ok`. Shots there not re-checked by the builder.
 
-### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
+### Overnight decisions (Tom, 2026-10-31)
+
+- Q93 (was Q91): a selected tree row in the light scheme gets a stronger background tint, no edge bar. Built as a
+  sketch round on sdk `components/tree`; Tom picks by merge.
+- Q94: no Rust for render speed. The 2c measurement showed the time goes to Chromium and Vite, not the host.
+  Reopen only if a new measurement shows a host hot spot.
+- Q95: elevation on dark surfaces gets a sketch round on sdk `foundations/colors` (or the elevation part): a) a
+  1 px light ring from a surface-theme token, b) stronger shadows in the dark scheme only, c) a top-edge
+  highlight. No variant changes the background (one background per surface theme).
+- Q96: overnight the grill session decides alone only inside existing rules (token choice, spacing on the
+  grid, states after a decided pattern) and records each one here. New looks become sketch rounds. No builder
+  merges a round; merging stays with Tom. Risky points (public API, breaking change, release) are noted for Tom
+  with a recommendation.
+- Tom: keep the tree committed, push from time to time, and check CI.
+
+### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
 Seen on sdk `foundations/colors`, "Surface, dark": the `Resting` and `Raised` shadow samples are almost
 invisible; on "Surface, light" the shadows work. On dark UIs an elevated element usually also gets a lighter
