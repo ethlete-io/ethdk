@@ -9,7 +9,7 @@ import {
   contrastExceptionsOf,
   contrastPairsOf,
 } from './contrast-check';
-import { controlStateGapsOf } from './complete';
+import { controlStateGapsOf, isInteractionState, isControlPart } from './complete';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -17,6 +17,7 @@ import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } f
 import { gridReportOf } from './list-system';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
+import { unchangedStatesOf } from './sketch/unchanged-states';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -511,7 +512,30 @@ export const renderIssuesOf = async (options: {
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
         const grid = gridReportOf(definition?.grid, states);
 
-        for (const gap of controlStateGapsOf({ part: key, controls: definition?.controls, states }))
+        const compare =
+          sketch && states.some(isInteractionState) && !isControlPart({ part: key, controls: definition?.controls });
+        const baseline = compare ? system.productOf(product) : null;
+        const foundSketch = compare
+          ? system.sketchesOf(product).find((candidate) => candidate.target === sketch.target)
+          : null;
+        const unchanged =
+          baseline && foundSketch && sketch
+            ? await unchangedStatesOf({
+                product: baseline,
+                sketch: foundSketch,
+                variant: sketch.variant,
+                part: key,
+                compareFrames: false,
+                load: ({ file, product: name, sketch: variant }) =>
+                  server.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: variant })),
+              })
+            : [];
+
+        for (const gap of controlStateGapsOf({
+          part: key,
+          controls: definition?.controls,
+          states: sketch ? states.filter((state) => !unchanged.includes(state)) : [],
+        }))
           issues.push({
             rule: gap.code,
             product,

@@ -132,7 +132,8 @@ const drawsTheSame = async (options: {
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
  * unchanged. Markup-only comparisons are kept by source hashes. Pixel comparisons are kept the same way only with
- * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them all.
+ * `keepPictures`, and never when a draw failed; `forgetUnchangedStates` drops them all. Set `compareFrames` to false
+ * to compare drawings without requiring matching widths and interactions.
  */
 export const unchangedStatesOf = async (options: {
   product: ResolvedProduct;
@@ -142,8 +143,18 @@ export const unchangedStatesOf = async (options: {
   pictureOf?: PictureOf;
   keepPictures?: boolean;
   part?: string;
+  compareFrames?: boolean;
 }): Promise<string[]> => {
-  const { product, sketch, variant, load, pictureOf, keepPictures = false, part: compared = sketch.target } = options;
+  const {
+    product,
+    sketch,
+    variant,
+    load,
+    pictureOf,
+    keepPictures = false,
+    part: compared = sketch.target,
+    compareFrames = true,
+  } = options;
   const current = product.parts.find((part) => partKeyOf(part) === compared);
   const merged = current?.file;
   const overlaid = overlaySketch({ product, sketch, variant });
@@ -161,6 +172,7 @@ export const unchangedStatesOf = async (options: {
       partHashOf({ product, dir: sharedDirOf(sketch) }),
       partHashOf({ product, dir: variantDirOf(sketch, variant) }),
       !!pictureOf,
+      compareFrames,
     ]),
   );
   const keeps = !pictureOf || keepPictures;
@@ -174,7 +186,7 @@ export const unchangedStatesOf = async (options: {
   ]);
 
   if (!now || !after) return [];
-  if (now.frames !== after.frames) return keeps ? remember(key, []) : [];
+  if (compareFrames && now.frames !== after.frames) return keeps ? remember(key, []) : [];
 
   const imported = productStylesheetFilesOf(product);
   const restyled = overlaid.parts.some((part) => {

@@ -215,6 +215,7 @@ const PARTS: Record<string, FixturePart> = {
     extra: "controls: { pick: { kind: 'select', input: [], surfaces: { open: 'open' } } },",
   },
   'components/plain': { states: { rest: '<div><p>Only text</p></div>' } },
+  'elements/legacy': { states: { rest: '<p>Legacy</p>', hover: '<p>Hover</p>' } },
   'elements/card': {
     states: {
       rest: '<div style="width: 360px; height: 240px; border: 1px solid"><p>Card</p></div>',
@@ -392,7 +393,7 @@ describe('controlStateGapsOf', () => {
     ).toEqual([true, true]);
   });
 
-  it('fails the part in completenessGapsOf', () => {
+  it('does not block completeness for an interaction state', () => {
     expect(
       completenessGapsOf({
         part: 'elements/card',
@@ -401,7 +402,7 @@ describe('controlStateGapsOf', () => {
         frames: [],
         reviewed: true,
       }).map((gap) => gap.code),
-    ).toEqual(['CONTROL-STATE']);
+    ).toEqual([]);
   });
 });
 
@@ -812,6 +813,17 @@ describe('completenessGapsOf', () => {
 });
 
 describe('completenessOf', () => {
+  it('lists a merged interaction state as a non-blocking open point', async (context) => {
+    const { target, config, product } = checkout();
+    const result = await completenessOf({ target, config, product, part: 'elements/legacy' });
+
+    if ('unavailable' in result) return context.skip(result.unavailable);
+    if ('problem' in result) throw new Error(result.problem);
+
+    expect(result.gaps).toEqual([]);
+    expect(result.hints).toEqual([expect.stringMatching(/^CONTROL-STATE elements\/legacy - state hover /)]);
+  }, 120_000);
+
   it('hints a state that changes a small share of the frame, without failing the part', async (context) => {
     const { target, config, product } = checkout();
     const card = await completenessOf({ target, config, product, part: 'elements/card' });

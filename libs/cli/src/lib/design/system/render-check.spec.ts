@@ -188,11 +188,11 @@ describe('renderIssuesOf', () => {
     expect(rendered.drawn).toHaveLength(1);
   });
 
-  it('fails interaction states on a part that declares no control, and passes them on a control part', async (context) => {
+  it('blocks only interaction states added or changed by a sketch', async (context) => {
     const target = checkout({
       'elements/shell': {
         body: '<p style="margin: 0">Shell</p>',
-        states: "rest: {}, 'row-hover': {}, 'collapse-focus': {}",
+        states: "rest: {}, 'row-hover': {}",
       },
       'components/row': {
         body: '<button data-et-control="row">Row</button>',
@@ -201,18 +201,49 @@ describe('renderIssuesOf', () => {
       },
     });
     const config = readConfig(target) ?? {};
+    const shop = join(target, DESIGN_DIR, 'shop');
+    const dir = join(shop, 'sketches', 'elements-shell');
+    const source = readFileSync(join(shop, 'elements/shell/shell.ts'), 'utf8');
+
+    for (const variant of ['same', 'added', 'changed', 'width'])
+      mkdirSync(join(dir, variant, 'elements/shell'), { recursive: true });
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'elements/shell', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+    writeFileSync(join(dir, 'same/elements/shell/shell.ts'), source);
+    writeFileSync(
+      join(dir, 'width/elements/shell/shell.ts'),
+      source.replace("note: 'A fixture.',", "note: 'A fixture.', widths: [320],"),
+    );
+    writeFileSync(
+      join(dir, 'added/elements/shell/shell.ts'),
+      source.replace("'row-hover': {}", "'row-hover': {}, 'collapse-focus': {}"),
+    );
+    writeFileSync(join(dir, 'changed/elements/shell/shell.ts'), source.replace('>Shell</p>', '>Changed</p>'));
 
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+    const rendered = await renderIssuesOf({
+      target,
+      config,
+      jobs: [
+        null,
+        ...['same', 'added', 'changed', 'width'].map((variant) => ({ target: 'elements/shell', variant })),
+      ].map((sketch) => ({ product: 'shop', sketch, parts: null })),
+    });
 
     if ('unavailable' in rendered) return context.skip(rendered.unavailable);
 
-    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.part}: ${issue.detail.split(' - ').at(-1)}`)).toEqual([
-      'CONTROL-STATE elements/shell: extract the row as its own control part and draw this state there',
-      'CONTROL-STATE elements/shell: extract the collapse as its own control part and draw this state there',
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CONTROL-STATE')
+        .map((issue) => `${issue.sketch?.variant}: ${issue.detail.split(' - ').at(-1)}`),
+    ).toEqual([
+      'added: extract the collapse as its own control part and draw this state there',
+      'changed: extract the row as its own control part and draw this state there',
     ]);
-  });
+  }, 120_000);
 
   it('answers why it can not draw when no browser resolves', async () => {
     const target = checkout();

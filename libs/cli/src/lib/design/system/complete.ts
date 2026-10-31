@@ -714,7 +714,6 @@ export const completenessGapsOf = (options: {
 
   return [
     ...gaps,
-    ...controlStateGapsOf({ part, controls: options.controls, states }),
     ...discoveryGapsOf({ part, declared, frames }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
@@ -1563,7 +1562,10 @@ export const partsCompletenessOf = async (options: {
 
       const { definition, states, seen, refused, changes, owner, hash } = sight;
 
-      hints.set(key, smallChangeHintsOf({ part: key, controls: definition?.controls, changes }));
+      hints.set(key, [
+        ...smallChangeHintsOf({ part: key, controls: definition?.controls, changes }),
+        ...controlStateGapsOf({ part: key, controls: definition?.controls, states }).map(completenessGapLineOf),
+      ]);
       const sketched = product.parts.find((candidate) => partKeyOf(candidate) === key)?.file !== resolved.file;
       const reviewed = sketched || readMerged(owner.dir)[key] === hash;
       const referenced: ReferencedParts = {};
