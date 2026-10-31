@@ -1,9 +1,12 @@
 import { anchoredDialog, anchoredDialogStyles } from '@ethlete/components/design/anchored-dialog';
 import { definePart, drawing } from '@design-system';
+import button from '@system/components/button';
 import edge from './anchored-dialog.css?inline';
 
 type Props = {
-  kind: 'open-points' | 'filter';
+  kind?: 'open-points' | 'filter';
+  content?: string;
+  label?: string;
   placement?: 'bottom-end' | 'bottom-start' | 'top-end' | 'top-start';
   arrow?: boolean;
   modal?: boolean;
@@ -21,12 +24,12 @@ const FILTERS = [
   { label: 'Has comments', checked: true },
 ];
 
-const filter = () => `<header class="anchored-dialog-header"><span>Filter</span></header>
+const filter = (apply: string) => `<header class="anchored-dialog-header"><span>Filter</span></header>
 <ul class="anchored-dialog-list">${FILTERS.map(
   ({ label, checked }) =>
     `<li><label><input type="checkbox" data-et-control="option"${checked ? ' checked' : ''} />${label}</label></li>`,
 ).join('')}</ul>
-<footer class="anchored-dialog-footer"><button type="button" class="et-button" data-et-control="apply">Apply</button></footer>`;
+<footer class="anchored-dialog-footer">${apply}</footer>`;
 
 export default definePart({
   note: 'An open popover anchored to its trigger: surface pane, arrow, free content',
@@ -40,19 +43,23 @@ export default definePart({
   widths: [480],
   controls: {
     option: { kind: 'row', input: ['pointer', 'keyboard'] },
-    apply: { kind: 'button', input: ['pointer', 'keyboard'] },
+    apply: { kind: 'button', part: 'components/button' },
   },
-  render: ({ kind, placement = 'bottom-end', arrow, modal = true }: Props) =>
-    drawing({
+  render: async ({ kind = 'open-points', content, label, placement = 'bottom-end', arrow, modal = true }: Props) => {
+    const apply = await button.render({ label: 'Apply', variant: 'filled' });
+    const pane = content ?? (kind === 'filter' ? filter(apply.body) : openPoints());
+
+    return drawing({
       body: `<div class="anchored-dialog-frame" style="--anchored-dialog-justify:${placement.endsWith('start') ? 'flex-start' : 'flex-end'}"><div data-et-anchor>${anchoredDialog(
         {
-          label: kind === 'filter' ? 'Filter' : 'Open points',
+          label: label ?? (kind === 'filter' ? 'Filter' : 'Open points'),
           placement,
           arrow,
           modal,
-          content: kind === 'filter' ? filter() : openPoints(),
+          content: pane,
         },
       )}</div></div>`,
-      styles: [anchoredDialogStyles, edge].join('\n'),
-    }),
+      styles: [anchoredDialogStyles, apply.styles, edge].join('\n'),
+    });
+  },
 });
