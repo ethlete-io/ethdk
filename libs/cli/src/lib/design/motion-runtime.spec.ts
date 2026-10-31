@@ -201,6 +201,38 @@ describe('stepMotion', () => {
     Reflect.deleteProperty(document, 'getAnimations');
   });
 
+  it('runs its ctx.at steps without pausing or posing an animation once released', async () => {
+    const root = mount();
+    const running: ReturnType<typeof fakeAnimation>[] = [];
+    const late = fakeAnimation([{ backgroundColor: 'red' }], 300);
+
+    Object.assign(document, { getAnimations: () => running });
+
+    const stepped = await stepMotion({
+      root,
+      markup: states['open'] ?? '',
+      motion: {
+        from: 'closed',
+        to: 'open',
+        play: (ctx) => {
+          running.push(fakeAnimation([{ transform: 'scale(1)' }], 400));
+          ctx.at(500, () => running.push(late));
+        },
+      },
+    });
+    const [first] = running;
+
+    stepped.seek(100);
+    stepped.release();
+    stepped.seek(650);
+
+    expect(stepped.now()).toBe(650);
+    expect(first?.currentTime).toBe(100);
+    expect(late.pause).not.toHaveBeenCalled();
+    expect(late.currentTime).toBeNull();
+    Reflect.deleteProperty(document, 'getAnimations');
+  });
+
   it('names an element by its data-et-key, otherwise by its selector', async () => {
     const root = mount();
     const running: ReturnType<typeof fakeAnimation>[] = [];

@@ -243,6 +243,7 @@ export class DesignCanvasComponent {
   /** The key of a column group whose switch the user clicked. */
   public groupSwitch = output<string>();
 
+  private frameViews = viewChildren(CanvasFrameComponent);
   private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
   private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
@@ -790,6 +791,15 @@ export class DesignCanvasComponent {
   }
 
   /** Opens a pin's text and moves the camera to its frame. */
+  /** The window of the frame `id` once its live page painted; `null` before. */
+  public liveWindowOf(id: string) {
+    return (
+      this.frameViews()
+        .find((view) => view.frame().id === id)
+        ?.liveWindow() ?? null
+    );
+  }
+
   public openPin(id: string) {
     const pin = this.pins().find((candidate) => candidate.id === id);
 
@@ -820,7 +830,8 @@ export class DesignCanvasComponent {
     this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING }), true);
   }
 
-  protected activate(id: string) {
+  /** Makes the frame `id` live and active, as a double click on it does. */
+  public activate(id: string) {
     if (this.pointing()) return;
     if (this.frames().find((frame) => frame.id === id)?.empty !== undefined) return;
 

@@ -4,6 +4,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { Observable, catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { ListedMotion, MotionAddress, MotionAnswer, MotionMode, motionAnswer$ } from '../../host/design-motion';
+import { MotionCanvas, motionFrameIdOf } from './motion-drive';
 import { MotionTimelineComponent } from './motion-timeline.component';
 
 type MotionRow = { name: string; listed: ListedMotion; answer: MotionAnswer | null; error: string | null };
@@ -81,7 +82,7 @@ const rowOf$ = ({
               @for (keyframe of answer.keyframes; track keyframe.ms) {
                 <button
                   [pressed]="opened()?.motion === row.name && opened()?.ms === keyframe.ms"
-                  (click)="opened.set({ motion: row.name, ms: keyframe.ms })"
+                  (click)="open({ motion: row.name, ms: keyframe.ms }, row.listed)"
                   class="h-auto shrink-0 flex-col py-1"
                   et-button
                   type="button"
@@ -101,7 +102,12 @@ const rowOf$ = ({
         </div>
       }
       @if (openedAnswer(); as shown) {
-        <ethlete-motion-timeline [answer]="shown.answer" [start]="shown.ms" (dismiss)="opened.set(null)" />
+        <ethlete-motion-timeline
+          [answer]="shown.answer"
+          [start]="shown.ms"
+          [frame]="drivenWindow()"
+          (dismiss)="opened.set(null)"
+        />
       }
     </section>
   `,
@@ -119,6 +125,8 @@ export class MotionStripComponent {
   public color = input<string>();
   /** Draws the motions anew on each change. */
   public revision = input(0);
+  /** The canvas whose frame an open timeline makes live and drives. */
+  public canvas = input<MotionCanvas | null>(null);
 
   protected preset = linkedSignal(() => this.presets()[0] ?? null);
   protected mode = signal<MotionMode>('full');
@@ -155,4 +163,27 @@ export class MotionStripComponent {
 
     return opened && answer ? { answer, ms: opened.ms } : null;
   });
+
+  private drivenId = computed(() => {
+    const opened = this.opened();
+    const from = opened && this.motions()[opened.motion]?.from;
+    const canvas = this.canvas();
+
+    return from && canvas ? motionFrameIdOf(canvas.frames(), { state: from, preset: this.preset() }) : null;
+  });
+
+  protected drivenWindow = computed(() => {
+    const id = this.drivenId();
+
+    return id ? (this.canvas()?.liveWindowOf(id) ?? null) : null;
+  });
+
+  protected open(opened: Opened, listed: ListedMotion) {
+    this.opened.set(opened);
+
+    const canvas = this.canvas();
+    const id = canvas && motionFrameIdOf(canvas.frames(), { state: listed.from, preset: this.preset() });
+
+    if (id) canvas.activate(id);
+  }
 }

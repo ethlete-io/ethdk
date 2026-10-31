@@ -1,7 +1,8 @@
 import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
-import { Part } from '../define-part';
+import { Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { pinScheme } from './frame-scheme';
+import { createMotionDriver, emulateReducedMotion, motionDriveMessageOf } from '../motion-drive';
 import { runRules, stepMotion, SteppedMotion } from '../motion-runtime';
 import { rootTokensOf, withTokenNames } from '../motion-tokens';
 import { calls } from 'virtual:design-explore';
@@ -250,6 +251,38 @@ const exposeStepped = (options: { start: () => Promise<SteppedMotion>; interrupt
   });
 };
 
+const motionStartOf = (options: {
+  drawn: NonNullable<typeof drawnPart>;
+  motion: Motion;
+  markupOf: (state: string) => Promise<string>;
+  switching?: () => void;
+}) => {
+  const { drawn, motion, markupOf } = options;
+
+  return () =>
+    Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)]).then(
+      ([markup, back]) => {
+        options.switching?.();
+
+        return stepMotion({
+          root,
+          markup,
+          motion,
+          ...(back === null
+            ? {}
+            : {
+                reverse: {
+                  markup: back,
+                  motion: Object.values(drawn.part.motions ?? {}).find(
+                    (other) => other.from === motion.to && other.to === motion.from,
+                  ),
+                },
+              }),
+        });
+      },
+    );
+};
+
 const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: string; styles: string }) => {
   const { drawn, name, styles } = options;
   const motion = drawn.part.motions?.[name];
@@ -262,29 +295,57 @@ const exposeMotion = (options: { drawn: NonNullable<typeof drawnPart>; name: str
     return;
   }
 
-  const markupOf = stateMarkupOf(drawn, styles);
-
   exposeStepped({
     interrupt: motion.interrupt ?? null,
-    start: () =>
-      Promise.all([markupOf(motion.to), motion.interrupt === undefined ? null : markupOf(motion.from)]).then(
-        ([markup, back]) =>
-          stepMotion({
-            root,
-            markup,
-            motion,
-            ...(back === null
-              ? {}
-              : {
-                  reverse: {
-                    markup: back,
-                    motion: Object.values(drawn.part.motions ?? {}).find(
-                      (other) => other.from === motion.to && other.to === motion.from,
-                    ),
-                  },
-                }),
-          }),
-      ),
+    start: motionStartOf({ drawn, motion, markupOf: stateMarkupOf(drawn, styles) }),
+  });
+};
+
+const settleAnimations = () => {
+  for (const animation of document.getAnimations()) {
+    if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish();
+    else animation.cancel();
+  }
+};
+
+const listenForDrive = (drawn: NonNullable<typeof drawnPart>, styles: string) => {
+  const markupOf = stateMarkupOf(drawn, styles);
+  const drawnMarkup = root.innerHTML;
+  let restore: () => void = () => undefined;
+
+  const driver = createMotionDriver({
+    document,
+    reply: (answer) => parent.postMessage({ ...answer, variant: key }, '*'),
+    released: () => {
+      restore();
+      restore = () => undefined;
+    },
+    start: (name, reduced) => {
+      const motion = drawn.part.motions?.[name];
+
+      if (!motion) return Promise.reject(new Error(`design-explore: part "${partKey}" has no motion "${name}"`));
+      if (motion.from !== key)
+        return Promise.reject(new Error(`design-explore: motion "${name}" starts at "${motion.from}", not "${key}"`));
+
+      settleAnimations();
+      restore();
+      root.innerHTML = drawnMarkup;
+
+      return motionStartOf({
+        drawn,
+        motion,
+        markupOf,
+        switching: () => {
+          restore = emulateReducedMotion(document, reduced);
+        },
+      })();
+    },
+  });
+
+  addEventListener('message', (event) => {
+    const message = event.source === parent ? motionDriveMessageOf(event.data) : null;
+
+    if (message) void driver.handle(message);
   });
 };
 
@@ -364,6 +425,8 @@ const drawFrame = async () => {
     if (flowTo && product) exposeFlowLine({ product, to: flowTo, styles: loaded.styles ?? '' });
     else if (motionName && drawnPart) exposeMotion({ drawn: drawnPart, name: motionName, styles: loaded.styles ?? '' });
     else if (drawnPart?.part.rules?.length) runPartRules(drawnPart, loaded.styles ?? '');
+
+    if (!flowTo && !motionName && drawnPart) listenForDrive(drawnPart, loaded.styles ?? '');
   }
 
   const place = () => {

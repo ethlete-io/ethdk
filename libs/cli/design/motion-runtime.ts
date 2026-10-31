@@ -162,9 +162,14 @@ export type MotionTrack = {
   end: number | null;
 };
 
-/** A motion paused at its start: `seek` moves it forward to a time in ms, `tracks` lists what ran so far. */
+/**
+ * A motion paused at its start: `seek` moves it forward to a time in ms, `tracks` lists what ran so far. `release`
+ * stops pausing and posing its animations, so a later `seek` only runs its `ctx.at` steps.
+ */
 export type SteppedMotion = {
   seek: (ms: number) => void;
+  now: () => number;
+  release: () => void;
   tracks: () => MotionTrack[];
   end: () => number;
   bounds: () => MotionBox;
@@ -238,6 +243,7 @@ export const stepMotion = (options: {
   const cut = new Set<Animation>();
   const interrupt = motion.interrupt;
   let interrupted = false;
+  let released = false;
   let lastTask = 0;
   let ready: Promise<unknown> = Promise.resolve();
 
@@ -257,12 +263,14 @@ export const stepMotion = (options: {
     for (const animation of document.getAnimations()) {
       if (started.has(animation)) continue;
 
-      animation.pause();
+      if (!released) animation.pause();
       started.set(animation, trackOf(animation, start));
     }
   };
 
   const pose = (ms: number) => {
+    if (released) return;
+
     for (const [animation, track] of started)
       if (!cut.has(animation)) animation.currentTime = Math.max(0, ms - track.start);
   };
@@ -317,6 +325,10 @@ export const stepMotion = (options: {
           clock.advance(ms - clock.now());
 
           pose(ms);
+        },
+        now: () => clock.now(),
+        release: () => {
+          released = true;
         },
         tracks: () => [...started.values()],
         end: () => Math.max(lastTask, ...[...started.values()].map((track) => track.end ?? 0)),

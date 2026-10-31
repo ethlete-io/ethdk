@@ -1,8 +1,21 @@
-import { Component, ViewEncapsulation, computed, input, linkedSignal, output, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DOCUMENT } from '@angular/common';
+import {
+  Component,
+  DestroyRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, SLIDER_IMPORTS } from '@ethlete/components';
-import { EMPTY, animationFrames, map, pairwise, switchMap, tap } from 'rxjs';
+import { EMPTY, animationFrames, combineLatest, map, of, pairwise, switchMap, tap } from 'rxjs';
 import { MotionAnswer, keyframeAt, tokenLabelOf, trackBarOf } from '../../host/design-motion';
+import { MotionDriveMessage, drivenFrame$, postDrive } from './motion-drive';
 
 export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
 
@@ -14,6 +27,9 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
       <header class="flex flex-wrap items-center gap-2">
         <span class="font-mono text-small text-text">{{ shown.motion }}</span>
         <span class="text-small text-text-muted">{{ shown.from }} → {{ shown.to }}, {{ shown.mode }}</span>
+        @if (driven()) {
+          <span class="text-small text-text-muted" data-motion-driven>in the live frame</span>
+        }
         <span class="flex-1"></span>
         @for (speed of SPEEDS; track speed) {
           <button
@@ -33,7 +49,7 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
           Close
         </button>
       </header>
-      @if (picture(); as keyframe) {
+      @if (!driven() && picture(); as keyframe) {
         <img
           [src]="keyframe.src"
           [alt]="shown.motion + ' at ' + keyframe.ms + ' ms'"
@@ -88,19 +104,24 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
   imports: [BUTTON_IMPORTS, SLIDER_IMPORTS],
 })
 export class MotionTimelineComponent {
+  private document = inject(DOCUMENT);
+  private destroyRef = inject(DestroyRef);
   public answer = input.required<MotionAnswer>();
   /** The time in ms the timeline opens at. */
   public start = input(0);
+
+  /** The live frame the timeline drives once it answers ready; the keyframe images show until then. */
+  public frame = input<Window | null>(null);
+
   public dismiss = output();
-
   protected readonly SPEEDS = MOTION_SPEEDS;
-
   protected time = linkedSignal(() => Math.min(this.start(), this.answer().end));
+
   protected playing = linkedSignal<MotionAnswer, boolean>({ source: this.answer, computation: () => false });
   protected rate = signal<number>(1);
-
   protected roundedTime = computed(() => Math.round(this.time()));
   protected playhead = computed(() => (this.time() / Math.max(this.answer().end, 1)) * 100);
+
   protected picture = computed(() => keyframeAt(this.answer().keyframes, this.time()));
   protected tracks = computed(() =>
     this.answer().tracks.map((track) => ({
@@ -111,8 +132,43 @@ export class MotionTimelineComponent {
       easing: tokenLabelOf(track.easing, track.easingTokens),
     })),
   );
+  private host = this.document.defaultView;
+
+  private started = computed(() => ({ motion: this.answer().motion, reduced: this.answer().mode === 'reduced' }), {
+    equal: (a, b) => a.motion === b.motion && a.reduced === b.reduced,
+  });
+
+  protected driven = toSignal(
+    combineLatest([toObservable(this.frame), toObservable(this.started)]).pipe(
+      switchMap(([target, started]) =>
+        target && this.host ? drivenFrame$({ host: this.host, target, ...started }) : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  private command = computed<MotionDriveMessage>(() =>
+    this.playing()
+      ? { type: 'design-explore:motion-play', ms: untracked(this.time), rate: this.rate() }
+      : { type: 'design-explore:motion-seek', ms: this.time(), rate: this.rate() },
+  );
 
   constructor() {
+    combineLatest([toObservable(this.driven), toObservable(this.command)])
+      .pipe(
+        tap(([target, command]) => {
+          if (target) postDrive(target, command);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    this.destroyRef.onDestroy(() => {
+      const target = this.driven();
+
+      if (target) postDrive(target, { type: 'design-explore:motion-stop' });
+    });
+
     toObservable(this.playing)
       .pipe(
         switchMap((playing) =>

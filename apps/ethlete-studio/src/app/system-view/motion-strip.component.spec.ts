@@ -1,8 +1,10 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { MotionAnswer, motionUrl } from '../../host/design-motion';
+import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { THEMES } from '../../themes';
+import { MotionCanvas, motionFrameIdOf } from './motion-drive';
 import { MotionStripComponent } from './motion-strip.component';
 
 const answerOf = (motion: string, url: string): MotionAnswer => ({
@@ -136,5 +138,92 @@ describe('MotionStripComponent', () => {
 
     expect(asked.some((url) => url.includes('preset=desktop') && url.includes('mode=full'))).toBe(true);
     expect(asked.at(-1)).toContain('preset=desktop&mode=reduced');
+  });
+});
+
+const frameOf = (state: string, size: string, interaction?: string): CanvasFrame => ({
+  id: [state, size, ...(interaction ? [interaction] : [])].join(' '),
+  src: '',
+  label: state,
+  place: { part: 'components/drawer', state, size, ...(interaction ? { interaction } : {}) },
+});
+
+const FRAMES = [frameOf('closed', 'desktop'), frameOf('closed', 'phone', 'hover'), frameOf('closed', 'phone')];
+
+describe('motionFrameIdOf', () => {
+  it('picks the resting frame of the from state at the preset, else the first resting one', () => {
+    expect(motionFrameIdOf(FRAMES, { state: 'closed', preset: 'phone' })).toBe('closed phone');
+    expect(motionFrameIdOf(FRAMES, { state: 'closed', preset: 'tablet' })).toBe('closed desktop');
+    expect(motionFrameIdOf(FRAMES, { state: 'open', preset: 'phone' })).toBeNull();
+  });
+});
+
+describe('MotionStripComponent driving the live frame', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const drive = async () => {
+    const iframe = document.createElement('iframe');
+
+    document.body.append(iframe);
+
+    const target = iframe.contentWindow as Window;
+    const posted = vi.spyOn(target, 'postMessage').mockImplementation(() => undefined);
+    const live = signal<string | null>(null);
+    const canvas: MotionCanvas = {
+      frames: () => FRAMES,
+      activate: vi.fn((id: string) => live.set(id)),
+      liveWindowOf: (id) => (live() === id ? target : null),
+    };
+    const rendered = await render();
+
+    rendered.fixture.componentRef.setInput('canvas', canvas);
+    rendered.element.querySelectorAll<HTMLButtonElement>('[data-motion="open"] [data-motion-keyframe]')[2]?.click();
+    await settle(rendered.fixture);
+
+    const messages = () => posted.mock.calls.map(([message]) => message as { type: string });
+
+    return { ...rendered, canvas, target, messages, posted };
+  };
+
+  const answerReady = (target: Window, motion: string) =>
+    window.dispatchEvent(
+      new MessageEvent('message', { data: { type: 'design-explore:motion-ready', motion }, source: target }),
+    );
+
+  it('makes the frame of the from state live and starts the motion in it', async () => {
+    const { canvas, element, messages } = await drive();
+
+    expect(canvas.activate).toHaveBeenCalledWith('closed phone');
+    expect(messages()).toEqual([{ type: 'design-explore:motion-start', motion: 'open', reduced: false }]);
+    expect(element.querySelector('[data-motion-picture]')).not.toBeNull();
+    expect(element.querySelector('[data-motion-driven]')).toBeNull();
+  });
+
+  it('posts the slider time, play and speed once the frame is ready, and stop on close', async () => {
+    const { element, fixture, target, messages } = await drive();
+
+    answerReady(target, 'open');
+    await settle(fixture);
+
+    expect(element.querySelector('[data-motion-picture]')).toBeNull();
+    expect(element.querySelector('[data-motion-driven]')).not.toBeNull();
+    expect(messages().at(-1)).toEqual({ type: 'design-explore:motion-seek', ms: 200, rate: 1 });
+
+    element.querySelectorAll<HTMLButtonElement>('[data-motion-speed]')[1]?.click();
+    await settle(fixture);
+
+    expect(messages().at(-1)).toEqual({ type: 'design-explore:motion-seek', ms: 200, rate: 0.25 });
+
+    element.querySelector<HTMLButtonElement>('[data-motion-play]')?.click();
+    await settle(fixture);
+
+    expect(messages()).toContainEqual({ type: 'design-explore:motion-play', ms: 200, rate: 0.25 });
+
+    [...element.querySelectorAll<HTMLButtonElement>('[data-motion-timeline] button')]
+      .find((button) => button.textContent?.trim() === 'Close')
+      ?.click();
+    await settle(fixture);
+
+    expect(messages().at(-1)).toEqual({ type: 'design-explore:motion-stop' });
   });
 });

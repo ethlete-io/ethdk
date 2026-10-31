@@ -101,8 +101,9 @@ the model. They are no reference for correct behaviour: some of them are broken.
    - 6a Token names on tracks. Done (2026-10-31), see "As built: slice 6a". The motion core matches each track's duration and
      easing against the foundations motion tokens computed on `:root` in the frame and adds `durationToken` and
      `easingToken`. The timeline shows the token name, with the raw value in the `title`.
-   - 6b The timeline drives the live frame. A `postMessage` switch into the frame pauses every animation of
-     `document.getAnimations()` at the slider time and sets `playbackRate` to the speed. Not started.
+   - 6b The timeline drives the live frame. Done (2026-10-31), see "As built: slice 6b". A `postMessage` switch into
+     the frame pauses every animation of `document.getAnimations()` at the slider time and sets `playbackRate` to the
+     speed.
 
 Each slice gets an "in progress" note here when it starts.
 
@@ -272,3 +273,25 @@ Each slice gets an "in progress" note here when it starts.
   `motion-timeline.component.spec.ts` (token name, "+2", titles).
 - Verified: the specs, spec and app typecheck, eslint, `nx build cli`.
 - Not verified: Studio in a running app (no product in this repo declares motions); WebKit's easing spelling.
+
+## As built: slice 6b (2026-10-31, commit "feat(cli): Drive the live frame from the motion timeline")
+
+- `design/motion-drive.ts`: `createMotionDriver` reads `design-explore:motion-start|seek|play|stop` messages from the
+  parent. Start (re)draws the frame's own state, switches with `stepMotion` and answers `design-explore:motion-ready`
+  (or `-failed`); seek pauses every animation at the time with the speed as `playbackRate` (a seek back restarts the
+  motion); play advances the `ctx.at` clock and the poses at the speed per animation frame; stop calls the new
+  `SteppedMotion.release()`, resumes every animation at 1x (finishes the ones past their end) and runs the remaining
+  `ctx.at` steps in real time. `emulateReducedMotion` rewrites the frame's `prefers-reduced-motion` media rules for the
+  run; stop puts them back. `frame.ts` listens in every part frame without `motion=`/`flow-to=`, only to `parent`.
+- Studio: opening a keyframe calls `DesignCanvasComponent.activate` on the resting frame of the motion's `from` state at
+  the strip's preset (else the first resting one; `motionFrameIdOf`), so the frame goes live as a double click makes it.
+  The timeline posts start once the frame painted (`CanvasFrameComponent.liveWindow`), then the slider, play and speed;
+  close posts stop and leaves the frame live. Until the frame answers ready, the keyframe image shows; after, the image
+  hides and the header says "in the live frame".
+- Bit: `motion-drive.spec.ts` (jsdom, fake animations: seek pauses at the time with the rate, seek back restarts, play at
+  the speed, stop resumes at 1x and finishes past-end ones, reduced media rewrite and restore), `motion-runtime.spec.ts`
+  (release), `motion-strip.component.spec.ts` (activates the frame, posts start, seek, speed, play, stop; image until ready).
+  `frame-bootstrap.spec.ts` stubs `../motion-drive` and the missing `../motion-tokens` (it failed since 6a).
+- Verified: the specs, spec and app typecheck, `libs/cli/design` typecheck, eslint, `nx build cli`.
+- Not verified: a real Chromium run of the in-frame driver (no headless Studio check); a View Transition motion under the
+  driver; `matchMedia` in a motion's script still sees the real reduced-motion preference.

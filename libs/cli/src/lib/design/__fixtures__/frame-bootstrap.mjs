@@ -54,7 +54,13 @@ const modules = {
     fitOutOfFlow: () => undefined,
   },
   '../embed-page': { applyEmbed: () => undefined, fitEmbed: () => undefined },
+  '../motion-drive': {
+    createMotionDriver: () => ({ handle: () => Promise.resolve() }),
+    emulateReducedMotion: () => () => undefined,
+    motionDriveMessageOf: () => null,
+  },
   '../motion-runtime': { runRules: () => undefined, stepMotion: () => undefined },
+  '../motion-tokens': { rootTokensOf: () => ({}), withTokenNames: (track) => track },
   './frame-scheme': { pinScheme: () => undefined },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },

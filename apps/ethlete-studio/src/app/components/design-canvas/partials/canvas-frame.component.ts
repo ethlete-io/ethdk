@@ -439,6 +439,13 @@ export class CanvasFrameComponent {
 
   private newest = computed(() => this.iframes().at(-1)?.nativeElement ?? null);
 
+  /** The window of the live page once it painted, to post messages to; `null` while the frame shows a shot. */
+  public liveWindow = computed(() => {
+    const iframe = this.newest();
+
+    return iframe && this.shown() === this.sources().at(-1)?.src ? iframe.contentWindow : null;
+  });
+
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 
   constructor() {

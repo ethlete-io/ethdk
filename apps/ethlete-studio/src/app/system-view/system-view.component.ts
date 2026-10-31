@@ -516,6 +516,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                     [surface]="surface()"
                     [color]="color()"
                     [revision]="productsRevision()"
+                    [canvas]="partCanvas"
                     class="max-h-[45vh] overflow-y-auto"
                   />
                 }
@@ -587,7 +588,7 @@ export class SystemViewComponent {
 
   public frameRevisions = input(NO_FRAME_REVISIONS);
 
-  private partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
+  public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
 
