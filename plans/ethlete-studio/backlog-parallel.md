@@ -793,7 +793,14 @@ server showed the chip, the remove, and the preamble. Not verified with a real d
    canvas signal `frameAreasInView` at rest), else the only one; the pick shows as `picked a` when it differs.
    Verified: app tests, 887 cli design tests, tsc, lint; specs fail without the change. Not verified in a running
    Studio; the in-view rule only by the pure spec.
-6. In progress: dogfood the chat loop on own ports and list each friction (grill, 2026-10-31).
+6. Dogfood, done (2026-10-31): a headless Studio on own ports, with real `claude` sonnet runs bridged into the
+   stub. The agent found the part file from the context line alone. The frame redrew about 0.4 s after the edit.
+   Follow-ups resumed the session. A sketch from the chat appeared in about 3 s. Fixed: `edf553ea7` (the finished
+   line repeated the last message) and `8b35a636f` (sketch check, new and ready wrote the four design tsconfigs
+   again with the same bytes, so Vite reloaded every frame). Open design questions went to the grill: a Studio brief
+   with `--append-system-prompt` (design check, no changeset, type tokens), markdown in messages, a grid-cell state
+   as the selection, a shorter sketch selection label, and the canvas zoom when the chat opens. Not exercised: the
+   real Rust `agent_run`, Stop, Codex, chip removal, the disk cache across a restart.
 
 As built, slice 1 (`d3003cfc3`): `injectChatStore()` in `apps/ethlete-studio/src/app/chat/chat-store.ts` (root
 provider) holds the CLI, the model, the entries, the session and the open flag. `ChatPanelComponent` sits beside
