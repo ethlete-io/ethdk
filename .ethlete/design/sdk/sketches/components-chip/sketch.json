@@ -1,0 +1,39 @@
+{
+  "target": "components/chip",
+  "status": "ready",
+  "createdAt": "2026-10-31T01:52:15.239Z",
+  "baseline": {
+    "foundations/colors": "417ee640702da3c3",
+    "foundations/icons": "0d29d1abcb0254cd",
+    "components/button": "ef27bebcfef3d8c3",
+    "components/form-field": "2f5692b326f3432a",
+    "components/select": "3915f5657c75ef8b",
+    "components/select-panel": "02b5ecfc4ba38913",
+    "components/tree": "6ec6cc2953065201",
+    "fixtures.ts": "909089fbef7b8f34"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "Chip baseline",
+      "note": "First drawing of the SDK chip (et-chip), drawn by its mock from @ethlete/components/design on the page: a plain chip, a removable chip with its remove icon button, the filter chip etSelectionOption makes of it (role checkbox, selected through aria-checked, readonly), a selected chip under the danger theme, disabled at the 0.4 chip opacity, and all of them in one row. The chip has no variants or sizes. States per grid row (removable, filter, selected, danger, disabled, disabled-selected, disabled-removable): rest, hover, active, focus-visible; interactions hit the chip on filter rows and the remove button on removable rows. Today on light the selected mark vanishes: the mint 16% fill is 1.08:1 against the page with no edge (danger fill 1.29:1); the focus rings of chip and remove button are mint, 1.33:1 against the page (remove ring 1.11:1 against the chip fill); the danger chip ring is the danger primary, 4.83:1. Dark: mint rings 13.50:1, selected fill 1.46:1, danger ring 3.71:1. Fixed numbers: label on the neutral 14% fill 15.04:1 light, 13.75:1 dark; neutral fill against the page 1.19:1 light, 1.25:1 dark; selected ink label on its fill 5.07:1 light, 9.24:1 dark (danger 5.02:1, 5.80:1); remove icon (muted) 6.55:1 light, 5.49:1 dark. Hover numbers, reported only (the hover step is Q101, open in another round): neutral chip hover fill 1.11:1 against rest light, 1.15:1 dark, label 13.58:1 / 11.93:1; selected hover fill 1.03:1 light, 1.27:1 dark, label 4.90:1 / 7.29:1; danger selected hover 1.14:1 / 1.09:1 and its label 4.42:1 light (under 4.5:1, a check exception in this round), 5.33:1 dark; remove hover circle 1.26:1 against the chip fill light, 1.41:1 dark, icon 11.98:1 / 9.70:1. Not this round's question: the chip itself has no active style (active fill equals rest); remove-button active icon stays muted, 4.72:1 light, 3.34:1 dark on the 28% circle; disabled label 2.39:1 light, 3.47:1 dark (disabled selected 1.79:1 / 2.75:1); the neutral fill against the page; the hover step (Q101); pane edges (Q98, open). Variants b and c apply decided rules: focus rings in --et-theme-color-ink-solid (Q88) and mint on light rule a (Q99): the selected mint fill gets a 1px inset ink edge. Variant a shows today."
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Today: on light the selected chip is the mint 16% fill at 1.08:1 against the page with no edge (danger 1.29:1), its label in ink 5.07:1; chip and remove focus rings mint 1.33:1 (danger ring 4.83:1). Dark: selected fill 1.46:1, mint rings 13.50:1, danger ring 3.71:1."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Pick. Decided rules only (Q88, Q99 rule a): chip and remove-button focus rings in --et-theme-color-ink-solid, and the selected chip's mint fill gets a 1px inset ink edge. Light: ink edge 5.48:1 against the page, 5.07:1 against the fill (danger 6.47:1 / 5.02:1); rings 5.48:1 against the page, the remove ring 4.60:1 against the chip fill (danger ring 6.47:1). Dark: ink is mint, so the edge draws mint, 13.50:1 against the page (danger 6.48:1); rings 13.50:1 unchanged, danger ring 6.48:1. Like the button and pagination rounds, the edge runs in both schemes since ink follows the scheme; in dark that adds a visible mint edge, which goes beyond rule a (light surfaces). If dark should stay as today, take c."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "b with the ink edge on light only: box-shadow takes light-dark(ink, transparent). Light equal to b (edge 5.48:1 against the page, 5.07:1 against the fill; danger 6.47:1); dark as today, selected fill 1.46:1 with no edge, rings as b. It keys on color-scheme, not on the surface, so a dark surface theme inside a light page would still draw the edge; that mechanism is my reading of rule a, not a decided rule."
+    }
+  }
+}
