@@ -43,7 +43,7 @@ type Row = {
 
       <button
         (click)="toggle()"
-        et-button
+        et-icon-button
         type="button"
         variant="transparent"
         color="surface"
@@ -51,7 +51,7 @@ type Row = {
         title="The checkouts Studio knows"
         aria-label="Checkouts"
       >
-        <svg class="size-3 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
+        <svg class="et-icon fill-none stroke-current stroke-[1.8]" etIcon viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="3" />
           <path
             d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1V3.5h-3.8V6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1v2.6h3.8V18a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"
