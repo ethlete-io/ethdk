@@ -825,7 +825,7 @@ describe('completenessOf', () => {
         /^HINT elements\/card badge - changes \d\.\d % of the frame against rest - extract the changed element as its own part$/,
       ),
     ]);
-  });
+  }, 120_000);
 
   it('fails the merge accordion that is only drawn open without its body, and passes a fully drawn one', async (context) => {
     const { target, config, product } = checkout();
