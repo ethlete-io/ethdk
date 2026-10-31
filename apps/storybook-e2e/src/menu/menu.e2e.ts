@@ -570,3 +570,15 @@ test.describe('menu / touch', () => {
     await expect(root.getByText('Last action: Save')).toBeVisible();
   });
 });
+
+test.describe('menu / selection check', () => {
+  test('the check of a selection item uses the ink colour', async ({ page }) => {
+    const root = await openStory(page, 'components-overlays-menu-with-selection--default');
+    await root.getByRole('button', { name: 'View options' }).click();
+
+    const check = page.locator('.et-menu-item-check').first();
+    await check.evaluate((el: HTMLElement) => el.style.setProperty('--et-theme-color-ink-solid', 'rgb(1 2 3)'));
+
+    await expect(check).toHaveCSS('color', 'rgb(1, 2, 3)');
+  });
+});

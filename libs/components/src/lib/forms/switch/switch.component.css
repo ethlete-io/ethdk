@@ -59,6 +59,7 @@
       height: var(--et-switch-track-height);
       border-radius: calc(var(--et-switch-track-height) / 2);
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
+      box-shadow: inset 0 0 0 1px var(--et-surface-interaction-solid);
     }
 
     /* hover-capable pointers only — on touch, :hover sticks after a tap */
@@ -69,6 +70,7 @@
         &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
         .et-switch-track {
         background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
+        box-shadow: inset 0 0 0 1px var(--et-surface-interaction-hover-solid);
       }
     }
 
@@ -154,6 +156,7 @@
     &[aria-checked='true'] {
       .et-switch-track {
         background-color: var(--et-theme-color-primary-solid, currentColor);
+        box-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
       }
 
       .et-switch-thumb {
@@ -186,19 +189,20 @@
     &[data-indeterminate] {
       .et-switch-track {
         background-color: transparent;
+        box-shadow: none;
 
         &::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          border: 1px dashed var(--et-theme-color-primary-solid, currentColor);
+          border: 1px dashed var(--et-theme-color-ink-solid, currentColor);
         }
       }
 
       .et-switch-thumb {
         left: calc((var(--et-switch-track-width) - (var(--et-switch-thumb-size) - 4px)) / 2);
-        background-color: var(--et-theme-color-primary-solid, currentColor);
+        background-color: var(--et-theme-color-ink-solid, currentColor);
       }
     }
 

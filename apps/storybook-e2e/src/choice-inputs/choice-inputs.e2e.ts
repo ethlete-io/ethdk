@@ -595,3 +595,39 @@ test.describe('choice-inputs / async validation', () => {
     await expect(group).not.toHaveAttribute('aria-busy', { timeout: 5000 });
   });
 });
+
+test.describe('switch / track edge', () => {
+  test('the off track draws a surface-interaction edge', async ({ page }) => {
+    const root = await openStory(page, SWITCH_DEFAULT);
+    const track = root.locator('et-switch:not([aria-checked="true"]) .et-switch-track').first();
+    const color = await track.evaluate((el) => {
+      const probe = document.createElement('span');
+      probe.style.border = '1px solid var(--et-surface-interaction-solid)';
+      el.appendChild(probe);
+      const value = getComputedStyle(probe).borderTopColor;
+      probe.remove();
+
+      return value;
+    });
+
+    await expect(track).toHaveCSS('box-shadow', `${color} 0px 0px 0px 1px inset`);
+  });
+
+  for (const [scheme, edge] of [
+    ['light', 'rgb(1, 2, 3) 0px 0px 0px 1px inset'],
+    ['dark', 'rgba(0, 0, 0, 0) 0px 0px 0px 1px inset'],
+  ] as const) {
+    test(`the on track draws its ink edge only in the light scheme (${scheme})`, async ({ page }) => {
+      const root = await openStory(page, SWITCH_DEFAULT);
+      await setColorScheme(root, scheme);
+      const toggle = root.locator('et-switch').first();
+      if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+      const track = toggle.locator('.et-switch-track');
+      await track.evaluate((el: HTMLElement) => el.style.setProperty('--et-theme-color-ink-solid', 'rgb(1 2 3)'));
+
+      await expect(track).toHaveCSS('box-shadow', edge);
+    });
+  }
+});
