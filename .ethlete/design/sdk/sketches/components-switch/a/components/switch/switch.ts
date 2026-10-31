@@ -1,5 +1,6 @@
 import { switchControl, type SwitchMockOptions, switchStyles } from '@ethlete/components/design/switch';
 import { definePart, drawing } from '@design-system';
+import focusRing from './switch.css?inline';
 
 type Interaction = 'hover' | 'focus-visible' | 'active';
 
@@ -57,6 +58,6 @@ export default definePart({
           .filter(Boolean)
           .join(' '),
       }).replace('class="et-choice-field-label-area', 'data-et-skip="CLIPPED" class="et-choice-field-label-area'),
-      styles: switchStyles,
+      styles: [switchStyles, focusRing].join('\n'),
     }),
 });

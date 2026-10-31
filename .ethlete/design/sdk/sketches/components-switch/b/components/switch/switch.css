@@ -14,4 +14,8 @@
       }
     }
   }
+
+  et-switch:focus-visible .et-switch-track {
+    outline-color: var(--et-theme-color-ink-solid);
+  }
 }
