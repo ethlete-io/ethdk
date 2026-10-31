@@ -757,6 +757,10 @@ machen".
 - Q139 error-theme hover tones (Tom, 2026-10-31, option b): a hover in the error state uses the theme's next stronger
   tone (`-active` instead of `-hover`), the same rule as Q101 for filled buttons. Today the checkbox error hover is
   2.77 on dark and the text-field hover ink about 2.8 on white. No theme generator change.
+  Refined as Q151 (Tom, 2026-10-31, option b): one tone for both schemes made the light hover (3.76) weaker than the
+  light rest (4.83). The error hover is `light-dark(primary -hover, ink-active)`: 6.47 light / 4.76 dark, a small
+  step over rest (4.83 / 3.71) per Q111. Also for dropzone and switch (their error border lost on hover; same bug as
+  the Q100 checkbox, lead call).
 
 ### Input/textarea r2 and chat dogfood decisions (Tom, 2026-10-31)
 
