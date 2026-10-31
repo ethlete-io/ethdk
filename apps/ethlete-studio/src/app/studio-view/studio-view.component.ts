@@ -1,5 +1,5 @@
 import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
@@ -28,6 +28,7 @@ import {
 } from '../../host/design';
 import { DesignChange, designChanges$ } from '../../host/design-changes';
 import { PartsRedraw } from '../../host/design-parts';
+import { designQueue$ } from '../../host/design-queue';
 import { injectFrameRenderQueue } from '../components/design-canvas/frame-render-queue';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
@@ -35,6 +36,7 @@ import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
+import { failuresOf, queueLineOf } from './queue-status';
 import { rememberView, rememberedView } from './remembered';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
@@ -103,6 +105,19 @@ const STATUS_ITEM =
         <span [class]="STATUS_ITEM" data-rendering>
           <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"></i>
           Rendering {{ rendering }} {{ rendering === 1 ? 'frame' : 'frames' }}
+        </span>
+      }
+
+      @if (queueLine(); as line) {
+        <span [class]="STATUS_ITEM" title="Shots the design server draws, and the age of the oldest" data-design-queue>
+          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"></i>
+          {{ line }}
+        </span>
+      }
+
+      @if (failures().length) {
+        <span [title]="failureNote()" [class]="STATUS_ITEM" [etProvideColor]="errorTheme()" data-draw-failures>
+          <span class="text-(--et-theme-color-ink-solid)">{{ failures().length }} failed</span>
         </span>
       }
 
@@ -188,6 +203,23 @@ export class StudioViewComponent {
 
     return state?.listening ? state.port : null;
   });
+
+  private designQueue = toSignal(
+    toObservable(this.listeningPort).pipe(switchMap((port) => (port === null ? of(null) : designQueue$(port)))),
+    { initialValue: null },
+  );
+
+  protected queueLine = computed(() => queueLineOf(this.designQueue()));
+
+  protected failures = computed(() =>
+    failuresOf({
+      queue: this.designQueue(),
+      failingFrames: Object.keys(this.frameRevisions().failing),
+      now: Date.now(),
+    }),
+  );
+
+  protected failureNote = computed(() => this.failures().join('\n'));
 
   protected serverLine = computed(() => {
     const state = this.server();
