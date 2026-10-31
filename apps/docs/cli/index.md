@@ -265,6 +265,13 @@ from `@ethlete/components`, is not checked: the rule cannot read that markup.
 its folder, or in a file of a `shared/` folder that it imports, has a canonical form under the product's stylesheets, as Tailwind IntelliSense reports it:
 with a 10px rem base, write `w-2xl` instead of `w-[420px]`.
 
+`et design check` fails with `CLASS-UNDEFINED` when a class in the markup of those same files parses
+as a Tailwind utility with a value but compiles to no CSS against the product's stylesheets:
+`bg-surface-sunken` once the theme no longer defines `--color-surface-sunken`. Tailwind emits nothing
+for such a class, so it fails silently in the browser. `et-` classes, names Tailwind does not parse,
+and classes the product's stylesheets or the file itself give a rule pass. A sketch fails only on a
+class it adds.
+
 `et design check` fails with `UTILITY-CSS` when the CSS of a part outside `foundations/` holds a
 declaration that a Tailwind utility of the product draws: a layout keyword such as `display: flex`, or
 the value of a token that a `@theme` block registers. Put the utility in the markup. A rule whose

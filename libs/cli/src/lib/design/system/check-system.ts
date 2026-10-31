@@ -19,6 +19,7 @@ import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { inlineSvgsOf } from './rules/inline-svg';
 import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
+import { undefinedClassesOf } from './rules/undefined-class';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { tokenSelectorsOf } from './rules/token-selectors';
 import { upwardDependenciesOf } from './rules/upward-dependency';
@@ -52,6 +53,7 @@ const RULES = [
   badSvgAssetsOf,
   inlineSvgsOf,
   canonicalClassesOf,
+  undefinedClassesOf,
   utilityCssOf,
 ];
 
