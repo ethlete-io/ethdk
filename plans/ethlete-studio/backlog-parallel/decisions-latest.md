@@ -209,3 +209,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **The word "go" (Tom, 2026-11-01), after the MVP:** "go" sounds odd as the name for releasing a part for
   implementation. Rename it with the after-MVP `pages/inventory` rework, which is where approvals will change anyway.
   Today the go exists only in the CLI (`et design go`); Studio has no go action.
+- **Two designers on one project (Tom, 2026-11-01), after the MVP, open topic:** how Studio avoids or resolves
+  conflicts when two designers work on the same product: the same part or sketch, the shared JSON records
+  (`go.json`, `ready.json`, `inventory.json`, `merged.json`, `accepted.json`), and comments. Today every record is a
+  plain file in git, so two edits meet only as a git merge conflict. Start with a grill: what must a designer see
+  and do when someone else changes the same thing.
