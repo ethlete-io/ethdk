@@ -56,9 +56,15 @@ const RULES = [
   inlineSvgsOf,
   canonicalClassesOf,
   undefinedClassesOf,
-  gluedInterpolationsOf,
   deniedClassesOf,
   utilityCssOf,
+];
+
+export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
+  ...unusedSharedExportsOf(product),
+  ...staleReplacesOf(product),
+  ...tokenSelectorsOf(product),
+  ...gluedInterpolationsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>
@@ -159,7 +165,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
     const isOwn = (problem: Problem) => !isInBasePart(product, problem.file);
-    const warnings = [...unusedSharedExportsOf(product), ...staleReplacesOf(product), ...tokenSelectorsOf(product)];
+    const warnings = warningProblemsOf(product);
     const problems = ruleProblemsOf(product);
 
     warnings.filter(isOwn).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));

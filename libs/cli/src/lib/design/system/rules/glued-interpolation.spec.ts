@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
-import { ruleProblemsOf } from '../check-system';
+import { ruleProblemsOf, warningProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
 import { gluedInterpolationsOf } from './glued-interpolation';
 
@@ -53,9 +53,12 @@ describe('gluedInterpolationsOf', { timeout: 30_000 }, () => {
     ).toEqual([]);
   });
 
-  it('runs as part of design check', () => {
+  it('runs as a warning of design check, not as an error', () => {
     const product = acme(`<div class="flex\${props.class}"></div>`);
+    const glued = (problems: { rule: string }[]) =>
+      problems.filter((problem) => problem.rule === 'CLASS-GLUED-INTERPOLATION');
 
-    expect(ruleProblemsOf(product).filter((problem) => problem.rule === 'CLASS-GLUED-INTERPOLATION')).toHaveLength(1);
+    expect(glued(warningProblemsOf(product))).toHaveLength(1);
+    expect(glued(ruleProblemsOf(product))).toHaveLength(0);
   });
 });

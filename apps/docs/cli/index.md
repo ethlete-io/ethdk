@@ -274,7 +274,7 @@ for such a class, so it fails silently in the browser. `et-` classes, names Tail
 and classes the product's stylesheets or the file itself give a rule pass. A sketch fails only on a
 class it adds.
 
-`et design check` fails with `CLASS-GLUED-INTERPOLATION` when a class in an `html` template of a part, or of a TS file below its
+`et design check` warns with `CLASS-GLUED-INTERPOLATION` when a class in an `html` template of a part, or of a TS file below its
 folder, has no space between it and a `${...}` interpolation, as in `shadow-lg${props.class}`. Tailwind's scanner reads
 both as one candidate and emits no CSS for the class. A class built by interpolation (`et-icon--${name}`, `md:${name}`) passes.
 
