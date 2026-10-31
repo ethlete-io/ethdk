@@ -131,10 +131,16 @@ export const taskStatesOf = (options: {
   return { added, changed, all: added.length === 0 && changed.length === 0 && record.hash !== hash };
 };
 
-/** The repo paths a task may change: the folder of the component, and for the `sdk` product its changeset and docs guide. */
-export const allowedFilesOf = (options: { product: string; component: string }): string[] => [
+/** The repo paths a task may change: the component folder, a changeset, the harness map, and for `sdk` a docs guide. */
+export const allowedFilesOf = (options: {
+  product: string;
+  component: string;
+  harnessMap: string | null;
+}): string[] => [
   `${posix.dirname(options.component)}/**`,
-  ...(options.product === 'sdk' ? ['.changeset/*.md', 'apps/docs/components/**'] : []),
+  '.changeset/*.md',
+  ...(options.harnessMap === null ? [] : [options.harnessMap]),
+  ...(options.product === 'sdk' ? ['apps/docs/components/**'] : []),
 ];
 
 const matchesPattern = (file: string, pattern: string) => {

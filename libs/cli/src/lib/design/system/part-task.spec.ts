@@ -81,17 +81,22 @@ const task = (
 describe('part task', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('allows the component folder, and for sdk also its changesets and component guides', () => {
+  it('allows the component folder, changesets and the harness map, and for sdk also its component guides', () => {
     const component = 'libs/components/src/lib/chip/chip.component.ts';
+    const harnessMap = 'apps/app-a/src/app/design-harness/design-harness-parts.ts';
 
-    expect(allowedFilesOf({ product: 'app-a', component })).toEqual(['libs/components/src/lib/chip/**']);
-    expect(allowedFilesOf({ product: 'sdk', component })).toEqual([
+    expect(allowedFilesOf({ product: 'app-a', component, harnessMap })).toEqual([
+      'libs/components/src/lib/chip/**',
+      '.changeset/*.md',
+      harnessMap,
+    ]);
+    expect(allowedFilesOf({ product: 'sdk', component, harnessMap: null })).toEqual([
       'libs/components/src/lib/chip/**',
       '.changeset/*.md',
       'apps/docs/components/**',
     ]);
 
-    const allowed = allowedFilesOf({ product: 'sdk', component });
+    const allowed = allowedFilesOf({ product: 'sdk', component, harnessMap: null });
 
     expect(
       filesOutsideOf({
@@ -114,8 +119,16 @@ describe('part task', () => {
       'apps/docs/cli/index.md',
     ]);
     expect(
-      filesOutsideOf({ allowed: allowedFilesOf({ product: 'app-a', component }), files: ['.changeset/a.md'] }),
-    ).toEqual(['.changeset/a.md']);
+      filesOutsideOf({
+        allowed: allowedFilesOf({ product: 'app-a', component, harnessMap }),
+        files: [
+          '.changeset/a.md',
+          harnessMap,
+          'apps/app-a/src/app/design-harness/other.ts',
+          'apps/docs/components/chip.md',
+        ],
+      }),
+    ).toEqual(['apps/app-a/src/app/design-harness/other.ts', 'apps/docs/components/chip.md']);
   });
 
   it('lists every state as new without a record, then the added and changed states, then all states', () => {
@@ -157,9 +170,9 @@ describe('part task', () => {
     expect(refusal('pages/inbox')).toContain('links only its route - add the presentational component');
     go(target, 'pages/outbox');
     expect(refusal('pages/outbox')).toMatchObject({ component: 'src/outbox/outbox.component.ts' });
-    expect(allowedFilesOf({ product: 'app-a', component: 'src/outbox/outbox.component.ts' })).toEqual([
-      'src/outbox/**',
-    ]);
+    expect(allowedFilesOf({ product: 'app-a', component: 'src/outbox/outbox.component.ts', harnessMap: null })).toEqual(
+      ['src/outbox/**', '.changeset/*.md'],
+    );
     expect(refusal('components/chip')).toContain('has no go');
     go(target);
     expect(refusal('components/chip')).toMatchObject({ component: 'libs/chip/chip.component.ts' });
@@ -206,6 +219,7 @@ describe('part task', () => {
       '  new: default, removable',
       'allowed files:',
       '  libs/chip/**',
+      '  .changeset/*.md',
       'target: compare green',
       THEMING_TEXT,
     ]);

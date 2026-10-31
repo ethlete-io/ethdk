@@ -348,10 +348,10 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 
 `et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
-allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component, and for the product
-`sdk` also `.changeset/*.md` and `apps/docs/components/**`. The task refuses a part without a go, with a stale go,
+allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component,
+`.changeset/*.md`, the generated harness map of the product, and for the product `sdk` also `apps/docs/components/**`. The task refuses a part without a go, with a stale go,
 without an `implements` link, or with only a route link: add the `component` of the page to the link. A page part's
-allowed files are the folder of that component.
+allowed folder is the folder of that component.
 `.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
 when the part changed but no state's props did, the task lists all states. `--verify [<rev>]` checks the files of a
 commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. When the

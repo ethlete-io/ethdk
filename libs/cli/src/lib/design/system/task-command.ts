@@ -109,7 +109,11 @@ export const designTask = async (options: {
     return 1;
   }
 
-  const allowed = allowedFilesOf({ product: product.name, component: task.component });
+  const allowed = allowedFilesOf({
+    product: product.name,
+    component: task.component,
+    harnessMap: product.config.harness?.map ?? null,
+  });
 
   if (rev !== null) {
     const stale = harnessStaleOf({ target, product });
