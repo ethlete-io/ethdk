@@ -82,6 +82,19 @@ describe('undefinedClassesOf', { timeout: 30_000 }, () => {
     expect(messagesOf(target)).toEqual([]);
   });
 
+  it('reads the options of a design renderer as no classes, except class', () => {
+    const target = acme();
+    const dialog = `import { anchoredDialog } from '@ethlete/components/design/anchored-dialog';\nexport const a = anchoredDialog({ placement: 'bottom-start', content: '<div class="p-3"></div>' });\n`;
+    const button = `import { button } from '@ethlete/components/design/button';\nexport const b = button({ class: 'bottom-start' });\n`;
+
+    write(target, 'acme/pages/home/home.ts', part('<div class="flex"></div>'));
+    write(target, 'acme/pages/home/shared/dialog.ts', dialog);
+    expect(messagesOf(target)).toEqual([]);
+
+    write(target, 'acme/pages/home/shared/button.ts', button);
+    expect(messagesOf(target)).toEqual([`button.ts: ${report('bottom-start')}`]);
+  });
+
   it('runs as part of design check', () => {
     const target = acme();
 

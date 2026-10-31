@@ -81,10 +81,43 @@ const literalOf = (node: ts.Node) => {
   return null;
 };
 
-const classTextsOf = (node: ts.Node): string[] => {
+const RENDERER_MODULES = '@ethlete/components/design/';
+
+const rendererNamesOf = (file: ts.SourceFile) =>
+  new Set(
+    file.statements.flatMap((statement) =>
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text.startsWith(RENDERER_MODULES) &&
+      statement.importClause?.namedBindings &&
+      ts.isNamedImports(statement.importClause.namedBindings)
+        ? statement.importClause.namedBindings.elements.map((element) => element.name.text)
+        : [],
+    ),
+  );
+
+const isRendererOption = (node: ts.Node, renderers: Set<string>) => {
+  const property = node.parent;
+  const options = property?.parent;
+  const call = options?.parent;
+
+  return (
+    ts.isPropertyAssignment(property) &&
+    property.initializer === node &&
+    !(ts.isIdentifier(property.name) && property.name.text === 'class') &&
+    ts.isObjectLiteralExpression(options) &&
+    ts.isCallExpression(call) &&
+    call.arguments.includes(options) &&
+    ts.isIdentifier(call.expression) &&
+    renderers.has(call.expression.text)
+  );
+};
+
+const classTextsOf = (node: ts.Node, renderers: Set<string>): string[] => {
   const literal = literalOf(node);
 
   if (!literal || isCompared(literal.expression)) return [];
+  if (!literal.text.includes('<') && isRendererOption(literal.expression, renderers)) return [];
   if (literal.text.includes('<'))
     return [...literal.text.matchAll(/\bclass=["']([^"']*)/gu)].map(([, value]) => value ?? '');
 
@@ -93,12 +126,14 @@ const classTextsOf = (node: ts.Node): string[] => {
 
 const classesIn = (source: string) => {
   const texts: string[] = [];
+  const file = sourceFileOf(source);
+  const renderers = rendererNamesOf(file);
   const visit = (node: ts.Node) => {
-    texts.push(...classTextsOf(node));
+    texts.push(...classTextsOf(node, renderers));
     ts.forEachChild(node, visit);
   };
 
-  visit(sourceFileOf(source));
+  visit(file);
 
   return [...new Set(texts.flatMap((text) => text.split(/\s+/u).filter(Boolean)))];
 };
