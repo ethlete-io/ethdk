@@ -724,6 +724,24 @@ Follows Q120. Built on products, parts, sketches and variants; nothing on legacy
 - Q129: the chat is a collapsible panel on the right that survives navigation. The `/agent` page goes away.
 - Q130: one running chat with a "New chat" button; a list of old chats only when Tom asks for it.
 
+### Studio MVP scope (Tom, 2026-10-31)
+
+The yardstick for every new task. Tom: "ziel 1 war Studio zu nutzen um Studio zu designen um Studio dadurch besser zu
+machen".
+
+- Q131 MVP: Tom designs Studio's own UI in Studio, with agents. Every friction he finds becomes a fix to the tool.
+  The MVP is done when all Studio pages are designed this way and merged.
+- Q132 SDK rounds: no new sketches that Studio does not need. Studio uses button, form-field, select, input,
+  textarea, tree and slider. Open rounds and their findings and lib fixes are finished; other open rounds wait for
+  Tom's merge after the MVP.
+- Q133 builder 33: after the slider fix, the input/textarea r2 rounds and the open findings, draw Studio pages and
+  Studio parts as sketches for Tom to review in Studio.
+- Q134 builder 57: finish the shot invalidation bug (friction). Build the global chat up to the view-context chip
+  (Q127). Smart navigation (Q128) is after the MVP.
+- Q135 after the MVP, unless one blocks Tom while he designs Studio (then it is friction and in scope): CEF runtime,
+  more motion work, the SDK catalog in Studio, existing-code import, the git-free designer workflow, the old-chats
+  list, wireframes.
+
 #### Build slices (builder ethlete-sdk-57)
 
 1. Q129, built (`d3003cfc3`): a collapsible chat panel on the right of the app shell. Its state lives in a root store, so it
