@@ -32,10 +32,11 @@ Tom. Tom is not there to merge sketches: sketch work stops at `ready` and goes o
      fixed descendants after `placeOverlays`. Real sdk select open shot at 320 px checked; live Studio canvas not seen.
      Open for Tom: a frame with a declared width does not grow sideways; content above the root is not added; a
      `fixed; inset: 0` backdrop stretches the frame to the 800 px viewport.
-  - In progress (2026-10-31, two opus subagents, uncommitted work may sit in the tree): Q66 live canvas frame
-    height (sdk select `open-option-hover` at 320 px cut off in the live canvas, shots fine; `frame.ts`,
-    `canvas-frame.component.ts`); Q69 static grid shots render light in a dark Studio (`shot.ts`, `serve.ts`, the
-    Studio grid cell). If a subagent did not commit, check `git status` and redo the slice from the grill's Q66/Q69.
+  - Done (2026-10-31): Q66 live canvas frame height in `9e41365d3`; Q69 grid shots follow the Studio colour mode in
+    `395fd54b4`.
+  - In progress (2026-10-31, opus subagent): sdk `components/form-field` live canvas draws empty cells (CLI shots
+    fine); then 1e: the :4402 server survives a `dist/libs/components` rebuild, a 500 shot shows an error state, a
+    loading state until the products are indexed, and the ~15 s cold start.
   3. Q60 (Tom): MCP `check` gets `call`/`variant` args; `et design check --receipt <path>`; new MCP tool `call`
      (call.ts, fixture.ts, variant path, frame URL); then delete `tools.rs` and move `cli_entry` into
      `design_server.rs`. One MCP server.
@@ -469,7 +470,12 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q88: a keyboard-active option gets the ink focus outline, like the tree row (Q70), so it differs from hover. A
   selected option stays check only, with no background.
 - Q89: `design complete` counts the keyboard-active option look (`data-active-source="keyboard"`) as focus-visible
-  for the select, menu and row kinds. No per-sketch exception. Built by `ethlete-sdk-57`.
+  for the select, menu and row kinds. No per-sketch exception. Built in `c230a42e3`: an option with
+  `data-active-source="keyboard"` counts like one `aria-activedescendant` names; a `row` control with it counts
+  against a plain row. Verified with a unit spec and a browser fixture (failed before the scan passed the flag on).
+- Q85 consumer test (sdk-33): a product that extends a base drew without the base's tokens. Built in `0126f0950`:
+  a product without `tokens` takes the base's. Verified: `design check --product app` in `/tmp/q85-consumer` gives
+  `ok`. Shots there not re-checked by the builder.
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, not decided)
 
