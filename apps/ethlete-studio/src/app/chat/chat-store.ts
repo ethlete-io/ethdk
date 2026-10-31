@@ -10,6 +10,16 @@ import { chipOf, injectViewContext, preambleOf } from './view-context';
 /** One line of the chat: a prompt the user sent with the view it carried, or an event of the agent run that answered it. */
 export type ChatEntry = { kind: 'prompt'; text: string; context?: string } | AgentEvent;
 
+const withoutRepeatedSummary = (entry: ChatEntry, list: readonly ChatEntry[]): ChatEntry => {
+  if (entry.kind !== 'finished') return entry;
+
+  const previous = [...list].reverse().find((candidate) => candidate.kind !== 'context');
+
+  return previous?.kind === 'message' && previous.text.trim() === entry.summary.trim()
+    ? { ...entry, summary: '' }
+    : entry;
+};
+
 const CHAT_STORE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const destroyRef = inject(DestroyRef);
   const viewContext = injectViewContext();
@@ -51,7 +61,7 @@ const CHAT_STORE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const record = (entry: ChatEntry) => {
     if (entry.kind === 'session') session.set(entry.id);
-    entries.update((list) => [...list, entry]);
+    entries.update((list) => [...list, withoutRepeatedSummary(entry, list)]);
   };
 
   const stop = () => {

@@ -184,4 +184,21 @@ describe('injectChatStore', () => {
 
     expect(host.run.mock.calls[1]?.[0].prompt).toBe('Studio view: product Kit, part components/select.\n\nSecond.');
   });
+  it('does not repeat the last message as the summary of the run', () => {
+    const store = setup();
+
+    store.send('Make it bolder.');
+
+    const run = host.runs.at(-1);
+
+    run?.events.next({ kind: 'message', text: 'I made the label bolder.' });
+    run?.events.next({ kind: 'context', tokens: 1200 });
+    run?.events.next({ kind: 'finished', ok: true, summary: 'I made the label bolder.' });
+    run?.events.next({ kind: 'finished', ok: false, summary: 'The CLI exited.' });
+
+    expect(store.entries().slice(-2)).toEqual([
+      { kind: 'finished', ok: true, summary: '' },
+      { kind: 'finished', ok: false, summary: 'The CLI exited.' },
+    ]);
+  });
 });
