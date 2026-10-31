@@ -76,7 +76,7 @@ export const tooltip = (options: TooltipMockOptions = {}) => {
   const tooltipAttributes = [
     options.attributes,
     'role="tooltip"',
-    `class="${['et-tooltip', 'et-color--inherited', surface].filter(Boolean).join(' ')}"`,
+    `class="et-tooltip et-color--inherited ${surface ?? 'et-surface--inherited'}"`,
     `id="${id}"`,
     hasTemplate && 'data-has-template="true"',
   ].filter(Boolean);

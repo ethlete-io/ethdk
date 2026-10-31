@@ -18,10 +18,18 @@ export const shapeOf = (element: Element): DesignMockShape => ({
   children: [...element.children].map(shapeOf),
 });
 
-/** Parses a mock's HTML and returns the shape of the first element matching `selector`. */
+/**
+ * Parses a mock's HTML and returns the shape of the first element matching `selector`. A `data-et-auto-surface`
+ * becomes the `et-surface--inherited` class that `etAutoSurface` renders when no surface theme is registered.
+ */
 export const mockShapeOf = (html: string, selector: string) => {
   const template = document.createElement('template');
   template.innerHTML = html;
+
+  for (const element of template.content.querySelectorAll('[data-et-auto-surface]')) {
+    element.removeAttribute('data-et-auto-surface');
+    element.classList.add('et-surface--inherited');
+  }
 
   const drawn = template.content.querySelector(selector);
   if (!drawn) throw new Error(`the mock drew no ${selector}`);

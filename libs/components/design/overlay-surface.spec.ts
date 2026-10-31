@@ -49,7 +49,7 @@ describe('overlay design renderers', () => {
   });
 
   it('leaves the tooltip itself to inherit the auto surface of its pane', () => {
-    expect(surfaceClassesOf(paneOf(tooltip({ text: 'Tip' }), 'et-tooltip'))).toEqual([]);
+    expect(surfaceClassesOf(paneOf(tooltip({ text: 'Tip' }), 'et-tooltip'))).toEqual(['et-surface--inherited']);
   });
 
   describe('anchoredDialog', () => {
