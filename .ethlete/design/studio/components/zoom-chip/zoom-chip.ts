@@ -39,7 +39,7 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: html`<div
-        class="inline-flex rounded-control-md border border-et-surface-interaction et-surface--dark bg-(--et-surface-background-solid)${
+        class="inline-flex rounded-control-md border border-et-surface-interaction et-surface--dark bg-et-surface-bg${
           props.class ? ` ${props.class}` : ''
         }"
         data-canvas-zoom

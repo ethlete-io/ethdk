@@ -76,7 +76,7 @@ export default definePart({
     const menu = await studioMenu(props);
     return drawing({
       body: html`<div
-        class="box-border w-xl h-64 p-space-3 et-surface--dark bg-(--et-surface-background-solid) text-(--et-surface-color-solid) font-ui text-ui-md"
+        class="box-border w-xl h-64 p-space-3 et-surface--dark bg-et-surface-bg text-et-surface font-ui text-ui-md"
       >
         ${menu.body}
       </div>`,

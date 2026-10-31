@@ -36,18 +36,14 @@ const dot = (inert?: boolean) =>
 
 const lead = ({ kind, expanded, inert }: Row) => (kind === 'leaf' ? dot(inert) : chevron(expanded === true));
 
-const statusClass = { 'in-progress': 'text-(--et-surface-color-muted-solid)', ready: 'text-accent' };
+const statusClass = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
 
 const rowMarkup = (r: Row) => {
-  const accent = r.selected ? 'text-accent-text' : 'text-(--et-surface-color-muted-solid)';
-  const color = r.selected
-    ? 'text-accent-text'
-    : r.kind === 'group'
-      ? 'text-(--et-surface-color-muted-solid)'
-      : 'text-(--et-surface-color-solid)';
+  const accent = r.selected ? 'text-et-theme-ink' : 'text-et-surface-muted';
+  const color = r.selected ? 'text-et-theme-ink' : r.kind === 'group' ? 'text-et-surface-muted' : 'text-et-surface';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-accent-subtle ' : ''}hover:bg-(--et-surface-interaction-solid)/9 active:bg-(--et-surface-interaction-solid)/15 ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-et-theme/20 ' : ''}hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"
@@ -55,7 +51,7 @@ const rowMarkup = (r: Row) => {
       >
         <span class="st-trow-lead flex flex-none items-center justify-center ${accent}">${lead(r)}</span>
         <span class="flex-1 min-w-0 overflow-hidden text-ellipsis">${r.label}</span>
-        ${r.warning ? `<span class="st-trow-warning flex flex-none" title="${r.warning}">${warningIcon}</span>` : ''}
+        ${r.warning ? `<span class="st-trow-warning flex flex-none et-color--warning text-et-theme" title="${r.warning}">${warningIcon}</span>` : ''}
         ${r.status ? `<span class="flex flex-none ${statusClass[r.status]}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
         ${r.comments ? `<span class="flex flex-none items-center gap-0.5 ${accent} text-(length:--text-xs)" title="${r.comments} open comments">${bubble}</span>` : ''}
       </div>`;

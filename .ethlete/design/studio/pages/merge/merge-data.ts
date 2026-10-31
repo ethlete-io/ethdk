@@ -31,7 +31,7 @@ export const buttonTree = await partTree.render({
 
 export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
   html`<div
-    class="mg-shot relative flex-none overflow-hidden rounded-control-md et-surface--dark bg-(--et-surface-background-solid)"
+    class="mg-shot relative flex-none overflow-hidden rounded-control-md et-surface--dark bg-et-surface-bg"
     data-et-skip="CLIPPED"
     data-side="${side}"
     style="--mg-scale: ${scale}; --mg-w: ${row.width}px; --mg-h: ${row.height}px"
@@ -42,20 +42,19 @@ export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
 export const rowCaption = (row: Row, stacked = false) =>
   html`<span
     class="flex items-baseline gap-space-2 min-w-0 text-ui-sm whitespace-nowrap${stacked ? ' flex-wrap gap-y-0' : ''}"
-    ><span class="text-(--et-surface-color-solid) font-code">${row.part}</span
-    ><span class="text-(--et-surface-color-muted-solid)">${row.state}</span
+    ><span class="text-et-surface font-code">${row.part}</span><span class="text-et-surface-muted">${row.state}</span
     ><span
-      class="text-(--et-surface-color-muted-solid) text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
+      class="text-et-surface-muted text-(length:--text-xs)${stacked ? ' basis-full' : " before:content-['·'] before:mr-space-2"}"
       >${row.instances === 1 ? '1 instance' : `${row.instances} instances`}</span
     ></span
   >`;
 
 export const picked = (variant: string) =>
   html`<span
-    class="mg-picked inline-flex items-center gap-space-1 h-control-sm px-space-3 box-border rounded-control-md bg-accent-subtle text-accent-text text-(length:--text-sm) whitespace-nowrap"
+    class="mg-picked inline-flex items-center gap-space-1 h-control-sm px-space-3 box-border rounded-control-md bg-et-theme/20 text-et-theme-ink text-(length:--text-sm) whitespace-nowrap"
     >Picked <code class="font-code">${variant}</code></span
   >`;
 
 export const unchangedBody = html`<ul class="${disclosureBodyClass}">
-  ${UNCHANGED.states.map((state) => html`<li><span class="text-(--et-surface-color-solid) font-code">${UNCHANGED.part}</span><span class="text-(--et-surface-color-muted-solid)">${state}</span></li>`).join('')}
+  ${UNCHANGED.states.map((state) => html`<li><span class="text-et-surface font-code">${UNCHANGED.part}</span><span class="text-et-surface-muted">${state}</span></li>`).join('')}
 </ul>`;

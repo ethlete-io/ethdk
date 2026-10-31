@@ -25,15 +25,15 @@ const faceClass = ({ agent, selected }: Props) => {
     'group-active/pin:bg-surface-raised group-active/pin:bg-[linear-gradient(var(--surface-pressed),var(--surface-pressed))]';
 
   if (!selected) {
-    return `${faceBase} bg-surface-overlay ring-1 ring-surface-border group-hover/pin:bg-surface-raised group-hover/pin:text-text group-hover/pin:ring-text-muted ${pressed} group-focus-visible/pin:outline-offset-2`;
+    return `${faceBase} et-surface--dark-elevated-2 bg-et-surface-bg ring-1 ring-surface-border group-hover/pin:bg-surface-raised group-hover/pin:text-text group-hover/pin:ring-text-muted ${pressed} group-focus-visible/pin:outline-offset-2`;
   }
 
   const rings =
-    'ring-2 shadow-[0_0_0_4px_var(--accent-subtle)] text-on-accent group-focus-visible/pin:outline-offset-[5px]';
+    'ring-2 shadow-[0_0_0_4px_rgb(var(--et-theme-color-primary-rgb)/0.2)] text-et-on-theme group-focus-visible/pin:outline-offset-[5px]';
 
   return agent
-    ? `${faceBase} bg-surface-overlay ring-accent ${rings} group-hover/pin:bg-surface-raised ${pressed}`
-    : `${faceBase} bg-accent ring-surface ${rings} group-hover/pin:bg-accent-hover group-active/pin:bg-(--accent-active)`;
+    ? `${faceBase} et-surface--dark-elevated-2 bg-et-surface-bg ring-et-theme ${rings} group-hover/pin:bg-surface-raised ${pressed}`
+    : `${faceBase} bg-et-theme ring-et-surface-bg ${rings} group-hover/pin:bg-et-theme-hover group-active/pin:bg-et-theme-active`;
 };
 
 const face = (p: Props, inner = '') =>
@@ -43,7 +43,7 @@ const face = (p: Props, inner = '') =>
 
 const countBadge = ({ count }: Props) =>
   count && count > 1
-    ? `<span class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-ui-xs font-ui-strong leading-none text-on-accent tabular-nums ring-2 ring-surface">${count}</span>`
+    ? `<span class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
     : '';
 
 export const pin = (p: Props, placement: CountPlacement = 'beside') => {

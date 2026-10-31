@@ -21,7 +21,7 @@ const label = (text: string, extra = '') =>
 type Place = NonNullable<StateGridOptions['place']>;
 
 const cell = (place: Place) => (body: string | undefined) =>
-  `<div class="st-sgrid-cell py-space-2 px-space-1 et-surface--dark bg-(--et-surface-background-solid)${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
+  `<div class="st-sgrid-cell py-space-2 px-space-1 et-surface--dark bg-et-surface-bg${place === 'center' ? ' grid place-items-center' : ''}">${body ?? ''}</div>`;
 
 const tableRow =
   (place: Place) =>
@@ -54,19 +54,19 @@ export const stateGrid = (
   const rest = rows.filter(restOnly);
   const interactionGroup = interactive.length
     ? `<div class="st-sgrid-group grid items-stretch gap-px">
-        <span class="st-sgrid-head col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 uppercase">States by interaction</span>
+        <span class="st-sgrid-head col-span-full mb-2 border-b border-et-surface-border pb-1 uppercase">States by interaction</span>
         <span></span>
         ${columns.map((column) => label(column)).join('')} ${interactive.map(tableRow(place)).join('')}
       </div>`
     : '';
   const restGroup = rest.length
     ? `<div class="st-sgrid-group st-sgrid-packed grid items-stretch gap-px">
-        <span class="st-sgrid-head col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 uppercase">Rest only</span>
+        <span class="st-sgrid-head col-span-full mb-2 border-b border-et-surface-border pb-1 uppercase">Rest only</span>
         ${lines(rest).map(packedLine(place)).join('')}
       </div>`
     : '';
   return html`<div
-    class="st-sgrid flex flex-col gap-6 w-max et-surface--dark bg-(--et-surface-background-solid) text-(--et-surface-color-muted-solid) pt-4 px-6 pb-6"
+    class="st-sgrid flex flex-col gap-6 w-max et-surface--dark bg-et-surface-bg text-et-surface-muted pt-4 px-6 pb-6"
     data-place="${place}"
     style="--st-cols: ${columns.length}; --st-cell-w: ${cellWidth}"
   >
@@ -76,17 +76,13 @@ export const stateGrid = (
 
 /** The head of a frame: its name and optional width, set above the frame box. */
 export const canvasFrameHead = (name: string, width = '') =>
-  html`<figcaption
-    class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-(--et-surface-color-solid) whitespace-nowrap"
-  >
-    ${name}${width ? `<span class="text-(--et-surface-color-muted-solid) tabular-nums">${width}</span>` : ''}
+  html`<figcaption class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-et-surface whitespace-nowrap">
+    ${name}${width ? `<span class="text-et-surface-muted tabular-nums">${width}</span>` : ''}
   </figcaption>`;
 
 /** The box of a frame: a hairline-edged surface around the body, with an optional head above it. */
 export const canvasFrameBox = (body: string, head = '') =>
-  html`<figure class="st-cframe relative m-0 et-surface--dark bg-(--et-surface-background-solid)">
-    ${head}${body}
-  </figure>`;
+  html`<figure class="st-cframe relative m-0 et-surface--dark bg-et-surface-bg">${head}${body}</figure>`;
 
 /** One frame on the canvas: the head above the box, the body inside. */
 export const canvasFrame = (name: string, body: string, width = '') =>

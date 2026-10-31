@@ -61,21 +61,19 @@ const variantHead = (variant: PageVariant) =>
     <div class="flex items-center gap-space-2 whitespace-nowrap [&>*]:flex-none [&_.et-button]:ms-space-2">
       ${
         variant.key === 'current'
-          ? html`<span class="font-ui font-ui-medium text-ui-sm text-(--et-surface-color-solid)"
-              >${variant.label}</span
-            >`
-          : html`<span class="font-code text-ui-sm text-(--et-surface-color-solid)">Variante ${variant.label}</span>`
+          ? html`<span class="font-ui font-ui-medium text-ui-sm text-et-surface">${variant.label}</span>`
+          : html`<span class="font-code text-ui-sm text-et-surface">Variante ${variant.label}</span>`
       }
       ${pageAuthor(variant)} ${variant.key === 'current' ? '' : merge.body}
     </div>
-    <span class="text-(--et-surface-color-muted-solid) text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis"
+    <span class="text-et-surface-muted text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis"
       >${variant.note}</span
     >
   </div>`;
 
 const frame = (variant: PageVariant, selected: boolean) =>
   html`<figure
-    class="sk-frame relative m-0 box-border flex rounded-control-md et-surface--dark bg-(--et-surface-background-solid) p-space-2"
+    class="sk-frame relative m-0 box-border flex rounded-control-md et-surface--dark bg-et-surface-bg p-space-2"
     ${selected ? ' data-selected' : ''}
   >
     ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}

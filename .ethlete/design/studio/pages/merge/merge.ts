@@ -42,7 +42,7 @@ const crop: Row = {
 
 const listRow = (row: Row) =>
   html`<li
-    class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-accent-subtle"
+    class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-et-theme/20"
     ${row === selected ? ' data-selected' : ''}
   >
     ${rowCaption(row, true)}
@@ -51,13 +51,13 @@ const listRow = (row: Row) =>
 const panelOf = (unchanged: boolean) =>
   html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
     <div class="mg-d-back flex">${back.body}</div>
-    <div class="flex flex-col gap-space-2 pb-space-3 border-b border-(--et-surface-border-solid)">
+    <div class="flex flex-col gap-space-2 pb-space-3 border-b border-et-surface-border">
       <span class="font-code text-(length:--text-sm)">${TARGET.part}</span>
-      <span class="flex items-center gap-space-2 text-(--et-surface-color-muted-solid) text-ui-xs"
+      <span class="flex items-center gap-space-2 text-et-surface-muted text-ui-xs"
         >${picked(TARGET.variant)}<span>${TARGET.note}</span></span
       >
     </div>
-    <span class="text-(--et-surface-color-muted-solid) text-ui-xs">Changed</span>
+    <span class="text-et-surface-muted text-ui-xs">Changed</span>
     <ul class="flex flex-col gap-0.5 m-0 p-0 list-none">
       ${CHANGED.map(listRow).join('')}
     </ul>
@@ -65,9 +65,7 @@ const panelOf = (unchanged: boolean) =>
       ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
     </div>
     <span class="flex-1"></span>
-    <div class="mg-d-merge flex flex-col gap-space-3 pt-space-3 border-t border-(--et-surface-border-solid)">
-      ${merge.body}
-    </div>
+    <div class="mg-d-merge flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">${merge.body}</div>
   </div>`;
 
 export default definePart<Props>({
@@ -91,18 +89,18 @@ export default definePart<Props>({
           </header>
           <div class="flex gap-space-4">
             <figure class="flex flex-col gap-space-2 m-0">
-              <figcaption class="text-(--et-surface-color-muted-solid) text-ui-xs">Now</figcaption>
+              <figcaption class="text-et-surface-muted text-ui-xs">Now</figcaption>
               ${shot(row, 'now', SCALE)}
             </figure>
             <figure class="flex flex-col gap-space-2 m-0">
-              <figcaption class="text-(--et-surface-color-muted-solid) text-ui-xs">
-                After merging <code class="text-accent-text font-code">${TARGET.variant}</code>
+              <figcaption class="text-et-surface-muted text-ui-xs">
+                After merging <code class="text-et-theme-ink font-code">${TARGET.variant}</code>
               </figcaption>
               ${shot(row, 'after', SCALE)}
             </figure>
           </div>
           <div class="flex flex-col gap-space-2">
-            <span class="text-(--et-surface-color-muted-solid) text-ui-xs">Instance 1 of ${row.instances} · 200 %</span>
+            <span class="text-et-surface-muted text-ui-xs">Instance 1 of ${row.instances} · 200 %</span>
             <div class="flex gap-space-4">${shot(crop, 'now', CROP_SCALE)}${shot(crop, 'after', CROP_SCALE)}</div>
           </div>
         </div>`

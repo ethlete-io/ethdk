@@ -59,5 +59,5 @@ export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
 
 export const pageAuthor = (variant: PageVariant) =>
   variant.author
-    ? `<span class="flex min-w-0 items-center gap-space-1 text-(length:--text-sm) text-(--et-surface-color-muted-solid)">${agentLogo(variant.author.agent, 'size-3 flex-none')}${variant.author.name}</span>`
+    ? `<span class="flex min-w-0 items-center gap-space-1 text-(length:--text-sm) text-et-surface-muted">${agentLogo(variant.author.agent, 'size-3 flex-none')}${variant.author.name}</span>`
     : '';

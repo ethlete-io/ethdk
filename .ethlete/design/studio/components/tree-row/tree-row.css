@@ -22,19 +22,15 @@
     border: 1.5px solid currentColor;
   }
 
-  .st-trow-warning {
-    color: var(--warning);
-  }
-
   .st-trow[data-selected]:hover {
     background:
-      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
       color-mix(in srgb, var(--et-surface-interaction-solid) 9%, transparent);
   }
 
   .st-trow[data-selected]:active {
     background:
-      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
+      linear-gradient(rgb(var(--et-theme-color-primary-rgb) / 0.2), rgb(var(--et-theme-color-primary-rgb) / 0.2)),
       color-mix(in srgb, var(--et-surface-interaction-solid) 15%, transparent);
   }
 
