@@ -142,3 +142,12 @@
   render-check specs throw under `CI` when no browser starts; locally they still skip. Local `CI=true nx test cli`:
   1823 pass; `nx lint cli` clean. The GitHub run of the new step is not seen yet.
 - Waiting: Q243 (render-check rule for issues the merged part already shows) and Q242 pick, both with Tom.
+- As built: Q243 render-check passes issues the merged part already shows (6c5e0c234, spec bites); disabled rows stay at
+  rest in the design tool (b0a422041, specs bite). Q241 accordion round merged: 41 SDK parts use definePart `frame`
+  (2db7db916; pixel compare 37/42 at 0 px, rest animation noise or the button change). floating-action parked after MVP.
+- As built: Q242 variant b merged (6d4c70a85) and ported to button.component.css (7385e470f); Q245 icon-button
+  (f94364cc3; split-button needed no edit). Storybook pressed colours checked; touch not checked.
+- As built: no-visible-change rounds pages/system (c7d3b0d31), pages/inbox (acd224ce0, new hash 7f377531e580c026),
+  sdk textarea glued class (6d9a00a81), shell-main menu override (this commit), studio canvas-frames + zoom-chip
+  (4861c0165). Checked only by the tool's state pixel compare.
+- Parked after MVP: Q244 sketch head (partial diff in /tmp/q244-partial.patch), floating-action frame normalisation.
