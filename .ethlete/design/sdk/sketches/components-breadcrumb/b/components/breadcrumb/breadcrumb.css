@@ -1,0 +1,25 @@
+.breadcrumb-frame {
+  padding: 2.4rem 1.6rem;
+  background: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+  font-size: 1.4rem;
+}
+
+.breadcrumb-overflow-stage {
+  display: grid;
+  gap: 1rem;
+}
+
+.breadcrumb-overflow-stage > .et-breadcrumb-mock-pane {
+  margin-inline-start: 4.2rem;
+}
+
+@layer components {
+  .et-breadcrumb-item:where(a, button):focus-visible {
+    outline-color: var(--et-theme-color-ink-solid);
+  }
+
+  .et-breadcrumb-overflow-trigger {
+    --_et-focus-ring-color: var(--et-theme-color-ink-solid);
+  }
+}
