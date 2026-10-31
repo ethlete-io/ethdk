@@ -1,5 +1,4 @@
 import floatingActionBase from '../src/lib/floating-action/floating-action-styles.component.css?inline';
-import { FloatingActionState } from '../src/lib/floating-action/floating-action.types';
 import { FILTER_ICON } from '../src/lib/icon/headless/filter-icon';
 import iconBase from '../src/lib/icon/headless/icon-styles.component.css?inline';
 import { button, buttonStyles, ButtonMockOptions } from './button';
@@ -11,7 +10,7 @@ export type FloatingActionMockOptions = {
   /** Draws the filter icon in the trigger, as the story's Filter button could carry. */
   filterIcon?: boolean;
   /** Where the trigger is. Left out, `inline`. */
-  state?: FloatingActionState;
+  state?: 'inline' | 'floating' | 'hidden';
   /** The in-flow size the anchor holds while the trigger is out of the flow, in px. */
   heldSize?: { inlineSize: number; blockSize: number };
   /** Extra attributes on the trigger, e.g. design markers. */
