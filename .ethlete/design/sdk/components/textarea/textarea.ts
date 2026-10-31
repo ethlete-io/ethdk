@@ -22,7 +22,7 @@ const INVALID = {
 
 export default definePart({
   note: 'scale of the decided shape, Q182, lead merge',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     empty: message({ placeholder: undefined }),
     placeholder: message(),
@@ -54,7 +54,7 @@ export default definePart({
     'size-lg': message({ value: VALUE, size: 'lg' }),
   },
   widths: [320, 360, 640],
-  frame: (body, props) => `<div class="t-frame${props.scrolled ? ' t-scrolled' : ''}">${body}</div>`,
+  frame: (body, props) => `<div class="t-frame ${props.scrolled ? 't-scrolled' : ''}">${body}</div>`,
   render: (props: Props) =>
     drawing({
       body: props.scrolled

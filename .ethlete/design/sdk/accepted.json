@@ -779,5 +779,13 @@
     "note": "merged without a pick: allowed by Q241 plans/ethlete-studio/backlog-parallel/decisions-latest.md",
     "hash": "8963a8ba9a488f1b",
     "at": "2026-10-31T22:52:10.093Z"
+  },
+  {
+    "part": "components/textarea",
+    "by": "claude-sonnet-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "7ac4a67d54c0a797",
+    "at": "2026-10-31T23:01:11.806Z",
+    "auto": true
   }
 ]
