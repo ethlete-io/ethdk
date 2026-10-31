@@ -15,6 +15,7 @@ import { OtpInputCharset, OtpInputDirective } from './otp-input.directive';
       [length]="length()"
       [charset]="charset()"
       [masked]="masked()"
+      [readonly]="readonly()"
       (valueChange)="value.set($event)"
       (complete)="completions.push($event)"
     >
@@ -28,6 +29,7 @@ class OtpTestHost {
   length = signal(4);
   charset = signal<OtpInputCharset>('numeric');
   masked = signal(false);
+  readonly = signal(false);
   completions: string[] = [];
 }
 
@@ -205,6 +207,17 @@ describe('OtpInputDirective', () => {
 
     driver.blur();
     expect(driver.segmentCarets()).toEqual([false, false, false, false]);
+  });
+
+  it('shows no caret on a focused readonly field', () => {
+    driver.host.value.set('12');
+    driver.host.readonly.set(true);
+    driver.tick();
+
+    driver.focus();
+
+    expect(driver.segmentCarets()).toEqual([false, false, false, false]);
+    expect(driver.queryAll('.et-otp-input-caret')).toHaveLength(0);
   });
 });
 

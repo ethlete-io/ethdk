@@ -61,6 +61,8 @@
     display: inline-flex;
     flex-direction: column;
     gap: 6px;
+    max-inline-size: 100%;
+    min-inline-size: 0;
     color: var(--et-surface-color-solid, currentColor);
 
     --et-form-support-duration: var(--et-otp-input-support-duration);
@@ -81,6 +83,7 @@
     .et-otp-input-field {
       position: relative;
       inline-size: fit-content;
+      max-inline-size: 100%;
     }
 
     .et-otp-input-segments {
@@ -94,7 +97,8 @@
       align-items: center;
       justify-content: center;
       inline-size: var(--et-otp-input-segment-size);
-      block-size: var(--et-otp-input-segment-size);
+      min-inline-size: 0;
+      aspect-ratio: 1;
       border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
       border-radius: var(--et-otp-input-segment-radius);
       font-size: calc(var(--et-otp-input-segment-size) * 0.45);

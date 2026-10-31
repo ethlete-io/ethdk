@@ -81,6 +81,7 @@ export class OtpInputDirective
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.OTP_INPUT);
   public focused = signal(false);
+  public showsCaret = computed(() => this.focused() && !this.readonly());
 
   /**
    * The native input this directive controls. Auto-initialized when the directive sits on

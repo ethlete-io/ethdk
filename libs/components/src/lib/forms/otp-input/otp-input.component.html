@@ -4,13 +4,13 @@
   <div class="et-otp-input-segments" aria-hidden="true">
     @for (index of segmentIndexes(); track index) {
       <div
-        [attr.data-caret]="(otp.focused() && otp.caretIndex() === index) || null"
+        [attr.data-caret]="(otp.showsCaret() && otp.caretIndex() === index) || null"
         [attr.data-filled]="otp.segmentChars()[index] !== null || null"
         class="et-otp-input-segment"
       >
         @if (otp.segmentChars()[index]; as char) {
           <span class="et-otp-input-segment-char">{{ char }}</span>
-        } @else if (otp.focused() && otp.caretIndex() === index) {
+        } @else if (otp.showsCaret() && otp.caretIndex() === index) {
           <span class="et-otp-input-caret"></span>
         }
       </div>

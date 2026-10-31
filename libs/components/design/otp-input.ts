@@ -48,7 +48,7 @@ export const otpInput = (options: OtpInputMockOptions) => {
   const supportId = invalid ? ids.error : options.hint !== undefined ? ids.hint : null;
   const colorClass = invalid && options.errorColor ? options.errorColor : (options.color ?? 'inherited');
   const chars = value.slice(0, length);
-  const caretIndex = options.focused ? Math.min(chars.length, length - 1) : -1;
+  const caretIndex = options.focused && !options.readonly ? Math.min(chars.length, length - 1) : -1;
   const force = forceList(options.force);
 
   const hostAttributes = [

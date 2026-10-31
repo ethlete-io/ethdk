@@ -458,12 +458,13 @@ Plus the shared control members: the `value`
 `complete` fires no matter who wrote the value - typing, paste, SMS autofill or a
 programmatic write into the bound field. Pastes strip separators (`123-456` → `123456`) and truncate.
 Editing is append/delete-at-end (the caret is pinned to the end), with the active
-segment marked visually. A `charset` RegExp is tested per character, so its `g`
+segment marked visually; a readonly field shows no caret. The segments are
+`--et-otp-input-segment-size` wide and shrink when the field is narrower than the row. A `charset` RegExp is tested per character, so its `g`
 and `y` flags are ignored. Narrowing `charset` or shrinking `length` at runtime
 re-sanitizes the value that is already in the field, without emitting `complete`.
 
 The headless `<input etOtpInput>` renders no segments - that is up to you, from
-`segmentChars()` and `caretIndex()` - but keeps the input itself in sync: the value,
+`segmentChars()`, `caretIndex()` and `showsCaret()` (focused and not readonly) - but keeps the input itself in sync: the value,
 `type`, `inputmode`, `autocomplete="one-time-code"`, the disabled/readonly/required state
 and the ARIA attributes.
 
