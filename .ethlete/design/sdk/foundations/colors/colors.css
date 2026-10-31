@@ -11,6 +11,8 @@
     --et-surface-type: light;
     --et-surface-elevation: 0;
     --et-shadow-color-rgb: 23 23 23;
+    --et-surface-color-theme-variants:
+      brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
     --et-surface-interaction: 115 115 115;
     --et-surface-interaction-hover: 64 64 64;
     --et-surface-interaction-focus: 64 64 64;
@@ -44,6 +46,8 @@
     --et-surface-type: light;
     --et-surface-elevation: 1;
     --et-shadow-color-rgb: 23 23 23;
+    --et-surface-color-theme-variants:
+      brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
     --et-surface-interaction: 115 115 115;
     --et-surface-interaction-hover: 64 64 64;
     --et-surface-interaction-focus: 64 64 64;
@@ -77,6 +81,8 @@
       --et-surface-type: light;
       --et-surface-elevation: 0;
       --et-shadow-color-rgb: 23 23 23;
+      --et-surface-color-theme-variants:
+        brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
       --et-surface-interaction: 115 115 115;
       --et-surface-interaction-hover: 64 64 64;
       --et-surface-interaction-focus: 64 64 64;
@@ -114,6 +120,8 @@
     --et-surface-type: light;
     --et-surface-elevation: 0;
     --et-shadow-color-rgb: 23 23 23;
+    --et-surface-color-theme-variants:
+      brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
     --et-surface-interaction: 115 115 115;
     --et-surface-interaction-hover: 64 64 64;
     --et-surface-interaction-focus: 64 64 64;
@@ -259,6 +267,7 @@
   }
 
   .et-color--danger {
+    --et-color-theme-type: error;
     --et-color-primary: 220 38 38;
     --et-color-primary-hover: 185 28 28;
     --et-color-primary-focus: 185 28 28;
@@ -279,6 +288,7 @@
   }
 
   .et-color--warning {
+    --et-color-theme-type: warning;
     --et-color-primary: 217 119 6;
     --et-color-primary-hover: 245 158 11;
     --et-color-primary-focus: 245 158 11;
@@ -525,6 +535,8 @@
     --et-surface-type: light;
     --et-surface-elevation: 1;
     --et-shadow-color-rgb: 23 23 23;
+    --et-surface-color-theme-variants:
+      brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
     --et-surface-interaction: 115 115 115;
     --et-surface-interaction-hover: 64 64 64;
     --et-surface-interaction-focus: 64 64 64;
@@ -558,6 +570,8 @@
       --et-surface-type: light;
       --et-surface-elevation: 1;
       --et-shadow-color-rgb: 23 23 23;
+      --et-surface-color-theme-variants:
+        brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
       --et-surface-interaction: 115 115 115;
       --et-surface-interaction-hover: 64 64 64;
       --et-surface-interaction-focus: 64 64 64;
@@ -593,6 +607,8 @@
     --et-surface-type: light;
     --et-surface-elevation: 1;
     --et-shadow-color-rgb: 23 23 23;
+    --et-surface-color-theme-variants:
+      brand brand-on-light, danger danger-on-light, success success-on-light, warning warning-on-light;
     --et-surface-interaction: 115 115 115;
     --et-surface-interaction-hover: 64 64 64;
     --et-surface-interaction-focus: 64 64 64;
