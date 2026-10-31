@@ -28,6 +28,9 @@
     /* The clip that makes overflow measurable — `scroll.width > client.width` is the directive's
        "doesn't fit" signal. Never `auto`: a scrollbar would defeat the collapsing it drives. */
     overflow: hidden;
+    /* Room for the focus ring (the overflow trigger's 2px outline + 3px offset) inside the clip; the negative margin keeps the layout height. */
+    padding-block: 5px;
+    margin-block: -5px;
     color: var(--et-surface-color-muted-solid, GrayText);
   }
 
