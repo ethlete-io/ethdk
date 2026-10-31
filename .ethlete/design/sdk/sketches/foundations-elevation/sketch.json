@@ -34,6 +34,11 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "Dark-only inset top highlight 76 = 18 % --et-surface-color-solid: 1.76:1 against the fill, 1.21:1 against the border above it. The outer edge stays as today (1.76 / 1.46), pane on panel 1.50; only the top edge lights up, sides and bottom do not. Needs a generated --et-surface-highlight per surface theme."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Like a, at 30 %: ring about 102 in dark, 3.12:1 against the base 23 (WCAG 1.4.11 passes), 2.64:1 against the panel fill 38. 29 % gives only 2.98:1. Lib follow-up after a merge of a or d: the sdk generator emits --et-surface-ring (-rgb/-solid) per surface theme (light value = the border), and select-panel, the floating tip and panel styles and the menu use it as their border colour."
     }
   }
 }

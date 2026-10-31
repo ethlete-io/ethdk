@@ -1,0 +1,6 @@
+@media (prefers-color-scheme: dark) {
+  .sdk-ring {
+    --et-surface-ring-solid: color-mix(in srgb, var(--et-surface-color-solid) 30%, var(--et-surface-background-solid));
+    --sdk-elevation-edge: var(--et-surface-ring-solid);
+  }
+}
