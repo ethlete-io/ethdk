@@ -631,6 +631,10 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
 - Q59 lead decisions under Q96: 6a shows the first token with the track's value in foundations declaration order,
   plus "+N" when more tokens share it; the title lists all names and the raw value. 6b: opening the timeline makes
   the frame live and drives it; closing it leaves the frame live, resumed at 1x.
+- Q59 6b built (`840272d27`). Lead decisions: keep the hidden keyframe image and the "in the live frame" header;
+  a preset or Reduced change makes the new frame live too; opening the timeline focuses the driven frame. For Tom:
+  only the first colour-scheme copy is driven, and a `from` state in a part grid cell keeps images (both accepted
+  for now).
 
 ### Open point: elevation on dark surfaces (Tom feedback, 2026-10-30, design round decided in Q95)
 
