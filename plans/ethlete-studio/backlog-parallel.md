@@ -743,7 +743,8 @@ machen".
   list, wireframes.
 - Q178 (Tom, 2026-10-31; moved into the MVP by Q218): Studio shows only the SDK base parts the Studio product actually uses, not
   every SDK part.
-- Q184 after the MVP (Tom, 2026-10-31): a full performance investigation of Studio and the design server. The
+- Q184 after the MVP (Tom, 2026-10-31): a full performance investigation of Studio, the design server and
+  `design check` (over 2 minutes for `--product studio` at 22:05; Tom, same day). The
   renderer still freezes again and again after the merge-freeze fix (`373e73641`); Tom: "das darf nicht passieren,
   die app fühlt sich dann nicht gut an und man muss lange warten". Measure where the main thread and the server
   loop block (merges, sketch lists, shot rendering, reloads), then fix until Studio never freezes.
