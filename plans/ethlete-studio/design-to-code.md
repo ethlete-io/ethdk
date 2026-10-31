@@ -222,7 +222,7 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     lint, a real refusal (no part has a link yet) and the success and verify paths in a temp repo. Not verified:
     the sdk product, a root commit for `--verify`.
   - 3c compare, in progress (builder ethlete-sdk-57), in two parts. 3c-1 CLI: `et design compare <part> --product
-    --url <app dev server>`, `PartLink` `{ route, component }` for page parts, `task --verify` records
+--url <app dev server>`, `PartLink` `{ route, component }` for page parts, `task --verify` records
     `implemented.json` when compare is green. 3c-2: the harness route in `apps/ethlete-studio` and
     `apps/docs-examples`. Builder defaults (safe to undo): the CLI passes each state's props as a JSON `props` query
     param to `/__design-harness?part=&state=&props=`; the app keeps a hand-written dev-only registry from part to a
@@ -260,3 +260,7 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
 - Q195 page parts (Tom): a page part links a presentational component (data in, events out) for compare, beside its
   route link. The route container stays outside compare. The pilot builds `pages/inbox` and `elements/shell-main`
   this way.
+
+- Q196 page motions (Tom, 2026-10-31): open point 8 (missing motion between states) does not apply to the `pages`
+  layer, like open point 1 (missing states) already does not. Page states are data scenarios; the components and
+  elements inside a page carry their own motions.
