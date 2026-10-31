@@ -280,8 +280,10 @@ drawn background, with semi-transparent layers composited: 4.5:1, or 3:1 for lar
 
 A part names the code that builds it in `implements`: a component or element names the path of its
 `.component.ts` from the repository root, `implements: 'apps/app/src/app/tree-row.component.ts'`, and a page
-names its route, `implements: { route: '/system' }`. `et design check` fails with `IMPLEMENTS-MISSING` when the
-path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal or not the shape of its layer.
+names its route, `implements: { route: '/system' }`, and for compare the presentational component the route renders,
+`implements: { route: '/inbox', component: 'apps/app/src/app/inbox/inbox.component.ts' }`. `et design check` fails
+with `IMPLEMENTS-MISSING` when a path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal or not
+the shape of its layer.
 
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged; no implements`. A point is a
@@ -323,11 +325,22 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
 allowed files and the target, compare green. The allowed files are the folder of the component, and for the product
 `sdk` also `.changeset/*.md` and `apps/docs/components/**`. The task refuses a part without a go, with a stale go,
-without an `implements` link, or with only a route link: a page part needs a presentational component link for compare.
+without an `implements` link, or with only a route link: add the `component` of the page to the link. A page part's
+allowed files are the folder of that component.
 `.ethlete/design/<product>/implemented.json` keeps the part hash and a props hash per state of the last implementation;
 when the part changed but no state's props did, the task lists all states. `--verify [<rev>]` checks the files of a
-commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. It records
-nothing until compare exists.
+commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. It needs
+`--url <app dev server url>`: when the files pass, it runs compare over all states, and only when every state is ok it
+records the part hash, the time and a props hash per state in `implemented.json`.
+
+`et design compare components/chip --product app-a --url http://localhost:4200` compares each state of a part, or the
+one `--state` names, with the app. It refuses a part as `task` does. For each state it draws the design frame and
+opens `<url>/__design-harness?part=<part>&state=<state>&props=<JSON>` in the same Chromium, with the same viewport and
+device scale, and shoots the `[data-design-harness-host]` element. The app owns that dev-only route and mounts the
+`implements` component with the state's props inside the host. Pixels compare at tolerance 0, and a size mismatch
+fails too. It prints one line per state, `default ok`, `removable DIFF 12 px` or `removable SIZE 120x32 vs 118x32`, and
+keeps the design, app and diff pictures of each failing state in a temp folder it prints. It exits 0 only when every
+state is ok, and names the URL when the page shows no host element. It never starts the app server.
 
 A product whose part stylesheets hold a `prefers-color-scheme` query or `light-dark(` renders two
 colour schemes. The check then draws each state in the light and in the dark scheme, and a finding

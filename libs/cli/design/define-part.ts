@@ -64,9 +64,10 @@ export type Part<TProps, TState extends string = string> = {
 
 /**
  * The code a part is built in: a component or element names the repo-relative path of its `.component.ts`, a page
- * names its route. `design check` fails on a path that does not exist, and lists a part without a link as open.
+ * names its route and, for `design compare`, the presentational `component` it renders. `design check` fails on a
+ * path that does not exist, and lists a part without a link as open.
  */
-export type PartLink = `${string}.component.ts` | { route: `/${string}` };
+export type PartLink = `${string}.component.ts` | { route: `/${string}`; component?: `${string}.component.ts` };
 
 /** What `play` of a motion may use, so Studio controls time: `at` schedules `fn` at `ms` into the motion on the tool's clock, `random` is seeded, `rect` measures a selector in the `from` state. */
 export type MotionContext = {

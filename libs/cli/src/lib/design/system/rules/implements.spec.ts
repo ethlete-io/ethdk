@@ -39,7 +39,13 @@ const problemsWith = (files: Record<string, string>) => {
 describe('partLinkOf', () => {
   it('reads a component path, a route, none, and a link it cannot read', () => {
     expect(partLinkOf(part("'src/a.component.ts'"))).toEqual({ kind: 'component', path: 'src/a.component.ts' });
-    expect(partLinkOf(part("{ route: '/system' }"))).toEqual({ kind: 'route', route: '/system' });
+    expect(partLinkOf(part("{ route: '/system' }"))).toEqual({ kind: 'route', route: '/system', component: null });
+    expect(partLinkOf(part("{ route: '/inbox', component: 'src/inbox.component.ts' }"))).toEqual({
+      kind: 'route',
+      route: '/inbox',
+      component: 'src/inbox.component.ts',
+    });
+    expect(partLinkOf(part("{ route: '/inbox', component: PATH }"))).toEqual({ kind: 'unreadable' });
     expect(partLinkOf(part('LINK'))).toEqual({ kind: 'unreadable' });
     expect(partLinkOf("export default definePart({ note: '' });")).toEqual({ kind: 'none' });
   });
@@ -52,6 +58,7 @@ describe('badLinksOf', () => {
       problemsWith({
         'acme/elements/hero/hero.ts': "'src/app/hero.component.ts'",
         'acme/pages/home/home.ts': "{ route: '/' }",
+        'acme/pages/about/about.ts': "{ route: '/about', component: 'src/app/hero.component.ts' }",
       }),
     ).toEqual([]);
   });
@@ -60,6 +67,15 @@ describe('badLinksOf', () => {
     expect(problemsWith({ 'acme/elements/hero/hero.ts': "'src/app/gone.component.ts'" })).toEqual([
       'IMPLEMENTS-MISSING "src/app/gone.component.ts" does not exist - implements is a path from the repository root',
     ]);
+  });
+
+  it('fails the component of a page link that does not exist or is no .component.ts', () => {
+    expect(
+      problemsWith({
+        'acme/pages/home/home.ts': "{ route: '/', component: 'src/app/gone.component.ts' }",
+        'acme/pages/about/about.ts': "{ route: '/about', component: 'src/app/hero.ts' }",
+      }).map((line) => line.split(' ')[0]),
+    ).toEqual(['IMPLEMENTS-SHAPE', 'IMPLEMENTS-MISSING']);
   });
 
   it('fails a link in the wrong shape for its layer, or one it cannot read', () => {

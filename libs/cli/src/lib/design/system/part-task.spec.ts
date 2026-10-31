@@ -17,6 +17,7 @@ import {
 } from './part-task';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
+import { ComparePart } from './compare-command';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
 
@@ -34,6 +35,10 @@ const checkout = () => {
   );
   part('components/tag', 'export default definePart({ states: { default: {} } });\n');
   part('pages/inbox', "export default definePart({ implements: { route: '/inbox' }, states: { default: {} } });\n");
+  part(
+    'pages/outbox',
+    "export default definePart({ implements: { route: '/outbox', component: 'src/outbox/outbox.component.ts' }, states: { default: {} } });\n",
+  );
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
 
   return { target, dir: join(design, 'app-a'), chip: join(design, 'app-a', 'components/chip/chip.ts') };
@@ -53,13 +58,19 @@ const output = () => {
   return lines;
 };
 
-const task = (target: string, argv: string[], diff = vi.fn((): string[] => [])) =>
+const task = (
+  target: string,
+  argv: string[],
+  diff = vi.fn((): string[] => []),
+  compare: ComparePart = vi.fn(async () => 'compare must not run'),
+) =>
   designTask({
     target,
     argv: ['components/chip', '--product', 'app-a', ...argv],
     invocation: 'et design',
     load: async () => CHIP_STATES,
     diff,
+    compare,
   });
 
 describe('part task', () => {
@@ -138,7 +149,12 @@ describe('part task', () => {
 
     expect(refusal('components/tag')).toContain('has no implements link');
     go(target, 'pages/inbox');
-    expect(refusal('pages/inbox')).toContain('needs a presentational component link for compare (Q195)');
+    expect(refusal('pages/inbox')).toContain('links only its route - add the presentational component');
+    go(target, 'pages/outbox');
+    expect(refusal('pages/outbox')).toMatchObject({ component: 'src/outbox/outbox.component.ts' });
+    expect(allowedFilesOf({ product: 'app-a', component: 'src/outbox/outbox.component.ts' })).toEqual([
+      'src/outbox/**',
+    ]);
     expect(refusal('components/chip')).toContain('has no go');
     go(target);
     expect(refusal('components/chip')).toMatchObject({ component: 'libs/chip/chip.component.ts' });
@@ -196,7 +212,7 @@ describe('part task', () => {
     expect(lines).toContain('  changed: default');
   });
 
-  it('verifies the files of a commit or range against the allowed files and records nothing', async () => {
+  it('verifies the files of a commit or range, then records the part only when compare is green', async () => {
     const { target, dir } = checkout();
     const lines = output();
 
@@ -204,16 +220,42 @@ describe('part task', () => {
 
     const inside = vi.fn(() => ['libs/chip/chip.component.ts', 'libs/chip/chip.component.css']);
 
-    expect(await task(target, ['--verify'], inside)).toBe(0);
+    expect(await task(target, ['--verify'], inside)).toBe(1);
+    expect(lines.join('\n')).toContain('needs --url');
+    expect(inside).not.toHaveBeenCalled();
+
+    const red = vi.fn<ComparePart>(async () => ({ green: false, states: CHIP_STATES }));
+
+    lines.length = 0;
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, red)).toBe(1);
     expect(inside).toHaveBeenCalledWith({ root: target, range: 'HEAD^..HEAD' });
+    expect(red).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:9', only: null }),
+    );
     expect(lines.join('\n')).toContain('nothing was recorded');
     expect(readImplemented(dir)).toEqual({});
+
+    const failed = vi.fn<ComparePart>(async () => 'the harness page did not load');
+
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, failed)).toBe(1);
+    expect(readImplemented(dir)).toEqual({});
+
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+
+    lines.length = 0;
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, green)).toBe(0);
+    expect(lines.join('\n')).toContain('recorded components/chip as implemented');
+    expect(readImplemented(dir)['components/chip']?.states).toEqual({
+      default: stateHashOf(CHIP_STATES.default),
+      removable: stateHashOf(CHIP_STATES.removable),
+    });
 
     const outside = vi.fn(() => ['libs/chip/chip.component.ts', 'libs/other/x.ts']);
 
     lines.length = 0;
-    expect(await task(target, ['--verify', 'a1..b2'], outside)).toBe(1);
+    expect(await task(target, ['--verify', 'a1..b2', '--url', 'http://localhost:9'], outside, red)).toBe(1);
     expect(outside).toHaveBeenCalledWith({ root: target, range: 'a1..b2' });
+    expect(red).toHaveBeenCalledTimes(1);
     expect(lines).toContain('  libs/other/x.ts');
     expect(lines).not.toContain('  libs/chip/chip.component.ts');
     expect(verifyRangeOf('abc')).toBe('abc^..abc');

@@ -98,15 +98,18 @@ export const taskPartOf = (options: { product: ResolvedProduct; part: string }):
 
   if (link.kind === 'none') return `${part} has no implements link - a task needs the component it builds`;
   if (link.kind === 'unreadable') return `${part} has an implements link the task cannot read - make it a literal`;
-  if (link.kind === 'route')
-    return `${part} links only the route ${link.route} - a page part needs a presentational component link for compare (Q195), which comes with slice 3c`;
+
+  const component = link.kind === 'route' ? link.component : link.path;
+
+  if (component === null)
+    return `${part} links only its route - add the presentational component it renders for compare (Q195): implements: { route: '/…', component: '<repo path>.component.ts' }`;
 
   const go = goStateOf({ product, part });
 
   if (go === 'missing') return `${part} has no go - run design go first`;
   if (go === 'stale') return `${part} changed since its go - it needs a new go first`;
 
-  return { part, hash: found.hash, dir: found.dir, component: link.path };
+  return { part, hash: found.hash, dir: found.dir, component };
 };
 
 /** The states added or changed since the implemented record; without a record every state is added. */

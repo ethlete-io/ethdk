@@ -18,6 +18,7 @@ import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
+import { COMPARE_USAGE, designCompare } from './system/compare-command';
 import { designTask, TASK_USAGE } from './system/task-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
@@ -113,7 +114,14 @@ const helpOf = (invocation: string) =>
     `${invocation} ${TASK_USAGE}`,
     '  Print what implementing a part with a current go takes: its implements link, each state with its props, the',
     '  states new or changed since implemented.json, and the files it may change. --verify checks the files of a',
-    '  commit or range (default HEAD) against them; it records nothing until compare exists.',
+    '  commit or range (default HEAD) against them, then runs compare on --url and records implemented.json when',
+    '  both pass.',
+    '',
+    `${invocation} ${COMPARE_USAGE}`,
+    '  Draw each state of a linked part with a current go, or the one --state names, and shoot the',
+    '  [data-design-harness-host] element of <url>/__design-harness?part=&state=&props= in the same Chromium. Prints ok,',
+    '  DIFF <n> px or SIZE per state at tolerance 0 and keeps the pictures of a failing state in a temp folder. It',
+    '  never starts the app; exits 1 unless every state is ok.',
     '',
     `${invocation} ${COMPLETE_USAGE}`,
     '  Exit 1 while a control the part declares in definePart({ controls }) lacks a drawn state or surface: hover and',
@@ -310,6 +318,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designTask({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'compare') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designCompare({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'ready') {

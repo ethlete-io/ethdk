@@ -278,10 +278,13 @@ export const unreachableOf = (source: string): UnreachableSource[] | null => {
 
 /**
  * What a part file writes in `definePart({ implements })`, read without running it: `none` without one, `unreadable`
- * when it is not a string literal or a `{ route: '…' }` literal.
+ * when it is not a string literal or a `{ route: '…', component?: '…' }` literal.
  */
 export type PartLinkSource =
-  { kind: 'none' } | { kind: 'component'; path: string } | { kind: 'route'; route: string } | { kind: 'unreadable' };
+  | { kind: 'none' }
+  | { kind: 'component'; path: string }
+  | { kind: 'route'; route: string; component: string | null }
+  | { kind: 'unreadable' };
 
 export const partLinkOf = (source: string): PartLinkSource => {
   const { definition } = definitionOf(source);
@@ -293,7 +296,13 @@ export const partLinkOf = (source: string): PartLinkSource => {
 
   if (path !== null) return { kind: 'component', path };
 
-  const route = ts.isObjectLiteralExpression(link) ? literalOf(propertyOf(link, 'route')?.initializer) : null;
+  if (!ts.isObjectLiteralExpression(link)) return { kind: 'unreadable' };
 
-  return route === null ? { kind: 'unreadable' } : { kind: 'route', route };
+  const route = literalOf(propertyOf(link, 'route')?.initializer);
+  const componentProperty = propertyOf(link, 'component');
+  const component = componentProperty ? literalOf(componentProperty.initializer) : null;
+
+  return route === null || (componentProperty && component === null)
+    ? { kind: 'unreadable' }
+    : { kind: 'route', route, component };
 };

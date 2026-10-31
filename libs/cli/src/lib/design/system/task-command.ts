@@ -1,9 +1,11 @@
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
+import { comparePart, ComparePart } from './compare-command';
 import {
   allowedFilesOf,
   filesOutsideOf,
   gitDiffFilesOf,
+  markImplemented,
   readImplemented,
   taskPartOf,
   taskStatesOf,
@@ -14,7 +16,7 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
 
-export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>]]';
+export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>] --url <app dev server url>]';
 
 type LoadStates = (options: { target: string; product: ResolvedProduct; file: string }) => Promise<unknown>;
 
@@ -53,8 +55,9 @@ const verifyOf = (argv: string[]) => {
 };
 
 /**
- * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>]` checks
- * the files of a commit or range against the files the task allows.
+ * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>] --url`
+ * checks the files of a commit or range against the files the task allows, runs compare, and records the part as
+ * implemented when both pass.
  */
 export const designTask = async (options: {
   target: string;
@@ -62,10 +65,11 @@ export const designTask = async (options: {
   invocation: string;
   load?: LoadStates;
   diff?: DiffFiles;
+  compare?: ComparePart;
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
-  const args = argsOf(rest, ['--product']);
+  const args = argsOf(rest, ['--product', '--url']);
 
   if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);
@@ -103,6 +107,14 @@ export const designTask = async (options: {
   const allowed = allowedFilesOf({ product: product.name, component: task.component });
 
   if (rev !== null) {
+    const url = args.values['--url'];
+
+    if (!url) {
+      console.error(`task --verify needs --url <app dev server url> to run compare`);
+
+      return 1;
+    }
+
     const range = verifyRangeOf(rev);
     let files: string[];
 
@@ -125,7 +137,33 @@ export const designTask = async (options: {
     }
 
     console.log(`${files.length} file${files.length === 1 ? '' : 's'} of ${range} inside the allowed files`);
-    console.log('compare is not built yet (slice 3c), so nothing was recorded');
+
+    const compared = await (options.compare ?? comparePart)({
+      target,
+      config,
+      product,
+      part: task.part,
+      url,
+      only: null,
+    });
+
+    if (typeof compared === 'string' || !compared.green) {
+      console.error(typeof compared === 'string' ? compared : 'compare is not green, so nothing was recorded');
+
+      return 1;
+    }
+
+    const implemented = markImplemented({ product, part: task.part, states: compared.states });
+
+    if (typeof implemented === 'string') {
+      console.error(implemented);
+
+      return 1;
+    }
+
+    console.log(
+      `recorded ${task.part} as implemented at ${implemented.hash} (${implemented.at}), states: ${Object.keys(implemented.states).join(', ')}`,
+    );
 
     return 0;
   }
