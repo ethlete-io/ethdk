@@ -101,6 +101,23 @@ describe('ChatPanelComponent', () => {
     expect(element(fixture).querySelector('[data-chat-entry="prompt"]')?.textContent?.trim()).toBe(
       'Make the header calmer.',
     );
+    expect(field.value).toBe('');
+  });
+
+  it('clears the field when Enter follows a paste into the empty field before a change detection', async () => {
+    const fixture = await render();
+
+    await open(fixture);
+    const field = element(fixture).querySelector<HTMLTextAreaElement>('[data-chat-prompt] textarea');
+
+    if (!field) throw new Error('no prompt field');
+
+    field.value = 'Make the header calmer.';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    await press(fixture, field, false);
+
+    expect(host.run.mock.calls[0]?.[0]).toMatchObject({ prompt: 'Make the header calmer.' });
+    expect(field.value).toBe('');
   });
 
   it('keeps the panel and its messages when the routed page changes', async () => {

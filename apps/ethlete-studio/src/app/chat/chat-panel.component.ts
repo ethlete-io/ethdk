@@ -1,5 +1,11 @@
 import { Component, ElementRef, ViewEncapsulation, afterRenderEffect, signal, viewChild } from '@angular/core';
-import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
+import {
+  BUTTON_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  SELECT_IMPORTS,
+  TEXTAREA_IMPORTS,
+  TextareaDirective,
+} from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { injectChatStore } from './chat-store';
 
@@ -163,6 +169,7 @@ export class ChatPanelComponent {
   protected store = injectChatStore();
   protected errorTheme = injectSemanticColorTheme('error');
   private list = viewChild<ElementRef<HTMLElement>>('list');
+  private promptField = viewChild(TextareaDirective);
   protected prompt = signal('');
 
   constructor() {
@@ -195,6 +202,11 @@ export class ChatPanelComponent {
   }
 
   protected send() {
-    if (this.store.send(this.prompt())) this.prompt.set('');
+    if (!this.store.send(this.prompt())) return;
+
+    // A value typed or pasted into the empty field without a change detection in between leaves the
+    // two-way binding's last bound value at '', so resetting `prompt` alone never reaches the field.
+    this.prompt.set('');
+    this.promptField()?.value.set('');
   }
 }
