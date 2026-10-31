@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DRAWS_AT_ONCE, createDrawQueue, createThumbnailer } from './thumb';
+import { DRAWS_AT_ONCE, ShotTimeoutError, createDrawQueue, createThumbnailer, openFrame } from './thumb';
 
 const sent: Record<string, unknown>[] = [];
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -250,5 +250,40 @@ describe('createDrawQueue', () => {
 
     await expect(failed).rejects.toThrow('broken');
     await expect(next).resolves.toBe('drawn');
+  });
+});
+
+describe('openFrame', () => {
+  const pageOf = (draws: boolean[]) => {
+    const visits: string[] = [];
+    const page = {
+      goto: async (url: string) => void visits.push(url),
+      mouse: { move: async () => undefined },
+      locator: (selector: string) => ({
+        count: async () => 0,
+        first: () => ({
+          waitFor: async () => {
+            if (selector.startsWith('#root') && !draws.shift()) throw new Error('timeout');
+          },
+        }),
+      }),
+    };
+
+    return { page: page as unknown as Parameters<typeof openFrame>[0], visits };
+  };
+
+  it('reloads a frame once when it misses the first wait', async () => {
+    const { page, visits } = pageOf([false, true]);
+
+    await openFrame(page, '/frame.html?a');
+
+    expect(visits).toEqual(['/frame.html?a', '/frame.html?a']);
+  });
+
+  it('fails a frame that draws nothing after the reload', async () => {
+    const { page, visits } = pageOf([false, false]);
+
+    await expect(openFrame(page, '/frame.html?b')).rejects.toBeInstanceOf(ShotTimeoutError);
+    expect(visits).toHaveLength(2);
   });
 });

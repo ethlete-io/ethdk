@@ -47,23 +47,27 @@ type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPa
 
 /**
  * Opens a frame and waits until it drew its content or its error, then for its embedded frames. A frame that
- * never draws throws a `ShotTimeoutError` naming the URL.
+ * draws nothing after one reload throws a `ShotTimeoutError` naming the URL.
  */
 export const openFrame = async (page: Page, url: string) => {
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
-  // frame's corner. A move before the first navigation does not stick.
-  await page.mouse.move(-1, -1);
   const never = (what: string) =>
     new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${DRAW_TIMEOUT_MS} ms`);
+  const drawn = async () => {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
+    // frame's corner. A move before the first navigation does not stick.
+    await page.mouse.move(-1, -1);
+    return page
+      .locator('#root > :not(style)')
+      .first()
+      .waitFor({ state: 'attached', timeout: DRAW_TIMEOUT_MS })
+      .then(
+        () => true,
+        async () => (await page.locator('vite-error-overlay').count()) > 0,
+      );
+  };
 
-  await page
-    .locator('#root > :not(style)')
-    .first()
-    .waitFor({ state: 'attached', timeout: DRAW_TIMEOUT_MS })
-    .catch(async () => {
-      if ((await page.locator('vite-error-overlay').count()) === 0) throw never('draw its content');
-    });
+  if (!(await drawn()) && !(await drawn())) throw never('draw its content');
   await page
     .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
     .first()
