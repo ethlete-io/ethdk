@@ -553,6 +553,12 @@ Tom merged sdk form-field and discarded the held `foundations/tokens` sketch. Se
   verified). Open for Tom (Q97): Studio has no selected call/variant, so the /agent chat page has two text inputs,
   Call and Variant. Builder recommendation: open the chat from a call's view with both filled in, and drop the
   inputs.
+- Q95 variant d added: ring at 30 % (3.12:1 vs the base, 2.64:1 vs the panel fill). Builder pick stays a (quieter).
+- Tooltip round ready: sdk `components/tooltip` r1 "Pane edge" (`058c0fd85`). In dark the fill equals the base
+  (1.00:1); only the 1 px border marks it (1.73:1). b = `--et-surface-ring` at 24 % (2.12:1), c = 35 % (3.1:1).
+  Light unchanged. Builder pick b. Open for Tom (Q98): decide the dark ring once for elevation and tooltip. For
+  WCAG 3:1 one mix does not fit both (elevation needs 30 % over the fill, tooltip 35 % over the base): use 35 %
+  for both, or per-surface values in the generator.
 - Noted for Tom, low priority: the choice-field label line box clips by under 1 px at sm and lg (line-height
   1.2, overflow hidden). No glyph is cut.
 
