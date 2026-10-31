@@ -71,7 +71,7 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
 
 const picker = (placement: 'above' | 'beside') =>
   html`<div
-    class="st-project-picker absolute box-border w-62 border border-surface-border p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
+    class="st-project-picker absolute box-border w-62 border border-et-surface-interaction p-space-1 rounded-control-lg bg-surface-overlay${placement === 'above' ? ' left-space-3' : ' bottom-space-3'}"
     data-placement="${placement}"
     data-et-surface="project.open"
   >

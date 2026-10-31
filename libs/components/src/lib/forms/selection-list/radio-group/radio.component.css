@@ -54,7 +54,8 @@
       inline-size: var(--et-radio-size);
       block-size: var(--et-radio-size);
       border-radius: 50%;
-      border: var(--et-radio-border-width) solid var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+      border: var(--et-radio-border-width) solid
+        var(--_et-control-border, var(--et-surface-interaction-solid, currentColor));
       background-color: transparent;
       display: grid;
       place-items: center;

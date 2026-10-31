@@ -55,7 +55,7 @@
       block-size: var(--et-checkbox-option-size);
       border-radius: var(--et-checkbox-option-border-radius);
       border: var(--et-checkbox-option-border-width) solid
-        var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+        var(--_et-control-border, var(--et-surface-interaction-solid, currentColor));
       background-color: transparent;
       display: grid;
       place-items: center;

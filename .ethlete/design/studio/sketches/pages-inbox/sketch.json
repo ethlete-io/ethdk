@@ -1,6 +1,6 @@
 {
   "target": "pages/inbox",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-31T13:39:05.301Z",
   "baseline": {
     "foundations/agent-logos": "9d16069b875f1e82",
@@ -81,17 +81,17 @@
       "note": "Today: an SDK switch for resolved threads and an undeclared comment editor; no part draws the switch's hover, press or focus."
     },
     "b": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "One SDK transparent button 'Erledigte zeigen' with pressed when resolved threads show; components/button draws its hover, press and focus. Pin, comment and send declared. Costs: off reads as plain text, on only as a faint tonal fill; the '6 offen' caption stays apart."
     },
     "c": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "A segmented 'Offen 6 | Alle 8' of two SDK buttons in a hairline ring, the active one pressed; components/button draws each segment's states. Pin, comment and send declared. Costs: the '6 offen' caption goes, the head is left-aligned, and two buttons replace one control."
     },
     "d": {
-      "authors": ["claude-sonnet-5-5"],
+      "authors": ["claude-sonnet-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "As a: keeps the Erledigte zeigen switch (Q179: the SDK is Studio's kit; the switch is declared once that lands), plus the pin, comment and send declarations of b and c."
     }

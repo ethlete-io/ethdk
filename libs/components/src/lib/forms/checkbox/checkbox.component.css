@@ -57,7 +57,7 @@
       place-items: center;
       width: var(--et-checkbox-size);
       height: var(--et-checkbox-size);
-      border: var(--et-checkbox-border-width) solid var(--et-surface-border-solid, currentColor);
+      border: var(--et-checkbox-border-width) solid var(--et-surface-interaction-solid, currentColor);
       border-radius: var(--et-checkbox-border-radius);
     }
 

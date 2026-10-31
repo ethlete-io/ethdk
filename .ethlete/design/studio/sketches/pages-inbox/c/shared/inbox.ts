@@ -219,12 +219,12 @@ export const inbox = () =>
       const unresolved = comments.filter((c) => !c.resolved).length;
       const controls = await ng(
         `<div class="contents">
-        <div class="inline-flex rounded-control-md border border-surface-border bg-surface"><button et-button data-et-control="open" type="button" variant="transparent" color="surface" size="xs" class="tabular-nums" [pressed]="${!showResolved}">Offen ${unresolved}</button><button et-button data-et-control="all" type="button" variant="transparent" color="surface" size="xs" class="tabular-nums" [pressed]="${showResolved}">Alle ${comments.length}</button></div>
+        <div class="inline-flex rounded-control-md border border-et-surface-interaction bg-surface"><button et-button data-et-control="open" type="button" variant="transparent" color="surface" size="xs" class="tabular-nums" [pressed]="${!showResolved}">Offen ${unresolved}</button><button et-button data-et-control="all" type="button" variant="transparent" color="surface" size="xs" class="tabular-nums" [pressed]="${showResolved}">Alle ${comments.length}</button></div>
         ${
           draft || entry
             ? `<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
                 ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
-                <div class="mt-1.25 rounded-md border border-surface-border shadow-lg bg-surface">
+                <div class="mt-1.25 rounded-md border border-et-surface-interaction shadow-lg bg-surface">
                   <div class="flex flex-col items-stretch p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-text-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>
                 </div>
               </div>`

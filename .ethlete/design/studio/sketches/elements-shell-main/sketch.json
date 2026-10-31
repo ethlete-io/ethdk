@@ -6,7 +6,7 @@
     "components/shell-project-switch",
     "components/shell-project-option"
   ],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-10-31T13:27:52.015Z",
   "baseline": {
     "foundations/agent-logos": "9d16069b875f1e82",
@@ -82,17 +82,17 @@
   ],
   "variantInfo": {
     "a": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "Today: plain buttons with a rest look only, no declared controls."
     },
     "b": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "SDK transparent buttons for collapse and project switch: SDK hover, press, the SDK focus ring and a 120 ms fade. Costs: the hairline ring and raised fill go, the switch reads as plain text at rest, and the chevron sits after the name, not at the right edge (the SDK label does not stretch)."
     },
     "c": {
-      "authors": ["claude-opus-5-5"],
+      "authors": ["claude-opus-5-5", "gpt-6.1-terra"],
       "round": "r1",
       "note": "Studio's own buttons keep the hairline ring and raised fill; hover and open lift to the overlay fill, press to the pressed fill, focus draws the Studio teal ring that tree rows and disclosures use, all on --transition-state. Costs: about 25 lines of interaction CSS next to the SDK button's own."
     }

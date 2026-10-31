@@ -44,7 +44,7 @@
     padding: var(--et-selection-card-padding);
     border-radius: var(--et-selection-card-border-radius);
     background-color: var(--et-surface-background-solid, transparent);
-    border: var(--et-selection-card-border-width) solid var(--et-surface-border-solid, currentColor);
+    border: var(--et-selection-card-border-width) solid var(--et-surface-interaction-solid, currentColor);
 
     /* Every state guard sits in `:where()` so source order decides; the checked rule below relies on it. */
     @media (hover: hover) {

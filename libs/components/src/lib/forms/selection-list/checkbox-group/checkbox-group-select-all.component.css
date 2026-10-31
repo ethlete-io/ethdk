@@ -15,7 +15,7 @@
     place-items: center;
     inline-size: var(--et-checkbox-option-size, 20px);
     block-size: var(--et-checkbox-option-size, 20px);
-    border: var(--et-checkbox-option-border-width, 2px) solid var(--et-surface-border-solid, currentColor);
+    border: var(--et-checkbox-option-border-width, 2px) solid var(--et-surface-interaction-solid, currentColor);
     border-radius: var(--et-checkbox-option-border-radius, 4px);
     transition:
       border-color var(--et-checkbox-option-transition-duration, 150ms) ease,
