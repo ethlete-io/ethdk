@@ -51,6 +51,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
               [class.bg-et-theme/20]="row === current()"
               (click)="pick.emit(row.part + ' ' + row.state)"
               (keydown.enter)="pick.emit(row.part + ' ' + row.state)"
+              (keydown.space)="$event.preventDefault(); pick.emit(row.part + ' ' + row.state)"
               class="cursor-pointer rounded-control-sm px-space-2 py-space-1"
               tabindex="0"
             >
