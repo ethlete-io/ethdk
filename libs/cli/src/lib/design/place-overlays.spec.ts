@@ -230,6 +230,49 @@ describe('fitOutOfFlow', () => {
     expect(root.style.minHeight).toBe('444px');
   });
 
+  const above = () => {
+    const root = mount(
+      `${field}<div class="et-overlay-runtime-root">` +
+        `<div class="et-overlay-runtime-entry" id="panel" style="position: absolute">Panel</div></div>`,
+    );
+
+    rect(root, { top: 300, left: 0, width: 320, height: 40 });
+    rect(root.querySelector('#panel'), { top: 100, left: 0, width: 300, height: 184 });
+
+    return root;
+  };
+
+  it('pads a fitted root on top over a panel drawn above it, keeping its own padding above the panel', () => {
+    const root = above();
+
+    root.style.padding = '16px';
+    fitOutOfFlow(root, { sideways: true });
+
+    expect([root.style.paddingTop, root.style.paddingBottom]).toEqual(['232px', '16px']);
+  });
+
+  it('pads the root on top only once when it runs again, and drops the padding once the panel is gone', () => {
+    const root = above();
+
+    fitOutOfFlow(root, { sideways: true });
+    fitOutOfFlow(root, { sideways: true });
+
+    expect(root.style.paddingTop).toBe('200px');
+
+    root.querySelector('.et-overlay-runtime-root')?.remove();
+    fitOutOfFlow(root, { sideways: true });
+
+    expect(root.style.paddingTop).toBe('');
+  });
+
+  it('leaves the top of a root that is not fitted', () => {
+    const root = above();
+
+    fitOutOfFlow(root, { sideways: false });
+
+    expect(root.style.paddingTop).toBe('');
+  });
+
   it('leaves the root of a closed state at its own height, also after it was open', () => {
     const root = open();
 

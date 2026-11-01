@@ -17,7 +17,7 @@ import {
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
-  HOST_BOX_SCRIPT,
+  hostBoxScriptOf,
   OVERLAY_PANES,
   pointerOpensOf,
 } from './part-compare';
@@ -52,6 +52,8 @@ export type ComparePart = (options: {
   preset?: string | null;
   shoot?: ShootStates;
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
+
+const ROOM_PX = 1024;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -194,7 +196,8 @@ const forcedTargetOf = async (options: {
 
 /**
  * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
- * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with the
+ * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with room
+ * above and before it so an overlay that opens above does not flip below or shift off the viewport edge, with the
  * pointer off the page, after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named
  * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
  */
@@ -208,7 +211,12 @@ export const harnessShotOf = async (options: {
 }) => {
   const { browser, url } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
-  const context = await browser.newContext({ viewport: viewportOf(options.size ?? null), deviceScaleFactor: 1 });
+  const fitted = !options.size;
+  const viewport = viewportOf(options.size ?? null);
+  const context = await browser.newContext({
+    viewport: fitted ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
+    deviceScaleFactor: 1,
+  });
 
   try {
     const page = await context.newPage();
@@ -225,6 +233,9 @@ export const harnessShotOf = async (options: {
       );
     });
     await page.evaluate('document.fonts.ready');
+
+    if (fitted) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
+
     await page.mouse.move(-1, -1);
 
     if (options.opened) await clickOpen({ page, host, url, timeout, ...options.opened });
@@ -250,7 +261,12 @@ export const harnessShotOf = async (options: {
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
     await host.scrollIntoViewIfNeeded({ timeout });
 
-    const box = (await page.evaluate(HOST_BOX_SCRIPT)) as { x: number; y: number; width: number; height: number };
+    const box = (await page.evaluate(hostBoxScriptOf({ fitted }))) as {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
 
     return await page.screenshot({
       type: 'png',

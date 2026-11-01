@@ -245,19 +245,20 @@ export const placeOverlays = (root: HTMLElement) => {
   }
 };
 
+const fitPaddingTops = new WeakMap<HTMLElement, string>();
+
 /**
  * Grows `root` to cover every absolutely or fixed positioned element inside it, such as an open
  * overlay pane, so a frame measured or shot from `root` shows them. Skips a fixed element on all four
  * edges of the viewport, such as a backdrop, and counts an absolute element only as far as the
- * overflow boxes that clip it. Grows sideways too with `sideways`. Safe to run again.
+ * overflow boxes that clip it. Grows sideways and up too with `sideways`, up by a top padding that
+ * moves the content below an element drawn above it. Safe to run again.
  */
 export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) => {
   const view = root.ownerDocument.defaultView;
 
   if (!view) return;
 
-  const box = root.getBoundingClientRect();
-  const style = view.getComputedStyle(root);
   const fillsViewport = (style: CSSStyleDeclaration) =>
     style.position === 'fixed' &&
     [style.top, style.right, style.bottom, style.left].every((edge) => parseFloat(edge) === 0);
@@ -287,11 +288,32 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
 
     return { top, right, bottom, left, width: right - left, height: bottom - top };
   };
-  const outOfFlow = [...root.querySelectorAll('*')]
-    .map((element) => ({ element, style: view.getComputedStyle(element) }))
-    .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
-    .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
-    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const outOfFlowOf = () =>
+    [...root.querySelectorAll('*')]
+      .map((element) => ({ element, style: view.getComputedStyle(element) }))
+      .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
+      .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
+      .filter((rect) => rect.width > 0 && rect.height > 0);
+
+  if (options.sideways) {
+    const fitted = fitPaddingTops.get(root);
+
+    if (fitted !== undefined) root.style.paddingTop = fitted;
+
+    const top = Math.min(...outOfFlowOf().map((rect) => rect.top));
+    const rootTop = root.getBoundingClientRect().top;
+
+    if (top < rootTop) {
+      const padding = parseFloat(view.getComputedStyle(root).paddingTop) || 0;
+
+      fitPaddingTops.set(root, root.style.paddingTop);
+      root.style.paddingTop = `${Math.ceil(2 * padding + rootTop - top)}px`;
+    } else fitPaddingTops.delete(root);
+  }
+
+  const box = root.getBoundingClientRect();
+  const style = view.getComputedStyle(root);
+  const outOfFlow = outOfFlowOf();
   const extentOf = ({ side, start, paddings }: { side: 'bottom' | 'right'; start: number; paddings: string[] }) => {
     const extent = Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
     const [before, after] = paddings.map((padding) => parseFloat(padding) || 0) as [number, number];

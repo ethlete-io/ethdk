@@ -17,13 +17,15 @@ export const harnessUrlOf = (options: {
 }) =>
   `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}${options.layout ? `&layout=${options.layout}` : ''}`;
 
-/**
- * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right to cover each absolutely or fixed positioned descendant as far as the overflow boxes that clip it.
- */
 /** The panes of the overlays an app opens outside the harness host. */
 export const OVERLAY_PANES = '.et-overlay-runtime-pane, .cdk-overlay-pane';
 
-export const HOST_BOX_SCRIPT = `(() => {
+/**
+ * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right, and
+ * up for a `fitted` host, to cover each overlay pane and each absolutely or fixed positioned descendant as far as the
+ * overflow boxes that clip it.
+ */
+export const hostBoxScriptOf = (options: { fitted: boolean }) => `(() => {
   const host = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)});
   const box = host.getBoundingClientRect();
   const fillsViewport = (style) =>
@@ -62,7 +64,7 @@ export const HOST_BOX_SCRIPT = `(() => {
     .map((pane) => pane.getBoundingClientRect())
     .filter((rect) => rect.width > 0 && rect.height > 0);
   const left = Math.min(box.left, ...panes.map((rect) => rect.left));
-  const top = Math.min(box.top, ...panes.map((rect) => rect.top));
+  const top = Math.min(box.top, ...panes.map((rect) => rect.top), ...(${options.fitted} ? outOfFlow.map((rect) => rect.top) : []));
   const right = Math.max(box.left + Math.max(box.width, extentOf('right', box.left)), ...panes.map((rect) => rect.right));
   const bottom = Math.max(box.top + Math.max(box.height, extentOf('bottom', box.top)), ...panes.map((rect) => rect.bottom));
 
