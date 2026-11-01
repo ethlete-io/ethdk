@@ -121,6 +121,7 @@ type Frame = {
   crop: Crop | null;
   scheme: 'dark' | 'light' | null;
   emptySlots: string | null;
+  slotFill: string | null;
   checker: boolean;
   pan: Pan | null;
 };
@@ -238,7 +239,7 @@ export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: S
  * A frame script that empties the `slot()` regions the part `part` draws itself, not those of the parts it embeds.
  * A region belongs to the innermost marked part around it that its markup was not passed into through props.
  */
-export const emptySlotsScriptOf = (part: string) => `(() => {
+export const emptySlotsScriptOf = (part: string, fill: string | null = null) => `(() => {
   const keysOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
   const ownerOf = (slot) => {
     let passed = keysOf(slot, 'data-et-slot');
@@ -257,8 +258,13 @@ export const emptySlotsScriptOf = (part: string) => `(() => {
   document.querySelectorAll('[data-et-projected]').forEach((slot) => {
     const owner = ownerOf(slot);
 
-    if (owner === null || owner === ${JSON.stringify(part)}) slot.replaceChildren();
+    if (owner === null || owner === ${JSON.stringify(part)}) {
+      slot.replaceChildren();
+      ${fill === null ? '' : `slot.innerHTML = ${JSON.stringify(fill)};`}
+    }
   });
+
+  return Promise.all([...document.images].map((image) => image.decode().catch(() => undefined)));
 })()`;
 
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
@@ -307,6 +313,10 @@ export type PartAddress = {
   bare?: boolean;
   /** Empties the `slot()` regions the part draws itself before the shot, as the app's harness host projects no content into them. */
   emptySlots?: boolean;
+  /** The markup the emptied `slot()` regions get instead, as the live compare puts its fixed frame content there. */
+  slotFill?: string | null;
+  /** Props merged into every render of the named parts, as the live compare draws a page with the panel of its shell hidden. */
+  compose?: Record<string, Record<string, unknown>> | null;
   /** Draws the part over the compare checkerboard instead of a transparent page, so a background shows in the picture. */
   checker?: boolean;
   /** Pans part of the picture before the shot, as the live compare moves the app's canvas camera. */
@@ -315,8 +325,23 @@ export type PartAddress = {
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots, checker, pan } =
-    options;
+  const {
+    system,
+    product,
+    part,
+    state,
+    preset,
+    width,
+    sketch,
+    interaction,
+    props,
+    bare,
+    emptySlots,
+    slotFill,
+    compose,
+    checker,
+    pan,
+  } = options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -343,6 +368,8 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       props?.variant,
       ...(bare ? ['bare'] : []),
       ...(emptySlots ? ['empty-slots'] : []),
+      ...(emptySlots && slotFill ? ['slot-fill', createHash('sha1').update(slotFill).digest('hex')] : []),
+      ...(compose ? ['compose', JSON.stringify(compose)] : []),
       ...(checker ? ['checker'] : []),
       ...(pan ? ['pan', pan.selector, pan.x, pan.y] : []),
     ] as unknown[],
@@ -355,10 +382,12 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
       ...(interaction ? { interaction } : {}),
       ...(props ? { props: props.target, 'props-variant': props.variant } : {}),
+      ...(compose ? { compose: JSON.stringify(compose) } : {}),
     }),
     size: size ?? null,
     clip: !preset,
     emptySlots: emptySlots ? part : null,
+    slotFill: emptySlots ? (slotFill ?? null) : null,
     checker: checker ?? false,
     pan: pan ?? null,
   };
@@ -402,7 +431,7 @@ export const createPartShooter = (options: {
         await page.evaluate(settled);
         await page.evaluate(finished);
 
-        if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots));
+        if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));
         if (frame.pan) await page.evaluate(panScriptOf(frame.pan));
 
         const overlay = page.locator('vite-error-overlay');
@@ -486,6 +515,7 @@ export const createPartShooter = (options: {
     size: Size | null;
     clip?: boolean;
     emptySlots?: string | null;
+    slotFill?: string | null;
     checker?: boolean;
     pan?: Pan | null;
     want: DrawWant;
@@ -541,6 +571,7 @@ export const createPartShooter = (options: {
             crop,
             scheme,
             emptySlots: options.emptySlots ?? null,
+            slotFill: options.slotFill ?? null,
             checker: options.checker ?? false,
             pan: options.pan ?? null,
           });

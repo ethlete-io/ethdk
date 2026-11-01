@@ -120,6 +120,26 @@ const drawCall = async (): Promise<Drawing | null> => {
   );
 };
 
+const composeParam = product ? params.get('compose') : null;
+
+/** Makes each part named in the `compose` param draw with its props merged over the props its user passes. */
+const composed = async (name: string) => {
+  const overrides = composeParam ? (JSON.parse(composeParam) as Record<string, Record<string, unknown>>) : {};
+
+  await Promise.all(
+    Object.entries(overrides).map(async ([used, props]) => {
+      const load = parts[name]?.[used];
+
+      if (!load) throw new Error(`design-explore: product "${name}" has no part "${used}" to compose`);
+
+      const { default: part } = await retried(load);
+      const render = part.render.bind(part);
+
+      part.render = (given: unknown) => render({ ...(given as Record<string, unknown>), ...props });
+    }),
+  );
+};
+
 const drawPart = async (name: string): Promise<Drawing | null> => {
   const load = sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
   if (!load)
@@ -136,6 +156,8 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
     );
 
   try {
+    await composed(name);
+
     const [{ default: part }, { default: holder }] = await Promise.all([retried(load), retried(loadProps)]);
 
     if (!(key in holder.states)) return failMissing(`design-explore: part "${partKey}" has no state "${key}"`);

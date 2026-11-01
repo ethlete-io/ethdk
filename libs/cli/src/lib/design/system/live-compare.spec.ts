@@ -16,6 +16,28 @@ describe('liveSpecProblemOf', () => {
     expect(liveSpecProblemOf(SPEC)).toBeNull();
   });
 
+  it('accepts frame content, page hosts, sample overrides and composed parts', () => {
+    expect(
+      liveSpecProblemOf({
+        host: 'app-shell',
+        frame: 'live/frame.png',
+        pages: {
+          'pages/start': {
+            host: 'app-start',
+            answers: { '/x': 'live/x.json' },
+            states: {
+              hidden: {
+                design: 'part',
+                invoke: { roots: [] },
+                compose: { 'elements/shell': { panel: 'hidden' } },
+              },
+            },
+          },
+        },
+      }),
+    ).toBeNull();
+  });
+
   it.each([
     [{ pages: {} }, 'a live spec must be'],
     [{ ...SPEC, answers: { '/x': 1 } }, 'answers must map'],
@@ -23,6 +45,14 @@ describe('liveSpecProblemOf', () => {
     [{ host: 'a', pages: { 'pages/home': { states: { edge: {} } } } }, 'must name its design state'],
     [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', pan: { x: 1 } } } } } }, 'pan must be'],
     [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', click: 'x' } } } } }, 'click must be'],
+    [{ ...SPEC, frame: 1 }, 'frame must name a PNG'],
+    [{ host: 'a', pages: { 'pages/home': { host: 1, states: {} } } }, 'host must be a selector'],
+    [{ host: 'a', pages: { 'pages/home': { answers: { '/x': 1 }, states: {} } } }, 'pages/home: answers must map'],
+    [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', invoke: 1 } } } } }, 'invoke must be'],
+    [
+      { host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', compose: { x: 1 } } } } } },
+      'compose must',
+    ],
   ])('refuses %j', (spec, message) => {
     expect(liveSpecProblemOf(spec)).toContain(message);
   });
