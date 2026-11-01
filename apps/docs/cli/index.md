@@ -371,6 +371,17 @@ unknown path answered by its `index.html`, and stops the server and removes the 
 Ctrl-C. This works next to a running dev server of the same app. When another nx process runs the same build, it
 fails at once and asks for `--url`.
 
+`et design actions components/chip --product app-a [--url …] [--state <name>]` checks what each control does. Every
+interactive element of a design (button, link, field, an element with an interactive role or `tabindex` 0 or more)
+declares its action in `data-et-action`: the state a press reaches (`data-et-action="open"`) or the output it fires
+(`data-et-action="emit:collapse"`). From each state that forces no interaction, and from each open-surface state
+after a click on its trigger, the command opens the harness page, clicks the element and, in fresh pages, presses
+Enter and Space on it. A state action passes when the host shot equals that state's design picture at 0 px; a key
+compares with `<state>-focus-visible` where the part draws one. An output action passes when the mounted component
+emits it; the harness records outputs on `window.__etDesignEmits`. It fails on an app element whose design element
+declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.
+It needs no go. `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
+
 The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
 `"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and
 `et design harness --product app-a` writes one lazy import per part whose `implements` names a component, keyed by

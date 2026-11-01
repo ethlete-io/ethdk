@@ -1,12 +1,17 @@
 import { PlatformLocation } from '@angular/common';
-import { Component, input, provideZonelessChangeDetection } from '@angular/core';
+import { Component, input, output, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DesignHarnessComponent } from './design-harness.component';
 
-@Component({ selector: 'ethlete-fake-chip', template: '{{ label() }}{{ removable() ? " x" : "" }}' })
+@Component({
+  selector: 'ethlete-fake-chip',
+  template: '{{ label() }}{{ removable() ? " x" : "" }}',
+  host: { '(click)': 'remove.emit(label())' },
+})
 class FakeChipComponent {
   label = input('');
   removable = input(false);
+  remove = output<string>();
 }
 
 vi.mock('./design-harness-parts', () => ({
@@ -55,6 +60,18 @@ describe('DesignHarnessComponent', () => {
     const page = await render('?part=components%2Fchip&state=a&props=%7B%7D&layout=page');
 
     expect(page.querySelector('[data-design-harness-host]')?.className).toBe('block min-h-screen w-screen');
+  });
+
+  it('records each output the part emits on window', async () => {
+    const props = encodeURIComponent(JSON.stringify({ label: 'Tag' }));
+    const element = await render(`?part=components%2Fchip&state=a&props=${props}`);
+    const emits = () => (window as Window & { __etDesignEmits?: unknown }).__etDesignEmits;
+
+    expect(emits()).toEqual([]);
+
+    element.querySelector<HTMLElement>('ethlete-fake-chip')?.click();
+
+    expect(emits()).toEqual([{ output: 'remove', value: 'Tag' }]);
   });
 
   it('shows only an error text for an unknown part', async () => {

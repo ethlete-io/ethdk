@@ -18,6 +18,7 @@ import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
+import { ACTIONS_USAGE, designActions } from './system/actions-command';
 import { COMPARE_USAGE, designCompare } from './system/compare-command';
 import { designTask, TASK_USAGE } from './system/task-command';
 import { designHarness, HARNESS_USAGE } from './system/harness-command';
@@ -133,6 +134,12 @@ const helpOf = (invocation: string) =>
     '  product) and its harness url adds layout=page, so the host fills that viewport.',
     '  Without --url it makes a development build of the harness app in a temp folder, serves it on a free port and',
     '  stops it afterwards, also next to a running dev server of the same app; exits 1 unless every state is ok.',
+    '',
+    `${invocation} ${ACTIONS_USAGE}`,
+    "  Click and press Enter and Space on each interactive element of the part in the app's harness page, from each",
+    '  state that forces no interaction. Each must reach the state or fire the output its design element declares in',
+    '  data-et-action ("<state>" or "emit:<output>"); a key reaches the "<state>-focus-visible" row where the part draws',
+    '  one. Fails on an element without a declared action and on a design element the app does not draw.',
     '',
     `${invocation} ${HARNESS_USAGE}`,
     '  Write the harness map named in config.json products.<name>.harness.map: a lazy import of the component each',
@@ -346,6 +353,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designCompare({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'actions') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designActions({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'ready') {

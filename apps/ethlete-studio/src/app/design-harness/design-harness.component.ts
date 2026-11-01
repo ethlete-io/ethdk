@@ -1,18 +1,23 @@
-import { PlatformLocation } from '@angular/common';
+import { DOCUMENT, PlatformLocation } from '@angular/common';
 import {
   Component,
   effect,
   inject,
+  OutputRef,
+  reflectComponentType,
   Type,
   untracked,
   viewChild,
   ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { outputToObservable, toSignal } from '@angular/core/rxjs-interop';
 import { injectRenderer } from '@ethlete/core';
-import { catchError, from, map, Observable, of } from 'rxjs';
+import { catchError, from, map, Observable, of, tap } from 'rxjs';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
+
+/** Each output a mounted part emits, in order, for `et design actions` to read. */
+export type HarnessEmits = { output: string; value: unknown }[];
 
 type HarnessState = { component: Type<unknown>; props: Record<string, unknown> } | { error: string };
 
@@ -56,6 +61,7 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
 })
 export class DesignHarnessComponent {
   private platformLocation = inject(PlatformLocation);
+  private document = inject(DOCUMENT);
   private renderer = injectRenderer();
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   protected state = toSignal(stateOf$(this.platformLocation.search));
@@ -83,7 +89,24 @@ export class DesignHarnessComponent {
 
           ref.setInput(name, value);
         });
+
+        this.recordOutputs(state.component, ref.instance as Record<string, unknown>);
       });
     });
+  }
+
+  private recordOutputs(component: Type<unknown>, instance: Record<string, unknown>) {
+    const emits: HarnessEmits = [];
+
+    if (this.document.defaultView) Reflect.set(this.document.defaultView, '__etDesignEmits', emits);
+
+    for (const { propName, templateName } of reflectComponentType(component)?.outputs ?? []) {
+      const output = instance[propName] as OutputRef<unknown> | undefined;
+
+      if (output)
+        outputToObservable(output)
+          .pipe(tap((value) => emits.push({ output: templateName, value })))
+          .subscribe();
+    }
   }
 }

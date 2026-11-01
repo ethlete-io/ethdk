@@ -7,6 +7,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
+import { INTERACTIVE_SELECTOR } from './actions';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
 import { partHashOf } from './sketch/baseline';
@@ -39,6 +40,8 @@ export type FoundControl = {
   owner?: string | null;
   box?: FrameBox | null;
   covered?: boolean;
+  /** The element's `data-et-action`, or `undefined` for an element the action check does not press. */
+  action?: string | null;
 };
 
 /** A rule of the part's own stylesheet that sets `properties` on `path`, an element the embedded part `owner` draws. */
@@ -336,6 +339,37 @@ const discoveryGapsOf = (options: {
             detail: `${where} - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style`,
           };
     });
+};
+
+const actionGapsOf = (options: {
+  part: string;
+  declared: Record<string, DeclaredControl>;
+  frames: SeenFrame[];
+}): CompletenessGap[] => {
+  const { part, declared, frames } = options;
+  const groups = new Map<string, { found: FoundControl; states: string[] }>();
+
+  for (const frame of frames.filter((seen) => seen.interaction === null))
+    for (const found of frame.found ?? []) {
+      if (
+        found.action !== null ||
+        (found.owner ?? null) !== null ||
+        found.within.some((id) => (declared[id]?.part ?? null) !== null)
+      )
+        continue;
+
+      const key = findingKeyOf(found);
+      const group = groups.get(key) ?? { found, states: [] };
+
+      if (!group.states.includes(frame.state)) group.states.push(frame.state);
+      groups.set(key, group);
+    }
+
+  return [...groups.values()].map(({ found, states }) => ({
+    code: 'ACTION-UNDECLARED',
+    target: part,
+    detail: `${found.what}${found.label ? ` "${found.label}"` : ''} at ${found.path} in ${statesShownOf(states)} - declare what it does: data-et-action="<state>" or "emit:<output>"`,
+  }));
 };
 
 const isUndeclaredControlGap = (gap: CompletenessGap) => gap.code === 'CONTROL-UNDECLARED';
@@ -770,6 +804,7 @@ export const completenessGapsOf = (options: {
   return [
     ...gaps,
     ...discoveryGapsOf({ part, declared, frames }).filter((gap) => !isUndeclaredControlGap(gap)),
+    ...actionGapsOf({ part, declared, frames }),
     ...ownerGapsOf({ part, declared, frames, referenced }),
     ...overrideGapsOf({ part, frames }),
     ...inventoryGapsOf({ part, inventory }),
@@ -1052,7 +1087,7 @@ const discoverControls = `((root) => {
     if (what) {
       const inSdk = element.parentElement.closest(sdk);
       if (inSdk !== null && root.contains(inSdk)) continue;
-      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), label: labelOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element), covered: isCovered(element) });
+      found.push({ kind: 'control', what: what.startsWith('[') ? element.tagName.toLowerCase() + what : what, path: pathOf(element), label: labelOf(element), marked: markedOf(element), within: withinOf(element), owner: ownerOf(element)?.key ?? null, box: frameBoxOf(element), covered: isCovered(element), ...(element.matches(${JSON.stringify(INTERACTIVE_SELECTOR)}) ? { action: element.getAttribute('data-et-action') } : {}) });
       continue;
     }
     const cursor = getComputedStyle(element).cursor;

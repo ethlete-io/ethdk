@@ -43,7 +43,7 @@ const STYLES = [
 ].join(' ');
 
 const field = (attributes: string, marker: string, trigger = '') =>
-  `<div data-et-control="field"${attributes}><span class="aa-frame"${marker}><button class="aa-trigger" type="button"${marker}${trigger}>Field</button></span></div>`;
+  `<div data-et-control="field"${attributes}><span class="aa-frame"${marker}><button data-et-action="emit:press" class="aa-trigger" type="button"${marker}${trigger}>Field</button></span></div>`;
 
 const fieldStates = (marker: string) => ({
   rest: `<div>${field('', marker)}</div>`,
@@ -56,19 +56,20 @@ const FIELD =
   "controls: { field: { kind: 'button', input: ['pointer'], disabled: true } }, grid: { columns: ['rest', 'hover', 'active'], rows: { rest: { rest: 'rest', hover: 'hovered', active: 'pressed' } } },";
 
 const row = (attributes = '', name = 'aa-row') =>
-  `<button class="${name}" type="button" data-et-control="row"${attributes}>Row</button>`;
+  `<button data-et-action="emit:press" class="${name}" type="button" data-et-control="row"${attributes}>Row</button>`;
 
-const pick = '<button class="aa-toggle" type="button" data-et-control="pick">Pick</button>';
+const pick = '<button data-et-action="emit:press" class="aa-toggle" type="button" data-et-control="pick">Pick</button>';
 
-const option = (attributes = '', name = 'aa-row') => `<li class="${name}" role="option"${attributes}>Option</li>`;
+const option = (attributes = '', name = 'aa-row') =>
+  `<li class="${name}" role="option" data-et-action="emit:pick"${attributes}>Option</li>`;
 
 const OPTIONS = `<ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option()}${option(' data-et-force="hover"')}${option(' data-et-force="focus-visible" tabindex="0"')}</ul>`;
 
 const named = (name: string) =>
-  `<div><button class="aa-toggle" type="button" data-et-control="pick" aria-activedescendant="aa-b">Pick</button><ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option(' id="aa-b"', name)}${option()}${option(' data-et-force="hover"')}</ul></div>`;
+  `<div><button data-et-action="emit:press" class="aa-toggle" type="button" data-et-control="pick" aria-activedescendant="aa-b">Pick</button><ul data-et-surface="pick.open">${option(' aria-selected="true"')}${option(' id="aa-b"', name)}${option()}${option(' data-et-force="hover"')}</ul></div>`;
 
 const toggle = (attributes = '', name = 'aa-toggle') =>
-  `<button class="${name}" type="button" data-et-control="more"${attributes}><span>More</span></button>`;
+  `<button data-et-action="emit:press" class="${name}" type="button" data-et-control="more"${attributes}><span>More</span></button>`;
 
 const CORNER = ' style="position: fixed; top: 0; left: 0; width: 100%"';
 
@@ -226,14 +227,14 @@ const PARTS: Record<string, FixturePart> = {
   'components/undeclared': { states: { rest: '<div><button type="button">Go</button></div>' } },
   'components/focus-containers': {
     states: {
-      rest: '<div><div role="menu" tabindex="-1"><button type="button" role="menuitem">Copy</button></div><ul role="listbox" tabindex="0" aria-activedescendant="aa-one"><li role="option" id="aa-one">One</li></ul></div>',
+      rest: '<div><div role="menu" tabindex="-1"><button data-et-action="emit:press" type="button" role="menuitem">Copy</button></div><ul role="listbox" tabindex="0" aria-activedescendant="aa-one"><li role="option" id="aa-one" data-et-action="emit:pick">One</li></ul></div>',
     },
   },
   'components/focusable-box': { states: { rest: '<div><div tabindex="-1">Box</div></div>' } },
   'components/pointer': {
     states: { rest: '<div><div style="cursor: pointer"><span>Go</span></div><div class="aa-card">Card</div></div>' },
   },
-  'pages/inner': { states: { rest: '<main><button type="button">Inner</button></main>' } },
+  'pages/inner': { states: { rest: '<main><button data-et-action="emit:press" type="button">Inner</button></main>' } },
   'pages/host': { states: { rest: '' }, embed: 'pages/inner' },
   'pages/uses': {
     states: { rest: `<main>${toggle()}</main>`, open: `<main>${toggle()}${body}</main>` },
@@ -246,12 +247,13 @@ const PARTS: Record<string, FixturePart> = {
   'elements/slot': {
     states: { rest: '' },
     render:
-      '`<div class="aa-slot"><button type="button" class="aa-menu">Menu</button><section>${BODIES[state] ?? state}</section></div>`',
+      '`<div class="aa-slot"><button data-et-action="emit:press" type="button" class="aa-menu">Menu</button><section>${BODIES[state] ?? state}</section></div>`',
   },
   'pages/slotted': {
     states: { rest: '' },
     imports: "import slot from '@system/elements/slot';",
-    render: '(await slot.render({ state: \'<button type="button" class="aa-own">Own</button>\' })).body',
+    render:
+      '(await slot.render({ state: \'<button data-et-action="emit:press" type="button" class="aa-own">Own</button>\' })).body',
   },
   'pages/owns': {
     states: { rest: '' },
@@ -467,6 +469,36 @@ describe('completenessGapsOf', () => {
     ).toEqual([
       'CONTROL-UNCLASSIFIED components/a - div with cursor: pointer at div > div in rest, open - draw it as a native control or give it an interactive role and declare it, or drop the pointer cursor and :hover style',
     ]);
+  });
+
+  it('refuses an interactive element that declares no data-et-action, unless an embedded part owns it', () => {
+    const control = (found: Partial<FoundControl>): FoundControl => ({
+      kind: 'control',
+      what: 'button',
+      path: 'div > button',
+      label: 'Hide panel',
+      marked: 'hide',
+      within: ['hide'],
+      ...found,
+    });
+    const gapsOf = (found: FoundControl[]) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: { hide: { kind: 'button' }, picker: { kind: 'button', part: 'components/picker' } },
+        states: ['rest'],
+        frames: [frame('rest', { controls: [], found })],
+        reviewed: true,
+      })
+        .filter((gap) => gap.code === 'ACTION-UNDECLARED')
+        .map(completenessGapLineOf);
+
+    expect(gapsOf([control({ action: null })])).toEqual([
+      'ACTION-UNDECLARED components/a - button "Hide panel" at div > button in rest - declare what it does: data-et-action="<state>" or "emit:<output>"',
+    ]);
+    expect(gapsOf([control({ action: 'emit:collapse' })])).toEqual([]);
+    expect(gapsOf([control({})])).toEqual([]);
+    expect(gapsOf([control({ action: null, within: ['picker'] })])).toEqual([]);
+    expect(gapsOf([control({ action: null, owner: 'components/picker' })])).toEqual([]);
   });
 
   it('passes a disclosure drawn hovered, pressed, focused, collapsed and open in a reviewed part', () => {
@@ -1134,7 +1166,14 @@ export default definePart({
 
     expect(plain).toEqual({ gaps: [] });
     expect(await completenessOf({ target, config, product, part: 'components/undeclared' })).toEqual({
-      gaps: [],
+      gaps: [
+        {
+          code: 'ACTION-UNDECLARED',
+          target: 'components/undeclared',
+          detail:
+            'button "Go" at div > button in rest - declare what it does: data-et-action="<state>" or "emit:<output>"',
+        },
+      ],
       hints: [
         'CONTROL-UNDECLARED components/undeclared - button at div > button in rest - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls',
       ],
