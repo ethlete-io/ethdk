@@ -395,3 +395,8 @@ only; the builder starts when Tom gives the start.
   `projectPicker='open'` (API), not by pointer, so autofocus drew a focus ring (8355 px). Autofocus stays on in the
   app (keyboard open focuses the first item); the compare harness opens the picker by a real pointer click (cli
   change), and the app drops `autoFocus="false"`.
+- Impl Q15 go by the builder (Tom, 2026-11-01): when Tom approves a concrete design change in the chat (for example
+  the Impl Q13 transform line), the builder may record the new go with `--by tom`; the commit message names the
+  decision. A new design or a larger change still needs Tom's own go. The Impl Q13 go stays.
+- Impl Q16 verify revision (Tom, 2026-11-01): no tool change. With parallel committers the builder passes the
+  revision to `task --verify`; revisit only if a wrong record happens.
