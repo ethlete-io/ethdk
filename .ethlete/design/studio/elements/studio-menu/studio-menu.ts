@@ -6,7 +6,9 @@ import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
 
-type Props = { open: boolean; interaction?: Exclude<Interaction, 'disabled'> };
+type MenuInteraction = Exclude<Interaction, 'disabled'>;
+
+type Props = { open: boolean; interaction?: MenuInteraction; option?: MenuInteraction };
 
 const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabled'>) => {
   const markup = button({
@@ -22,11 +24,15 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const action = (name: string) => `data-et-control="item" data-studio-action="${name}"`;
+const action = (name: string) => `data-studio-action="${name}" data-et-slot="components/menu"`;
 
-const STUDIO_ROWS: MenuMockRow[] = [
+const studioRows = (option?: MenuInteraction): MenuMockRow[] => [
   { kind: 'label', label: 'Studio' },
-  { label: 'Einstellungen…', attributes: action('settings') },
+  {
+    label: 'Einstellungen…',
+    active: !!option,
+    attributes: option ? `${action('settings')} data-et-force="${option}"` : action('settings'),
+  },
   { label: 'Erscheinungsbild…', attributes: action('appearance') },
   { label: 'Tastenkürzel…', attributes: action('shortcuts') },
   { kind: 'separator' },
@@ -34,15 +40,19 @@ const STUDIO_ROWS: MenuMockRow[] = [
   { label: 'Über Studio…', attributes: action('about') },
 ];
 
-const studioPanel = async (interaction?: Exclude<Interaction, 'disabled'>) => {
-  const panel = await menu.render({ rows: STUDIO_ROWS, forced: interaction });
+const studioPanel = async (interaction?: MenuInteraction, option?: MenuInteraction) => {
+  if (option) return menu.render({ rows: studioRows(option) });
+
+  const panel = await menu.render({ rows: studioRows(), forced: interaction });
   // The SDK menu part replaces the attributes of its second row with its own force marks; this puts the action back.
   return { ...panel, body: panel.body.replace('data-et-control="item"', action('settings')) };
 };
 
-export const studioMenu = async ({ open, interaction }: Props) => {
+export const studioMenu = async ({ open, interaction, option }: Props) => {
   const panel =
-    typeof location === 'undefined' ? { body: '', styles: '' } : await studioPanel(open ? interaction : undefined);
+    typeof location === 'undefined'
+      ? { body: '', styles: '' }
+      : await studioPanel(open ? interaction : undefined, open ? option : undefined);
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
       ${studioTrigger(open, open ? undefined : interaction)}
@@ -61,13 +71,21 @@ export const studioMenu = async ({ open, interaction }: Props) => {
   };
 };
 
+const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
+  { closed: { open: false }, open: { open: true } },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
+
 export default definePart({
   note: 'Studio-wide actions behind the neutral logo tile: settings, appearance, shortcuts, help and about. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. Menu destinations are separate work.',
   madeBy: ['gpt-6'],
-  ...interactionRows<Props, 'closed' | 'open', Exclude<Interaction, 'disabled'>>(
-    { closed: { open: false }, open: { open: true } },
-    { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
-  ),
+  states: {
+    ...menuRows.states,
+    'studio-menu.option-hover': { open: true, option: 'hover' },
+    'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
+    'studio-menu.option-active': { open: true, option: 'active' },
+  },
+  grid: menuRows.grid,
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: styles + buttonStyles,
   implements: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts',

@@ -222,8 +222,8 @@
     }
   },
   "elements/studio-menu": {
-    "hash": "36b27e6e093819a5",
-    "at": "2026-11-01T13:43:20.449Z",
+    "hash": "7d4694350dfb77c3",
+    "at": "2026-11-01T14:22:09.769Z",
     "states": {
       "closed": "5cbc2772c1f9aa12",
       "closed-active": "f0330652bc0e1d79",
@@ -232,7 +232,10 @@
       "open": "1707653503031fda",
       "open-active": "aeef13d59bf609a7",
       "open-focus-visible": "cc0720d9b509fd57",
-      "open-hover": "0a3667d972683d58"
+      "open-hover": "0a3667d972683d58",
+      "studio-menu.option-active": "ee59e03c075bcb81",
+      "studio-menu.option-focus-visible": "b640ed890ce7d9d8",
+      "studio-menu.option-hover": "acf23cdfa12e41be"
     }
   },
   "pages/flows": {

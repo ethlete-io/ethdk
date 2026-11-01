@@ -1554,5 +1554,12 @@
     "note": "Impl Q63: drop open-focus-visible, the open row focus-visible column shows project.option-focus-visible",
     "hash": "330f0d4de9082165",
     "at": "2026-11-01T14:19:22.315Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "tom",
+    "note": "Impl Q64: draw studio-menu option-hover, option-focus-visible, option-active with forced menu rows",
+    "hash": "7d4694350dfb77c3",
+    "at": "2026-11-01T14:21:53.439Z"
   }
 ]
