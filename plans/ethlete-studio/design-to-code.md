@@ -895,6 +895,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 77. pages/system round 1: the "Aktuell" column is an empty dark frame; only variant a renders (Tom, 2026-11-01,
     screenshot). Cause: asked the builder. Lesson + tool change: open until the cause is known (why does no check
     fail when the current side of a sketch renders nothing?).
+78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+    (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
+    author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
+    decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
+    question for Tom (builder recommends: ready refuses without a current go; accept stays without a go gate,
+    because accept approves a direct design edit before its go).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
