@@ -84,7 +84,7 @@
         [style.width.px]="place?.width"
         class="absolute z-2 flex -translate-y-full flex-col gap-space-1 overflow-hidden"
       >
-        <div class="flex items-center gap-space-2 whitespace-nowrap [&_.et-button]:ms-space-2 [&>*]:flex-none">
+        <div class="flex items-center gap-space-2 whitespace-nowrap [&_.et-button]:ms-space-2 *:flex-none">
           @if (variant.key === CURRENT) {
             <span class="font-ui text-ui-sm font-ui-medium text-et-surface">{{ variant.label }}</span>
           } @else {
