@@ -1,9 +1,9 @@
 @layer components {
   .st-trow {
-    height: 2rem;
+    height: 2.4rem;
     padding: 0 var(--space-2) 0 calc(var(--space-1) + var(--depth, 0) * 1.6rem);
-    font-size: 1.1rem;
-    line-height: 1.4rem;
+    font-size: var(--text-md);
+    line-height: var(--text-md-line);
     transition: var(--transition-state);
   }
 
