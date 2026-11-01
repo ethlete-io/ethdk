@@ -10,6 +10,20 @@ export const STUDIO_LABELS = {
     sketchReady: 'Entwurf fertig',
     openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
   },
+  system: {
+    none: 'Noch keine Teile.',
+    emptyTitle: 'Noch keine Teile',
+    emptyExplainer:
+      'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',
+    emptyPrompt: 'Lege die Foundations für studio an: Farben, Schrift und Abstände.',
+    copyPrompt: 'Prompt kopieren',
+    statesByInteraction: 'States by interaction',
+    openCount: (count: number) => `${count} offen`,
+    nothingOpen: 'Nichts offen',
+    openPoints: 'Offene Punkte',
+    more: (count: number) => `+${count} weitere`,
+    allDone: 'Jeder Zustand ist gezeichnet, verknüpft und besprochen.',
+  },
   flows: {
     none: 'Noch keine Flows.',
     emptyTitle: 'Noch keine Flows',
