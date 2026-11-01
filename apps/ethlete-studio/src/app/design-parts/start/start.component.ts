@@ -16,11 +16,11 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
           />
         </g>
       </svg>
-      <span class="text-et-surface font-ui-strong text-ui-md">{{ labels.title }}</span>
+      <span class="text-et-surface font-ui-strong text-ui-md">{{ LABELS.title }}</span>
       @if (repo(); as name) {
         <span class="text-et-surface-muted text-ui-sm">{{ name }}</span>
         <button (click)="otherRepo.emit()" et-button type="button" variant="transparent" color="surface" size="sm">
-          {{ labels.otherRepo }}
+          {{ LABELS.otherRepo }}
         </button>
       }
     </header>
@@ -32,25 +32,25 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
             <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>
             <span class="block size-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>
           </div>
-          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ labels.noProducts }}</p>
-          <p class="m-0 text-et-surface-muted">{{ labels.productExplainer }}</p>
+          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noProducts }}</p>
+          <p class="m-0 text-et-surface-muted">{{ LABELS.productExplainer }}</p>
           <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
-            {{ labels.prompt(name) }}
+            {{ LABELS.prompt(name) }}
           </p>
           <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">
-            {{ labels.copyPrompt }}
+            {{ LABELS.copyPrompt }}
           </button>
           <p class="m-0 text-et-surface-muted">
-            {{ labels.orTerminal }} <code>{{ labels.command }}</code>
+            {{ LABELS.orTerminal }} <code>{{ LABELS.command }}</code>
           </p>
         } @else {
           <span
             class="block w-24 h-16 rounded-sm outline outline-et-surface-border bg-et-surface-bg"
             aria-hidden="true"
           ></span>
-          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ labels.noRepo }}</p>
-          <p class="m-0 text-et-surface-muted">{{ labels.repoExplainer }}</p>
-          <button (click)="openRepo.emit()" et-button type="button" variant="filled">{{ labels.openRepo }}</button>
+          <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
+          <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>
+          <button (click)="openRepo.emit()" et-button type="button" variant="filled">{{ LABELS.openRepo }}</button>
         }
       </div>
     </div>
@@ -65,5 +65,5 @@ export class StartComponent {
   public otherRepo = output();
   public copyPrompt = output();
 
-  protected readonly labels = STUDIO_LABELS.start;
+  protected readonly LABELS = STUDIO_LABELS.start;
 }
