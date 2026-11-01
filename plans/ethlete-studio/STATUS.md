@@ -21,9 +21,9 @@ ausgeklammert.
 | components/shell-collapse       | ✅     |                                                                                      |                   |
 | components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
 | elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
-| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
+| pages/inbox                     | ❌     | Kommentare nicht klickbar (Befund 102, Fragen an Tom); Prüfung wartet auf Fix        | Tom, dann Builder |
 | pages/system                    | ❌     | Merge-Ansicht leer, Builder repariert; dann mergen und „Go geben“                    | Builder, dann Tom |
-| pages/sketches                  | ❌     | Hover-Rahmen raus aus Entwurf und App, dann Merge von pages-system und „Go geben“    | Builder, dann Tom |
+| pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün      | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                              | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                  | Builder           |
 | pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“                | Builder, dann Tom |
@@ -51,7 +51,7 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
-- Parallel: Canvas ändert sich beim Auf- und Zuklappen der Seitenleiste (Befund 100), leere Merge-Ansicht, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.
+- Parallel: Canvas ändert sich beim Auf- und Zuklappen der Seitenleiste (Befund 100), leere Merge-Ansicht, Prüfungen für Start und Merge, Fehler-Toast.
 - Shell-Teile (shell-main, shell-project-switch, pages/inbox): Prüfung wartet auf den Fix für eingebettete Teile.
 
 ## Für später gesammelt
