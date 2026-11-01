@@ -2,5 +2,18 @@
 import { Type } from '@angular/core';
 
 export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> = {
+  'components/canvas-viewport': () =>
+    import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
+  'components/comment-pin': () =>
+    import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
+  'components/tree-row': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
+  'components/zoom-chip': () =>
+    import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
+  'elements/part-tree': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
+  'pages/flows': () => import('../system-view/flow-view.component').then((m) => m.FlowViewComponent),
   'pages/inbox': () => import('../design-parts/inbox/inbox.component').then((m) => m.InboxComponent),
+  'pages/inventory': () => import('../system-view/inventory-view.component').then((m) => m.InventoryViewComponent),
+  'pages/merge': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
+  'pages/sketches': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
+  'pages/system': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
 };

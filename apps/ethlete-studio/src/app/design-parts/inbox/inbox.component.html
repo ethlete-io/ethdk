@@ -5,7 +5,7 @@
     <div class="relative flex min-h-10 w-full justify-center">
       <div class="relative size-10">
         <button
-          class="size-10 p-0 [--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:[transform-box:view-box]"
+          class="size-10 p-0 [--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
           etAutoSurface
           et-button
           type="button"
@@ -35,7 +35,7 @@
       <div
         [class]="
           active
-            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-[3px] before:rounded-r-[3px] before:bg-et-theme before:content-[\'\']'
+            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-0.75 before:rounded-r-[3px] before:bg-et-theme before:content-[\'\']'
             : ''
         "
         class="relative flex w-full justify-center"
@@ -88,7 +88,7 @@
       <div
         [class]="
           active
-            ? 'before:absolute before:top-[10px] before:left-0 before:h-5 before:w-[3px] before:rounded-r-[3px] before:bg-text before:content-[\'\']'
+            ? 'before:absolute before:top-2.5 before:left-0 before:h-5 before:w-0.75 before:rounded-r-[3px] before:bg-text before:content-[\'\']'
             : ''
         "
         class="relative flex w-full justify-center"
@@ -135,7 +135,7 @@
       <ng-content />
     </main>
     <aside
-      class="absolute top-space-3 bottom-space-3 left-space-3 flex min-h-0 w-[248px] flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
+      class="absolute top-space-3 bottom-space-3 left-space-3 flex min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
     >
       <header
         class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pr-space-2 pl-space-4"
@@ -193,15 +193,19 @@
                   </button>
                   <div class="mt-1.25">
                     <div
-                      class="relative w-max min-w-72 rounded-[12px] border border-et-surface-border bg-et-surface-bg text-et-surface"
+                      class="relative isolate w-max min-w-72 rounded-[12px] border border-et-surface-border bg-et-surface-bg text-et-surface"
                       etAutoSurface
                       role="dialog"
                       aria-label="Kommentar"
                     >
                       <span
-                        class="absolute -top-[6.66px] left-[20.34px] size-[11.31px] rotate-45 border-t border-l border-et-surface-border bg-et-surface-bg"
+                        class="absolute -top-2.5 left-4 z-1 size-5 transform-[translate3d(0,0,0)] [clip-path:inset(-100%_-100%_9px_-100%)]"
                         aria-hidden="true"
-                      ></span>
+                      >
+                        <span
+                          class="absolute inset-0 m-auto box-border size-[14.1421px] rotate-45 rounded-[2px] border-t border-l border-et-surface-border bg-et-surface-bg"
+                        ></span>
+                      </span>
                       <div class="box-border flex w-80 flex-col items-stretch p-3">
                         @if (draft()) {
                           <et-textarea
@@ -307,7 +311,7 @@
           aria-expanded="false"
         >
           <span
-            class="flex size-[22px] flex-none items-center justify-center rounded-control-sm bg-et-surface-bg font-ui-strong text-ui-xs text-et-surface"
+            class="flex size-5.5 flex-none items-center justify-center rounded-control-sm bg-et-surface-bg font-ui-strong text-ui-xs text-et-surface"
             etAutoSurface
             >E</span
           ><span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-et-surface"
