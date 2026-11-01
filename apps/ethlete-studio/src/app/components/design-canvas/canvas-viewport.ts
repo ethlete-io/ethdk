@@ -12,6 +12,8 @@ export type CanvasViewportOptions = {
   outline?: number;
   /** The chip's Fit and 100% controls and the element that shows the zoom. */
   chip?: { fit: Element | null; reset: Element | null; label: Element | null };
+  /** The camera to start at instead of fitting all. */
+  start?: Camera;
   /** Runs after every camera move with the frames measured in world space. */
   onPaint?: (camera: Camera, frames: Rect[]) => void;
 };
@@ -43,12 +45,12 @@ const padded = (rect: Rect, by: number): Rect => ({
  */
 export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewport => {
   const { viewport, world, padding, outline = 0, chip } = options;
-  let camera: Camera = { x: 0, y: 0, zoom: 1 };
+  let camera: Camera = options.start ?? { x: 0, y: 0, zoom: 1 };
   let elements: HTMLElement[] = [];
   let frames: Rect[] = [];
   let focused: HTMLElement | null = null;
   let pressed: HTMLElement | null = null;
-  let following = true;
+  let following = !options.start;
 
   const measure = () => {
     const origin = world.getBoundingClientRect();

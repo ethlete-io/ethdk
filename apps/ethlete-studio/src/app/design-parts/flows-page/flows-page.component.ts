@@ -1,10 +1,25 @@
-import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  model,
+  output,
+  signal,
+  TemplateRef,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
+import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
+import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 
 export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
 
@@ -29,6 +44,8 @@ export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
   { from: 'inbox', to: 'resolved', label: STUDIO_LABELS.flows.sample.lines[1] },
   { from: 'sketch', to: 'system', label: STUDIO_LABELS.flows.sample.lines[2] },
 ];
+
+const ZOOM_STEP = 1.5;
 
 export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
 
@@ -72,26 +89,14 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
         }
       </div>
       @if (flow() === 'open') {
-        <div
-          class="box-border flex h-full flex-col gap-space-4 p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--space-5))]"
-        >
-          <header class="flex h-(--control-md) flex-none items-center gap-space-3">
-            <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
-            <span class="flex-1"></span>
-            <div class="w-60">
-              <et-form-field size="sm">
-                <et-select [value]="preset()" (valueChange)="pickPreset($event)">
-                  @for (option of presetOptions(); track option.value) {
-                    <et-select-option [value]="option.value" [label]="option.label">{{
-                      option.label
-                    }}</et-select-option>
-                  }
-                </et-select>
-              </et-form-field>
-            </div>
-          </header>
-          <div class="flex min-h-0 flex-1 items-center justify-center">
-            <div [style.width.px]="graph().width" [style.height.px]="graph().height" class="relative flex-none">
+        <div class="relative h-full overflow-hidden">
+          <ethlete-canvas-viewport class="absolute inset-0 overflow-hidden">
+            <div
+              #world
+              [style.width.px]="graph().width"
+              [style.height.px]="graph().height"
+              class="absolute top-0 left-0 origin-top-left"
+            >
               <svg
                 [attr.width]="graph().width"
                 [attr.height]="graph().height"
@@ -125,7 +130,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                     <div
                       [style.width.px]="graph().w"
                       [style.height.px]="graph().h"
-                      class="overflow-hidden"
+                      class="pointer-events-none overflow-hidden"
                       data-et-projected="shot"
                     >
                       <ng-container
@@ -147,7 +152,35 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                 </span>
               }
             </div>
+          </ethlete-canvas-viewport>
+          <div
+            class="pointer-events-none relative box-border flex h-full flex-col gap-space-4 p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+          >
+            <header class="pointer-events-auto flex h-(--control-md) flex-none items-center gap-space-3">
+              <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
+              <span class="flex-1"></span>
+              <div class="w-60">
+                <et-form-field size="sm">
+                  <et-select [value]="preset()" (valueChange)="pickPreset($event)">
+                    @for (option of presetOptions(); track option.value) {
+                      <et-select-option [value]="option.value" [label]="option.label">{{
+                        option.label
+                      }}</et-select-option>
+                    }
+                  </et-select>
+                </et-form-field>
+              </div>
+            </header>
+            <div #stage class="min-h-0 flex-1"></div>
           </div>
+          <ethlete-zoom-chip
+            [percent]="percent()"
+            (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+            (zoomIn)="zoomBy(ZOOM_STEP)"
+            (zoomReset)="zoomReset()"
+            (fit)="fit()"
+            class="absolute right-space-3 bottom-space-3 z-3"
+          />
         </div>
       } @else {
         <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)">
@@ -176,11 +209,13 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
   imports: [
     NgTemplateOutlet,
     BUTTON_IMPORTS,
+    CanvasViewportComponent,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
     ShellMainComponent,
     StudioMenuComponent,
     TreeRowItemComponent,
+    ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -210,7 +245,17 @@ export class FlowsPageComponent {
   public projectChange = output<string>();
 
   public openProject = output();
+  private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
+  private world = viewChild<ElementRef<HTMLElement>>('world');
+
+  private stage = viewChild<ElementRef<HTMLElement>>('stage');
   protected readonly LABELS = STUDIO_LABELS.flows;
+  protected readonly ZOOM_STEP = ZOOM_STEP;
+  private canvas: CanvasViewport | null = null;
+  private mounted: HTMLElement | null = null;
+
+  public zoom = signal(1);
+  protected percent = computed(() => Math.round(this.zoom() * 100));
   protected presetOptions = computed(() =>
     this.presets().length ? this.presets() : [{ value: this.preset(), label: this.preset() }],
   );
@@ -272,7 +317,41 @@ export class FlowsPageComponent {
       : this.flows().map((label) => ({ label, depth: 0, kind: 'leaf', selected: label === this.selected() })),
   );
 
+  public constructor() {
+    afterRenderEffect(() => this.mountCamera());
+  }
+
+  public zoomBy(factor: number) {
+    this.canvas?.show({ kind: 'visible', zoom: this.canvas.camera().zoom * factor });
+  }
+
+  protected zoomReset() {
+    this.canvas?.show({ kind: 'visible', zoom: 1 });
+  }
+
+  protected fit() {
+    this.canvas?.show({ kind: 'all' });
+  }
+
   protected pickPreset(value: unknown) {
     if (typeof value === 'string') this.presetChange.emit(value);
+  }
+
+  private mountCamera() {
+    const viewport: HTMLElement | undefined = this.viewport()?.nativeElement;
+    const world = this.world()?.nativeElement;
+    const stage = this.stage()?.nativeElement;
+
+    if (!viewport || !world || !stage || viewport === this.mounted) return;
+
+    this.mounted = viewport;
+    this.canvas = mountCanvasViewport({
+      viewport,
+      world,
+      frameSelector: 'figure',
+      padding: 24,
+      start: { x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 },
+      onPaint: (camera) => this.zoom.set(camera.zoom),
+    });
   }
 }
