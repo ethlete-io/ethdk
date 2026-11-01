@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B29, C3 und C5. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: C3 und C5. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- B29: Design-Regel NATIVE-TITLE, opt-in mit `nativeTitle: 'deny'` (ed8457932, 02.11.).
 - C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet; der Test fängt das alte Verhalten (28141b818, e76c503fb, 02.11.).
 - B26: `design check` nennt jetzt auch Teile, die ohne Browser nicht zeichnen und an denen `design ready` scheitert (85a028f16, 02.11.).
 - B11: Lint-Regel `ethlete/no-native-title`, vorerst opt-in (4c60be59e, 02.11.).
@@ -111,7 +112,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`. **Erledigt** (85a028f16).
 27. Kanonische Tailwind-Klassen im App-Code prüfen.
 28. Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
-29. Design-Regel NATIVE-TITLE: findet `title=` im Markup der Design-Dateien, opt-in pro Produkt; Studio schaltet sie mit A8 ein (7 Stellen in .ethlete/design/studio). **Läuft.**
+29. Design-Regel NATIVE-TITLE: findet `title=` im Markup der Design-Dateien, opt-in pro Produkt; Studio schaltet sie mit A8 ein (7 Stellen in .ethlete/design/studio). **Erledigt** (ed8457932).
 
 ## C. CLI: Tempo und Ablauf
 
