@@ -312,3 +312,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - After the MVP (Tom, 2026-11-01, Impl Q75): a per-preset frame box ratio on the flows canvas, so a phone page is not clipped to its top.
 - After the MVP (Tom, 2026-11-01, Impl Q81): chat, notes, the top-right page buttons and the footer bar removed from the live pages; each needs a design before it comes back.
 - After the MVP (Tom, 2026-11-01, Impl Q83): the studio menu (Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio) and the logo as its button; each target needs a design first.
+- After the MVP (Tom, 2026-11-01, Impl Q88-Q92): plan what Studio shows of the server status and diagnostics (old footer); "Scan" for checkouts; a design pass for an update hint; a design for the "Ausnahmen N" popover; the legacy design-call view keeps its old look.

@@ -856,3 +856,19 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q85 panel states (Tom, 2026-11-01): no page design change. shell-main already draws panel open and panel
   hidden, and every page inherits it, so the Impl Q78 live-page compare takes the panel-hidden state from shell-main.
   The sample frame across the panel edge belongs to the compare's fixed sample, on both sides, not to a design.
+- Impl Q86 demo backdrops (Tom, 2026-11-01): build a check that detects a demo background in a design (a wrapper
+  outside the part root that paints a fill the part does not own) and refuses it in `design complete`; then fix
+  what it flags, starting with shell-collapse and shell-project-switch. Finding 52.
+- Impl Q87 design server (Tom, 2026-11-01): the "server stopped" screen with Restart stays and gets a design as a
+  shell-main state. Start, Restart and Stop move into the logo menu. This changes Impl Q83: the logo stays a button
+  on every page and opens the studio menu, which now holds only the server actions; the five old entries stay
+  removed. Design change of studio-menu, go `--by tom`.
+- Impl Q88 server status (Tom, 2026-11-01): the footer bar goes, with its status and diagnostics. What to do with
+  that information is planned after the MVP.
+- Impl Q89 open project (Tom, 2026-11-01): "Projekt öffnen…" opens the OS folder dialog; the footer checkouts popup
+  goes; "Scan" to the backlog.
+- Impl Q90 updates (Tom, 2026-11-01): a ready update installs on the next Studio start, no UI. A design pass for an
+  update hint is planned after the MVP.
+- Impl Q91 exceptions (Tom, 2026-11-01): the "Ausnahmen N" popover stays as it is; no new design now (that was scope
+  creep). Design after the MVP.
+- Impl Q92 legacy call view (Tom, 2026-11-01): stays as it is, with "Als übertragen markieren".
