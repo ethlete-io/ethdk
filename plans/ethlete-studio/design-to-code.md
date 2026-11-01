@@ -1025,6 +1025,16 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     fails if a ring appears; `design actions --live` names the live element it probed for each ready part and flags a
     ready part that no live page renders. The Shift probe ships with the fix; the live report is parked
     until after MVP.
+92. Impl Q122 (open the first folded unchanged row when "Aktuell" shows no frame) was decided but never built; Tom saw
+    the empty "Aktuell" column again hours later (Tom, 2026-11-01, screenshot). Cause (builder): the parallel agent
+    for Q122 stopped before a commit, and when the queue was rewritten for the new MVP measure, Q122 moved to an
+    unordered list and fell out. Why missed: a decision has no open state anywhere once the plan entry is written.
+    Fix (process, now): a decided Impl Q stays in the builder's ordered queue until a commit names it. Fix (any
+    project, after MVP): a decision that names a part shows as an open point of that part until a commit builds it.
+93. The ready re-check reported "pages/sketches: sketch ready, not merged", and Tom found no such sketch (Tom,
+    2026-11-01). Cause (builder): sketch pages-system targets both pages/system and pages/sketches, and the open
+    point does not name the sketch. Fix (any project, with Q122): the open point names the sketch, for example
+    "sketch pages-system is ready, not merged (it also targets this part)".
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
