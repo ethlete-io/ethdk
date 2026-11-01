@@ -1202,6 +1202,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      "Nach dem Merge" crop shows the whole text (grill from Tom's screenshot, studio-lab components/card in
      pages/library empty, 2026-11-01). Looks like the crop takes the rect of one side for both. MVP: pages/merge. Cause
      and why no check caught it: asked the builder.
+119. Finding 107 cause (builder, 434e3f297): the logo button drew radius 6 px plus a 1 px transparent border around a
+     38 px logo with radius 9.5 px; the corners showed only when hover, open or focus painted the button. The design had
+     the same bug, so compare was 0 px before and after. Why no check caught it: compare checks design = app, never an
+     inner radius against its outer control. Tool fix (general, after MVP): a check that a control's radius matches a
+     child that fills it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
