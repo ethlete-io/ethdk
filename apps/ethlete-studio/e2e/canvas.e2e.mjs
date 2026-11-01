@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { resolve } from 'node:path';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -9,10 +11,29 @@ const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 
 process.env['DE_PORT'] ??= '4473';
 
 const PAGES = [
-  { name: 'System', view: { systemProduct: 'studio', systemEntry: 'pages/system' } },
-  { name: 'Sketches', view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' } },
-  { name: 'Inbox', view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true } },
-  { name: 'Flow', view: { systemProduct: 'studio-lab', systemEntry: 'flow:sign-in' }, frame: 'figure' },
+  {
+    name: 'System',
+    view: { systemProduct: 'studio', systemEntry: 'pages/system' },
+    shows: 'ethlete-system-view ethlete-open-points-chip',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Sketches',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+  },
+  {
+    name: 'Inbox',
+    view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true },
+    shows: 'ethlete-inbox',
+    hides: 'ethlete-sketch-view',
+  },
+  {
+    name: 'Flow',
+    view: { systemProduct: 'studio-lab', systemEntry: 'flow:sign-in' },
+    frame: 'figure',
+    shows: 'ethlete-flow-view',
+  },
 ];
 
 const NARROW = { width: 1440, height: 900 };
@@ -453,6 +474,31 @@ const CASES = [
   },
 ];
 
+const checkout = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
+
+for (const entry of readdirSync(root)) {
+  if (entry !== '.ethlete' && entry !== '.git') symlinkSync(join(root, entry), join(checkout, entry));
+}
+
+cpSync(join(root, '.ethlete/design'), join(checkout, '.ethlete/design'), { recursive: true });
+
+const sketch = join(checkout, '.ethlete/design/studio/sketches/pages-system');
+
+rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
+mkdirSync(join(sketch, 'a/pages'), { recursive: true });
+cpSync(join(root, '.ethlete/design/studio/pages/system'), join(sketch, 'a/pages/system'), { recursive: true });
+writeFileSync(
+  join(sketch, 'sketch.json'),
+  JSON.stringify({
+    target: 'pages/system',
+    targets: ['pages/system'],
+    status: 'ready',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+    variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+  }),
+);
+
 const results = await withStudio(
   async ({ page, studioUrl }) => {
     const rows = [];
@@ -467,7 +513,7 @@ const results = await withStudio(
             localStorage.clear();
             localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
           },
-          { view: target.view, checkout: root },
+          { view: target.view, checkout },
         );
         await page.setViewportSize(testCase.viewport ?? NARROW);
         await page.goto(studioUrl);
@@ -478,11 +524,19 @@ const results = await withStudio(
         );
         await page.waitForTimeout(2500);
 
+        const shown = await page.evaluate(
+          ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
+          { shows: target.shows, hides: target.hides ?? null },
+        );
         const state = await probe(page);
         let result;
 
         try {
-          result = state ? await testCase.run(page, state) : { ok: false, detail: 'no canvas' };
+          result = !shown
+            ? { ok: false, detail: `the page does not show ${target.shows}` }
+            : state
+              ? await testCase.run(page, state)
+              : { ok: false, detail: 'no canvas' };
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };
         }
@@ -496,8 +550,8 @@ const results = await withStudio(
 
     return rows;
   },
-  { built },
-);
+  { built, checkout },
+).finally(() => rmSync(checkout, { recursive: true, force: true }));
 
 const failed = results.filter((row) => !row.ok);
 
