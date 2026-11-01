@@ -1472,6 +1472,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 - Impl Q134 start empty state (Tom, 2026-11-01): the empty bordered box (`ghostFolder`) above "Kein Repo geöffnet" on
   pages/start goes away in design and app; title, text and the "Repo öffnen" button stay. Then Tom accepts the
   direct edit and gives the go on pages/start.
+- Impl Q135 Sketches camera on panel toggle (Tom, 2026-11-01, finding 100 follow-up): when the panel hides or shows,
+  the Sketches camera shifts by the panel width so the frames keep their screen position, as in System and Flow
+  (canvas-level adjustment when the host's left edge moves). Tom could not try it (no open sketch), so the e2e case
+  is the proof.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
