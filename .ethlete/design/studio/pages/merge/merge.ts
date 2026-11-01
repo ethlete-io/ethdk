@@ -70,7 +70,7 @@ const panelOf = (unchanged: boolean) =>
   </div>`;
 
 export default definePart<Props>({
-  implements: { route: '/', component: 'apps/ethlete-studio/src/app/system-view/sketch-view.component.ts' },
+  implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/merge/merge.component.ts' },
   note: 'focus-visible nimmt --text wie hover',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   widths: [1440],
