@@ -839,3 +839,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   Impl Q78 keeps it so. Anything Tom wants back goes to the backlog and gets a design first. Exception: an element
   that is the only way to an important function (for example a design server restart) goes to Tom one by one before
   it is removed. Finding 49.
+- Impl Q82 ready needs working controls (Tom, 2026-11-01): the Impl Q79 action check is a gate for ready. A part or
+  page with interactive elements is ready only when each one declares an action and the check passes, on the real
+  page too. Every current ready mark is reset until its part passes; the DONE number counts only those. Finding 51.
+- Impl Q83 studio menu (Tom, 2026-11-01): the five entries (Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe,
+  Über Studio) have no target design and leave design and app; backlog, design first. With the menu empty, the logo
+  menu goes to the backlog too: the rail logo is the plain Studio mark on every page (the shell-main standalone
+  preview already draws it), not a button. Finding 51 and 50.
+- Impl Q84 frame label (Tom, 2026-11-01): the live canvas frame label shows the bare name as the design does
+  (`button`), not the layer-qualified name; the layer shows as the group in the side tree.
+- Impl Q85 panel states (Tom, 2026-11-01): no page design change. shell-main already draws panel open and panel
+  hidden, and every page inherits it, so the Impl Q78 live-page compare takes the panel-hidden state from shell-main.
+  The sample frame across the panel edge belongs to the compare's fixed sample, on both sides, not to a design.

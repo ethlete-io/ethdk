@@ -311,3 +311,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   for "Verwerfen"; unchanged rows of several parts on the merge page.
 - After the MVP (Tom, 2026-11-01, Impl Q75): a per-preset frame box ratio on the flows canvas, so a phone page is not clipped to its top.
 - After the MVP (Tom, 2026-11-01, Impl Q81): chat, notes, the top-right page buttons and the footer bar removed from the live pages; each needs a design before it comes back.
+- After the MVP (Tom, 2026-11-01, Impl Q83): the studio menu (Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio) and the logo as its button; each target needs a design first.
