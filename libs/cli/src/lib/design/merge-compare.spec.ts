@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { compareMerge, PictureOf } from './merge-compare';
 import { readConfig } from './paths';
 import { resolveProduct } from './system/resolve-product';
-import { createSketch, Sketch } from './system/sketch/sketch';
+import { createSketch, Sketch, SketchTarget } from './system/sketch/sketch';
 
 const acme = (target: string) => {
   const product = resolveProduct({
@@ -17,13 +17,19 @@ const acme = (target: string) => {
   return product;
 };
 
-const sketchOn = (layer: 'components', name: string) => {
+const sketchOn = (layer: 'components' | 'pages', name: string, others: SketchTarget[] = []) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-compare-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
   const product = acme(target);
-  const sketch = createSketch({ merge: 'override', product, sketch: { layer, name }, variants: ['a'] }) as Sketch;
+  const sketch = createSketch({
+    merge: 'override',
+    product,
+    sketch: { layer, name },
+    others,
+    variants: ['a'],
+  }) as Sketch;
 
   return { product, sketch };
 };
@@ -98,6 +104,25 @@ describe('compareMerge', () => {
       }),
     );
     expect(pictureOf).toHaveBeenCalledWith(expect.objectContaining({ state: 'default', sketch: null }));
+  });
+
+  it('draws each sketched element and page itself, for a sketch with several targets', async () => {
+    const { product, sketch } = sketchOn('pages', 'home', [{ layer: 'elements', name: 'hero' }]);
+    const compared = await compareMerge({
+      product,
+      sketch,
+      variant: 'a',
+      size: null,
+      params: new URLSearchParams(),
+      pictureOf,
+      load: loadWith({ states: { default: {}, empty: {} } }),
+    });
+
+    expect(compared.changed.map(({ part, state }) => `${part} ${state}`)).toEqual([
+      'elements/hero default',
+      'pages/home default',
+    ]);
+    expect(compared.unchanged.map(({ part, state }) => `${part} ${state}`)).toEqual(['pages/home empty']);
   });
 
   it('draws a page at the asked preset and a part with widths at the asked width, else at their first', async () => {

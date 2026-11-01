@@ -59,10 +59,12 @@ const outlinesOf = (picture: Picture, target: string): Outline[] =>
     .filter((mark) => mark.parts.includes(target))
     .map(({ x, y, width, height }) => ({ x, y, width, height }));
 
+const SHOWN = new Set(['elements', 'pages']);
+
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /**
- * Draws each state of every element and page that shows the sketched part twice, as the product has it
+ * Draws each state of every element and page the merge changes or that shows a changed part twice, as the product has it
  * now and with `variant` merged, and splits them by whether the two pictures differ in any pixel. A page
  * is drawn at the preset `size` names, or its first; a part with `widths` at the width `size` names, or
  * its first; any other part fitted to its content.
@@ -79,7 +81,8 @@ export const compareMerge = async (options: {
   const { product, sketch, variant, size, params, pictureOf, load } = options;
   const target = sketch.target;
   const merged: SketchVariant = { target, variant };
-  const { affected } = mergePreviewOf({ product, sketch, variant });
+  const { changed, affected } = mergePreviewOf({ product, sketch, variant });
+  const drawn = [...changed.filter((key) => SHOWN.has(key.split('/')[0] ?? '')), ...affected].sort();
 
   const rowsOf = async (key: string): Promise<{ row: CompareRow; changed: boolean }[]> => {
     const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
@@ -134,7 +137,7 @@ export const compareMerge = async (options: {
     );
   };
 
-  const rows = (await Promise.all(affected.map(rowsOf))).flat();
+  const rows = (await Promise.all(drawn.map(rowsOf))).flat();
 
   return {
     target,
