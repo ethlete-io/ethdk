@@ -889,9 +889,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     `compare --live --sketch <variant>`, and sketch check reads design-live.json. Done in d85d4129c, 622f8dbe4. Lesson: every check must be able to run on a sketch, or a
     decided change cannot be verified before its merge.
 76. A pointer click into the canvas draws a teal frame around the whole canvas viewport (Tom, 2026-11-01, screenshot
-    of pages/system round 1): a focus ring that shows on a mouse click, not only on keyboard focus. Cause: asked the
-    builder. Lesson + tool change: open until the cause is known (why did `design actions` / the focus checks not
-    flag a ring on pointer focus?).
+    of pages/system round 1): a focus ring that shows on a mouse click, not only on keyboard focus. Cause:
+    canvas-viewport.ts pointerdown calls preventDefault and then `viewport.focus()` by script; Chrome can treat
+    script focus as `:focus-visible`, so the FocusRingDirective painted. Fixed in ee1299600 (`data-pointer-focus`
+    hides the outline after a pointer press; Tab still rings); not yet checked in a real browser. Why no check caught
+    it: `design actions` presses only declared part controls and checks focus-visible only after keys; nothing reads
+    the outline after a pointer press, and the canvas viewport is a page-level host, not a part. Lesson: a focus check
+    that only uses keys cannot see a ring that a click paints. Tool change (builder work): a pointer-focus check in
+    `design actions` and on the live pages: real click on every focusable element, fail on a visible outline, then
+    Tab to it and expect the outline.
 77. pages/system round 1: the "Aktuell" column is an empty dark frame; only variant a renders (Tom, 2026-11-01,
     screenshot). Cause: asked the builder. Lesson + tool change: open until the cause is known (why does no check
     fail when the current side of a sketch renders nothing?).
