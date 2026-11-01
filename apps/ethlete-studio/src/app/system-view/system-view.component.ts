@@ -71,7 +71,7 @@ import {
   pinsOf,
   withOtherSizeNotes,
 } from './comment-pins';
-import { InboxComponent } from '../design-parts/inbox/inbox.component';
+import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { ShellMainComponent, ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -504,7 +504,9 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [project]="project()"
         [projects]="projects()"
         [panel]="panel()"
+        [load]="inboxLoad()"
         (showResolvedChange)="commentStore.showResolved($event)"
+        (retry)="commentStore.retry()"
         (pick)="jumpToComment($event)"
         (collapse)="panel.set('hidden')"
         (sectionChange)="pickSection($event)"
@@ -1103,6 +1105,12 @@ export class SystemViewComponent {
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>('System');
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
+
+  protected inboxLoad = computed<InboxLoad>(() => {
+    if (this.commentStore.loaded()) return 'loaded';
+
+    return this.commentStore.loadError() ? 'error' : 'loading';
+  });
 
   protected inboxComments = computed(() => {
     const now = Date.now();

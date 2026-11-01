@@ -1,11 +1,13 @@
 import { WritableSignal, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { THEMES } from '../../themes';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -198,6 +200,41 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(element.querySelector('ethlete-inbox')).toBeNull();
     expect(element.querySelector('ethlete-shell-main aside et-tree')).not.toBeNull();
+  });
+
+  it('shows a failed comment load in the Inbox and loads the list again on retry', async () => {
+    let failing = true;
+
+    TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) {
+        return failing ? Promise.reject(new Error('offline')) : json({ comments: [HOVER_COMMENT], unreadable: [] });
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    fixture.componentInstance['pickSection']('Inbox');
+    await settle(fixture);
+
+    const aside = () => element.querySelector('ethlete-inbox aside')?.textContent ?? '';
+
+    expect(aside()).toContain('Kommentare nicht geladen');
+    expect(aside()).not.toContain('offen');
+
+    failing = false;
+    [...element.querySelectorAll<HTMLButtonElement>('ethlete-inbox aside button')]
+      .find((button) => button.textContent?.includes('Erneut laden'))
+      ?.click();
+    await settle(fixture);
+
+    expect(aside()).toContain('1 offen');
+    expect(aside()).toContain('Too light');
   });
 
   it('shows the new-product screen while "New product" is picked, and goes back on another pick', async () => {
