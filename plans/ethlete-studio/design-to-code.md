@@ -910,26 +910,32 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     matrix logic (aktuell-placeholders.ts), because the app takes "unchanged" from a pixel compare and cannot import
     CLI code. Known drift: the CLI counts all non-rejected variants, the view only open rounds. Lesson: two copies of
     the view logic drift; a later fix should move the matrix into one module both import.
-78. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
+78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+    (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
+    author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
+    decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
+    question for Tom (builder recommends: ready refuses without a current go; accept stays without a go gate,
+    because accept approves a direct design edit before its go).
+79. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
     "stdin is not a TTY: write the entries to a go list and let Tom run `yarn design go --batch <file>`" (Tom,
     2026-11-01). The `!` shell has no TTY, so the Impl Q119 confirm cannot run there, and the message tells Tom to do
     the very thing he just did. Lesson: an error must name the next step that works for the person who reads it;
     a command for Tom needs a tested path, not only an agent-proof refusal. Tool change (builder work): the message
     says "run it in your own terminal, not through an agent shell"; the go list hand-off gives the exact command for
     a real terminal.
-79. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
+80. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
     "pages/system is in progress - mark it ready before a merge" (Tom, 2026-11-01). Nobody checked the
     precondition before the hand-off. Lesson: every command for Tom must pass a dry run of its checks first, or Tom
     becomes the test. Tool change (builder work): the batch file takes sketch merges too, and `--batch` checks
     every precondition (ready, product, go state) before the prompt; the merge refusal names the command that marks
     the sketch ready.
-80. Tom on the Impl Q121-Q124 round (2026-11-01): "wir sind mittlerweile bei so fragen angekommen die kein mensch
+81. Tom on the Impl Q121-Q124 round (2026-11-01): "wir sind mittlerweile bei so fragen angekommen die kein mensch
     mehr versteht", and "nichts funktioniert hier" after two failed hand-off commands (findings 79, 80). The round
     asked Tom about tool internals (go gates, matrix code copies) that he cannot judge from what he sees. Lesson: Tom
     decides what he sees and does in Studio; the builder decides tool internals itself (builder default, recorded as a
     finding) and Tom only gets them in the feedback round. Every command handed to Tom must be run once by an agent
     up to its Tom-only step first.
-81. Tom (2026-11-01, late): "wir sind schon wieder den ganzen tag dabei irgendwas zu fixen ich habe absolut keinen
+82. Tom (2026-11-01, late): "wir sind schon wieder den ganzen tag dabei irgendwas zu fixen ich habe absolut keinen
     überblick mehr und du fragst nach irgendwelchen go systemen wo ich schon längst ausgestiegen bin. ich will das
     meine vision von studio funktioniert; was interessieren mich internals und command line args." Lesson: the go,
     batch and CLI machinery leaked into Tom's work; Tom does not run CLI commands and does not follow the go system.
@@ -941,10 +947,18 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     36368703a (pages-system sketch ready, with a round note) and dc276d433 (batch merges, ready hint in the refusal).
     Correction (builder after restart): Studio has a merge click (sketch view, POST /__design/sketch-merge); no
     screen calls part-go or part-ready, and accept has no server path. The builder builds go and accept clicks.
-82. Tom (2026-11-01): "wieso verhält sich der canvas in sketch anders als in system. der müll hört nicht auf." The
-    canvas on the sketch page behaves differently from the canvas on the system page. Cause: asked the builder.
-    Lesson + tool change: open until the cause is known.
-83. Two live defects from the 705a39ce2 report (builder, 2026-11-01): (a) the picker in the live shell did not close
+83. Tom (2026-11-01): "wieso verhält sich der canvas in sketch anders als in system. der müll hört nicht auf." Cause:
+    two canvas implementations. System uses `ethlete-design-canvas` (design-canvas.component.ts) with its own input
+    handlers; Sketches and Flows use `mountCanvasViewport` (canvas-viewport.ts). Only the wheel math and the Shift+1/2/0
+    targets are shared. Left drag and arrow keys pan in Sketches and Flows, not in System; double-click focuses a
+    frame only in Sketches and Flows; Shift+1/2/0 work window-wide in System but only after a canvas click elsewhere.
+    Why missed: `design actions` and compare check each part alone; no check compares one interaction across pages;
+    the sketches design part copied the camera from the drawing instead of reusing the System canvas. Lesson: a
+    second copy of an interaction drifts silently (as finding 84). Tool change (builder default): a live "canvas
+    parity" action runs one input script on every canvas page and fails when the camera results differ, plus a check
+    that fails when more than one module attaches canvas input handlers. Code fix: one input layer for all canvas
+    pages; left-drag behaviour asked as Impl Q125.
+84. Two live defects from the 705a39ce2 report (builder, 2026-11-01): (a) the picker in the live shell did not close
     on a pick, because shell-main.component.html holds its own inlined copy of the picker; d369ce390 fixed only the
     shell-project-switch part. (b) System from the sketch or merge page kept the sketch page: `pickSection` re-picked
     only for an open flow. Fixed (`closeOnActivate` in shell-main; `this.flow() || this.sketch()`). Live check 14/257
@@ -955,12 +969,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     Correction (builder, 2026-11-01, from code): the server has `part-go` and `part-ready`, but no Studio screen calls
     them; there is no accept path. Studio does have a merge click (sketch view, `mergeSketch$`). In progress: go and
     accept clicks in Studio with all preconditions checked first, and a live check of the merge click.
-84. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
-    (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
-    author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
-    decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
-    question for Tom (builder recommends: ready refuses without a current go; accept stays without a go gate,
-    because accept approves a direct design edit before its go).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
