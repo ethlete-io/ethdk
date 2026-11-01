@@ -18,6 +18,8 @@ import {
   type PointGroup,
 } from './shared/open-points';
 
+const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="${action}"`);
+
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
@@ -33,7 +35,7 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
     <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
-    ${copy.body}
+    ${act(copy.body, 'emit:copyPrompt')}
   </div>
 </div>`;
 
@@ -49,7 +51,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean) => {
     pressed,
   });
   return {
-    body: control(drawn.body, 'open-points'),
+    body: control(act(drawn.body, pressed ? 'points-closed' : 'part'), 'open-points'),
     styles: drawn.styles,
   };
 };
