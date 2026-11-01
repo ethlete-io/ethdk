@@ -1569,3 +1569,9 @@ After the MVP, except item 5.
    never the same single letter for all. A tooltip shows the full name.
 5. MVP, pages/inbox: a resolved comment shows its pin after a click in the inbox, muted and with a check mark, so the
    click always shows a place.
+
+### Project switch focus row decision (Tom, 2026-11-01)
+
+- components/shell-project-switch `project.option-focus-visible`: the design draws the row fill together with the focus
+  ring, like the SDK menu on a keyboard-focused row and like the design's own `open-focus-visible`. No app override of
+  the SDK menu CSS.
