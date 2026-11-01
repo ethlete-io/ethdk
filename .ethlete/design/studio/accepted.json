@@ -1605,5 +1605,48 @@
     "note": "Impl Q102/Q108/Q110 (Tom, 2026-11-01): keyboard highlight on the forced focus-visible row, row attributes kept, demo fill dropped",
     "hash": "3b9b10d017b5ad08",
     "at": "2026-11-01T17:47:00.453Z"
+  },
+  {
+    "part": "components/shell-collapse",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "661f6592c6280d88",
+    "at": "2026-11-01T21:08:33.416Z"
+  },
+  {
+    "part": "components/shell-project-switch",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "741176665ea29f40",
+    "at": "2026-11-01T21:08:52.624Z"
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "0da3aa1ff2582456",
+    "at": "2026-11-01T21:09:22.700Z"
+  },
+  {
+    "part": "pages/inbox",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "c0191a969e252732",
+    "at": "2026-11-01T21:20:50.286Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "6f1d3fd6aee08bf6",
+    "at": "2026-11-01T21:35:16.020Z"
+  },
+  {
+    "part": "components/tree-row",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "39cd74bbb91664ba",
+    "at": "2026-11-01T21:38:28.093Z",
+    "auto": true
   }
 ]

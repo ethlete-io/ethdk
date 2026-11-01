@@ -14,7 +14,7 @@ import styles from './sketches.css?inline';
 import below from './below.css?inline';
 import { mountCanvasViewport, type Camera, type Rect } from 'ethlete-studio/canvas';
 
-type Props = { camera: 'fit' | Camera; selected?: PageVariant['key'] };
+type Props = { camera: 'fit' | '100' | Camera; selected?: PageVariant['key'] };
 
 const HEAD_INSET = 3;
 const HEAD_MIN_WIDTH = 180;
@@ -42,10 +42,12 @@ const side = await partTree.render({
     { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true, selected: true }] },
   ],
 });
+const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="emit:${action}"`);
+
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
 const merge = await button.render({ label: 'Wählen', variant: 'outline', size: 'sm' });
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
-const pagePin = commentPinMark(pinProps(PAGE_PIN));
+const pagePin = act(commentPinMark(pinProps(PAGE_PIN)), 'pinToggle');
 const open = await systemPage();
 const hidden = await systemPage('hidden');
 const pages: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
@@ -66,7 +68,7 @@ const variantHead = (variant: PageVariant) =>
           ? html`<span class="font-ui font-ui-medium text-ui-sm text-et-surface">${variant.label}</span>`
           : html`<span class="font-code text-ui-sm text-et-surface">Variante ${variant.label}</span>`
       }
-      ${pageAuthor(variant)} ${variant.key === 'current' ? '' : merge.body}
+      ${pageAuthor(variant)} ${variant.key === 'current' ? '' : act(merge.body, 'merge')}
     </div>
     <span class="text-et-surface-muted text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis"
       >${variant.note}</span
@@ -112,7 +114,7 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
 
   if (!page || !viewport || !world) return;
 
-  if (camera !== 'fit') {
+  if (camera !== 'fit' && camera !== '100') {
     const frames = [...world.querySelectorAll<HTMLElement>('.sk-frame')].map((element) => ({
       x: element.offsetLeft,
       y: element.offsetTop,
@@ -145,6 +147,8 @@ const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
   const zoomBy = (factor: number) => () => canvas.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
   chip?.querySelector('[data-camera-out]')?.addEventListener('click', zoomBy(1 / ZOOM_STEP));
   chip?.querySelector('[data-camera-in]')?.addEventListener('click', zoomBy(ZOOM_STEP));
+
+  if (camera === '100') canvas.show({ kind: 'visible', zoom: 1 });
 };
 
 export default definePart<Props>({
@@ -154,6 +158,7 @@ export default definePart<Props>({
   controls: { canvas: { kind: 'field', part: 'components/canvas-viewport' } },
   states: {
     'page-sketch': { camera: 'fit' },
+    'page-100': { camera: '100' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
   },
   render: async ({ camera, selected }) => {
@@ -167,7 +172,7 @@ export default definePart<Props>({
       >
         <span class="text-ui-lg font-ui-strong">${PAGE_SKETCH.part}</span>
         <span class="flex-1"></span>
-        ${discard.body}
+        ${act(discard.body, 'discard')}
       </header>
       <div class="zr-picker absolute z-2 top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
         ${roundPicker}

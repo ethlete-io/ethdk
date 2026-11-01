@@ -111,6 +111,30 @@ const popover = async (open: PartOpenPoints) => {
   };
 };
 
+const FIT_PADDING = 64;
+
+const fitAll = (root: HTMLElement) => {
+  const canvas = root.querySelector<HTMLElement>('.st-canvas');
+  const strip = canvas?.firstElementChild as HTMLElement | null;
+  const frame = strip?.querySelector<HTMLElement>('.st-cframe');
+
+  if (!canvas || !strip || !frame) return;
+
+  const covered = parseFloat(getComputedStyle(canvas).paddingLeft) || 0;
+  const width = canvas.clientWidth - covered;
+  const height = canvas.clientHeight;
+  const zoom = Math.min(
+    1,
+    (width - FIT_PADDING * 2) / frame.offsetWidth,
+    (height - FIT_PADDING * 2) / frame.offsetHeight,
+  );
+  const left = covered + (width - frame.offsetWidth * zoom) / 2;
+  const top = Math.min((height - frame.offsetHeight * zoom) / 2, FIT_PADDING);
+
+  strip.style.transformOrigin = '0 0';
+  strip.style.transform = `translate(${left - covered - frame.offsetLeft * zoom}px, ${top - frame.offsetTop * zoom}px) scale(${zoom})`;
+};
+
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
 
 const buttonGrid = async () => {
@@ -131,7 +155,13 @@ const buttonGrid = async () => {
 
 const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Teile.</p>`;
 
-export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?: boolean; closed?: boolean }>({
+export default definePart<{
+  empty?: boolean;
+  manyStates?: boolean;
+  nothingOpen?: boolean;
+  closed?: boolean;
+  fit?: boolean;
+}>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
@@ -142,6 +172,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     part: {},
     empty: { empty: true },
     'many-states': { manyStates: true },
+    fit: { fit: true },
     'points-closed': { closed: true },
     'nothing-open': { nothingOpen: true },
   },
@@ -149,7 +180,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     'open-points': { kind: 'button', part: 'components/button' },
     popover: { kind: 'disclosure', part: 'components/anchored-dialog', surfaces: { body: 'open-points' } },
   },
-  render: async ({ empty, manyStates, nothingOpen: clear, closed }) => {
+  render: async ({ empty, manyStates, nothingOpen: clear, closed, fit }) => {
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
     }
@@ -189,7 +220,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
 
     return drawing({
       body: shell.body,
-      setup: menu.setup,
+      setup: fit ? [menu.setup, fitAll] : menu.setup,
       styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles + toggle.styles + (dialog?.styles ?? ''),
     });
   },
