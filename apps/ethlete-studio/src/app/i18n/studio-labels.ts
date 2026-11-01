@@ -185,7 +185,7 @@ export const STUDIO_LABELS = {
     after: 'Nach dem Merge von',
     addedIn: (variant: string) => `Neu in ${variant}`,
     instances: (count: number) => (count === 1 ? '1 Instanz' : `${count} Instanzen`),
-    instance: (count: number) => `Instanz 1 von ${count} · 200 %`,
+    instance: (count: number, percent: number) => `Instanz 1 von ${count} · ${percent} %`,
     unchanged: (count: number, part: string) => `${count} Zustände von ${part} ohne sichtbare Änderung`,
     needsRebase: (parts: readonly string[]) =>
       parts.length === 0

@@ -85,6 +85,30 @@ describe('MergeComponent', () => {
     ]);
   });
 
+  it('fits the whole instance of each side into its crop, at one zoom for both sides', async () => {
+    const now = { x: 24, y: 120, width: 342, height: 83 };
+    const after = { x: 24, y: 120, width: 342, height: 115 };
+    const row: MergeRow = { ...ROW, width: 390, height: 844, crop: { now, after } };
+    const el = (await render({ changed: [row], selected: 0, shotTemplate: shotTemplate() }))
+      .nativeElement as HTMLElement;
+    const windows = [...el.querySelectorAll<HTMLElement>('[inert]')];
+
+    expect(windows).toHaveLength(2);
+    [now, after].forEach((rect, index) => {
+      const window = windows[index]!;
+      const view = window.firstElementChild as HTMLElement;
+      const [scale = 0, x = 0, y = 0] = (
+        /scale\(([\d.]+)\) translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(view.style.transform)?.slice(1) ?? []
+      ).map(Number);
+
+      expect(scale * (rect.x + x)).toBeGreaterThanOrEqual(2);
+      expect(scale * (rect.y + y)).toBeGreaterThanOrEqual(2);
+      expect(scale * (rect.x + rect.width + x)).toBeLessThanOrEqual(parseFloat(window.style.width) - 2);
+      expect(scale * (rect.y + rect.height + y)).toBeLessThanOrEqual(parseFloat(window.style.height) - 2);
+    });
+    expect(el.textContent).toContain(STUDIO_LABELS.merge.instance(1, 104));
+  });
+
   it('shows no crop without an outline and labels the empty side of a state the variant adds', async () => {
     const added: MergeRow = { ...ROW, state: 'added', now: '', missing: 'now', crop: { now: null, after: RECT } };
     const el = (

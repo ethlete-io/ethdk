@@ -16,7 +16,7 @@ import {
 
 const SCALE = 0.37;
 
-const CROP = { width: 266, height: 64, scale: 2 };
+const CROP = { width: 266, height: 64, scale: 2, margin: 4 };
 
 @Component({
   selector: 'ethlete-merge',
@@ -139,7 +139,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
             </figure>
           </div>
           <div class="flex flex-col gap-space-2">
-            <span class="text-ui-xs text-et-surface-muted">{{ LABELS.instance(row.instances) }}</span>
+            <span class="text-ui-xs text-et-surface-muted">{{ LABELS.instance(row.instances, cropPercent()) }}</span>
             <div class="flex gap-space-4">
               @for (side of SIDES; track side) {
                 <div
@@ -152,7 +152,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
                     <div
                       [style.width.px]="row.width"
                       [style.height.px]="row.height"
-                      [style.transform]="cropTransform(rect)"
+                      [style.transform]="cropTransform(rect, cropZoom())"
                       class="pointer-events-none relative origin-top-left"
                     >
                       <ng-container
@@ -224,14 +224,29 @@ export class MergeComponent {
 
   protected current = computed(() => this.changed()[this.selected()] ?? this.changed()[0] ?? null);
 
+  protected cropZoom = computed(() => {
+    const row = this.current();
+    const rects = row ? this.SIDES.flatMap((side) => this.cropOf(row, side) ?? []) : [];
+
+    if (rects.length === 0) return CROP.scale;
+
+    const width = Math.max(...rects.map((rect) => rect.width)) + 2 * CROP.margin;
+    const height = Math.max(...rects.map((rect) => rect.height)) + 2 * CROP.margin;
+    const fit = Math.min((CROP.width * CROP.scale) / width, (CROP.height * CROP.scale) / height);
+
+    return Math.min(CROP.scale, Math.floor(fit * 100) / 100);
+  });
+
+  protected cropPercent = computed(() => Math.round(this.cropZoom() * 100));
+
   protected cropOf(row: MergeRow, side: MergeSide) {
     return row.missing === side ? null : (row.crop?.[side] ?? null);
   }
 
-  protected cropTransform(rect: MergeRect) {
-    const x = CROP.width / 2 - (rect.x + rect.width / 2);
-    const y = CROP.height / 2 - (rect.y + rect.height / 2);
+  protected cropTransform(rect: MergeRect, zoom: number) {
+    const x = (CROP.width * CROP.scale) / (2 * zoom) - (rect.x + rect.width / 2);
+    const y = (CROP.height * CROP.scale) / (2 * zoom) - (rect.y + rect.height / 2);
 
-    return `scale(${CROP.scale}) translate(${x}px, ${y}px)`;
+    return `scale(${zoom}) translate(${x}px, ${y}px)`;
   }
 }
