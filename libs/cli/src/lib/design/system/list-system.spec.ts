@@ -359,7 +359,9 @@ export default definePart({ note: '', states: { rest: {} }, render: () => drawin
       default: { render: (props: { label: string }) => { styles: string } };
     };
 
-    expect(loaded.default.render({ label: 'x' }).styles).toContain('.acme-button:is(:hover, [data-et-force~="hover"])');
+    expect(loaded.default.render({ label: 'x' }).styles).toContain(
+      '.acme-button:is(:hover, [data-et-force~="hover"]:not(:disabled, [disabled], [aria-disabled="true"]))',
+    );
   });
 });
 

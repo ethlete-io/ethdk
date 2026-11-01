@@ -5,9 +5,10 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { forceInteractions, forceInteractionsPlugin } from './force-interactions';
 
-const HOVER = ':is(:hover, [data-et-force~="hover"])';
-const FOCUS = ':is(:focus-visible, [data-et-force~="focus-visible"])';
-const ACTIVE = ':is(:active, [data-et-force~="active"])';
+const ENABLED = ':not(:disabled, [disabled], [aria-disabled="true"])';
+const HOVER = `:is(:hover, [data-et-force~="hover"]${ENABLED})`;
+const FOCUS = `:is(:focus-visible, [data-et-force~="focus-visible"]${ENABLED})`;
+const ACTIVE = `:is(:active, [data-et-force~="active"]${ENABLED})`;
 
 describe('forceInteractions', () => {
   it('lets an attribute force each interaction pseudo-class', () => {
@@ -41,6 +42,16 @@ describe('forceInteractions', () => {
 
     expect(getComputedStyle(forced!).color).toBe('rgb(255, 0, 0)');
     expect(getComputedStyle(rest!).color).not.toBe('rgb(255, 0, 0)');
+  });
+
+  it('does not force an interaction on a disabled element', () => {
+    const css = forceInteractions('.x:hover { color: red; } .f:focus-within { color: red; }');
+    document.body.innerHTML = `<style>${css}</style><button class="x" data-et-force="hover" disabled></button><div class="x" data-et-force="hover" aria-disabled="true"></div><div class="x" data-et-force="hover"></div><div class="f"><input data-et-force="focus-visible" disabled></div>`;
+
+    const [button, aria, enabled, field] = document.querySelectorAll('.x, .f');
+    const red = (el: Element) => getComputedStyle(el).color === 'rgb(255, 0, 0)';
+
+    expect([red(button!), red(aria!), red(enabled!), red(field!)]).toEqual([false, false, true, false]);
   });
 
   it('leaves strings, comments, urls and declarations alone', () => {
