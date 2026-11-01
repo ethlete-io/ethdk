@@ -278,6 +278,8 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     and re-recorded. Verified: both compares, `task --verify`, lint, tsc, the app-classes check, the cli compare spec.
     Not verified: the real Studio on :4402, keyboard opening of the picker (`autoFocus="false"`). Open: the inline
     SVGs (rail icons, Studio mark) have no shared app source; they moved over from the inbox copy.
+  - In progress (builder ethlete-sdk-cf, 2026-11-01), in parallel: Impl Q6 items 1 and 2 (cli); Impl Q10 disabled
+    guards (sdk CSS); Impl Q8 picker font and the 29 px (shell-main); pilot slice 3 real route (Impl Q5).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
