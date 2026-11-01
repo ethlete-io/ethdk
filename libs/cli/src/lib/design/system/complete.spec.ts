@@ -1020,6 +1020,38 @@ export default definePart({
     );
   }, 60_000);
 
+  it('draws a frame whose forced control lies clipped outside the page', async (context) => {
+    const { target, config } = checkout();
+    const dir = join(target, DESIGN_DIR, 'app-a', 'components', 'clipped-control');
+    const more = (left: number) =>
+      `<div style="width: 200px; height: 60px; overflow: hidden"><span data-et-control="more" data-et-force="hover" class="hover:text-defined" style="position: relative; left: ${left}px">More</span></div>`;
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'clipped-control.ts'),
+      `import { definePart, drawing } from '@design-system';
+
+const BODIES: Record<string, string> = ${JSON.stringify({ rest: more(0), zoomed: more(5000) })};
+
+export default definePart({
+  note: 'A fixture.',
+  states: { rest: { state: 'rest' }, zoomed: { state: 'zoomed' } },
+  controls: { more: { kind: 'button', input: ['pointer'] } },
+  render: async ({ state }: { state: string }) =>
+    drawing({ body: BODIES[state] ?? '', styles: ${JSON.stringify(STYLES)} + '.hover\\\\:text-defined:hover { color: red }' }),
+});
+`,
+    );
+
+    const product = resolveProduct({ target, name: 'app-a', config: config.products?.['app-a'] ?? {} });
+    const result = await completenessOf({ target, config, product, part: 'components/clipped-control' });
+
+    if ('unavailable' in result) return context.skip(result.unavailable);
+    if ('problem' in result) throw new Error(result.problem);
+
+    expect(result.gaps.map(completenessGapLineOf).filter((line) => line.startsWith('RENDER'))).toEqual([]);
+  }, 60_000);
+
   it('does not fail a page on the gaps of a part it uses from its base', async (context) => {
     const { target } = checkout();
     const design = join(target, DESIGN_DIR);

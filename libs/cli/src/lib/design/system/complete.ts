@@ -1247,10 +1247,12 @@ export const seeFrame = (options: {
     const box = element.getBoundingClientRect();
     const x = Math.max(0, box.x + scrollX - ${PAD});
     const y = Math.max(0, box.y + scrollY - ${PAD});
+    const width = Math.min(box.x + scrollX + box.width + ${PAD}, document.documentElement.scrollWidth) - x;
+    const height = Math.min(box.y + scrollY + box.height + ${PAD}, document.documentElement.scrollHeight) - y;
     return {
       at,
       forced: tokensOf(element, 'data-et-force'),
-      box: box.width > 0 && box.height > 0 ? { x, y, width: box.width + ${PAD * 2}, height: box.height + ${PAD * 2} } : null,
+      box: box.width > 0 && box.height > 0 && width > 0 && height > 0 ? { x, y, width, height } : null,
       selected: isSelected(element),
       look: lookOf(element),
     };
@@ -1355,7 +1357,7 @@ const seeFrames = async (options: {
   try {
     const page = await context.newPage();
 
-    for (const frame of frames) {
+    const seeOne = async (frame: CompleteFrame) => {
       await page.setViewportSize(viewportOf(frame.size));
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.addStyleTag({ content: NO_MOTION });
@@ -1367,7 +1369,8 @@ const seeFrames = async (options: {
 
       if ('refused' in found) {
         refused.push(`${frame.state}: ${found.refused}`);
-        continue;
+
+        return;
       }
 
       if (frame.interaction === null) {
@@ -1456,6 +1459,16 @@ const seeFrames = async (options: {
         found: found.found,
         overrides: found.overrides,
       });
+    };
+
+    for (const frame of frames) {
+      try {
+        await seeOne(frame);
+      } catch (error) {
+        refused.push(
+          `${frame.state}: design check could not draw this frame (${error instanceof Error ? error.message.split('\n')[0] : String(error)})`,
+        );
+      }
     }
   } finally {
     await context.close();
