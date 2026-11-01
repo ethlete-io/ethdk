@@ -1,4 +1,6 @@
-export type InboxAgent = 'claude' | 'codex' | 'gemini';
+import { AgentLogoName } from '../../icons/agent-logos';
+
+export type InboxAgent = AgentLogoName;
 
 export type InboxComment = {
   id: string;

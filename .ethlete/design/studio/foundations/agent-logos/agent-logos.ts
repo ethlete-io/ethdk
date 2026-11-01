@@ -1,10 +1,8 @@
 import { definePart, drawing, html, svgAsset } from '@design-system';
-import claude from '@assets/agent-claude.svg?raw';
-import codex from '@assets/agent-codex.svg?raw';
+import { agentLogoSvg } from '../../../../../apps/ethlete-studio/src/app/icons/agent-logos';
 import copilot from '@assets/agent-copilot.svg?raw';
 import cursor from '@assets/agent-cursor.svg?raw';
 import deepseek from '@assets/agent-deepseek.svg?raw';
-import gemini from '@assets/agent-gemini.svg?raw';
 import generic from '@assets/agent-generic.svg?raw';
 import grok from '@assets/agent-grok.svg?raw';
 import kimi from '@assets/agent-kimi.svg?raw';
@@ -42,9 +40,9 @@ export const agents: Agent[] = [
 ];
 
 const logos: Record<Agent, string> = {
-  claude,
-  codex,
-  gemini,
+  claude: agentLogoSvg('claude'),
+  codex: agentLogoSvg('codex'),
+  gemini: agentLogoSvg('gemini'),
   grok,
   deepseek,
   kimi,

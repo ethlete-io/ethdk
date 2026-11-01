@@ -1,8 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { AutoSurfaceDirective, SurfaceInteractiveDirective } from '@ethlete/core';
+import { AgentLogoComponent } from '../../icons/agent-logo.component';
+import { AgentLogoName } from '../../icons/agent-logos';
 
-export type CommentPinAgent = 'claude' | 'codex' | 'gemini';
+export type CommentPinAgent = AgentLogoName;
 
 const SHAPE = 'rounded-[50%_50%_50%_0]';
 
@@ -25,7 +27,7 @@ const FACE_INTERACTIVE = `${FACE} group-hover/pin:bg-et-surface-interaction/9 gr
   selector: 'ethlete-comment-pin',
   templateUrl: './comment-pin.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, AutoSurfaceDirective, SurfaceInteractiveDirective],
+  imports: [NgTemplateOutlet, AutoSurfaceDirective, SurfaceInteractiveDirective, AgentLogoComponent],
   host: { class: 'inline-flex p-space-2 font-ui' },
 })
 export class CommentPinComponent {

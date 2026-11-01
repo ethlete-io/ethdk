@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 
@@ -21,6 +22,7 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
     ProvideColorDirective,
     NgTemplateOutlet,
     ShellMainComponent,
+    AgentLogoComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
