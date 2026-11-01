@@ -3,8 +3,8 @@ use keyring::Entry;
 use std::collections::HashMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
-const SERVICE: &str = "io.ethlete.timetrack";
-const DATABASE_KEY_ACCOUNT: &str = "database-key";
+pub(crate) const SERVICE: &str = "io.ethlete.timetrack";
+pub(crate) const DATABASE_KEY_ACCOUNT: &str = "database-key";
 const MACHINE_KEY_ACCOUNT: &str = "machine-key";
 
 fn entry(account: &str) -> TimetrackResult<Entry> {

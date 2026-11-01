@@ -38,6 +38,7 @@ mod secrets;
 mod spec;
 mod state;
 mod store;
+pub mod store_key;
 mod timer;
 #[cfg(feature = "transcribe")]
 mod transcribe;

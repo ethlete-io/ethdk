@@ -80,24 +80,26 @@ fn placeholders(count: usize) -> String {
 
 #[tauri::command]
 pub async fn events_between(db: State<'_, Db>, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<StoredEvent>> {
-    db.run(move |connection| {
-        let mut statement = connection.prepare(
-            "SELECT at_ms, source, kind, payload FROM collected_event
-             WHERE at_ms >= ?1 AND at_ms < ?2 ORDER BY at_ms ASC, id ASC",
-        )?;
-        let rows = statement.query_map(params![from_ms, to_ms], |row| {
-            Ok(StoredEvent {
-                at_ms: row.get(0)?,
-                source: row.get(1)?,
-                kind: row.get(2)?,
-                payload: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or(serde_json::Value::Null),
-                dedupe_key: None,
-            })
-        })?;
+    db.run(move |connection| read_events_between(connection, from_ms, to_ms))
+        .await
+}
 
-        Ok(rows.collect::<Result<Vec<_>, _>>()?)
-    })
-    .await
+pub fn read_events_between(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<StoredEvent>> {
+    let mut statement = connection.prepare(
+        "SELECT at_ms, source, kind, payload FROM collected_event
+         WHERE at_ms >= ?1 AND at_ms < ?2 ORDER BY at_ms ASC, id ASC",
+    )?;
+    let rows = statement.query_map(params![from_ms, to_ms], |row| {
+        Ok(StoredEvent {
+            at_ms: row.get(0)?,
+            source: row.get(1)?,
+            kind: row.get(2)?,
+            payload: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or(serde_json::Value::Null),
+            dedupe_key: None,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
 /// Appends what a collector produced and moves its cursors in the same transaction.
