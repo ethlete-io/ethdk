@@ -8,7 +8,14 @@ import { compareFrameOf } from './compare-command';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { goPartOf } from './part-go';
-import { HARNESS_HOST_SELECTOR, harnessUrlOf } from './part-compare';
+import {
+  drawnSurfacesOf,
+  forcedElementsOf,
+  HARNESS_HOST_SELECTOR,
+  harnessUrlOf,
+  PointerOpen,
+  pointerOpensOf,
+} from './part-compare';
 import { formattedTextOf } from './prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -29,6 +36,29 @@ export type ReadDom = (options: {
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
+const refusedOf = ({ part, what, detail = '' }: { part: string; what: string; detail?: string }) =>
+  `design dom --app cannot render ${what} of ${part}${detail} yet; run it without --app for the design markup`;
+
+/** The reason `--app` cannot print a state: compare forces its hover, active or focus, or clicks a trigger to open it. */
+export const appRefusalOf = (options: {
+  part: string;
+  state: string;
+  markup: string;
+  open: PointerOpen | string | undefined;
+}) => {
+  const { part, state, markup, open } = options;
+
+  if (forcedElementsOf(markup).length > 0) return refusedOf({ part, what: `the forced state ${state}` });
+
+  if (open === undefined) return null;
+
+  return refusedOf({
+    part,
+    what: `the click-opened state ${state}`,
+    detail: ` (${typeof open === 'string' ? open : `a click on ${open.control}`})`,
+  });
+};
+
 export const readDom: ReadDom = async ({ target, config, product, part, state: asked, app, url }) => {
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
@@ -44,16 +74,16 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
 
     const { port } = server.httpServer?.address() as AddressInfo;
 
-    shooter = createPartShooter({
+    const partShooter = (shooter = createPartShooter({
       target,
       base: `http://localhost:${port}`,
       system: createSystemModules({ target, config }),
       queue,
-    });
+    }));
 
     const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
     const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
-      default?: { states?: unknown };
+      default?: { states?: unknown; controls?: unknown };
     };
     const loaded = module.default?.states;
     const states =
@@ -63,11 +93,11 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
     if (state === undefined || !(state in states))
       return `${part} has no state "${asked ?? ''}" - its states: ${Object.keys(states).join(', ')}`;
 
-    if (!app) {
-      const design = await shooter.pictureOf({
+    const designOf = (name: string) =>
+      partShooter.pictureOf({
         product: product.name,
         part,
-        state,
+        state: name,
         preset: frame.preset,
         width: null,
         sketch: null,
@@ -78,10 +108,25 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
         params: new URLSearchParams(),
       });
 
+    if (!app) {
+      const design = await designOf(state);
+
       return design.markup === undefined
         ? `the design of ${part} state ${state} drew no markup`
         : { state, html: design.markup };
     }
+
+    const markups = Object.fromEntries(
+      await Promise.all(Object.keys(states).map(async (name) => [name, (await designOf(name)).markup ?? ''] as const)),
+    );
+    const opens = pointerOpensOf({
+      states,
+      controls: module.default?.controls,
+      drawn: Object.fromEntries(Object.entries(markups).map(([name, markup]) => [name, drawnSurfacesOf(markup)])),
+    });
+    const refusal = appRefusalOf({ part, state, markup: markups[state] ?? '', open: opens[state] });
+
+    if (refusal !== null) return refusal;
 
     const pageUrl = harnessUrlOf({ url, part, state, props: states[state], layout: frame.layout });
     const html = await queue.run(async (browser) => {

@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { designDom, ReadDom } from './dom-command';
+import { appRefusalOf, designDom, ReadDom } from './dom-command';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-dom-'));
@@ -81,5 +81,33 @@ describe('design dom', () => {
       }),
     ).toBe(1);
     expect(lines.at(-1)).toBe('no state "x"');
+  });
+});
+
+describe('appRefusalOf', () => {
+  const part = 'components/x';
+
+  it('refuses a state whose design forces hover, active or focus', () => {
+    expect(
+      appRefusalOf({ part, state: 'hover', markup: '<button data-et-force="hover">Go</button>', open: undefined }),
+    ).toBe(
+      'design dom --app cannot render the forced state hover of components/x yet; run it without --app for the design markup',
+    );
+    expect(
+      appRefusalOf({ part, state: 'x', markup: '<a data-et-force="hover active">Go</a>', open: undefined }),
+    ).toContain('the forced state x of components/x');
+  });
+
+  it('refuses a state the app reaches by clicking a trigger open', () => {
+    expect(appRefusalOf({ part, state: 'open', markup: '<div></div>', open: { control: 'menu', from: 'rest' } })).toBe(
+      'design dom --app cannot render the click-opened state open of components/x (a click on menu) yet; run it without --app for the design markup',
+    );
+    expect(appRefusalOf({ part, state: 'open', markup: '<div></div>', open: 'no state to click it open from' })).toBe(
+      'design dom --app cannot render the click-opened state open of components/x (no state to click it open from) yet; run it without --app for the design markup',
+    );
+  });
+
+  it('lets an idle state through', () => {
+    expect(appRefusalOf({ part, state: 'rest', markup: '<button>Go</button>', open: undefined })).toBeNull();
   });
 });
