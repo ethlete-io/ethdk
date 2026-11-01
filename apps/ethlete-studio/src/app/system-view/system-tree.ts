@@ -1020,7 +1020,7 @@ export const sketchMatrixOf = ({
             label: cell.label,
             ...rowOf(row, column.key),
             column: column.key,
-            empty: column.key === CURRENT ? STUDIO_LABELS.systemTree.newInSketch : missing,
+            empty: column.key === CURRENT ? STUDIO_LABELS.systemTree.newInSketch(row.state, column.states) : missing,
           },
         ];
       });

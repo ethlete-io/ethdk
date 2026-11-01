@@ -78,7 +78,10 @@ export const STUDIO_LABELS = {
     noReport: 'Seit 30 Minuten kein Bericht',
     drawing: 'wird gezeichnet …',
     variantBy: (variant: string, authors: string) => `${variant} von ${authors}`,
-    newInSketch: 'neu in diesem Sketch',
+    newInSketch: (state: string | undefined, has: string[]) =>
+      state === undefined || has.length === 0
+        ? 'neu in diesem Sketch'
+        : `${state} ist neu in diesem Sketch. Aktuell gibt es: ${has.join(', ')}`,
     noState: (column: string, state: string | undefined) => `${column} hat keinen Zustand ${state}`,
     noInteraction: (column: string, interaction: string) => `${column} hat keine Interaktion ${interaction}`,
     unchangedIn: (columns: string) => `unverändert in ${columns}`,

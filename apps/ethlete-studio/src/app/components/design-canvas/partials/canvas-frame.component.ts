@@ -108,7 +108,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     /></span>
     @if (frame().empty; as empty) {
       <div
-        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
+        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),4))] leading-tight text-text-muted"
         data-empty-cell
       >
         {{ empty }}

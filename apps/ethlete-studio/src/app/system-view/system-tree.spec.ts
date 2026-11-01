@@ -739,10 +739,26 @@ describe('sketchMatrixOf', () => {
     const empty = matrix.frames.filter((frame) => frame.empty !== undefined);
 
     expect(empty.map((frame) => [frame.column, frame.row, frame.empty, frame.place])).toEqual([
-      ['current', 'disabled', 'neu in diesem Sketch', undefined],
+      ['current', 'disabled', 'disabled ist neu in diesem Sketch. Aktuell gibt es: default', undefined],
       ['a', 'disabled', 'a hat keinen Zustand disabled', undefined],
     ]);
     expect(empty.every((frame) => frame.src === '' && frame.screenshot === undefined)).toBe(true);
+  });
+
+  it('names the states the merged part has in the current cell of a state that is new in the sketch', () => {
+    const matrix = sketchMatrixOf({
+      ...source,
+      part: part({ states: ['part', 'empty'] }),
+      sketch: sketch({
+        variants: ['a'],
+        targets: [{ variant: 'a', states: ['part', 'empty', 'fit'], unchanged: ['part', 'empty'] }],
+      }),
+    });
+    const current = matrix.frames.filter((frame) => frame.column === 'current');
+
+    expect(current.map((frame) => [frame.row, frame.empty])).toEqual([
+      ['fit', 'fit ist neu in diesem Sketch. Aktuell gibt es: part, empty'],
+    ]);
   });
 
   it('gives every cell of a page the picked preset, or the first one', () => {
@@ -932,7 +948,7 @@ describe('sketchMatrixOf', () => {
       ).toEqual(['components/card', 'components/card']);
       expect(
         matrix.frames.find((frame) => frame.row === 'components/card flat' && frame.column === 'current')?.empty,
-      ).toBe('neu in diesem Sketch');
+      ).toBe('flat ist neu in diesem Sketch. Aktuell gibt es: plain, raised');
 
       const single = sketchMatrixOf({
         ...source,

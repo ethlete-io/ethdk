@@ -544,7 +544,7 @@ describe('DesignCanvasComponent', () => {
     const cell = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-empty-cell]');
 
     expect(cell?.classList).toContain('leading-tight');
-    expect(cell?.className).toContain('min(var(--et-design-canvas-label-scale),2)');
+    expect(cell?.className).toContain('min(var(--et-design-canvas-label-scale),4)');
   });
 
   it('draws an outline over a frame at its offset in the frame', async () => {
