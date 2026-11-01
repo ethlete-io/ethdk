@@ -209,3 +209,7 @@ Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix ch
   that throws becomes a RENDER finding. Spec bites. Full Studio run: 24 of 26 parts clean; open: canvas-frames
   (out, reset, in, fit are control ids no state draws), part-tree (state row).
 - Pushed next (96a2406d0).
+- As built: the checker counted a declared part control only on the root of the embedded part; zoom-chip (out,
+  reset, in, fit) and tree-row (row) draw them inside a wrapper. Fixed, spec bites, docs updated (e0bf58dca). No
+  design file changed. `design check --product studio --complete`: 26 of 26 Studio parts clean; the 48 parts with
+  open points are SDK parts. Full cli suite passes. Pushed e0bf58dca.
