@@ -558,3 +558,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 10. The live UI shows information the design has no mark for (Impl Q39): the design missed a real data inventory.
 11. Live data lacks fields the design shows (Impl Q32, Q18).
 12. The go hash counts the `implements` link (Impl Q28).
+13. UI text in the wrong language (English tooltips in a German UI, Impl Q41); Studio needs i18n later, so a check
+    for hardcoded UI text, not only for the language.
+
+- Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
+  Studio shows them as the demo.
+- Impl Q41 zoom-chip titles (Tom, 2026-11-01): German `title` tooltips, in Tom's collected round. Studio must not stay
+  German-only: i18n comes later, so UI text should be ready for translation, not hardcoded per language. Finding 13.
