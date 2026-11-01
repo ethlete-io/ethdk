@@ -1131,8 +1131,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      touched parts and stops on UTILITY-CSS. Fixed in 37655a447; check clean, pixels unchanged, the go carries over.
 106. The Merge button in the merge view shows no loading state while the merge runs (Tom, 2026-11-01, merge of
      pages-system went through). Fact: neither the pages/merge design nor merge.component.ts has a loading or busy
-     state. Why missed: no check asks for a pending state on a control whose action is asynchronous (a server write).
-     Tool lesson: open, asked the builder.
+     state. Why missed: the check asks a control only for interaction states (hover, active, focus-visible,
+     disabled); `design actions` sees `emit:merge` as a plain event and does not know the app answers it with an async
+     request. Tool fix (any project, after MVP): an action declares itself async in the design (`data-et-async`), or
+     the actions probe finds a pending request in the app handler; then `design check` asks for a `pending` state on
+     that control, and `design actions` checks that a second click while pending does nothing.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
