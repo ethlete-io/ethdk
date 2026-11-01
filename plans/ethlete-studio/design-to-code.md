@@ -1196,6 +1196,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      check flags a native `title` where the SDK has a tooltip; the compare cannot see a browser tooltip at all. Tool fix
      (general): a lint rule in `@ethlete/eslint-plugin` that flags `title` and `[title]`/`[attr.title]` in app templates
      and design files and points to the SDK tooltip. Parked for after the MVP.
+117. The merge page has no canvas any more: no zoom, no pan (Tom, 2026-11-01, screenshot of studio-lab
+     components/card). Parked for after the MVP. Cause and why no check caught it: asked the builder.
+118. The merge page crop row cuts the "Jetzt" crop on the left ("films yet", "l a film to start the library") while the
+     "Nach dem Merge" crop shows the whole text (grill from Tom's screenshot, studio-lab components/card in
+     pages/library empty, 2026-11-01). Looks like the crop takes the rect of one side for both. MVP: pages/merge. Cause
+     and why no check caught it: asked the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
