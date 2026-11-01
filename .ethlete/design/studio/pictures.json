@@ -463,7 +463,7 @@
   },
   "pages/inbox": {
     "review": {
-      "hash": "c0191a969e252732",
+      "hash": "48331e96cc534bae",
       "states": {
         "open": "0c117cdd03cbe213",
         "with-resolved": "e15a0d09c4ea62a4",
@@ -478,7 +478,7 @@
       }
     },
     "go": {
-      "hash": "184e64d08db6fb07",
+      "hash": "1e5237a2654701d7",
       "states": {
         "open": "0c117cdd03cbe213",
         "with-resolved": "e15a0d09c4ea62a4",
