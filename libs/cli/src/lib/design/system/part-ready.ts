@@ -126,7 +126,12 @@ export const markPartReady = async (options: {
       actions,
     };
 
-  const mark: PartReady = { hash, files: found.design.files, by: by.trim(), at: options.at ?? new Date().toISOString() };
+  const mark: PartReady = {
+    hash,
+    files: found.design.files,
+    by: by.trim(),
+    at: options.at ?? new Date().toISOString(),
+  };
   const marks = Object.entries({ ...readReady(found.dir), [part]: mark }).sort(([a], [b]) => a.localeCompare(b));
 
   writeFileSync(readyFileOf(found.dir), `${JSON.stringify(Object.fromEntries(marks), null, 2)}\n`);
