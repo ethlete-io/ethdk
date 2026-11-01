@@ -1,0 +1,973 @@
+[
+  {
+    "name": "studio",
+    "base": ".ethlete/design/sdk",
+    "presets": {
+      "desktop": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "schemes": ["dark"],
+    "themes": {
+      "surface": [],
+      "color": []
+    },
+    "parts": [
+      {
+        "layer": "foundations",
+        "name": "colors",
+        "origin": "overridden",
+        "file": ".ethlete/design/studio/foundations/colors/colors.ts",
+        "note": "The Studio surfaces, accent, warning and error colours. The source of the Studio SDK themes: `yarn studio:themes` generates them from this part.",
+        "madeBy": ["claude-opus-5-5", "gpt-6.1-terra", "claude-sonnet-5-5"],
+        "states": ["surfaces", "accent", "warning", "error"],
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": []
+      },
+      {
+        "layer": "elements",
+        "name": "shell-main",
+        "origin": "product",
+        "file": ".ethlete/design/studio/elements/shell-main/shell-main.ts",
+        "note": "The shell owns rail and panel geometry, with a 40-px studio slot for the independently composed Studio menu. Its standalone preview fills that slot with the neutral Studio mark; pages supply the complete menu element and its styles and setup. Menu states live on elements/studio-menu. Its layout states are panel open, panel hidden and project picker open; the rail section, product and all-products buttons draw the shell hover fill, pressed fill and inset focus ring on --transition-state. The panel controls and their interaction states are their own parts: components/shell-collapse and components/shell-project-switch (the picker is its surface).",
+        "madeBy": ["claude-opus-5-5", "gpt-6.1-terra", "claude-sonnet-5-5", "gpt-6"],
+        "states": [
+          "project-picker",
+          "open",
+          "hidden",
+          "section",
+          "section-hover",
+          "section-active",
+          "section-focus-visible",
+          "product",
+          "product-hover",
+          "product-active",
+          "product-focus-visible",
+          "products",
+          "products-hover",
+          "products-active",
+          "products-focus-visible"
+        ],
+        "widths": [1440],
+        "grid": {
+          "columns": ["rest", "hover", "active", "focus-visible"],
+          "rows": ["section", "product", "products"],
+          "cells": [
+            {
+              "row": "section",
+              "column": "rest",
+              "state": "section"
+            },
+            {
+              "row": "section",
+              "column": "hover",
+              "state": "section-hover"
+            },
+            {
+              "row": "section",
+              "column": "active",
+              "state": "section-active"
+            },
+            {
+              "row": "section",
+              "column": "focus-visible",
+              "state": "section-focus-visible"
+            },
+            {
+              "row": "product",
+              "column": "rest",
+              "state": "product"
+            },
+            {
+              "row": "product",
+              "column": "hover",
+              "state": "product-hover"
+            },
+            {
+              "row": "product",
+              "column": "active",
+              "state": "product-active"
+            },
+            {
+              "row": "product",
+              "column": "focus-visible",
+              "state": "product-focus-visible"
+            },
+            {
+              "row": "products",
+              "column": "rest",
+              "state": "products"
+            },
+            {
+              "row": "products",
+              "column": "hover",
+              "state": "products-hover"
+            },
+            {
+              "row": "products",
+              "column": "active",
+              "state": "products-active"
+            },
+            {
+              "row": "products",
+              "column": "focus-visible",
+              "state": "products-focus-visible"
+            }
+          ]
+        },
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": []
+      },
+      {
+        "layer": "components",
+        "name": "button",
+        "origin": "base",
+        "file": ".ethlete/design/sdk/components/button/button.ts",
+        "note": "scale of the decided shape, Q182, lead merge",
+        "madeBy": ["claude-opus-5-5", "claude-sonnet-5-5"],
+        "states": [
+          "filled",
+          "filled-hover",
+          "filled-active",
+          "filled-focus-visible",
+          "outline",
+          "outline-hover",
+          "outline-active",
+          "outline-focus-visible",
+          "tonal",
+          "tonal-hover",
+          "tonal-active",
+          "tonal-focus-visible",
+          "transparent",
+          "transparent-hover",
+          "transparent-active",
+          "transparent-focus-visible",
+          "pressed",
+          "pressed-hover",
+          "pressed-active",
+          "pressed-focus-visible",
+          "danger",
+          "danger-hover",
+          "danger-active",
+          "danger-focus-visible",
+          "small",
+          "small-hover",
+          "small-active",
+          "small-focus-visible",
+          "disabled",
+          "icon-filled",
+          "icon-filled-hover",
+          "icon-filled-active",
+          "icon-filled-focus-visible",
+          "icon-outline",
+          "icon-outline-hover",
+          "icon-outline-active",
+          "icon-outline-focus-visible",
+          "icon-tonal",
+          "icon-tonal-hover",
+          "icon-tonal-active",
+          "icon-tonal-focus-visible",
+          "icon-transparent",
+          "icon-transparent-hover",
+          "icon-transparent-active",
+          "icon-transparent-focus-visible",
+          "size-xs",
+          "size-sm",
+          "size-md",
+          "size-lg",
+          "size-xl"
+        ],
+        "grid": {
+          "columns": ["rest", "hover", "active", "focus-visible"],
+          "rows": [
+            "filled",
+            "outline",
+            "tonal",
+            "transparent",
+            "pressed",
+            "danger",
+            "small",
+            "disabled",
+            "icon filled",
+            "icon outline",
+            "icon tonal",
+            "icon transparent",
+            "size xs",
+            "size sm",
+            "size md",
+            "size lg",
+            "size xl"
+          ],
+          "cells": [
+            {
+              "row": "filled",
+              "column": "rest",
+              "state": "filled"
+            },
+            {
+              "row": "filled",
+              "column": "hover",
+              "state": "filled-hover"
+            },
+            {
+              "row": "filled",
+              "column": "active",
+              "state": "filled-active"
+            },
+            {
+              "row": "filled",
+              "column": "focus-visible",
+              "state": "filled-focus-visible"
+            },
+            {
+              "row": "outline",
+              "column": "rest",
+              "state": "outline"
+            },
+            {
+              "row": "outline",
+              "column": "hover",
+              "state": "outline-hover"
+            },
+            {
+              "row": "outline",
+              "column": "active",
+              "state": "outline-active"
+            },
+            {
+              "row": "outline",
+              "column": "focus-visible",
+              "state": "outline-focus-visible"
+            },
+            {
+              "row": "tonal",
+              "column": "rest",
+              "state": "tonal"
+            },
+            {
+              "row": "tonal",
+              "column": "hover",
+              "state": "tonal-hover"
+            },
+            {
+              "row": "tonal",
+              "column": "active",
+              "state": "tonal-active"
+            },
+            {
+              "row": "tonal",
+              "column": "focus-visible",
+              "state": "tonal-focus-visible"
+            },
+            {
+              "row": "transparent",
+              "column": "rest",
+              "state": "transparent"
+            },
+            {
+              "row": "transparent",
+              "column": "hover",
+              "state": "transparent-hover"
+            },
+            {
+              "row": "transparent",
+              "column": "active",
+              "state": "transparent-active"
+            },
+            {
+              "row": "transparent",
+              "column": "focus-visible",
+              "state": "transparent-focus-visible"
+            },
+            {
+              "row": "pressed",
+              "column": "rest",
+              "state": "pressed"
+            },
+            {
+              "row": "pressed",
+              "column": "hover",
+              "state": "pressed-hover"
+            },
+            {
+              "row": "pressed",
+              "column": "active",
+              "state": "pressed-active"
+            },
+            {
+              "row": "pressed",
+              "column": "focus-visible",
+              "state": "pressed-focus-visible"
+            },
+            {
+              "row": "danger",
+              "column": "rest",
+              "state": "danger"
+            },
+            {
+              "row": "danger",
+              "column": "hover",
+              "state": "danger-hover"
+            },
+            {
+              "row": "danger",
+              "column": "active",
+              "state": "danger-active"
+            },
+            {
+              "row": "danger",
+              "column": "focus-visible",
+              "state": "danger-focus-visible"
+            },
+            {
+              "row": "small",
+              "column": "rest",
+              "state": "small"
+            },
+            {
+              "row": "small",
+              "column": "hover",
+              "state": "small-hover"
+            },
+            {
+              "row": "small",
+              "column": "active",
+              "state": "small-active"
+            },
+            {
+              "row": "small",
+              "column": "focus-visible",
+              "state": "small-focus-visible"
+            },
+            {
+              "row": "disabled",
+              "column": "rest",
+              "state": "disabled"
+            },
+            {
+              "row": "icon filled",
+              "column": "rest",
+              "state": "icon-filled"
+            },
+            {
+              "row": "icon filled",
+              "column": "hover",
+              "state": "icon-filled-hover"
+            },
+            {
+              "row": "icon filled",
+              "column": "active",
+              "state": "icon-filled-active"
+            },
+            {
+              "row": "icon filled",
+              "column": "focus-visible",
+              "state": "icon-filled-focus-visible"
+            },
+            {
+              "row": "icon outline",
+              "column": "rest",
+              "state": "icon-outline"
+            },
+            {
+              "row": "icon outline",
+              "column": "hover",
+              "state": "icon-outline-hover"
+            },
+            {
+              "row": "icon outline",
+              "column": "active",
+              "state": "icon-outline-active"
+            },
+            {
+              "row": "icon outline",
+              "column": "focus-visible",
+              "state": "icon-outline-focus-visible"
+            },
+            {
+              "row": "icon tonal",
+              "column": "rest",
+              "state": "icon-tonal"
+            },
+            {
+              "row": "icon tonal",
+              "column": "hover",
+              "state": "icon-tonal-hover"
+            },
+            {
+              "row": "icon tonal",
+              "column": "active",
+              "state": "icon-tonal-active"
+            },
+            {
+              "row": "icon tonal",
+              "column": "focus-visible",
+              "state": "icon-tonal-focus-visible"
+            },
+            {
+              "row": "icon transparent",
+              "column": "rest",
+              "state": "icon-transparent"
+            },
+            {
+              "row": "icon transparent",
+              "column": "hover",
+              "state": "icon-transparent-hover"
+            },
+            {
+              "row": "icon transparent",
+              "column": "active",
+              "state": "icon-transparent-active"
+            },
+            {
+              "row": "icon transparent",
+              "column": "focus-visible",
+              "state": "icon-transparent-focus-visible"
+            },
+            {
+              "row": "size xs",
+              "column": "rest",
+              "state": "size-xs"
+            },
+            {
+              "row": "size sm",
+              "column": "rest",
+              "state": "size-sm"
+            },
+            {
+              "row": "size md",
+              "column": "rest",
+              "state": "size-md"
+            },
+            {
+              "row": "size lg",
+              "column": "rest",
+              "state": "size-lg"
+            },
+            {
+              "row": "size xl",
+              "column": "rest",
+              "state": "size-xl"
+            }
+          ]
+        },
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": []
+      },
+      {
+        "layer": "components",
+        "name": "form-field",
+        "origin": "base",
+        "file": ".ethlete/design/sdk/components/form-field/form-field.ts",
+        "note": "scale of the decided shape, Q182, lead merge",
+        "madeBy": ["claude-opus-5-5"],
+        "states": [
+          "empty",
+          "empty-hover",
+          "empty-focus-visible",
+          "filled",
+          "filled-hover",
+          "filled-focus-visible",
+          "error",
+          "error-hover",
+          "error-focus-visible",
+          "textarea-empty",
+          "textarea-empty-hover",
+          "textarea-empty-focus-visible",
+          "textarea-filled",
+          "textarea-filled-hover",
+          "textarea-filled-focus-visible",
+          "textarea-error",
+          "textarea-error-hover",
+          "textarea-error-focus-visible",
+          "appearance-box",
+          "appearance-box-hover",
+          "appearance-box-focus-visible",
+          "appearance-underline",
+          "appearance-underline-hover",
+          "appearance-underline-focus-visible",
+          "fill-transparent",
+          "fill-transparent-hover",
+          "fill-transparent-focus-visible",
+          "fill-filled",
+          "fill-filled-hover",
+          "fill-filled-focus-visible",
+          "labelMode-static",
+          "labelMode-static-hover",
+          "labelMode-static-focus-visible",
+          "labelMode-inline",
+          "labelMode-inline-hover",
+          "labelMode-inline-focus-visible",
+          "labelMode-floating-inside",
+          "labelMode-floating-inside-hover",
+          "labelMode-floating-inside-focus-visible",
+          "labelMode-floating-outside",
+          "labelMode-floating-outside-hover",
+          "labelMode-floating-outside-focus-visible",
+          "size-sm",
+          "size-sm-hover",
+          "size-sm-focus-visible",
+          "size-md",
+          "size-md-hover",
+          "size-md-focus-visible",
+          "size-lg",
+          "size-lg-hover",
+          "size-lg-focus-visible",
+          "text-align-center",
+          "text-align-end",
+          "focused",
+          "disabled",
+          "textarea-focused",
+          "textarea-disabled"
+        ],
+        "widths": [320],
+        "grid": {
+          "columns": ["rest", "hover", "focus-visible"],
+          "rows": [
+            "empty",
+            "filled",
+            "error",
+            "textarea-empty",
+            "textarea-filled",
+            "textarea-error",
+            "appearance-box",
+            "appearance-underline",
+            "fill-transparent",
+            "fill-filled",
+            "labelMode-static",
+            "labelMode-inline",
+            "labelMode-floating-inside",
+            "labelMode-floating-outside",
+            "size-sm",
+            "size-md",
+            "size-lg",
+            "textAlign center",
+            "textAlign end"
+          ],
+          "cells": [
+            {
+              "row": "empty",
+              "column": "rest",
+              "state": "empty"
+            },
+            {
+              "row": "empty",
+              "column": "hover",
+              "state": "empty-hover"
+            },
+            {
+              "row": "empty",
+              "column": "focus-visible",
+              "state": "empty-focus-visible"
+            },
+            {
+              "row": "filled",
+              "column": "rest",
+              "state": "filled"
+            },
+            {
+              "row": "filled",
+              "column": "hover",
+              "state": "filled-hover"
+            },
+            {
+              "row": "filled",
+              "column": "focus-visible",
+              "state": "filled-focus-visible"
+            },
+            {
+              "row": "error",
+              "column": "rest",
+              "state": "error"
+            },
+            {
+              "row": "error",
+              "column": "hover",
+              "state": "error-hover"
+            },
+            {
+              "row": "error",
+              "column": "focus-visible",
+              "state": "error-focus-visible"
+            },
+            {
+              "row": "textarea-empty",
+              "column": "rest",
+              "state": "textarea-empty"
+            },
+            {
+              "row": "textarea-empty",
+              "column": "hover",
+              "state": "textarea-empty-hover"
+            },
+            {
+              "row": "textarea-empty",
+              "column": "focus-visible",
+              "state": "textarea-empty-focus-visible"
+            },
+            {
+              "row": "textarea-filled",
+              "column": "rest",
+              "state": "textarea-filled"
+            },
+            {
+              "row": "textarea-filled",
+              "column": "hover",
+              "state": "textarea-filled-hover"
+            },
+            {
+              "row": "textarea-filled",
+              "column": "focus-visible",
+              "state": "textarea-filled-focus-visible"
+            },
+            {
+              "row": "textarea-error",
+              "column": "rest",
+              "state": "textarea-error"
+            },
+            {
+              "row": "textarea-error",
+              "column": "hover",
+              "state": "textarea-error-hover"
+            },
+            {
+              "row": "textarea-error",
+              "column": "focus-visible",
+              "state": "textarea-error-focus-visible"
+            },
+            {
+              "row": "appearance-box",
+              "column": "rest",
+              "state": "appearance-box"
+            },
+            {
+              "row": "appearance-box",
+              "column": "hover",
+              "state": "appearance-box-hover"
+            },
+            {
+              "row": "appearance-box",
+              "column": "focus-visible",
+              "state": "appearance-box-focus-visible"
+            },
+            {
+              "row": "appearance-underline",
+              "column": "rest",
+              "state": "appearance-underline"
+            },
+            {
+              "row": "appearance-underline",
+              "column": "hover",
+              "state": "appearance-underline-hover"
+            },
+            {
+              "row": "appearance-underline",
+              "column": "focus-visible",
+              "state": "appearance-underline-focus-visible"
+            },
+            {
+              "row": "fill-transparent",
+              "column": "rest",
+              "state": "fill-transparent"
+            },
+            {
+              "row": "fill-transparent",
+              "column": "hover",
+              "state": "fill-transparent-hover"
+            },
+            {
+              "row": "fill-transparent",
+              "column": "focus-visible",
+              "state": "fill-transparent-focus-visible"
+            },
+            {
+              "row": "fill-filled",
+              "column": "rest",
+              "state": "fill-filled"
+            },
+            {
+              "row": "fill-filled",
+              "column": "hover",
+              "state": "fill-filled-hover"
+            },
+            {
+              "row": "fill-filled",
+              "column": "focus-visible",
+              "state": "fill-filled-focus-visible"
+            },
+            {
+              "row": "labelMode-static",
+              "column": "rest",
+              "state": "labelMode-static"
+            },
+            {
+              "row": "labelMode-static",
+              "column": "hover",
+              "state": "labelMode-static-hover"
+            },
+            {
+              "row": "labelMode-static",
+              "column": "focus-visible",
+              "state": "labelMode-static-focus-visible"
+            },
+            {
+              "row": "labelMode-inline",
+              "column": "rest",
+              "state": "labelMode-inline"
+            },
+            {
+              "row": "labelMode-inline",
+              "column": "hover",
+              "state": "labelMode-inline-hover"
+            },
+            {
+              "row": "labelMode-inline",
+              "column": "focus-visible",
+              "state": "labelMode-inline-focus-visible"
+            },
+            {
+              "row": "labelMode-floating-inside",
+              "column": "rest",
+              "state": "labelMode-floating-inside"
+            },
+            {
+              "row": "labelMode-floating-inside",
+              "column": "hover",
+              "state": "labelMode-floating-inside-hover"
+            },
+            {
+              "row": "labelMode-floating-inside",
+              "column": "focus-visible",
+              "state": "labelMode-floating-inside-focus-visible"
+            },
+            {
+              "row": "labelMode-floating-outside",
+              "column": "rest",
+              "state": "labelMode-floating-outside"
+            },
+            {
+              "row": "labelMode-floating-outside",
+              "column": "hover",
+              "state": "labelMode-floating-outside-hover"
+            },
+            {
+              "row": "labelMode-floating-outside",
+              "column": "focus-visible",
+              "state": "labelMode-floating-outside-focus-visible"
+            },
+            {
+              "row": "size-sm",
+              "column": "rest",
+              "state": "size-sm"
+            },
+            {
+              "row": "size-sm",
+              "column": "hover",
+              "state": "size-sm-hover"
+            },
+            {
+              "row": "size-sm",
+              "column": "focus-visible",
+              "state": "size-sm-focus-visible"
+            },
+            {
+              "row": "size-md",
+              "column": "rest",
+              "state": "size-md"
+            },
+            {
+              "row": "size-md",
+              "column": "hover",
+              "state": "size-md-hover"
+            },
+            {
+              "row": "size-md",
+              "column": "focus-visible",
+              "state": "size-md-focus-visible"
+            },
+            {
+              "row": "size-lg",
+              "column": "rest",
+              "state": "size-lg"
+            },
+            {
+              "row": "size-lg",
+              "column": "hover",
+              "state": "size-lg-hover"
+            },
+            {
+              "row": "size-lg",
+              "column": "focus-visible",
+              "state": "size-lg-focus-visible"
+            },
+            {
+              "row": "textAlign center",
+              "column": "rest",
+              "state": "text-align-center"
+            },
+            {
+              "row": "textAlign end",
+              "column": "rest",
+              "state": "text-align-end"
+            }
+          ]
+        },
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": []
+      },
+      {
+        "layer": "components",
+        "name": "select",
+        "origin": "base",
+        "file": ".ethlete/design/sdk/components/select/select.ts",
+        "note": "scale of the decided shape, Q182, lead merge",
+        "madeBy": ["claude-opus-5-5", "claude-sonnet-5-5"],
+        "states": [
+          "placeholder",
+          "placeholder-hover",
+          "placeholder-active",
+          "placeholder-focus-visible",
+          "selected",
+          "selected-hover",
+          "selected-active",
+          "selected-focus-visible",
+          "disabled",
+          "open",
+          "open-option-hover",
+          "size-sm",
+          "size-lg"
+        ],
+        "widths": [320],
+        "grid": {
+          "columns": ["rest", "hover", "active", "focus-visible"],
+          "rows": ["placeholder", "selected", "size sm", "size lg"],
+          "cells": [
+            {
+              "row": "placeholder",
+              "column": "rest",
+              "state": "placeholder"
+            },
+            {
+              "row": "placeholder",
+              "column": "hover",
+              "state": "placeholder-hover"
+            },
+            {
+              "row": "placeholder",
+              "column": "active",
+              "state": "placeholder-active"
+            },
+            {
+              "row": "placeholder",
+              "column": "focus-visible",
+              "state": "placeholder-focus-visible"
+            },
+            {
+              "row": "selected",
+              "column": "rest",
+              "state": "selected"
+            },
+            {
+              "row": "selected",
+              "column": "hover",
+              "state": "selected-hover"
+            },
+            {
+              "row": "selected",
+              "column": "active",
+              "state": "selected-active"
+            },
+            {
+              "row": "selected",
+              "column": "focus-visible",
+              "state": "selected-focus-visible"
+            },
+            {
+              "row": "size sm",
+              "column": "rest",
+              "state": "size-sm"
+            },
+            {
+              "row": "size lg",
+              "column": "rest",
+              "state": "size-lg"
+            }
+          ]
+        },
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": [
+          {
+            "rule": "RENDER",
+            "file": ".ethlete/design/sdk/components/select/select.ts",
+            "message": "Render check: 1 warning"
+          }
+        ]
+      },
+      {
+        "layer": "pages",
+        "name": "system",
+        "origin": "product",
+        "file": ".ethlete/design/studio/pages/system/system.ts",
+        "note": "The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.",
+        "madeBy": ["claude-opus-5-5", "claude-sonnet-5-5", "gpt-6"],
+        "states": ["part", "empty", "many-states", "points-closed", "nothing-open"],
+        "interactions": [],
+        "kitUses": 0,
+        "usedIn": [],
+        "changedOutsideSketch": false,
+        "problems": []
+      }
+    ],
+    "problems": []
+  },
+  {
+    "name": "timetrack",
+    "base": null,
+    "presets": {
+      "desktop": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "schemes": ["dark"],
+    "themes": {
+      "surface": [],
+      "color": []
+    },
+    "parts": [],
+    "problems": []
+  },
+  {
+    "name": "docs",
+    "base": null,
+    "presets": {
+      "desktop": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "schemes": ["dark"],
+    "themes": {
+      "surface": [],
+      "color": []
+    },
+    "parts": [],
+    "problems": []
+  }
+]

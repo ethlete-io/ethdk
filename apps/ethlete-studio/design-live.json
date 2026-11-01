@@ -1,0 +1,111 @@
+{
+  "host": "ethlete-shell-main",
+  "invoke": {
+    "design_roots": {
+      "search": "",
+      "roots": ["$checkout"]
+    },
+    "design_project": {
+      "callsRoot": "$checkout",
+      "port": "$port",
+      "defaultCall": null,
+      "themes": {},
+      "calls": []
+    },
+    "design_server_state": {
+      "port": "$port",
+      "listening": true,
+      "managed": false,
+      "foreign": false,
+      "stale": false,
+      "exited": false,
+      "log": []
+    },
+    "design_server_start": {
+      "port": "$port",
+      "listening": true,
+      "managed": false,
+      "foreign": false,
+      "stale": false,
+      "exited": false,
+      "log": []
+    },
+    "agent_list": []
+  },
+  "storage": {
+    "ethlete-studio.call-view": {
+      "systemProduct": "studio",
+      "systemEntry": "components/button",
+      "openGroups": {
+        "foundations": false,
+        "components": true,
+        "elements": false,
+        "pages": false
+      }
+    }
+  },
+  "answers": {
+    "/__design/system": "design-live/system.json",
+    "/__design/queue": "design-live/queue.json",
+    "/__design/calls": "design-live/calls.json",
+    "/__design/comments": "design-live/comments.json",
+    "/__design/notes": "design-live/notes.json",
+    "/__design/sketches": "design-live/sketches.json",
+    "/__design/flows": "design-live/flows.json",
+    "/__design/exceptions": "design-live/exceptions.json"
+  },
+  "pages": {
+    "pages/system": {
+      "states": {
+        "part": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": 300,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          }
+        },
+        "edge": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": -23,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          },
+          "pan": {
+            "selector": ".st-canvas > div:first-child",
+            "x": -323,
+            "y": 0
+          }
+        },
+        "zoom-100": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": -500,
+                  "y": -300,
+                  "zoom": 0.5
+                }
+              }
+            }
+          },
+          "click": ["Auf 100 % zoomen"]
+        }
+      }
+    }
+  }
+}

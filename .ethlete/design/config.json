@@ -79,6 +79,7 @@
       "harness": {
         "app": "apps/ethlete-studio",
         "map": "apps/ethlete-studio/src/app/design-harness/design-harness-parts.ts",
+        "live": "apps/ethlete-studio/design-live.json",
         "shared": ["apps/ethlete-studio/src/app/i18n/**", "apps/ethlete-studio/src/app/icons/agent-logos.ts"]
       },
       "tokens": ["foundations/colors", "foundations/type", "foundations/spacing"],
