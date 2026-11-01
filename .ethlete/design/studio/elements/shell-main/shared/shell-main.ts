@@ -34,13 +34,13 @@ const ICONS: Record<Section, IconName> = {
   Inbox: 'inbox',
 };
 
-type RailKind = 'section' | 'product' | 'all';
+type RailKind = 'section' | 'product';
 
-const RAIL_CONTROLS: Record<RailKind, string> = { section: 'section', product: 'product', all: 'products' };
+const RAIL_CONTROLS: Record<RailKind, string> = { section: 'section', product: 'product' };
 
 type RailInteraction = Exclude<Interaction, 'disabled'>;
 
-type RailForce = { label: string; interaction?: RailInteraction };
+type RailForce = { label: string; interaction: RailInteraction };
 
 const HOVER_PRESS = 'hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15';
 
@@ -62,12 +62,11 @@ const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
 };
 
 const railButton = (markup: string, label: string, force?: RailForce) =>
-  force?.interaction && force.label === label ? forceInteraction(markup, force.interaction) : markup;
+  force?.label === label ? forceInteraction(markup, force.interaction) : markup;
 
 const RAIL_ACTIONS: Record<RailKind, string> = {
   section: 'emit:sectionChange',
   product: 'emit:productChange',
-  all: 'emit:allProducts',
 };
 
 const railItem = (
@@ -97,7 +96,6 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     <div class="flex-1"></div>
     ${sep}
     ${RECENT_PRODUCTS.map((p) => railItem(p.charAt(0).toUpperCase(), p, p === product, 'product', false, force)).join('')}
-    ${railItem(icon('more', { size: 18 }), 'All products', false, 'all', false, force)}
   </nav>`;
 
 const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
@@ -184,17 +182,14 @@ ${log.join('\n')}</pre>`
 
 const BASE: Props = { section: 'System', product: 'studio', side: '', content: '' };
 
-const railRows = interactionRows<Props, 'section' | 'product' | 'products', RailInteraction>(
-  {
-    section: { ...BASE, force: { label: 'Sketches' } },
-    product: { ...BASE, force: { label: 'timetrack' } },
-    products: { ...BASE, force: { label: 'All products' } },
-  },
-  {
+const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
+  interactionRows<Props, TRow, RailInteraction>({ [row]: BASE } as Record<TRow, Props>, {
     interactions: ['hover', 'active', 'focus-visible'],
-    force: (props, interaction) => ({ ...props, force: { label: props.force?.label ?? '', interaction } }),
-  },
-);
+    force: (props, interaction) => ({ ...props, force: { label, interaction } }),
+  });
+
+const sectionRows = railRowsOf('section', 'Sketches');
+const productRows = railRowsOf('product', 'timetrack');
 
 export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
   widths: [1440],
@@ -204,13 +199,13 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     'server-starting': { ...BASE, server: 'starting' },
     open: BASE,
     hidden: { ...BASE, panel: 'hidden' },
-    ...railRows.states,
+    ...sectionRows.states,
+    ...productRows.states,
   } satisfies Record<string, Props>,
-  grid: railRows.grid,
+  grid: { columns: sectionRows.grid.columns, rows: { ...sectionRows.grid.rows, ...productRows.grid.rows } },
   controls: {
     section: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     product: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
-    products: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
     restart: { kind: 'button' as const, part: 'components/button' as const },
     project: {
