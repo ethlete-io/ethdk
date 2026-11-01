@@ -368,7 +368,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           }),
           size: frame.size,
           forced: forcedElementsOf(design.markup ?? ''),
-          roomAbove: design.marks.length > 0 && Math.min(...design.marks.map((mark) => mark.y)) > 0,
+          roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }),
       );
