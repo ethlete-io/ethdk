@@ -105,7 +105,7 @@
     min-width: var(--et-notification-min-width);
     max-width: var(--et-notification-max-width);
     border-inline-start: var(--et-notification-border-width) solid var(--et-theme-color-primary-solid, #d1d5db);
-    font-family: inherit;
+    font-family: var(--et-font-family, inherit);
     font-size: var(--et-notification-font-size);
     line-height: var(--et-notification-line-height);
 

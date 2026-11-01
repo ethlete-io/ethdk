@@ -1,6 +1,7 @@
 import { anchoredDialog } from './anchored-dialog';
 import { alertDialog, dialog } from './dialog';
 import { menu } from './menu';
+import { notification } from './notification';
 import { selectPanel } from './select';
 import { tooltip } from './tooltip';
 
@@ -29,6 +30,7 @@ const renderers: [string, (surface?: string) => string, string][] = [
   ['menu', (surface) => menu({ rows: [], surface }), 'et-menu'],
   ['selectPanel', (surface) => selectPanel({ id: 'a', content: '', surface }), 'et-select-panel'],
   ['tooltip', (surface) => tooltip({ text: 'Tip', surface }), '.et-overlay'],
+  ['notification', (surface) => notification({ status: 'info', title: 'Title', surface }), 'et-notification'],
 ];
 
 describe('overlay design renderers', () => {

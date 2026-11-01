@@ -29,7 +29,10 @@ export type NotificationMockOptions = {
    * its type). Left out, the notification takes the color theme around it.
    */
   color?: string;
-  /** A surface theme name the app registers. Left out, the notification inherits it. */
+  /**
+   * A surface theme name the app registers. Left out, the notification takes the surface one elevation above its
+   * parent, as the component forces elevation 1 on the page.
+   */
   surface?: string;
   /** Extra attributes on the dismiss button, e.g. design markers. */
   dismissAttributes?: string;
@@ -117,11 +120,12 @@ export const notification = (options: NotificationMockOptions) => {
   const classes = [
     'et-notification',
     `et-color--${options.color ?? 'inherited'}`,
-    `et-surface--${options.surface ?? 'inherited'}`,
+    options.surface && `et-surface--${options.surface}`,
     'et-animation-enter-done',
-  ];
+  ].filter(Boolean);
+  const autoSurface = options.surface ? '' : ' data-et-auto-surface';
 
-  return `<et-notification ${options.attributes ?? ''} class="${classes.join(' ')}"><div class="et-notification-content">${header}${message}${footer}</div></et-notification>`;
+  return `<et-notification ${options.attributes ?? ''}${autoSurface} class="${classes.join(' ')}"><div class="et-notification-content">${header}${message}${footer}</div></et-notification>`;
 };
 
 /** Draws notifications in the stack's column and gap, in flow instead of fixed to the viewport. */
