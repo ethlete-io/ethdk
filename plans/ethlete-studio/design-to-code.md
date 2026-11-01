@@ -899,8 +899,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     `design actions` and on the live pages: real click on every focusable element, fail on a visible outline, then
     Tab to it and expect the outline.
 77. pages/system round 1: the "Aktuell" column is an empty dark frame; only variant a renders (Tom, 2026-11-01,
-    screenshot). Cause: asked the builder. Lesson + tool change: open until the cause is known (why does no check
-    fail when the current side of a sketch renders nothing?).
+    screenshot). Cause: not a render bug. The 5 unchanged states fold away; the 2 visible rows (`fit`, `page-100`)
+    are new in the sketch, so "Aktuell" holds only the "neu in diesem Sketch" placeholder, with text capped so small
+    that the column looks empty. Fixed in b879f640e (the placeholder names the merged states; cap 2 -> 4). Why no
+    check caught it: sketch check reads only variant render problems; nothing evaluates the Studio matrix. Lesson: a
+    check must judge what the reviewer sees, not only what each variant renders. Tool change (builder work): sketch
+    check runs the shared matrix function and warns when the "Aktuell" column has no drawn frame in the visible rows.
+    Design question for Tom: Q122.
 78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
@@ -1146,11 +1151,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   when the design commit is newer than that decision. Finding 64.
 - Impl Q114 auto go `by` (Tom, 2026-11-01): an auto go or acceptance (Impl Q109) keeps the previous `by` and adds
   `auto: true`.
+  Done in c9c00eb98 (spec 104a3de8e).
 - Impl Q115 decision ref vs later design (Tom, 2026-11-01): with Impl Q119, Tom's confirm is the proof. "Design newer
   than the decision" is no longer a refusal but a note in the confirm list (for example "design changed after Impl
-  Q98 (5e554809b)"). `--note "Impl Qnn"` stays required. Changes Impl Q113. Finding 64.
+  Q98 (5e554809b)"). `--note "Impl Qnn"` stays required. Changes Impl Q113. Finding 64. Done in b873da3ee.
 - Impl Q116 import cycles (Tom, 2026-11-01): `import/no-cycle` (or madge --circular) as a lint error for libs/core
-  now, and resolve its 24 cycles; libs/components (71 in-lib cycles) after the MVP. Finding 68.
+  now, and resolve its 24 cycles; libs/components (71 in-lib cycles) after the MVP. Finding 68. Done in 22890a960:
+  24 -> 0 cycles; the check is a spec (libs/core/src/import-cycles.spec.ts) in `nx test core`, not
+  import/no-cycle, because the repo has no eslint import plugin. Public exports unchanged (590 names).
 - Impl Q117 shell-main surface (Tom, 2026-11-01): the shell-main drawing root (shell-main.ts:233) gets
   `data-et-surface`, because the app paints the same fill; the DEMO-BACKDROP exemption applies, no tool change. Do it
   before Tom's shell-main go. Finding 71.
@@ -1160,5 +1168,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q119 Tom go needs Tom (Tom, 2026-11-01): `--by tom` (go and accept) needs a TTY confirm or a Studio click,
   which an agent cannot give. The builder writes a go list; Tom confirms it at once with
   `et design go --batch <file>`, one prompt for all entries. The builder no longer writes a chat-approved go itself
-  (replaces Impl Q45). Finding 74.
+  (replaces Impl Q45). Finding 74. Done in b873da3ee: `Record this as Tom? [y/N]` at a TTY, refusal without one;
+  `design go --batch <file>` takes a JSON array of {part, product, action go|accept, note, verify?}, checks all
+  entries first, then one prompt. Batch file for Tom: .claude/handoffs/tom-go-batch.json (gitignored).
 - Impl Q120 shell-main keyboard open (Tom, 2026-11-01): shell-main gets the `open-focus-visible` state, as Impl Q95.
