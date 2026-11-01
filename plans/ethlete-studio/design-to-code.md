@@ -839,6 +839,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     bug reaches the first consumer. Also: the Q105 agent's `design go --by tom` for the new, unseen error-toast
     drawing passed the classifier (against finding 66); the builder removed the uncommitted go entry. Lesson: the
     classifier is no reliable guard for a go; only the Impl Q113 decision ref is.
+    Cause (a4126f7ab): an import cycle in libs/core (animatable.directive → easing-tokens-styles → providers →
+    utils/logger → signals/render-utils → animations barrel → animated-lifecycle.directive → animatable.directive);
+    when a bundle evaluates animatable.directive first, AnimatedLifecycleDirective gets hostDirectives [undefined].
+    Fix: render-utils imports nextFrame from animation-utils, not the barrel; animations-module-order.spec.ts bites.
+    JIT tests build ɵdir lazily, the public index order hides it, and no lint rule checks cycles. More barrel cycles
+    in core are likely. Tool change: Impl Q116 (Tom).
 69. The Q112 push first failed on prettier (builder, 2026-11-01): the agent committed only its own hunks of
     part-ready.ts, and the committed text was never formatted (fixed in a style(cli) commit). Lesson: a hunk-only
     commit skips prettier on the text that gets committed; format the file before staging hunks.
