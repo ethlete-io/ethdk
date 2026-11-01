@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 01.11.2026
+Stand: 01.11.2026, abends
 
 ## Ziel
 
@@ -10,27 +10,28 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                    | Entwurf gemergt | Im Code | Fertig |
-| ----------------------- | --------------- | ------- | ------ |
-| Canvas-Ansicht          | ✅              | ✅      | ❌     |
-| Kommentar-Pin           | ✅              | ✅      | ❌     |
-| Aufklapper              | ✅              | ✅      | ❌     |
-| Seitenleiste einklappen | ✅              | ✅      | ❌     |
-| Projektwechsel          | ✅              | ✅      | ❌     |
-| Baumzeile               | ✅              | ✅      | ❌     |
-| Zoom-Chip               | ✅              | ✅      | ❌     |
-| Fehler-Toast            | ❌              | ❌      | ❌     |
-| Canvas-Rahmen           | ✅              | ✅      | ❌     |
-| Teile-Baum              | ✅              | ✅      | ❌     |
-| Hauptlayout             | ✅              | ✅      | ❌     |
-| Studio-Menü             | ✅              | ✅      | ✅     |
-| Start                   | ✅              | ✅      | ❌     |
-| System                  | ✅              | ✅      | ❌     |
-| Sketches                | ✅              | ✅      | ❌     |
-| Merge                   | ✅              | ✅      | ❌     |
-| Inbox                   | ✅              | ✅      | ❌     |
+| Teil                    | Fertig | Was fehlt                                           | Wer     |
+| ----------------------- | ------ | --------------------------------------------------- | ------- |
+| Canvas-Ansicht          | ✅     |                                                     |         |
+| Kommentar-Pin           | ✅     |                                                     |         |
+| Aufklapper              | ✅     |                                                     |         |
+| Baumzeile               | ✅     |                                                     |         |
+| Zoom-Chip               | ✅     |                                                     |         |
+| Teile-Baum              | ✅     |                                                     |         |
+| Studio-Menü             | ✅     |                                                     |         |
+| Seitenleiste einklappen | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| Projektwechsel          | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| Hauptlayout             | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| Inbox                   | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| Sketches                | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
+| System                  | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
+| Canvas-Rahmen           | ❌     | App zeichnet ein Element, das der Entwurf nicht hat | Builder |
+| Start                   | ❌     | 3 Knöpfe ohne Aktion im Entwurf                     | Builder |
+| Merge                   | ❌     | Kopfzeile in der App weicht vom Entwurf ab          | Builder |
+| Fehler-Toast            | ❌     | Neu, noch in Arbeit                                 | Builder |
 
-Stand: 1 von 17 Teilen fertig. Der Fehler-Toast ist neu und noch in Arbeit.
+Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
 
@@ -46,5 +47,4 @@ Stand: 1 von 17 Teilen fertig. Der Fehler-Toast ist neu und noch in Arbeit.
 
 ## Gerade in Arbeit
 
-- Pause bis 21:40.
-- Danach: alle Teile neu prüfen (Finding 88), dann Fehler-Toast.
+- Umriss für den ausgewählten Rahmen in Sketches, dann Fehler-Toast, dann Canvas-Rahmen, Start und Merge.
