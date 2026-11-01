@@ -5,6 +5,8 @@ import { assetRoot } from './paths';
 
 export const STAMP_PATH = '/__design/stamp';
 
+export const BUILD_INFO_FILE = 'build-info.json';
+
 /** What a design server was started from: the cli version and a hash of its code and frame assets. */
 export type BuildStamp = { version: string; build: string };
 
@@ -14,7 +16,17 @@ const filesUnder = (dir: string) =>
     .sort()
     .map((file) => ({ name: file, path: join(dir, file) }));
 
-const inspectBuild = (dirs: { code: string; assets: string; manifest: string }) => {
+const builtAtFromFile = (path: string) => {
+  try {
+    const time = Date.parse((JSON.parse(readFileSync(path, 'utf8')) as { builtAt?: string }).builtAt ?? '');
+
+    return Number.isNaN(time) ? null : time;
+  } catch {
+    return null;
+  }
+};
+
+const inspectBuild = (dirs: { code: string; assets: string; manifest: string; info: string }) => {
   const hash = createHash('sha256');
   let builtAt = 0;
 
@@ -29,17 +41,27 @@ const inspectBuild = (dirs: { code: string; assets: string; manifest: string }) 
 
   return {
     stamp: { version: manifest.version ?? 'unknown', build: hash.digest('hex').slice(0, 12) } satisfies BuildStamp,
-    builtAt: Math.round(builtAt),
+    builtAt: builtAtFromFile(dirs.info) ?? Math.round(builtAt),
   };
 };
 
 /** The stamp of the cli on disk now. A server takes it once at start, so a reinstall moves the two apart. */
 export const buildStampOf = (assets = assetRoot()): BuildStamp =>
-  inspectBuild({ code: __dirname, assets, manifest: resolve(__dirname, '../../../package.json') }).stamp;
+  inspectBuild({
+    code: __dirname,
+    assets,
+    manifest: resolve(__dirname, '../../../package.json'),
+    info: resolve(__dirname, '../../../', BUILD_INFO_FILE),
+  }).stamp;
 
-/** The stamp and the newest file time (ms) of the cli code at `__dirname` and its frame assets. */
+/** The stamp and build time (ms) of the cli at `__dirname`: `build-info.json` when the build wrote one, else the newest file time. */
 export const buildInfoOf = (assets = assetRoot()) =>
-  inspectBuild({ code: __dirname, assets, manifest: resolve(__dirname, '../../../package.json') });
+  inspectBuild({
+    code: __dirname,
+    assets,
+    manifest: resolve(__dirname, '../../../package.json'),
+    info: resolve(__dirname, '../../../', BUILD_INFO_FILE),
+  });
 
 /** The stamp and newest file time of the cli package installed at `packageRoot`, or null when it has no built design code. */
 export const installedBuildInfoOf = (packageRoot: string) => {
@@ -48,6 +70,7 @@ export const installedBuildInfoOf = (packageRoot: string) => {
       code: join(packageRoot, 'src/lib/design'),
       assets: join(packageRoot, 'design'),
       manifest: join(packageRoot, 'package.json'),
+      info: join(packageRoot, BUILD_INFO_FILE),
     });
   } catch {
     return null;

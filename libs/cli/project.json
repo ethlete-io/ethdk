@@ -10,7 +10,7 @@
       "dependsOn": ["compile"],
       "cache": false,
       "options": {
-        "command": "node libs/cli/scripts/move-into-place.mts tmp/cli-build dist/libs/cli"
+        "command": "node libs/cli/scripts/move-into-place.mts tmp/cli-build dist/libs/cli && node libs/cli/scripts/write-build-info.mts dist/libs/cli"
       }
     },
     "compile": {

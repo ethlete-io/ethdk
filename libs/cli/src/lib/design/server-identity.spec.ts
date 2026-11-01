@@ -6,7 +6,7 @@ import { judgeServerIdentity, ServerIdentity, serverIdentityOf, STUDIO_API_LEVEL
 
 const roots: string[] = [];
 
-const projectWithCli = (options: { code: string; builtAt: number; version?: string }) => {
+const projectWithCli = (options: { code: string; builtAt: number; version?: string; infoBuiltAt?: string }) => {
   const project = mkdtempSync(join(tmpdir(), 'identity-'));
   roots.push(project);
   const cli = join(project, 'node_modules/@ethlete/cli');
@@ -20,6 +20,8 @@ const projectWithCli = (options: { code: string; builtAt: number; version?: stri
   const file = join(cli, 'src/lib/design/serve.js');
   writeFileSync(file, options.code);
   utimesSync(file, options.builtAt / 1000, options.builtAt / 1000);
+  if (options.infoBuiltAt)
+    writeFileSync(join(cli, 'build-info.json'), JSON.stringify({ builtAt: options.infoBuiltAt }));
 
   return project;
 };
@@ -38,6 +40,39 @@ describe('serverIdentityOf', () => {
     expect(identity.stamp.build).toMatch(/^[0-9a-f]{12}$/);
     expect(identity.builtAt).toBeGreaterThan(0);
     expect(identity.installed).toMatchObject({ builtAt: 1_000_000, stamp: { version: '1.0.0' } });
+  });
+
+  it('reads the build time from build-info.json when every file time is 1985', () => {
+    const year1985 = Date.UTC(1985, 9, 26);
+    const project = projectWithCli({ code: 'a', builtAt: year1985, infoBuiltAt: '2026-05-01T00:00:00.000Z' });
+
+    expect(serverIdentityOf(project)().installed?.builtAt).toBe(Date.UTC(2026, 4, 1));
+  });
+
+  it('judges a 1985 install with a newer build-info.json as a restart', () => {
+    const year1985 = Date.UTC(1985, 9, 26);
+    const project = projectWithCli({ code: 'b', builtAt: year1985, infoBuiltAt: '2026-05-01T00:00:00.000Z' });
+    const installed = serverIdentityOf(project)().installed;
+
+    expect(
+      judgeServerIdentity({
+        expectedApiLevel: STUDIO_API_LEVEL,
+        identity: {
+          stamp: { version: '1.0.0', build: 'aaa' },
+          apiLevel: STUDIO_API_LEVEL,
+          builtAt: Date.UTC(2026, 0, 1),
+          projectRoot: project,
+          installed,
+        },
+      }).verdict,
+    ).toBe('restart');
+  });
+
+  it('keeps the stamp when only build-info.json changes', () => {
+    const a = projectWithCli({ code: 'a', builtAt: 1_000_000, infoBuiltAt: '2026-01-01T00:00:00.000Z' });
+    const b = projectWithCli({ code: 'a', builtAt: 1_000_000, infoBuiltAt: '2026-06-01T00:00:00.000Z' });
+
+    expect(serverIdentityOf(a)().installed?.stamp).toEqual(serverIdentityOf(b)().installed?.stamp);
   });
 
   it('reads the installed cli at request time', () => {
