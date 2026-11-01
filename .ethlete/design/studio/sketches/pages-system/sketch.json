@@ -72,7 +72,7 @@
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
     "components/tree": "7826d5e508a8602c",
-    "components/tree-row": "4a61550aab8efc15",
+    "components/tree-row": "6f1d3fd6aee08bf6",
     "components/zoom-chip": "19b060128f62ca4f",
     "elements/canvas-frames": "dc89aa310d9f6893",
     "elements/part-tree": "4decbdf07174f4c8",
@@ -82,7 +82,7 @@
     "pages/inbox": "c0191a969e252732",
     "pages/inventory": "963f56a2b935222b",
     "pages/merge": "5e62baa11f0f8365",
-    "pages/sketches": "c14f9e6750f5385b",
+    "pages/sketches": "5dbcb06352eba249",
     "pages/start": "d7e06f6c43db3f93",
     "pages/system": "31b90702f1a44d46",
     "fixtures.ts": "909089fbef7b8f34"
@@ -90,7 +90,7 @@
   "decision": {
     "kind": "pick",
     "variant": "a",
-    "decidedAt": "2026-11-01T21:25:20.248Z"
+    "decidedAt": "2026-11-01T21:27:11.408Z"
   },
   "rounds": [
     {
