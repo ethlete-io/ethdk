@@ -1284,6 +1284,15 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
 - Impl Q-B system action marks (grill, 2026-11-02, no pixel change): pages/system adds `data-et-action` on the
   open-points chip and "Prompt kopieren"; Q15 keeps the go.
 
+130. pages/inbox and pages/system failed action checks after the canvas-frames canvas change (builder, 2026-11-02). The
+     app canvas became focusable (ae210e62d), but the embedding designs still drew a non-focusable one; inbox fixed in
+     2f36f4c7f. The "Erledigte zeigen" switch failed on Enter: the CLI pressed Enter on every action, but a switch,
+     checkbox or radio takes click and Space only (SDK switch, native checkbox); fixed in general in 8bf0fd0fb,
+     menuitemcheckbox and menuitemradio keep Enter. Why no check caught it: only `design actions` and `ready` press
+     elements, and a change in an embedded part does not re-run the action checks of the parts that embed it; the
+     switch was the first declared switch action. Tool fix (after MVP): `design check` marks every embedding part as
+     "actions need a re-run" when an embedded part changes, and `ready` names that reason.
+
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
 - Impl Q41 zoom-chip titles (Tom, 2026-11-01): German `title` tooltips, in Tom's collected round. Studio must not stay
