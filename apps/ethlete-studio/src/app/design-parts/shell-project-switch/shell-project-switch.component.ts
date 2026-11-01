@@ -7,7 +7,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
   templateUrl: './shell-project-switch.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
-  host: { class: 'box-border block w-62 p-space-2' },
+  host: { class: 'box-border block w-62 p-space-2 font-ui text-ui-md text-et-surface' },
 })
 export class ShellProjectSwitchComponent {
   public project = input('ethlete-sdk');
