@@ -1,11 +1,28 @@
 import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
+import type { MenuMockRow } from '@ethlete/components/design/menu';
+import menu from '@system/components/menu';
 import { icon } from '@system/foundations/icons';
 import styles from './shell-project-switch.css?inline';
 
 type SwitchInteraction = Exclude<Interaction, 'disabled'>;
 
 type Props = { open?: boolean; interaction?: SwitchInteraction };
+
+const MENU_ITEM = 'data-et-control="item"';
+
+const PROJECT_ROWS: MenuMockRow[] = [
+  {
+    kind: 'radio-group',
+    items: [
+      { kind: 'radio', label: 'ethlete-sdk', checked: true, active: true, attributes: MENU_ITEM },
+      { kind: 'radio', label: 'fut-frontend', attributes: MENU_ITEM },
+      { kind: 'radio', label: 'design-playground', attributes: MENU_ITEM },
+    ],
+  },
+  { kind: 'separator' },
+  { label: 'Projekt öffnen…', attributes: MENU_ITEM },
+];
 
 export const shellProjectSwitchStyles = styles + buttonStyles;
 
@@ -37,12 +54,21 @@ export default definePart({
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
   ),
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
-  controls: { project: { kind: 'button', input: ['pointer', 'keyboard'] } },
+  controls: { project: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellProjectSwitchStyles,
-  render: (props: Props) =>
-    drawing({
+  render: async (props: Props) => {
+    const projectMenu = props.open ? await menu.render({ rows: PROJECT_ROWS }) : null;
+
+    return drawing({
       body: html`<div class="box-border w-62 p-space-2 bg-et-surface-bg text-et-surface font-ui text-ui-md">
+        ${
+          projectMenu
+            ? html`<div class="mb-space-2 shadow-none" data-et-surface="project.open">${projectMenu.body}</div>`
+            : ''
+        }
         ${shellProjectSwitch(props)}
       </div>`,
-    }),
+      styles: projectMenu ? shellProjectSwitchStyles + projectMenu.styles : undefined,
+    });
+  },
 });
