@@ -54,6 +54,13 @@ output; the designed Studio is the side product.
   Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows (also from WSL)
   `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then write one short line on what blocks.
 
+## Authority over the builder
+
+- If the builder looks stuck, read its pane (`tmux capture-pane -p -t <builder tmux session>`) and the running
+  processes (`ps`) before you ask it anything.
+- You may clear its dead background agents and shells, or restart its CLI with the agent-sessions `restart`
+  command and a `/handoff resume` prompt. Agree this with the builder first by SendMessage.
+
 ## Record
 
 - After the user confirms a short summary, write the decision into the plan in English, as a
