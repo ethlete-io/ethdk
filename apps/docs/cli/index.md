@@ -442,6 +442,14 @@ declares nothing, on a declared design element the app lacks, and names a key wh
 States run in batches of a few with a fresh browser each, so a part with many states does not exhaust memory.
 It needs no go. `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
 
+It also checks the pointer focus of every focusable element (`tabindex` other than -1, button, `a[href]`, field,
+select, `contenteditable`) in two fresh pages: a real mouse click at its centre must leave no focus ring (a visible
+`outline`: style not none, width above 0, a colour that is not transparent), reported as
+`<element> pointer focus FAILED shows a focus ring after a pointer click`. Text entry is exempt, because browsers always
+show `:focus-visible` there. Keyboard focus (after a Shift press) must show a ring, an outline or a changed `box-shadow`;
+when it does not, the line is `ok (warning: …)` and not a failure, because another indicator such as a focus-within
+wrapper may draw it. An element whose click navigates away is skipped.
+
 `et design actions [<layer>/<name>] --product app-a --live [--url …]` runs the same check on the app's real pages
 instead of the part harness. It needs a development build (`window.ng`) and the product's live spec
 (`"harness": { …, "live": "apps/my-app/design-live.json" }`) with a `"shell"` selector of the app's shell component,
@@ -450,7 +458,8 @@ component's view owns, and every control in an overlay, with click, Enter and Sp
 declares the action and the press reaches it: the shell output fires, or the declared state's `aria-expanded` values
 show. It then compares each control's outcome across pages (outputs, expanded controls, a gained `aria-current`, added
 and removed controls) and prints one `drift` line naming each page when they differ. With a part it presses only the
-controls that part draws.
+controls that part draws. The same pointer-focus check runs on every control the press reaches, as a `<control> pointer
+focus` line per page.
 
 The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
 `"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and

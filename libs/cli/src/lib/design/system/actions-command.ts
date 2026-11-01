@@ -23,6 +23,7 @@ import {
 import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { checkLiveActions, liveLineOf } from './live-actions';
+import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
 import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -56,7 +57,13 @@ type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPa
 /** A state the check starts from: its harness props, and the trigger a click opens first when the state is an open surface. */
 export type ActionStart = { state: string; props: unknown; opener: string | null };
 
-type Line = { state: string; element: string; input: ActionInput | null; failure: string | null };
+type Line = {
+  state: string;
+  element: string;
+  input: ActionInput | null;
+  failure: string | null;
+  warning?: string | null;
+};
 
 const scanOf = async (page: Page, roots: string[]) =>
   (await page.evaluate(actionScanScriptOf(roots))) as ActionElement[];
@@ -345,6 +352,61 @@ export const checkActions = async (options: {
 
       for (const { app: element, design: drawn } of paired) {
         const name = elementNameOf(element);
+
+        try {
+          const probes = await queue.run((browser) =>
+            probePointerFocus({
+              open: async () => {
+                const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+                const page = await context.newPage();
+                const close = () => context.close();
+
+                try {
+                  await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+                  await page
+                    .locator(HARNESS_HOST_SELECTOR)
+                    .first()
+                    .waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
+                  await page.mouse.move(-1, -1);
+
+                  if (opener !== null) {
+                    const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((found) => found.key === opener);
+
+                    if (trigger) await page.locator(probeOf(trigger.probe)).click();
+
+                    await settle(page, DRAW_TIMEOUT_MS);
+                    await page.mouse.move(-1, -1);
+                  }
+
+                  const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
+                    (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
+                  );
+
+                  if (!found) throw new Error('the element is gone after a fresh load');
+
+                  return { page, locator: page.locator(probeOf(found.probe)), close };
+                } catch (error) {
+                  await close();
+                  throw error;
+                }
+              },
+              settle: (page) => settle(page, DRAW_TIMEOUT_MS),
+            }),
+          );
+
+          if (probes) {
+            const { failure, warning } = pointerFocusVerdictOf(probes);
+
+            lines.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
+          }
+        } catch (error) {
+          lines.push({
+            state,
+            element: `${name} pointer focus`,
+            input: null,
+            failure: messageOf(error).split('\n')[0] ?? '',
+          });
+        }
         const action = drawn ? parseAction(drawn.action, names) : null;
 
         if (drawn === null || action === null || typeof action === 'string') {
@@ -423,8 +485,8 @@ export const checkActions = async (options: {
 };
 
 /** The line `design actions` prints for one checked element and input. */
-export const actionLineOf = ({ state, element, input, failure }: Line) =>
-  `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? 'ok' : `FAILED ${failure}`}`;
+export const actionLineOf = ({ state, element, input, failure, warning }: Line) =>
+  `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
 
 /** The failed lines `design actions` prints for a part, or why the check could not run. */
 export const partActionFailuresOf = async (options: {

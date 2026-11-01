@@ -10,6 +10,7 @@ import { ACTION_INPUTS, ActionElement, actionFailureOf, ActionInput, actionScanS
 import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
+import { PointerFocusProbes, pointerFocusVerdictOf, readRingProbe, RingProbe, RingStyle } from './pointer-focus';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -38,6 +39,7 @@ export type LiveLine = {
   element: string;
   input: ActionInput | null;
   failure: string | null;
+  warning?: string | null;
   parts: string[];
 };
 
@@ -232,8 +234,8 @@ export const liveStateCompareOf = (options: {
 };
 
 /** The line `design actions --live` prints for one checked control and input. */
-export const liveLineOf = ({ page, element, input, failure }: LiveLine) =>
-  `${page} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? 'ok' : `FAILED ${failure}`}`;
+export const liveLineOf = ({ page, element, input, failure, warning }: LiveLine) =>
+  `${page} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
 
 const LOCATE_TIMEOUT_MS = 5000;
 
@@ -468,12 +470,27 @@ export const checkLiveActions = async (options: {
           await page.evaluate(listenOutputsScriptOf(shell));
           await page.evaluate('window.__etPrevented = [];');
 
+          let clickRing: RingProbe | null = null;
+          let keyboardRing: PointerFocusProbes['keyboard'] = null;
+
           if (options.input === 'click') {
             await control.click({ timeout: DRAW_TIMEOUT_MS });
+            clickRing = await readRingProbe(control).catch(() => null);
             await page.mouse.move(-1, -1);
           } else {
+            const before: RingStyle | undefined = (await readRingProbe(control).catch(() => null))?.style;
+
             await page.keyboard.press('Shift');
             await control.focus({ timeout: DRAW_TIMEOUT_MS });
+
+            if (options.input === 'Enter') {
+              await settle(page, DRAW_TIMEOUT_MS);
+
+              const probe = await readRingProbe(control).catch(() => null);
+
+              keyboardRing = before && probe ? { before, probe } : null;
+            }
+
             await page.keyboard.press(options.input);
           }
 
@@ -485,7 +502,7 @@ export const checkLiveActions = async (options: {
           )) as string[];
           const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
 
-          return { before, after: await stableScan(), emitted, prevented };
+          return { before, after: await stableScan(), emitted, prevented, clickRing, keyboardRing };
         } finally {
           await context.close();
         }
@@ -524,11 +541,16 @@ export const checkLiveActions = async (options: {
             });
           }
 
+          const rings: PointerFocusProbes = { click: null, keyboard: null };
+
           await Promise.all(
             ACTION_INPUTS.map(async (input) => {
               try {
                 const result = await press({ run, opener, pick: app, input });
                 const outcome = liveOutcomeOf(result);
+
+                rings.click ??= result.clickRing;
+                rings.keyboard ??= result.keyboardRing;
 
                 presses.push({ page: run.name, control: name, action: declared, input, outcome, parts });
 
@@ -596,6 +618,12 @@ export const checkLiveActions = async (options: {
               }
             }),
           );
+
+          if (rings.click !== null) {
+            const { failure, warning } = pointerFocusVerdictOf(rings);
+
+            lines.push({ page: run.name, element: `${name} pointer focus`, input: null, parts, failure, warning });
+          }
         }),
       );
 
