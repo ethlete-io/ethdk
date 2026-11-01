@@ -23,7 +23,7 @@ ausgeklammert.
 | elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“ | Builder, dann Tom |
 | pages/inbox                     | ❌     | Erledigte Kommentare werden markiert und zeigen ihren Pin (Befund 113), Bild geprüft; Tom: Abnahme und Go   | Tom               |
 | pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                  | Builder, dann Tom |
-| pages/sketches                  | ❌     | Kamera und page-100 gebaut; Prüfungen laufen zuerst, dann Bild, Abnahme und Go                              | Builder, dann Tom |
+| pages/sketches                  | ❌     | Go gegeben; „ready“ meldet 9 Fehler bei den Aktionen, Builder prüft, ob das Werkzeug irrt                   | Builder           |
 | components/canvas-viewport      | ❌     | Go gilt; Fokus-Rahmen nach Klick + Shift wird behoben (Befund 123), dann „ready“                            | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                         | Builder           |
 | pages/start                     | ✅     |                                                                                                             |                   |

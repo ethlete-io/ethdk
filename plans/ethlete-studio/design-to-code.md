@@ -1238,6 +1238,13 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      after MVP): `design task --verify` runs the actions check too. Lesson: a fix in one of two copies of the same
      behaviour leaves the other broken (rule "every thing only once"). Also: the STATUS row said "code used on no page";
      wrong, canvas-frames and flows-page import it.
+124. A system-view merge spec failed on HEAD after the merge page work (builder, 2026-11-01): it clicked a "Merge"
+     button on the sketch page that no longer exists. Fixed in 80210e278, no app regression. Why no check caught it:
+     the pre-push hook runs affected typecheck and lint, not vitest. Tool fix (process, after MVP): pre-push runs the
+     Studio vitest suite for affected files.
+125. The WRAP check on pages/inbox counted the hidden lines of a `line-clamp-2` comment text as a wrap (builder,
+     2026-11-01). Tool fix (general, built now, test first): a block with `-webkit-line-clamp` is multi-line on purpose.
+     No design edit, so no stale go.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
