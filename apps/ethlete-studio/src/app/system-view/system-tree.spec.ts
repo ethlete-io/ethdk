@@ -1,7 +1,6 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
-  usingPagesOf,
   callFramesOf,
   canPick,
   holdersOf,
@@ -330,7 +329,7 @@ describe('framesOf', () => {
 
     expect(isSmallPart(button)).toBe(true);
     expect(frames.map((frame) => [frame.id, frame.label, frame.row, frame.width, frame.place])).toEqual([
-      ['components/button', 'components/button', undefined, undefined, undefined],
+      ['components/button', 'button', undefined, undefined, undefined],
     ]);
     expect(frames[0]?.grid?.sheet).toBe('table');
     expect(frames[0]?.grid?.schemes).toEqual(['light', 'dark']);
@@ -421,9 +420,7 @@ describe('framesOf', () => {
       part: part({ states: [], problems: [{ rule: 'LOAD', file: 'x', message: 'boom' }] }),
     });
 
-    expect(frames.map((frame) => [frame.row, frame.label, frame.error])).toEqual([
-      [undefined, 'components/button', 'boom'],
-    ]);
+    expect(frames.map((frame) => [frame.row, frame.label, frame.error])).toEqual([[undefined, 'button', 'boom']]);
   });
 });
 
@@ -567,7 +564,7 @@ describe('sketches in the tree', () => {
   });
 });
 
-describe('pages that use a part', () => {
+describe('sketches of a part that pages use', () => {
   const tree = part({
     layer: 'elements',
     name: 'tree',
@@ -578,36 +575,6 @@ describe('pages that use a part', () => {
   });
   const system = part({ layer: 'pages', name: 'system', states: ['open', 'empty'] });
   const shop = product([tree, system]);
-
-  it('adds a used in row to the part view with the first state of each page of its product at the first preset', () => {
-    const used = framesOf({ port: 4400, product: shop, part: tree }).filter((frame) => frame.row === 'used in');
-
-    expect(usingPagesOf(shop, tree)).toEqual([system]);
-    expect(used).toMatchObject([
-      {
-        id: 'used in pages/system',
-        width: 390,
-        height: 844,
-        place: { part: 'pages/system', state: 'open', size: 'phone' },
-      },
-    ]);
-    expect(used[0]?.screenshot).toContain('part=pages%2Fsystem');
-  });
-
-  it('draws one label instead of frames when every page of the product uses the part', () => {
-    const all = part({
-      layer: 'elements',
-      name: 'all',
-      usedIn: [
-        { product: 'acme', part: 'pages/system' },
-        { product: 'acme', part: 'pages/start' },
-      ],
-    });
-    const both = product([all, system, part({ layer: 'pages', name: 'start', states: ['open'] })]);
-    const used = framesOf({ port: 4400, product: both, part: all }).filter((frame) => frame.row === 'used in');
-
-    expect(used).toMatchObject([{ rowLabel: 'verwendet in allen 2 Seiten', empty: expect.any(String) }]);
-  });
 
   it('adds the pages that use any target part of a sketch to its in context band, each page once', () => {
     const start = part({ layer: 'pages', name: 'start', states: ['open'] });

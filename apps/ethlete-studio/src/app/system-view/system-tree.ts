@@ -29,8 +29,8 @@ const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer &&
 
 export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds: (part: ListedPart) => boolean }[] = [
   { key: 'foundations', label: 'Foundations', holds: onLayer('foundations') },
-  { key: 'components', label: 'Components', holds: onLayer('components') },
   { key: 'elements', label: 'Elements', holds: onLayer('elements') },
+  { key: 'components', label: 'Components', holds: onLayer('components') },
   {
     key: 'pages',
     label: 'Pages',
@@ -325,7 +325,7 @@ const statesOf = (part: ListedPart, error: string | undefined): (string | undefi
 export const interactionsOf = (part: ListedPart): string[] => [REST, ...(part.interactions ?? [])];
 
 /** The pages of its own product that use a part, in the order the server lists them. */
-export const usingPagesOf = (product: ListedProduct, part: ListedPart | null): ListedPart[] =>
+const usingPagesOf = (product: ListedProduct, part: ListedPart | null): ListedPart[] =>
   (part?.usedIn ?? []).flatMap((use) =>
     use.product === product.name ? product.parts.filter((page) => partKeyOf(page) === use.part) : [],
   );
@@ -353,8 +353,6 @@ export const sketchUsingPagesOf = ({
 
   return [...new Set(pages)].filter((page) => !targets.includes(partKeyOf(page)));
 };
-
-const USED_IN = 'used in';
 
 const UNCHANGED_ROW = 'unchanged';
 
@@ -473,7 +471,7 @@ const gridFrameOf = (options: {
  * at the part's first width or fitted. Only a `LOAD` problem fails the frames: a part that breaks a rule still
  * renders, and one that does not load lists no states.
  */
-const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
+export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const { port, product, part, epoch, revision, view, surface, color } = source;
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
@@ -542,13 +540,13 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
   const [first] = cells;
 
   if (!first) return gridFrames;
-  if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: key, error }];
+  if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: part.name, error }];
 
   return [
     {
       id: key,
       src: '',
-      label: key,
+      label: part.name,
       grid: {
         sheet: 'table',
         schemes,
@@ -573,56 +571,12 @@ export const frameKeyOf = (part: string, frame: string) => `frame:${part} ${fram
 
 /** The frames a part draws on its own, as tree rows that open the part on that frame. */
 const treeFramesOf = (product: ListedProduct, part: ListedPart): TreeFrame[] =>
-  ownFramesOf({ port: 0, product, part }).map((frame) => ({
+  framesOf({ port: 0, product, part }).map((frame) => ({
     key: frameKeyOf(partKeyOf(part), frame.id),
     name: frame.label,
     part: partKeyOf(part),
     frame: frame.id,
   }));
-
-/**
- * Every state of a part as `ownFramesOf` draws it, then a `used in` row with the first state of each page
- * of the product that uses the part. When every page of a product with several uses it, the row is one empty cell
- * labelled `used in all N pages` instead.
- */
-export const framesOf = (source: FramesSource): CanvasFrame[] => {
-  const pages = usingPagesOf(source.product, source.part);
-  const total = source.product.parts.filter((part) => part.layer === 'pages').length;
-
-  if (total > 1 && pages.length === total)
-    return [
-      ...ownFramesOf(source),
-      {
-        id: USED_IN,
-        src: '',
-        width: 390,
-        height: 120,
-        label: STUDIO_LABELS.systemTree.usedIn,
-        row: USED_IN,
-        rowLabel: STUDIO_LABELS.systemTree.usedInAll(total),
-        empty: STUDIO_LABELS.systemTree.everyPage,
-      },
-    ];
-
-  return [
-    ...ownFramesOf(source),
-    ...pages.flatMap((page): CanvasFrame[] => {
-      const frame = pageFrameOf({ ...source, page });
-      const key = partKeyOf(page);
-
-      return frame
-        ? [
-            {
-              ...frame,
-              id: `${USED_IN} ${key}`,
-              row: USED_IN,
-              rowLabel: STUDIO_LABELS.systemTree.usedIn,
-            },
-          ]
-        : [];
-    }),
-  ];
-};
 
 export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   sketch: ListedSketch;
