@@ -20,6 +20,7 @@ import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
 import { ACTIONS_USAGE, designActions } from './system/actions-command';
 import { COMPARE_USAGE, designCompare } from './system/compare-command';
+import { designDom, DOM_USAGE } from './system/dom-command';
 import { designTask, TASK_USAGE } from './system/task-command';
 import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
@@ -135,6 +136,10 @@ const helpOf = (invocation: string) =>
     '  product) and its harness url adds layout=page, so the host fills that viewport.',
     '  Without --url it makes a development build of the harness app in a temp folder, serves it on a free port and',
     '  stops it afterwards, also next to a running dev server of the same app; exits 1 unless every state is ok.',
+    '',
+    `${invocation} ${DOM_USAGE}`,
+    '  Print the pretty-printed HTML of one state of a part (default: its first): the rendered design, or with --app the',
+    '  [data-design-harness-host] element of the app harness page that compare shoots. --app needs a current harness map.',
     '',
     `${invocation} ${ACTIONS_USAGE}`,
     "  Click and press Enter and Space on each interactive element of the part in the app's harness page, from each",
@@ -354,6 +359,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designCompare({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'dom') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designDom({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'actions') {
