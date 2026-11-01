@@ -20,7 +20,10 @@ import {
   parseAction,
   targetStateOf,
 } from './actions';
+import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
+import { checkLiveActions, liveLineOf } from './live-actions';
+import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
@@ -39,15 +42,12 @@ import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
-export const ACTIONS_USAGE = 'actions <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>]';
+export const ACTIONS_USAGE =
+  'actions <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] | actions [<layer>/<name>] --product <name> --live [--url <app build url>]';
 
 const ROOM_PX = 1024;
 
-const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
-
-const EMIT_WAIT_MS = 400;
-
-const SETTLED_FRAMES = 2;
+const ACTION_BATCH_STATES = 4;
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -57,23 +57,6 @@ type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPa
 export type ActionStart = { state: string; props: unknown; opener: string | null };
 
 type Line = { state: string; element: string; input: ActionInput | null; failure: string | null };
-
-const INIT_SCRIPT = `window.__etPrevented = [];
-window.addEventListener('keydown', (event) => { if (event.defaultPrevented) window.__etPrevented.push(event.key); });`;
-
-const settle = async (page: Page, timeout: number) => {
-  await page
-    .waitForFunction(
-      `(() => {
-        const settled = document.getAnimations().every((animation) => animation.playState !== 'running' || animation.effect?.getTiming().iterations === Infinity);
-        window.__etActionFrames = settled ? (window.__etActionFrames ?? 0) + 1 : 0;
-        return window.__etActionFrames >= ${SETTLED_FRAMES};
-      })()`,
-      undefined,
-      { timeout, polling: 'raf' },
-    )
-    .catch(() => undefined);
-};
 
 const scanOf = async (page: Page, roots: string[]) =>
   (await page.evaluate(actionScanScriptOf(roots))) as ActionElement[];
@@ -200,21 +183,30 @@ export const checkActions = async (options: {
   if (typeof frame === 'string') return frame;
   if (!(await chromiumOf(target))) return 'actions needs playwright or playwright-core in the checkout';
 
-  const queue = createDrawQueue({ target });
   const server = await createDesignServer({ target, config, listen: true, port: 0 });
-  let shooter: ReturnType<typeof createPartShooter> | undefined;
+  let browser: { queue: ReturnType<typeof createDrawQueue>; shooter: ReturnType<typeof createPartShooter> } | undefined;
+  const closeBrowser = async () => {
+    const open = browser;
+
+    browser = undefined;
+    await open?.shooter.close();
+    await open?.queue.close();
+  };
 
   try {
     await server.listen();
 
     const { port } = server.httpServer?.address() as AddressInfo;
+    const system = createSystemModules({ target, config });
+    const freshBrowser = async () => {
+      await closeBrowser();
 
-    shooter = createPartShooter({
-      target,
-      base: `http://localhost:${port}`,
-      system: createSystemModules({ target, config }),
-      queue,
-    });
+      const queue = createDrawQueue({ target });
+
+      browser = { queue, shooter: createPartShooter({ target, base: `http://localhost:${port}`, system, queue }) };
+
+      return browser;
+    };
 
     const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
     const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
@@ -241,12 +233,12 @@ export const checkActions = async (options: {
         }),
       ).then((entries) => embeddersOf({ part, controls: Object.fromEntries(entries) })));
 
-    const pictures = shooter;
+    let { queue, shooter } = await freshBrowser();
     const designs = new Map<string, Picture>();
     const draw = async (state: string) => {
       const drawn =
         designs.get(state) ??
-        (await pictures.pictureOf({
+        (await shooter.pictureOf({
           product: product.name,
           part,
           state,
@@ -267,10 +259,11 @@ export const checkActions = async (options: {
 
     for (const state of names) await draw(state);
 
+    const markups = new Map([...designs].map(([state, design]) => [state, design.markup ?? '']));
     const opens = pointerOpensOf({
       states,
       controls: module.default?.controls,
-      drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
+      drawn: Object.fromEntries([...markups].map(([state, markup]) => [state, drawnSurfacesOf(markup)])),
     });
     const designScan = async (state: string) =>
       queue.run(async (browser) => {
@@ -279,7 +272,7 @@ export const checkActions = async (options: {
         try {
           const page = await context.newPage();
 
-          await page.setContent(designs.get(state)?.markup ?? '');
+          await page.setContent(markups.get(state) ?? '');
 
           return await scanOf(page, ['body']);
         } finally {
@@ -289,8 +282,15 @@ export const checkActions = async (options: {
     const lines: Line[] = [];
     let dir: string | null = null;
 
-    for (const state of only === null ? names : [only]) {
-      const markup = designs.get(state)?.markup ?? '';
+    const checked = only === null ? names : [only];
+
+    for (const [index, state] of checked.entries()) {
+      if (index % ACTION_BATCH_STATES === 0) {
+        designs.clear();
+        ({ queue, shooter } = await freshBrowser());
+      }
+
+      const markup = markups.get(state) ?? '';
 
       if (forcedElementsOf(markup).length > 0) continue;
 
@@ -417,8 +417,7 @@ export const checkActions = async (options: {
   } catch (error) {
     return messageOf(error);
   } finally {
-    await shooter?.close();
-    await queue.close();
+    await closeBrowser();
     await server.close();
   }
 };
@@ -436,6 +435,7 @@ export const partActionFailuresOf = async (options: {
   url?: string;
   start?: StartHarnessServer;
   check?: typeof checkActions;
+  checkLive?: typeof checkLiveActions;
 }): Promise<string[] | { unavailable: string }> => {
   const { target, config, product, part } = options;
   const stale = harnessStaleOf({ target, product });
@@ -452,8 +452,20 @@ export const partActionFailuresOf = async (options: {
 
   if (typeof checked === 'string') return { unavailable: checked };
 
-  return checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
+  const failures = checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
+
+  if (!options.url || typeof liveSpecOf({ target, product }) === 'string') return failures;
+
+  const live = await (options.checkLive ?? checkLiveActions)({ target, config, product, url: options.url, part });
+
+  if (typeof live === 'string') return { unavailable: `the live action check: ${live}` };
+
+  return [...failures, ...live.lines.filter((line) => line.failure !== null).map((line) => `live ${liveLineOf(line)}`)];
 };
+
+/** The note a ready refusal adds when the action check ran on the part harness only. */
+export const PART_HARNESS_ONLY =
+  'checked on the part harness only - pass --url <studio build> to check the live pages too';
 
 /**
  * `et design actions <layer>/<name> …` clicks and presses Enter and Space on each interactive element of a part in the
@@ -464,12 +476,14 @@ export const designActions = async (options: {
   argv: string[];
   invocation: string;
   check?: typeof checkActions;
+  checkLive?: typeof checkLiveActions;
   start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
   const args = argsOf(options.argv, ['--product', '--url', '--state']);
+  const live = typeof args !== 'string' && args.flags.has('--live');
 
-  if (typeof args === 'string' || args.positional.length !== 1) {
+  if (typeof args === 'string' || args.positional.length > 1 || (!live && args.positional.length !== 1)) {
     if (typeof args === 'string') console.error(args);
 
     console.error(`usage: ${invocation} ${ACTIONS_USAGE}`);
@@ -478,6 +492,9 @@ export const designActions = async (options: {
   }
 
   const config = configOf(target);
+
+  if (live) return designLiveActions({ ...options, args, config });
+
   const parsed = parseTarget(args.positional[0]);
 
   if (typeof config === 'string' || typeof parsed === 'string') {
@@ -547,6 +564,66 @@ export const designActions = async (options: {
     failed === 0
       ? `${part}: every declared action works`
       : `${part}: ${failed} of ${checked.lines.length} action check(s) failed`,
+  );
+
+  return failed === 0 ? 0 : 1;
+};
+
+const designLiveActions = async (options: {
+  target: string;
+  args: Exclude<ReturnType<typeof argsOf>, string>;
+  config: ReturnType<typeof configOf>;
+  start?: StartHarnessServer;
+  checkLive?: typeof checkLiveActions;
+}) => {
+  const { target, args, config } = options;
+  const parsed = args.positional[0] === undefined ? null : parseTarget(args.positional[0]);
+
+  if (typeof config === 'string' || typeof parsed === 'string') {
+    console.error(typeof config === 'string' ? config : parsed);
+
+    return 1;
+  }
+
+  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+  if (typeof product === 'string') {
+    console.error(product);
+
+    return 1;
+  }
+
+  const part = parsed === null ? null : partKeyOf(parsed);
+
+  if (part !== null && !product.parts.some((candidate) => partKeyOf(candidate) === part)) {
+    console.error(`${product.name} has no part ${part}`);
+
+    return 1;
+  }
+
+  const checked = await withHarnessUrl({
+    target,
+    product,
+    url: args.values['--url'],
+    start: options.start,
+    run: (url) => (options.checkLive ?? checkLiveActions)({ target, config, product, url, part }),
+  });
+
+  if (typeof checked === 'string') {
+    console.error(checked);
+
+    return 1;
+  }
+
+  for (const line of checked.lines) console.log(liveLineOf(line));
+
+  const failed = checked.lines.filter((line) => line.failure !== null).length;
+  const scope = part ?? 'the live pages';
+
+  console.log(
+    failed === 0
+      ? `${scope}: every shell control reaches its declared action and behaves the same on every page`
+      : `${scope}: ${failed} of ${checked.lines.length} live action check(s) failed`,
   );
 
   return failed === 0 ? 0 : 1;

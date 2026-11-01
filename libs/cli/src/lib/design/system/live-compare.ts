@@ -39,10 +39,13 @@ export type LivePage = LiveSample & {
  * checkout), `storage` the localStorage entries, and `answers` the design server paths answered with a JSON file
  * (relative to the spec) instead of the live design system. `frame` is a PNG (relative to the spec) both sides draw as
  * frame content: the design in each slot the page draws itself, the app as every part shot and frame. `now` is the
- * ISO time the app's clock reads, in UTC, so relative times such as "vor 3 Min" draw the same on every run.
+ * ISO time the app's clock reads, in UTC, so relative times such as "vor 3 Min" draw the same on every run. `shell`
+ * is the selector of the app component whose template, with the components it draws, holds the shell controls that
+ * `design actions --live` presses on every page.
  */
 export type LiveSpec = {
   host: string;
+  shell?: string;
   frame?: string;
   now?: string;
   invoke?: Record<string, unknown>;
@@ -82,6 +85,7 @@ export const liveSpecProblemOf = (spec: unknown): string | null => {
 
   if (spec['storage'] !== undefined && !isRecord(spec['storage'])) return 'storage must be an object';
   if (spec['frame'] !== undefined && typeof spec['frame'] !== 'string') return 'frame must name a PNG file';
+  if (spec['shell'] !== undefined && typeof spec['shell'] !== 'string') return 'shell must be a selector';
   if (spec['now'] !== undefined && (typeof spec['now'] !== 'string' || Number.isNaN(Date.parse(spec['now']))))
     return 'now must be an ISO time';
 
@@ -203,12 +207,129 @@ const hostBoxOf = async (page: Page, { host, timeout = 0 }: { host: string; time
   }
 };
 
-class LiveError extends Error {}
+/** A live page that could not be opened or shot, with the reason. */
+export class LiveError extends Error {}
 
 /**
- * A PNG of the app's `spec.host` element on the real page `url`, sized to `size`, running on the fixed sample of
- * `spec`: stubbed desktop host, seeded localStorage, canned design server answers, the given clicks, and taken once
- * the picture stops changing.
+ * Opens the app's real page `url` in `context`, sized so its `spec.host` element measures `size`, on the fixed sample of
+ * `spec`: stubbed desktop host, seeded localStorage, canned design server answers, and the page's and state's clicks.
+ */
+export const openLivePage = async (options: {
+  context: Awaited<ReturnType<Browser['newContext']>>;
+  url: string;
+  size: { width: number; height: number };
+  spec: LiveSpec;
+  dir: string;
+  page: LivePage;
+  state: LiveState;
+  server: string;
+  checkout: string;
+  timeout: number;
+}) => {
+  const { context, spec, size, server, checkout, timeout } = options;
+  const host = options.page.host ?? spec.host;
+  const port = Number(new URL(server).port);
+  const page = await context.newPage();
+  const sdkErrors = watchSdkErrors(page);
+
+  if (spec.now !== undefined) await page.clock.setFixedTime(spec.now);
+  const answers = { ...spec.answers, ...options.page.answers, ...options.state.answers };
+  const invoke = { ...spec.invoke, ...options.page.invoke, ...options.state.invoke };
+  const frame = spec.frame ? readFileSync(resolve(options.dir, spec.frame)) : null;
+  const frameAnswers: Record<string, { contentType: string; body: Buffer | string }> = frame
+    ? {
+        '/__design/shot': { contentType: 'image/png', body: frame },
+        '/frame.html': { contentType: 'text/html', body: framePageOf(frameContentOf(frame)) },
+      }
+    : {};
+  const storage = mergedStorageOf(spec.storage, options.page.storage, options.state.storage);
+
+  await page.addInitScript(
+    (data: { invoke: Record<string, unknown>; storage: Record<string, string> }) => {
+      let callbacks = 0;
+      const target = globalThis as unknown as Record<string, unknown>;
+
+      target['__TAURI_INTERNALS__'] = {
+        invoke: (command: string) =>
+          command in data.invoke ? Promise.resolve(data.invoke[command]) : new Promise(() => undefined),
+        transformCallback: () => ++callbacks,
+        unregisterCallback: () => undefined,
+        convertFileSrc: (path: string) => path,
+        metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
+      };
+      Object.entries(data.storage).forEach(([key, value]) => localStorage.setItem(key, value));
+    },
+    {
+      invoke: substitutedOf(invoke, { port, checkout }) as Record<string, unknown>,
+      storage: Object.fromEntries(
+        Object.entries(storage).map(([key, value]) => [key, typeof value === 'string' ? value : JSON.stringify(value)]),
+      ),
+    },
+  );
+
+  const answer = async (route: Parameters<Parameters<typeof page.route>[1]>[0]) => {
+    const url = new URL(route.request().url());
+    const file = answerFileOf(answers, url);
+
+    const fixed = frameAnswers[url.pathname];
+
+    if (file === null && fixed)
+      return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, ...fixed });
+    if (file !== null)
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: readFileSync(resolve(options.dir, file)),
+      });
+    if (url.pathname.endsWith('-events') || route.request().method() !== 'GET') return route.abort();
+
+    const response = await route.fetch({ url: `${server}${url.pathname}${url.search}` }).catch(() => null);
+
+    return response
+      ? route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
+      : route.abort();
+  };
+
+  await page.route(`http://localhost:${port}/**`, (route) => answer(route).catch(() => undefined));
+
+  const address = `${options.url.replace(/\/+$/, '')}${options.page.path ?? '/'}`;
+
+  await page.goto(address, { timeout }).catch((error: unknown) => {
+    throw new LiveError(`the app page ${address} did not load: ${String(error).split('\n')[0] ?? ''}`);
+  });
+  await page
+    .locator(host)
+    .first()
+    .waitFor({ state: 'visible', timeout })
+    .catch(() => {
+      throw new LiveError(`the app page ${address} showed no ${host} within ${timeout} ms`);
+    });
+
+  const box = await hostBoxOf(page, { host, timeout });
+
+  await page.setViewportSize({
+    width: size.width + Math.round(size.width - box.width),
+    height: size.height + Math.round(size.height - box.height),
+  });
+
+  for (const label of [...(options.page.click ?? []), ...(options.state.click ?? [])]) {
+    const control = page
+      .locator(`[aria-label=${JSON.stringify(label)}]`)
+      .filter({ visible: true })
+      .first();
+
+    await control.click({ timeout }).catch(() => {
+      throw new LiveError(`the app page ${address} has no visible control "${label}" to click`);
+    });
+  }
+
+  return { page, host, address, sdkErrors };
+};
+
+/**
+ * A PNG of the app's `spec.host` element on the real page `url`, sized to `size`, opened as `openLivePage` does and
+ * taken once the picture stops changing.
  */
 export const liveShotOf = async (options: {
   browser: Browser;
@@ -222,10 +343,8 @@ export const liveShotOf = async (options: {
   checkout: string;
   timeout?: number;
 }) => {
-  const { browser, spec, size, server, checkout } = options;
-  const host = options.page.host ?? spec.host;
+  const { browser, spec, size } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
-  const port = Number(new URL(server).port);
   const context = await browser.newContext({
     viewport: { width: size.width, height: size.height },
     deviceScaleFactor: 1,
@@ -233,101 +352,7 @@ export const liveShotOf = async (options: {
   });
 
   try {
-    const page = await context.newPage();
-    const sdkErrors = watchSdkErrors(page);
-
-    if (spec.now !== undefined) await page.clock.setFixedTime(spec.now);
-    const answers = { ...spec.answers, ...options.page.answers, ...options.state.answers };
-    const invoke = { ...spec.invoke, ...options.page.invoke, ...options.state.invoke };
-    const frame = spec.frame ? readFileSync(resolve(options.dir, spec.frame)) : null;
-    const frameAnswers: Record<string, { contentType: string; body: Buffer | string }> = frame
-      ? {
-          '/__design/shot': { contentType: 'image/png', body: frame },
-          '/frame.html': { contentType: 'text/html', body: framePageOf(frameContentOf(frame)) },
-        }
-      : {};
-    const storage = mergedStorageOf(spec.storage, options.page.storage, options.state.storage);
-
-    await page.addInitScript(
-      (data: { invoke: Record<string, unknown>; storage: Record<string, string> }) => {
-        let callbacks = 0;
-        const target = globalThis as unknown as Record<string, unknown>;
-
-        target['__TAURI_INTERNALS__'] = {
-          invoke: (command: string) =>
-            command in data.invoke ? Promise.resolve(data.invoke[command]) : new Promise(() => undefined),
-          transformCallback: () => ++callbacks,
-          unregisterCallback: () => undefined,
-          convertFileSrc: (path: string) => path,
-          metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
-        };
-        Object.entries(data.storage).forEach(([key, value]) => localStorage.setItem(key, value));
-      },
-      {
-        invoke: substitutedOf(invoke, { port, checkout }) as Record<string, unknown>,
-        storage: Object.fromEntries(
-          Object.entries(storage).map(([key, value]) => [
-            key,
-            typeof value === 'string' ? value : JSON.stringify(value),
-          ]),
-        ),
-      },
-    );
-
-    await page.route(`http://localhost:${port}/**`, async (route) => {
-      const url = new URL(route.request().url());
-      const file = answerFileOf(answers, url);
-
-      const fixed = frameAnswers[url.pathname];
-
-      if (file === null && fixed)
-        return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, ...fixed });
-      if (file !== null)
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          headers: { 'access-control-allow-origin': '*' },
-          body: readFileSync(resolve(options.dir, file)),
-        });
-      if (url.pathname.endsWith('-events') || route.request().method() !== 'GET') return route.abort();
-
-      const response = await route.fetch({ url: `${server}${url.pathname}${url.search}` }).catch(() => null);
-
-      return response
-        ? route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } })
-        : route.abort();
-    });
-
-    const address = `${options.url.replace(/\/+$/, '')}${options.page.path ?? '/'}`;
-
-    await page.goto(address, { timeout }).catch((error: unknown) => {
-      throw new LiveError(`the app page ${address} did not load: ${String(error).split('\n')[0] ?? ''}`);
-    });
-    await page
-      .locator(host)
-      .first()
-      .waitFor({ state: 'visible', timeout })
-      .catch(() => {
-        throw new LiveError(`the app page ${address} showed no ${host} within ${timeout} ms`);
-      });
-
-    const box = await hostBoxOf(page, { host, timeout });
-
-    await page.setViewportSize({
-      width: size.width + Math.round(size.width - box.width),
-      height: size.height + Math.round(size.height - box.height),
-    });
-
-    for (const label of [...(options.page.click ?? []), ...(options.state.click ?? [])]) {
-      const control = page
-        .locator(`[aria-label=${JSON.stringify(label)}]`)
-        .filter({ visible: true })
-        .first();
-
-      await control.click({ timeout }).catch(() => {
-        throw new LiveError(`the app page ${address} has no visible control "${label}" to click`);
-      });
-    }
+    const { page, host, address, sdkErrors } = await openLivePage({ ...options, context, timeout });
 
     await page.mouse.move(-1, -1);
     await page.evaluate('document.fonts.ready');

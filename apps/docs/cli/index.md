@@ -332,7 +332,8 @@ mark, or `null`.
 A part is ready only when its open-point list is empty and `et design actions` passes for it.
 `et design ready components/chip --product app-a --by tom [--url …]` draws the part, prints its open points and exits 1
 while there are any; then it runs the action check on the harness app (`--url`, or one it starts) and exits 1 with the
-failed lines; otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
+failed lines. With `--url` and a live spec it also runs `et design actions --live` for the part and adds its failed
+lines prefixed `live `; without `--url` the refusal notes that it checked the part harness only. Otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
 (the base's file for a part the product takes from its base). Any edit of the part changes its hash, and the mark
 then reads as not ready. Studio sends `POST /__design/part-ready?product=` with `{ part, hash, by }`: 400 without
 `by` or `hash`, 404 for an unknown part, 409 when the part changed since `hash`, 422 with `{ error, points }` while it
@@ -411,7 +412,18 @@ Enter and Space on it. A state action passes when the host shot equals that stat
 compares with `<state>-focus-visible` where the part draws one. An output action passes when the mounted component
 emits it; the harness records outputs on `window.__etDesignEmits`. It fails on an app element whose design element
 declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.
+States run in batches of a few with a fresh browser each, so a part with many states does not exhaust memory.
 It needs no go. `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
+
+`et design actions [<layer>/<name>] --product app-a --live [--url …]` runs the same check on the app's real pages
+instead of the part harness. It needs a development build (`window.ng`) and the product's live spec
+(`"harness": { …, "live": "apps/my-app/design-live.json" }`) with a `"shell"` selector of the app's shell component,
+for example `"shell": "app-shell-page"`. On the first state of each live page it presses every control the shell
+component's view owns, and every control in an overlay, with click, Enter and Space, and passes when the page design
+declares the action and the press reaches it: the shell output fires, or the declared state's `aria-expanded` values
+show. It then compares each control's outcome across pages (outputs, expanded controls, a gained `aria-current`, added
+and removed controls) and prints one `drift` line naming each page when they differ. With a part it presses only the
+controls that part draws.
 
 The harness route reads its parts from a generated map. A product names its app and the map file in `config.json`,
 `"harness": { "app": "apps/my-app", "map": "apps/my-app/src/app/design-harness/design-harness-parts.ts" }`, and

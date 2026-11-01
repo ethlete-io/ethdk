@@ -23,6 +23,7 @@ describe('liveSpecProblemOf', () => {
     expect(
       liveSpecProblemOf({
         host: 'app-shell',
+        shell: 'app-shell-page',
         frame: 'live/frame.png',
         pages: {
           'pages/start': {
@@ -54,6 +55,7 @@ describe('liveSpecProblemOf', () => {
     [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', pan: { x: 1 } } } } } }, 'pan must be'],
     [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', click: 'x' } } } } }, 'click must be'],
     [{ ...SPEC, frame: 1 }, 'frame must name a PNG'],
+    [{ ...SPEC, shell: 1 }, 'shell must be a selector'],
     [{ host: 'a', pages: { 'pages/home': { host: 1, states: {} } } }, 'host must be a selector'],
     [{ host: 'a', pages: { 'pages/home': { answers: { '/x': 1 }, states: {} } } }, 'pages/home: answers must map'],
     [{ host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', invoke: 1 } } } } }, 'invoke must be'],

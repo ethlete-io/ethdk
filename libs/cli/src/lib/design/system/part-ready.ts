@@ -93,6 +93,7 @@ export const markPartReady = async (options: {
   by: unknown;
   pointsOf: () => Promise<OpenPoint[] | ReadyRefusal>;
   actionsOf: () => Promise<string[] | ReadyRefusal>;
+  actionsNote?: string;
   at?: string;
 }): Promise<PartReady | ReadyRefusal> => {
   const { product, part, hash, by } = options;
@@ -122,7 +123,7 @@ export const markPartReady = async (options: {
   if (actions.length > 0)
     return {
       status: 422,
-      error: `${part} fails ${actions.length} action check${actions.length === 1 ? '' : 's'} - fix them before ready`,
+      error: `${part} fails ${actions.length} action check${actions.length === 1 ? '' : 's'} - fix them before ready${options.actionsNote ? ` (${options.actionsNote})` : ''}`,
       actions,
     };
 

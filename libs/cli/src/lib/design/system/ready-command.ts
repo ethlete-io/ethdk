@@ -1,4 +1,4 @@
-import { partActionFailuresOf } from './actions-command';
+import { PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { openPointsText } from './open-points';
 import { drawnPartPointsOf, markPartReady, readyPartOf } from './part-ready';
 import { partKeyOf } from './resolve-product';
@@ -64,6 +64,7 @@ export const designReady = async (options: { target: string; argv: string[]; inv
         ? failures
         : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
     },
+    ...(args.values['--url'] ? {} : { actionsNote: PART_HARNESS_ONLY }),
   });
 
   if ('status' in marked) {

@@ -6,7 +6,9 @@ import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { openPointsAnswer, partReadyAnswer } from '../studio-api';
-import { checkActions, partActionFailuresOf } from './actions-command';
+import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
+import { harnessMapOf, writeHarnessMap } from './harness-map';
+import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
 import { readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
 import { markPartGo } from './part-go';
@@ -184,7 +186,10 @@ describe('part ready', () => {
 
     expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
       status: 422,
-      body: { error: 'components/chip fails 1 action check - fix them before ready', actions: failed },
+      body: {
+        error: `components/chip fails 1 action check - fix them before ready (${PART_HARNESS_ONLY})`,
+        actions: failed,
+      },
     });
 
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
@@ -197,7 +202,19 @@ describe('part ready', () => {
       }),
     ).toBe(1);
     expect(lines).toContain(`  ${failed[0]}`);
+    expect(lines).toContain(`components/chip fails 1 action check - fix them before ready (${PART_HARNESS_ONLY})`);
+
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
+
+    expect(
+      await designReady({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--by', 'tom', '--url', 'http://localhost:1'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
     expect(lines).toContain('components/chip fails 1 action check - fix them before ready');
+    expect(partActionFailuresOf).toHaveBeenLastCalledWith(expect.objectContaining({ url: 'http://localhost:1' }));
 
     vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ unavailable: 'no harness' });
 
@@ -233,5 +250,62 @@ describe('part ready', () => {
     expect(check).toHaveBeenCalledWith(
       expect.objectContaining({ part: 'components/chip', url: 'http://localhost:1', only: null }),
     );
+  });
+
+  it('adds the failed live lines when ready runs with a url, and skips the live check without one', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+
+    const config = {
+      products: { 'app-a': { harness: { app: 'apps/a', map: 'apps/a/harness.ts', live: 'apps/a/live.json' } } },
+    };
+
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "@Component({ selector: 'app-chip', template: '' })\nexport class ChipComponent {}\n",
+    );
+    writeFileSync(
+      join(target, 'apps/a/live.json'),
+      JSON.stringify({ host: 'app-shell', shell: 'app-shell-page', pages: {} }),
+    );
+
+    const product = resolveProduct({ target, name: 'app-a', config: config.products['app-a'] });
+    const map = harnessMapOf({ target, product });
+
+    if (map === null || typeof map === 'string') throw new Error(`no harness map: ${map}`);
+
+    writeHarnessMap(map);
+
+    const check = vi.fn<typeof checkActions>(async () => ({ lines: [], pictures: null }));
+    const checkLive = vi.fn<typeof checkLiveActions>(async () => ({
+      lines: [
+        { page: 'pages/home', element: 'button "remove"', input: 'click', failure: null, parts: [] },
+        {
+          page: 'drift',
+          element: 'button "remove"',
+          input: 'Enter',
+          failure: 'behaves differently per page',
+          parts: [],
+        },
+      ],
+    }));
+    const options = { target, config, product, part: 'components/chip', check, checkLive };
+
+    expect(await failuresOf({ ...options, url: 'http://localhost:1' })).toEqual([
+      'live drift button "remove" Enter FAILED behaves differently per page',
+    ]);
+    expect(checkLive).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:1' }),
+    );
+
+    checkLive.mockClear();
+
+    expect(
+      await failuresOf({ ...options, start: async () => ({ url: 'http://localhost:2', stop: async () => undefined }) }),
+    ).toEqual([]);
+    expect(checkLive).not.toHaveBeenCalled();
   });
 });

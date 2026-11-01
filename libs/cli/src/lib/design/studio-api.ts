@@ -27,7 +27,7 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
-import { partActionFailuresOf } from './system/actions-command';
+import { PART_HARNESS_ONLY, partActionFailuresOf } from './system/actions-command';
 import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
 import { goMarkOf, markPartGo } from './system/part-go';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
@@ -848,6 +848,7 @@ export const partReadyAnswer = withProduct('POST', async (found) => {
     by: body['by'],
     pointsOf: () => drawnPointsOf(found, part),
     actionsOf: () => actionFailuresOf(found, part),
+    actionsNote: PART_HARNESS_ONLY,
   });
 
   if ('status' in marked)
