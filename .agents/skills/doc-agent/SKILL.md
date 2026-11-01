@@ -38,6 +38,9 @@ coordinator/builder session.
 - Keep chat output to one short line per event. The user does not read it while away.
 - Still record findings and decisions at once, and still answer the builder.
 - When the user says they are back, send all collected questions in one round.
+- If a collected question blocks the builder (it cannot go on with any other work), play a system sound once:
+  Linux `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga`; Windows (also from WSL)
+  `powershell.exe -c "[System.Media.SystemSounds]::Exclamation.Play()"`. Then write one short line on what blocks.
 
 ## Record
 
