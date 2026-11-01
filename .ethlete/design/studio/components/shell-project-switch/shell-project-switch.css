@@ -3,4 +3,9 @@
     width: 22px;
     height: 22px;
   }
+
+  .st-shell-project-menu {
+    bottom: calc(var(--control-md) + 3 * var(--space-2));
+    transform: translate3d(0, 0, 0);
+  }
 }

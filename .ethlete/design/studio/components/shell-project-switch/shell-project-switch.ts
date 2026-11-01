@@ -79,13 +79,15 @@ export default definePart({
     const projectMenu = props.open ? await menu.render({ rows: projectRows(props.option) }) : null;
 
     return drawing({
-      body: html`<div class="box-border w-62 p-space-2 bg-et-surface-bg text-et-surface font-ui text-ui-md">
+      body: html`<div class="relative box-border w-62 p-space-2 bg-et-surface-bg text-et-surface font-ui text-ui-md">
+        ${shellProjectSwitch(props)}
         ${
           projectMenu
-            ? html`<div class="mb-space-2 shadow-none" data-et-surface="project.open">${projectMenu.body}</div>`
+            ? html`<div class="st-shell-project-menu absolute left-0 box-border w-62" data-et-surface="project.open">
+                ${projectMenu.body}
+              </div>`
             : ''
         }
-        ${shellProjectSwitch(props)}
       </div>`,
       styles: projectMenu ? shellProjectSwitchStyles + projectMenu.styles : undefined,
     });
