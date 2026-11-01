@@ -14,7 +14,7 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/shell-project-switch/shell-project-switch.component').then(
       (m) => m.ShellProjectSwitchComponent,
     ),
-  'components/tree-row': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
+  'components/tree-row': () => import('../design-parts/tree-row/tree-row.component').then((m) => m.TreeRowComponent),
   'components/zoom-chip': () =>
     import('../design-parts/zoom-chip/zoom-chip.component').then((m) => m.ZoomChipComponent),
   'elements/part-tree': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
