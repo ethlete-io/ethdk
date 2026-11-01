@@ -38,6 +38,13 @@ describe('DesignHarnessComponent', () => {
     expect(element.textContent?.trim()).toBe('Tag x');
   });
 
+  it('adds a class prop to the part element instead of setting it as an input', async () => {
+    const props = encodeURIComponent(JSON.stringify({ label: 'Tag', class: 'relative  h-56' }));
+    const element = await render(`?part=components%2Fchip&state=a&props=${props}`);
+
+    expect(element.querySelector('ethlete-fake-chip')?.className).toBe('relative h-56');
+  });
+
   it('fits the host to its content, and fills the viewport with it for a page layout', async () => {
     const fitted = await render('?part=components%2Fchip&state=a&props=%7B%7D');
 

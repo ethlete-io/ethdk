@@ -10,6 +10,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of } from 'rxjs';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
 
@@ -55,6 +56,7 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
 })
 export class DesignHarnessComponent {
   private platformLocation = inject(PlatformLocation);
+  private renderer = injectRenderer();
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   protected state = toSignal(stateOf$(this.platformLocation.search));
   protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
@@ -71,7 +73,16 @@ export class DesignHarnessComponent {
 
         const ref = outlet.createComponent(state.component);
 
-        Object.entries(state.props).forEach(([name, value]) => ref.setInput(name, value));
+        Object.entries(state.props).forEach(([name, value]) => {
+          if (name === 'class') {
+            if (typeof value === 'string')
+              this.renderer.addClass(ref.location.nativeElement, ...value.split(/\s+/).filter(Boolean));
+
+            return;
+          }
+
+          ref.setInput(name, value);
+        });
       });
     });
   }
