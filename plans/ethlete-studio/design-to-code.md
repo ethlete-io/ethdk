@@ -987,9 +987,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     part only through a kit import (imports.ts); `design check` flags a subtree that matches another part's drawn
     structure without importing it, and merge refuses it; the code check fails when a page's app component does not
     use the selector of each part its design imports. (2) Each part maps to exactly one app component
-    (implemented.json); a second component with the same template structure fails, and so does more than one module
-    with canvas input listeners. (3) `design actions --live` runs a part's action script on every page that shows
-    it (from the import graph) and on every canvas page, and fails when the results differ.
+    (implemented.json); a second component with the same template structure fails. (3) `design actions --live` runs
+    a part's action script on every page that shows it (from the import graph), and fails when the results differ.
+    The "one module owns canvas input" check is dropped: it only checks Studio's own code. All three are parked until
+    the MVP (no new tooling); the one-canvas cleanup runs now.
 86. Studio had no go, accept or ready button (builder, 2026-11-01): the server had POST /__design/part-go and
     part-ready, but no Studio screen called them; accept had no route. Per part, Studio showed only the open-points
     chip. Fixed in 4f8a7b4a3 and 6f28013b2 (part view bar: "Go geben" and "Änderung abnehmen", German refusals); not
