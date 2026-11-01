@@ -23,7 +23,7 @@ const content = html`<div class="h-full box-border flex flex-col gap-space-4 ${p
 export default definePart<FlowProps>({
   note: 'Flows as a canvas with a page header: a flat list of the flows in the side panel, the open flow name as the header title with the size picker at its right end, and the flow as a graph on the canvas: frames in columns along the lines, a branch on its own row, every line an elbow arrow with its label above the last segment.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
-  implements: { route: '/', component: 'apps/ethlete-studio/src/app/system-view/flow-view.component.ts' },
+  implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/flows-page/flows-page.component.ts' },
   states: { flow: { flow: 'open' }, empty: { flow: 'none' } },
   render: async ({ flow }) => {
     const list = await flatFlowList();

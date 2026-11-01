@@ -24,7 +24,7 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/shell-main/shell-main.component').then((m) => m.ShellMainComponent),
   'elements/studio-menu': () =>
     import('../design-parts/studio-menu/studio-menu.component').then((m) => m.StudioMenuComponent),
-  'pages/flows': () => import('../system-view/flow-view.component').then((m) => m.FlowViewComponent),
+  'pages/flows': () => import('../design-parts/flows-page/flows-page.component').then((m) => m.FlowsPageComponent),
   'pages/inbox': () => import('../design-parts/inbox/inbox.component').then((m) => m.InboxComponent),
   'pages/inventory': () => import('../system-view/inventory-view.component').then((m) => m.InventoryViewComponent),
   'pages/merge': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
