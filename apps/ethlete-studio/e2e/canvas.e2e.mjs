@@ -274,6 +274,71 @@ const CASES = [
     },
   },
   {
+    name: 'selected frame draws the selection outline',
+    run: async (page, state) => {
+      if (!state.frame) return { ok: false, detail: 'no frame point' };
+      await page.mouse.click(state.frame.x, state.frame.y);
+      await settle(page);
+      const outline = await page.evaluate(
+        ({ CANVAS }) => {
+          const canvas = [...document.querySelectorAll(CANVAS)].sort(
+            (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+          )[0];
+          const border = canvas?.querySelector('[data-selected] [data-frame-border]');
+
+          if (!border) return null;
+
+          const style = getComputedStyle(border);
+          const box = border.getBoundingClientRect();
+          const host = border.closest('[data-selected]').getBoundingClientRect();
+
+          return {
+            width: style.outlineWidth,
+            style: style.outlineStyle,
+            color: style.outlineColor,
+            fills: Math.abs(box.width - host.width) < 1 && Math.abs(box.height - host.height) < 1,
+          };
+        },
+        { CANVAS },
+      );
+
+      return {
+        ok: !!outline && outline.style === 'solid' && Number.parseFloat(outline.width) > 1 && outline.fills,
+        detail: JSON.stringify(outline),
+      };
+    },
+  },
+  {
+    name: 'hover alone draws no frame border',
+    run: async (page, state) => {
+      if (!state.frame || !state.empty) return { ok: false, detail: 'no frame or empty point' };
+      const edges = () =>
+        page.evaluate(
+          ({ FRAME, index }) => {
+            const frame = [...document.querySelectorAll(FRAME)][index];
+
+            return [frame, ...frame.querySelectorAll('*')].map((element) => {
+              const style = getComputedStyle(element);
+
+              return `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor} | ${style.boxShadow} | ${style.borderColor}`;
+            });
+          },
+          { FRAME, index: state.frame.index },
+        );
+
+      await page.mouse.move(state.empty.x, state.empty.y);
+      await settle(page);
+      const before = await edges();
+
+      await page.mouse.move(state.frame.x, state.frame.y);
+      await settle(page);
+      const after = await edges();
+      const changed = after.flatMap((edge, index) => (edge === before[index] ? [] : [`${before[index]} -> ${edge}`]));
+
+      return { ok: changed.length === 0, detail: changed.length ? changed.join('; ') : 'unchanged' };
+    },
+  },
+  {
     name: 'arrow key pans',
     run: async (page, state) => {
       if (!state.empty) return { ok: false, detail: 'no empty point' };

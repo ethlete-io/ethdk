@@ -49,6 +49,7 @@ import {
 import { Rect, Size } from '../canvas-math';
 import { paintedFrame$ } from '../frame-paint';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
+import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
 import { FAILED_SHOT_SIZE, ShotStateComponent, ShotStateDirective } from './shot-state';
 
@@ -276,19 +277,24 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       <div class="absolute inset-0 size-full border-0"></div>
     }
     @for (box of borderBoxes(); track $index) {
-      <div
+      <ethlete-canvas-frame-border
         [style.left.px]="box?.x ?? 0"
         [style.top.px]="box?.y ?? 0"
         [style.width.px]="box ? width() : null"
         [style.height.px]="box ? height() : null"
         [class.size-full]="!box"
-        class="pointer-events-none absolute outline-[calc(0.1rem*var(--et-design-canvas-label-scale))] outline-(--et-surface-border-solid) outline-solid group-data-active/frame:outline-dashed group-data-selected/frame:outline-[calc(0.2rem*var(--et-design-canvas-label-scale))] group-data-selected/frame:outline-(--et-theme-color-primary-solid)"
-        data-frame-border
-      ></div>
+      />
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent, ShotStateDirective, ShotStateComponent],
+  imports: [
+    NgTemplateOutlet,
+    ProvideColorDirective,
+    CanvasFrameBorderComponent,
+    CanvasFrameGridComponent,
+    ShotStateDirective,
+    ShotStateComponent,
+  ],
   host: {
     class:
       'group/frame absolute block bg-(--et-surface-background-solid) data-empty:bg-transparent data-schemed:bg-transparent data-unsized:pointer-events-none data-unsized:opacity-0 data-rejected:opacity-40',
