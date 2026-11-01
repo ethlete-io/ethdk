@@ -1075,6 +1075,8 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     state, with a stubbed picture. Fix (any project): compare reads the states with and without the variant; a state
     only in the variant is a changed row with only an "after" picture, a state only in the product one with only
     "now"; the app asks for the compare when the preview lists any changed or affected part.
+99. The part tree loses its scroll position on reload (Tom, 2026-11-01, collected for after MVP). Cause and the tool
+    lesson: open, asked the builder. Low priority.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
