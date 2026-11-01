@@ -11,8 +11,10 @@ import {
   ActionElement,
   actionScanScriptOf,
   componentSelectorOf,
+  drawsStateAlreadyOf,
   embeddedOwnersScriptOf,
   embeddersOf,
+  openedFromOf,
   pairElementsOf,
   parseAction,
   resolveActionOf,
@@ -76,6 +78,40 @@ describe('actions', () => {
       }),
     ).toEqual(['elements/part-tree']);
     expect(embeddersOf({ part: 'components/shell-collapse', controls: { 'elements/shell': 'broken' } })).toEqual([]);
+  });
+
+  it('resolves a state an embedded part already draws against the page that has it too', () => {
+    const page = { part: 'elements/part-b', states: ['open', 'picker'] };
+    const owners = [{ part: 'components/part-a', states: ['closed', 'open'] }];
+
+    expect(resolveActionOf({ value: 'open', owners, page, settled: ['components/part-a'] }).owner).toBe(
+      'elements/part-b',
+    );
+    expect(resolveActionOf({ value: 'closed', owners, page, settled: ['components/part-a'] }).owner).toBe(
+      'components/part-a',
+    );
+  });
+
+  it('tells a state whose expanded controls the start drawing already shows', () => {
+    expect(drawsStateAlreadyOf({ expected: { 'button "A"': 'true' }, current: { 'button "A"': 'true' } })).toBe(true);
+    expect(drawsStateAlreadyOf({ expected: { 'button "A"': 'true' }, current: { 'button "A"': 'false' } })).toBe(false);
+    expect(drawsStateAlreadyOf({ expected: {}, current: {} })).toBe(false);
+  });
+
+  it('expects a surface opened from another state over that state, with the opening props only', () => {
+    const states = {
+      rest: { panel: 'open' },
+      picker: { panel: 'open', picker: 'open' },
+      stopped: { panel: 'open', server: 'stopped' },
+      gone: { picker: 'open' },
+    };
+    const open = { control: 'project', from: 'rest' };
+
+    expect(openedFromOf({ goal: 'picker', start: 'stopped', states, open })).toEqual({ picker: 'open' });
+    expect(openedFromOf({ goal: 'picker', start: 'rest', states, open })).toBeNull();
+    expect(openedFromOf({ goal: 'picker', start: 'picker', states, open })).toBeNull();
+    expect(openedFromOf({ goal: 'picker', start: 'stopped', states, open: undefined })).toBeNull();
+    expect(openedFromOf({ goal: 'gone', start: 'stopped', states, open })).toBeNull();
   });
 
   it('resolves a state declared inside an embedded part against the innermost part that has it, the page last', () => {

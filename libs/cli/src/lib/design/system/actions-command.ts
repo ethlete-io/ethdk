@@ -15,11 +15,13 @@ import {
   ActionOutcome,
   actionScanScriptOf,
   componentSelectorOf,
+  drawsStateAlreadyOf,
   elementNameOf,
   embeddedOwnersScriptOf,
   embeddersOf,
   listenEmbeddedScriptOf,
   pairElementsOf,
+  openedFromOf,
   resolveActionOf,
   targetStateOf,
 } from './actions';
@@ -268,9 +270,10 @@ export const checkActions = async (options: {
 
     let { queue, shooter } = await freshBrowser();
     const designs = new Map<string, Picture>();
-    const draw = async (state: string) => {
+    const draw = async (state: string, opened: Record<string, unknown> | null = null) => {
+      const key = opened === null ? state : `${state}\n${JSON.stringify(opened)}`;
       const drawn =
-        designs.get(state) ??
+        designs.get(key) ??
         (await shooter.pictureOf({
           product: product.name,
           part,
@@ -282,10 +285,11 @@ export const checkActions = async (options: {
           bare: true,
           emptySlots: true,
           checker: true,
+          ...(opened && { compose: { [part]: opened } }),
           params: new URLSearchParams(),
         }));
 
-      designs.set(state, drawn);
+      designs.set(key, drawn);
 
       return drawn;
     };
@@ -507,8 +511,21 @@ export const checkActions = async (options: {
           });
         }
         const owners = drawn ? await Promise.all(drawn.owners.map(embeddedOf)) : [];
+        const value = drawn?.action?.trim() ?? '';
+        const settled: string[] = [];
+
+        for (const candidate of owners)
+          if (
+            candidate.states.includes(value) &&
+            drawsStateAlreadyOf({
+              expected: await expectedOf(candidate.part, value),
+              current: await expectedOf(part, state),
+            })
+          )
+            settled.push(candidate.part);
+
         const { action, owner } = drawn
-          ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names } })
+          ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names }, settled })
           : { action: null, owner: part };
         const embeddedState = owners.find((candidate) => candidate.part === owner);
         const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
@@ -535,7 +552,8 @@ export const checkActions = async (options: {
             action.kind === 'state'
               ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
               : '';
-          const goalPicture = goal === '' || embeddedState ? null : await draw(goal);
+          const opened = goal === '' ? null : openedFromOf({ goal, start: state, states, open: opens[goal] });
+          const goalPicture = goal === '' || embeddedState ? null : await draw(opened ? state : goal, opened);
 
           try {
             const run = await queue.run((browser) =>

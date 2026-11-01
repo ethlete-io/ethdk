@@ -109,20 +109,64 @@ export const embeddedOwnersScriptOf = (part: string) => `(() => {
 
 /**
  * Where a declared action resolves: an output against the components of the embedded parts that draw the element and
- * of the page; a state against the innermost of those parts that has it, the page last.
+ * of the page; a state against the innermost of those parts that has it, the page last. An embedded part in `settled`
+ * already draws that state, so the action names it only when the page has no such state.
  */
 export const resolveActionOf = (options: {
   value: string | null;
   owners: { part: string; states: readonly string[] }[];
   page: { part: string; states: readonly string[] };
+  settled?: readonly string[];
 }): { action: DeclaredAction | string | null; owner: string } => {
-  const { value, owners, page } = options;
+  const { value, owners, page, settled = [] } = options;
   const trimmed = value?.trim() ?? '';
+  const having = owners.filter((candidate) => candidate.states.includes(trimmed));
   const owner = trimmed.startsWith('emit:')
     ? page
-    : (owners.find((candidate) => candidate.states.includes(trimmed)) ?? page);
+    : (having.find((candidate) => !settled.includes(candidate.part)) ??
+      (page.states.includes(trimmed) ? page : (having[0] ?? page)));
 
   return { action: parseAction(value, owner.states), owner: owner.part };
+};
+
+/** Whether a state's `aria-expanded` controls all show already in the drawing a press starts from. */
+export const drawsStateAlreadyOf = (options: { expected: Record<string, string>; current: Record<string, string> }) => {
+  const keys = Object.keys(options.expected);
+
+  return keys.length > 0 && keys.every((key) => options.current[key] === options.expected[key]);
+};
+
+/**
+ * The props a press from `start` must reach when it opens the surface state `goal` that `open` clicks open from
+ * another state: `start`'s own props with the props that tell `goal` from `open.from`; `null` where `goal` itself is
+ * the expected drawing or the opening removes a prop.
+ */
+export const openedFromOf = (options: {
+  goal: string;
+  start: string;
+  states: Record<string, unknown>;
+  open: { from: string } | string | undefined;
+}): Record<string, unknown> | null => {
+  const { goal, start, states, open } = options;
+
+  if (open === undefined || typeof open === 'string' || start === goal || start === open.from) return null;
+
+  const recordOf = (state: string) => {
+    const props = states[state];
+
+    return typeof props === 'object' && props !== null ? (props as Record<string, unknown>) : {};
+  };
+  const target = recordOf(goal);
+  const from = recordOf(open.from);
+  const own = recordOf(start);
+  const keys = [...new Set([...Object.keys(target), ...Object.keys(from)])].filter(
+    (key) => JSON.stringify(target[key]) !== JSON.stringify(from[key]),
+  );
+
+  if (keys.length === 0 || keys.some((key) => !(key in target))) return null;
+  if (keys.every((key) => JSON.stringify(own[key]) === JSON.stringify(target[key]))) return null;
+
+  return Object.fromEntries(keys.map((key) => [key, target[key]]));
 };
 
 /** The element selector of the Angular component `source` declares, or `null` without one. */
