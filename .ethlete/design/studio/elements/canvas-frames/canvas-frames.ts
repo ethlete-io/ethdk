@@ -1,4 +1,4 @@
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, slot } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
 import zoomChip from '@system/components/zoom-chip';
@@ -125,6 +125,7 @@ const defaultFrames: Props = {
 };
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames.component.ts',
   note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
@@ -284,7 +285,10 @@ export default definePart({
       { cellWidth: '120px', place: 'center' },
     );
     return drawing({
-      body: await canvasView([canvasFrame(part, grid)], zoom, { target, interaction }),
+      body: await canvasView([html`<div class="contents" ${slot('frames')}>${canvasFrame(part, grid)}</div>`], zoom, {
+        target,
+        interaction,
+      }),
       styles: canvasFrameStyles,
     });
   },
