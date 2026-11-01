@@ -287,6 +287,10 @@ counts as `bg-surface-raised`. It fails with `DENIED-STYLESHEET` when the produc
 outside `foundations/`, define what would expose a denied name: a custom property, a `--color-*` theme
 value, an `@utility` or a class rule. A sketch fails only on a denied class it adds. `sketch ready`, `sketch merge` and `design accept` refuse on all three rules.
 
+A product that sets `"nativeTitle": "deny"` in its config also fails `et design check` with `NATIVE-TITLE` on a native `title`
+attribute on an HTML element in the markup strings of its design files, with the line; elements with a dash in
+their name are components and pass. Off when the flag is left out.
+
 `et design check` fails with `UTILITY-CSS` when the CSS of a part outside `foundations/` holds a
 declaration that a Tailwind utility of the product draws: a layout keyword such as `display: flex`, or
 the value of a token that a `@theme` block registers. Put the utility in the markup. A rule whose
