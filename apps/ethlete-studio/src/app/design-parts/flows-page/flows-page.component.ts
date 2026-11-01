@@ -248,6 +248,7 @@ export class FlowsPageComponent {
   private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
   private world = viewChild<ElementRef<HTMLElement>>('world');
 
+  private pickedFlow: string | null = null;
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
   protected readonly LABELS = STUDIO_LABELS.flows;
   protected readonly ZOOM_STEP = ZOOM_STEP;
@@ -319,6 +320,7 @@ export class FlowsPageComponent {
 
   public constructor() {
     afterRenderEffect(() => this.mountCamera());
+    afterRenderEffect(() => this.resetOnPick());
   }
 
   public zoomBy(factor: number) {
@@ -335,6 +337,18 @@ export class FlowsPageComponent {
 
   protected pickPreset(value: unknown) {
     if (typeof value === 'string') this.presetChange.emit(value);
+  }
+
+  private resetOnPick() {
+    const selected = this.selected();
+    const stage = this.stage()?.nativeElement;
+    const previous = this.pickedFlow;
+
+    this.pickedFlow = selected;
+
+    if (previous === null || previous === selected || !this.canvas || !stage) return;
+
+    this.canvas.reset({ x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 });
   }
 
   private mountCamera() {

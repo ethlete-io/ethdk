@@ -68,4 +68,16 @@ describe('FlowsPageComponent', () => {
 
     expect(element.querySelector('[role="combobox"]')?.getAttribute('aria-label')).toBe('Bildschirmgröße');
   });
+
+  it('resets the camera when another flow is picked', async () => {
+    const { fixture, viewport, world } = await render();
+
+    viewport?.dispatchEvent(new WheelEvent('wheel', { deltaX: 300, deltaY: 40, cancelable: true }));
+    expect(world?.style.transform).toBe('translate(-300px, -40px) scale(1)');
+
+    fixture.componentRef.setInput('selected', 'Kommentar beantworten');
+    await fixture.whenStable();
+
+    expect(world?.style.transform).toBe('translate(0px, 0px) scale(1)');
+  });
 });

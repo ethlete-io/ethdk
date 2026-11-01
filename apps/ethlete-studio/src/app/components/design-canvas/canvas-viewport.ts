@@ -18,7 +18,12 @@ export type CanvasViewportOptions = {
   onPaint?: (camera: Camera, frames: Rect[]) => void;
 };
 
-export type CanvasViewport = { camera: () => Camera; show: (target: CameraTarget) => void };
+export type CanvasViewport = {
+  camera: () => Camera;
+  show: (target: CameraTarget) => void;
+  /** Moves the camera as the user would and stops it fitting all. */
+  reset: (camera: Camera) => void;
+};
 
 export type { Camera, CameraTarget, Rect };
 
@@ -190,5 +195,5 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   settle();
   void document.fonts.ready.then(settle);
 
-  return { camera: () => camera, show };
+  return { camera: () => camera, show, reset: move };
 };
