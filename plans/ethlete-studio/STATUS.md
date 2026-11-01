@@ -14,7 +14,7 @@ ausgeklammert.
 | ------------------------------- | ------ | --------------------------------------------------------------------------------- | ----------------- |
 | components/comment-pin          | ✅     |                                                                                   |                   |
 | components/disclosure           | ✅     |                                                                                   |                   |
-| components/tree-row             | ✅     |                                                                                   |                   |
+| components/tree-row             | ✅     | Schrift wird 13 px, dann neues „Go geben“                                         | Builder, dann Tom |
 | components/zoom-chip            | ✅     |                                                                                   |                   |
 | elements/part-tree              | ✅     |                                                                                   |                   |
 | elements/studio-menu            | ✅     |                                                                                   |                   |
@@ -26,8 +26,8 @@ ausgeklammert.
 | pages/sketches                  | ❌     | Hover-Rahmen raus aus Entwurf und App, dann Merge von pages-system und „Go geben“ | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                           | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                               | Builder           |
-| pages/start                     | ❌     | Builder ergänzt 3 Knöpfe im Entwurf, dann neues „Go geben“                        | Builder, dann Tom |
-| pages/merge                     | ❌     | Prüfung liest eingebettete Teile falsch, Builder repariert                        | Builder           |
+| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“             | Builder, dann Tom |
+| pages/merge                     | ❌     | Merge-Ansicht zeigt Vorher/Nachher nicht; Prüfung noch nicht grün                 | Builder           |
 | components/error-toast          | ❌     | Go gegeben, Prüfung läuft                                                         | Builder           |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
