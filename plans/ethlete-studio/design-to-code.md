@@ -859,6 +859,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     batches. `design complete elements/shell-main` reports DEMO-BACKDROP on every state, because div.st-shell paints
     the surface fill: Impl Q117 (Tom). Lesson: a new check must be dry-run over every existing part before it
     gates, so its false positives and its memory limit show at once.
+72. `design compare` refuses a part whose design "changed since its go - it needs a new go first" (taskPartOf gate;
+    builder, 2026-11-01, Impl Q98 5e554809b/41d7343d1 and shell-main). So a design edit blocks the compare that
+    would verify it before Tom's go, and Q98 0 px is not confirmed. Lesson: a read-only check must not sit behind an
+    approval gate; the gate belongs on the steps that change state. Tool change: Impl Q118 (Tom).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
