@@ -1,6 +1,6 @@
 {
   "components/canvas-viewport": "24c59621b0af790a",
-  "components/comment-pin": "abe6c7fc0c3b0a41",
+  "components/comment-pin": "e921df24e18554e3",
   "components/disclosure": "92834053fa3147f5",
   "components/shell-collapse": "661f6592c6280d88",
   "components/shell-project-switch": "9928826b58573f38",
@@ -18,7 +18,7 @@
   "foundations/spacing": "b8821653c3476a2d",
   "foundations/type": "55cbe2495f74530a",
   "pages/flows": "142b826a05d31fbb",
-  "pages/inbox": "48331e96cc534bae",
+  "pages/inbox": "2d8267ff43d1abba",
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "c017306ebbc49a60",
   "pages/sketches": "9e3f9d5a092a70c3",

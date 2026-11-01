@@ -1,13 +1,14 @@
 {
   "components/canvas-viewport": {
     "hash": "36e9588a6f860c36",
-    "at": "2026-11-01T22:45:47.144Z",
+    "at": "2026-11-01T22:48:40.985Z",
     "states": {
       "canvas": "817390d43b97154e",
       "canvas-focus-visible": "b86902211c3f293e"
     },
     "app": {
-      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "cc8c83cce6d327b1",
+      "apps/ethlete-studio/src/app/components/design-canvas/pointer-focus.ts": "a8eb46c7d2218e59",
+      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "cc38f17db7f2f564",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "9b2779fdd412f304",
       "libs/components/src/lib/focus-ring/focus-ring.directive.ts": "4d024884f07f2ba0",
