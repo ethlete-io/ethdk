@@ -1052,7 +1052,7 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     it (53bc9aae3). Why missed: compare renders only static states and never hovers, so a hover rule that matches the
     design gives 0 px; the e2e had no hover case. Fix: drop the hover rule in design and app, e2e case "hover alone
     draws no frame border" on System and Sketches. Tool fix (any project): `design compare` renders a hover state for
-    each part with hover rules, so Tom sees hover before the go.
+    each part with hover rules, so Tom sees hover before the go. Parked until after MVP (builder).
 97. The "2 offen" open-points chip stays pressed after click 2 closes its popup; click 3 un-presses it, click 4 opens
     again (Tom, 2026-11-01, screenshots). Cause (builder): the Studio chip keeps its own `closed` flag and never
     listens to the overlay's close; the SDK overlay closes on pointerdown and swallows the trigger click on purpose.
