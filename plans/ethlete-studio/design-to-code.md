@@ -733,6 +733,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     sits bottom right in the app and centred in the design. App follows the design (Impl Q81 rule). Lesson: a shot
     that does not wait for the data compares an empty page as fine, and hand-written live code drifts from the
     design in many small places that only a whole-page compare shows.
+54. `design check --product studio` timed out after 900 s with no DONE line (builder, 2026-11-01): the design harness
+    logs "ResizeObserver loop completed" errors without end. Cause: open, asked the builder. Lesson so far: a check
+    that never ends gives no measure at all; it must fail fast with the cause, not hang until a timeout.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
