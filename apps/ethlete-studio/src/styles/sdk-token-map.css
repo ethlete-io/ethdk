@@ -1,3 +1,7 @@
+:root {
+  --et-font-family: var(--font-ui);
+}
+
 .et-button {
   --et-button-line-height: 1.5;
   --et-button-font-size: var(--text-md);
