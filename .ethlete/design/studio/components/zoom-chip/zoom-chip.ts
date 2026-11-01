@@ -7,10 +7,17 @@ type ZoomInteraction = 'hover' | 'active' | 'focus-visible';
 
 type Props = { percent: number; class?: string; target?: ZoomControl; interaction?: ZoomInteraction };
 
+const ARIA_LABEL: Record<ZoomControl, string> = {
+  out: 'Verkleinern',
+  reset: 'Auf 100 % zoomen',
+  in: 'Vergrößern',
+  fit: 'Einpassen',
+};
+
 const chipButton = (id: ZoomControl, label: string, { target, interaction }: Props, extra?: string) => {
   const markup = button({ label, variant: 'transparent', color: 'surface', size: 'sm', class: extra }).replace(
     /^<button /,
-    `<button data-et-control="${id}" data-can-animate `,
+    `<button data-et-control="${id}" aria-label="${ARIA_LABEL[id]}" data-can-animate `,
   );
 
   return html`<span class="contents" data-camera-${id}

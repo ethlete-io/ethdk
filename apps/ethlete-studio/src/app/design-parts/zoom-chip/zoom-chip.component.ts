@@ -12,7 +12,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
       variant="transparent"
       color="surface"
       size="sm"
-      aria-label="Zoom out"
+      aria-label="Verkleinern"
     >
       −
     </button>
@@ -25,6 +25,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
       color="surface"
       size="sm"
       title="Zoom to 100 % (Shift+0)"
+      aria-label="Auf 100 % zoomen"
     >
       {{ percent() }} %
     </button>
@@ -35,7 +36,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
       variant="transparent"
       color="surface"
       size="sm"
-      aria-label="Zoom in"
+      aria-label="Vergrößern"
     >
       +
     </button>
@@ -47,6 +48,7 @@ import { AutoSurfaceDirective } from '@ethlete/core';
       color="surface"
       size="sm"
       title="Zoom to fit (Shift+1)"
+      aria-label="Einpassen"
     >
       Fit
     </button>
