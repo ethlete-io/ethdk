@@ -10,7 +10,7 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/shell-collapse/shell-collapse.component').then((m) => m.ShellCollapseComponent),
   'components/tree-row': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
   'components/zoom-chip': () =>
-    import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
+    import('../design-parts/zoom-chip/zoom-chip.component').then((m) => m.ZoomChipComponent),
   'elements/part-tree': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
   'elements/shell-main': () =>
     import('../design-parts/shell-main/shell-main.component').then((m) => m.ShellMainComponent),
