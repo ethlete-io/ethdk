@@ -3,7 +3,15 @@ import { disclosureBodyClass } from '@system/components/disclosure';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 
-export type Row = { part: string; state: string; instances: number; width: number; height: number; body: string };
+export type Row = {
+  part: string;
+  state: string;
+  instances: number;
+  width: number;
+  height: number;
+  body: string;
+  missing?: 'now' | 'after';
+};
 
 export const TARGET = { part: 'components/button', name: 'button', variant: 'b', note: 'Pill-Radius in jeder Größe' };
 
@@ -13,6 +21,15 @@ const emptySystem = embedPage('pages/system', { state: 'empty', width: 1440, hei
 export const CHANGED: Row[] = [
   { part: 'elements/canvas-frames', state: 'default', instances: 18, width: 1440, height: 560, body: frames.body },
   { part: 'pages/system', state: 'empty', instances: 1, width: 1440, height: 900, body: emptySystem.body },
+  {
+    part: 'pages/system',
+    state: 'onboarding',
+    instances: 1,
+    width: 1440,
+    height: 900,
+    body: emptySystem.body,
+    missing: 'now',
+  },
 ];
 
 export const UNCHANGED = { part: 'pages/inbox', states: ['all', 'none'] };
