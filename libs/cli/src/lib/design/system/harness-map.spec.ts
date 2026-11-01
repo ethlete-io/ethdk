@@ -59,6 +59,7 @@ describe('harness config', () => {
   it('accepts app and map repo paths with the map inside the app', () => {
     expect(harnessProblemOf(HARNESS)).toBeNull();
     expect(harnessProblemOf({ ...HARNESS, shared: ['apps/app-a/src/i18n/**'] })).toBeNull();
+    expect(harnessProblemOf({ ...HARNESS, live: 'apps/app-a/design-live.json' })).toBeNull();
   });
 
   it.each([
@@ -70,6 +71,8 @@ describe('harness config', () => {
     [{ app: 'apps/a', map: 'apps/b/parts.ts' }, 'must lie inside harness.app'],
     [{ app: 'apps/a', map: 'apps/a/parts.ts', shared: 'apps/a/i18n/**' }, 'harness.shared must be a list'],
     [{ app: 'apps/a', map: 'apps/a/parts.ts', shared: ['apps/b/i18n/**'] }, 'harness.shared "apps/b/i18n/**" must be'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', live: 'apps/b/live.json' }, 'harness.live must be'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', live: 'apps/a/live.ts' }, 'harness.live must be'],
   ])('refuses %j', (value, message) => {
     expect(harnessProblemOf(value)).toContain(message);
   });

@@ -41,9 +41,10 @@ export type DesignPreset = { width: number; height?: number };
 /**
  * The Angular app that serves a product's design harness, the part map `et design harness` writes into it, and the
  * app files the design shares with the app (`shared`, files or `<folder>/**`): a part may import them and a task may
- * change them. All repo paths inside `app`.
+ * change them. `live` is the JSON file that `et design compare --live` opens the app's real pages with. All repo paths
+ * inside `app`.
  */
-export type DesignHarness = { app: string; map: string; shared?: string[] };
+export type DesignHarness = { app: string; map: string; shared?: string[]; live?: string };
 
 /**
  * One product's design system: the render settings of a project, the product folder it extends

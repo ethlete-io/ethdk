@@ -8,6 +8,7 @@ import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
+import { shootLiveStates } from './live-compare';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
   compareLineOf,
@@ -28,9 +29,9 @@ import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>]';
+  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live]';
 
-export type StateShot = { state: string; design: Buffer; app: Buffer };
+export type StateShot = { state: string; design: Buffer; app: Buffer } | { state: string; problem: string };
 
 export type ShootStates = (options: {
   target: string;
@@ -455,7 +456,18 @@ export const comparePart: ComparePart = async (options) => {
 
   let dir: string | null = null;
 
-  for (const { state, design, app } of shot.shots) {
+  let failed = false;
+
+  for (const stateShot of shot.shots) {
+    const { state } = stateShot;
+
+    if ('problem' in stateShot) {
+      console.log(`${state} FAILED ${stateShot.problem}`);
+      failed = true;
+      continue;
+    }
+
+    const { design, app } = stateShot;
     let result: ReturnType<typeof comparePngs>;
 
     try {
@@ -476,10 +488,13 @@ export const comparePart: ComparePart = async (options) => {
 
   if (dir !== null) console.log(`pictures: ${dir}`);
 
-  return { green: dir === null, states: shot.states };
+  return { green: dir === null && !failed, states: shot.states };
 };
 
-/** `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component. */
+/**
+ * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
+ * with `--live` each live state of a page with the app's real page on the fixed sample of `harness.live`.
+ */
 export const designCompare = async (options: {
   target: string;
   argv: string[];
@@ -515,8 +530,9 @@ export const designCompare = async (options: {
     return 1;
   }
 
+  const live = args.flags.has('--live');
   const task = taskPartOf({ product, part: partKeyOf(parsed) });
-  const refusal = typeof task === 'string' ? task : harnessStaleOf({ target, product });
+  const refusal = typeof task === 'string' ? task : live ? null : harnessStaleOf({ target, product });
 
   if (typeof task === 'string' || refusal !== null) {
     console.error(refusal);
@@ -538,7 +554,7 @@ export const designCompare = async (options: {
         url,
         only: args.values['--state'] ?? null,
         preset: args.values['--preset'] ?? null,
-        shoot: options.shoot,
+        shoot: options.shoot ?? (live ? shootLiveStates : undefined),
       }),
   });
 

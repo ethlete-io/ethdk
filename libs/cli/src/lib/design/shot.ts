@@ -122,6 +122,7 @@ type Frame = {
   scheme: 'dark' | 'light' | null;
   emptySlots: string | null;
   checker: boolean;
+  pan: Pan | null;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -264,6 +265,20 @@ const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeou
 
 const CHECKER_SQUARE_PX = 8;
 
+/** Moves the elements a selector matches by `x` and `y` CSS pixels, as a canvas camera pans its content. */
+export type Pan = { selector: string; x: number; y: number };
+
+/** A frame script that moves every element of `pan.selector` by the pan, on top of its own transform. */
+export const panScriptOf = (pan: Pan) => `(() => {
+  const elements = [...document.querySelectorAll(${JSON.stringify(pan.selector)})];
+
+  if (elements.length === 0) throw new Error(${JSON.stringify(`the picture has no ${pan.selector} to pan`)});
+
+  elements.forEach((element) => {
+    element.style.translate = '${pan.x}px ${pan.y}px';
+  });
+})()`;
+
 /** Paints the compare checkerboard on the page canvas, with its origin at the shot's top left corner. */
 export const checkerScriptOf = (origin: { x: number; y: number }) => `(() => {
   const size = ${CHECKER_SQUARE_PX};
@@ -294,11 +309,13 @@ export type PartAddress = {
   emptySlots?: boolean;
   /** Draws the part over the compare checkerboard instead of a transparent page, so a background shows in the picture. */
   checker?: boolean;
+  /** Pans part of the picture before the shot, as the live compare moves the app's canvas camera. */
+  pan?: Pan | null;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots, checker } =
+  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots, checker, pan } =
     options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
@@ -327,6 +344,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       ...(bare ? ['bare'] : []),
       ...(emptySlots ? ['empty-slots'] : []),
       ...(checker ? ['checker'] : []),
+      ...(pan ? ['pan', pan.selector, pan.x, pan.y] : []),
     ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
@@ -342,6 +360,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     clip: !preset,
     emptySlots: emptySlots ? part : null,
     checker: checker ?? false,
+    pan: pan ?? null,
   };
 };
 
@@ -384,6 +403,7 @@ export const createPartShooter = (options: {
         await page.evaluate(finished);
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots));
+        if (frame.pan) await page.evaluate(panScriptOf(frame.pan));
 
         const overlay = page.locator('vite-error-overlay');
 
@@ -467,6 +487,7 @@ export const createPartShooter = (options: {
     clip?: boolean;
     emptySlots?: string | null;
     checker?: boolean;
+    pan?: Pan | null;
     want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
@@ -521,6 +542,7 @@ export const createPartShooter = (options: {
             scheme,
             emptySlots: options.emptySlots ?? null,
             checker: options.checker ?? false,
+            pan: options.pan ?? null,
           });
     }, options.want);
 
