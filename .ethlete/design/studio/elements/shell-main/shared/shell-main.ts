@@ -235,6 +235,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     return drawing({
       body: html`<div
         class="st-shell relative grid overflow-hidden bg-et-surface-bg text-et-surface font-ui text-ui-md"
+        data-et-surface
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}
       >
         ${rail(section, product, panel === 'hidden', studio, force)}
