@@ -240,7 +240,10 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
       >
         ${rail(section, product, panel === 'hidden', studio, force)}
         <div class="st-shell-stage relative min-w-0">
-          <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg" ${slot('canvas')}>
+          <main
+            class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
+            ${server ? '' : slot('canvas')}
+          >
             ${server ? serverScreen(server, log) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open')}

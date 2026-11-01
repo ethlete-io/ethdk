@@ -1591,5 +1591,12 @@
     "hash": "9cff163528746cb4",
     "at": "2026-11-01T16:34:06.950Z",
     "auto": true
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by plans/ethlete-studio/design-to-code.md Impl Q87 (Tom, 2026-11-01)",
+    "hash": "71edde6c1106bd74",
+    "at": "2026-11-01T16:39:13.194Z"
   }
 ]
