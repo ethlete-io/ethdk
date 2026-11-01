@@ -40,7 +40,7 @@ export const tomGoRefusalOf = (options: { root: string; note: string | undefined
     const decisions = git(root, ['log', '-G', `^\\s*-\\s+Impl Q${number}\\b`, '--format=%H', '--', 'plans'])
       .split('\n')
       .filter(Boolean);
-    const decision = decisions.at(-1);
+    const decision = decisions[decisions.length - 1];
 
     if (!decision) return `Impl Q${number} is not committed yet: commit the decision first`;
 
