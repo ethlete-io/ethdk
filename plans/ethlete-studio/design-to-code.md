@@ -1518,3 +1518,10 @@ forbids a restart while a sub-agent runs, so the builder stood still. Change the
 1. From 70 % (handoff mode on) start no new sub-agent. Running ones finish in peace.
 2. At 85 % stop only a sub-agent that surely hangs: no new step for more than 30 minutes. Write its remaining work into
    the handoff file; the fresh session starts it again. Never stop a working agent ("a mit stoppen klingt zu aggro").
+3. A restart waits only for sub-agents whose answer the session needs for its next step (Tom: some agents write their
+   result another way). At spawn time the session decides: answer needed, or the agent writes its own result. A
+   self-reporting agent commits its slice and writes its result to `.claude/handoffs/agent-results/<name>.md`. The
+   handoff file names these agents and their result files; the restart then starts at once. Rule 2 still applies to the
+   agents whose answer the session waits for.
+4. First check whether a background sub-agent keeps running after `/clear`. If it dies, rule 3 does not apply and only
+   rules 1 and 2 hold.
