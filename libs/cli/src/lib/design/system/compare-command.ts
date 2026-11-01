@@ -140,6 +140,41 @@ const clickOpen = async (options: {
 
 const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
+/** The number of overlay panes a design picture draws, as `<et-overlay-container>` mocks. */
+const drawnPaneCountOf = (markup: string) => markup.match(/<et-overlay-container[\s>]/g)?.length ?? 0;
+
+const PANE_TRANSITIONS = ['enter-from', 'enter-active', 'enter-to', 'leave-from', 'leave-active', 'leave-to']
+  .map((phase) => `.et-animation-${phase}`)
+  .join(', ');
+
+const SETTLED_FRAMES = 2;
+
+const settledPanesOf = async (options: { page: Page; url: string; count: number; timeout: number }) => {
+  const { page, url, count, timeout } = options;
+
+  await page
+    .waitForFunction(
+      `(() => {
+        const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})];
+        const settled =
+          panes.length >= ${count} &&
+          panes.every((pane) => !pane.matches(${JSON.stringify(PANE_TRANSITIONS)}) && !pane.querySelector(${JSON.stringify(PANE_TRANSITIONS)})) &&
+          document.getAnimations().every((animation) => animation.playState !== 'running' || animation.effect?.getTiming().iterations === Infinity);
+
+        window.__etSettledFrames = settled ? (window.__etSettledFrames ?? 0) + 1 : 0;
+
+        return window.__etSettledFrames >= ${SETTLED_FRAMES};
+      })()`,
+      undefined,
+      { timeout, polling: 'raf' },
+    )
+    .catch(() => {
+      throw new HarnessError(
+        `the harness page ${url} did not open and settle ${count} overlay pane(s) within ${timeout} ms`,
+      );
+    });
+};
+
 const FORCED_POLL_MS = 50;
 
 const escapedForRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -209,6 +244,7 @@ export const harnessShotOf = async (options: {
   forced?: ForcedElement[];
   opened?: { control: string; markup: string };
   roomAbove?: boolean;
+  panes?: number;
   timeout?: number;
 }) => {
   const { browser, url } = options;
@@ -256,6 +292,8 @@ export const harnessShotOf = async (options: {
       } else
         throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
+
+    if (options.panes) await settledPanesOf({ page, url, count: options.panes, timeout });
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0)
       return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
@@ -369,6 +407,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           size: frame.size,
           forced: forcedElementsOf(design.markup ?? ''),
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+          panes: drawnPaneCountOf(design.markup ?? ''),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }),
       );
