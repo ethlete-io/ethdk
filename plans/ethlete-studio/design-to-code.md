@@ -724,3 +724,18 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q65 system open-points popover (Tom, 2026-11-01): the design takes the real anchored dialog position: pane
   10 px below the chip bottom, arrow centred under the chip; go `--by tom`. The app does not change. If `nothing-open`
   stays flaky after this, compare waits for overlay panes (cli). Finding 34.
+- Impl Q66 flows live swap (Tom, 2026-11-01): strict swap; pins, notes, drafts and `jumpTo` on the flow canvas drop
+  for the MVP (backlog), as Impl Q55. Finding 39.
+- Impl Q67 system live swap (Tom, 2026-11-01): swap only the empty state; the live design-canvas stays (Impl Q59); the
+  open-points chip stays out until live open-points data exists.
+- Impl Q68 start in the app (Tom, 2026-11-01): when the repo has no products, the app renders the start part in place
+  of shell-main; with no repo the checkout picker stays.
+- Impl Q69 merge error (Tom, 2026-11-01): the merge design gets one error line under the Merge button (for example the
+  needs-rebase refusal); go `--by tom`. Finding 39.
+- Impl Q70 Verwerfen (Tom, 2026-11-01): one click as drawn for the MVP (git keeps the sketch history); a confirm goes
+  to the backlog. Finding 39.
+- Impl Q71 German text everywhere (Tom, 2026-11-01): Impl Q58 covers merge and every other page; go `--by tom`.
+- Impl Q72 merge unchanged rows (Tom, 2026-11-01): the merge part shows the first part only for the MVP; several parts
+  go to the backlog. Finding 39.
+- Impl Q73 inbox frames (Tom, 2026-11-01): Impl Q57 covers pages/inbox (canvas content in `slot('canvas')` as flows);
+  go `--by tom`. Finding 38.
