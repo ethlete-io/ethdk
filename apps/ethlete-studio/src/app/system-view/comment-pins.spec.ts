@@ -42,7 +42,7 @@ const frame = (id: string, variant?: string): CanvasFrame => ({
   },
 });
 
-const DU = { author: 'Du', initials: 'Du', count: 0 };
+const DU = { author: 'Du', initials: 'Du', count: 1 };
 
 describe('isQuestion', () => {
   it('is a question only when the server says the agent asked one', () => {
@@ -53,7 +53,7 @@ describe('isQuestion', () => {
 });
 
 describe('comment pins', () => {
-  it('draws the pin face from the latest sender and counts the replies', () => {
+  it('draws the pin face from the latest sender and counts all messages', () => {
     const [pin] = pinsOf(
       [frame('a')],
       numberedCommentsOf([
@@ -66,7 +66,7 @@ describe('comment pins', () => {
       ]),
     );
 
-    expect(pin).toMatchObject({ author: 'Claude', initials: 'C', agent: 'claude', count: 2 });
+    expect(pin).toMatchObject({ author: 'Claude', initials: 'C', agent: 'claude', count: 3 });
   });
 
   const comments = numberedCommentsOf([
@@ -209,10 +209,9 @@ describe('comment pins', () => {
     const tree = treeOf([part], { comments: asked });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['question']);
-    expect(pinsOf([frame('a')], asked)[0]?.dot).toBe(true);
   });
 
-  it('marks an answered thread in the tree without a dot on its pin', () => {
+  it('marks an answered thread in the tree', () => {
     const part = {
       layer: 'components',
       name: 'card',
@@ -227,7 +226,6 @@ describe('comment pins', () => {
     const tree = treeOf([part], { comments: answered });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['answered']);
-    expect(pinsOf([frame('a')], answered)[0]?.dot).toBeUndefined();
   });
 
   it('starts a draft only on a frame with a place', () => {

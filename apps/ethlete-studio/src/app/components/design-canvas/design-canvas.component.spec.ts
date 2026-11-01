@@ -48,6 +48,14 @@ describe('DesignCanvasComponent', () => {
 
   afterEach(() => vi.useRealTimers());
 
+  it('is a focusable region named like the canvas viewport part', async () => {
+    const fixture = await render([FITTED]);
+    const host: HTMLElement = fixture.nativeElement;
+
+    expect(host.getAttribute('tabindex')).toBe('0');
+    expect(host.getAttribute('aria-label')).toBe('Design Canvas');
+  });
+
   it('hides a fitted frame until its size is known', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture);

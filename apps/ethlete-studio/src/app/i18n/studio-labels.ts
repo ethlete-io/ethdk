@@ -1,4 +1,7 @@
 export const STUDIO_LABELS = {
+  canvas: {
+    label: 'Design Canvas',
+  },
   sketches: {
     discard: 'Verwerfen',
     merge: 'Merge',

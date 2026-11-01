@@ -69,6 +69,7 @@ import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
 const FLOW_SPACING = { columnGap: 280, rowGap: 120, maxColumnGap: 560 };
@@ -177,7 +178,9 @@ const isEditable = (target: EventTarget | null) =>
   imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-(--et-surface-background-solid) text-text select-none',
+      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-(--et-surface-background-solid) text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
+    tabindex: '0',
+    'aria-label': STUDIO_LABELS.canvas.label,
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',

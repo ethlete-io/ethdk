@@ -10,8 +10,6 @@ export type CanvasPin = {
   initials: string;
   agent?: AgentLogoName;
   count: number;
-  /** Marks the pin with an accent dot. */
-  dot?: boolean;
   /** CSS pixels from the frame's top left corner. */
   point?: { x: number; y: number };
 };

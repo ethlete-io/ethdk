@@ -75,8 +75,7 @@ export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): Canv
             label: String(comment.number),
             text: comment.text,
             ...senderOf(comment.replies.at(-1)?.by ?? 'user', comment.replies.at(-1)?.author),
-            count: comment.replies.length,
-            ...(isQuestion(comment) ? { dot: true } : {}),
+            count: comment.replies.length + 1,
             ...(comment.point ? { point: comment.point } : {}),
           },
         ]
