@@ -939,6 +939,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     but no accept click and no merge click. The batch file is deleted. Next builder session: check Studio for real,
     then build the missing clicks with all preconditions checked and a clear message in Studio. Finding 80 done in
     36368703a (pages-system sketch ready, with a round note) and dc276d433 (batch merges, ready hint in the refusal).
+    Correction (builder, 2026-11-01, from code): the server has `part-go` and `part-ready`, but no Studio screen calls
+    them; there is no accept path. Studio does have a merge click (sketch view, `mergeSketch$`). In progress: go and
+    accept clicks in Studio with all preconditions checked first, and a live check of the merge click.
 82. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
