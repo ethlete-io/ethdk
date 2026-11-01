@@ -299,3 +299,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   make the go stale.
 - After the MVP (Tom, 2026-11-01, Impl Q50): the design harness emits the Tailwind classes the designs use, so a
   design-only class needs no hand-written `@source inline` line in the app's `styles.css`.
+- After the MVP (Tom, 2026-11-01, Impl Q51): one shared compare rule for the corner antialias of SDK panes, so no part
+  needs the `translate3d` design fix (findings 3 and 23).

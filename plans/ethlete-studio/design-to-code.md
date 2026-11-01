@@ -624,3 +624,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q50 Tailwind source line in verify (Tom, 2026-11-01): `task --verify` allows a change to the `@source` lines
   of the app's `styles.css` in a part commit; the running cli slice (Impl Q46) builds it. The harness emitting the
   design classes itself goes to the backlog, after the MVP. Finding 20.
+- Impl Q51 studio-menu pane corners (Tom, 2026-11-01): same one-line design fix as Impl Q13,
+  `transform: translate3d(0,0,0)` on the studio-menu pane class in its design CSS; go `--by tom`. A shared compare rule
+  for SDK pane corners goes to the backlog, after the MVP. Finding 23.
