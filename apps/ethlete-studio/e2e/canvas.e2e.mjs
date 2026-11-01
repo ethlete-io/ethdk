@@ -11,7 +11,12 @@ process.env['DE_PORT'] ??= '4473';
 const PAGES = [
   { name: 'System', view: { systemProduct: 'studio', systemEntry: 'pages/system' } },
   { name: 'Sketches', view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' } },
+  { name: 'Inbox', view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true } },
 ];
+
+const NARROW = { width: 1440, height: 900 };
+const WIDE = { width: 2000, height: 1100 };
+const CHIP_INSET = 12;
 
 const CANVAS = 'ethlete-design-canvas, ethlete-canvas-viewport';
 const FRAME = 'ethlete-canvas-frame, [data-canvas-frame], [data-sk-frame]';
@@ -101,6 +106,48 @@ const probe = (page) =>
 
 const settle = (page) => page.waitForTimeout(SETTLE_MS);
 
+const ringOf = (page) =>
+  page.evaluate(
+    ({ CANVAS }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+      const transparent = /^transparent$|\/\s*0(\.0+)?\s*\)$|,\s*0(\.0+)?\s*\)$/;
+      const rings = [];
+
+      for (let at = canvas; at && at !== document.body; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        const visible =
+          style.outlineStyle !== 'none' &&
+          Number.parseFloat(style.outlineWidth) > 0 &&
+          !transparent.test(style.outlineColor.trim());
+
+        if (visible) rings.push(`${at.localName} ${style.outlineWidth} ${style.outlineColor}`);
+      }
+
+      return { focused: document.activeElement === canvas, rings };
+    },
+    { CANVAS },
+  );
+
+const noRingAfterPointer = async (page, point) => {
+  await page.mouse.click(point.x, point.y);
+  await settle(page);
+  const clicked = await ringOf(page);
+  await page.keyboard.press('Shift');
+  await settle(page);
+  const shifted = await ringOf(page);
+  await page.keyboard.press('ArrowRight');
+  await settle(page);
+  const panned = await ringOf(page);
+  const rings = [...clicked.rings, ...shifted.rings, ...panned.rings];
+
+  return {
+    ok: clicked.focused && rings.length === 0,
+    detail: `focused=${clicked.focused} click=[${clicked.rings}] shift=[${shifted.rings}] arrow=[${panned.rings}]`,
+  };
+};
+
 const drag = async (page, from, by, button = 'left') => {
   await page.mouse.move(from.x, from.y);
   await page.mouse.down({ button });
@@ -125,6 +172,60 @@ const describe = (before, after) =>
     : 'no camera';
 
 const CASES = [
+  {
+    name: 'zoom chip sits at the canvas bottom right',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page) => {
+      const placed = await page.evaluate(
+        ({ CANVAS }) =>
+          [...document.querySelectorAll('ethlete-zoom-chip')]
+            .map((chip) => ({ chip, box: chip.getBoundingClientRect() }))
+            .filter(({ box }) => box.width > 0)
+            .map(({ chip, box }) => {
+              const area = (chip.closest(CANVAS) ?? chip.offsetParent).getBoundingClientRect();
+
+              return { right: area.right - box.right, bottom: area.bottom - box.bottom, left: box.left };
+            }),
+        { CANVAS },
+      );
+      const ok =
+        placed.length > 0 &&
+        placed.every((gap) => Math.abs(gap.right - CHIP_INSET) <= 2 && Math.abs(gap.bottom - CHIP_INSET) <= 2);
+
+      return { ok, detail: JSON.stringify(placed) };
+    },
+  },
+  {
+    name: 'pointer click on an empty area keeps the ring off',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) =>
+      state.empty ? noRingAfterPointer(page, state.empty) : { ok: false, detail: 'no empty point' },
+  },
+  {
+    name: 'pointer click on a frame keeps the ring off',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) =>
+      state.frame ? noRingAfterPointer(page, state.frame) : { ok: false, detail: 'no frame point' },
+  },
+  {
+    name: 'Tab focus shows the ring',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      await settle(page);
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await settle(page);
+      const ring = await ringOf(page);
+
+      return { ok: ring.focused && ring.rings.length > 0, detail: `focused=${ring.focused} rings=[${ring.rings}]` };
+    },
+  },
   {
     name: 'left drag on an empty area pans',
     run: async (page, state) => {
@@ -253,6 +354,9 @@ const results = await withStudio(
       );
 
       for (const testCase of CASES) {
+        if (!(testCase.pages ?? ['System', 'Sketches']).includes(target.name)) continue;
+
+        await page.setViewportSize(testCase.viewport ?? NARROW);
         await page.goto(studioUrl);
         await page.waitForFunction(
           ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
