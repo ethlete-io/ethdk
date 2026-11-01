@@ -614,6 +614,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 28. pages/sketches and pages/merge link the 1300-line `sketch-view` container, while the design shows an entirely
     different layout, and the container renders blank in the harness. The design also drops features the container
     has (reject/reopen, notes, diff lists) without a decision. Lesson: a page design that removes a feature must say so.
+29. The inventory design frame embeds another page (`embedPage('pages/flows')`, an iframe), while the live view shows a
+    host screenshot `<img>`; the app can only match it by embedding the flows view at scale 0.5. Lesson: a design
+    shows what the app will render, not a live embed the app has no way to draw.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
