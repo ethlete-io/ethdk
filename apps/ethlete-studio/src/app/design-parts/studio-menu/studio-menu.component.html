@@ -8,9 +8,8 @@
   placement="right-start"
 >
   <button
-    class="size-10 p-0 [--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] aria-expanded:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
+    class="group size-10 p-0 [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
     etMenuTrigger
-    etAutoSurface
     et-button
     type="button"
     variant="transparent"
@@ -18,7 +17,14 @@
     size="sm"
     aria-label="Studio-Menü"
   >
-    <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+    <svg
+      class="[--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] group-hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] group-active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] group-aria-expanded:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))]"
+      etAutoSurface
+      width="40"
+      height="40"
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+    >
       <g color="var(--on-accent)">
         <rect width="32" height="32" rx="8" fill="var(--accent)" />
         <path
@@ -31,7 +37,7 @@
   </button>
   <ng-template etMenuSurface>
     <et-menu
-      class="box-border w-62 [--et-menu-item-font-size:var(--text-md)] [--et-menu-item-height:var(--control-md)]"
+      class="box-border w-62 text-ui-md [--et-menu-item-font-size:var(--text-md)] [--et-menu-item-height:var(--control-md)]"
       aria-label="Studio"
     >
       <et-menu-group-label>Studio</et-menu-group-label>
