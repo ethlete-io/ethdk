@@ -2,6 +2,7 @@
   .st-project-picker {
     box-shadow: 0 12px 32px var(--surface-shadow);
     bottom: calc(var(--space-3) + var(--control-md) + 3 * var(--space-2));
+    transform: translate3d(0, 0, 0);
   }
 
   .st-project-picker[data-placement='beside'] {
