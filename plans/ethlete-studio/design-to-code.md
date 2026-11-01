@@ -713,8 +713,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     button, on Flows it is a button and opens the studio menu, on Inbox it looks like a button but opens nothing.
     Wanted: on every page the logo is a button that opens the studio menu (the studio-menu part). Lesson: each live
     page wires the shell on its own, so one page can drift from the others and no check compares them; the shell
-    must have one live wiring for all pages, and the Impl Q79 page clicks must run on every page. Cause: asked from
-    the builder.
+    must have one live wiring for all pages, and the Impl Q79 page clicks must run on every page. Done 35087f019:
+    every live page wired shell-main and the logo slot itself (System: empty slot; Inbox: own button with no menu;
+    the server-down shell: no handlers); one `ethlete-shell-page` wrapper now owns the shell wiring for all pages.
+    Impl Q79 slice 2 also runs every shell control on every live page and compares the results across pages; a page
+    that differs is the drift signal.
 51. The studio-menu entries ("Einstellungen…", "Erscheinungsbild…", "Tastenkürzel…", "Hilfe", "Über Studio…") passed
     go, compare and ready, but none of them does anything (Tom, 2026-11-01). Lesson, system level: "ready" certifies
     a picture, not a working product. Every check in the chain (go, task, compare, verify, ready) looks at pixels;
