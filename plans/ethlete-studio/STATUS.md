@@ -14,7 +14,7 @@ ausgeklammert.
 | ------------------------------- | ------ | --------------------------------------------------------------------------------- | ----------------- |
 | components/comment-pin          | ✅     |                                                                                   |                   |
 | components/disclosure           | ✅     |                                                                                   |                   |
-| components/tree-row             | ✅     | Schrift wird 13 px, dann neues „Go geben“                                         | Builder, dann Tom |
+| components/tree-row             | ✅     | Studio baut wieder; Live-Shot mit 13 px fehlt noch, dann neues „Go geben“         | Builder, dann Tom |
 | components/zoom-chip            | ✅     |                                                                                   |                   |
 | elements/part-tree              | ✅     |                                                                                   |                   |
 | elements/studio-menu            | ✅     |                                                                                   |                   |
@@ -51,4 +51,10 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
-- Parallel: leere Merge-Ansicht, Schrift im Baum 13 px, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.
+- Parallel: leere Merge-Ansicht, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.
+- Shell-Teile (shell-main, shell-project-switch, pages/inbox): Prüfung wartet auf den Fix für eingebettete Teile.
+
+## Für später gesammelt
+
+- Teil-Baum verliert beim Neuladen die Scroll-Position (Befund 99).
+- Canvas in Sketches und Flow ändert sich, wenn die Seitenleiste auf- oder zugeht (Befund 100).

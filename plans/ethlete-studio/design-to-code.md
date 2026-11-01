@@ -1075,8 +1075,14 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     state, with a stubbed picture. Fix (any project): compare reads the states with and without the variant; a state
     only in the variant is a changed row with only an "after" picture, a state only in the product one with only
     "now"; the app asks for the compare when the preview lists any changed or affected part.
-99. The part tree loses its scroll position on reload (Tom, 2026-11-01, collected for after MVP). Cause and the tool
-    lesson: open, asked the builder. Low priority.
+99. The part tree loses its scroll position on reload (Tom, 2026-11-01, collected for after MVP). Cause (builder):
+    `studio-view/remembered.ts` ViewState stores openGroups, systemEntry and cameras, but no tree scroll position, so
+    the list starts at scrollTop 0. Why missed: the remembered-state specs and canvas.e2e cover only stored keys; no
+    case reloads and compares the visible scroll, and the design tool has no "state after reload" case. Tool fix (any
+    project, after MVP): a live-actions reload probe scrolls each scroll container, reloads, and compares scrollTop.
+100. In the Sketches view, hiding the sidebar changes the canvas: the frames grow and move (Tom, 2026-11-01, two
+     screenshots of pages/system round 1). Expected: the camera keeps its zoom and position when the canvas width
+     changes. The Flow view does the same (Tom). Cause and the tool lesson: open, asked the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
