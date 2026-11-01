@@ -91,19 +91,19 @@ export const canvasFrame = (name: string, body: string, width = '') =>
 type ChipState = { target?: 'out' | 'reset' | 'in' | 'fit'; interaction?: 'hover' | 'active' | 'focus-visible' };
 
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
-export const canvasView = async (frames: string[], zoom: string, chipState: ChipState = {}) => {
+export const canvasView = async (frames: string[], zoom: string, chipState: ChipState = {}, extra = '') => {
   const chip = await zoomChip.render({
     percent: parseFloat(zoom),
     class: 'absolute right-space-3 bottom-space-3',
     ...chipState,
   });
-  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden" data-et-skip="CLIPPED">
+  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden ${extra}" data-et-skip="CLIPPED">
     <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
     ${chip.body}
   </div>`;
 };
 
-type Props = { part: string; states: string[]; zoom: string } & ChipState;
+type Props = { class?: string; part: string; states: string[]; zoom: string } & ChipState;
 
 const buttonStates = {
   filled: { label: 'Save', variant: 'filled' },
@@ -122,6 +122,7 @@ const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
   zoom: '100%',
+  class: 'w-250',
 };
 
 export default definePart({
@@ -265,7 +266,7 @@ export default definePart({
     in: ZOOM,
     fit: ZOOM,
   },
-  render: async ({ part, states, zoom, target, interaction }: Props) => {
+  render: async ({ class: extra, part, states, zoom, target, interaction }: Props) => {
     const rows = await Promise.all(
       states.map(async (state) => {
         const base = buttonStates[state as keyof typeof buttonStates];
@@ -285,10 +286,15 @@ export default definePart({
       { cellWidth: '120px', place: 'center' },
     );
     return drawing({
-      body: await canvasView([html`<div class="contents" ${slot('frames')}>${canvasFrame(part, grid)}</div>`], zoom, {
-        target,
-        interaction,
-      }),
+      body: await canvasView(
+        [html`<div class="contents" ${slot('frames')}>${canvasFrame(part, grid)}</div>`],
+        zoom,
+        {
+          target,
+          interaction,
+        },
+        extra,
+      ),
       styles: canvasFrameStyles,
     });
   },
