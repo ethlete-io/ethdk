@@ -59,7 +59,7 @@ const STATUS_ITEM =
   template: `
     @if (serverDown(); as down) {
       <div
-        class="mx-auto mt-15 flex w-full max-w-180 flex-col items-start gap-2.5 px-5 text-[1.2rem] text-text-muted"
+        class="mx-auto mt-15 flex w-full max-w-6xl flex-col items-start gap-2.5 px-5 text-[1.2rem] text-text-muted"
         role="alert"
       >
         <h3 class="m-0 text-[1.4rem] text-text">The design server stopped</h3>
@@ -76,7 +76,7 @@ const STATUS_ITEM =
         </button>
       </div>
     } @else if (serverStarting()) {
-      <div class="mx-auto mt-15 w-full max-w-180 px-5">
+      <div class="mx-auto mt-15 w-full max-w-6xl px-5">
         <h3 class="m-0 text-[1.4rem]">The design server is starting</h3>
       </div>
     } @else {
