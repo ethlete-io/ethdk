@@ -753,3 +753,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   go to the backlog. Finding 39.
 - Impl Q73 inbox frames (Tom, 2026-11-01): Impl Q57 covers pages/inbox (canvas content in `slot('canvas')` as flows);
   go `--by tom`. Finding 38.
+- Impl Q74 wide flows (Tom, 2026-11-01): the flows canvas gets the same camera as the sketch `design-canvas`: pan by
+  wheel and space-drag, zoom with the zoom-chip. A flow starts at zoom 1 with its first frame at the left edge. No
+  fit-to-width scaling (a 10-page flow would be unreadable). The design does not show it, so go `--by tom`.
+- Impl Q75 phone frames (Tom, 2026-11-01): the fixed 16:10 frame box that clips a 390x844 page stays for the MVP; a
+  per-preset box ratio goes to the backlog.

@@ -309,3 +309,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   problem text shows only as the warning's title.
 - After the MVP (Tom, 2026-11-01, Impl Q66, Q70, Q72): pins, notes, drafts and `jumpTo` on the flow canvas; a confirm
   for "Verwerfen"; unchanged rows of several parts on the merge page.
+- After the MVP (Tom, 2026-11-01, Impl Q75): a per-preset frame box ratio on the flows canvas, so a phone page is not clipped to its top.
