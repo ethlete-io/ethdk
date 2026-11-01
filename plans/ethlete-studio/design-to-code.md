@@ -1116,12 +1116,19 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      panel has no label. Cause (checked by the grill session, Tom asked "demo content again?"): yes, demo content in
      the app. The pages/merge design fills the crop with a sample `button` "Prompt kopieren" (merge.ts:36), and the
      app copied it as `cropLabel = input(STUDIO_LABELS.system.copyPrompt)` in merge.component.ts:188, so every crop
-     shows that button instead of the real crop. Same class as the demo backdrops (Impl Q86). Tool lesson: open,
-     asked the builder. The "Neu in a" label is Impl Q131.
-105. components/tree-row shows a UTILITY-CSS warning in Studio after the 13 px change (Tom, 2026-11-01). Likely
-     trigger: b57fb9729 moved the text size into tree-row.css as `font-size: var(--text-md)` and `line-height:
-var(--text-md-line)`, which a utility class can express. Why missed: open, asked the builder (was
-     `design check` run on the part before the commit?).
+     shows that button instead of the real crop. Same class as the demo backdrops (Impl Q86). Why missed: DEMO-BACKDROP
+     (`demo-backdrop.ts`) reads only computed root fills, never slot text or app source; compare passes because both
+     sides draw the same sample. Tool fix (any project, after MVP): the design marks sample slot content with
+     `data-et-demo`; `design check` collects the demo texts, and a source scan flags an app string literal or input
+     default equal to a demo text of a part it implements. Later: the harness renders the app with empty inputs and
+     flags a slot that still shows a demo text. The "Neu in a" label is Impl Q131.
+105. components/tree-row shows a UTILITY-CSS warning in Studio after the 13 px change (Tom, 2026-11-01). Cause:
+     b57fb9729 moved the text size into tree-row.css as `font-size: var(--text-md)` plus its line-height. Rule hit:
+     `UTILITY-CSS ... font-size: var(--text-md) outside foundations`. Fix: the CSS drops both lines, the markup gets
+     `text-ui-md` (the app already uses it since ef47f58b8). Why missed: the Q127 agent ran only compare (53/53 ok), not
+     `design check`, and nothing gates a commit on check. Process rule: a design edit runs `design check --part` before
+     its commit. Tool fix (any project): the pre-push hook or `design compare` runs the static check problems for the
+     touched parts and stops on UTILITY-CSS.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
