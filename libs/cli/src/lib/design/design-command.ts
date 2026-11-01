@@ -51,7 +51,7 @@ const helpOf = (invocation: string) =>
     '  a drawn state or surface as complete draws it - what ready refuses on. Open points never fail.',
     '  It also lists each view of the harness app (*-view.component.ts) that no part implements and the parts',
     '  without an implements link (UNLINKED, not an open point), and ends with one',
-    '  line per part with findings and a count of the clean ones. --part keeps only that part.',
+    '  line per part with findings and a count of the clean ones, base parts included; a part with an open point is not clean. --part keeps only that part.',
     '',
     `${invocation} check --product <name>… --app-classes`,
     "  Only report the Tailwind classes in the product's harness app source (templates and class strings) that have a",
