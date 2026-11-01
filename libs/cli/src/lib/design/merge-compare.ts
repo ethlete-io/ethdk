@@ -2,6 +2,7 @@ import { PartMark, Picture } from './shot';
 import { readPartModule } from './system/list-system';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { mergePreviewOf } from './system/sketch/merge-preview';
+import { overlaySketch } from './system/sketch/overlay';
 import { Sketch } from './system/sketch/sketch';
 import { SketchVariant } from './system/system-modules';
 
@@ -10,7 +11,8 @@ export type Outline = Omit<PartMark, 'parts'>;
 /**
  * One state of a part that shows the sketched part, at the preset or width it is compared at (neither
  * for a part fitted to its content), with the outline of each instance of the sketched part now and
- * after the merge. `error` says why a side could not be drawn.
+ * after the merge. `error` says why a side could not be drawn. `missing` names the side that has no such state, which
+ * is not drawn.
  */
 export type CompareRow = {
   part: string;
@@ -18,6 +20,7 @@ export type CompareRow = {
   preset?: string;
   width?: number;
   outlines: { now: Outline[]; merged: Outline[] };
+  missing?: 'now' | 'merged';
   error?: string;
 };
 
@@ -52,7 +55,11 @@ export const drawnPair = async (
   return { now, after, same: now.png.equals(after.png) };
 };
 
-export type PartModuleLoader = (options: { file: string; product: string }) => Promise<unknown>;
+export type PartModuleLoader = (options: {
+  file: string;
+  product: string;
+  sketch: SketchVariant | null;
+}) => Promise<unknown>;
 
 const outlinesOf = (picture: Picture, target: string): Outline[] =>
   picture.marks
@@ -89,7 +96,21 @@ export const compareMerge = async (options: {
 
     if (!part) return [];
 
-    const read = await readPartModule({ part, product: product.name, load });
+    const read = await readPartModule({
+      part,
+      product: product.name,
+      load: () => load({ file: part.file, product: product.name, sketch: null }),
+    });
+    const mergedFile = overlaySketch({ product, sketch, variant }).parts.find(
+      (candidate) => partKeyOf(candidate) === key,
+    )?.file;
+    const readMerged = mergedFile
+      ? await readPartModule({
+          part: { file: mergedFile },
+          product: product.name,
+          load: () => load({ file: mergedFile, product: product.name, sketch: merged }),
+        })
+      : null;
 
     if (read.problem)
       return [{ row: { part: key, state: '', outlines: { now: [], merged: [] }, error: read.problem }, changed: true }];
@@ -100,8 +121,15 @@ export const compareMerge = async (options: {
     const at =
       picked === undefined ? {} : part.layer === 'pages' ? { preset: String(picked) } : { width: Number(picked) };
 
+    const nowStates: string[] = read.states;
+    const mergedStates: string[] = readMerged && !readMerged.problem ? readMerged.states : nowStates;
+    const states = [...nowStates, ...mergedStates.filter((state) => !nowStates.includes(state))];
+    const missingOf = (state: string) =>
+      !nowStates.includes(state) ? ('now' as const) : !mergedStates.includes(state) ? ('merged' as const) : null;
+
     return Promise.all(
-      read.states.map(async (state) => {
+      states.map(async (state) => {
+        const missing = missingOf(state);
         const draw = (drawn: SketchVariant | null, fresh: boolean) =>
           pictureOf({
             product: product.name,
@@ -116,6 +144,22 @@ export const compareMerge = async (options: {
           });
 
         try {
+          if (missing) {
+            const picture = await draw(missing === 'now' ? merged : null, false);
+            const outlines = outlinesOf(picture, target);
+
+            return {
+              row: {
+                part: key,
+                state,
+                ...at,
+                missing,
+                outlines: missing === 'now' ? { now: [], merged: outlines } : { now: outlines, merged: [] },
+              },
+              changed: true,
+            };
+          }
+
           const { now, after, same } = await drawnPair(draw, merged);
 
           return {

@@ -22,7 +22,7 @@ const affectedChangeOf = async (options: {
     size: null,
     params: new URLSearchParams(),
     pictureOf,
-    load: (part) => load({ ...part, sketch: null }),
+    load,
   });
 
   if (changed.length === 0) return null;

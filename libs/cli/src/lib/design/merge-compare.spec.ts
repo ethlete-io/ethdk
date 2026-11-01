@@ -125,6 +125,36 @@ describe('compareMerge', () => {
     expect(compared.unchanged.map(({ part, state }) => `${part} ${state}`)).toEqual(['pages/home empty']);
   });
 
+  it('draws a state only the variant or only the product has on that side alone, as a change', async () => {
+    const { product, sketch } = sketchOn('pages', 'home');
+    const drawnSides = vi.fn<PictureOf>(async ({ state, sketch: drawn }) => {
+      if ((state === 'added' && !drawn) || (state === 'removed' && drawn)) throw new Error(`no state "${state}"`);
+
+      return { png: Buffer.from('same'), marks: [] };
+    });
+    const compared = await compareMerge({
+      product,
+      sketch,
+      variant: 'a',
+      size: null,
+      params: new URLSearchParams(),
+      pictureOf: drawnSides,
+      load: async ({ sketch: drawn }) => ({
+        default: {
+          note: 'n',
+          render: () => null,
+          states: drawn ? { default: {}, added: {} } : { default: {}, removed: {} },
+        },
+      }),
+    });
+
+    expect(compared.changed).toEqual([
+      { part: 'pages/home', state: 'removed', preset: 'phone', missing: 'merged', outlines: { now: [], merged: [] } },
+      { part: 'pages/home', state: 'added', preset: 'phone', missing: 'now', outlines: { now: [], merged: [] } },
+    ]);
+    expect(compared.unchanged.map(({ state }) => state)).toEqual(['default']);
+  });
+
   it('draws a page at the asked preset and a part with widths at the asked width, else at their first', async () => {
     const { product, sketch } = sketchOn('components', 'button');
     const compareAt = (size: string) =>

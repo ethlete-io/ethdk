@@ -363,7 +363,7 @@ export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sk
       size: asked.url.searchParams.get('size'),
       params: asked.url.searchParams,
       pictureOf,
-      load: ({ file, product: name }) => load({ file, product: name, sketch: null }),
+      load,
     }),
   };
 });
