@@ -1,0 +1,42 @@
+<div [(open)]="open" [offset]="{ mainAxis: 16, crossAxis: -8 }" etMenu arrow="false" placement="top-start">
+  <button
+    class="h-control-md w-full justify-start gap-space-2 px-space-2 py-0 text-left [&>.et-button-contents]:flex-1"
+    etMenuTrigger
+    et-button
+    type="button"
+    variant="transparent"
+    color="surface"
+    size="sm"
+  >
+    <span
+      class="flex size-5.5 flex-none items-center justify-center rounded-control-sm bg-et-surface-bg font-ui-strong text-ui-xs text-et-surface"
+      etAutoSurface
+      >{{ project().charAt(0).toUpperCase() }}</span
+    ><span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-et-surface">{{ project() }}</span
+    ><svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m5.5 6 2.5-2.5 2.5 2.5" />
+      <path d="m5.5 10 2.5 2.5 2.5-2.5" />
+    </svg>
+  </button>
+  <ng-template etMenuSurface>
+    <et-menu class="box-border w-62">
+      <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
+        @for (name of projects(); track name) {
+          <et-menu-radio-item [value]="name">{{ name }}</et-menu-radio-item>
+        }
+      </et-menu-radio-group>
+      <et-menu-separator />
+      <button (click)="openProject.emit()" et-menu-item type="button">Projekt öffnen…</button>
+    </et-menu>
+  </ng-template>
+</div>
