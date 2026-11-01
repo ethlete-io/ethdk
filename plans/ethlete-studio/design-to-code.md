@@ -620,6 +620,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 30. With parallel builder subagents, `implemented.json` broke at a commit (a second entry written after the closing
     brace); repaired in 768228c78. Lesson: shared record files need a cli write path that is safe for parallel agents
     (merge, not append), and a check that every record file parses.
+31. The canvas-frames design is a static frame (CSS zoom, projected children), while the live `design-canvas` has camera
+    pan and zoom, iframe frames, pins, notes and drafts, so a swap is not possible. Lesson: a design part that stands
+    for a live tool must model its interaction, or say it is only the look.
+32. part-tree has no section level (legacy stages, per-layer "Not used in ..." sections) and draws entries as states,
+    so an entry with several frames loses its frame rows; the comment-pin design has no mark for a question that waits
+    for the user, and its "N messages" label does not match the Impl Q32 count. Lesson: a design that replaces a live
+    view needs an inventory of what the old view shows, item by item, before the freeze.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
