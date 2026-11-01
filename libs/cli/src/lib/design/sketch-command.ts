@@ -606,7 +606,7 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
     target: context.target,
     config: context.config,
     product,
-    entries: sketch.variants.map((variant) => ({ sketch, variant })),
+    entries: sketch.variants.filter((variant) => !rejectionOf(sketch, variant)).map((variant) => ({ sketch, variant })),
     drawn: false,
   });
 
@@ -696,13 +696,15 @@ const readyRefusalOf = (
 
   found.forEach(noteProblemsBefore);
 
-  const problems = found.flatMap(({ variant, problems }) =>
-    [
-      ...problems,
-      ...formatProblemsOf({ target: context.target, sketch, variant }),
-      ...(rejectionOf(sketch, variant) ? [] : unusedInVariantOf({ product, sketch, variant })),
-    ].map((problem) => lineOf(variant, problem)),
-  );
+  const problems = found
+    .filter(({ variant }) => !rejectionOf(sketch, variant))
+    .flatMap(({ variant, problems }) =>
+      [
+        ...problems,
+        ...formatProblemsOf({ target: context.target, sketch, variant }),
+        ...unusedInVariantOf({ product, sketch, variant }),
+      ].map((problem) => lineOf(variant, problem)),
+    );
 
   sketch.variants.forEach((variant) =>
     variantWarningsOf({ target: context.target, product, sketch, variant }).forEach((warning) =>

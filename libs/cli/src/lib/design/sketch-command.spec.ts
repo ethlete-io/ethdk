@@ -223,6 +223,45 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'in progress' });
   });
 
+  it('does not let a render issue in a rejected variant block ready', async () => {
+    const target = acme();
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--override',
+      '--variants',
+      'a,b',
+      '--round',
+      'R',
+      '--note',
+      'n',
+      '--product',
+      'acme',
+    );
+    write(target, 'reject', 'components/button', '--variant', 'a', '--product', 'acme');
+    vi.mocked(renderIssuesOf).mockImplementationOnce(async ({ jobs }) => ({
+      issues: jobs
+        .filter((job) => job.sketch?.variant === 'a')
+        .map((job) => ({
+          rule: 'CONTROL-PART-INPUT',
+          product: 'acme',
+          part: 'components/button',
+          state: 'default',
+          size: 'phone',
+          path: '#root > button',
+          detail: 'clipped',
+          sketch: job.sketch,
+        })),
+      warnings: [],
+      grids: [],
+      drawn: [],
+    }));
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+  });
+
   it('accepts ready with a SKIPPED line when the browser is unavailable', async () => {
     const target = acme();
     const lines = output();
