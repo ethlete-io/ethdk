@@ -24,7 +24,7 @@ const STATUS_TITLE: Record<TreeRowStatus, string> = {
 const STATUS_CLASS: Record<TreeRowStatus, string> = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
 
 const ROW_CLASS =
-  'relative flex h-5 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-[1.1rem]/[1.4rem] whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
+  'relative flex h-6 items-center font-ui gap-space-1 rounded-control-sm pr-space-2 pl-[calc(var(--space-1)+var(--depth,0)*1.6rem)] text-ui-md whitespace-nowrap outline-none cursor-default [transition:var(--transition-state)] hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]';
 
 const SELECTED_CLASS =
   'bg-et-theme/20 text-et-theme-ink hover:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_9%,transparent)] active:[background:linear-gradient(rgb(var(--et-theme-color-primary-rgb)/0.2),rgb(var(--et-theme-color-primary-rgb)/0.2)),color-mix(in_srgb,var(--et-surface-interaction-solid)_15%,transparent)]';
