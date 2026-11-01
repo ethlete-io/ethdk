@@ -1,53 +1,31 @@
-# Studio – Status (Stand: 01.11.2026, spät)
+# Studio – Status
 
-## Ziel (MVP)
+Stand: 01.11.2026
 
-Jeder Studio-Teil ist **gemerged** (Design steht) und **ready** (Code passt zum Design, keine offenen Punkte).
-Chat ist nicht im MVP.
+## Ziel
 
-## Wo wir stehen
+Studio ist fertig (MVP), wenn diese Abläufe funktionieren. Jeder Ablauf hat einen Test, der die echte App klickt.
 
-| Was                   | Stand                                  |
-| --------------------- | -------------------------------------- |
-| Studio-Teile gesamt   | 19 (8 Components, 4 Elements, 7 Pages) |
-| Design gemerged       | 18 von 19 – nur error-toast fehlt      |
-| Ready (fertig)        | 1 von 19 – nur studio-menu             |
-| Offene Fragen an dich | keine                                  |
+| #   | Ablauf                                                           | Stand |
+| --- | ---------------------------------------------------------------- | ----- |
+| 1   | Studio starten und ein Projekt wählen                            | ❌    |
+| 2   | Ein Teil im Baum öffnen und seine Zustände auf dem Canvas sehen  | ❌    |
+| 3   | Einen Sketch öffnen und die Varianten mit „Aktuell“ vergleichen  | ❌    |
+| 4   | Eine Variante mergen                                             | ❌    |
+| 5   | Einen Kommentar setzen und die Antwort des Agents im Inbox sehen | ❌    |
+| 6   | Flows ansehen                                                    | ❌    |
+| 7   | Im Inventar sehen, welcher Code zu welchem Teil gehört           | ❌    |
 
-Kurz: Das Design ist fast komplett. Die Umsetzung im Code ist fast nirgends abgenommen.
+Entwurf: Tom korrigiert die Liste. ✅ heißt, der Klick-Test läuft grün.
 
-## Was gerade nicht gut läuft
+## Regeln, bis das Ziel steht
 
-- Der Canvas in „Sketches“ verhält sich anders als in „System“: Es gibt zwei Canvas-Umsetzungen statt einer.
-- Du kannst in Studio noch nicht alles freigeben. Merge geht per Klick. Go und Accept haben noch keinen Button.
-- Viele kleine Fehler kommen erst raus, wenn du klickst. Die Prüf-Tools sehen zu wenig von der echten App.
+1. Gebaut wird nur, was einen Ablauf repariert. Neue Prozess-Werkzeuge kommen auf die Liste für später.
+2. Jedes Ding gibt es nur einmal: ein Canvas, ein Picker, keine Kopien.
+3. Jeder Fehler wird zuerst ein Test, dann wird er behoben.
+4. Der Builder wartet nicht auf Tom. Er arbeitet einen Ablauf nach dem anderen. Tom schaut, wann er Zeit hat.
+5. Tom bekommt eine kurze Runde, wenn er da ist: was jetzt geht, höchstens 3 Fragen.
 
-## Warum immer wieder dieselben Fehler
+## Gerade in Arbeit
 
-Studio erlaubt, dass eine Seite ein vorhandenes Teil neu zeichnet, statt es einzubetten. Dann entsteht eine zweite
-Code-Kopie, zum Beispiel ein zweiter Canvas oder ein zweiter Picker. Die Prüfungen sehen jedes Teil nur allein, darum
-fällt der Unterschied nie auf.
-
-Was Studio besser machen muss:
-
-- Ein Teil wird eingebettet, nicht kopiert. Studio lehnt eine Kopie ab.
-- Für jedes Verhalten gibt es genau eine Umsetzung. Eine Prüfung meldet jede zweite.
-- Die Prüfungen klicken dasselbe auf allen Seiten und vergleichen das Ergebnis.
-
-## Nächste Schritte (in dieser Reihenfolge, langsam, eins nach dem anderen)
-
-1. Freigeben per Klick in Studio (Go und Accept). Danach gibst du nichts mehr über die Kommandozeile frei.
-2. Ein einziger Canvas für System, Sketches und Flows. Linkes Ziehen verschiebt überall.
-3. Spalte „Aktuell“ im Sketch: zeigt immer einen echten Vergleich.
-4. Fehler-Toast fertig machen und mergen.
-5. Teil für Teil auf „ready“ bringen, bis 19 von 19.
-6. Danach: deine Feedback-Runde über die gesammelten Lektionen und den Backlog.
-
-## Was du tun musst
-
-Nichts, bis Schritt 1 fertig ist. Dann liegen deine Freigaben als Buttons in Studio.
-
-## Details (nur bei Bedarf)
-
-- Entscheidungen und Lektionen: `plans/ethlete-studio/design-to-code.md`
-- Später-Liste: `plans/ethlete-studio/backlog-parallel.md`
+- Ein Canvas für System, Sketches und Flows (Ablauf 2, 3, 6).
