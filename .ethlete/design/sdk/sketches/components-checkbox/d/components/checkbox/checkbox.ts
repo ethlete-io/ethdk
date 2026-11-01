@@ -8,10 +8,12 @@ import {
   checkboxGroupStyles,
   checkboxStyles,
 } from '@ethlete/components/design/checkbox';
+import { control } from '@ethlete/components/design/control';
 import { definePart, drawing } from '@design-system';
 import frame from './checkbox.css?inline';
 
-type Props = { checkbox: CheckboxMockOptions } | { group: CheckboxGroupMockOptions };
+type Props = ({ checkbox: CheckboxMockOptions } | { group: CheckboxGroupMockOptions }) &
+  Partial<CheckboxMockOptions & CheckboxGroupMockOptions>;
 
 const LABEL = 'Send me the match report';
 
@@ -75,12 +77,22 @@ const venueGroup: CheckboxGroupMockOptions = {
   options: [{ label: 'Home', checked: true }, { label: 'Away', checked: true }, { label: 'Neutral ground' }],
 };
 
+const marked = (markup: string) =>
+  markup.replace(/<(et-checkbox|et-checkbox-option|et-checkbox-group-select-all)(?=[\s>])/gu, (_, tag: string) =>
+    control(
+      `<${tag}>`,
+      tag === 'et-checkbox-option' ? 'option' : tag === 'et-checkbox' ? 'checkbox' : 'select-all',
+    ).slice(0, -1),
+  );
+
 const render = (props: Props) =>
   'group' in props
-    ? checkboxGroup(props.group)
-    : checkbox(props.checkbox).replace(
-        'class="et-choice-field-label-area',
-        'data-et-skip="CLIPPED" class="et-choice-field-label-area',
+    ? marked(checkboxGroup(props.group))
+    : marked(
+        checkbox(props.checkbox).replace(
+          'class="et-choice-field-label-area',
+          'data-et-skip="CLIPPED" class="et-choice-field-label-area',
+        ),
       );
 
 export default definePart({
@@ -138,6 +150,26 @@ export default definePart({
         Object.fromEntries(COLUMNS.map((column) => [column, stateOf(row, column)])),
       ]),
     ),
+  },
+  omits: [
+    { option: 'size', value: 'md', reason: 'The default size, which every state draws without setting it.' },
+    { option: 'variant', value: 'plain', reason: 'The default variant, which the grid draws without setting it.' },
+    { option: 'size', value: 'sm', reason: 'Not drawn in this round: sizes are a later round.' },
+    { option: 'size', value: 'lg', reason: 'Not drawn in this round: sizes are a later round.' },
+    { option: 'orientation', value: 'vertical', reason: 'Drawn as the group-* states, outside the grid.' },
+    { option: 'orientation', value: 'horizontal', reason: 'Drawn as the group-horizontal state, outside the grid.' },
+    { option: 'variant', value: 'card', reason: 'Drawn as the card-* states, outside the grid.' },
+    {
+      option: 'controlPosition',
+      value: 'start',
+      reason: 'Not drawn in this round: the card with the control at start is a later round.',
+    },
+    { option: 'controlPosition', value: 'end', reason: 'Drawn as the card-* states, outside the grid.' },
+  ],
+  controls: {
+    checkbox: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
+    option: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
+    'select-all': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
   },
   widths: [360, 640],
   render: (props: Props) =>
