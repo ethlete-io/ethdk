@@ -13,7 +13,7 @@ type Props = { open?: boolean; interaction?: SwitchInteraction; option?: OptionI
 
 const MENU_ITEM = 'data-et-slot="components/menu"';
 
-const projectRows = (option?: Props['option']): MenuMockRow[] => {
+const projectRows = (option?: Props['option'], keyboard = false): MenuMockRow[] => {
   const forced = option && option !== 'selected' ? option : undefined;
 
   return [
@@ -25,7 +25,8 @@ const projectRows = (option?: Props['option']): MenuMockRow[] => {
           label: 'ethlete-sdk',
           checked: true,
           active: !option,
-          attributes: `${MENU_ITEM} data-et-action="closed"`,
+          ...(keyboard ? { activeSource: 'keyboard' as const } : {}),
+          attributes: `${MENU_ITEM} data-et-action="closed"${keyboard ? ' data-et-force="focus-visible"' : ''}`,
         },
         {
           kind: 'radio',
@@ -75,16 +76,13 @@ const closedRows = interactionRows<Props, 'closed', SwitchInteraction>(
 
 const openRows = interactionRows<Props, 'open', SwitchInteraction>(
   { open: { open: true } },
-  { interactions: ['hover', 'active'], force },
+  { interactions: ['hover', 'active', 'focus-visible'], force },
 );
 
 const switchStates = { ...closedRows.states, ...openRows.states };
 const switchGrid = {
   columns: closedRows.grid.columns,
-  rows: {
-    ...closedRows.grid.rows,
-    open: { ...openRows.grid.rows.open, 'focus-visible': 'project.option-focus-visible' as const },
-  },
+  rows: { ...closedRows.grid.rows, ...openRows.grid.rows },
 };
 
 export default definePart({
@@ -101,11 +99,12 @@ export default definePart({
   controls: { project: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellProjectSwitchStyles,
   render: async (props: Props) => {
-    const projectMenu = props.open ? await menu.render({ rows: projectRows(props.option) }) : null;
+    const keyboard = props.open === true && props.interaction === 'focus-visible';
+    const projectMenu = props.open ? await menu.render({ rows: projectRows(props.option, keyboard) }) : null;
 
     return drawing({
       body: html`<div class="relative box-border w-62 p-space-2 text-et-surface font-ui text-ui-md">
-        ${shellProjectSwitch(props)}
+        ${shellProjectSwitch(keyboard ? { open: true } : props)}
         ${
           projectMenu
             ? html`<div class="st-shell-project-menu absolute left-0 box-border w-62" data-et-surface="project.open">
