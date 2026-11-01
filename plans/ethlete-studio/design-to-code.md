@@ -329,6 +329,10 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     pages `system`, `sketches`, `merge`, `flows`, `inventory`, `start`. Q24 count (`fe709f9d8`, not pushed) widened
     `PARTS` to base parts (34 of 81); the builder recommends a revert and a separate `DONE studio: n of 26` line,
     decision open with the grill session.
+  - In progress (builder ethlete-sdk-cf, 2026-11-01, wave 3), in parallel: record and ready comment-pin, zoom-chip,
+    canvas-viewport; cli compare gaps (d) pointer at (0,0), (e) forced-state lookup, (f) pointer-open from-state;
+    Impl Q34 studio-menu panel redraw; Impl Q35 and Q36 shell-project-switch picker and shell-project-option retire;
+    Impl Q39 tree-row live swap in `system-view`.
   - Canvas parts, partial (`817d09b9b`, `752623638`, `249d2ab66`, `3c510d2bd`, `98f24fcec`): `ZoomChipComponent` and
     `CommentPinComponent` in `design-parts/`, links and go (Impl Q28); the live canvas draws the zoom chip, not yet the
     pin. Nothing recorded: zoom-chip `out` 0 px, `reset`/`in`/`fit` fail on size rounding (173 vs 174 px), its 12
