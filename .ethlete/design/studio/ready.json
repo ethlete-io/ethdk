@@ -45,6 +45,38 @@
     "by": "claude-opus-5-5",
     "at": "2026-11-01T20:55:47.339Z"
   },
+  "components/shell-collapse": {
+    "hash": "5bd5c9ce8c762016",
+    "files": {
+      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
+      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
+      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
+      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
+      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
+      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
+      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
+      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
+      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
+      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
+      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
+      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
+      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
+      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
+      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
+      ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "4d475fcc93ed85d7",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "9dfadae50297a76a",
+      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
+      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "by": "claude-opus-5-5",
+    "at": "2026-11-01T21:12:32.886Z"
+  },
   "components/tree-row": {
     "hash": "4e54385e494600dc",
     "files": {
