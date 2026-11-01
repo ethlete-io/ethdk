@@ -1066,6 +1066,9 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     Why missed: the compare spec covers only a sketched component with users; no merge e2e. Fix (any project, now):
     merge compare also draws each changed element or page target; the view hides the disclosure at 0 states; rebase
     after the hover fix.
+    Not fixed live: after eca732f7a and "merge ok", Tom still saw an empty merge view (Tom, 2026-11-01, screenshot).
+    The fix was checked by a cli spec only. Rule (process): a "Tom can click X" message needs a headless shot of
+    that exact live Studio view with the expected content.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
