@@ -56,13 +56,20 @@ export type PartBadge =
   | 'merging';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
-type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string>; answered: ReadonlySet<string> };
+type CommentMarks = {
+  commented: ReadonlyMap<string, number>;
+  questioned: ReadonlySet<string>;
+  answered: ReadonlySet<string>;
+};
 
 const commentBadgesOf = (key: string, { commented, questioned, answered }: CommentMarks): PartBadge[] => {
   if (questioned.has(key)) return ['question'];
   if (answered.has(key)) return ['answered'];
   return commented.has(key) ? ['comment open'] : [];
 };
+
+const commentsOf = (key: string, { commented }: CommentMarks) =>
+  commented.has(key) ? { comments: commented.get(key) } : {};
 
 /** `count` is the number of wireframe kit parts a wireframe page uses. */
 export type TreeFrame = { key: string; name: string; part: string; frame: string };
@@ -73,6 +80,7 @@ export type TreeEntry = {
   name: string;
   title?: string;
   badges: PartBadge[];
+  comments?: number;
   count?: number;
   frames?: TreeFrame[];
 };
@@ -110,6 +118,7 @@ const sketchEntryOf = (
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
   title: sketch.target,
+  ...commentsOf(sketch.target, marks),
   badges: [
     merging ? 'merging' : sketch.status,
     ...commentBadgesOf(sketch.target, marks),
@@ -245,7 +254,10 @@ export const treeOf = (
     const keyOf = (comment: CommentPlace) => comment.sketch?.target ?? comment.part;
 
     return {
-      commented: new Set(own.map(keyOf)),
+      commented: own.reduce(
+        (counts, comment) => counts.set(keyOf(comment), (counts.get(keyOf(comment)) ?? 0) + 1),
+        new Map<string, number>(),
+      ),
       questioned: new Set(own.filter(isQuestion).map(keyOf)),
       answered: new Set(own.filter(isAnswered).map(keyOf)),
     };
@@ -276,6 +288,7 @@ export const treeOf = (
           ? { title: part.problems.map((found) => `${found.rule}: ${found.message}`).join('\n') }
           : {}),
         badges: badgesOf(part, { sketched, marks: partMarks }),
+        ...commentsOf(partKeyOf(part), partMarks),
         ...(isWireframe(part) ? { count: part.kitUses } : {}),
         ...(frames.length > 1 ? { frames } : {}),
       };

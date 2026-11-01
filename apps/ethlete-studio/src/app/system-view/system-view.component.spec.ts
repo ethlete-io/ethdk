@@ -171,8 +171,34 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(shell?.querySelector('nav button[aria-label="web"]')?.getAttribute('aria-current')).toBe('true');
     expect(shell?.querySelector('nav button[aria-current="page"]')?.getAttribute('aria-label')).toBe('System');
-    expect(shell?.querySelector('aside et-tree')).not.toBeNull();
+    expect(shell?.querySelector('aside [role="tree"]')).not.toBeNull();
     expect(shell?.querySelector('aside header')?.textContent?.trim()).toBe('web');
+  });
+
+  it('draws the part tree rows with the tree-row part and moves between them by keyboard', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const rows = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        'aside [role="tree"] > [role="treeitem"][ethlete-tree-row-item]',
+      ),
+    ];
+    const rating = rows.find((row) => row.textContent?.includes('rating'));
+
+    expect(rows.map((row) => [row.textContent?.trim(), row.dataset['kind']])).toEqual([
+      ['Foundations', 'group'],
+      ['tokens', 'leaf'],
+      ['Elements', 'group'],
+      ['rating', 'leaf'],
+    ]);
+    expect(rating?.getAttribute('aria-current')).toBe('true');
+    expect(rating?.querySelector('[title="1 open comments"]')).not.toBeNull();
+    expect(rating?.style.getPropertyValue('--depth')).toBe('1');
+
+    rating?.focus();
+    rating?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    await settle(fixture);
+
+    expect(document.activeElement?.textContent?.trim()).toBe('Elements');
   });
 
   it('lists the live comments in the Inbox section and opens the part of a picked one', async () => {
@@ -199,7 +225,7 @@ describe('SystemViewComponent on a reload', () => {
     await settle(fixture);
 
     expect(element.querySelector('ethlete-inbox')).toBeNull();
-    expect(element.querySelector('ethlete-shell-main aside et-tree')).not.toBeNull();
+    expect(element.querySelector('ethlete-shell-main aside [role="tree"]')).not.toBeNull();
   });
 
   it('shows a failed comment load in the Inbox and loads the list again on retry', async () => {
@@ -527,33 +553,14 @@ describe('SystemViewComponent on a merge', () => {
     root.querySelector<HTMLButtonElement>('[data-merge]')?.click();
     await settle(fixture);
 
-    expect(root.querySelector('[data-tree-merging]')?.textContent).toContain('merging');
-
     finishMerge();
     await settle(fixture);
 
-    expect(root.querySelector('[data-tree-merging]')).toBeNull();
     expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
     expect(rememberedView().systemEntry).toBe('elements/rating');
   });
 
-  it('shows the kit-part count next to a wireframe page', async () => {
-    vi.stubGlobal('fetch', (url: string) => {
-      if (url.includes('/__design/system'))
-        return json([{ ...PRODUCT, parts: [...PRODUCT.parts, { ...part('pages', 'login'), kitUses: 6 }] }]);
-      if (url.includes('/__design/calls')) return json([]);
-      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-
-      return new Promise(() => undefined);
-    });
-
-    const fixture = await mount({ systemEntry: 'pages/login' });
-    const root: HTMLElement = fixture.nativeElement;
-
-    expect(root.querySelector('[data-tree-kit-count]')?.textContent?.trim()).toBe('6');
-  });
-
-  it('marks a part changed outside a sketch in the tree and above its frame', async () => {
+  it('marks a part changed outside a sketch above its frame', async () => {
     vi.stubGlobal('fetch', (url: string) => {
       if (url.includes('/__design/system'))
         return json([{ ...PRODUCT, parts: [{ ...part('elements', 'rating'), changedOutsideSketch: true }] }]);
@@ -566,7 +573,6 @@ describe('SystemViewComponent on a merge', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const root: HTMLElement = fixture.nativeElement;
 
-    expect(root.querySelector('[data-tree-changed]')?.getAttribute('title')).toBe('changed outside a sketch');
     expect(root.querySelector('[data-changed-outside-sketch]')?.getAttribute('title')).toBe('changed outside a sketch');
   });
 });

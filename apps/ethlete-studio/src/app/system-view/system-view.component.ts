@@ -16,6 +16,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
+import {
+  TreeRow as TreeRowItem,
+  TreeRowItemComponent,
+  TreeRowStatus,
+} from '../design-parts/tree-row/tree-row-item.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
@@ -45,6 +50,7 @@ import {
 import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
+  PartBadge,
   TreeEntry,
   TreeFrame,
   TreeGroup,
@@ -96,9 +102,6 @@ type Reading = { products: ListedProduct[]; error: string | null };
 const BADGE =
   'shrink-0 whitespace-nowrap rounded-full border border-(--et-surface-border-solid) px-1.5 py-px text-[1rem] text-(--et-surface-color-subtle-solid)';
 
-const BADGE_ACCENT =
-  'shrink-0 whitespace-nowrap rounded-full border border-(--et-theme-color-primary-solid) px-1.5 py-px text-[1rem] text-(--et-theme-color-primary-solid)';
-
 const CHANGED_OUTSIDE_SKETCH = 'changed outside a sketch';
 
 /** A product switch keeps the old read until the new product answers; that read must not show. */
@@ -109,6 +112,26 @@ const itemsOf = <T>(read: { product: string; items: T[] } | null, product: strin
 const NEW_PRODUCT = '/new';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
+
+type RowMarks = Pick<TreeRowItem, 'kind' | 'warning' | 'status' | 'comments'> & { title?: string };
+
+const GROUP_MARKS: RowMarks = { kind: 'group' };
+
+const ROW_STATUS: Partial<Record<PartBadge, TreeRowStatus>> = { 'in progress': 'in-progress', ready: 'ready' };
+
+const rowMarksOf = (entry: TreeEntry, sketchStatus: ListedSketch['status'] | undefined): RowMarks => {
+  const status =
+    entry.badges.map((badge) => ROW_STATUS[badge]).find(Boolean) ??
+    (entry.badges.includes('sketch open') && sketchStatus ? ROW_STATUS[sketchStatus] : undefined);
+  const warning = entry.badges.includes('error') ? (entry.title ?? 'error') : undefined;
+
+  return {
+    kind: entry.frames ? 'part' : 'leaf',
+    ...(warning ? { warning } : entry.title ? { title: entry.title } : {}),
+    ...(status ? { status } : {}),
+    ...(entry.comments ? { comments: entry.comments } : {}),
+  };
+};
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
@@ -122,54 +145,37 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     </ng-template>
 
     <ng-template #sideTree>
-      <et-tree
+      <div
+        #partTree="etTree"
         [dataSource]="dataSource()"
         [expandedValues]="expandedValues()"
         (expandedValuesChange)="rememberOpen($event)"
         (nodeActivate)="activate($event.value)"
-        class="p-2"
+        class="flex flex-col gap-px p-2"
         selectionMode="none"
         aria-label="Design system"
+        etTree
       >
-        <ng-template etTreeNodeDef let-node>
-          @let entry = entryOf(node.value);
-          @if (entry) {
-            <span class="flex min-w-0 items-center gap-1.5">
-              <span
-                [class.font-semibold]="entry.key === selectedKey()"
-                [style.color]="entry.key === selectedKey() ? 'var(--accent)' : null"
-                [title]="entry.title ?? ''"
-                class="min-w-0 truncate"
-              >
-                {{ node.label }}
-              </span>
-              @for (badge of entry.badges; track badge) {
-                @if (badge === 'error') {
-                  <span [class]="BADGE_ACCENT" [etProvideColor]="errorTheme()" [title]="entry.title ?? ''">error</span>
-                } @else if (badge === 'question') {
-                  <span [class]="BADGE_ACCENT" data-tree-question>question</span>
-                } @else if (badge === 'merging') {
-                  <span [class]="BADGE_ACCENT" data-tree-merging>merging</span>
-                } @else if (badge === 'changed') {
-                  <span [class]="BADGE" [title]="CHANGED_OUTSIDE_SKETCH" data-tree-changed>changed</span>
-                } @else {
-                  <span [class]="BADGE">{{ badge }}</span>
-                }
-              }
-              @if (entry.count) {
-                <span [title]="entry.count + ' wireframe kit parts'" class="ml-auto opacity-70" data-tree-kit-count>
-                  {{ entry.count }}
-                </span>
-              }
-            </span>
-          } @else {
-            {{ node.label }}
-            @if (countOf(node.value); as count) {
-              <span class="ml-auto opacity-70">{{ count }}</span>
-            }
-          }
-        </ng-template>
-      </et-tree>
+        @for (row of partTree.visibleRows(); track row.node.value) {
+          @let marks = marksOf(row.node.value);
+          <div
+            [row]="row"
+            [item]="{
+              label: row.node.label,
+              depth: row.level - 1,
+              kind: marks.kind,
+              expanded: row.isExpanded,
+              selected: row.node.value === selectedKey(),
+              warning: marks.warning,
+              status: marks.status,
+              comments: marks.comments,
+            }"
+            [attr.title]="marks.title"
+            etTreeNode
+            ethlete-tree-row-item
+          ></div>
+        }
+      </div>
     </ng-template>
 
     <ng-template #themeBar>
@@ -545,6 +551,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     BUTTON_IMPORTS,
     NgTemplateOutlet,
     TREE_IMPORTS,
+    TreeRowItemComponent,
     DesignCanvasComponent,
     ProvideColorDirective,
     SketchViewComponent,
@@ -602,8 +609,6 @@ export class SystemViewComponent {
   private allRevision = computed(() => this.lists().all);
   protected readonly BADGE = BADGE;
   protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
-
-  protected readonly BADGE_ACCENT = BADGE_ACCENT;
 
   protected readonly NOTE = NOTE;
 
@@ -902,11 +907,13 @@ export class SystemViewComponent {
 
   private nodes = computed(() => {
     const entries = new Map<string, TreeEntry>();
-    const counts = new Map<string, number>();
+    const marks = new Map<string, RowMarks>();
+    const sketchStatus = new Map(this.sketches().map((sketch) => [sketch.target, sketch.status]));
     const children = new Map<string | null, TreeNode<string>[]>();
     const frames = new Map<string, TreeFrame>();
     const leaf = (entry: TreeEntry): TreeNode<string> => {
       entries.set(entry.key, entry);
+      marks.set(entry.key, rowMarksOf(entry, sketchStatus.get(entry.key)));
 
       if (!entry.frames) return { value: entry.key, label: entry.name, isLeaf: true };
 
@@ -924,21 +931,14 @@ export class SystemViewComponent {
     const branch = (node: TreeGroup | TreeSection): TreeNode<string> => {
       const sections = 'sections' in node ? (node.sections ?? []) : [];
 
-      children.set(node.key, [
-        ...node.entries.map(leaf),
-        ...sections.map((section) => {
-          counts.set(section.key, section.entries.length);
-
-          return branch(section);
-        }),
-      ]);
+      children.set(node.key, [...node.entries.map(leaf), ...sections.map(branch)]);
 
       return { value: node.key, label: node.label };
     };
 
     children.set(null, this.tree().map(branch));
 
-    return { entries, counts, children, frames };
+    return { entries, marks, children, frames };
   });
 
   /** True while the remembered entry may still be a call or a sketch whose list has not arrived. */
@@ -1229,12 +1229,8 @@ export class SystemViewComponent {
     if (comment) this.jumpTo(comment);
   }
 
-  protected entryOf(value: unknown) {
-    return typeof value === 'string' ? this.nodes().entries.get(value) : undefined;
-  }
-
-  protected countOf(value: unknown) {
-    return typeof value === 'string' ? this.nodes().counts.get(value) : undefined;
+  protected marksOf(value: string): RowMarks {
+    return this.nodes().marks.get(value) ?? GROUP_MARKS;
   }
 
   protected rememberOpen(expanded: readonly string[]) {
