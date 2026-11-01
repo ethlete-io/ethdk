@@ -1,12 +1,4 @@
 export const STUDIO_LABELS = {
-  designServer: {
-    start: 'Design-Server starten',
-    restart: 'Design-Server neu starten',
-    stop: 'Design-Server stoppen',
-    stopped: 'Design-Server gestoppt',
-    starting: 'Design-Server startet',
-    restartButton: 'Neu starten',
-  },
   canvas: {
     label: 'Design Canvas',
   },

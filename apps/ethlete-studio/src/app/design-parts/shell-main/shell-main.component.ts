@@ -1,7 +1,6 @@
 import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
@@ -36,8 +35,6 @@ export class ShellMainComponent {
   public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
   public panel = input<'open' | 'hidden'>('open');
   public projectPicker = model<'open' | 'closed'>('closed');
-  public server = input<'stopped' | 'starting' | null>(null);
-  public log = input<readonly string[]>([]);
 
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
@@ -45,10 +42,8 @@ export class ShellMainComponent {
   public collapse = output();
   public projectChange = output<string>();
   public openProject = output();
-  public restartServer = output();
 
   protected readonly SECTIONS = SECTIONS;
-  protected readonly LABELS = STUDIO_LABELS.designServer;
   protected readonly ALL_PRODUCTS_CLASS = ALL_PRODUCTS_CLASS;
 
   protected sectionClass(active: boolean) {

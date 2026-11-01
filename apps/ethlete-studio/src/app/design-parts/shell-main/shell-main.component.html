@@ -144,39 +144,7 @@
       "
       class="absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
     >
-      @if (server(); as server) {
-        <div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
-          @if (server === 'starting') {
-            <div class="mx-auto mt-15 box-border w-full max-w-6xl px-space-5">
-              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.starting }}</h3>
-            </div>
-          } @else {
-            <div
-              class="mx-auto mt-15 box-border flex w-full max-w-6xl flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
-              role="alert"
-            >
-              <h3 class="m-0 font-ui-strong text-ui-lg text-et-surface">{{ LABELS.stopped }}</h3>
-              @if (log().length) {
-                <pre
-                  class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
-                  >{{ log().join('\n') }}</pre>
-              }
-              <button
-                (click)="restartServer.emit()"
-                et-button
-                type="button"
-                variant="outline"
-                color="surface"
-                size="sm"
-              >
-                {{ LABELS.restartButton }}
-              </button>
-            </div>
-          }
-        </div>
-      } @else {
-        <ng-content />
-      }
+      <ng-content />
     </main>
     @if (panel() !== 'hidden') {
       <aside

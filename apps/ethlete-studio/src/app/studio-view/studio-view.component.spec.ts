@@ -5,7 +5,6 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { Project, Themes } from '../../host/design';
 import { resetDesignStreams } from '../../host/design-events';
 import { THEMES } from '../../themes';
-import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { NO_LIST_REVISIONS } from './list-revisions';
 import { StudioViewComponent } from './studio-view.component';
@@ -110,6 +109,9 @@ const system = (fixture: ComponentFixture<StudioViewComponent>) =>
 const button = (root: Element, text: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((found) => found.textContent?.trim() === text);
 
+const status = (fixture: ComponentFixture<StudioViewComponent>) =>
+  element(fixture).querySelector(':scope > footer')?.textContent ?? '';
+
 const mount = async () => {
   localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
 
@@ -168,6 +170,7 @@ describe('StudioViewComponent', () => {
     await settle(fixture);
 
     expect(system(fixture)?.port()).toBeNull();
+    expect(status(fixture)).toContain('No design config in /broken.');
   });
 
   it('opens the checkout picked last after a restart', async () => {
@@ -185,6 +188,15 @@ describe('StudioViewComponent', () => {
     await settle(again);
 
     expect(system(again)?.checkout()).toBe('/other');
+  });
+
+  it('reads every list again on a reload', async () => {
+    const fixture = await mount();
+
+    button(element(fixture), 'Reload')?.click();
+    await settle(fixture);
+
+    expect(system(fixture)?.lists()).toEqual({ all: 1, products: 1, calls: 1, sketches: 1, flows: 1 });
   });
 
   it('reads only the list a design server event names, once per burst, and every list after a reconnect', async () => {
@@ -217,18 +229,24 @@ describe('StudioViewComponent', () => {
     expect(projectReads()).toBe(reads + 1);
   });
 
-  it('runs the design server action of the studio menu on the stopped screen', async () => {
-    const stopped = () => ({ ...RUNNING, listening: false, exited: true, log: [] });
-
-    stubHost({ design_server_state: stopped, design_server_start: stopped });
+  it('offers Restart for a server Studio did not start and that runs an old cli', async () => {
+    stubHost({
+      design_server_state: () => ({ ...RUNNING, foreign: true, stale: true }),
+      design_server_restart: () => ({ ...RUNNING, managed: true }),
+    });
 
     const fixture = await mount();
-    const shell = fixture.debugElement.query(By.directive(ShellPageComponent)).componentInstance as ShellPageComponent;
+    const footer = () => element(fixture).querySelector('footer') as HTMLElement;
 
-    shell.action.emit({ kind: 'server', action: 'stop' });
+    expect(status(fixture)).toContain('Design server 4402 · not started by Studio · stale');
+    expect(button(footer(), 'Restart')).toBeDefined();
+
+    button(footer(), 'Restart')?.click();
     await settle(fixture);
 
-    expect(sent.some((call) => call.command === 'design_server_stop')).toBe(true);
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
+    expect(status(fixture)).toContain('Design server 4402 · running');
+    expect(button(footer(), 'Restart')).toBeUndefined();
   });
 
   it('says the design server stopped and shows its last output with a Restart', async () => {
@@ -244,11 +262,12 @@ describe('StudioViewComponent', () => {
     const fixture = await mount();
     const panel = element(fixture).querySelector('[role="alert"]');
 
-    expect(panel?.textContent).toContain('Design-Server gestoppt');
+    expect(panel?.textContent).toContain('The design server stopped');
     expect(panel?.textContent).toContain('EMFILE: too many open files');
+    expect(panel?.textContent).toContain('Raise fs.inotify.max_user_instances');
     expect(system(fixture)).toBeUndefined();
 
-    if (panel) button(panel, 'Neu starten')?.click();
+    if (panel) button(panel, 'Restart')?.click();
     await settle(fixture);
 
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
@@ -269,7 +288,7 @@ describe('StudioViewComponent', () => {
 
     const fixture = await mount();
 
-    expect(element(fixture).textContent).toContain('Design-Server startet');
+    expect(element(fixture).textContent).toContain('The design server is starting');
     expect(system(fixture)).toBeUndefined();
 
     release({ ...RUNNING, managed: true });
@@ -278,7 +297,7 @@ describe('StudioViewComponent', () => {
     expect(system(fixture)?.port()).toBe(4402);
   });
 
-  it('says the design server starts until it answers, then shows the system view', async () => {
+  it('says the design server starts until it answers, then that it runs', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 
     let answer: () => Promise<Response> = () => Promise.resolve(new Response('', { status: 500 }));
@@ -293,13 +312,16 @@ describe('StudioViewComponent', () => {
       await vi.advanceTimersByTimeAsync(10);
       await fixture.whenStable();
 
-      expect(element(fixture).textContent).toContain('Design-Server startet');
+      expect(status(fixture)).toContain('Design server 4402 · starting');
+      expect(status(fixture)).not.toContain('running');
+      expect(element(fixture).textContent).toContain('The design server is starting');
       expect(system(fixture)).toBeUndefined();
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
       await vi.advanceTimersByTimeAsync(1000);
       await fixture.whenStable();
 
+      expect(status(fixture)).toContain('Design server 4402 · running');
       expect(system(fixture)?.port()).toBe(4402);
     } finally {
       vi.useRealTimers();

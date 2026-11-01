@@ -1,16 +1,8 @@
-import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
-import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
-export type DesignServerAction = 'start' | 'restart' | 'stop';
-
-export type DesignServerStatus = 'running' | 'stopped';
-
-const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
-  running: ['restart', 'stop'],
-  stopped: ['start'],
-};
+export type StudioMenuAction = 'settings' | 'appearance' | 'shortcuts' | 'help' | 'about';
 
 @Component({
   selector: 'ethlete-studio-menu',
@@ -25,11 +17,6 @@ const SERVER_ACTIONS: Record<DesignServerStatus, DesignServerAction[]> = {
 export class StudioMenuComponent {
   public bare = input(false, { transform: booleanAttribute });
   public open = model(false);
-  public server = input<DesignServerStatus>('running');
 
-  public serverAction = output<DesignServerAction>();
-
-  protected items = computed(() =>
-    SERVER_ACTIONS[this.server()].map((action) => ({ action, label: STUDIO_LABELS.designServer[action] })),
-  );
+  public action = output<StudioMenuAction>();
 }
