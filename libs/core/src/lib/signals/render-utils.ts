@@ -1,5 +1,5 @@
 import { DestroyRef, afterNextRender, effect, inject, signal } from '@angular/core';
-import { nextFrame } from '../animations';
+import { nextFrame } from '../animations/animation-utils';
 
 export const signalIsRendered = () => {
   const isRendered = signal(false);
