@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: CLI neu bauen, Ende-zu-Ende-Prüfung der fünf Fixes, Live-Vergleich aller pages-Teile, Fertig-Marken um den `embedded`-Eintrag ergänzen, dann pushen. Danach der Rest von Liste B und C. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B11, B25, B26, C2, C3 und C5. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- `design ready` behält `by` und `at` einer Fertig-Marke, wenn sich das Teil nicht geändert hat (d7bdfb315, 02.11.).
 - C1: Die Design-Befehle verwenden den letzten Harness-Build wieder, wenn sich keine Eingabe geändert hat (9cf6343a3, 02.11.).
 - B21: `design check` meldet ACTIONS RERUN, wenn sich ein eingebettetes Teil seit dem letzten Aktionslauf geändert hat. Alte Fertig-Marken bekommen den Eintrag erst beim nächsten `design ready` (7581e0cce, 02.11.).
 - B14 und B15: `design compare --live` meldet Rahmen unter einem Panel als OCCLUDED und wartet auf Overlay-Animationen (cf2565685, 02.11.).
@@ -88,7 +89,7 @@ Builder: CLI neu bauen, Ende-zu-Ende-Prüfung der fünf Fixes, Live-Vergleich al
 8. Wiederholte Gruppen brauchen ein Control (Befund 102).
 9. Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 10. Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-11. Lint-Regel gegen native `title` (Befund 116).
+11. Lint-Regel gegen native `title` (Befund 116). **Läuft.**
 12. Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 13. Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Erledigt** (cf2565685).
@@ -102,18 +103,18 @@ Builder: CLI neu bauen, Ende-zu-Ende-Prüfung der fünf Fixes, Live-Vergleich al
 22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Erledigt** (a01d37d64).
 23. Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
 24. Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
-25. `design dom <part>` gibt das HTML eines Teils aus.
-26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`.
+25. `design dom <part>` gibt das HTML eines Teils aus. **Läuft.**
+26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`. **Läuft.**
 27. Kanonische Tailwind-Klassen im App-Code prüfen.
 28. Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
 
 ## C. CLI: Tempo und Ablauf
 
 1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
-2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111).
-3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124).
+2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Läuft.**
+3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Läuft.**
 4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-5. Pre-push prüft geänderte Teile statisch (Befund 105).
+5. Pre-push prüft geänderte Teile statisch (Befund 105). **Läuft.**
 6. Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
 7. Studio-App ohne Lint-Warnungen; danach ist jede neue Warnung ein Fehler.
 
