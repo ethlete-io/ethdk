@@ -591,9 +591,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     that part. Lesson candidate: a change to an embedded part makes the go of every part that embeds it stale.
 23. studio-menu open states differ 35-39 px, only on the pane's rounded corners: the same corner antialias as finding 3
     (Impl Q13), now in a second part. Lesson: one shared rule for SDK pane corners in compare, not a fix per part.
-24. shell-project-switch: the app opens the menu below the button and 8 px wider (256x223) than the design (above,
-    248x223). Lesson candidate: the design states fix the overlay position and width, but the app's overlay config
-    does not read them; the builder aligns the app like the shell-main picker.
+24. shell-project-switch is a design defect: the design `open` state draws the menu in-flow inside the 248 px host
+    (232 px wide, 8 px above the trigger), not absolute w-62 above the trigger like shell-main's picker (Impl Q35). The
+    app already matches shell-main. In addition, the harness puts the host at the top of the viewport, so an overlay that
+    opens above flips below. Lessons: "like part X" in a decision must be checked against X's drawn geometry; the
+    harness must leave room on the side where a surface opens.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
