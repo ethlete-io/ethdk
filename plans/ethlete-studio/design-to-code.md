@@ -760,14 +760,20 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     default): compare fails when a design state differs from its base state only inside emptied slots; the harness
     fails on a prop with no matching input. Lesson: a compare that removes the very content a state is about proves
     nothing; a state must differ from its base in the compared area, or the check must say it cannot compare it.
+    Done in 02e18fa5f + 2cc8801e4 (compare also draws every state with --state).
 57. `sketch merge --note` overwrote each target part's note with the merge reason (builder, 2026-11-01; restored).
     Tool fix (builder default): keep the part note unless `--replace-note`; the merge reason goes only to
-    accepted.json. Lesson: a flag that records why an action ran must not overwrite content the part owns.
+    accepted.json. Lesson: a flag that records why an action ran must not overwrite content the part owns. Done in
+    42486d5e3.
 58. studio-menu `open-focus-visible` fails by 5436 px (builder, 2026-11-01): the app's keyboard-focused first row
     paints the active background plus the ring, the design only the ring. Cause: c3082e0d3 (finding 42) changed the
     SDK menu keyboard styles after studio-menu was recorded, and the sdk components/menu design mock does not draw
     the keyboard-active background. Lesson: an SDK style change silently moves every part that embeds it; the tool
     did not flag the SDK menu mock or the dependent studio parts when c3082e0d3 landed. Design fix: Impl Q102 (Tom).
+    Cause: ready, go and implemented store `partHashOf` (baseline.ts:42) over the part's own folder plus
+    @shared/@assets only; imported parts, @ethlete/*/design mocks, the app component and SDK runtime/CSS are not
+    covered, and c3082e0d3 changed only menu.directive.ts, menu-item.directive.ts and menu.component.css.
+    `design check` lists ready parts (check-system.ts:364) but never re-compares them. Tool change: Impl Q112 (Tom).
 59. Live-page compare slice 4 (Impl Q78, 6d3588e6f, builder, 2026-11-01): merge failed with a 0x0 swapped host
     (fix: wait for a sized host; fixed clock `now`); inventory 501029 px is mostly a sample mismatch (app showed
     pages/system inventory, design pages/flows; 453k of it), the rest is list selectors full path vs short names,
@@ -797,6 +803,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     to source bytes resets on edits that change no pixel, and a direct edit bypasses the merge rule that already
     writes an `auto` acceptance for pixel-identical states (merged-parts.ts:154). Tool change: Impl Q109 (Tom).
     Accept + go for both: Impl Q107 (Tom); studio-menu backdrop: Impl Q108 (Tom).
+63. The finding 56 compare fix (2cc8801e4) shows new fails (builder, 2026-11-01): studio-menu option-* (3 states)
+    passed trivially before, because the SDK menu mock drops the row's data-et-force, so compare forced nothing;
+    shell-main section/product/products rows at rest set `force: { label }` with no interaction. Lesson: a check
+    that never failed for a state can be a check that never ran; each new strictness gate finds old trivial passes.
+    Design fixes: Impl Q110, Q111 (Tom). The 2cc8801e4 subagent also forgot its changeset; the push hook caught it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
