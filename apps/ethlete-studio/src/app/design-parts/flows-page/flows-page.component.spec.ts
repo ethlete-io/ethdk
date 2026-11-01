@@ -62,4 +62,10 @@ describe('FlowsPageComponent', () => {
     expect(world?.style.transform).toContain('scale(1.5)');
     expect(element.querySelector('[aria-label="Auf 100 % zoomen"]')?.textContent?.trim()).toBe('150 %');
   });
+
+  it('names the preset select', async () => {
+    const { element } = await render();
+
+    expect(element.querySelector('[role="combobox"]')?.getAttribute('aria-label')).toBe('Bildschirmgröße');
+  });
 });

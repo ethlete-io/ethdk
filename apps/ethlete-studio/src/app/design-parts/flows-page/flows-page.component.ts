@@ -161,7 +161,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
               <span class="flex-1"></span>
               <div class="w-60">
                 <et-form-field size="sm">
-                  <et-select [value]="preset()" (valueChange)="pickPreset($event)">
+                  <et-select [value]="preset()" [aria-label]="LABELS.presetAria" (valueChange)="pickPreset($event)">
                     @for (option of presetOptions(); track option.value) {
                       <et-select-option [value]="option.value" [label]="option.label">{{
                         option.label

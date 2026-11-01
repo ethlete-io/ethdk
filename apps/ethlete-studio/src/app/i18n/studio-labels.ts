@@ -164,6 +164,7 @@ export const STUDIO_LABELS = {
       'Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn an. Bitte ihn zum Beispiel so:',
     emptyPrompt: 'Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.',
     copyPrompt: 'Prompt kopieren',
+    presetAria: 'Bildschirmgröße',
     presetLabel: (name: string, { width, height }: { width: number; height?: number }) =>
       height === undefined ? `${name} · ${width}` : `${name} · ${width} × ${height}`,
     sample: {
