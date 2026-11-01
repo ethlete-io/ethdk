@@ -550,7 +550,6 @@ export class SystemViewComponent {
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
-
   protected copied = signal(false);
 
   private productReloads = signal(0);
