@@ -1259,7 +1259,7 @@ export const seeFrame = (options: {
   };
   const isOwnControl = (element) => {
     const owner = ownerOf(element);
-    return owner === null || (owner.at === element && CONTROL_PARTS[element.getAttribute('data-et-control')] === owner.key);
+    return owner === null || CONTROL_PARTS[element.getAttribute('data-et-control')] === owner.key;
   };
   const controls = [...root.querySelectorAll('[data-et-control]')].filter(isOwnControl).map((element) => {
     const parts = ${controlPartsOf}(element);

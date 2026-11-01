@@ -607,7 +607,7 @@ A part that another part renders owns its controls. Every rendered part root car
 carries `data-et-slot` and stays the host's. The same holds for the markup of an exported `const` or
 `function` helper of a part module, such as `studioMenu()`, and for the markup passed in as its
 arguments. A control inside an embedded part is not declared on the host, unless the host declares it
-with `part` naming that part and the control is the root of that part; the host fails once per owning part that is not design complete itself, as
+with `part` naming that part; the host fails once per owning part that is not design complete itself, as
 `CONTROL-PART-INCOMPLETE`. A rule in a CSS file of the host's folder that styles an element inside
 an owned part fails as `CONTROL-OVERRIDDEN`, unless the host marks it with `data-et-control` and
 declares it. On the owned root itself, outer layout (margin, size, position, inset, flex and grid

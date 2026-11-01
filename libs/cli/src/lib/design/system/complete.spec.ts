@@ -274,6 +274,12 @@ const PARTS: Record<string, FixturePart> = {
     render: "`<main>${(await rootToggle.render({ state: 'rest' })).body}</main>`",
     extra: "controls: { more: { kind: 'button', part: 'components/root-toggle' } },",
   },
+  'pages/inner-control': {
+    states: { rest: '' },
+    imports: "import done from '@system/components/done';",
+    render: "`<main>${(await done.render({ state: 'rest' })).body}</main>`",
+    extra: "controls: { more: { kind: 'button', part: 'components/done' } },",
+  },
   'pages/recolours': {
     states: { rest: '' },
     imports: "import done from '@system/components/done';",
@@ -1124,7 +1130,7 @@ export default definePart({
     expect(await lines('pages/host')).toEqual([]);
   }, 120_000);
 
-  it('gives a control inside an embedded part root to that part, keeps a declared control on the root of its part, and fails a page that restyles it', async (context) => {
+  it('gives a control inside an embedded part root to that part, keeps a declared control on the root of its part or inside it, and fails a page that restyles it', async (context) => {
     const { target, config, product } = checkout();
     const lines = async (part: string) => {
       const result = await completenessOf({ target, config, product, part });
@@ -1153,6 +1159,7 @@ export default definePart({
       ],
     });
     expect(await lines('pages/root-control')).not.toContainEqual(expect.stringMatching(/^CONTROL-UNDRAWN/));
+    expect(await lines('pages/inner-control')).not.toContainEqual(expect.stringMatching(/^CONTROL-UNDRAWN/));
     expect(await lines('pages/recolours')).toEqual([
       'CONTROL-OVERRIDDEN pages/recolours - ".aa-page > div" sets padding on main.aa-page > div, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
       'CONTROL-OVERRIDDEN pages/recolours - ":is(.aa-page) .aa-toggle:hover" sets color on main.aa-page > div > button.aa-toggle, drawn by components/done, in rest - change components/done instead, or mark the control with data-et-control and declare it in controls',
