@@ -243,6 +243,16 @@
       "with-resolved": "dc287f827e0cbba9"
     }
   },
+  "pages/inventory": {
+    "hash": "b85ea9aa93bb79df",
+    "at": "2026-11-01T13:55:20.696Z",
+    "states": {
+      "approvable": "a252356de7161b82",
+      "approved": "f8316a93dddbb106",
+      "loading": "f539536395e535b7",
+      "open": "615516f17a04b81f"
+    }
+  },
   "pages/start": {
     "hash": "d73fc4b2d7f8e2e0",
     "at": "2026-11-01T13:48:29.062Z",
