@@ -1278,6 +1278,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   wäre müll." System, Sketches and Flows use one and the same canvas component, not a shared input layer under two
   implementations. Left drag on an empty area pans on every page; a left click on a frame selects it. Arrow-key pan,
   double-click focus, Space/middle-button pan and window-wide Shift+1/2/0 work on every page. Finding 83.
+  In progress (builder, 2026-11-01): one subagent folds `mountCanvasViewport` into `ethlete-design-canvas` and adds a
+  Playwright canvas test against the real Studio for System, Sketches and Flows.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
