@@ -150,36 +150,9 @@
       <aside
         class="absolute top-space-3 bottom-space-3 left-space-3 flex min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
       >
-        <header
-          class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pr-space-2 pl-space-4"
-        >
+        <header class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pl-space-4">
           <span class="font-ui-strong text-ui-lg">{{ product() }}</span>
-          <button
-            (click)="collapse.emit()"
-            class="size-control-sm p-0"
-            et-button
-            type="button"
-            variant="transparent"
-            color="surface"
-            size="sm"
-            title="Hide panel"
-            aria-label="Hide panel"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="2.5" y="3" width="11" height="10" rx="1.75" />
-              <path d="M6.5 3v10" />
-            </svg>
-          </button>
+          <ethlete-shell-collapse (collapse)="collapse.emit()" />
         </header>
         <div class="min-h-0 flex-1 overflow-hidden p-space-2">
           <ng-content select="[shellMainSide]" />

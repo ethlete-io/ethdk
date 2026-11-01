@@ -1,6 +1,7 @@
 import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
+import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -22,7 +23,7 @@ const ALL_PRODUCTS_CLASS = `mt-0.5 size-9 rounded-control-md text-et-surface-mut
   selector: 'ethlete-shell-main',
   templateUrl: './shell-main.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
+  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective, ShellCollapseComponent],
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
 })
 export class ShellMainComponent {
