@@ -24,13 +24,9 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
 
 const action = (name: string) => `data-et-control="item" data-studio-action="${name}"`;
 
-const studioRows = (interaction?: Exclude<Interaction, 'disabled'>): MenuMockRow[] => [
+const STUDIO_ROWS: MenuMockRow[] = [
   { kind: 'label', label: 'Studio' },
-  {
-    label: 'Einstellungen…',
-    active: Boolean(interaction),
-    attributes: `${action('settings')}${interaction ? ` data-et-force="${interaction}"` : ''}`,
-  },
+  { label: 'Einstellungen…', attributes: action('settings') },
   { label: 'Erscheinungsbild…', attributes: action('appearance') },
   { label: 'Tastenkürzel…', attributes: action('shortcuts') },
   { kind: 'separator' },
@@ -38,7 +34,11 @@ const studioRows = (interaction?: Exclude<Interaction, 'disabled'>): MenuMockRow
   { label: 'Über Studio…', attributes: action('about') },
 ];
 
-const studioPanel = (interaction?: Exclude<Interaction, 'disabled'>) => menu.render({ rows: studioRows(interaction) });
+const studioPanel = async (interaction?: Exclude<Interaction, 'disabled'>) => {
+  const panel = await menu.render({ rows: STUDIO_ROWS, forced: interaction });
+  // The SDK menu part replaces the attributes of its second row with its own force marks; this puts the action back.
+  return { ...panel, body: panel.body.replace('data-et-control="item"', action('settings')) };
+};
 
 export const studioMenu = async ({ open, interaction }: Props) => {
   const panel =
