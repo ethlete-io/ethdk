@@ -36,6 +36,7 @@ export default definePart({
     { closed: { open: false }, open: { open: true } },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
   ),
+  implements: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
   controls: { project: { kind: 'button', input: ['pointer', 'keyboard'] } },
   styles: shellProjectSwitchStyles,
   render: (props: Props) =>
