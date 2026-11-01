@@ -162,6 +162,17 @@
       "reset-hover": "607876aa1964dd84"
     }
   },
+  "elements/canvas-frames": {
+    "hash": "dc89aa310d9f6893",
+    "at": "2026-11-01T13:18:19.632Z",
+    "states": {
+      "default": "8e2322a7dc6db4c5",
+      "fit": "ea67f9bf1ea9480b",
+      "in": "3b70b83e7e2db09f",
+      "out": "6fa71d334277b14e",
+      "reset": "06587f5fb701ca37"
+    }
+  },
   "elements/shell-main": {
     "hash": "4b64a4137ba97697",
     "at": "2026-11-01T12:00:00.710Z",
