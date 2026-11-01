@@ -41,12 +41,9 @@
       aria-label="Studio"
     >
       <et-menu-group-label>Studio</et-menu-group-label>
-      <button (click)="action.emit('settings')" et-menu-item type="button">Einstellungen…</button>
-      <button (click)="action.emit('appearance')" et-menu-item type="button">Erscheinungsbild…</button>
-      <button (click)="action.emit('shortcuts')" et-menu-item type="button">Tastenkürzel…</button>
-      <et-menu-separator />
-      <button (click)="action.emit('help')" et-menu-item type="button">Hilfe</button>
-      <button (click)="action.emit('about')" et-menu-item type="button">Über Studio…</button>
+      @for (item of items(); track item.action) {
+        <button (click)="serverAction.emit(item.action)" et-menu-item type="button">{{ item.label }}</button>
+      }
     </et-menu>
   </ng-template>
 </div>
