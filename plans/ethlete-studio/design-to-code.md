@@ -785,3 +785,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   flows, sketches and the other live pages) shoots the real app page against the page design, with the slots filled
   by a fixed sample, so hand-written live components inside a page (for example `design-canvas`) are covered.
   Finding 43.
+- Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
+  in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
+  (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter on each one, and
+  fails when the state does not compare 0 px, the output does not fire, or an app element has no declared action.
+  `design complete` refuses a design with an undeclared interactive element. The same clicks also run on the real
+  pages of the Impl Q78 compare, where the page must reach the declared page state (for example sidebar hidden),
+  because the active nav defect sat in the app wiring, not in the part. Finding 45.
