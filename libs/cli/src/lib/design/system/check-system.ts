@@ -307,6 +307,19 @@ export const checkSystem = (options: CheckOptions) => {
   return code;
 };
 
+const cannotDrawLine = (options: { product: string; line: string }) =>
+  `CANNOT DRAW ${options.product} ${options.line} - et design ready refuses the part until it draws`;
+
+const countCannotDraw = (options: CheckOptions & { product: ResolvedProduct; why: string }) => {
+  for (const part of statefulPartsOf(options.product, options.part ? [options.part] : null)) {
+    console.log(cannotDrawLine({ product: options.product.name, line: `${part}: ${options.why}` }));
+
+    const counted = tallyOf(options.tally, { product: options.product.name, part });
+
+    if (counted) counted.open += 1;
+  }
+};
+
 const drawnFindingsFor = async (
   options: CheckOptions & { product: ResolvedProduct; rendered: RenderIssue[] },
 ): Promise<DrawnFindings> => {
@@ -317,8 +330,10 @@ const drawnFindingsFor = async (
   if (stateful.length > 0) {
     const checked = await partsCompletenessOf({ ...options, parts: stateful });
 
-    if ('unavailable' in checked) console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
-    else {
+    if ('unavailable' in checked) {
+      console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
+      countCannotDraw({ ...options, why: checked.unavailable });
+    } else {
       for (const hint of [...checked.hints.values()].flat()) console.log(hint);
 
       gaps = checked.gaps;
@@ -328,7 +343,7 @@ const drawnFindingsFor = async (
   const { failed, ...findings } = drawnFindingsFrom({ product, issues: rendered, gaps, stateful });
 
   for (const line of failed) {
-    console.log(`CANNOT DRAW ${product.name} ${line} - et design ready refuses the part until it draws`);
+    console.log(cannotDrawLine({ product: product.name, line }));
 
     const counted = tallyOf(options.tally, { product: product.name, part: line.slice(0, line.indexOf(':')) });
 
@@ -338,7 +353,7 @@ const drawnFindingsFor = async (
   return findings;
 };
 
-const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null }) => {
+const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null; notDrawn?: string }) => {
   const { target, config, products, rendered } = options;
 
   for (const name of products) {
@@ -348,6 +363,8 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
 
     const product = resolveProduct({ target, name, config: entry });
     const findings = rendered === null ? {} : await drawnFindingsFor({ ...options, product, rendered });
+
+    if (rendered === null && options.notDrawn) countCannotDraw({ ...options, product, why: options.notDrawn });
 
     const points = readOpenPoints(product, findings).filter(({ part }) => !options.part || part === options.part);
 
@@ -406,7 +423,9 @@ const countsOf = (values: string[]) =>
 const blockedRenderLineOf = (blocking: string[]) =>
   `RENDER CHECK NOT RUN - ${blocking.length} problem${blocking.length === 1 ? '' : 's'} above stop it (${countsOf(blocking)}); the open points list no contrasts or missing states until they are fixed`;
 
-const renderSystem = async (options: CheckOptions): Promise<{ code: number; rendered: RenderIssue[] | null }> => {
+const renderSystem = async (
+  options: CheckOptions,
+): Promise<{ code: number; rendered: RenderIssue[] | null; notDrawn?: string }> => {
   const blocking: string[] = [];
   const code = reportSystem({ ...options, warn: true, blocking });
 
@@ -425,7 +444,7 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
   if ('unavailable' in rendered) {
     console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
 
-    return { code: 0, rendered: null };
+    return { code: 0, rendered: null, notDrawn: rendered.unavailable };
   }
 
   const resolved = options.products.flatMap((name) => {
@@ -484,9 +503,9 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     lines.forEach((line) => console.log(line));
   }
 
-  const { code, rendered } = await renderSystem(counted);
+  const { code, rendered, notDrawn } = await renderSystem(counted);
 
-  await printOpenPoints({ ...counted, rendered });
+  await printOpenPoints({ ...counted, rendered, notDrawn });
 
   for (const name of options.products) {
     const entry = options.config.products?.[name];

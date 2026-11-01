@@ -90,4 +90,25 @@ describe('design check shows what design ready refuses', () => {
       expect.stringMatching(/1 missing state \(cta\); 1 contrast under the rule \(state default\)/),
     ]);
   }, 120_000);
+
+  it('names each stateful part design ready cannot draw when the render check is skipped', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+
+    vi.mocked(renderIssuesOf).mockResolvedValue({ unavailable: 'no browser' } as never);
+
+    const lines: string[] = [];
+    const push = (line: unknown) => void lines.push(String(line));
+
+    vi.spyOn(console, 'log').mockImplementation(push);
+    vi.spyOn(console, 'error').mockImplementation(push);
+    vi.spyOn(console, 'warn').mockImplementation(push);
+
+    await checkSystemRendered({ target, config, products: ['acme'], part: 'elements/hero' });
+
+    expect(lines).toContain(
+      'CANNOT DRAW acme elements/hero: no browser - et design ready refuses the part until it draws',
+    );
+    expect(lines.filter((line) => line.startsWith('CANNOT DRAW'))).toHaveLength(1);
+  }, 120_000);
 });
