@@ -275,3 +275,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - **Checkbox missing states (2026-11-01), with the checkbox and radio-group SDK track:** the merged variant d of sdk
   `components/checkbox` lacks 4 states (option.disabled, select-all.hover, select-all.active, select-all.disabled).
   One sketch round after the Studio implementation phase, before the lib port.
+- **System lesson, canonical classes in app code (Tom, 2026-11-01), after the Studio implementation phase:** the
+  builder wrote `size-[22px]` (canonical `size-5.5`) in new Studio app code during the pilot, and no check caught it;
+  the editor showed it. The Q220 canonical-class rule (`libs/cli/src/lib/design/system/rules/tailwind-classes.ts`)
+  covers the design parts, not the app templates. Lesson: the same check runs on the Tailwind classes in
+  `apps/ethlete-studio/src` (lint or `design check`), so an implementation cannot add a non-canonical class.
