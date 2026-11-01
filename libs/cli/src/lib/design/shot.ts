@@ -120,7 +120,7 @@ type Frame = {
   scale: number;
   crop: Crop | null;
   scheme: 'dark' | 'light' | null;
-  emptySlots: boolean;
+  emptySlots: string | null;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -232,7 +232,32 @@ export const dependencyFilesOf = (modules: Iterable<ImportingModule>, imports: S
   return [...seen].flatMap((module) => (module.file && isAbsolute(module.file) ? [module.file] : []));
 };
 
-const EMPTY_SLOTS = "document.querySelectorAll('[data-et-projected]').forEach((slot) => slot.replaceChildren())";
+/**
+ * A frame script that empties the `slot()` regions the part `part` draws itself, not those of the parts it embeds.
+ * A region belongs to the innermost marked part around it that its markup was not passed into through props.
+ */
+export const emptySlotsScriptOf = (part: string) => `(() => {
+  const keysOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
+  const ownerOf = (slot) => {
+    let passed = keysOf(slot, 'data-et-slot');
+
+    for (let root = slot.closest('[data-et-part]'); root; root = root.parentElement?.closest('[data-et-part]') ?? null) {
+      const owner = keysOf(root, 'data-et-part').find((key) => !passed.includes(key));
+
+      if (owner) return owner;
+
+      passed = keysOf(root, 'data-et-slot');
+    }
+
+    return null;
+  };
+
+  document.querySelectorAll('[data-et-projected]').forEach((slot) => {
+    const owner = ownerOf(slot);
+
+    if (owner === null || owner === ${JSON.stringify(part)}) slot.replaceChildren();
+  });
+})()`;
 
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
 
@@ -248,7 +273,7 @@ export type PartAddress = {
   props?: SketchVariant | null;
   /** Fits the state to its content without the frame padding, as the app's harness host draws it. */
   bare?: boolean;
-  /** Empties every `slot()` region before the shot, as the app's harness host projects no content into it. */
+  /** Empties the `slot()` regions the part draws itself before the shot, as the app's harness host projects no content into them. */
   emptySlots?: boolean;
 };
 
@@ -294,7 +319,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     }),
     size: size ?? null,
     clip: !preset,
-    emptySlots: emptySlots ?? false,
+    emptySlots: emptySlots ? part : null,
   };
 };
 
@@ -336,7 +361,7 @@ export const createPartShooter = (options: {
         await page.evaluate(settled);
         await page.evaluate(finished);
 
-        if (frame.emptySlots) await page.evaluate(EMPTY_SLOTS);
+        if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots));
 
         const overlay = page.locator('vite-error-overlay');
 
@@ -417,7 +442,7 @@ export const createPartShooter = (options: {
     params: URLSearchParams;
     size: Size | null;
     clip?: boolean;
-    emptySlots?: boolean;
+    emptySlots?: string | null;
     want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
@@ -470,7 +495,7 @@ export const createPartShooter = (options: {
             scale,
             crop,
             scheme,
-            emptySlots: options.emptySlots ?? false,
+            emptySlots: options.emptySlots ?? null,
           });
     }, options.want);
 
