@@ -7,7 +7,7 @@
   "components/tree-row": "39cd74bbb91664ba",
   "components/zoom-chip": "495a0ba0d6d2e17a",
   "elements/canvas-frames": "2ef65299d3a0c178",
-  "elements/part-tree": "ae2ab59f5379f752",
+  "elements/part-tree": "4decbdf07174f4c8",
   "elements/shell-main": "0da3aa1ff2582456",
   "elements/studio-menu": "3b9b10d017b5ad08",
   "foundations/agent-logos": "46bcf29865e6c1f4",
@@ -22,6 +22,6 @@
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "e970918b69a2494b",
   "pages/sketches": "9e3f9d5a092a70c3",
-  "pages/start": "28fd542da5c7fc82",
+  "pages/start": "0ba0bebf7cccdeaa",
   "pages/system": "ced076d5fcc8722b"
 }

@@ -365,9 +365,29 @@
     "at": "2026-11-01T14:19:08.784Z"
   },
   "pages/start": {
-    "hash": "d73fc4b2d7f8e2e0",
-    "by": "tom",
-    "at": "2026-11-01T13:46:13.948Z"
+    "hash": "109488ca765065e5",
+    "files": {
+      ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
+      ".ethlete/design/sdk/components/button/button.ts": "2db7ffb8295043f6",
+      ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
+      ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "c6fdcd018df6d00f",
+      ".ethlete/design/studio/pages/start/start.ts": "69f9ec72e856aa65",
+      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
+      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "by": "user",
+    "at": "2026-11-01T21:56:13.613Z",
+    "note": "studio click"
   },
   "pages/system": {
     "hash": "e89d4aa02f6db78c",
