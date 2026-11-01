@@ -1015,14 +1015,16 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     design draws the canvas as a fixed 1000 px box (`w-250`); the app copied the design. Why missed: compare passed at
     0 px - app and design match, and both are drawn at one width; the e2e runs at 1440 px with no chip case. Fix (any
     project): `design check` draws every page also at a second, wider viewport and flags a region that keeps a fixed
-    width while its shell slot grows, with the elements anchored to its right or bottom edge.
+    width while its shell slot grows, with the elements anchored to its right or bottom edge. Parked until after MVP
+    (builder); the Studio e2e at 2000 px covers Studio now.
 91. The teal canvas focus frame (finding 76) is back on pages/system (Tom, 2026-11-01, screenshot). Cause (builder):
     00eecda8a gave the one canvas (`design-canvas`) the focus ring but not the pointer-focus fix of ee1299600; a click
     shows no ring, but the next key (Shift, Space, an arrow) turns on :focus-visible. Why missed: the pointer-focus
     check reads the ring once after the click and never presses a key; components/canvas-viewport was marked ready,
     but no live page renders its code any more. Fix (any project): the check presses a lone Shift after the click and
     fails if a ring appears; `design actions --live` names the live element it probed for each ready part and flags a
-    ready part that no live page renders.
+    ready part that no live page renders. The Shift probe ships with the fix; the live report is parked
+    until after MVP.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
