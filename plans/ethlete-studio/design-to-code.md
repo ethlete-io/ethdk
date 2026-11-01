@@ -687,6 +687,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     nothing. Wanted: a click on the active nav item toggles the sidebar (hide, and show again). Lesson: a pixel compare
     cannot see behaviour, and the designs say nothing about what a click on each control does, so a dead control
     passes every check.
+46. The flows preset `et-select` (and earlier the sketches round select) had no accessible name. The SDK form field
+    logs ET2201 at runtime, but specs and compare still passed. Label fixed by the builder. Lesson: runtime `ET\d+`
+    errors from the SDK reach nobody; a check must fail on them (open question Impl Q80).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
