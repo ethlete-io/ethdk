@@ -57,6 +57,11 @@ export class ShellMainComponent {
     return `my-0.5 size-9 rounded-control-md bg-et-surface-bg ${active ? 'text-et-surface shadow-[inset_0_0_0_1px_var(--et-surface-border-solid)]' : 'text-et-surface-muted'} ${HOVER_PRESS_RAISED}`;
   }
 
+  protected pickSection(section: ShellSection, active: boolean) {
+    if (active && this.panel() !== 'hidden') this.collapse.emit();
+    else this.sectionChange.emit(section);
+  }
+
   protected selectProject(value: unknown) {
     if (typeof value === 'string') this.projectChange.emit(value);
   }

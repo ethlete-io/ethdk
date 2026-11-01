@@ -34,7 +34,7 @@
           [class]="sectionClass(active)"
           [attr.aria-label]="item.label"
           [attr.aria-current]="active ? 'page' : null"
-          (click)="sectionChange.emit(item.label)"
+          (click)="pickSection(item.label, active)"
           class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
           et-button
           type="button"
