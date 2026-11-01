@@ -736,27 +736,27 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 54. `design check --product studio` timed out after 900 s with no DONE line (builder, 2026-11-01): the design harness
     logs "ResizeObserver loop completed" errors without end. Cause: not a hang. A product run renders ~57 sdk base
     parts plus the studio parts in one Chromium with no progress output; alone it took 384 s (`DONE studio: 10 of
-    25`), the >900 s came from machine load (7-10, parallel agents). The ResizeObserver noise is the tool's own:
+25`), the >900 s came from machine load (7-10, parallel agents). The ResizeObserver noise is the tool's own:
     `libs/cli/design/web/frame.ts:462` observes root while `fitOutOfFlow` (`define-call.ts:301`) writes
     root.style.paddingTop (only sdk bracket and scheduler); harmless. Tool fix (builder default): a progress line
     per part, a 120 s per-part timeout that reports a RENDER issue naming the part (render-check.ts:494), and no
     padding write when unchanged. Lesson: a long check with no progress output looks like a hang; every check must
     show which target it is on and bound each target, so a slow run and a stuck part read differently.
-56. Compare passed shell-main `server-stopped` before any app code for it existed (builder, 2026-11-01, Q87): the
+55. Compare passed shell-main `server-stopped` before any app code for it existed (builder, 2026-11-01, Q87): the
     compare empties projected slots and the server screen sat inside slot('canvas'); the harness also ignores a prop
     the component has no input for. The same gap lets studio-menu option-* states pass trivially. Tool fix (builder
     default): compare fails when a design state differs from its base state only inside emptied slots; the harness
     fails on a prop with no matching input. Lesson: a compare that removes the very content a state is about proves
     nothing; a state must differ from its base in the compared area, or the check must say it cannot compare it.
-57. `sketch merge --note` overwrote each target part's note with the merge reason (builder, 2026-11-01; restored).
+56. `sketch merge --note` overwrote each target part's note with the merge reason (builder, 2026-11-01; restored).
     Tool fix (builder default): keep the part note unless `--replace-note`; the merge reason goes only to
     accepted.json. Lesson: a flag that records why an action ran must not overwrite content the part owns.
-58. studio-menu `open-focus-visible` fails by 5436 px (builder, 2026-11-01): the app's keyboard-focused first row
+57. studio-menu `open-focus-visible` fails by 5436 px (builder, 2026-11-01): the app's keyboard-focused first row
     paints the active background plus the ring, the design only the ring. Cause: c3082e0d3 (finding 42) changed the
     SDK menu keyboard styles after studio-menu was recorded, and the sdk components/menu design mock does not draw
     the keyboard-active background. Lesson: an SDK style change silently moves every part that embeds it; the tool
     did not flag the SDK menu mock or the dependent studio parts when c3082e0d3 landed. Design fix: Impl Q102 (Tom).
-55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
+58. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
     the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
     (partial swap, finding 43 class); "Auf 100 % zoomen" keeps the viewport point, but Impl Q74 says 100 % = the
     opening view; the live canvas draws a row label ("default") left of the frame, the design has none; with no
@@ -890,6 +890,19 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   harness `SystemPageComponent` draws it), so canned comments cannot reach it; system has no Fit design state;
   sketches has no 100 % design state; flows `flow`, merge and the inbox states with comments need canned flows,
   merge mode and comments.
+  Slice 4 (6d3588e6f, c37c574b4): the spec's `now` fixes the app clock (UTC), so relative comment times draw the
+  same on every run; the shot waits for a drawn host before it sizes the viewport (merge swapped the host and measured
+  0x0). New states: merge `open` (sketch with a pick, `sketchViews.merge` seeded, canned sketch-preview and
+  sketch-compare), flows `flow` (canned flow "Sketch prüfen"), inbox `open`, `with-resolved`, `active-only`,
+  `active-clear` (canned comments); the sketches sample carries the round title and variant notes
+  (`rounds[].title`, `variantInfo.<v>.note`). Results on one build of 50dc56256 (2026-11-01): system part 143644,
+  edge 143141, zoom-100 334261, panel-hidden 143644; flows empty 0, flow 145138; inbox all-clear 360712, open 389248,
+  with-resolved 389758, active-only 382406, active-clear 367554; start no-products 46080, no-repo FAILED; sketches fit
+  197931; inventory open 501029; merge open 82854 px. The run must start in a checkout folder named like the real one,
+  or the project name in the side panel foot differs. Causes: no-repo needs the app's `startPage` to show the no-repo
+  page when no checkout is chosen (today it needs a port; studio-view never reads the server without a checkout);
+  inventory compares the app's real pages/system inventory with the design's pages/flows sample (canvas 453k of the
+  502k px), so it needs `systemEntry: pages/flows` and a canned `/__design/inventory` first.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
   (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter and Space on each one, and
