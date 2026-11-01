@@ -686,3 +686,17 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   Compare empties it on both sides; the live app fills it with `/frame.html` iframes as today. The content is covered
   by the part compares. One rule for system, sketches, merge and flows; design change, go `--by tom`. Inventory keeps
   its placeholder box (Impl Q56). Findings 29, 31.
+- Impl Q58 page design text (Tom, 2026-11-01): the inventory, flows and sketches designs get German text, go
+  `--by tom`; the app takes every text from `studio-labels.ts`. No hardcoded English in the app.
+- Impl Q59 live canvas (Tom, 2026-11-01): the live `design-canvas` stays; it only gets the look of canvas-viewport and
+  canvas-frames (focus ring, aria-label, shell inset). No rebuild on canvas-frames. Finding 31.
+- Impl Q60 part-tree sections (Tom, 2026-11-01): the flattening without a section level is accepted for the MVP;
+  sections go to the backlog. Finding 32.
+- Impl Q61 pin count (Tom, 2026-11-01): the pin number is 1 + replies, so it counts all messages and matches the
+  "N messages" label (changes Impl Q32).
+- Impl Q62 question dot (Tom, 2026-11-01): the old accent dot for a waiting question goes away in the MVP; the inbox
+  shows waiting questions. Finding 32.
+- Impl Q63 shell-project-switch focus state (Tom, 2026-11-01): drop `open-focus-visible` (unreachable, the SDK menu
+  keeps focus inside); `option-focus-visible` covers a focused row; go `--by tom`. Finding 33.
+- Impl Q64 studio-menu row states (Tom, 2026-11-01): draw `option-hover`, `option-focus-visible` and `option-active`
+  with the menu mock's forced rows as Impl Q44; go `--by tom`. Finding 33.

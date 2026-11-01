@@ -303,3 +303,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   needs the `translate3d` design fix (findings 3 and 23).
 - After the MVP (Tom, 2026-11-01, Impl Q55): the sketch-view features the new sketches and merge pages drop: reject and
   reopen a variant, notes, diff lists. Decide in Tom's round whether they come back and where the design shows them.
+- After the MVP (Tom, 2026-11-01, Impl Q60): part-tree section level (legacy stages, per-layer "Not used in ..."
+  sections) and the frame rows of an entry with several frames.
+- For Tom's round (2026-11-01): the side tree no longer shows sketch status and comment counts (Impl Q39/Q43); the
+  problem text shows only as the warning's title.
