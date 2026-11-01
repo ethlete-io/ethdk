@@ -140,6 +140,10 @@ const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>)
   new Set([...Object.keys(a), ...Object.keys(b)]).size -
   Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
 
+/** Whether a design picture's markup draws an option, row or button as selected, checked, pressed or current. */
+export const drawsSelectedOf = (markup: string) =>
+  /\saria-(?:selected|checked|pressed)="true"|\saria-current="(?!false")[^"]*"/.test(markup);
+
 /** The `data-et-surface` ids a design picture's markup draws; a surface element marked `hidden` draws none. */
 export const drawnSurfacesOf = (markup: string) =>
   [...markup.matchAll(/<[^>]*\sdata-et-surface="([^"]*)"[^>]*>/g)]
@@ -399,7 +403,8 @@ export const compareLineOf = (state: string, result: PixelCompare) =>
  * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,
  * a prop every state sets to the same value (no state differs by it), each prop a pointer open toggles (it clicks
  * them), each prop whose value, or its `interaction`, names an interaction the state's design forces on an
- * element (compare forces it in the app), and, in a state that forces one, each prop only the `forcing` states set.
+ * element (compare forces it in the app), in a state that forces one, each prop only the `forcing` states set, and,
+ * where the state's design draws a `selected` option, each prop set to `selected` (the app draws it from its value).
  */
 export const designOnlyPropsOf = (options: {
   states: Record<string, unknown>;
@@ -407,8 +412,9 @@ export const designOnlyPropsOf = (options: {
   state: string;
   forced: readonly string[];
   forcing: ReadonlySet<string>;
+  selected?: boolean;
 }): Set<string> => {
-  const { states, opens, state, forced, forcing } = options;
+  const { states, opens, state, forced, forcing, selected = false } = options;
   const designOnly = new Set(['class']);
 
   for (const [opened, open] of Object.entries(opens)) {
@@ -438,6 +444,7 @@ export const designOnlyPropsOf = (options: {
     const interaction = isRecord(value) ? value['interaction'] : value;
 
     if (typeof interaction === 'string' && forced.includes(interaction)) designOnly.add(key);
+    if (selected && value === 'selected') designOnly.add(key);
   }
 
   return designOnly;

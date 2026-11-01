@@ -13,6 +13,7 @@ import {
   comparePngs,
   decodePng,
   designOnlyPropsOf,
+  drawsSelectedOf,
   drawnSurfacesOf,
   droppedPropsOf,
   encodePng,
@@ -727,18 +728,37 @@ describe('dropped design props', () => {
     stopped: { open: true, server: 'stopped', content: '' },
     'row-hover': { open: false, force: { label: 'Go', interaction: 'hover' }, content: '' },
     'chip-hover': { open: false, target: 'out', interaction: 'hover', content: '' },
+    'option-selected': { open: true, option: 'selected', content: '' },
   };
   const opens = pointerOpensOf({
     states,
     controls: { menu: { surfaces: { open: 'open' } } },
-    drawn: { open: ['menu.open'], stopped: ['menu.open'] },
+    drawn: { open: ['menu.open'], stopped: ['menu.open'], 'option-selected': ['menu.open'] },
   });
-  const droppedOf = (state: keyof typeof states, forced: string[] = []) =>
+  const droppedOf = (state: keyof typeof states, forced: string[] = [], selected = false) =>
     droppedPropsOf({
       props: states[state],
       inputs: [],
-      designOnly: designOnlyPropsOf({ states, opens, state, forced, forcing: new Set(['row-hover', 'chip-hover']) }),
+      designOnly: designOnlyPropsOf({
+        states,
+        opens,
+        state,
+        forced,
+        forcing: new Set(['row-hover', 'chip-hover']),
+        selected,
+      }),
     });
+
+  it('lets the harness drop a prop set to selected in a state whose design draws a selected option', () => {
+    expect(droppedOf('option-selected', [], true)).toEqual([]);
+    expect(droppedOf('option-selected')).toEqual(['option']);
+  });
+
+  it('reads a selected option from the design markup', () => {
+    expect(drawsSelectedOf('<button role="menuitemradio" aria-checked="true"></button>')).toBe(true);
+    expect(drawsSelectedOf('<a aria-current="page"></a>')).toBe(true);
+    expect(drawsSelectedOf('<button aria-checked="false" aria-current="false"></button>')).toBe(false);
+  });
 
   it('lets the harness drop the props compare reproduces: one no state differs by, a pointer open, a forced interaction', () => {
     expect(droppedOf('closed')).toEqual([]);
