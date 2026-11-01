@@ -13,6 +13,7 @@ import {
   compareLineOf,
   comparePngs,
   ForcedElement,
+  drawnSurfacesOf,
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
@@ -293,23 +294,39 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
     if (only !== null && !(only in states))
       return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
 
-    const opens = pointerOpensOf({ states, controls: module.default?.controls });
+    const controls = module.default?.controls;
+    const opened = only !== null && only in pointerOpensOf({ states, controls });
+    const designs = new Map<string, Awaited<ReturnType<typeof shooter.pictureOf>>>();
+
+    for (const state of only === null || opened ? Object.keys(states) : [only])
+      designs.set(
+        state,
+        await shooter.pictureOf({
+          product: product.name,
+          part,
+          state,
+          preset: frame.preset,
+          width: null,
+          sketch: null,
+          interaction: null,
+          bare: true,
+          emptySlots: true,
+          params: new URLSearchParams(),
+        }),
+      );
+
+    const opens = pointerOpensOf({
+      states,
+      controls,
+      drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
+    });
     const shots: StateShot[] = [];
 
     for (const state of only === null ? Object.keys(states) : [only]) {
-      const design = await shooter.pictureOf({
-        product: product.name,
-        part,
-        state,
-        preset: frame.preset,
-        width: null,
-        sketch: null,
-        interaction: null,
-        bare: true,
-        emptySlots: true,
-        params: new URLSearchParams(),
-      });
+      const design = designs.get(state);
       const open = opens[state];
+
+      if (!design) continue;
 
       if (typeof open === 'string') return open;
 

@@ -12,6 +12,7 @@ import { StartHarnessServer } from './harness-server';
 import {
   comparePngs,
   decodePng,
+  drawnSurfacesOf,
   encodePng,
   forcedElementsOf,
   harnessUrlOf,
@@ -170,6 +171,26 @@ describe('part compare', () => {
         controls: { toggle: { surfaces: { body: 'open' } } },
       }),
     ).toEqual({ open: { control: 'toggle', from: 'rest' } });
+  });
+
+  it('never opens a surface from a state that already draws it open', () => {
+    expect(
+      pointerOpensOf({
+        states: {
+          closed: { open: false },
+          open: { open: true },
+          'option-hover': { open: true, option: 'hover' },
+          'option-selected': { open: true, option: 'selected' },
+        },
+        controls: { project: { surfaces: { open: 'open' } } },
+        drawn: {
+          closed: [],
+          open: ['project.open'],
+          'option-hover': ['project.open'],
+          'option-selected': drawnSurfacesOf('<div data-et-surface="project.open"><span role="option"></span></div>'),
+        },
+      }),
+    ).toEqual({ open: { control: 'project', from: 'closed' } });
   });
 
   it('names the states a surface state is equally close to', () => {

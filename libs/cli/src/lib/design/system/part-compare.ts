@@ -127,18 +127,27 @@ const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>)
   new Set([...Object.keys(a), ...Object.keys(b)]).size -
   Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
 
+/** The `data-et-surface` ids a design picture's markup draws. */
+export const drawnSurfacesOf = (markup: string) =>
+  [...markup.matchAll(/\sdata-et-surface="([^"]*)"/g)].map(([, id = '']) => id);
+
 /**
  * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same
  * `interaction` prop whose props differ from it in the fewest keys; a string where no single such state exists.
+ * A state whose `drawn` surface ids already include the opened surface is never a state to click it open from.
  */
-export const pointerOpensOf = (options: { states: Record<string, unknown>; controls: unknown }) => {
-  const { states } = options;
+export const pointerOpensOf = (options: {
+  states: Record<string, unknown>;
+  controls: unknown;
+  drawn?: Record<string, readonly string[]>;
+}) => {
+  const { states, drawn = {} } = options;
   const opens: Record<string, PointerOpen | string> = {};
 
   for (const [control, declared] of Object.entries(isRecord(options.controls) ? options.controls : {})) {
     const surfaces = isRecord(declared) && isRecord(declared['surfaces']) ? declared['surfaces'] : {};
 
-    for (const state of Object.values(surfaces)) {
+    for (const [surface, state] of Object.entries(surfaces)) {
       if (typeof state !== 'string' || !(state in states)) continue;
 
       const props = isRecord(states[state]) ? states[state] : {};
@@ -146,6 +155,7 @@ export const pointerOpensOf = (options: { states: Record<string, unknown>; contr
         .filter(
           ([name, other]) =>
             name !== state &&
+            !drawn[name]?.includes(`${control}.${surface}`) &&
             JSON.stringify((isRecord(other) ? other : {})['interaction']) === JSON.stringify(props['interaction']),
         )
         .map(([name, other]) => ({ name, distance: differingKeysOf(props, isRecord(other) ? other : {}) }))
