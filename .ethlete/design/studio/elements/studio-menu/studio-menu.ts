@@ -72,6 +72,7 @@ export default definePart({
   ),
   controls: { 'studio-menu': { kind: 'menu', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: styles + buttonStyles,
+  implements: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts',
   render: async (props: Props) => {
     const menu = await studioMenu(props);
     return drawing({
