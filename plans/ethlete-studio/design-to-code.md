@@ -334,3 +334,10 @@ only; the builder starts when Tom gives the start.
   7. The canonical-class check also runs on the Tailwind classes in `apps/ethlete-studio/src`.
      Not now: the Inventory canvas, the sketch views (live iframe cap, changed-area context, multi-part title), and the
      word "go". They change the design or touch Studio views of the pilot.
+- Impl Q7 restart notice (Tom, 2026-11-01): the "has no system view" case came when Tom opened the tomflix project
+  in Studio. Tomflix has its own copy of `@ethlete/cli` in `~/dev/tomflix/node_modules` (built 2026-10-31 23:52,
+  same version string `3.0.0-next.26`), so its design server ran an older cli than Studio expects. A restart does not
+  help there. Item 4 therefore: the server reports its own build stamp and API level, Studio compares it with what it
+  needs, for every server it talks to (own, tmux, other project). An older one shows a notice that names the cause
+  and the fix: "restart the server" when the project's installed cli is newer than the running server, else "update
+  `@ethlete/cli` in <project>". Studio shows the notice after pilot slice 3, when `studio-view` is free.
