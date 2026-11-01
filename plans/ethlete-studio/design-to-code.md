@@ -580,3 +580,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q44 project row states (Tom, 2026-11-01): shell-project-switch's `project` control is now a `select`, which
   needs `project.option-hover`, `option-focus-visible` and `option-selected`. Draw the 3 states with the menu mock's
   forced rows; go `--by tom`.
+- Impl Q45 accept by the builder (Tom, 2026-11-01): same rule as Impl Q15 for the go. When Tom approves a concrete
+  design change in the chat, the builder may run `design accept` for it, always `--by tom` (not the model name), and
+  names the decision. A new design Tom accepts himself. The Impl Q44 accept stays.
