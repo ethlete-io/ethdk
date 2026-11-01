@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, of, switchMap, tap } from 'rxjs';
-import { BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   DesignRoots,
@@ -12,6 +12,8 @@ import {
   designScan$,
 } from '../../host/design';
 import { workspaceRoot$ } from '../../host/workspace';
+
+export const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 const NONE: DesignRoots = { search: '', roots: [] };
 
@@ -26,39 +28,7 @@ type Row = {
 @Component({
   selector: 'ethlete-checkouts',
   template: `
-    <span class="relative flex min-w-0 flex-[0_1_44rem] items-center gap-1.5">
-      <et-select
-        [disabled]="!held().roots.length"
-        [value]="current()"
-        [title]="current() || 'The checkout the design work lives in'"
-        (valueChange)="choose($event)"
-        class="min-w-30 flex-[0_1_44rem] font-mono text-[1.1rem]"
-        aria-label="Checkout"
-        placeholder="No checkout"
-      >
-        @for (root of held().roots; track root) {
-          <et-select-option [value]="root">{{ folderName(root) }}</et-select-option>
-        }
-      </et-select>
-
-      <button
-        (click)="toggle()"
-        et-icon-button
-        type="button"
-        variant="transparent"
-        color="surface"
-        size="xs"
-        title="The checkouts Studio knows"
-        aria-label="Checkouts"
-      >
-        <svg class="et-icon fill-none stroke-current stroke-[1.8]" etIcon viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1V3.5h-3.8V6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1v2.6h3.8V18a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"
-          />
-        </svg>
-      </button>
-
+    <span class="relative flex">
       @if (open()) {
         <div
           class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
@@ -163,7 +133,7 @@ type Row = {
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, AutoSurfaceDirective, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, AutoSurfaceDirective, ProvideColorDirective],
 })
 export class CheckoutsComponent {
   protected errorTheme = injectSemanticColorTheme('error');
@@ -176,8 +146,10 @@ export class CheckoutsComponent {
 
   protected readonly LABEL = LABEL;
 
-  protected held = signal<DesignRoots>(NONE);
-  protected current = signal('');
+  public held = signal<DesignRoots>(NONE);
+  private picked = signal('');
+  public current = this.picked.asReadonly();
+  public names = computed(() => this.held().roots.map(folderNameOf));
   public found = signal<string[]>([]);
   protected search = signal('');
   protected hand = signal('');
@@ -207,19 +179,21 @@ export class CheckoutsComponent {
       .subscribe();
   }
 
-  protected folderName(path: string) {
-    return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-  }
-
-  protected toggle() {
+  public toggle() {
     this.open.update((open) => !open);
     this.trouble.set('');
+  }
+
+  public chooseByName(name: string) {
+    const checkout = this.held().roots.find((root) => folderNameOf(root) === name);
+
+    if (checkout) this.choose(checkout);
   }
 
   protected choose(checkout: string) {
     if (!checkout || checkout === this.current()) return;
 
-    this.current.set(checkout);
+    this.picked.set(checkout);
     this.pick.emit(checkout);
   }
 

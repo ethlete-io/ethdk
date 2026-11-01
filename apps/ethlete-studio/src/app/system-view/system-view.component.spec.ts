@@ -11,7 +11,7 @@ import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
 import { injectViewContext } from '../chat/view-context';
 import { SketchViewComponent } from './sketch-view.component';
-import { baseLabelOf, SystemViewComponent } from './system-view.component';
+import { SystemViewComponent } from './system-view.component';
 
 const watchChannels: { onmessage: () => void }[] = [];
 
@@ -105,14 +105,6 @@ const mount = async (remembered: object) => {
   return fixture;
 };
 
-describe('baseLabelOf', () => {
-  it('names a base path by its last folder and keeps the built-in base whole', () => {
-    expect(baseLabelOf('.ethlete/design/web')).toBe('web');
-    expect(baseLabelOf('../shared/web/')).toBe('web');
-    expect(baseLabelOf('@ethlete/components')).toBe('@ethlete/components');
-  });
-});
-
 describe('SystemViewComponent on a reload', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -171,23 +163,41 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
-  it('heads the sidebar with the Studio mark beside the "Studio" label', async () => {
+  it('draws the shell with the product on the rail and the tree in the side panel', async () => {
     const fixture = await mount({});
-    const header = (fixture.nativeElement as HTMLElement).querySelector('aside > header');
+    const shell = (fixture.nativeElement as HTMLElement).querySelector('ethlete-shell-main');
 
-    expect(header?.querySelector('ethlete-studio-mark svg path')).not.toBeNull();
-    expect(header?.textContent?.trim()).toBe('Studio');
+    expect(shell?.querySelector('nav button[aria-label="web"]')?.getAttribute('aria-current')).toBe('true');
+    expect(shell?.querySelector('nav button[aria-current="page"]')?.getAttribute('aria-label')).toBe('System');
+    expect(shell?.querySelector('aside et-tree')).not.toBeNull();
+    expect(shell?.querySelector('aside header')?.textContent?.trim()).toBe('web');
   });
 
-  it('offers the one product and "New product" in the picker', async () => {
-    const fixture = await mount({});
+  it('lists the live comments in the Inbox section and opens the part of a picked one', async () => {
+    const fixture = await mount({ systemProduct: 'web' });
     const element: HTMLElement = fixture.nativeElement;
+    const view = fixture.componentInstance;
 
-    expect(element.querySelector('et-select')).not.toBeNull();
-    expect([...element.querySelectorAll('et-select-option')].map((option) => option.textContent?.trim())).toEqual([
-      'web',
-      'New product',
-    ]);
+    view['pickSection']('Inbox');
+    await settle(fixture);
+
+    const row = element.querySelector<HTMLElement>('ethlete-inbox [role="button"]');
+
+    expect(element.querySelector('ethlete-inbox aside')?.textContent).toContain('1 offen');
+    expect(row?.textContent).toContain('Too light');
+    expect(row?.textContent).toContain('rating › default · hover');
+    expect(rememberedView().commentsOpen).toBe(true);
+
+    row?.click();
+    await settle(fixture);
+
+    expect(view['selectedKey']()).toBe('elements/rating');
+
+    view['pickSection']('System');
+    await settle(fixture);
+
+    expect(element.querySelector('ethlete-inbox')).toBeNull();
+    expect(element.querySelector('ethlete-shell-main aside et-tree')).not.toBeNull();
   });
 
   it('shows the new-product screen while "New product" is picked, and goes back on another pick', async () => {
@@ -200,14 +210,14 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(element.querySelector('main h2')?.textContent?.trim()).toBe('New product');
     expect(element.querySelector('main pre')?.textContent).toBe('npx et design product new web');
-    expect(view['pickerValue']()).toBe(view['NEW_PRODUCT']);
+    expect(view['creating']()).toBe(true);
     expect(rememberedView().systemProduct).toBe('web');
 
     view['pickProduct']('web');
     await settle(fixture);
 
     expect(element.querySelector('main h2')).toBeNull();
-    expect(view['pickerValue']()).toBe('web');
+    expect(view['creating']()).toBe(false);
   });
 });
 

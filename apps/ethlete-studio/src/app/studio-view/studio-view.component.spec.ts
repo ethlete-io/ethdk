@@ -1,7 +1,6 @@
-import { Component, input, provideZonelessChangeDetection } from '@angular/core';
+import { Component, input, output, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { SelectDirective } from '@ethlete/components';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { Project, Themes } from '../../host/design';
 import { resetDesignStreams } from '../../host/design-events';
@@ -17,6 +16,9 @@ class SystemViewStubComponent {
   public checkout = input('');
   public projectThemes = input<Record<string, Themes>>({});
   public lists = input(NO_LIST_REVISIONS);
+  public project = input('');
+  public projects = input<string[]>([]);
+  public projectChange = output<string>();
 }
 
 class FakeEventSource {
@@ -108,7 +110,7 @@ const button = (root: Element, text: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((found) => found.textContent?.trim() === text);
 
 const status = (fixture: ComponentFixture<StudioViewComponent>) =>
-  element(fixture).querySelector('footer')?.textContent ?? '';
+  element(fixture).querySelector(':scope > footer')?.textContent ?? '';
 
 const mount = async () => {
   localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT }));
@@ -155,14 +157,16 @@ describe('StudioViewComponent', () => {
     stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }) });
 
     const fixture = await mount();
-    const picker = fixture.debugElement.query(By.directive(SelectDirective))?.injector.get(SelectDirective<string>);
+
+    expect(system(fixture)?.projects()).toEqual(['checkout', 'broken']);
+    expect(system(fixture)?.project()).toBe('checkout');
 
     stubHost({
       design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }),
       design_project: () => Promise.reject('No design config in /broken.'),
     });
 
-    picker?.value.set('/broken');
+    system(fixture)?.projectChange.emit('broken');
     await settle(fixture);
 
     expect(system(fixture)?.port()).toBeNull();
@@ -173,9 +177,8 @@ describe('StudioViewComponent', () => {
     stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }) });
 
     const first = await mount();
-    const picker = first.debugElement.query(By.directive(SelectDirective))?.injector.get(SelectDirective<string>);
 
-    picker?.value.set('/other');
+    system(first)?.projectChange.emit('other');
     await settle(first);
     first.destroy();
 

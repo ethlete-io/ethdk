@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
@@ -38,7 +39,8 @@ import { injectFrameRenderQueue } from '../components/design-canvas/frame-render
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
-import { CheckoutsComponent } from './checkouts.component';
+import { ShellMainComponent } from '../design-parts/shell-main/shell-main.component';
+import { CheckoutsComponent, folderNameOf } from './checkouts.component';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
 import { failuresOf, queueLineOf } from './queue-status';
@@ -57,28 +59,20 @@ const STATUS_ITEM =
 @Component({
   selector: 'ethlete-studio-view',
   template: `
-    @if (serverDown(); as down) {
-      <div
-        class="mx-auto mt-15 flex w-full max-w-6xl flex-col items-start gap-2.5 px-5 text-[1.2rem] text-text-muted"
-        role="alert"
+    @if (serverDown() || serverStarting()) {
+      <ethlete-shell-main
+        product=""
+        [products]="[]"
+        [project]="projectName()"
+        [projects]="checkouts.names()"
+        (projectChange)="checkouts.chooseByName($event)"
+        (openProject)="checkouts.toggle()"
+        fill
       >
-        <h3 class="m-0 text-[1.4rem] text-text">The design server stopped</h3>
-        @if (watcherHint()) {
-          <p class="m-0">The system ran out of file watchers (inotify). Raise fs.inotify.max_user_instances.</p>
-        }
-        @if (down.log.length) {
-          <pre
-            class="m-0 box-border max-h-60 w-full overflow-auto rounded-sm bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_6%,transparent)] p-2.5 font-mono text-[1.1rem] whitespace-pre-wrap"
-            >{{ downLog() }}</pre>
-        }
-        <button (click)="restartServer()" et-button type="button" variant="outline" color="surface" size="sm">
-          Restart
-        </button>
-      </div>
-    } @else if (serverStarting()) {
-      <div class="mx-auto mt-15 w-full max-w-6xl px-5">
-        <h3 class="m-0 text-[1.4rem]">The design server is starting</h3>
-      </div>
+        <div class="size-full overflow-auto pl-(--st-shell-inset-left)">
+          <ng-container [ngTemplateOutlet]="serverMessage" />
+        </div>
+      </ethlete-shell-main>
     } @else {
       <ethlete-system-view
         [port]="server()?.listening ? (design()?.port ?? null) : null"
@@ -87,13 +81,43 @@ const STATUS_ITEM =
         [projectThemes]="design()?.themes ?? {}"
         [lists]="lists()"
         [frameRevisions]="frameRevisions()"
+        [project]="projectName()"
+        [projects]="checkouts.names()"
+        (projectChange)="checkouts.chooseByName($event)"
+        (openProject)="checkouts.toggle()"
       />
     }
+
+    <ng-template #serverMessage>
+      @if (serverDown(); as down) {
+        <div
+          class="mx-auto mt-15 flex w-full max-w-6xl flex-col items-start gap-2.5 px-5 text-[1.2rem] text-text-muted"
+          role="alert"
+        >
+          <h3 class="m-0 text-[1.4rem] text-text">The design server stopped</h3>
+          @if (watcherHint()) {
+            <p class="m-0">The system ran out of file watchers (inotify). Raise fs.inotify.max_user_instances.</p>
+          }
+          @if (down.log.length) {
+            <pre
+              class="m-0 box-border max-h-60 w-full overflow-auto rounded-sm bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_6%,transparent)] p-2.5 font-mono text-[1.1rem] whitespace-pre-wrap"
+              >{{ downLog() }}</pre>
+          }
+          <button (click)="restartServer()" et-button type="button" variant="outline" color="surface" size="sm">
+            Restart
+          </button>
+        </div>
+      } @else if (serverStarting()) {
+        <div class="mx-auto mt-15 w-full max-w-6xl px-5">
+          <h3 class="m-0 text-[1.4rem]">The design server is starting</h3>
+        </div>
+      }
+    </ng-template>
 
     <footer
       class="flex h-8 items-center gap-4 border-t border-(--et-surface-border-solid) bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
     >
-      <ethlete-checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
+      <ethlete-checkouts #checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
 
       <button (click)="reload()" et-button type="button" variant="transparent" color="surface" size="xs">Reload</button>
 
@@ -179,7 +203,9 @@ const STATUS_ITEM =
   imports: [
     BUTTON_IMPORTS,
     CheckoutsComponent,
+    NgTemplateOutlet,
     ProvideColorDirective,
+    ShellMainComponent,
     SystemViewComponent,
     UpdateButtonComponent,
     UpdateCheckButtonComponent,
@@ -197,6 +223,7 @@ export class StudioViewComponent {
   protected remembered = rememberedView().checkout ?? '';
 
   public checkout = signal('');
+  protected projectName = computed(() => folderNameOf(this.checkout()));
   protected design = signal<Project | null>(null);
   protected server = signal<ServerState | null>(null);
   protected serverBusy = signal(false);

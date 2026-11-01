@@ -10,12 +10,13 @@ import {
   inject,
   input,
   linkedSignal,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, SELECT_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
-import { AutoSurfaceDirective, ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
+import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
   ListedCall,
@@ -31,7 +32,6 @@ import {
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
-import { StudioMarkComponent } from '../components/studio-mark.component';
 import {
   ThemePick,
   camerasWith,
@@ -71,7 +71,9 @@ import {
   pinsOf,
   withOtherSizeNotes,
 } from './comment-pins';
-import { CommentPanelComponent } from './comment-panel.component';
+import { InboxComponent } from '../design-parts/inbox/inbox.component';
+import { ShellMainComponent, ShellSection } from '../design-parts/shell-main/shell-main.component';
+import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { NewProductFormComponent } from './new-product-form.component';
 import { SketchViewComponent } from './sketch-view.component';
@@ -106,9 +108,6 @@ const itemsOf = <T>(read: { product: string; items: T[] } | null, product: strin
 /** Never a product name: a product is a directory, and a directory name holds no slash. */
 const NEW_PRODUCT = '/new';
 
-export const baseLabelOf = (base: string) =>
-  base.startsWith('@') ? base : (base.split('/').filter(Boolean).at(-1) ?? base);
-
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
@@ -122,39 +121,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       }
     </ng-template>
 
-    <aside
-      class="flex min-h-0 flex-col overflow-y-auto border-r border-(--et-surface-border-solid) bg-(--et-surface-background-solid) pb-4 text-text"
-      etAutoSurface
-    >
-      <header class="flex flex-none items-center gap-2 px-4 pt-4 font-semibold text-ui-lg">
-        <ethlete-studio-mark class="size-5 flex-none" />
-        <span>Studio</span>
-      </header>
-
-      @if (reading() && !reading()?.error) {
-        <et-select
-          [value]="pickerValue()"
-          (valueChange)="pickProduct($event)"
-          class="mx-4 mt-4 mb-1 flex-none"
-          title="The product the system shows"
-          aria-label="Product"
-        >
-          @for (listed of products(); track listed.name) {
-            <et-select-option [value]="listed.name" [label]="listed.name">
-              <span class="flex flex-col">
-                {{ listed.name }}
-                @if (listed.base) {
-                  <span class="text-[1.1rem] text-(--et-surface-color-subtle-solid)"
-                    >inherits from {{ BASE_LABEL_OF(listed.base) }}</span
-                  >
-                }
-              </span>
-            </et-select-option>
-          }
-          <et-select-option [value]="NEW_PRODUCT" label="New product">New product</et-select-option>
-        </et-select>
-      }
-
+    <ng-template #sideTree>
       <et-tree
         [dataSource]="dataSource()"
         [expandedValues]="expandedValues()"
@@ -203,7 +170,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           }
         </ng-template>
       </et-tree>
-    </aside>
+    </ng-template>
 
     <ng-template #themeBar>
       @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
@@ -278,7 +245,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         <button
           [title]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
           [attr.aria-label]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
-          (click)="commentStore.showPanel(true)"
+          (click)="pickSection('Inbox')"
           class="-ml-1.5"
           et-button
           type="button"
@@ -289,18 +256,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           {{ questions }} ?
         </button>
       }
-      <button
-        [pressed]="commentStore.panelOpen()"
-        (click)="commentStore.showPanel(!commentStore.panelOpen())"
-        et-button
-        type="button"
-        variant="outline"
-        color="surface"
-        size="sm"
-        title="Show the comments of the product"
-      >
-        Comments{{ commentStore.comments().length > 0 ? ' · ' + commentStore.comments().length : '' }}
-      </button>
     </ng-template>
 
     <ng-template #newProductScreen let-heading>
@@ -327,252 +282,285 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       </div>
     </ng-template>
 
-    <main class="relative grid min-h-0 min-w-0">
-      @if (!port()) {
-        <p [class]="NOTE">Start the design server to see the design system.</p>
-      } @else if (creating()) {
-        <ng-container [ngTemplateOutlet]="newProductScreen" [ngTemplateOutletContext]="{ $implicit: 'New product' }" />
-      } @else if (call(); as shown) {
-        <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
-          <header class="flex items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
-            <div class="min-w-0 flex-1">
-              <span class="font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)">{{ shown.slug }}</span>
-              @if ('headline' in shown) {
-                <h2 class="m-0 mt-0.5 overflow-hidden text-[1.5rem] font-semibold text-ellipsis whitespace-nowrap">
-                  {{ shown.headline }}
-                </h2>
-              }
-            </div>
-            <ng-container [ngTemplateOutlet]="themeBar" />
-            @if ('transferred' in shown && shown.transferred) {
-              <span [class]="BADGE">transferred</span>
-            } @else if (!('error' in shown)) {
-              <button
-                [disabled]="transferring()"
-                (click)="markTransferred(shown.slug)"
-                et-button
-                type="button"
-                variant="outline"
-                color="surface"
-                size="sm"
-              >
-                Mark transferred
-              </button>
-            }
-            @if (transferError(); as message) {
-              <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-(--et-theme-color-primary-solid)">{{
-                message
-              }}</span>
-            }
-          </header>
-          <ethlete-design-canvas
-            [frames]="callFrames()"
-            [cameraKey]="cameraKey()"
-            [restoredCamera]="restoredCamera()"
-            (cameraChange)="rememberCamera($event)"
-            class="min-h-0"
-          />
-        </div>
-      } @else if (reading(); as read) {
-        @if (read.error) {
-          <p [class]="NOTE">{{ read.error }}</p>
-        } @else if (read.products.length === 0) {
+    <ng-template #shellCanvas>
+      <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
+        @if (!port()) {
+          <p [class]="NOTE">Start the design server to see the design system.</p>
+        } @else if (creating()) {
           <ng-container
             [ngTemplateOutlet]="newProductScreen"
-            [ngTemplateOutletContext]="{ $implicit: 'No product yet' }"
+            [ngTemplateOutletContext]="{ $implicit: 'New product' }"
           />
-        } @else if (sketchShown(); as shown) {
-          <ethlete-sketch-view
-            #sketchView
-            [port]="shown.port"
-            [product]="shown.product"
-            [sketch]="shown.sketch"
-            [part]="shown.part"
-            [epoch]="epoch()"
-            [revision]="sketchRevision()"
-            [view]="view()"
-            [surface]="surface()"
-            [color]="color()"
-            [cameraKey]="cameraKey()"
-            [restoredCamera]="restoredCamera()"
-            (cameraChange)="rememberCamera($event)"
-            (decide)="reloadSketches()"
-            (partOpen)="activate(shown.sketch.target)"
-            (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
-            (mergeComplete)="selectMerged($event)"
-          >
-            <ng-container [ngTemplateOutlet]="themeBar" />
-            <ng-container [ngTemplateOutlet]="commentModeButton" />
-          </ethlete-sketch-view>
-        } @else if (flowShown(); as shown) {
-          <ethlete-flow-view
-            #flowView
-            [notesShown]="notesShown()"
-            [port]="shown.port"
-            [product]="shown.product"
-            [flow]="shown.flow"
-            [sketches]="sketches()"
-            [epoch]="epoch()"
-            [revision]="shown.revision"
-            [view]="view()"
-            [surface]="surface()"
-            [color]="color()"
-            [cameraKey]="cameraKey()"
-            [restoredCamera]="restoredCamera()"
-            (cameraChange)="rememberCamera($event)"
-          >
-            <ng-container [ngTemplateOutlet]="themeBar" />
-            <ng-container [ngTemplateOutlet]="noteModeButton" />
-            <ng-container [ngTemplateOutlet]="commentModeButton" />
-          </ethlete-flow-view>
-        } @else if (awaitingPicked()) {
-        } @else if (part(); as partShown) {
-          <div class="absolute top-3 right-4 z-1 flex gap-2">
-            @if (partShown.listed.changedOutsideSketch) {
-              <span [class]="BADGE + ' self-center'" [title]="CHANGED_OUTSIDE_SKETCH" data-changed-outside-sketch>
-                changed
-              </span>
-            }
-            @let madeBy = partShown.listed.madeBy ?? [];
-            @if (madeBy.length > 0) {
-              <span
-                [title]="'made by ' + madeBy.join(', ')"
-                class="self-center font-mono text-small whitespace-nowrap text-(--et-surface-color-subtle-solid)"
-                data-made-by
-              >
-                made by {{ AUTHORS_LABEL_OF(madeBy) }}
-              </span>
-            }
-            @if (port(); as port) {
-              <ethlete-exception-list
-                [port]="port"
-                [product]="product()?.name ?? ''"
-                [part]="partShown.key"
-                [revision]="productsRevision()"
-              />
-            }
-            @if (partShown.listed.layer === 'pages') {
-              <button
-                [pressed]="inventoryShown()"
-                (click)="toggleInventory()"
-                et-button
-                type="button"
-                variant="outline"
-                color="surface"
-                size="sm"
-                title="Show the controls of this page and approve them"
-                data-inventory-toggle
-              >
-                Inventory
-              </button>
-            }
-            @if (!inventoryShown() || partShown.listed.layer !== 'pages') {
+        } @else if (call(); as shown) {
+          <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
+            <header class="flex items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
+              <div class="min-w-0 flex-1">
+                <span class="font-mono text-[1.1rem] text-(--et-surface-color-subtle-solid)">{{ shown.slug }}</span>
+                @if ('headline' in shown) {
+                  <h2 class="m-0 mt-0.5 overflow-hidden text-[1.5rem] font-semibold text-ellipsis whitespace-nowrap">
+                    {{ shown.headline }}
+                  </h2>
+                }
+              </div>
+              <ng-container [ngTemplateOutlet]="themeBar" />
+              @if ('transferred' in shown && shown.transferred) {
+                <span [class]="BADGE">transferred</span>
+              } @else if (!('error' in shown)) {
+                <button
+                  [disabled]="transferring()"
+                  (click)="markTransferred(shown.slug)"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  color="surface"
+                  size="sm"
+                >
+                  Mark transferred
+                </button>
+              }
+              @if (transferError(); as message) {
+                <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-(--et-theme-color-primary-solid)">{{
+                  message
+                }}</span>
+              }
+            </header>
+            <ethlete-design-canvas
+              [frames]="callFrames()"
+              [cameraKey]="cameraKey()"
+              [restoredCamera]="restoredCamera()"
+              (cameraChange)="rememberCamera($event)"
+              class="min-h-0"
+            />
+          </div>
+        } @else if (reading(); as read) {
+          @if (read.error) {
+            <p [class]="NOTE">{{ read.error }}</p>
+          } @else if (read.products.length === 0) {
+            <ng-container
+              [ngTemplateOutlet]="newProductScreen"
+              [ngTemplateOutletContext]="{ $implicit: 'No product yet' }"
+            />
+          } @else if (sketchShown(); as shown) {
+            <ethlete-sketch-view
+              #sketchView
+              [port]="shown.port"
+              [product]="shown.product"
+              [sketch]="shown.sketch"
+              [part]="shown.part"
+              [epoch]="epoch()"
+              [revision]="sketchRevision()"
+              [view]="view()"
+              [surface]="surface()"
+              [color]="color()"
+              [cameraKey]="cameraKey()"
+              [restoredCamera]="restoredCamera()"
+              (cameraChange)="rememberCamera($event)"
+              (decide)="reloadSketches()"
+              (partOpen)="activate(shown.sketch.target)"
+              (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
+              (mergeComplete)="selectMerged($event)"
+            >
+              <ng-container [ngTemplateOutlet]="themeBar" />
+              <ng-container [ngTemplateOutlet]="commentModeButton" />
+            </ethlete-sketch-view>
+          } @else if (flowShown(); as shown) {
+            <ethlete-flow-view
+              #flowView
+              [notesShown]="notesShown()"
+              [port]="shown.port"
+              [product]="shown.product"
+              [flow]="shown.flow"
+              [sketches]="sketches()"
+              [epoch]="epoch()"
+              [revision]="shown.revision"
+              [view]="view()"
+              [surface]="surface()"
+              [color]="color()"
+              [cameraKey]="cameraKey()"
+              [restoredCamera]="restoredCamera()"
+              (cameraChange)="rememberCamera($event)"
+            >
               <ng-container [ngTemplateOutlet]="themeBar" />
               <ng-container [ngTemplateOutlet]="noteModeButton" />
               <ng-container [ngTemplateOutlet]="commentModeButton" />
-            }
-          </div>
-          @if (inventoryShown() && partShown.listed.layer === 'pages' && port(); as port) {
-            @defer {
-              <ethlete-inventory-view
-                [port]="port"
-                [product]="product()?.name ?? ''"
-                [part]="partShown.key"
-                class="pt-14"
-              />
-            }
-          } @else {
-            <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
-              <ethlete-design-canvas
-                #partCanvas
-                [frames]="notedFrames()"
-                [cameraKey]="cameraKey()"
-                [restoredCamera]="restoredCamera()"
-                [pins]="partPins()"
-                [pointing]="commentStore.active() || noteStore.active()"
-                [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
-                [draft]="noteStore.draft() ?? commentStore.draft()"
-                [pinPopover]="pinThread"
-                [notes]="notesShown() ? partNotes() : []"
-                [noteTemplate]="noteBody"
-                (cameraChange)="rememberCamera($event)"
-                (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-                class="min-h-0"
-              >
-                @if (noteStore.draft()) {
-                  @defer {
-                    <ethlete-note-form canvasDraft />
-                  }
-                } @else if (commentStore.draft()) {
-                  @defer {
-                    <ethlete-comment-draft canvasDraft />
-                  }
-                }
-              </ethlete-design-canvas>
-              @if (partMotions(); as motions) {
-                @if (port(); as port) {
-                  <ethlete-motion-strip
-                    [port]="port"
-                    [product]="product()?.name ?? ''"
-                    [part]="partShown.key"
-                    [motions]="motions"
-                    [presets]="presetNames()"
-                    [surface]="surface()"
-                    [color]="color()"
-                    [revision]="productsRevision()"
-                    [canvas]="partCanvas"
-                    class="max-h-[45vh] overflow-y-auto"
-                  />
-                }
+            </ethlete-flow-view>
+          } @else if (awaitingPicked()) {
+          } @else if (part(); as partShown) {
+            <div class="absolute top-3 right-4 z-1 flex gap-2">
+              @if (partShown.listed.changedOutsideSketch) {
+                <span [class]="BADGE + ' self-center'" [title]="CHANGED_OUTSIDE_SKETCH" data-changed-outside-sketch>
+                  changed
+                </span>
+              }
+              @let madeBy = partShown.listed.madeBy ?? [];
+              @if (madeBy.length > 0) {
+                <span
+                  [title]="'made by ' + madeBy.join(', ')"
+                  class="self-center font-mono text-small whitespace-nowrap text-(--et-surface-color-subtle-solid)"
+                  data-made-by
+                >
+                  made by {{ AUTHORS_LABEL_OF(madeBy) }}
+                </span>
+              }
+              @if (port(); as port) {
+                <ethlete-exception-list
+                  [port]="port"
+                  [product]="product()?.name ?? ''"
+                  [part]="partShown.key"
+                  [revision]="productsRevision()"
+                />
+              }
+              @if (partShown.listed.layer === 'pages') {
+                <button
+                  [pressed]="inventoryShown()"
+                  (click)="toggleInventory()"
+                  et-button
+                  type="button"
+                  variant="outline"
+                  color="surface"
+                  size="sm"
+                  title="Show the controls of this page and approve them"
+                  data-inventory-toggle
+                >
+                  Inventory
+                </button>
+              }
+              @if (!inventoryShown() || partShown.listed.layer !== 'pages') {
+                <ng-container [ngTemplateOutlet]="themeBar" />
+                <ng-container [ngTemplateOutlet]="noteModeButton" />
+                <ng-container [ngTemplateOutlet]="commentModeButton" />
               }
             </div>
+            @if (inventoryShown() && partShown.listed.layer === 'pages' && port(); as port) {
+              @defer {
+                <ethlete-inventory-view
+                  [port]="port"
+                  [product]="product()?.name ?? ''"
+                  [part]="partShown.key"
+                  class="pt-14"
+                />
+              }
+            } @else {
+              <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
+                <ethlete-design-canvas
+                  #partCanvas
+                  [frames]="notedFrames()"
+                  [cameraKey]="cameraKey()"
+                  [restoredCamera]="restoredCamera()"
+                  [pins]="partPins()"
+                  [pointing]="commentStore.active() || noteStore.active()"
+                  [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+                  [draft]="noteStore.draft() ?? commentStore.draft()"
+                  [pinPopover]="pinThread"
+                  [notes]="notesShown() ? partNotes() : []"
+                  [noteTemplate]="noteBody"
+                  (cameraChange)="rememberCamera($event)"
+                  (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
+                  class="min-h-0"
+                >
+                  @if (noteStore.draft()) {
+                    @defer {
+                      <ethlete-note-form canvasDraft />
+                    }
+                  } @else if (commentStore.draft()) {
+                    @defer {
+                      <ethlete-comment-draft canvasDraft />
+                    }
+                  }
+                </ethlete-design-canvas>
+                @if (partMotions(); as motions) {
+                  @if (port(); as port) {
+                    <ethlete-motion-strip
+                      [port]="port"
+                      [product]="product()?.name ?? ''"
+                      [part]="partShown.key"
+                      [motions]="motions"
+                      [presets]="presetNames()"
+                      [surface]="surface()"
+                      [color]="color()"
+                      [revision]="productsRevision()"
+                      [canvas]="partCanvas"
+                      class="max-h-[45vh] overflow-y-auto"
+                    />
+                  }
+                }
+              </div>
+            }
+          } @else {
+            <p [class]="NOTE">This product has no parts yet.</p>
           }
-        } @else {
-          <p [class]="NOTE">This product has no parts yet.</p>
         }
-      }
-    </main>
-    @if (commentStore.panelOpen() && commentable()) {
-      <ethlete-comment-panel
-        [comments]="commentStore.comments()"
-        [resolved]="commentStore.resolved()"
-        [resolvedShown]="commentStore.resolvedShown()"
-        [loaded]="commentStore.loaded()"
-        [loadError]="commentStore.loadError()"
-        [interrupted]="commentStore.interrupted()"
-        [selected]="shownPart()"
-        (retry)="commentStore.retry()"
-        (jump)="jumpTo($event)"
-        (dismiss)="commentStore.showPanel(false)"
-        (resolvedToggle)="commentStore.showResolved($event)"
-      />
+      </main>
+    </ng-template>
+
+    @if (section() === 'Inbox') {
+      <ethlete-inbox
+        [comments]="inboxComments()"
+        [activePart]="activePart()"
+        [selectedId]="null"
+        [showResolved]="commentStore.resolvedShown()"
+        [product]="product()?.name ?? ''"
+        [products]="productNames()"
+        [project]="project()"
+        [projects]="projects()"
+        [panel]="panel()"
+        (showResolvedChange)="commentStore.showResolved($event)"
+        (pick)="jumpToComment($event)"
+        (collapse)="panel.set('hidden')"
+        (sectionChange)="pickSection($event)"
+        (productChange)="pickProduct($event)"
+        (allProducts)="pickProduct(NEW_PRODUCT)"
+        (projectChange)="projectChange.emit($event)"
+        (openProject)="openProject.emit()"
+      >
+        <ng-container [ngTemplateOutlet]="shellCanvas" />
+      </ethlete-inbox>
+    } @else {
+      <ethlete-shell-main
+        [section]="section()"
+        [product]="product()?.name ?? ''"
+        [products]="productNames()"
+        [project]="project()"
+        [projects]="projects()"
+        [panel]="panel()"
+        (collapse)="panel.set('hidden')"
+        (sectionChange)="pickSection($event)"
+        (productChange)="pickProduct($event)"
+        (allProducts)="pickProduct(NEW_PRODUCT)"
+        (projectChange)="projectChange.emit($event)"
+        (openProject)="openProject.emit()"
+        fill
+      >
+        <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto" shellMainSide>
+          <ng-container [ngTemplateOutlet]="sideTree" />
+        </div>
+        <ng-container [ngTemplateOutlet]="shellCanvas" />
+      </ethlete-shell-main>
     }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
-    SELECT_IMPORTS,
     NgTemplateOutlet,
     TREE_IMPORTS,
     DesignCanvasComponent,
     ProvideColorDirective,
-    AutoSurfaceDirective,
     SketchViewComponent,
     FlowViewComponent,
     NewProductFormComponent,
     CommentDraftComponent,
     CommentThreadComponent,
-    CommentPanelComponent,
+    InboxComponent,
+    ShellMainComponent,
     NoteBodyComponent,
     NoteFormComponent,
-    StudioMarkComponent,
     InventoryViewComponent,
     ExceptionListComponent,
     MotionStripComponent,
   ],
   providers: [provideCommentStore(), provideNoteStore()],
   host: {
-    class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)_auto]',
+    class: 'block size-full min-h-0',
     '(window:keydown)': 'handleCommentKey($event)',
   },
 })
@@ -586,12 +574,17 @@ export class SystemViewComponent {
   public port = input<number | null>(null);
   public epoch = input(0);
   public checkout = input('');
+  public project = input('');
+  public projects = input<string[]>([]);
 
   public projectThemes = input<Record<string, Themes>>({});
-
   public lists = input(NO_LIST_REVISIONS);
 
   public frameRevisions = input(NO_FRAME_REVISIONS);
+
+  public projectChange = output<string>();
+
+  public openProject = output();
 
   public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
 
@@ -696,7 +689,7 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  protected pickerValue = computed(() => (this.creating() ? NEW_PRODUCT : (this.product()?.name ?? NEW_PRODUCT)));
+  protected productNames = computed(() => this.products().map((listed) => listed.name));
 
   private sketchRead = toSignal(
     toObservable(
@@ -1099,13 +1092,27 @@ export class SystemViewComponent {
     return motions && Object.keys(motions).length > 0 ? motions : null;
   });
   protected presetNames = computed(() => Object.keys(this.product()?.presets ?? {}));
-  protected shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
+  public shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
-  protected commentable = computed(
+  public commentable = computed(
     () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
   );
 
-  protected readonly BASE_LABEL_OF = baseLabelOf;
+  protected panel = signal<'open' | 'hidden'>('open');
+
+  private railSection = signal<Exclude<ShellSection, 'Inbox'>>('System');
+
+  protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
+
+  protected inboxComments = computed(() => {
+    const now = Date.now();
+
+    return [...this.commentStore.comments(), ...this.commentStore.resolved()].map((comment) =>
+      inboxCommentOf(comment, now),
+    );
+  });
+
+  protected activePart = computed(() => inboxPartOf(this.shownPart() ?? ''));
 
   constructor() {
     const source = computed(() => {
@@ -1188,7 +1195,7 @@ export class SystemViewComponent {
   }
 
   /** Opens the pin of a comment on the shown flow, else shows the part or sketch it sits on, moves the camera to its pin and opens it. */
-  protected jumpTo(comment: NumberedComment) {
+  public jumpTo(comment: NumberedComment) {
     if (this.flowView()?.jumpTo(comment)) return;
 
     const sketchKey = sketchKeyOf(comment.part);
@@ -1199,6 +1206,19 @@ export class SystemViewComponent {
       this.activate(key);
       afterNextRender(() => this.focusComment(comment), { injector: this.injector });
     }
+  }
+
+  protected pickSection(section: ShellSection) {
+    this.panel.set('open');
+    this.commentStore.showPanel(section === 'Inbox');
+
+    if (section !== 'Inbox') this.railSection.set(section);
+  }
+
+  protected jumpToComment(id: string) {
+    const comment = this.commentStore.comments().find((open) => open.id === id);
+
+    if (comment) this.jumpTo(comment);
   }
 
   protected entryOf(value: unknown) {
