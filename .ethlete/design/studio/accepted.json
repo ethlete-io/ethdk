@@ -1547,5 +1547,12 @@
     "note": "Impl Q33: the claude, codex and gemini SVGs moved to one shared icon file used by app and design",
     "hash": "46bcf29865e6c1f4",
     "at": "2026-11-01T13:50:16.382Z"
+  },
+  {
+    "part": "components/shell-project-switch",
+    "by": "tom",
+    "note": "Impl Q63: drop open-focus-visible, the open row focus-visible column shows project.option-focus-visible",
+    "hash": "330f0d4de9082165",
+    "at": "2026-11-01T14:19:22.315Z"
   }
 ]

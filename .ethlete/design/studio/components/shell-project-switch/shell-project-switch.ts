@@ -57,21 +57,37 @@ export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) =>
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const switchRows = interactionRows<Props, 'closed' | 'open', SwitchInteraction>(
-  { closed: { open: false }, open: { open: true } },
-  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+const force = (props: Props, interaction: SwitchInteraction) => ({ ...props, interaction });
+
+const closedRows = interactionRows<Props, 'closed', SwitchInteraction>(
+  { closed: { open: false } },
+  { interactions: ['hover', 'active', 'focus-visible'], force },
 );
+
+const openRows = interactionRows<Props, 'open', SwitchInteraction>(
+  { open: { open: true } },
+  { interactions: ['hover', 'active'], force },
+);
+
+const switchStates = { ...closedRows.states, ...openRows.states };
+const switchGrid = {
+  columns: closedRows.grid.columns,
+  rows: {
+    ...closedRows.grid.rows,
+    open: { ...openRows.grid.rows.open, 'focus-visible': 'project.option-focus-visible' as const },
+  },
+};
 
 export default definePart({
   note: 'The project switch in the shell panel foot: badge, project name and an up-down chevron; it opens the project picker. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. Plain text at rest, and the chevron sits after the name, not at the right edge.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: {
-    ...switchRows.states,
+    ...switchStates,
     'project.option-hover': { open: true, option: 'hover' },
     'project.option-focus-visible': { open: true, option: 'focus-visible' },
     'project.option-selected': { open: true, option: 'selected' },
   },
-  grid: switchRows.grid,
+  grid: switchGrid,
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
   controls: { project: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellProjectSwitchStyles,

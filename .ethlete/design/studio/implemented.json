@@ -81,6 +81,22 @@
       "collapse-hover": "12b1b358429b1df5"
     }
   },
+  "components/shell-project-switch": {
+    "hash": "330f0d4de9082165",
+    "at": "2026-11-01T14:19:37.759Z",
+    "states": {
+      "closed": "5cbc2772c1f9aa12",
+      "closed-active": "f0330652bc0e1d79",
+      "closed-focus-visible": "078c36de460a3ace",
+      "closed-hover": "17c27d1812d9055b",
+      "open": "1707653503031fda",
+      "open-active": "aeef13d59bf609a7",
+      "open-hover": "0a3667d972683d58",
+      "project.option-focus-visible": "b640ed890ce7d9d8",
+      "project.option-hover": "acf23cdfa12e41be",
+      "project.option-selected": "e73ec66fd02b1bb3"
+    }
+  },
   "components/tree-row": {
     "hash": "3f84d36591542970",
     "at": "2026-11-01T13:28:45.934Z",
