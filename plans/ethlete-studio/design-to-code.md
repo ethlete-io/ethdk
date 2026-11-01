@@ -321,3 +321,15 @@ only; the builder starts when Tom gives the start.
   renders `InboxComponent` with live comment-store data in place of the old comment panel, and the real shell
   renders `ShellMainComponent`. Route `/` no longer shows the old `StudioViewComponent` parts that these replace.
   Tom checks the inbox on :4402 after slice 3, not after slice 2.
+- Impl Q6 parallel findings (Tom, 2026-11-01): Q254 is partly lifted. Parallel to the pilot, the builder fixes tool
+  and system findings that change no design and touch none of the pilot files (inbox, shell-main, `studio-view`,
+  their harness). One subagent per item; commits pushed in batches. The items:
+  1. Plain `design check` shows every blocker that today only `design ready` shows (missing states, contrast).
+  2. `design check` and `design ready` warn when `dist/libs` is older than the lib sources.
+  3. Forced interactions (hover, active) are not applied to disabled states.
+  4. Studio says "restart the server" when the server runs an older `@ethlete/cli` than the installed one.
+  5. Studio writes `inventory.json` in the format Prettier accepts.
+  6. Browser-backed cli specs that CI skips report the skip visibly.
+  7. The canonical-class check also runs on the Tailwind classes in `apps/ethlete-studio/src`.
+     Not now: the Inventory canvas, the sketch views (live iframe cap, changed-area context, multi-part title), and the
+     word "go". They change the design or touch Studio views of the pilot.
