@@ -656,6 +656,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     because Impl Q58 named only three pages, the merge part shows unchanged rows of one part only, and the flows part
     draws no pins, notes or drafts. Lesson: every page design needs error and confirm states for its destructive and
     failing actions, and a decision about "all pages" must list them all.
+40. `task --verify` cannot verify the inbox part: its latest component commits (34df339ec, d86590c14) also touch
+    files outside the part, so "ready" was re-stamped without a fresh verify. Also, the pane-count wait from b3608e561
+    failed two inbox states because the part draws the comment editor as a static dialog and the design as an overlay
+    mock; 24f0de777 made the wait soft (3 s, then shoot, the pixel compare decides). Lesson: a verify must not depend
+    on the commit touching only part files, and a compare wait must not assume the part and the design use the same
+    overlay mechanism.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
