@@ -34,6 +34,7 @@ export const FLOWS_SAMPLE = ['Sketch prüfen', 'Kommentar beantworten', 'Produkt
                 [attr.aria-level]="1"
                 [attr.aria-selected]="row.selected"
                 (click)="pick.emit(row.label)"
+                (keydown.enter)="pick.emit(row.label)"
                 ethlete-tree-row-item
                 role="treeitem"
                 tabindex="0"
@@ -41,7 +42,7 @@ export const FLOWS_SAMPLE = ['Sketch prüfen', 'Kommentar beantworten', 'Produkt
             }
           </div>
         } @else {
-          <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ labels.none }}</p>
+          <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted">{{ LABELS.none }}</p>
         }
       </div>
       <ng-content />
@@ -52,8 +53,6 @@ export const FLOWS_SAMPLE = ['Sketch prüfen', 'Kommentar beantworten', 'Produkt
   host: { class: 'block h-screen w-full' },
 })
 export class FlowsPageComponent {
-  protected readonly labels = STUDIO_LABELS.flows;
-
   public flow = input<'open' | 'none'>('open');
   public flows = input(FLOWS_SAMPLE);
   public selected = input(FLOWS_SAMPLE[0]);
@@ -71,6 +70,8 @@ export class FlowsPageComponent {
   public allProducts = output();
   public projectChange = output<string>();
   public openProject = output();
+
+  protected readonly LABELS = STUDIO_LABELS.flows;
 
   protected rows = computed<TreeRow[]>(() =>
     this.flow() === 'none'
