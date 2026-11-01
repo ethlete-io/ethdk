@@ -1,5 +1,5 @@
 {
-  "apiLevel": 1,
+  "apiLevel": 2,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -23,6 +23,7 @@
     "/__design/note-delete",
     "/__design/notes",
     "/__design/open-points",
+    "/__design/part-accept",
     "/__design/part-go",
     "/__design/part-ready",
     "/__design/product",

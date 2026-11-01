@@ -50,8 +50,9 @@ const startDesignServer = (checkout) =>
  * The design server listens on `::1` only, so every address here is `[::1]`: `localhost` and `127.0.0.1` are refused from Node.
  * Builds Studio into a scratch folder, runs a design server and a static server of its own on free ports, and
  * calls `run({ page, studioUrl, designPort })` in headless Chromium with a stubbed desktop shell. Stops only what it started.
+ * `built` serves an existing Studio build folder instead of building one.
  */
-export const withStudio = async (run, { checkout = root, build = true } = {}) => {
+export const withStudio = async (run, { checkout = root, build = true, built } = {}) => {
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
   const servers = [];
   let design;
@@ -60,7 +61,7 @@ export const withStudio = async (run, { checkout = root, build = true } = {}) =>
   try {
     if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
 
-    if (build) {
+    if (build && !built) {
       execFileSync(
         'npx',
         ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
@@ -74,7 +75,7 @@ export const withStudio = async (run, { checkout = root, build = true } = {}) =>
 
     design = await startDesignServer(checkout);
 
-    const app = serveStatic(join(scratch, 'browser'));
+    const app = serveStatic(join(built ?? scratch, 'browser'));
     servers.push(app);
     const studioPort = await listen(app);
     const designUrl = `http://[::1]:${design.port}`;

@@ -208,6 +208,27 @@ export const recordMergeReason = (options: {
   });
 };
 
+export type AcceptRefusal = { reason: 'unknown-part' | 'open-sketch' | 'nothing-to-accept'; error: string };
+
+/** Why a direct edit of a part cannot be accepted, or `null` when it can. */
+export const acceptRefusalOf = (options: { product: ResolvedProduct; part: string }): AcceptRefusal | null => {
+  const { product, part } = options;
+
+  if (!product.parts.some((candidate) => partKeyOf(candidate) === part))
+    return { reason: 'unknown-part', error: `NO PART "${part}" in ${product.name}` };
+
+  if (sketchedPartsOf(product).has(part))
+    return {
+      reason: 'open-sketch',
+      error: `${part} has an open sketch - merge or discard it; a merge records the part`,
+    };
+
+  if (!changedOutsideSketchOf(product).includes(part))
+    return { reason: 'nothing-to-accept', error: `${part} has no change outside a sketch - nothing to accept` };
+
+  return null;
+};
+
 /**
  * Records a direct edit of a merged part the user approved: writes the part's current hash to `merged.json` and
  * logs who accepted it and why in `accepted.json`. Answers with why nothing was accepted, or `null`.
@@ -219,14 +240,9 @@ export const acceptPart = (options: {
   note: string;
 }): string | null => {
   const { product, part, by, note } = options;
+  const refusal = acceptRefusalOf({ product, part });
 
-  if (!product.parts.some((candidate) => partKeyOf(candidate) === part)) return `NO PART "${part}" in ${product.name}`;
-
-  if (sketchedPartsOf(product).has(part))
-    return `${part} has an open sketch - merge or discard it; a merge records the part`;
-
-  if (!changedOutsideSketchOf(product).includes(part))
-    return `${part} has no change outside a sketch - nothing to accept`;
+  if (refusal) return refusal.error;
 
   recordMerged({ product, parts: [part] });
 

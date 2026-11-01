@@ -68,7 +68,7 @@ describe('part go', () => {
     const { target, dir } = checkout();
     const hash = hashOf(target);
 
-    expect((await post(target, { part: 'components/tag', by: 'tom' })).status).toBe(200);
+    expect((await post(target, { part: 'components/tag', hash: hashOf(target, 'components/tag') })).status).toBe(200);
 
     const answer = await post(target, { part: 'components/chip', by: 'tom', hash });
 
@@ -76,8 +76,9 @@ describe('part go', () => {
     expect(readGo(dir)['components/chip']).toEqual({
       hash,
       files: { '.ethlete/design/app-a/components/chip/chip.ts': expect.any(String) },
-      by: 'tom',
+      by: 'user',
       at: expect.any(String),
+      note: 'studio click',
     });
     expect(goPartsOf(productOf(target))).toEqual(['components/chip', 'components/tag']);
 
@@ -87,13 +88,22 @@ describe('part go', () => {
     expect(goPartsOf(productOf(target))).toEqual(['components/tag']);
   });
 
-  it('answers 400 without by or a body part, 404 for an unknown part and 409 on a stale hash', async () => {
+  it('refuses a Studio go without the shown hash or a body part, for an unknown part and on a stale hash', async () => {
     const { target, dir } = checkout();
 
-    expect((await post(target, { part: 'components/chip' })).status).toBe(400);
-    expect((await post(target, { by: 'tom' })).status).toBe(400);
-    expect((await post(target, { part: 'components/gone', by: 'tom' })).status).toBe(404);
-    expect((await post(target, { part: 'components/chip', by: 'tom', hash: 'stale' })).status).toBe(409);
+    expect(await post(target, { part: 'components/chip' })).toMatchObject({
+      status: 400,
+      body: { reason: 'hash-missing' },
+    });
+    expect(await post(target, { hash: 'x' })).toMatchObject({ status: 400, body: { reason: 'part-missing' } });
+    expect(await post(target, { part: 'components/gone', hash: 'x' })).toMatchObject({
+      status: 404,
+      body: { reason: 'unknown-part' },
+    });
+    expect(await post(target, { part: 'components/chip', hash: 'stale' })).toMatchObject({
+      status: 409,
+      body: { reason: 'changed' },
+    });
     expect(readGo(dir)).toEqual({});
   });
 
@@ -105,7 +115,7 @@ describe('part go', () => {
       { kind: 'missing-state', control: null },
     ]);
 
-    await post(target, { part: 'components/chip', by: 'tom' });
+    await post(target, { part: 'components/chip', hash: hashOf(target) });
 
     expect(chipPointsOf(target)).toEqual([]);
 
@@ -120,7 +130,7 @@ describe('part go', () => {
   it('answers the go of a part with its open points', async () => {
     const { target } = checkout();
 
-    await post(target, { part: 'components/chip', by: 'tom' });
+    await post(target, { part: 'components/chip', hash: hashOf(target) });
 
     const answer = await openPointsAnswer({
       target,
@@ -128,7 +138,7 @@ describe('part go', () => {
       request: request('GET'),
     });
 
-    expect(answer.body).toMatchObject({ go: { by: 'tom' }, points: [] });
+    expect(answer.body).toMatchObject({ go: { by: 'user' }, directEdit: false, points: [] });
   });
 
   it('et design go stores a go, and refuses an unknown part and a missing author', async () => {

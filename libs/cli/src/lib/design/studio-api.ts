@@ -37,7 +37,9 @@ import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
 import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { recordMergeReason } from './system/sketch/merged-parts';
+import { changedOutsideSketchOf, recordMergeReason } from './system/sketch/merged-parts';
+import { acceptRunOf, partAcceptRefusalOf } from './system/accept-command';
+import { DrawStates, storePictures } from './system/accepted-pictures';
 import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
@@ -88,6 +90,7 @@ export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
 export const PART_READY_PATH = '/__design/part-ready';
 export const PART_GO_PATH = '/__design/part-go';
+export const PART_ACCEPT_PATH = '/__design/part-accept';
 
 export type Answer = { status: number; body: unknown };
 
@@ -106,9 +109,20 @@ type Asked = {
   pictureOf?: PictureOf;
   boxOf?: BoxOf;
   inventoryOf?: (options: { product: ResolvedProduct; part: string }) => Promise<Inventory | string>;
+  drawStates?: DrawStates;
 };
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
+
+const refusal = (options: {
+  status: number;
+  reason: string;
+  message: string;
+  extra?: Record<string, unknown>;
+}): Answer => ({
+  status: options.status,
+  body: { error: options.message, reason: options.reason, ...options.extra },
+});
 
 const productOf = ({ target, url }: Asked): { config: DesignConfig; product: ResolvedProduct } | Answer => {
   const asked = url.searchParams.get('product');
@@ -773,11 +787,12 @@ export const exceptionApproveAnswer = withProduct('POST', async ({ asked, produc
 });
 
 const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer => {
-  if (typeof part !== 'string' || part === '') return failure(400, 'part is required');
+  if (typeof part !== 'string' || part === '')
+    return refusal({ status: 400, reason: 'part-missing', message: 'part is required' });
 
   return product.parts.some((candidate) => partKeyOf(candidate) === part)
     ? part
-    : failure(404, `product "${product.name}" has no part "${part}"`);
+    : refusal({ status: 404, reason: 'unknown-part', message: `product "${product.name}" has no part "${part}"` });
 };
 
 const actionFailuresOf = async ({ asked, config, product }: Found, part: string) => {
@@ -797,6 +812,7 @@ const drawnPointsOf = async ({ asked, config, product }: Found, part: string) =>
 /**
  * GET `?product=&part=&draw=`: the open points of one part, or of every part without `part`. Contrasts and missing
  * control states need a draw: only `draw=true` with a `part` lists them, and `drawn` says whether they are in.
+ * `directEdit` says whether the merged part changed outside a sketch and waits for an accept.
  */
 export const openPointsAnswer = withProduct('GET', async (found) => {
   const { url } = found.asked;
@@ -823,8 +839,9 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const ready = readyMarkOf({ product: found.product, part });
 
   const go = goMarkOf({ product: found.product, part });
+  const directEdit = changedOutsideSketchOf(found.product).includes(part);
 
-  return { status: 200, body: { part, hash, ready, go, drawn: draw === 'true', points } };
+  return { status: 200, body: { part, hash, ready, go, directEdit, drawn: draw === 'true', points } };
 });
 
 /**
@@ -864,9 +881,29 @@ export const partReadyAnswer = withProduct('POST', async (found) => {
   return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
 });
 
+const STUDIO_CLICK = 'user';
+
+const shownHashRefusalOf = (options: { product: ResolvedProduct; part: string; shown: unknown }): Answer | null => {
+  const { product, part, shown } = options;
+
+  if (typeof shown !== 'string' || shown === '')
+    return refusal({ status: 400, reason: 'hash-missing', message: 'hash is required' });
+
+  const located = readyPartOf({ product, part });
+
+  return typeof located !== 'string' && located.hash !== shown
+    ? refusal({
+        status: 409,
+        reason: 'changed',
+        message: `${part} changed since it was shown - reload and check it again`,
+      })
+    : null;
+};
+
 /**
- * POST `?product=`, body `{ part, by, hash? }`: stores a go for a part at its current hash. A `hash` Studio showed must
- * still match (409). A go does not need an empty open-point list.
+ * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, then its go
+ * pictures (`unstored` says why not). A refusal answers `reason`: `hash-missing` (400), `unknown-part` (404) or
+ * `changed` (409). A go needs no empty open-point list.
  */
 export const partGoAnswer = withProduct('POST', async (found) => {
   const body = await bodyOf(found.asked.request);
@@ -877,9 +914,79 @@ export const partGoAnswer = withProduct('POST', async (found) => {
 
   if (typeof part !== 'string') return part;
 
-  const marked = markPartGo({ product: found.product, part, by: body['by'], hash: body['hash'] });
+  const shown = shownHashRefusalOf({ product: found.product, part, shown: body['hash'] });
 
-  if ('status' in marked) return failure(marked.status, marked.error);
+  if (shown) return shown;
 
-  return { status: 200, body: { part, hash: marked.hash, go: marked } };
+  const marked = markPartGo({
+    product: found.product,
+    part,
+    by: STUDIO_CLICK,
+    hash: body['hash'],
+    note: 'studio click',
+  });
+
+  if ('status' in marked)
+    return refusal({
+      status: marked.status,
+      reason: marked.status === 409 ? 'changed' : 'unknown-part',
+      message: marked.error,
+    });
+
+  const unstored = await storePictures({
+    target: found.asked.target,
+    config: found.config,
+    product: found.product,
+    part,
+    kind: 'go',
+    hash: marked.hash,
+    draw: found.asked.drawStates,
+  });
+
+  return { status: 200, body: { part, hash: marked.hash, go: marked, unstored } };
+});
+
+/**
+ * POST `?product=`, body `{ part, hash, note? }`: accepts the Studio user's approval of a direct edit of a merged part,
+ * as `et design accept` does. Checks everything before it writes; a refusal answers `reason`: `hash-missing`,
+ * `unknown-part`, `changed`, `findings` (with the `findings` lines), `open-sketch` or `nothing-to-accept`.
+ */
+export const partAcceptAnswer = withProduct('POST', async (found) => {
+  const body = await bodyOf(found.asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const part = knownPartOf(found.product, body['part']);
+
+  if (typeof part !== 'string') return part;
+
+  const shown = shownHashRefusalOf({ product: found.product, part, shown: body['hash'] });
+
+  if (shown) return shown;
+
+  const refused = partAcceptRefusalOf({ target: found.asked.target, product: found.product, part });
+
+  if (refused)
+    return refusal({
+      status: refused.reason === 'unknown-part' ? 404 : 422,
+      reason: refused.reason,
+      message: refused.error,
+      extra: 'findings' in refused ? { findings: refused.findings } : {},
+    });
+
+  const note = textOf(body['note'])?.trim() || 'approved by a click in Studio';
+  const step = acceptRunOf({
+    target: found.asked.target,
+    config: found.config,
+    product: found.product,
+    part,
+    by: STUDIO_CLICK,
+    note,
+    draw: found.asked.drawStates,
+  });
+
+  if ((await step.run()) !== 0)
+    return refusal({ status: 409, reason: 'changed', message: `${part} changed while it was accepted - reload it` });
+
+  return { status: 200, body: { part, accepted: { by: STUDIO_CLICK, note } } };
 });

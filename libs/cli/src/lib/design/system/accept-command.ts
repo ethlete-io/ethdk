@@ -1,9 +1,10 @@
 import { dirname, relative } from 'path';
 import { DrawStates, storePictures } from './accepted-pictures';
 import { ruleProblemsOf } from './check-system';
+import { DesignConfig } from '../paths';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
-import { acceptPart, readMerged } from './sketch/merged-parts';
+import { AcceptRefusal, acceptPart, acceptRefusalOf, readMerged } from './sketch/merged-parts';
 import { parseTarget } from './sketch/sketch';
 import { DesignStep, isTom, runSteps, tomConfirmRefusalOf, ttyPrompt, WriteCommandOptions } from './tom-confirm';
 
@@ -24,32 +25,37 @@ const findingsOfPart = (options: { target: string; product: ResolvedProduct; par
     .map((problem) => `${problem.rule} ${relative(options.target, problem.file)}: ${problem.message}`);
 };
 
-/** An acceptance of a direct edit of one part as a step, or why it may not run. */
-export const acceptStepOf = (options: {
+export type PartAcceptRefusal = AcceptRefusal | { reason: 'findings'; error: string; findings: string[] };
+
+/** Why a direct edit of a part cannot be accepted - theming findings in its folder first - or `null` when it can. */
+export const partAcceptRefusalOf = (options: {
   target: string;
-  product: string | undefined;
+  product: ResolvedProduct;
+  part: string;
+}): PartAcceptRefusal | null => {
+  const findings = findingsOfPart(options);
+
+  if (findings.length > 0)
+    return {
+      reason: 'findings',
+      error: `${findings.join('\n')}\n${options.part} has problems - fix them before accept`,
+      findings,
+    };
+
+  return acceptRefusalOf(options);
+};
+
+/** Accepts a direct edit and stores the review pictures, for a part whose {@link partAcceptRefusalOf} is `null`. */
+export const acceptRunOf = (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
   part: string;
   by: string;
   note: string;
   draw?: DrawStates;
-}): DesignStep | string => {
-  const { target, by, note } = options;
-  const config = configOf(target);
-
-  if (typeof config === 'string') return config;
-
-  const parsed = parseTarget(options.part);
-
-  if (typeof parsed === 'string') return parsed;
-
-  const product = oneProductOf({ target, config, asked: options.product });
-
-  if (typeof product === 'string') return product;
-
-  const part = partKeyOf(parsed);
-  const findings = findingsOfPart({ target, product, part });
-
-  if (findings.length > 0) return `${findings.join('\n')}\n${part} has problems - fix them before accept`;
+}): DesignStep => {
+  const { target, config, product, part, by, note } = options;
 
   return {
     line: `accept ${product.name} ${part} - ${note}`,
@@ -79,6 +85,36 @@ export const acceptStepOf = (options: {
       return 0;
     },
   };
+};
+
+/** An acceptance of a direct edit of one part as a step, or why it may not run. */
+export const acceptStepOf = (options: {
+  target: string;
+  product: string | undefined;
+  part: string;
+  by: string;
+  note: string;
+  draw?: DrawStates;
+}): DesignStep | string => {
+  const { target, by, note } = options;
+  const config = configOf(target);
+
+  if (typeof config === 'string') return config;
+
+  const parsed = parseTarget(options.part);
+
+  if (typeof parsed === 'string') return parsed;
+
+  const product = oneProductOf({ target, config, asked: options.product });
+
+  if (typeof product === 'string') return product;
+
+  const part = partKeyOf(parsed);
+  const refusal = partAcceptRefusalOf({ target, product, part });
+
+  if (refusal) return refusal.error;
+
+  return acceptRunOf({ target, config, product, part, by, note, draw: options.draw });
 };
 
 /**
