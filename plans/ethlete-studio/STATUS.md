@@ -51,6 +51,8 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
+- Schnellere Design-CLI: Aktions-Prüfungen parallel, Bedingung statt fester Wartezeit von 400 ms (Q16, 02.11.).
+
 - Go erst, wenn alle Prüfungen grün sind (Q14). Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, wird gebaut).
 
 - Ein Knopf „Abnehmen und Go“, wenn beide Schritte offen sind (Q12, 01.11.).
@@ -61,6 +63,8 @@ oben rechts in der Teil-Ansicht.
 - pages/system: Prüfung läuft, Live-Shot folgt. pages/sketches: Kamera (Q135) wird gebaut.
 
 ## Für später gesammelt
+
+- Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16, 02.11.).
 
 - Merge-Ansicht hat keinen Canvas mehr, kein Zoomen (Befund 117, 01.11.).
 

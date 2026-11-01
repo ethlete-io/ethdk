@@ -1673,3 +1673,12 @@ checks failed post-go.
    example a `data-et-action`, an app-only text) does not make the go stale, like the existing "merged automatically:
    no visible change" accept. A new state that only combines known looks (for example `open` plus the focus ring) goes
    into Tom's next review round but does not block the part.
+
+### CLI speed decision (Tom, 2026-11-02)
+
+Q16, from finding 126:
+
+1. Now, in the MVP: run the action checks in parallel (actions-command.ts, with the limit of the draw queue in
+   thumb.ts), and replace the fixed 400 ms emit wait in action-press.ts with a condition. Both are general tool
+   changes, test first.
+2. After the MVP: stop rebuilding the harness app on every command (harness-server.ts).
