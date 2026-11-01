@@ -791,7 +791,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 62. Impl Q86 DEMO-BACKDROP check (fc6803125) flags only elements/studio-menu after the shell-collapse and
     shell-project-switch backdrops went (0987a5490, studio-menu.ts:105; its app host copies the fill). Both shell
     parts already showed PART-UNREVIEWED before that edit, probably since f1fea4e17 (the Impl Q79 action attributes).
-    Cause: open, asked the builder. Accept + go for both: Impl Q107 (Tom); studio-menu backdrop: Impl Q108 (Tom).
+    Cause: merged.json stores `partHashOf`, a hash of the raw part folder bytes (merged-parts.ts:12), so the
+    attribute-only edit in f1fea4e17 reset the review; disclosure, tree-row, zoom-chip, part-tree and shell-main are
+    probably reset too. No step ran `design accept` or the merge path after the direct edit. Lesson: a review tied
+    to source bytes resets on edits that change no pixel, and a direct edit bypasses the merge rule that already
+    writes an `auto` acceptance for pixel-identical states (merged-parts.ts:154). Tool change: Impl Q109 (Tom).
+    Accept + go for both: Impl Q107 (Tom); studio-menu backdrop: Impl Q108 (Tom).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
