@@ -313,6 +313,14 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     unguarded pattern but the check does not flag them.
   - In progress (builder ethlete-sdk-cf, 2026-11-01), in parallel: Impl Q19 and Q20 inbox load states and scroll;
     Impl Q24 clean count (cli).
+  - Impl Q19 and Q20 as built (`af2f464ea`, `d86590c14`, `6291165b5`, `27047beb9`, `6ad063d82`): `pages/inbox` has
+    the new states `loading`, `load-error` (error icon, "Erneut laden" button, control `retry`) and `long-list` (16
+    rows); the list is `overflow-auto`; go `--by tom`. `InboxComponent` takes `load` and emits `retry`; `system-view`
+    maps `commentStore.loaded()`, `loadError()` and `retry()`. The error text is fixed, not the real message.
+    Verified: compare `pages/inbox` 0 px in 10 of 10, `elements/shell-main` 15 of 15; `task --verify` recorded the
+    inbox (hash `70d2d0c3f68b5b46`); a fetch-fail-retry spec; system-view specs 214; eslint, tsc, app classes. Not
+    verified: the scroll in a browser, Studio on :4402, the full app suite. `task --verify` refuses a commit that
+    also touches files outside the part, so a part commit and its live wiring go in separate commits.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
