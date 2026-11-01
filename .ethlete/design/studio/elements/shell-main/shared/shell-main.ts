@@ -18,6 +18,7 @@ type Props = {
   panel?: 'hidden';
   projectPicker?: 'open';
   pickerKeyboard?: boolean;
+  switchFocus?: boolean;
   studio?: string;
   force?: RailForce;
   server?: 'stopped' | 'starting';
@@ -99,7 +100,7 @@ const rail = (section: Section, product: string, panelHidden: boolean, studio: s
     ${RECENT_PRODUCTS.map((p) => railItem(p.charAt(0).toUpperCase(), p, p === product, 'product', false, force)).join('')}
   </nav>`;
 
-const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
+const sidePanel = (product: string, side: string, pickerOpen: boolean, switchFocus: boolean) =>
   html`<aside
     class="st-shell-side absolute top-space-3 bottom-space-3 left-space-3 flex flex-col min-h-0 overflow-hidden rounded-control-lg bg-et-surface-bg"
   >
@@ -109,7 +110,7 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
     </header>
     <div class="flex-1 min-h-0 overflow-hidden p-space-2">${side}</div>
     <footer class="st-shell-side-foot p-space-2">
-      ${shellProjectSwitch({ open: pickerOpen }, { open: 'project-picker', closed: 'open' })}
+      ${shellProjectSwitch({ open: pickerOpen, ...(switchFocus ? { interaction: 'focus-visible' as const } : {}) }, { open: 'project-picker', closed: 'open' })}
     </footer>
   </aside>`;
 
@@ -201,6 +202,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
     open: BASE,
+    'open-focus-visible': { ...BASE, switchFocus: true },
     hidden: { ...BASE, panel: 'hidden' },
     ...sectionRows.states,
     ...productRows.states,
@@ -225,6 +227,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     panel,
     projectPicker,
     pickerKeyboard = false,
+    switchFocus = false,
     studio = '',
     force,
     server,
@@ -246,7 +249,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
           >
             ${server ? serverScreen(server, log) : content}
           </main>
-          ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open')}
+          ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open', switchFocus)}
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement, projectMenu.body) : ''}
         </div>
       </div>`,
