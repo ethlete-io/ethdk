@@ -7,8 +7,10 @@ import { createPartShooter, Pan } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { ShootStates, StateShot } from './compare-command';
 import { harnessOf } from './harness-map';
+import { occludedFramesOf } from './occluded';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
+import { settledPanesOf } from './settled-panes';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
@@ -18,13 +20,17 @@ type Storage = Record<string, unknown>;
 /** The sample a page or one of its states changes: host command answers and design server answers over the spec's. */
 type LiveSample = { invoke?: Record<string, unknown>; answers?: Record<string, string> };
 
-/** How the live compare reaches one state of a page: the design state it draws, and what the app needs to show it. */
+/**
+ * How the live compare reaches one state of a page: the design state it draws, and what the app needs to show it.
+ * `occluded: true` allows a shell panel to cover a design frame in this state; otherwise compare fails it as OCCLUDED.
+ */
 export type LiveState = LiveSample & {
   design: string;
   storage?: Storage;
   click?: string[];
   pan?: Pan;
   compose?: Record<string, Storage>;
+  occluded?: boolean;
 };
 
 export type LivePage = LiveSample & {
@@ -110,6 +116,8 @@ export const liveSpecProblemOf = (spec: unknown): string | null => {
         return `${part} state ${name} must name its design state`;
       if (!isLabels(state['click'])) return `${part} state ${name}: click must be a list of aria-labels`;
       if (!isPan(state['pan'])) return `${part} state ${name}: pan must be { "selector", "x", "y" }`;
+      if (state['occluded'] !== undefined && typeof state['occluded'] !== 'boolean')
+        return `${part} state ${name}: occluded must be true or false`;
 
       const stateProblem = sampleProblemOf(state);
 
@@ -372,6 +380,9 @@ export const liveShotOf = async (options: {
           `${host} measures ${Math.round(clip.width)}x${Math.round(clip.height)} on ${address}, not the ${size.width}x${size.height} of the design`,
         );
 
+      if (!(await settledPanesOf({ page, count: 0, timeout: Math.max(deadline - Date.now(), 0) })))
+        throw new LiveError(`the app page ${address} did not settle its overlay panes within ${timeout} ms`);
+
       const shot = await page.screenshot({ type: 'png', animations: 'disabled', clip, timeout });
 
       same = last !== null && shot.equals(last) ? same + 1 : 0;
@@ -381,6 +392,20 @@ export const liveShotOf = async (options: {
         const sdkProblem = sdkErrors(`the app page ${address}`);
 
         if (sdkProblem) throw new LiveError(sdkProblem);
+
+        const occluded = options.state.occluded
+          ? []
+          : await occludedFramesOf({ page, host, port: Number(new URL(options.server).port) });
+
+        if (occluded.length > 0)
+          throw new LiveError(
+            occluded
+              .map(
+                (line) =>
+                  `OCCLUDED: ${line} on ${address} - the user cannot see what compare checks there; set "occluded": true on the live state if the cover is intended`,
+              )
+              .join('\n'),
+          );
 
         return shot;
       }

@@ -28,8 +28,8 @@ import {
 } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { UNSETTLED_ANIMATION } from './action-press';
 import { watchSdkErrors } from './sdk-errors';
+import { settledPanesOf } from './settled-panes';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
@@ -167,44 +167,6 @@ const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 /** The number of overlay panes a design picture draws, as `<et-overlay-container>` mocks. */
 const drawnPaneCountOf = (markup: string) => markup.match(/<et-overlay-container[\s>]/g)?.length ?? 0;
 
-const PANE_TRANSITIONS = ['enter-from', 'enter-active', 'enter-to', 'leave-from', 'leave-active', 'leave-to']
-  .map((phase) => `.et-animation-${phase}`)
-  .join(', ');
-
-const SETTLED_FRAMES = 2;
-
-const PANE_COUNT_TIMEOUT_MS = 3000;
-
-const settledPanesOf = async (options: { page: Page; url: string; count: number; timeout: number }) => {
-  const { page, url, count, timeout } = options;
-
-  await page
-    .waitForFunction(`document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)}).length >= ${count}`, undefined, {
-      timeout: Math.min(timeout, PANE_COUNT_TIMEOUT_MS),
-      polling: 'raf',
-    })
-    .catch(() => undefined);
-
-  await page
-    .waitForFunction(
-      `(() => {
-        const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})];
-        const settled =
-          panes.every((pane) => !pane.matches(${JSON.stringify(PANE_TRANSITIONS)}) && !pane.querySelector(${JSON.stringify(PANE_TRANSITIONS)})) &&
-          !document.getAnimations().some(${UNSETTLED_ANIMATION});
-
-        window.__etSettledFrames = settled ? (window.__etSettledFrames ?? 0) + 1 : 0;
-
-        return window.__etSettledFrames >= ${SETTLED_FRAMES};
-      })()`,
-      undefined,
-      { timeout, polling: 'raf' },
-    )
-    .catch(() => {
-      throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
-    });
-};
-
 const FORCED_POLL_MS = 50;
 
 const escapedForRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -336,7 +298,8 @@ export const harnessShotOf = async (options: {
         throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
-    if (options.panes) await settledPanesOf({ page, url, count: options.panes, timeout });
+    if (options.panes && !(await settledPanesOf({ page, count: options.panes, timeout })))
+      throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
       const hostBox = await host.evaluate((element) => {

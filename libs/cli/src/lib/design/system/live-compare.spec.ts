@@ -1,7 +1,8 @@
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
 import { chromium, type Browser } from 'playwright';
-import { answerFileOf, liveShotOf, liveSpecProblemOf, mergedStorageOf, substitutedOf } from './live-compare';
+import { answerFileOf, liveShotOf, liveSpecProblemOf, LiveState, mergedStorageOf, substitutedOf } from './live-compare';
+import { decodePng } from './part-compare';
 
 const SPEC = {
   host: 'app-shell',
@@ -63,6 +64,10 @@ describe('liveSpecProblemOf', () => {
       { host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', compose: { x: 1 } } } } } },
       'compose must',
     ],
+    [
+      { host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', occluded: 'yes' } } } } },
+      'occluded must be true or false',
+    ],
   ])('refuses %j', (spec, message) => {
     expect(liveSpecProblemOf(spec)).toContain(message);
   });
@@ -98,6 +103,41 @@ describe('answerFileOf', () => {
   });
 });
 
+const PLAIN_PAGE = (erroring: boolean) =>
+  `<body style="margin:0"><main style="display:block;width:7px;height:5px;background:#0000ff"></main>${
+    erroring
+      ? '<script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script>'
+      : ''
+  }</body>`;
+
+const WIDE = { width: 40, height: 20 };
+
+const canvasPageOf = (cover: string, world = '') =>
+  `<body style="margin:0"><main style="display:block;position:relative;width:40px;height:20px;background:#0000ff">
+    <div style="position:absolute;inset:0;overflow:hidden">
+      <div style="transform:translate(0px,0px)">
+        <img src="http://localhost:1/__design/shot" style="display:block;width:40px;height:20px">${world}
+      </div>
+    </div>${cover}
+  </main></body>`;
+
+const PAGES: Record<string, string> = {
+  '/entering': `<body style="margin:0"><main style="display:block;position:relative;width:7px;height:5px;background:#0000ff">
+    <div class="et-overlay-runtime-pane et-animation-enter-active" style="position:absolute;inset:0;background:#ff0000;opacity:0"></div>
+  </main><script>setTimeout(() => {
+    const pane = document.querySelector('.et-overlay-runtime-pane');
+    pane.classList.remove('et-animation-enter-active');
+    pane.style.opacity = '1';
+  }, 1500)</script></body>`,
+  '/occluded': canvasPageOf(
+    '<aside class="panel" style="position:absolute;left:0;top:0;width:10px;height:20px;background:#00ff00"></aside>',
+  ),
+  '/labelled': canvasPageOf(
+    '',
+    '<span style="position:absolute;left:0;top:0;width:10px;height:20px;background:#00ff00"></span>',
+  ),
+};
+
 describe('liveShotOf', () => {
   let browser: Browser | undefined;
   let server: Server;
@@ -107,13 +147,7 @@ describe('liveShotOf', () => {
     browser = await chromium.launch().catch(() => undefined);
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
-      response.end(
-        `<body style="margin:0"><main style="display:block;width:7px;height:5px;background:#0000ff"></main>${
-          request.url === '/erroring'
-            ? '<script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script>'
-            : ''
-        }</body>`,
-      );
+      response.end(PAGES[request.url ?? ''] ?? PLAIN_PAGE(request.url === '/erroring'));
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -124,15 +158,15 @@ describe('liveShotOf', () => {
     await new Promise((resolve) => server.close(resolve));
   });
 
-  const shotOf = (path: string) =>
+  const shotOf = (path: string, options: { size?: { width: number; height: number }; state?: LiveState } = {}) =>
     liveShotOf({
       browser: browser as Browser,
       url,
-      size: { width: 7, height: 5 },
+      size: options.size ?? { width: 7, height: 5 },
       spec: { host: 'main', pages: {} },
       dir: '.',
       page: { path, states: {} },
-      state: { design: 'a' },
+      state: options.state ?? { design: 'a' },
       server: 'http://localhost:1',
       checkout: '.',
       timeout: 5000,
@@ -150,5 +184,30 @@ describe('liveShotOf', () => {
     await expect(shotOf('/erroring')).rejects.toThrow(
       `the app page ${url}/erroring logged SDK errors:\n  ET1234: The control has no accessible name.`,
     );
+  });
+
+  it('waits for an overlay pane to end its enter animation before the shot', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const { data } = decodePng(await shotOf('/entering'));
+
+    expect([...data.subarray(0, 3)]).toEqual([255, 0, 0]);
+  });
+
+  it('fails a page whose design frame sits under a shell panel', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(shotOf('/occluded', { size: WIDE })).rejects.toThrow(
+      /OCCLUDED: the design frame <img> at 0,0 40x20 sits under <aside class="panel"> \(\d+ of 25 sample points\) on .*\/occluded/,
+    );
+  });
+
+  it('passes a covered frame in a state that allows it, and a frame under its own canvas labels', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect((await shotOf('/occluded', { size: WIDE, state: { design: 'a', occluded: true } })).length).toBeGreaterThan(
+      0,
+    );
+    expect((await shotOf('/labelled', { size: WIDE })).length).toBeGreaterThan(0);
   });
 }, 30_000);
