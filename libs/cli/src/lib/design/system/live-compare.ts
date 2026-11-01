@@ -256,6 +256,7 @@ export const liveShotOf = async (options: {
 
     await page.mouse.move(-1, -1);
     await page.evaluate('document.fonts.ready');
+    await page.waitForLoadState('networkidle', { timeout }).catch(() => undefined);
 
     const deadline = Date.now() + timeout;
     let last: Buffer | null = null;
