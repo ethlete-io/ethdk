@@ -3,11 +3,11 @@ import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canva
 import { Point } from '../components/design-canvas/canvas-math';
 import { CanvasNote } from '../components/design-canvas/canvas-note';
 
-/** A note the user is typing: on a frame, optionally at a point on it, or free on a flow at a world point. */
-export type NoteDraft = { frameId: string; place: FramePlace; point: Point | null } | { flow: string; at: Point };
+/** A note the user is typing: on a frame, optionally at a point on it. */
+export type NoteDraft = { frameId: string; place: FramePlace; point: Point | null };
 
-/** The note the user is changing; `flow` names the flow of a free note, `key` the copy the user clicked. */
-export type NoteEdit = { id: string; key: string; flow: string | null };
+/** The note the user is changing; `key` is the copy the user clicked. */
+export type NoteEdit = { id: string; key: string };
 
 const stateNoteOf = (note: ListedNote, frameId: string): CanvasNote => ({
   id: note.id,

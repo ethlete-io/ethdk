@@ -3,17 +3,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { EMPTY, Observable, catchError, finalize, of, scan, startWith, switchMap, tap } from 'rxjs';
 import { ProductAddress } from '../../host/design';
-import {
-  ListedNotes,
-  changeFlowNote$,
-  changeNote$,
-  deleteFlowNote$,
-  deleteNote$,
-  listedNotes$,
-  noteChanges$,
-  writeFlowNote$,
-  writeNote$,
-} from '../../host/design-notes';
+import { ListedNotes, changeNote$, deleteNote$, listedNotes$, noteChanges$, writeNote$ } from '../../host/design-notes';
 import { CommentSource } from './comment-store';
 import { NoteDraft, NoteEdit, roundedPoint } from './note-places';
 
@@ -124,15 +114,12 @@ export class NoteStore {
 
     if (!address || !draft || !trimmed || this.busy()) return;
 
-    const write$ =
-      'at' in draft
-        ? writeFlowNote$({ ...address, flow: draft.flow }, { text: trimmed, at: roundedPoint(draft.at) })
-        : writeNote$(address, {
-            part: draft.place.part,
-            state: draft.place.state,
-            text: trimmed,
-            ...(draft.point ? { point: roundedPoint(draft.point), size: draft.place.size } : {}),
-          });
+    const write$ = writeNote$(address, {
+      part: draft.place.part,
+      state: draft.place.state,
+      text: trimmed,
+      ...(draft.point ? { point: roundedPoint(draft.point), size: draft.place.size } : {}),
+    });
 
     this.run(write$.pipe(tap(() => this.draft.set(null))));
   }
@@ -147,12 +134,7 @@ export class NoteStore {
 
     const change = { id: editing.id, text: trimmed };
 
-    this.run(
-      (editing.flow === null
-        ? changeNote$(address, change)
-        : changeFlowNote$({ ...address, flow: editing.flow }, change)
-      ).pipe(tap(() => this.editing.set(null))),
-    );
+    this.run(changeNote$(address, change).pipe(tap(() => this.editing.set(null))));
   }
 
   public remove() {
@@ -161,12 +143,7 @@ export class NoteStore {
 
     if (!address || !editing || this.busy()) return;
 
-    this.run(
-      (editing.flow === null
-        ? deleteNote$(address, editing.id)
-        : deleteFlowNote$({ ...address, flow: editing.flow }, editing.id)
-      ).pipe(tap(() => this.editing.set(null))),
-    );
+    this.run(deleteNote$(address, editing.id).pipe(tap(() => this.editing.set(null))));
   }
 
   private run(work$: Observable<unknown>) {

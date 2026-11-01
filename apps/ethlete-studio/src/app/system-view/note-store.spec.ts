@@ -2,11 +2,9 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ProductAddress } from '../../host/design';
-import { FlowAddress, ListedNote, ListedNotes } from '../../host/design-notes';
+import { ListedNote, ListedNotes } from '../../host/design-notes';
 import { CommentSource } from './comment-store';
 import { injectNoteStore, provideNoteStore } from './note-store';
-
-type Point = { x: number; y: number };
 
 const host = vi.hoisted(() => ({
   list: vi.fn<(address: ProductAddress) => Observable<ListedNotes>>(),
@@ -14,9 +12,6 @@ const host = vi.hoisted(() => ({
   write: vi.fn<(address: ProductAddress, note: object) => Observable<void>>(),
   change: vi.fn<(address: ProductAddress, change: object) => Observable<void>>(),
   remove: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
-  writeFlow: vi.fn<(address: FlowAddress, note: { text: string; at?: Point }) => Observable<void>>(),
-  changeFlow: vi.fn<(address: FlowAddress, change: object) => Observable<void>>(),
-  removeFlow: vi.fn<(address: FlowAddress, id: string) => Observable<void>>(),
 }));
 
 vi.mock('../../host/design-notes', () => ({
@@ -25,14 +20,9 @@ vi.mock('../../host/design-notes', () => ({
   writeNote$: host.write,
   changeNote$: host.change,
   deleteNote$: host.remove,
-  writeFlowNote$: host.writeFlow,
-  changeFlowNote$: host.changeFlow,
-  deleteFlowNote$: host.removeFlow,
 }));
 
 const ADDRESS = { port: 4500, product: 'shop' };
-
-const FLOW = { ...ADDRESS, flow: 'sign-in' };
 
 const PLACE = { part: 'pages/library', state: 'empty', size: 'phone' };
 
@@ -65,8 +55,7 @@ describe('NoteStore', () => {
     stored = [listed('a')];
     host.list.mockReset().mockImplementation(() => of({ notes: [...stored], unreadable: [] }));
     host.changes.mockReset().mockReturnValue(changes);
-    for (const write of [host.write, host.change, host.remove, host.writeFlow, host.changeFlow, host.removeFlow])
-      write.mockReset().mockReturnValue(of(undefined));
+    for (const write of [host.write, host.change, host.remove]) write.mockReset().mockReturnValue(of(undefined));
   });
 
   it('reads the notes again on a note change', () => {
@@ -111,43 +100,25 @@ describe('NoteStore', () => {
     expect(host.write).toHaveBeenCalledWith(ADDRESS, { part: 'pages/library', state: 'empty', text: 'Whole' });
   });
 
-  it('writes a free note into its flow at the clicked point', () => {
+  it('changes and deletes a state note', () => {
     const { store } = setup();
 
-    store.start({ flow: 'sign-in', at: { x: -12.2, y: 40.7 } });
-    store.send('Heading');
-
-    expect(host.writeFlow).toHaveBeenCalledWith(FLOW, { text: 'Heading', at: { x: -12, y: 41 } });
-    expect(host.write).not.toHaveBeenCalled();
-  });
-
-  it('changes and deletes a state note or a free note through the matching endpoint', () => {
-    const { store } = setup();
-
-    store.edit({ id: 'a', key: 'a f', flow: null });
+    store.edit({ id: 'a', key: 'a f' });
     store.save('New');
     expect(host.change).toHaveBeenCalledWith(ADDRESS, { id: 'a', text: 'New' });
     expect(store.editing()).toBeNull();
 
-    store.edit({ id: 'heading', key: 'heading ', flow: 'sign-in' });
-    store.save('Title');
-    expect(host.changeFlow).toHaveBeenCalledWith(FLOW, { id: 'heading', text: 'Title' });
-
-    store.edit({ id: 'a', key: 'a f', flow: null });
+    store.edit({ id: 'a', key: 'a f' });
     store.remove();
     expect(host.remove).toHaveBeenCalledWith(ADDRESS, 'a');
-
-    store.edit({ id: 'heading', key: 'heading ', flow: 'sign-in' });
-    store.remove();
-    expect(host.removeFlow).toHaveBeenCalledWith(FLOW, 'heading');
-    expect(store.writes()).toBe(4);
+    expect(store.writes()).toBe(2);
   });
 
   it('keeps the note open with the server message when a write fails', () => {
     const { store } = setup();
 
     host.change.mockReturnValue(throwError(() => new Error('no note x')));
-    store.edit({ id: 'x', key: 'x f', flow: null });
+    store.edit({ id: 'x', key: 'x f' });
     store.save('New');
 
     expect(store.error()).toBe('no note x');
@@ -159,11 +130,11 @@ describe('NoteStore', () => {
   it('drops the draft when a note is opened for a change, and the change when a draft starts', () => {
     const { store } = setup();
 
-    store.start({ flow: 'sign-in', at: { x: 0, y: 0 } });
-    store.edit({ id: 'a', key: 'a f', flow: null });
+    store.start({ frameId: 'f', place: PLACE, point: null });
+    store.edit({ id: 'a', key: 'a f' });
     expect(store.draft()).toBeNull();
 
-    store.start({ flow: 'sign-in', at: { x: 0, y: 0 } });
+    store.start({ frameId: 'f', place: PLACE, point: null });
     expect(store.editing()).toBeNull();
   });
 });

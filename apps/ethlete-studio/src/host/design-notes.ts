@@ -25,13 +25,8 @@ export type ListedNotes = { notes: ListedNote[]; unreadable: { file: string; pro
 /** A free note of a flow; `at` is its top left corner on the flow canvas. */
 export type FlowNote = { id: string; text: string; at?: Point };
 
-/** A product and one of its flows. */
-export type FlowAddress = ProductAddress & { flow: string };
-
-const noteUrl = ({ port, product, flow }: ProductAddress & { flow?: string }, path: string) =>
-  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}${
-    flow === undefined ? '' : `&flow=${encodeURIComponent(flow)}`
-  }`;
+const noteUrl = ({ port, product }: ProductAddress, path: string) =>
+  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}`;
 
 const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
 
@@ -53,18 +48,6 @@ export const changeNote$ = (
 
 export const deleteNote$ = (address: ProductAddress, id: string): Observable<void> =>
   designAnswer$<unknown>(noteUrl(address, 'note-delete'), post({ id })).pipe(done);
-
-export const writeFlowNote$ = (address: FlowAddress, note: { text: string; at?: Point }): Observable<void> =>
-  designAnswer$<unknown>(noteUrl(address, 'flow-note'), post(note)).pipe(done);
-
-/** Changes a free note of a flow; `at: null` lets Studio place it. */
-export const changeFlowNote$ = (
-  address: FlowAddress,
-  change: { id: string; text?: string; at?: Point | null },
-): Observable<void> => designAnswer$<unknown>(noteUrl(address, 'flow-note-change'), post(change)).pipe(done);
-
-export const deleteFlowNote$ = (address: FlowAddress, id: string): Observable<void> =>
-  designAnswer$<unknown>(noteUrl(address, 'flow-note-delete'), post({ id })).pipe(done);
 
 /** Emits whenever a note file of the checkout changes, from the design server's own event stream. */
 export const noteChanges$ = (port: number): Observable<void> => designEvents$(port, 'notes').pipe(map(() => undefined));

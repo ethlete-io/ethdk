@@ -38,6 +38,6 @@ export class NoteBodyComponent {
 
     const note = this.note();
 
-    this.store.edit({ id: note.id, key: noteKeyOf(note), flow: null });
+    this.store.edit({ id: note.id, key: noteKeyOf(note) });
   }
 }

@@ -226,63 +226,6 @@ describe('DesignCanvasComponent', () => {
     expect(host.querySelector('[data-note-anchor="at"]')?.className).toContain('has-data-canvas-popover:z-4');
   });
 
-  it('lays a flow out left to right along its lines and draws each line with its label', async () => {
-    const page = (id: string): CanvasFrame => ({ ...FITTED, id, label: id, width: 390, height: 844 });
-
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
-
-    const fixture = TestBed.createComponent(DesignCanvasComponent);
-
-    fixture.componentRef.setInput('frames', [page('done'), page('cart'), page('checkout')]);
-    fixture.componentRef.setInput('arrangement', 'flow');
-    fixture.componentRef.setInput('lines', [
-      { from: 'cart', to: 'checkout', label: 'user clicks "Zur Kasse"' },
-      { from: 'checkout', to: 'done' },
-    ]);
-    await fixture.whenStable();
-
-    const lefts = Object.fromEntries(
-      fixture.debugElement
-        .queryAll(By.directive(CanvasFrameComponent))
-        .map((frame) => [
-          (frame.componentInstance as CanvasFrameComponent).frame().id,
-          (frame.nativeElement as HTMLElement).style.left,
-        ]),
-    );
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(lefts).toEqual({ cart: '0px', checkout: '670px', done: '1340px' });
-    expect(host.querySelectorAll('[data-flow-line]')).toHaveLength(2);
-    expect([...host.querySelectorAll('[data-flow-label]')].map((label) => label.textContent?.trim())).toEqual([
-      'user clicks "Zur Kasse"',
-    ]);
-    expect(host.querySelector<HTMLElement>('[data-flow-label]')?.style.maxWidth).toBe('200px');
-
-    fixture.componentRef.setInput('lines', [
-      {
-        from: 'cart',
-        to: 'checkout',
-        label: 'user fills in the shipping address and the credit card details, then clicks "Pay now"',
-      },
-      { from: 'checkout', to: 'done' },
-    ]);
-    await fixture.whenStable();
-
-    const checkout = fixture.debugElement
-      .queryAll(By.directive(CanvasFrameComponent))
-      .find((frame) => (frame.componentInstance as CanvasFrameComponent).frame().id === 'checkout');
-
-    expect((checkout?.nativeElement as HTMLElement).style.left).toBe('950px');
-    expect(host.querySelector<HTMLElement>('[data-flow-label]')?.style.maxWidth).toBe('480px');
-
-    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.5 });
-    await fixture.whenStable();
-
-    expect(host.querySelector<HTMLElement>('[data-flow-label]')?.style.maxWidth).toBe('240px');
-  });
-
   it('remembers the measured size and places the frame by it after a reload', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture).componentInstance as CanvasFrameComponent;

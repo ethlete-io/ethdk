@@ -64,7 +64,6 @@ import {
   screenToWorld,
   zoomAtPoint,
 } from './canvas-math';
-import { CanvasLine, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
@@ -72,7 +71,6 @@ import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.compon
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
-const FLOW_SPACING = { columnGap: 280, rowGap: 120, maxColumnGap: 560 };
 
 const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
   Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, top]) => b[key] === top);
@@ -90,7 +88,6 @@ const cellAt = (event: MouseEvent) => {
     );
 };
 
-let canvasCount = 0;
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
 const SECTION_GAP_FACTOR = 4;
@@ -199,13 +196,9 @@ export class DesignCanvasComponent {
 
   /**
    * `sheet` puts each row of frames on its own line; `grid` flows the frames as tiles with their label below;
-   * `matrix` puts each frame at its row and its `column`, with a head over each of `columns`; `flow` lays the
-   * frames out left to right along `lines`.
+   * `matrix` puts each frame at its row and its `column`, with a head over each of `columns`.
    */
-  public arrangement = input<'sheet' | 'grid' | 'matrix' | 'flow'>('sheet');
-
-  /** The lines a `flow` draws between its frames. */
-  public lines = input<CanvasLine[]>([]);
+  public arrangement = input<'sheet' | 'grid' | 'matrix'>('sheet');
 
   /** The columns of a `matrix`, in order. A column without frames still gets its head. */
   public columns = input<CanvasColumn[]>([]);
@@ -408,19 +401,8 @@ export class DesignCanvasComponent {
               emptyWidths,
               below,
             });
-    const flow =
-      arrangement === 'flow'
-        ? {
-            rows: [],
-            frames: layoutFlow(
-              sized.map((frame) => ({ ...frame, ...(byId.get(frame.id)?.at ? { at: byId.get(frame.id)?.at } : {}) })),
-              { links: this.lines(), spacing: FLOW_SPACING },
-            ),
-          }
-        : null;
     const sheet =
       matrix ??
-      flow ??
       (arrangement === 'grid'
         ? layoutGrid(sized, { ...GRID_SPACING, rowGap, below })
         : layoutSheet(sized, { ...SPACING, below }));
@@ -468,34 +450,13 @@ export class DesignCanvasComponent {
 
   protected groupHeads = computed(() => this.layout().groups);
 
-  protected placedLines = computed(() => {
-    const byId = new Map(this.layout().frames.map((placed) => [placed.frame.id, placed]));
-
-    return this.lines().flatMap((line, index) => {
-      const from = byId.get(line.from);
-      const to = byId.get(line.to);
-
-      return from && to
-        ? [
-            {
-              key: `${index} ${line.from} ${line.to}`,
-              label: line.label,
-              room: flowLabelRoomOf([from, to], FLOW_SPACING),
-              ...flowCurveOf(from, to),
-            },
-          ]
-        : [];
-    });
-  });
-
   private bounds = computed(() => {
     const { frames, heads, rowHeads } = this.layout();
     const thin = rowHeads.map((head) => ({ x: 0, y: head.y, width: head.width, height: head.height }));
-    const middles = this.placedLines().map(({ middle }) => ({ ...middle, width: 1, height: 1 }));
     const notes = this.notes().flatMap((note) => (note.at ? [{ ...note.at, width: 1, height: 1 }] : []));
 
     return (
-      boundingRect([...frames, ...thin, ...middles, ...notes]) ??
+      boundingRect([...frames, ...thin, ...notes]) ??
       boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
     );
   });
@@ -660,8 +621,6 @@ export class DesignCanvasComponent {
   private following: 'all' | 'start' | { frame: string } | null = null;
 
   protected readonly ZOOM_STEP = ZOOM_STEP;
-
-  protected readonly ARROW_ID = `et-design-canvas-arrow-${canvasCount++}`;
 
   constructor() {
     afterEveryRender({
