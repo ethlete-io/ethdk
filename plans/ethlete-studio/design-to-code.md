@@ -300,7 +300,10 @@ only; the builder starts when Tom gives the start.
   `design check --product studio --complete` reports it as one number.
 - Impl Q1 start (Tom, 2026-11-01): the implementation phase starts now with the Q251 pilot, `pages/inbox`, then
   `elements/shell-main`. Studio serve runs again in tmux.
-- Impl Q2 pilot order (Tom, 2026-11-01): `elements/shell-main` first, with its compare. The `pages/inbox` design
-  renders inside `shellMain.render`, so an inbox compare without the built shell cannot be green. Then
-  `pages/inbox` goes into the real shell, and Tom checks it in the real Studio on :4402, not only in the harness.
-  This swaps the Q251 order.
+- Impl Q2 pilot order (Tom, 2026-11-01): replaced by Impl Q3. Tom first chose `elements/shell-main` first,
+  because the `pages/inbox` design renders inside `shellMain.render`.
+- Impl Q3 pilot order (Tom, 2026-11-01): keep the Q251 order. The pilot inbox component
+  (`apps/ethlete-studio/src/app/design-parts/inbox/`) draws a copy of the shell markup, so its compare works without
+  the built shell (5 of 7 states 0 px). Finish the inbox with the copy, then build `elements/shell-main` at once. In
+  that slice the inbox uses the shell-main component and the copy is deleted; compare shows if the swap breaks
+  anything. Tom checks the inbox in the real Studio on :4402 after the swap.
