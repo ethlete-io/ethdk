@@ -857,7 +857,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     records still hold their old hash until the first REHASHED run). Cause: `upgradeLegacyMarksOf`
     (stale-parts.ts) rewrote the legacy go records of flows, system, merge, sketches and inventory to the new hash
     and absorbed the shell-main change silently; only inbox (own folder changed) came out STALE. Tool fix (builder
-    default): a legacy record comes out STALE when any reachable file is newer than the record. The five pages
+    default, done in 3132b3aa7): a legacy record comes out STALE when any reachable file is newer than the record. The five pages
     need a re-review by Tom. The full `design actions` run on
     shell-project-switch was killed (exit 137, likely out of memory); tool fix (builder default): run the states in
     batches. `design complete elements/shell-main` reports DEMO-BACKDROP on every state, because div.st-shell paints
@@ -886,7 +886,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 75. Impl Q99 sketch 60fe78cb7 (pages-system variant a holds `fit` and `page-100`) cannot be verified live:
     `compare --live` cannot read a sketch, and sketch check ignores the state names in design-live.json, so the live
     spec names `page-100` before it exists (builder, 2026-11-01). Tool fix (builder default):
-    `compare --live --sketch <variant>`, and sketch check reads design-live.json. Lesson: every check must be able to run on a sketch, or a
+    `compare --live --sketch <variant>`, and sketch check reads design-live.json. Done in d85d4129c, 622f8dbe4. Lesson: every check must be able to run on a sketch, or a
     decided change cannot be verified before its merge.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
