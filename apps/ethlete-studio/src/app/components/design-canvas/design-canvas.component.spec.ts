@@ -214,7 +214,7 @@ describe('DesignCanvasComponent', () => {
     expect([layer('[data-note-anchor="below"]'), layer('[data-note-marker]')]).toEqual([2, 2]);
     expect(pinLayer('1')).toBe(3);
     expect([pinLayer('2'), layer('[data-comment-draft]')]).toEqual([4, 4]);
-    expect(host.querySelector('[data-note-anchor="at"]')?.className).toContain('has-[[data-canvas-popover]]:z-4');
+    expect(host.querySelector('[data-note-anchor="at"]')?.className).toContain('has-data-canvas-popover:z-4');
   });
 
   it('lays a flow out left to right along its lines and draws each line with its label', async () => {
