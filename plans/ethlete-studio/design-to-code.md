@@ -1269,3 +1269,17 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   wäre müll." System, Sketches and Flows use one and the same canvas component, not a shared input layer under two
   implementations. Left drag on an empty area pans on every page; a left click on a frame selects it. Arrow-key pan,
   double-click focus, Space/middle-button pan and window-wide Shift+1/2/0 work on every page. Finding 83.
+
+### Exit the fix loop decisions (Tom, 2026-11-01)
+
+Tom: the find-error-fix loop runs for days; he wants out, and he is not always there to approve things.
+
+1. The MVP goal is a short list of user flows, not "every part merged and ready". The flow list and its state live in
+   plans/ethlete-studio/STATUS.md (draft of 7 flows; Tom corrects it). A flow is done when its click test passes.
+2. No new process tooling until the MVP: no new gates, flags or go rules. Ideas go to the backlog. Build only what
+   repairs a flow.
+3. Fix the root cause once (finding 85): one implementation per thing (one canvas, one picker, no copies), in one
+   cleanup pass.
+4. Every flow gets a Playwright test that clicks the real Studio. A defect Tom finds becomes a test first, then a fix.
+5. The builder never waits for Tom: Tom's approvals do not block work; one flow at a time. When Tom is there he gets a
+   short round: what works now, at most 3 questions.
