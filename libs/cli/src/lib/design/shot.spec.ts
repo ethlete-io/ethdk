@@ -271,6 +271,27 @@ describe('createPartShooter', () => {
     expect(new URL(drawnUrls()[1] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=&bare=');
   });
 
+  it('draws over the compare checkerboard, without omitting the background, as a picture of its own', async () => {
+    const { shots } = acme();
+    const address = {
+      product: 'acme',
+      part: 'components/card',
+      state: 'long',
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    };
+
+    await shots.pictureOf(address);
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: true }));
+
+    await shots.pictureOf({ ...address, checker: true });
+    expect(screenshot).toHaveBeenLastCalledWith(expect.objectContaining({ omitBackground: false }));
+    expect(drawnUrls()).toHaveLength(2);
+  });
+
   it('empties the slot regions before the shot when asked, as a picture of its own', async () => {
     const { shots } = acme();
     const address = {

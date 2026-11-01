@@ -121,6 +121,7 @@ type Frame = {
   crop: Crop | null;
   scheme: 'dark' | 'light' | null;
   emptySlots: string | null;
+  checker: boolean;
 };
 
 type GraphModule = { id: string | null; file?: string | null; importers: Set<GraphModule> };
@@ -261,6 +262,22 @@ export const emptySlotsScriptOf = (part: string) => `(() => {
 
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
 
+const CHECKER_SQUARE_PX = 8;
+
+/** Paints the compare checkerboard on the page canvas, with its origin at the shot's top left corner. */
+export const checkerScriptOf = (origin: { x: number; y: number }) => `(() => {
+  const size = ${CHECKER_SQUARE_PX};
+  const style = document.documentElement.style;
+
+  style.setProperty(
+    'background',
+    'conic-gradient(rgb(150,150,150) 25%, rgb(110,110,110) 0 50%, rgb(150,150,150) 0 75%, rgb(110,110,110) 0) ' +
+      ${origin.x} + 'px ' + ${origin.y} + 'px / ' + size * 2 + 'px ' + size * 2 + 'px',
+    'important',
+  );
+  document.body.style.setProperty('background', 'transparent', 'important');
+})()`;
+
 /** One state of a part as a frame draws it: at a product preset, at a container width, or fitted to its content. */
 export type PartAddress = {
   product: string;
@@ -275,11 +292,14 @@ export type PartAddress = {
   bare?: boolean;
   /** Empties the `slot()` regions the part draws itself before the shot, as the app's harness host projects no content into them. */
   emptySlots?: boolean;
+  /** Draws the part over the compare checkerboard instead of a transparent page, so a background shows in the picture. */
+  checker?: boolean;
 };
 
 /** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
 export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
-  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots } = options;
+  const { system, product, part, state, preset, width, sketch, interaction, props, bare, emptySlots, checker } =
+    options;
   const file = system.partOf({ product, part, sketch })?.file;
   const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -306,6 +326,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
       props?.variant,
       ...(bare ? ['bare'] : []),
       ...(emptySlots ? ['empty-slots'] : []),
+      ...(checker ? ['checker'] : []),
     ] as unknown[],
     drawn: { part: { product, part, sketch } } as Drawn,
     search: new URLSearchParams({
@@ -320,6 +341,7 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
     size: size ?? null,
     clip: !preset,
     emptySlots: emptySlots ? part : null,
+    checker: checker ?? false,
   };
 };
 
@@ -394,22 +416,23 @@ export const createPartShooter = (options: {
           x: frame.crop.x + (origin?.x ?? 0),
           y: frame.crop.y + (origin?.y ?? 0),
         };
-        const png = await (
-          crop
-            ? page.screenshot({ ...SHOT_OPTIONS, clip: crop })
-            : rootBox
-              ? page.screenshot({ ...SHOT_OPTIONS, clip: pixelBoxOf(rootBox) })
-              : page.screenshot(SHOT_OPTIONS)
-        ).catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
+        const shotOptions = frame.checker ? { ...SHOT_OPTIONS, omitBackground: false } : SHOT_OPTIONS;
+        const clip = crop ? crop : rootBox ? pixelBoxOf(rootBox) : null;
 
-          if (error instanceof Error && error.name === 'TimeoutError')
-            throw new ShotTimeoutError(
-              `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
-            );
+        if (frame.checker) await page.evaluate(checkerScriptOf({ x: clip?.x ?? 0, y: clip?.y ?? 0 }));
 
-          throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
-        });
+        const png = await (clip ? page.screenshot({ ...shotOptions, clip }) : page.screenshot(shotOptions)).catch(
+          (error: unknown) => {
+            const message = error instanceof Error ? error.message : String(error);
+
+            if (error instanceof Error && error.name === 'TimeoutError')
+              throw new ShotTimeoutError(
+                `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
+              );
+
+            throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
+          },
+        );
 
         const failure: unknown = await page.evaluate("document.documentElement.getAttribute('data-et-error')");
 
@@ -443,6 +466,7 @@ export const createPartShooter = (options: {
     size: Size | null;
     clip?: boolean;
     emptySlots?: string | null;
+    checker?: boolean;
     want: DrawWant;
     fresh?: boolean;
     gone?: () => ThumbMissingError | null;
@@ -496,6 +520,7 @@ export const createPartShooter = (options: {
             crop,
             scheme,
             emptySlots: options.emptySlots ?? null,
+            checker: options.checker ?? false,
           });
     }, options.want);
 

@@ -116,6 +116,10 @@ const output = () => {
 
 const RED = 0xff0000ff;
 const BLUE = 0x0000ffff;
+const DARK_SQUARE = 0x6e6e6eff;
+const LIGHT_SQUARE = 0x969696ff;
+const checkerAt = (x: number, y: number) =>
+  Math.floor(x / 8) % 2 === Math.floor(y / 8) % 2 ? DARK_SQUARE : LIGHT_SQUARE;
 
 describe('part compare', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -417,27 +421,29 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.includes('components%2Fupward')
-          ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
-          : request.url?.includes('components%2Ffraction')
-            ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
-            : request.url?.includes('components%2Fbadge')
-              ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
-              : request.url?.includes('components%2Fpicker')
-                ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-                : request.url?.includes('components%2Fpaned')
-                  ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
-                  : request.url?.includes('components%2Fportal')
-                    ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
-                    : request.url?.includes('components%2Ftwice')
-                      ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                      : request.url?.includes('components%2Fhover')
-                        ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                        : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                          ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                          : request.url?.startsWith('/__design-harness')
-                            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                            : '<body>no harness</body>',
+        request.url?.includes('components%2Fclear')
+          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
+          : request.url?.includes('components%2Fupward')
+            ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
+            : request.url?.includes('components%2Ffraction')
+              ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+              : request.url?.includes('components%2Fbadge')
+                ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+                : request.url?.includes('components%2Fpicker')
+                  ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+                  : request.url?.includes('components%2Fpaned')
+                    ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
+                    : request.url?.includes('components%2Fportal')
+                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
+                      : request.url?.includes('components%2Ftwice')
+                        ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                        : request.url?.includes('components%2Fhover')
+                          ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                          : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                            ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                            : request.url?.startsWith('/__design-harness')
+                              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                              : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -471,6 +477,24 @@ describe('harnessShotOf', () => {
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
   });
 
+  it('draws a transparent host as the bare checkerboard and an opaque one over it', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const clear = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/clear', state: 'a', props: {} }),
+    });
+    const opaque = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/chip', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(opaque)).toEqual(pixelsOf(7, 5, () => BLUE));
+    expect(decodePng(clear)).toEqual(pixelsOf(7, 5, checkerAt));
+    expect(comparePngs({ design: clear, app: opaque })).toMatchObject({ kind: 'diff', pixels: 35 });
+    expect(comparePngs({ design: clear, app: clear })).toMatchObject({ kind: 'ok' });
+  });
+
   it('grows the shot to the right and down over a positioned descendant, as a design frame grows its root', async (context) => {
     if (!browser) return context.skip('no browser');
 
@@ -479,7 +503,9 @@ describe('harnessShotOf', () => {
       url: harnessUrlOf({ url, part: 'components/badge', state: 'a', props: {} }),
     });
 
-    expect(decodePng(png)).toEqual(pixelsOf(9, 5, (x, y) => (y === 0 && x >= 5 ? RED : x < 7 ? BLUE : 0)));
+    expect(decodePng(png)).toEqual(
+      pixelsOf(9, 5, (x, y) => (y === 0 && x >= 5 ? RED : x < 7 ? BLUE : checkerAt(x, y))),
+    );
   });
 
   it('grows the shot up too with room above, as a design frame drawn above its part root', async (context) => {
@@ -491,7 +517,9 @@ describe('harnessShotOf', () => {
       roomAbove: true,
     });
 
-    expect(decodePng(png)).toEqual(pixelsOf(9, 7, (x, y) => (y < 3 && x >= 5 ? RED : y >= 2 && x < 7 ? BLUE : 0)));
+    expect(decodePng(png)).toEqual(
+      pixelsOf(9, 7, (x, y) => (y < 3 && x >= 5 ? RED : y >= 2 && x < 7 ? BLUE : checkerAt(x, y))),
+    );
   });
 
   it('leaves room above and before a fitted host, so an overlay that opens above neither flips nor shifts', async (context) => {
@@ -504,7 +532,9 @@ describe('harnessShotOf', () => {
       opened: { control: 'pick', markup: '<button data-et-control="pick" aria-expanded="true"> Pick </button>' },
     });
 
-    expect(decodePng(png)).toEqual(pixelsOf(9, 9, (x, y) => (y < 4 ? (x < 7 ? RED : 0) : x >= 2 ? BLUE : 0)));
+    expect(decodePng(png)).toEqual(
+      pixelsOf(9, 9, (x, y) => (y < 4 ? (x < 7 ? RED : checkerAt(x, y)) : x >= 2 ? BLUE : checkerAt(x, y))),
+    );
   });
 
   it('shoots a page host in the viewport of the preset size', async (context) => {

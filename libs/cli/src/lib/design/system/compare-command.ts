@@ -5,7 +5,7 @@ import { join } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
-import { createPartShooter, pixelBoxOf, viewportOf } from '../shot';
+import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -301,8 +301,17 @@ export const harnessShotOf = async (options: {
 
     if (options.panes) await settledPanesOf({ page, url, count: options.panes, timeout });
 
-    if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0)
-      return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
+    if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
+      const hostBox = await host.evaluate((element) => {
+        const { x, y } = element.getBoundingClientRect();
+
+        return { x: Math.round(x + scrollX), y: Math.round(y + scrollY) };
+      });
+
+      await page.evaluate(checkerScriptOf(hostBox));
+
+      return await host.screenshot({ type: 'png', animations: 'disabled', timeout });
+    }
 
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
     await host.scrollIntoViewIfNeeded({ timeout });
@@ -314,12 +323,15 @@ export const harnessShotOf = async (options: {
       height: number;
     };
 
+    const clip = pixelBoxOf(box);
+
+    await page.evaluate(checkerScriptOf(clip));
+
     return await page.screenshot({
       type: 'png',
       fullPage: true,
-      omitBackground: true,
       animations: 'disabled',
-      clip: pixelBoxOf(box),
+      clip,
       timeout,
     });
   } finally {
@@ -375,6 +387,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
             interaction: null,
             bare: true,
             emptySlots: true,
+            checker: true,
             params: new URLSearchParams(),
           }),
         )
