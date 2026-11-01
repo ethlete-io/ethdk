@@ -50,9 +50,38 @@
     "at": "2026-11-01T17:04:09.498Z"
   },
   "elements/studio-menu": {
-    "hash": "3b9b10d017b5ad08",
+    "hash": "f0ea58606ac8b853",
     "by": "tom",
-    "at": "2026-11-01T17:22:16.090Z"
+    "at": "2026-11-01T17:22:16.090Z",
+    "files": {
+      ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
+      ".ethlete/design/sdk/components/menu/menu.ts": "41081c4a032cf65d",
+      ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
+      ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
+      ".ethlete/design/studio/elements/studio-menu/setup.ts": "deb8d411ad0b54db",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.css": "c97af1b891f726dd",
+      ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "2fcf2d4b0a50c982",
+      ".ethlete/design/studio/foundations/logo/logo.ts": "c6fdcd018df6d00f",
+      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/menu.ts": "d9aabbb5a9eff093",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
+      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/components/src/lib/icon/headless/chevron-icon.ts": "d2c88d30d687a8bf",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/menu/menu-group-label.component.css": "019496380742be45",
+      "libs/components/src/lib/menu/menu-item-shortcut.component.css": "eff3ec9add0599b9",
+      "libs/components/src/lib/menu/menu-item-submenu-icon.component.css": "97b496a907162368",
+      "libs/components/src/lib/menu/menu-item.component.css": "1601776d0fd371ce",
+      "libs/components/src/lib/menu/menu-selection-item.component.css": "1a3701f6ecc40dff",
+      "libs/components/src/lib/menu/menu-separator.component.css": "2eb65be1cfba3ac7",
+      "libs/components/src/lib/menu/menu.component.css": "973861c3f97bc4be",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    }
   },
   "pages/flows": {
     "hash": "cccece4730c02440",

@@ -1598,5 +1598,12 @@
     "note": "merged without a pick: allowed by plans/ethlete-studio/design-to-code.md Impl Q87 (Tom, 2026-11-01)",
     "hash": "71edde6c1106bd74",
     "at": "2026-11-01T16:39:13.194Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "claude-opus-5-5",
+    "note": "Impl Q102/Q108/Q110 (Tom, 2026-11-01): keyboard highlight on the forced focus-visible row, row attributes kept, demo fill dropped",
+    "hash": "3b9b10d017b5ad08",
+    "at": "2026-11-01T17:47:00.453Z"
   }
 ]
