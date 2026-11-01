@@ -4,6 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { designAccept } from './accept-command';
+import { DrawStates } from './accepted-pictures';
 import { resolveProduct } from './resolve-product';
 import { ACCEPTED_FILE, changedOutsideSketchOf, readAccepted, recordMerged } from './sketch/merged-parts';
 import { createSketch } from './sketch/sketch';
@@ -29,27 +30,29 @@ const editedHero = () => {
   return { target, productDir };
 };
 
-const accept = (target: string, argv: string[]) => designAccept({ target, argv, invocation: 'et design' });
+const draw: DrawStates = async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }]));
+
+const accept = (target: string, argv: string[]) => designAccept({ target, argv, invocation: 'et design', draw });
 
 const FULL = ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', 'Tom approved the cleanup'];
 
 describe('designAccept', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('records the hash and logs who accepted, so the change no longer shows', () => {
+  it('records the hash and logs who accepted, so the change no longer shows', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const { target, productDir } = editedHero();
 
     expect(changedOutsideSketchOf(productOf(target))).toEqual(['elements/hero']);
-    expect(accept(target, FULL)).toBe(0);
+    expect(await accept(target, FULL)).toBe(0);
     expect(changedOutsideSketchOf(productOf(target))).toEqual([]);
     expect(readAccepted(productDir)).toEqual([
       expect.objectContaining({ part: 'elements/hero', by: 'claude-opus-5-5', note: 'Tom approved the cleanup' }),
     ]);
   });
 
-  it('refuses a part with no change outside a sketch, and writes nothing', () => {
+  it('refuses a part with no change outside a sketch, and writes nothing', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const target = acme();
@@ -57,33 +60,33 @@ describe('designAccept', () => {
 
     recordMerged({ product: { dir: productDir, base: null }, parts: ['elements/hero'] });
 
-    expect(accept(target, FULL)).toBe(1);
+    expect(await accept(target, FULL)).toBe(1);
     expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
   });
 
-  it('refuses an unknown part and a part with an open sketch', () => {
+  it('refuses an unknown part and a part with an open sketch', async () => {
     const errors: string[] = [];
 
     vi.spyOn(console, 'error').mockImplementation((line: unknown) => void errors.push(String(line)));
 
     const { target, productDir } = editedHero();
 
-    expect(accept(target, ['elements/nope', ...FULL.slice(1)])).toBe(1);
+    expect(await accept(target, ['elements/nope', ...FULL.slice(1)])).toBe(1);
 
     createSketch({ product: productOf(target), sketch: { layer: 'elements', name: 'hero' }, variants: ['a', 'b'] });
 
-    expect(accept(target, FULL)).toBe(1);
+    expect(await accept(target, FULL)).toBe(1);
     expect(errors).toEqual([expect.stringMatching(/NO PART/), expect.stringMatching(/open sketch/)]);
     expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
   });
 
-  it('refuses a missing --by or --note', () => {
+  it('refuses a missing --by or --note', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const { target, productDir } = editedHero();
 
-    expect(accept(target, ['elements/hero', '--product', 'acme', '--note', 'why'])).toBe(2);
-    expect(accept(target, ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5'])).toBe(2);
+    expect(await accept(target, ['elements/hero', '--product', 'acme', '--note', 'why'])).toBe(2);
+    expect(await accept(target, ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5'])).toBe(2);
     expect(readFileSync(join(productDir, 'merged.json'), 'utf8')).toContain('elements/hero');
     expect(changedOutsideSketchOf(productOf(target))).toEqual(['elements/hero']);
   });

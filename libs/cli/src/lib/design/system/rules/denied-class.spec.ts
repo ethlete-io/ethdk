@@ -219,7 +219,7 @@ describe('a denied class in the flows', () => {
     expect(readFileSync(hero, 'utf8')).toBe(before);
   }, 30_000);
 
-  it('refuses accept', () => {
+  it('refuses accept', async () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');
     const hero = join(productDir, 'elements/hero/hero.ts');
@@ -229,7 +229,7 @@ describe('a denied class in the flows', () => {
     writeFileSync(hero, readFileSync(hero, 'utf8').replace('class="acme-hero"', 'class="acme-hero bg-surface"'));
 
     expect(
-      designAccept({
+      await designAccept({
         target,
         argv: ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', 'Tom approved it'],
         invocation: 'et design',

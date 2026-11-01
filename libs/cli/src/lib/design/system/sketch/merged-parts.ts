@@ -167,6 +167,24 @@ export const recordAutoMerge = (options: { product: HashedProduct; part: string;
 };
 
 /**
+ * Records a part changed outside a sketch whose states all draw as at its last acceptance: writes its hash to
+ * `merged.json` and logs an `auto` entry in `accepted.json`.
+ */
+export const recordAutoReview = (options: { product: HashedProduct; part: string; by: string }) => {
+  const { product, part, by } = options;
+
+  recordMerged({ product, parts: [part] });
+  logAcceptance(product.dir, {
+    part,
+    by,
+    note: 'accepted automatically: every state draws as at the last acceptance',
+    hash: readMerged(product.dir)[part] ?? '',
+    at: new Date().toISOString(),
+    auto: true,
+  });
+};
+
+/**
  * Logs a sketch merge with a reason in `accepted.json`: the plan entry that let it go without a pick in Studio
  * (`planRef`), the merge reason (`reason`), or both.
  */

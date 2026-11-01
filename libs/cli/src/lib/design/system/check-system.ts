@@ -1,5 +1,6 @@
 import { dirname, relative } from 'path';
 import { DesignConfig } from '../paths';
+import { autoAcceptOf, DrawStates } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
@@ -97,6 +98,7 @@ type CheckOptions = {
   /** Only this part's findings, `<layer>/<name>`. */
   part?: string;
   tally?: Tally;
+  drawPictures?: DrawStates;
 };
 
 const PRODUCT_LEVEL = '(product)';
@@ -451,6 +453,17 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   const counted = { ...options, tally };
 
   for (const line of staleDistWarningsOf(options)) console.warn(line);
+
+  for (const name of options.products) {
+    const entry = options.config.products?.[name];
+
+    if (!entry) continue;
+
+    const product = resolveProduct({ target: options.target, name, config: entry });
+    const lines = await autoAcceptOf({ ...options, product, only: options.part, draw: options.drawPictures });
+
+    lines.forEach((line) => console.log(line));
+  }
 
   const { code, rendered } = await renderSystem(counted);
 

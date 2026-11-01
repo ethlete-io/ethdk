@@ -18,7 +18,7 @@ export type DesignHash = { hash: string; files: FileHashes; legacy: string };
 /** A stored mark: one with `files` holds at the design hash, one without at the folder-only hash. */
 export type HashRecord = { hash: string; files?: FileHashes };
 
-const sha16 = (data: string | Buffer) => createHash('sha256').update(data).digest('hex').slice(0, 16);
+export const sha16 = (data: string | Buffer) => createHash('sha256').update(data).digest('hex').slice(0, 16);
 
 const isFileHashes = (value: unknown): value is FileHashes =>
   !!value &&

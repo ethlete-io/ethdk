@@ -133,7 +133,13 @@ describe('part go', () => {
   it('et design go stores a go, and refuses an unknown part and a missing author', async () => {
     const { target, dir } = checkout();
     const lines = output();
-    const go = (...argv: string[]) => designGo({ target, argv, invocation: 'et design' });
+    const go = (...argv: string[]) =>
+      designGo({
+        target,
+        argv,
+        invocation: 'et design',
+        draw: async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }])),
+      });
 
     expect(await go('components/chip', '--product', 'app-a')).toBe(2);
     expect(await go('components/gone', '--product', 'app-a', '--by', 'tom')).toBe(1);
@@ -145,7 +151,13 @@ describe('part go', () => {
   it('et design go --by tom needs a committed Impl Q decision that is not older than the design', async () => {
     const { target, dir } = checkout();
     const lines = output();
-    const go = (...argv: string[]) => designGo({ target, argv, invocation: 'et design' });
+    const go = (...argv: string[]) =>
+      designGo({
+        target,
+        argv,
+        invocation: 'et design',
+        draw: async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }])),
+      });
     const git = (...args: string[]) => execFileSync('git', args, { cwd: target, encoding: 'utf8' }).trim();
     const chip = join(dir, 'components/chip/chip.ts');
     const tom = ['components/chip', '--product', 'app-a', '--by', 'tom'];

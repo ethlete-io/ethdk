@@ -1,8 +1,9 @@
 import { dirname, relative } from 'path';
+import { DrawStates, storePictures } from './accepted-pictures';
 import { ruleProblemsOf } from './check-system';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
-import { acceptPart } from './sketch/merged-parts';
+import { acceptPart, readMerged } from './sketch/merged-parts';
 import { parseTarget } from './sketch/sketch';
 
 export const ACCEPT_USAGE =
@@ -23,7 +24,12 @@ const findingsOfPart = (options: { target: string; product: ResolvedProduct; par
 };
 
 /** `et design accept <layer>/<name> …` records a direct edit of a merged part the user approved, so check stops warning of it. */
-export const designAccept = (options: { target: string; argv: string[]; invocation: string }) => {
+export const designAccept = async (options: {
+  target: string;
+  argv: string[];
+  invocation: string;
+  draw?: DrawStates;
+}) => {
   const { target, argv, invocation } = options;
   const args = argsOf(argv, ['--product', '--by', '--note']);
   const usage = `usage: ${invocation} ${ACCEPT_USAGE}`;
@@ -89,6 +95,18 @@ export const designAccept = (options: { target: string; argv: string[]; invocati
   }
 
   console.log(`accepted the direct edit of ${part} in ${product.name}`);
+
+  const unstored = await storePictures({
+    target,
+    config,
+    product,
+    part,
+    kind: 'review',
+    hash: readMerged(product.dir)[part] ?? '',
+    draw: options.draw,
+  });
+
+  if (unstored) console.warn(`PICTURES NOT STORED ${part}: ${unstored} - design check draws them`);
 
   return 0;
 };

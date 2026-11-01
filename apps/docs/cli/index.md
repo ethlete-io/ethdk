@@ -366,6 +366,17 @@ counts as done. A mark stored before the file lists holds while the old folder-o
 `et design check` moves it to the design hash and prints `REHASHED <product>: <part> (go, ready, implemented)`, and one
 whose folder changed since stays stale, listed with `files unknown: recorded before file lists`.
 
+An edit that changes no pixel keeps its review and its go. `et design go` and `et design accept` draw every state of
+the part as `design compare` draws the design side and store the hash of each picture in
+`.ethlete/design/<product>/pictures.json`, under `review` (at the `merged.json` hash) and `go` (at the go hash).
+`et design check` stores the pictures of a review or go that holds and has none at its hash yet, which covers Studio's
+go button and sketch merges. When the hash of a part with stored pictures moves, `et design check` draws every state
+again: with the same states and every picture identical, it records the review as `merged.json` does after a merge and
+logs an `auto` acceptance in `accepted.json`, and writes the go at the new hash with `auto: true`, keeping its `by` and
+`note`, and prints `AUTO ACCEPTED <product> <part> (review, go)`. Otherwise it prints
+`PICTURES CHANGED <product> <part>: <states>` and the part stays unreviewed or stale. A go without pictures from while
+it held is never carried, so an automatic go only carries a decision forward to an identical look.
+
 `et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
 allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component,

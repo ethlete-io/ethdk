@@ -1,3 +1,4 @@
+import { DrawStates, storePictures } from './accepted-pictures';
 import { tomGoRefusalOf } from './go-guard';
 import { goPartOf, markPartGo } from './part-go';
 import { repoRootOf } from './reachable-files';
@@ -8,7 +9,7 @@ import { parseTarget } from './sketch/sketch';
 export const GO_USAGE = 'go <layer>/<name> --product <name> --by <name> [--note "Impl Qnn"]';
 
 /** `et design go <layer>/<name> …` releases a part for implementation at its current hash. */
-export const designGo = async (options: { target: string; argv: string[]; invocation: string }) => {
+export const designGo = async (options: { target: string; argv: string[]; invocation: string; draw?: DrawStates }) => {
   const { target, argv, invocation } = options;
   const args = argsOf(argv, ['--product', '--by', '--note']);
   const usage = `usage: ${invocation} ${GO_USAGE}`;
@@ -70,6 +71,18 @@ export const designGo = async (options: { target: string; argv: string[]; invoca
   }
 
   console.log(`${part} has a go in ${product.name}`);
+
+  const unstored = await storePictures({
+    target,
+    config,
+    product,
+    part,
+    kind: 'go',
+    hash: marked.hash,
+    draw: options.draw,
+  });
+
+  if (unstored) console.warn(`PICTURES NOT STORED ${part}: ${unstored} - design check draws them`);
 
   return 0;
 };
