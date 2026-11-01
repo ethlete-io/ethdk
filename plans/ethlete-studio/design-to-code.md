@@ -719,6 +719,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     go, compare and ready, but none of them does anything (Tom, 2026-11-01). Lesson, system level: "ready" certifies
     a picture, not a working product. Every check in the chain (go, task, compare, verify, ready) looks at pixels;
     none asks what a control does. Findings 42, 45, 47, 49, 50 and 51 are all this one gap.
+52. The Impl Q77 checkerboard (ec7855f3d) made two old passes fail: components/shell-collapse (1390-1550 px, 4
+    states) and components/shell-project-switch (~10400 px, 10 states). Both designs wrap the part in a demo
+    backdrop `bg-et-surface-bg` (shell-collapse.ts:38, shell-project-switch.ts:98); the app part is transparent and
+    sits on the shell surface. Lesson: before Impl Q77, a transparent app pixel and an opaque design pixel compared as
+    equal over a transparent page; a design must not mix a demo backdrop into the part (as Impl Q31).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
