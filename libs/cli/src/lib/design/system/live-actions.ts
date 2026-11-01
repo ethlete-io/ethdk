@@ -15,7 +15,7 @@ import {
   actionScanScriptOf,
   parseAction,
 } from './actions';
-import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
+import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
 import {
@@ -112,6 +112,12 @@ export const liveControlsScriptOf = (options: { roots: string[]; frame: string; 
     }];
   });
 })()`;
+
+/** Waits after a press until the declared `output` fired or the page went quiet, then until its animations settle. */
+export const awaitEmitted = async (page: Parameters<typeof settle>[0], output: string | null) => {
+  await awaitOutput(page, output);
+  await settle(page, DRAW_TIMEOUT_MS);
+};
 
 /** A script that records each output the shell's components emit in `window.__etDesignEmits`. */
 export const listenOutputsScriptOf = (shell: string) => `(() => {
@@ -440,7 +446,13 @@ export const checkLiveActions = async (options: {
     const lines: LiveLine[] = [];
     const presses: Parameters<typeof liveDriftOf>[0] = [];
 
-    const press = async (options: { run: PageRun; opener: Target | null; pick: Target; input: ActionInput }) =>
+    const press = async (options: {
+      run: PageRun;
+      opener: Target | null;
+      pick: Target;
+      input: ActionInput;
+      output: string | null;
+    }) =>
       queue.run(async (browser) => {
         const context: Context = await browser.newContext({
           viewport: size,
@@ -536,6 +548,7 @@ export const checkLiveActions = async (options: {
 
           if (options.input === 'click') {
             await tabAwayFrom(page, control);
+            await watchMutations(page);
             await control.click({ timeout: DRAW_TIMEOUT_MS });
             await settle(page, DRAW_TIMEOUT_MS);
             await readToggle();
@@ -562,11 +575,11 @@ export const checkLiveActions = async (options: {
               keyboardRing = before && probe ? { before, probe } : null;
             }
 
+            await watchMutations(page);
             await page.keyboard.press(options.input);
           }
 
-          await page.waitForTimeout(EMIT_WAIT_MS);
-          await settle(page, DRAW_TIMEOUT_MS);
+          await awaitEmitted(page, options.output);
 
           const emitted = (await page.evaluate(
             '(window.__etDesignEmits ?? []).map((emit) => emit.output)',
@@ -641,7 +654,13 @@ export const checkLiveActions = async (options: {
           await Promise.all(
             actionInputsOf(app.key).map(async (input) => {
               try {
-                const result = await press({ run, opener, pick: app, input });
+                const result = await press({
+                  run,
+                  opener,
+                  pick: app,
+                  input,
+                  output: typeof action === 'object' && action?.kind === 'emit' ? action.output : null,
+                });
                 const outcome = liveOutcomeOf(result);
 
                 rings.click ??= result.clickRing;

@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { chromium, type Browser } from 'playwright';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { EMIT_WAIT_MS, watchMutations } from './action-press';
 import {
+  awaitEmitted,
   LiveControl,
   LiveOutcome,
   liveDriftOf,
@@ -168,3 +171,38 @@ describe('toggleSyncFailureOf', () => {
     expect(toggleSyncFailureOf([step('true', 0), step('false', 0)])).toBeNull();
   });
 });
+
+describe('awaitEmitted', () => {
+  let browser: Browser | undefined;
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it('returns once the declared output fired, without the fixed emit wait, while the DOM keeps changing', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<div id="busy"></div><script>
+      window.__etDesignEmits = [];
+      setInterval(() => (document.getElementById('busy').textContent = String(Math.random())), 5);
+      setTimeout(() => window.__etDesignEmits.push({ output: 'go' }), 60);
+    </script>`);
+    await watchMutations(page);
+
+    const start = Date.now();
+
+    await awaitEmitted(page, 'go');
+
+    const waited = Date.now() - start;
+
+    await page.close();
+
+    expect(waited).toBeLessThan(EMIT_WAIT_MS - 100);
+  });
+}, 30_000);
