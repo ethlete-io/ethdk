@@ -4,7 +4,6 @@ import { fromFetch } from 'rxjs/fetch';
 import { designEvents$, designStreamIsOpen } from './design-events';
 import { preferredScheme } from './color-scheme';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
-import { ListedMotion } from './design-motion';
 
 /** What the user ruled about a variant. A variant without one is still open. */
 export type Verdict = 'chosen' | 'rejected';
@@ -248,8 +247,6 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
-  /** The motions the part declares between its states. Missing without any or from an `@ethlete/cli` older than motions. */
-  motions?: Record<string, ListedMotion>;
   /** The states drawn as one table in rest, a row and a column label for each. Missing without a `grid` or from an `@ethlete/cli` older than grids. */
   grid?: { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
   /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
@@ -650,12 +647,6 @@ const productUrl = ({ port, product }: ProductAddress, path: string) =>
 export const listedComments$ = (address: ProductAddress): Observable<ListedComments> =>
   designAnswer$<ListedComments>(productUrl(address, 'comments'));
 
-/** Writes a comment into the product's `comments/` folder. */
-export const writeComment$ = (
-  address: ProductAddress,
-  comment: CommentPlace & { text: string },
-): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
-
 /** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
 export type CommentEvent = 'connected' | 'changed';
 
@@ -674,17 +665,3 @@ export const commentChanges$ = (port: number): Observable<CommentEvent> =>
       ),
     ),
   );
-
-/** Deletes a comment without a note, through `comment-withdraw`. */
-export const withdrawComment$ = (address: ProductAddress, id: string): Observable<void> =>
-  designAnswer$<unknown>(productUrl(address, 'comment-withdraw'), postJson({ id })).pipe(map(() => undefined));
-
-/** Resolves an open or addressed comment thread for the user, through `comment-done`. */
-export const resolveComment$ = (address: ProductAddress, id: string): Observable<void> =>
-  designAnswer$<unknown>(productUrl(address, 'comment-done'), postJson({ id })).pipe(map(() => undefined));
-
-/** Adds a reply by the user to a comment thread, through `comment-reply`. */
-export const replyToComment$ = (
-  address: ProductAddress,
-  reply: { id: string; text: string },
-): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment-reply'), postJson(reply));

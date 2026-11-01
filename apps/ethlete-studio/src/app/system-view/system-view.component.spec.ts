@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
-import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
@@ -151,9 +150,9 @@ describe('SystemViewComponent on a reload', () => {
     expect(fixture.componentInstance['restoredCamera']()).toBeNull();
   });
 
-  it('draws a small part in one grid frame whose cells take comments in their own interaction', async () => {
+  it('draws a small part in one grid frame with a cell per interaction', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
-    const frames: CanvasFrame[] = fixture.componentInstance['notedFrames']();
+    const frames: CanvasFrame[] = fixture.componentInstance.frames();
     const placeable: CanvasFrame[] = fixture.componentInstance['placeableFrames']();
 
     expect(frames.map((frame) => [frame.id, frame.grid?.columns])).toEqual([['elements/rating', ['rest', 'hover']]]);
@@ -260,26 +259,6 @@ describe('SystemViewComponent on a reload', () => {
     expect(aside()).toContain('1 offen');
     expect(aside()).toContain('Too light');
   });
-
-  it('shows the new-product screen while "New product" is picked, and goes back on another pick', async () => {
-    const fixture = await mount({ systemProduct: 'web' });
-    const element: HTMLElement = fixture.nativeElement;
-    const view = fixture.componentInstance;
-
-    view['pickProduct'](view['NEW_PRODUCT']);
-    await settle(fixture);
-
-    expect(element.querySelector('main h2')?.textContent?.trim()).toBe('Neues Produkt');
-    expect(element.querySelector('main pre')?.textContent).toBe('npx et design product new web');
-    expect(view['creating']()).toBe(true);
-    expect(rememberedView().systemProduct).toBe('web');
-
-    view['pickProduct']('web');
-    await settle(fixture);
-
-    expect(element.querySelector('main h2')).toBeNull();
-    expect(view['creating']()).toBe(false);
-  });
 });
 
 describe('SystemViewComponent on a product without parts or without products', () => {
@@ -341,7 +320,6 @@ describe('SystemViewComponent on a named list change', () => {
     sketches: listings('sketches'),
     flows: listings('flows'),
     comments: listings('comments'),
-    notes: listings('notes'),
   });
 
   beforeEach(() => {
@@ -356,7 +334,6 @@ describe('SystemViewComponent on a named list change', () => {
       if (url.includes('/__design/sketches')) return json({ sketches: [] });
       if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
       if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-      if (url.includes('/__design/notes')) return json({ notes: [], unreadable: [] });
 
       return new Promise(() => undefined);
     });
@@ -613,24 +590,6 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
     expect(rememberedView().systemEntry).toBe('elements/rating');
   });
-
-  it('marks a part changed outside a sketch above its frame', async () => {
-    vi.stubGlobal('fetch', (url: string) => {
-      if (url.includes('/__design/system'))
-        return json([{ ...PRODUCT, parts: [{ ...part('elements', 'rating'), changedOutsideSketch: true }] }]);
-      if (url.includes('/__design/calls')) return json([]);
-      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-
-      return new Promise(() => undefined);
-    });
-
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
-    const root: HTMLElement = fixture.nativeElement;
-
-    expect(root.querySelector('[data-changed-outside-sketch]')?.getAttribute('title')).toBe(
-      'außerhalb eines Sketches geändert',
-    );
-  });
 });
 
 describe('SystemViewComponent on a flow', () => {
@@ -653,16 +612,6 @@ describe('SystemViewComponent on a flow', () => {
   };
   const comment: ListedComment = { ...HOVER_COMMENT, part: 'pages/library', state: 'one', size: 'desktop' };
   delete comment.interaction;
-  const note: ListedNote = {
-    id: 'n1',
-    part: 'pages/library',
-    state: 'empty',
-    point: { x: 40, y: 120 },
-    size: 'phone',
-    text: 'Invites the first film',
-    file: 'notes/n1.json',
-    stale: null,
-  };
 
   beforeEach(() => {
     localStorage.clear();
@@ -672,7 +621,6 @@ describe('SystemViewComponent on a flow', () => {
       if (url.includes('/__design/calls')) return json([]);
       if (url.includes('/__design/flows')) return json({ flows: [flow], unreadable: [] });
       if (url.includes('/__design/comments')) return json({ comments: [comment], unreadable: [] });
-      if (url.includes('/__design/notes')) return json({ notes: [note], unreadable: [] });
 
       return new Promise(() => undefined);
     });
@@ -771,41 +719,5 @@ describe('SystemViewComponent on a flow', () => {
     await settle(fixture);
 
     expect(shown()).toBe(1);
-  });
-
-  it('shows the notes at start, hides them on "Show notes", and remembers that per product for the next start', async () => {
-    const first = await mount({ systemProduct: 'web', systemEntry: 'pages/library' });
-    const host = (fixture: ComponentFixture<SystemViewComponent>) => fixture.nativeElement as HTMLElement;
-    const toggle = host(first).querySelector<HTMLButtonElement>('[data-notes-shown]');
-
-    expect(host(first).querySelector('[data-note="n1"]')).not.toBeNull();
-
-    toggle?.click();
-    await settle(first);
-
-    expect(host(first).querySelector('[data-note="n1"]')).toBeNull();
-    expect(host(first).querySelector('[data-note-marker]')).toBeNull();
-    first.destroy();
-
-    expect(rememberedView().notesShown).toEqual({ ' web': false });
-
-    const second = await mount(JSON.parse(localStorage.getItem(KEY) ?? '{}'));
-
-    expect(host(second).querySelector('[data-note="n1"]')).toBeNull();
-    expect(host(second).querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('false');
-  });
-
-  it('shows the notes again when note mode turns on, so a new note stays in view', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'pages/library' });
-    const host = fixture.nativeElement as HTMLElement;
-
-    host.querySelector<HTMLButtonElement>('[data-notes-shown]')?.click();
-    await settle(fixture);
-    host.querySelector<HTMLButtonElement>('[data-note-mode]')?.click();
-    await settle(fixture);
-
-    expect(host.querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('true');
-    expect(host.querySelector('[data-note="n1"]')).not.toBeNull();
-    expect(rememberedView().notesShown).toEqual({ ' web': true });
   });
 });

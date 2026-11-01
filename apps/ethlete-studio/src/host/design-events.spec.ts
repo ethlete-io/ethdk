@@ -2,7 +2,6 @@ import { commentChanges$ } from './design';
 import { DesignChange, designChanges$ } from './design-changes';
 import { designEvents$, resetDesignStreams } from './design-events';
 import { flowChanges$ } from './design-flows';
-import { noteChanges$ } from './design-notes';
 
 class FakeEventSource {
   static instances: FakeEventSource[] = [];
@@ -46,7 +45,7 @@ describe('the shared design event stream', () => {
     const subscriptions = [
       commentChanges$(1).subscribe({ error: () => undefined }),
       designChanges$(1).subscribe(),
-      noteChanges$(1).subscribe(),
+      designEvents$(1, 'notes').subscribe(),
       flowChanges$(1).subscribe(),
     ];
 
@@ -71,7 +70,7 @@ describe('the shared design event stream', () => {
     const flows = vi.fn();
     const comments = vi.fn();
 
-    noteChanges$(1).subscribe(notes);
+    designEvents$(1, 'notes').subscribe(notes);
     flowChanges$(1).subscribe(flows);
     commentChanges$(1).subscribe({ next: comments, error: () => undefined });
 

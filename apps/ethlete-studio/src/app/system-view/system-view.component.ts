@@ -17,7 +17,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
 import { PartTreeComponent, PartTreeLayer, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
+import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
 import {
   ListedCall,
   ListedProduct,
@@ -29,13 +29,11 @@ import {
   listedSystem$,
   transferCall$,
 } from '../../host/design';
-import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
-import { FramePoint } from '../components/design-canvas/canvas-pin';
+import { placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import {
   ThemePick,
   camerasWith,
-  rememberNotesShown,
   rememberTheme,
   rememberView,
   rememberedView,
@@ -49,7 +47,6 @@ import {
   TreeFrame,
   TreeGroup,
   TreeSection,
-  authorsLabelOf,
   callFramesOf,
   callKeyOf,
   framesOf,
@@ -61,16 +58,7 @@ import {
   pickedPartKeyOf,
   treeOf,
 } from './system-tree';
-import { CommentDraftComponent } from './comment-draft.component';
-import { CommentThreadComponent } from './comment-thread.component';
-import {
-  NumberedComment,
-  commentDraftOf,
-  isCommentModeKey,
-  otherSizeFrameOf,
-  pinsOf,
-  withOtherSizeNotes,
-} from './comment-pins';
+import { NumberedComment, otherSizeFrameOf } from './comment-pins';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
@@ -78,18 +66,12 @@ import { ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
-import { NewProductFormComponent } from './new-product-form.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowViewComponent } from './flow-view.component';
-import { NoteBodyComponent } from './note-body.component';
-import { NoteFormComponent } from './note-form.component';
-import { partNotesOf } from './note-places';
 import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { ExceptionListComponent } from './exception-list.component';
-import { MotionStripComponent } from './motion-strip.component';
-import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -100,14 +82,9 @@ type Reading = { products: ListedProduct[]; error: string | null };
 const BADGE =
   'shrink-0 whitespace-nowrap rounded-full border border-(--et-surface-border-solid) px-1.5 py-px text-[1rem] text-(--et-surface-color-subtle-solid)';
 
-const CHANGED_OUTSIDE_SKETCH = STUDIO_LABELS.shell.changedOutsideSketch;
-
 /** A product switch keeps the old read until the new product answers; that read must not show. */
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
   read && read.product === product ? read.items : null;
-
-/** Never a product name: a product is a directory, and a directory name holds no slash. */
-const NEW_PRODUCT = '/new';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
@@ -116,12 +93,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 @Component({
   selector: 'ethlete-system-view',
   template: `
-    <ng-template #pinThread let-pin>
-      @defer {
-        <ethlete-comment-thread [commentId]="pin.id" />
-      }
-    </ng-template>
-
     <ng-template #sideTree>
       <ethlete-part-tree
         [layers]="partTreeLayers()"
@@ -156,101 +127,10 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       }
     </ng-template>
 
-    <ng-template #noteBody let-note>
-      <ethlete-note-body [note]="note" />
-    </ng-template>
-
-    <ng-template #noteModeButton>
-      <button
-        [pressed]="notesShown()"
-        (click)="showNotes(!notesShown())"
-        et-button
-        type="button"
-        variant="outline"
-        color="surface"
-        size="sm"
-        data-notes-shown
-      >
-        {{ LABELS.showNotes }}
-      </button>
-      <button
-        [pressed]="noteStore.active()"
-        [title]="LABELS.noteMode"
-        (click)="toggleNotes()"
-        et-button
-        type="button"
-        variant="outline"
-        color="surface"
-        size="sm"
-        data-note-mode
-      >
-        {{ LABELS.note }}
-      </button>
-    </ng-template>
-
-    <ng-template #commentModeButton>
-      <button
-        [pressed]="commentStore.active()"
-        [title]="LABELS.commentMode"
-        (click)="toggleComments()"
-        et-button
-        type="button"
-        variant="outline"
-        color="surface"
-        size="sm"
-      >
-        {{ LABELS.comment }}
-      </button>
-      @if (commentStore.questions().length; as questions) {
-        <button
-          [title]="LABELS.questionsForYou(questions)"
-          [attr.aria-label]="LABELS.questionsForYou(questions)"
-          (click)="pickSection('Inbox')"
-          class="-ml-1.5"
-          et-button
-          type="button"
-          variant="filled"
-          size="sm"
-          data-comment-questions
-        >
-          {{ questions }} ?
-        </button>
-      }
-    </ng-template>
-
-    <ng-template #newProductScreen let-heading>
-      <div class="max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)">
-        <h2 class="mb-2 text-h4 text-text">{{ heading }}</h2>
-        @if (port(); as port) {
-          @defer {
-            <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
-          }
-        }
-        <p>{{ LABELS.runInCheckout }}</p>
-        <div class="my-3 flex items-center gap-2">
-          <pre class="m-0 flex-1 rounded-md border border-(--et-surface-border-solid) p-3 font-mono text-text">{{
-            NEW_PRODUCT_COMMAND
-          }}</pre>
-          <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
-            {{ copied() ? LABELS.copied : LABELS.copy }}
-          </button>
-        </div>
-        <p>
-          {{ LABELS.partsLiveIn }}
-          <code class="font-mono">.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.
-        </p>
-      </div>
-    </ng-template>
-
     <ng-template #shellCanvas>
       <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
         @if (!port()) {
           <p [class]="NOTE">{{ LABELS.startServer }}</p>
-        } @else if (creating()) {
-          <ng-container
-            [ngTemplateOutlet]="newProductScreen"
-            [ngTemplateOutletContext]="{ $implicit: LABELS.newProduct }"
-          />
         } @else if (call(); as shown) {
           <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
             <header class="flex items-center gap-3 border-b border-(--et-surface-border-solid) px-4 py-3">
@@ -300,21 +180,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           } @else if (awaitingPicked()) {
           } @else if (part(); as partShown) {
             <div class="absolute top-3 right-4 z-1 flex gap-2">
-              @if (partShown.listed.changedOutsideSketch) {
-                <span [class]="BADGE + ' self-center'" [title]="CHANGED_OUTSIDE_SKETCH" data-changed-outside-sketch>
-                  {{ LABELS.changed }}
-                </span>
-              }
-              @let madeBy = partShown.listed.madeBy ?? [];
-              @if (madeBy.length > 0) {
-                <span
-                  [title]="LABELS.madeBy + ' ' + madeBy.join(', ')"
-                  class="self-center font-mono text-small whitespace-nowrap text-(--et-surface-color-subtle-solid)"
-                  data-made-by
-                >
-                  {{ LABELS.madeBy }} {{ AUTHORS_LABEL_OF(madeBy) }}
-                </span>
-              }
               @if (port(); as port) {
                 <ethlete-exception-list
                   [port]="port"
@@ -337,54 +202,15 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   {{ INVENTORY_LABELS.toggle }}
                 </button>
               }
-              <ng-container [ngTemplateOutlet]="themeBar" />
-              <ng-container [ngTemplateOutlet]="noteModeButton" />
-              <ng-container [ngTemplateOutlet]="commentModeButton" />
             </div>
-            <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
-              <ethlete-design-canvas
-                #partCanvas
-                [frames]="notedFrames()"
-                [cameraKey]="cameraKey()"
-                [restoredCamera]="restoredCamera()"
-                [pins]="partPins()"
-                [pointing]="commentStore.active() || noteStore.active()"
-                [pointingLabel]="noteStore.active() ? LABELS.noteOn : LABELS.commentOn"
-                [draft]="noteStore.draft() ?? commentStore.draft()"
-                [pinPopover]="pinThread"
-                [notes]="notesShown() ? partNotes() : []"
-                [noteTemplate]="noteBody"
-                (cameraChange)="rememberCamera($event)"
-                (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-                class="-ms-(--st-shell-inset-left) min-h-0"
-              >
-                @if (noteStore.draft()) {
-                  @defer {
-                    <ethlete-note-form canvasDraft />
-                  }
-                } @else if (commentStore.draft()) {
-                  @defer {
-                    <ethlete-comment-draft canvasDraft />
-                  }
-                }
-              </ethlete-design-canvas>
-              @if (partMotions(); as motions) {
-                @if (port(); as port) {
-                  <ethlete-motion-strip
-                    [port]="port"
-                    [product]="product()?.name ?? ''"
-                    [part]="partShown.key"
-                    [motions]="motions"
-                    [presets]="presetNames()"
-                    [surface]="surface()"
-                    [color]="color()"
-                    [revision]="productsRevision()"
-                    [canvas]="partCanvas"
-                    class="max-h-[45vh] overflow-y-auto"
-                  />
-                }
-              }
-            </div>
+            <ethlete-design-canvas
+              #partCanvas
+              [frames]="frames()"
+              [cameraKey]="cameraKey()"
+              [restoredCamera]="restoredCamera()"
+              (cameraChange)="rememberCamera($event)"
+              class="-ms-(--st-shell-inset-left) min-h-0"
+            />
           } @else {
             <ethlete-system-empty
               [product]="product()?.name ?? ''"
@@ -484,30 +310,20 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ProvideColorDirective,
     SketchViewComponent,
     FlowViewComponent,
-    NewProductFormComponent,
-    CommentDraftComponent,
-    CommentThreadComponent,
     InboxComponent,
     ShellPageComponent,
     SystemEmptyComponent,
     StartComponent,
-    NoteBodyComponent,
-    NoteFormComponent,
     InventoryViewComponent,
     ExceptionListComponent,
-    MotionStripComponent,
   ],
-  providers: [provideCommentStore(), provideNoteStore()],
-  host: {
-    class: 'block size-full min-h-0',
-    '(window:keydown)': 'handleCommentKey($event)',
-  },
+  providers: [provideCommentStore()],
+  host: { class: 'block size-full min-h-0' },
 })
 export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
-  protected noteStore = injectNoteStore();
   private injector = inject(Injector);
   public port = input<number | null>(null);
   public epoch = input(0);
@@ -535,21 +351,13 @@ export class SystemViewComponent {
   private flowsRevision = computed(() => this.lists().flows);
   private allRevision = computed(() => this.lists().all);
   protected readonly BADGE = BADGE;
-  protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
 
   protected readonly NOTE = NOTE;
 
-  protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
-
-  protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
   protected readonly LABELS = STUDIO_LABELS.shell;
   protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
-
-  protected copied = signal(false);
-
-  private productReloads = signal(0);
 
   protected reading = toSignal(
     toObservable(
@@ -557,7 +365,6 @@ export class SystemViewComponent {
         port: this.port(),
         epoch: this.epoch(),
         revision: this.productsRevision(),
-        reloads: this.productReloads(),
       })),
     ).pipe(
       switchMap(({ port }) =>
@@ -574,7 +381,7 @@ export class SystemViewComponent {
     { initialValue: null },
   );
 
-  protected products = computed(() => this.reading()?.products ?? []);
+  public products = computed(() => this.reading()?.products ?? []);
 
   private callReloads = signal(0);
 
@@ -607,8 +414,6 @@ export class SystemViewComponent {
 
   private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
-  protected creating = signal(false);
-
   private picked = signal(rememberedView().systemEntry ?? null);
 
   private cameras = signal(rememberedView().movedCameras ?? {});
@@ -625,7 +430,6 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  public readonly NEW_PRODUCT = NEW_PRODUCT;
   public productNames = computed(() => this.products().map((listed) => listed.name));
 
   private sketchRead = toSignal(
@@ -688,7 +492,6 @@ export class SystemViewComponent {
         product: this.product()?.name,
         epoch: this.epoch(),
         revision: this.flowsRevision(),
-        notes: this.noteStore.writes(),
         flows: this.flowChanges(),
       })),
     ).pipe(
@@ -777,20 +580,6 @@ export class SystemViewComponent {
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
 
   private themePicks = signal(rememberedView().themes ?? {});
-
-  private notesShownPicks = signal(rememberedView().notesShown ?? {});
-
-  private notesKey = computed(() => {
-    const product = this.product();
-
-    return product ? themeKey(this.checkout(), product.name) : null;
-  });
-
-  protected notesShown = computed(() => {
-    const key = this.notesKey();
-
-    return key === null || (this.notesShownPicks()[key] ?? true);
-  });
 
   /** The themes the shown entry names - a call's design project, else the product - with the name each frame wears. */
   private shownThemes = computed(() => {
@@ -1019,27 +808,9 @@ export class SystemViewComponent {
     }));
   });
 
-  protected placeableFrames = computed(() => placeableFramesOf(this.frames()));
+  public placeableFrames = computed(() => placeableFramesOf(this.frames()));
 
-  protected partPins = computed(() => pinsOf(this.placeableFrames(), this.commentStore.comments()));
-  protected partNotes = computed(() => partNotesOf(this.placeableFrames(), this.noteStore.notes()));
-  protected notedFrames = computed(() =>
-    withOtherSizeNotes(this.frames(), {
-      comments: this.commentStore.comments(),
-      notes: this.notesShown() ? this.noteStore.notes() : [],
-      everyInteraction: true,
-    }),
-  );
-  protected partMotions = computed(() => {
-    const motions = this.part()?.listed.motions;
-
-    return motions && Object.keys(motions).length > 0 ? motions : null;
-  });
-  protected presetNames = computed(() => Object.keys(this.product()?.presets ?? {}));
   public shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
-  public commentable = computed(
-    () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
-  );
 
   public panel = signal<'open' | 'hidden'>('open');
 
@@ -1062,7 +833,7 @@ export class SystemViewComponent {
     const read = this.reading();
 
     if (!read || read.error || read.products.length === 0) return null;
-    if (this.section() === 'Inbox' || this.creating() || this.call()) return null;
+    if (this.section() === 'Inbox' || this.call()) return null;
 
     return this.sketchShown();
   });
@@ -1070,7 +841,7 @@ export class SystemViewComponent {
   protected startPage = computed(() => {
     const read = this.reading();
 
-    if (!this.port() || !read || read.error || read.products.length > 0 || this.creating()) return null;
+    if (!this.port() || !read || read.error || read.products.length > 0) return null;
 
     return { repo: this.project() };
   });
@@ -1081,7 +852,7 @@ export class SystemViewComponent {
     const read = this.reading();
 
     if (!port || !product || !read || read.error || read.products.length === 0) return null;
-    if (this.section() !== 'Flows' || this.creating() || this.call()) return null;
+    if (this.section() !== 'Flows' || this.call()) return null;
 
     const flows = this.flowList() ?? [];
     const flow = this.flow() ?? flows[0] ?? null;
@@ -1095,7 +866,7 @@ export class SystemViewComponent {
     const read = this.reading();
 
     if (!port || !part || !read || read.error || read.products.length === 0) return null;
-    if (this.section() !== 'System' || this.creating() || this.call() || this.awaitingPicked()) return null;
+    if (this.section() !== 'System' || this.call() || this.awaitingPicked()) return null;
     if (this.sketchShown() || this.flowShown()) return null;
 
     return this.inventoryShown() && part.listed.layer === 'pages' ? { port, part: part.key } : null;
@@ -1126,50 +897,6 @@ export class SystemViewComponent {
     });
 
     this.commentStore.connect(source);
-    this.noteStore.connect(source);
-  }
-
-  protected toggleComments() {
-    this.commentStore.toggle();
-    if (this.commentStore.active()) this.noteStore.end();
-  }
-
-  protected showNotes(shown: boolean) {
-    const key = this.notesKey();
-
-    if (key === null) return;
-
-    this.notesShownPicks.update((picks) => ({ ...picks, [key]: shown }));
-    rememberNotesShown(key, shown);
-  }
-
-  protected toggleNotes() {
-    this.noteStore.toggle();
-    if (!this.noteStore.active()) return;
-
-    this.commentStore.end();
-    this.showNotes(true);
-  }
-
-  protected startNote(pick: FramePoint) {
-    const draft = commentDraftOf(this.placeableFrames(), pick);
-
-    if (draft) this.noteStore.start(draft);
-  }
-
-  protected startComment(frames: CanvasFrame[], pick: FramePoint) {
-    const draft = commentDraftOf(frames, pick);
-
-    if (draft) this.commentStore.start(draft);
-  }
-
-  protected handleCommentKey(event: KeyboardEvent) {
-    if (event.key === 'Escape' && (this.noteStore.draft() || this.noteStore.editing())) return this.noteStore.cancel();
-    if (event.key === 'Escape' && this.noteStore.active()) return this.noteStore.end();
-    if (!this.commentable()) return;
-    if (event.key === 'Escape' && this.commentStore.draft()) this.commentStore.cancel();
-    else if (event.key === 'Escape' && this.commentStore.active()) this.commentStore.end();
-    else if (isCommentModeKey(event) && !event.repeat) this.toggleComments();
   }
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
@@ -1184,7 +911,7 @@ export class SystemViewComponent {
     }
   }
 
-  protected pickSection(section: ShellSection) {
+  public pickSection(section: ShellSection) {
     this.panel.set('open');
     this.commentStore.showPanel(section === 'Inbox');
 
@@ -1218,17 +945,12 @@ export class SystemViewComponent {
     if (frame) return this.openFrame(frame);
     if (!this.nodes().entries.has(key)) return;
 
-    this.creating.set(false);
     this.picked.set(key);
     if (key.startsWith(flowKeyOf(''))) this.railSection.set('Flows');
     rememberView({ systemEntry: key });
   }
 
   public pickProduct(systemProduct: string) {
-    this.creating.set(systemProduct === NEW_PRODUCT);
-
-    if (systemProduct === NEW_PRODUCT) return;
-
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
   }
@@ -1243,8 +965,6 @@ export class SystemViewComponent {
         return this.pickSection(action.section);
       case 'product':
         return this.pickProduct(action.name);
-      case 'allProducts':
-        return this.pickProduct(NEW_PRODUCT);
       case 'project':
         return this.projectChange.emit(action.name);
       case 'openProject':
@@ -1257,11 +977,6 @@ export class SystemViewComponent {
 
     this.inventoryShown.set(inventoryShown);
     rememberView({ inventoryShown });
-  }
-
-  protected showCreated(systemProduct: string) {
-    this.pickProduct(systemProduct);
-    this.productReloads.update((value) => value + 1);
   }
 
   protected pickTheme(kind: keyof ThemePick, name: string) {
@@ -1300,18 +1015,7 @@ export class SystemViewComponent {
       .subscribe();
   }
 
-  protected copyCommand() {
-    from(navigator.clipboard.writeText(this.NEW_PRODUCT_COMMAND))
-      .pipe(
-        tap(() => this.copied.set(true)),
-        catchError(() => of(null)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
   protected selectMerged(target: string) {
-    this.creating.set(false);
     this.picked.set(target);
     rememberView({ systemEntry: target });
   }
@@ -1369,7 +1073,6 @@ export class SystemViewComponent {
 
     const frame = otherSizeFrameOf(this.placeableFrames(), comment);
 
-    if (this.partPins().some((pin) => pin.id === comment.id)) canvas.openPin(comment.id);
-    else if (frame) canvas.focusFrame(frame);
+    if (frame) canvas.focusFrame(frame);
   }
 }

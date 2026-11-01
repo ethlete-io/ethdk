@@ -26,8 +26,6 @@ export type ViewState = {
   sketchViews: Record<string, SketchViewPick>;
   /** The preset a flow view showed, keyed by its camera key. */
   flowPresets: Record<string, string>;
-  /** Whether the canvas shows the notes of a product, keyed by `themeKey`. */
-  notesShown: Record<string, boolean>;
   /** Whether a page shows its control inventory in place of the canvas. */
   inventoryShown: boolean;
 };
@@ -226,7 +224,6 @@ export const rememberedView = (): Partial<ViewState> => {
       resolvedShown,
       sketchViews,
       flowPresets,
-      notesShown,
       inventoryShown,
     } = stored as Partial<ViewState>;
 
@@ -242,7 +239,6 @@ export const rememberedView = (): Partial<ViewState> => {
       resolvedShown: typeof resolvedShown === 'boolean' ? resolvedShown : undefined,
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
-      notesShown: openFlags(notesShown),
       inventoryShown: typeof inventoryShown === 'boolean' ? inventoryShown : undefined,
     };
   } catch {
@@ -276,7 +272,3 @@ export const rememberSketchView = (key: string, pick: SketchViewPick) => {
 /** Remembers the preset one flow view shows and keeps those of the other flows. */
 export const rememberFlowPreset = (key: string, preset: string) =>
   rememberView({ flowPresets: { ...rememberedView().flowPresets, [key]: preset } });
-
-/** Remembers whether the canvas shows the notes of one product and keeps those of the others. */
-export const rememberNotesShown = (key: string, shown: boolean) =>
-  rememberView({ notesShown: { ...rememberedView().notesShown, [key]: shown } });

@@ -1,33 +1,10 @@
-import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Signal, computed, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  filter,
-  finalize,
-  map,
-  of,
-  retry,
-  scan,
-  startWith,
-  switchMap,
-  tap,
-  timer,
-} from 'rxjs';
-import {
-  ListedComments,
-  ProductAddress,
-  commentChanges$,
-  withdrawComment$,
-  listedComments$,
-  replyToComment$,
-  resolveComment$,
-  writeComment$,
-} from '../../host/design';
+import { EMPTY, Observable, catchError, filter, map, of, retry, scan, startWith, switchMap, tap, timer } from 'rxjs';
+import { ListedComments, ProductAddress, commentChanges$, listedComments$ } from '../../host/design';
 import { rememberView, rememberedView } from '../studio-view/remembered';
-import { CommentDraft, commentPlaceOf, isQuestion, numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
+import { numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
 export type CommentSource = { address: ProductAddress | null; revision: number };
@@ -47,10 +24,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 const sameAddress = (a: ProductAddress | null, b: ProductAddress | null) =>
   a?.port === b?.port && a?.product === b?.product;
 
-/** The open comments of the shown product, the comment mode, the draft and the panel, for the system view and its children. */
+/** The open comments of the shown product, the resolved threads and the panel, for the system view and its children. */
 export class CommentStore {
-  private destroyRef = inject(DestroyRef);
-
   private source = signal<Signal<CommentSource>>(signal(NO_SOURCE));
 
   private address = computed(() => this.source()().address, { equal: sameAddress });
@@ -136,21 +111,7 @@ export class CommentStore {
   /** Whether the comment sidebar lists the resolved threads too. */
   public resolvedShown = signal(rememberedView().resolvedShown ?? false);
 
-  /** The threads with an open question from the agent. */
-  public questions = computed(() => this.comments().filter(isQuestion));
-
-  public active = signal(false);
-
-  public draft = signal<CommentDraft | null>(null);
-
   public panelOpen = signal(rememberedView().commentsOpen ?? false);
-
-  public busy = signal(false);
-
-  /** Counts the replies sent, so a reply field can clear itself after a send. */
-  public repliesSent = signal(0);
-
-  public error = signal('');
 
   /** Reads the comments of the product `source` names, again whenever its revision changes. */
   public connect(source: Signal<CommentSource>) {
@@ -163,17 +124,6 @@ export class CommentStore {
     this.reconnects.update((count) => count + 1);
   }
 
-  public toggle() {
-    if (this.active()) this.end();
-    else this.active.set(true);
-  }
-
-  /** Ends comment mode and drops the draft. */
-  public end() {
-    this.active.set(false);
-    this.cancel();
-  }
-
   /** Shows or hides the comment sidebar, and remembers it for the next start. */
   public showPanel(open: boolean) {
     this.panelOpen.set(open);
@@ -184,78 +134,6 @@ export class CommentStore {
   public showResolved(shown: boolean) {
     this.resolvedShown.set(shown);
     rememberView({ resolvedShown: shown });
-  }
-
-  public start(draft: CommentDraft) {
-    this.draft.set(draft);
-    this.error.set('');
-  }
-
-  public cancel() {
-    this.draft.set(null);
-    this.error.set('');
-  }
-
-  /** Writes the draft with `text`; comment mode stays on. */
-  public send(text: string) {
-    const address = this.address();
-    const draft = this.draft();
-    const trimmed = text.trim();
-
-    if (!address || !draft || !trimmed || this.busy()) return;
-
-    this.run(
-      writeComment$(address, { ...commentPlaceOf(draft.place, draft.point), text: trimmed }).pipe(
-        tap(() => this.draft.set(null)),
-      ),
-    );
-  }
-
-  /** Adds `text` as the user's reply to a thread through `comment-reply`. */
-  public reply(id: string, text: string) {
-    const address = this.address();
-    const trimmed = text.trim();
-
-    if (!address || !trimmed || this.busy()) return;
-
-    this.run(
-      replyToComment$(address, { id, text: trimmed }).pipe(tap(() => this.repliesSent.update((count) => count + 1))),
-    );
-  }
-
-  /** Resolves a thread for the user through `comment-done`. */
-  public resolve(id: string) {
-    const address = this.address();
-
-    if (!address || this.busy()) return;
-
-    this.run(resolveComment$(address, id));
-  }
-
-  /** Deletes a comment through `comment-withdraw`. */
-  public withdraw(id: string) {
-    const address = this.address();
-
-    if (!address || this.busy()) return;
-
-    this.run(withdrawComment$(address, id));
-  }
-
-  private run(work$: Observable<unknown>) {
-    this.busy.set(true);
-    this.error.set('');
-    work$
-      .pipe(
-        tap(() => this.reloads.update((count) => count + 1)),
-        catchError((error: unknown) => {
-          this.error.set(messageOf(error));
-
-          return EMPTY;
-        }),
-        finalize(() => this.busy.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 }
 
