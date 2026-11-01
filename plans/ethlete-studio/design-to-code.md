@@ -336,6 +336,14 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     clipped badge, 2 `*-active` on forced active without hover. canvas-viewport not started: its design draws a
     sample frame not from props. Tool gaps (a) rounding, (b) overflow, (c) active+hover in a cli slice; design
     questions with the grill session.
+  - Disclosure and studio-menu, partial (`ed94b5129`, `071105769`, `b81ab2e15`, `a1cdd6b31`): components in
+    `design-parts/`, links and go; no live swap (live users: `sketch-view.component.ts:212`,
+    `exception-list.component.ts:20`, the studio slot of inbox and shell-main). Nothing recorded. Queued cli gaps:
+    (d) the pointer starts at (0,0) and hovers a part drawn top-left in rest states (move it off the page after
+    fonts load); (e) a forced interaction falls back to the element text and searches the whole page (portaled
+    overlays); (f) the pointer-open "from" state skips states with an `interaction`. With d-f patched locally,
+    disclosure was 0 px in 12 of 12; then `task --verify 071105769`. studio-menu open states ~52k px: the design
+    draws the panel without the overlay pane (base surface, not elevated); decision open with the grill session.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
