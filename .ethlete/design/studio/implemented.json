@@ -1,4 +1,14 @@
 {
+  "components/shell-collapse": {
+    "hash": "c2bff22ecd599c02",
+    "at": "2026-11-01T12:33:06.790Z",
+    "states": {
+      "collapse": "44136fa355b3678a",
+      "collapse-active": "5ea724df4cca1fcf",
+      "collapse-focus-visible": "c4e5e28159e35ce1",
+      "collapse-hover": "12b1b358429b1df5"
+    }
+  },
   "elements/shell-main": {
     "hash": "4b64a4137ba97697",
     "at": "2026-11-01T12:00:00.710Z",
