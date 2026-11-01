@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 01.11.2026, spät abends
+Stand: 02.11.2026, nachts
 
 ## Ziel
 
@@ -10,27 +10,27 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                             | Wer     |
-| ------------------------------- | ------ | ----------------------------------------------------- | ------- |
-| components/comment-pin          | ✅     |                                                       |         |
-| components/disclosure           | ✅     |                                                       |         |
-| components/tree-row             | ✅     |                                                       |         |
-| components/zoom-chip            | ✅     |                                                       |         |
-| elements/part-tree              | ✅     |                                                       |         |
-| elements/studio-menu            | ✅     |                                                       |         |
-| components/shell-collapse       | ✅     |                                                       |         |
-| components/shell-project-switch | ✅     |                                                       |         |
-| elements/shell-main             | ✅     |                                                       |         |
-| pages/inbox                     | ✅     |                                                       |         |
-| pages/system                    | ❌     | Abnahme und Go gegeben (00:33); Builder macht „ready“ | Builder |
-| pages/sketches                  | ✅     |                                                       |         |
-| components/canvas-viewport      | ✅     |                                                       |         |
-| elements/canvas-frames          | ✅     |                                                       |         |
-| pages/start                     | ✅     |                                                       |         |
-| pages/merge                     | ✅     |                                                       |         |
-| components/error-toast          | ✅     |                                                       |         |
+| Teil                            | Fertig | Was fehlt | Wer |
+| ------------------------------- | ------ | --------- | --- |
+| components/comment-pin          | ✅     |           |     |
+| components/disclosure           | ✅     |           |     |
+| components/tree-row             | ✅     |           |     |
+| components/zoom-chip            | ✅     |           |     |
+| elements/part-tree              | ✅     |           |     |
+| elements/studio-menu            | ✅     |           |     |
+| components/shell-collapse       | ✅     |           |     |
+| components/shell-project-switch | ✅     |           |     |
+| elements/shell-main             | ✅     |           |     |
+| pages/inbox                     | ✅     |           |     |
+| pages/system                    | ✅     |           |     |
+| pages/sketches                  | ✅     |           |     |
+| components/canvas-viewport      | ✅     |           |     |
+| elements/canvas-frames          | ✅     |           |     |
+| pages/start                     | ✅     |           |     |
+| pages/merge                     | ✅     |           |     |
+| components/error-toast          | ✅     |           |     |
 
-Stand: 16 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 17 von 17 Teilen fertig. Das MVP-Ziel ist erreicht (02.11.). Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
