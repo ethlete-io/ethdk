@@ -38,6 +38,11 @@ describe('liveSpecProblemOf', () => {
     ).toBeNull();
   });
 
+  it('accepts a fixed ISO time and rejects one that does not parse', () => {
+    expect(liveSpecProblemOf({ ...SPEC, now: '2026-11-04T12:00:00Z' })).toBeNull();
+    expect(liveSpecProblemOf({ ...SPEC, now: 'Mittwoch' })).toBe('now must be an ISO time');
+  });
+
   it.each([
     [{ pages: {} }, 'a live spec must be'],
     [{ ...SPEC, answers: { '/x': 1 } }, 'answers must map'],

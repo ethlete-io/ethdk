@@ -37,11 +37,13 @@ export type LivePage = LiveSample & {
  * the answers of the desktop host commands (`$port` and `$checkout` stand for the design server port and the
  * checkout), `storage` the localStorage entries, and `answers` the design server paths answered with a JSON file
  * (relative to the spec) instead of the live design system. `frame` is a PNG (relative to the spec) both sides draw as
- * frame content: the design in each slot the page draws itself, the app as every part shot and frame.
+ * frame content: the design in each slot the page draws itself, the app as every part shot and frame. `now` is the
+ * ISO time the app's clock reads, in UTC, so relative times such as "vor 3 Min" draw the same on every run.
  */
 export type LiveSpec = {
   host: string;
   frame?: string;
+  now?: string;
   invoke?: Record<string, unknown>;
   storage?: Storage;
   answers?: Record<string, string>;
@@ -79,6 +81,8 @@ export const liveSpecProblemOf = (spec: unknown): string | null => {
 
   if (spec['storage'] !== undefined && !isRecord(spec['storage'])) return 'storage must be an object';
   if (spec['frame'] !== undefined && typeof spec['frame'] !== 'string') return 'frame must name a PNG file';
+  if (spec['now'] !== undefined && (typeof spec['now'] !== 'string' || Number.isNaN(Date.parse(spec['now']))))
+    return 'now must be an ISO time';
 
   const specProblem = sampleProblemOf(spec);
 
@@ -185,8 +189,18 @@ const STABLE_SHOTS = 3;
 
 const STABLE_POLL_MS = 250;
 
-const hostBoxOf = async (page: Page, host: string) =>
-  (await page.locator(host).first().boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+const hostBoxOf = async (page: Page, { host, timeout = 0 }: { host: string; timeout?: number }) => {
+  const deadline = Date.now() + timeout;
+
+  for (;;) {
+    const box = await page.locator(host).first().boundingBox();
+
+    if ((box && box.width > 0 && box.height > 0) || Date.now() > deadline)
+      return box ?? { x: 0, y: 0, width: 0, height: 0 };
+
+    await page.waitForTimeout(STABLE_POLL_MS);
+  }
+};
 
 class LiveError extends Error {}
 
@@ -214,10 +228,13 @@ export const liveShotOf = async (options: {
   const context = await browser.newContext({
     viewport: { width: size.width, height: size.height },
     deviceScaleFactor: 1,
+    ...(spec.now !== undefined && { timezoneId: 'UTC' }),
   });
 
   try {
     const page = await context.newPage();
+
+    if (spec.now !== undefined) await page.clock.setFixedTime(spec.now);
     const answers = { ...spec.answers, ...options.page.answers, ...options.state.answers };
     const invoke = { ...spec.invoke, ...options.page.invoke, ...options.state.invoke };
     const frame = spec.frame ? readFileSync(resolve(options.dir, spec.frame)) : null;
@@ -292,7 +309,7 @@ export const liveShotOf = async (options: {
         throw new LiveError(`the app page ${address} showed no ${host} within ${timeout} ms`);
       });
 
-    const box = await hostBoxOf(page, host);
+    const box = await hostBoxOf(page, { host, timeout });
 
     await page.setViewportSize({
       width: size.width + Math.round(size.width - box.width),
@@ -319,7 +336,7 @@ export const liveShotOf = async (options: {
     let same = 0;
 
     for (;;) {
-      const clip = await hostBoxOf(page, host);
+      const clip = await hostBoxOf(page, { host });
 
       if (Math.round(clip.width) !== size.width || Math.round(clip.height) !== size.height)
         throw new LiveError(
