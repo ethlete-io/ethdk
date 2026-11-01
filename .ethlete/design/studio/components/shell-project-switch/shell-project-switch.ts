@@ -7,22 +7,33 @@ import styles from './shell-project-switch.css?inline';
 
 type SwitchInteraction = Exclude<Interaction, 'disabled'>;
 
-type Props = { open?: boolean; interaction?: SwitchInteraction };
+type OptionInteraction = 'hover' | 'focus-visible';
 
-const MENU_ITEM = 'data-et-control="item"';
+type Props = { open?: boolean; interaction?: SwitchInteraction; option?: OptionInteraction | 'selected' };
 
-const PROJECT_ROWS: MenuMockRow[] = [
-  {
-    kind: 'radio-group',
-    items: [
-      { kind: 'radio', label: 'ethlete-sdk', checked: true, active: true, attributes: MENU_ITEM },
-      { kind: 'radio', label: 'fut-frontend', attributes: MENU_ITEM },
-      { kind: 'radio', label: 'design-playground', attributes: MENU_ITEM },
-    ],
-  },
-  { kind: 'separator' },
-  { label: 'Projekt öffnen…', attributes: MENU_ITEM },
-];
+const MENU_ITEM = 'data-et-slot="components/menu"';
+
+const projectRows = (option?: Props['option']): MenuMockRow[] => {
+  const forced = option && option !== 'selected' ? option : undefined;
+
+  return [
+    {
+      kind: 'radio-group',
+      items: [
+        { kind: 'radio', label: 'ethlete-sdk', checked: true, active: !option, attributes: MENU_ITEM },
+        {
+          kind: 'radio',
+          label: 'fut-frontend',
+          active: !!forced,
+          attributes: forced ? `${MENU_ITEM} data-et-force="${forced}"` : MENU_ITEM,
+        },
+        { kind: 'radio', label: 'design-playground', attributes: MENU_ITEM },
+      ],
+    },
+    { kind: 'separator' },
+    { label: 'Projekt öffnen…', attributes: MENU_ITEM },
+  ];
+};
 
 export const shellProjectSwitchStyles = styles + buttonStyles;
 
@@ -46,18 +57,26 @@ export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) =>
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
+const switchRows = interactionRows<Props, 'closed' | 'open', SwitchInteraction>(
+  { closed: { open: false }, open: { open: true } },
+  { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
+);
+
 export default definePart({
   note: 'The project switch in the shell panel foot: badge, project name and an up-down chevron; it opens the project picker. SDK transparent button: SDK hover, press, focus ring and its 120 ms fade. Plain text at rest, and the chevron sits after the name, not at the right edge.',
   madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
-  ...interactionRows<Props, 'closed' | 'open', SwitchInteraction>(
-    { closed: { open: false }, open: { open: true } },
-    { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
-  ),
+  states: {
+    ...switchRows.states,
+    'project.option-hover': { open: true, option: 'hover' },
+    'project.option-focus-visible': { open: true, option: 'focus-visible' },
+    'project.option-selected': { open: true, option: 'selected' },
+  },
+  grid: switchRows.grid,
   implements: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
   controls: { project: { kind: 'select', input: ['pointer', 'keyboard'], surfaces: { open: 'open' } } },
   styles: shellProjectSwitchStyles,
   render: async (props: Props) => {
-    const projectMenu = props.open ? await menu.render({ rows: PROJECT_ROWS }) : null;
+    const projectMenu = props.open ? await menu.render({ rows: projectRows(props.option) }) : null;
 
     return drawing({
       body: html`<div class="box-border w-62 p-space-2 bg-et-surface-bg text-et-surface font-ui text-ui-md">
