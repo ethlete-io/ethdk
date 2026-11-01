@@ -1623,3 +1623,18 @@ after the MVP.
   the panel inset from `--st-shell-inset-left`, so the fitted frame sits centred in the visible canvas area, clear of
   the side panel, like the real System canvas. Re-check the app fit x after the design fix. pages/system then needs
   accept + go.
+
+### Go order and stale go decisions (Tom, 2026-11-01)
+
+Tom: "builder baut was, ich nicke es ab, builder macht checks, checks failen, ich muss fragen beantworten, builder baut
+was, ... viel zu optimieren". Tonight pages/inbox, elements/shell-main and pages/merge each needed a second go after
+checks failed post-go.
+
+1. Go last (rule, now): the builder runs `design check`, `design actions` and compare for the part and gets them green
+   (or names each remaining fail as a known tool defect) BEFORE it sends the grill a shot for Tom's go. `ready` runs
+   right after the go. After the MVP, a tool gate: Studio shows "Go geben" only when the part's checks are green, else
+   it lists what is missing.
+2. Invisible changes keep the go (tool change, MVP): a design change that changes no pixel in any existing state (for
+   example a `data-et-action`, an app-only text) does not make the go stale, like the existing "merged automatically:
+   no visible change" accept. A new state that only combines known looks (for example `open` plus the focus ring) goes
+   into Tom's next review round but does not block the part.

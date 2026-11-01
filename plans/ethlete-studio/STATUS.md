@@ -51,6 +51,8 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
+- Go erst, wenn alle Prüfungen grün sind (Q14). Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, wird gebaut).
+
 - Ein Knopf „Abnehmen und Go“, wenn beide Schritte offen sind (Q12, 01.11.).
 
 - Parallel: Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
