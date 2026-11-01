@@ -1197,11 +1197,19 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      (general): a lint rule in `@ethlete/eslint-plugin` that flags `title` and `[title]`/`[attr.title]` in app templates
      and design files and points to the SDK tooltip. Parked for after the MVP.
 117. The merge page has no canvas any more: no zoom, no pan (Tom, 2026-11-01, screenshot of studio-lab
-     components/card). Parked for after the MVP. Cause and why no check caught it: asked the builder.
-118. The merge page crop row cuts the "Jetzt" crop on the left ("films yet", "l a film to start the library") while the
-     "Nach dem Merge" crop shows the whole text (grill from Tom's screenshot, studio-lab components/card in
-     pages/library empty, 2026-11-01). Looks like the crop takes the rect of one side for both. MVP: pages/merge. Cause
-     and why no check caught it: asked the builder.
+     components/card). Cause (builder): d0f4a38cf (Q55/Q57/Q58) removed `<ethlete-design-canvas>` from sketch-view;
+     f7c94cff0 put in `<ethlete-merge>`, which follows the pages/merge design: static 0.37 shots and a fixed crop row.
+     Why no check caught it: the design itself has no canvas, so compare says 0 px; zoom and pan are behaviour, not a
+     state; the canvas specs left with d0f4a38cf; no e2e covers merge zoom and pan. Lesson: a removed capability needs
+     a design decision, and behaviour like zoom needs an e2e, not only a compare. Fix is a design call for Tom (canvas
+     like System, or static). Parked for after the MVP.
+118. The merge page crop row cut the "Jetzt" crop on the left (grill from Tom's screenshot, studio-lab components/card
+     in pages/library empty, 2026-11-01). Cause (builder): the crop window is always 266x64 at 2x, the design sample
+     size, and `cropTransform` only centres the rect, never fits it; the 342 px phone card lost 38 px on each side, on
+     both sides. Why no check caught it: the design samples have small instances that fit at 2x; compare never draws a
+     real instance wider than the window, and the spec used sample rects. Fixed in 63a0786fb: one zoom for both sides,
+     min(2, fit of the larger rect + 4 px); the label shows the real zoom. Tool fix (general, after MVP): compare and
+     actions also run states with real repo data at the extremes (largest instance), not only the design sample.
 119. Finding 107 cause (builder, 434e3f297): the logo button drew radius 6 px plus a 1 px transparent border around a
      38 px logo with radius 9.5 px; the corners showed only when hover, open or focus painted the button. The design had
      the same bug, so compare was 0 px before and after. Why no check caught it: compare checks design = app, never an
