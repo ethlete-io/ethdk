@@ -4,13 +4,11 @@ import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import {
   ageOf,
   commentDraftOf,
-  commentGroupsOf,
   commentPlaceOf,
   draftKeyOf,
   isCommentModeKey,
   isInSketch,
   isQuestion,
-  lastSenderOf,
   numberedCommentsOf,
   otherSizeCountOf,
   otherSizeFrameOf,
@@ -81,21 +79,9 @@ describe('comment pins', () => {
     });
   });
 
-  it('groups the comments by part with the selected part on top, and tells their age', () => {
-    const numbered = numberedCommentsOf([
-      comment('1', { part: 'pages/home' }),
-      comment('2', {}),
-      comment('3', { part: 'elements/rating' }),
-    ]);
-    const groups = commentGroupsOf(numbered, 'pages/home');
+  it('tells the age of a comment', () => {
     const now = Date.parse('2026-10-27T12:00:00Z');
 
-    expect(groups.map((group) => [group.part, group.comments.map((entry) => entry.id)])).toEqual([
-      ['pages/home', ['1']],
-      ['components/card', ['2']],
-      ['elements/rating', ['3']],
-    ]);
-    expect(commentGroupsOf(numbered, null)[0]?.part).toBe('components/card');
     expect(
       ['2026-10-27T11:59:30Z', '2026-10-27T11:55:00Z', '2026-10-27T09:00:00Z', '2026-10-25T12:00:00Z'].map(
         (createdAt) => ageOf(createdAt, now),
@@ -186,7 +172,7 @@ describe('comment pins', () => {
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['comment open']);
   });
 
-  it('marks a question in the tree, on its pin, and by its last sender', () => {
+  it('marks a question in the tree, on its pin', () => {
     const part = {
       layer: 'components',
       name: 'card',
@@ -206,7 +192,6 @@ describe('comment pins', () => {
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['question']);
     expect(pinsOf([frame('a')], asked)[0]?.dot).toBe(true);
-    expect(asked.map(lastSenderOf)).toEqual(['agent', 'user']);
   });
 
   it('marks an answered thread in the tree without a dot on its pin', () => {

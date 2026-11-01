@@ -11,10 +11,6 @@ export const isQuestion = (comment: Pick<ListedComment, 'threadState'>) => comme
 
 export const isAnswered = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'answered';
 
-/** Who has the last word in a thread; the user wrote the first text. */
-export const lastSenderOf = (comment: { replies: readonly Pick<CommentReply, 'by'>[] }) =>
-  comment.replies.at(-1)?.by ?? 'user';
-
 export const SENDER_LABELS: Record<CommentReply['by'], string> = { user: 'You', agent: 'Agent' };
 
 /** Numbers the open comments of a product from 1, oldest first, so the list and the pins agree. */
@@ -43,10 +39,6 @@ export const addressedLabelOf = ({ reason, round }: CommentAddressed) =>
 
 /** Who answered a thread: the agent's model id, `you` or `the agent`. */
 export const addressedByOf = ({ by, author }: CommentAddressed) => author ?? (by === 'user' ? 'you' : 'the agent');
-
-/** What answered a resolved thread, if anything did, then `resolved by you`. */
-export const resolvedByOf = ({ addressed }: ResolvedComment) =>
-  `${addressed ? `${addressedLabelOf(addressed).toLowerCase()} by ${addressedByOf(addressed)}, ` : ''}resolved by you`;
 
 const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
 
@@ -94,15 +86,6 @@ export const commentPlaceOf = (place: FramePlace, point: { x: number; y: number 
   ...(point ? { point: { x: Math.round(point.x), y: Math.round(point.y) } } : {}),
 });
 
-/** Where a comment sits, in words: state, size, interaction, sketch variant. */
-export const commentWhereOf = (comment: CommentPlace) =>
-  [
-    comment.state,
-    typeof comment.size === 'number' ? `${comment.size} px` : comment.size,
-    ...(interactionOf(comment) === REST ? [] : [interactionOf(comment)]),
-    ...(comment.sketch ? [`variant ${comment.sketch.variant}`] : []),
-  ].join(' · ');
-
 const otherSizeCommentsOf = (place: FramePlace, comments: CommentPlace[]) =>
   comments.filter(
     (comment) =>
@@ -140,17 +123,6 @@ export const otherInteractionCountOf = (place: FramePlace, comments: CommentPlac
 /** The open comments on a part, in its own states and in every sketch variant of it. */
 export const commentsOfPart = <T extends CommentPlace>(comments: T[], part: string) =>
   comments.filter((comment) => comment.part === part);
-
-export type CommentGroup = { part: string; comments: NumberedComment[] };
-
-/** The open comments grouped by part: the selected part first, then the others by name. */
-export const commentGroupsOf = (comments: NumberedComment[], selected: string | null): CommentGroup[] => {
-  const parts = [...new Set(comments.map((comment) => comment.part))].sort((a, b) =>
-    a === selected ? -1 : b === selected ? 1 : a.localeCompare(b),
-  );
-
-  return parts.map((part) => ({ part, comments: commentsOfPart(comments, part) }));
-};
 
 const MINUTE = 60_000;
 
