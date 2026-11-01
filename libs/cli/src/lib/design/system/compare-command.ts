@@ -28,6 +28,7 @@ import {
 } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { UNSETTLED_ANIMATION } from './action-press';
 import { watchSdkErrors } from './sdk-errors';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
@@ -190,7 +191,7 @@ const settledPanesOf = async (options: { page: Page; url: string; count: number;
         const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})];
         const settled =
           panes.every((pane) => !pane.matches(${JSON.stringify(PANE_TRANSITIONS)}) && !pane.querySelector(${JSON.stringify(PANE_TRANSITIONS)})) &&
-          document.getAnimations().every((animation) => animation.playState !== 'running' || animation.effect?.getTiming().iterations === Infinity);
+          !document.getAnimations().some(${UNSETTLED_ANIMATION});
 
         window.__etSettledFrames = settled ? (window.__etSettledFrames ?? 0) + 1 : 0;
 
