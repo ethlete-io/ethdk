@@ -14,19 +14,44 @@ const filesUnder = (dir: string) =>
     .sort()
     .map((file) => ({ name: file, path: join(dir, file) }));
 
-/** The stamp of the cli on disk now. A server takes it once at start, so a reinstall moves the two apart. */
-export const buildStampOf = (assets = assetRoot()): BuildStamp => {
+const inspectBuild = (dirs: { code: string; assets: string; manifest: string }) => {
   const hash = createHash('sha256');
+  let builtAt = 0;
 
-  for (const dir of [__dirname, assets]) {
-    for (const file of filesUnder(dir)) hash.update(file.name).update(readFileSync(file.path));
+  for (const dir of [dirs.code, dirs.assets]) {
+    for (const file of filesUnder(dir)) {
+      hash.update(file.name).update(readFileSync(file.path));
+      builtAt = Math.max(builtAt, statSync(file.path).mtimeMs);
+    }
   }
 
-  const manifest = JSON.parse(readFileSync(resolve(__dirname, '../../../package.json'), 'utf8')) as {
-    version?: string;
-  };
+  const manifest = JSON.parse(readFileSync(dirs.manifest, 'utf8')) as { version?: string };
 
-  return { version: manifest.version ?? 'unknown', build: hash.digest('hex').slice(0, 12) };
+  return {
+    stamp: { version: manifest.version ?? 'unknown', build: hash.digest('hex').slice(0, 12) } satisfies BuildStamp,
+    builtAt: Math.round(builtAt),
+  };
+};
+
+/** The stamp of the cli on disk now. A server takes it once at start, so a reinstall moves the two apart. */
+export const buildStampOf = (assets = assetRoot()): BuildStamp =>
+  inspectBuild({ code: __dirname, assets, manifest: resolve(__dirname, '../../../package.json') }).stamp;
+
+/** The stamp and the newest file time (ms) of the cli code at `__dirname` and its frame assets. */
+export const buildInfoOf = (assets = assetRoot()) =>
+  inspectBuild({ code: __dirname, assets, manifest: resolve(__dirname, '../../../package.json') });
+
+/** The stamp and newest file time of the cli package installed at `packageRoot`, or null when it has no built design code. */
+export const installedBuildInfoOf = (packageRoot: string) => {
+  try {
+    return inspectBuild({
+      code: join(packageRoot, 'src/lib/design'),
+      assets: join(packageRoot, 'design'),
+      manifest: join(packageRoot, 'package.json'),
+    });
+  } catch {
+    return null;
+  }
 };
 
 const isStamp = (value: unknown): value is BuildStamp =>

@@ -89,6 +89,7 @@ import {
 import { createShotStore, StoredAddress } from './shot-store';
 import { sharedDirsOf } from './system/imports';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
+import { serverIdentityOf } from './server-identity';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
@@ -541,6 +542,7 @@ const designExplore = ({
       const callsRoot = callsRootOf(target);
       const designRoot = resolve(target, DESIGN_DIR);
       const stamp = buildStampOf();
+      const identityOf = serverIdentityOf(target);
       const base = () => {
         const address = vite.httpServer?.address();
 
@@ -758,7 +760,7 @@ const designExplore = ({
 
       vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
         response.setHeader('content-type', 'application/json');
-        response.end(JSON.stringify(stamp));
+        response.end(JSON.stringify({ ...stamp, ...identityOf() }));
       });
       vite.middlewares.use(QUEUE_PATH, (_request: unknown, response: ServerResponse) =>
         sendJson(response, { status: 200, body: ledger.report() }),
