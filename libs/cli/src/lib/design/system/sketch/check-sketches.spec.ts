@@ -163,6 +163,37 @@ describe('openSketchProblemsOf', () => {
     ]);
   });
 
+  it('reports a live state mapped to a design state neither the sketch nor the merged design has', () => {
+    const target = acme();
+    const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
+    const hero = readFileSync(heroOf(join(target, DESIGN_DIR, 'acme')), 'utf8');
+    const config = { harness: { app: 'apps/a', map: 'apps/a/map.ts', live: 'apps/a/design-live.json' } };
+    const product = resolveProduct({ target, name: 'acme', config });
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    }) as Sketch;
+
+    writeFileSync(heroOf(join(sketch.dir, 'a')), hero.replace(/states: \{ default:/u, 'states: { fit: {}, default:'));
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    writeFileSync(
+      join(target, 'apps/a/design-live.json'),
+      JSON.stringify({
+        host: 'app-shell',
+        pages: {
+          'elements/hero': {
+            states: { one: { design: 'fit' }, two: { design: 'default' }, three: { design: 'gone' } },
+          },
+        },
+      }),
+    );
+
+    expect(openSketchProblemsOf(product).variants.flatMap(({ problems }) => problems.map((p) => p.message))).toEqual([
+      'the live spec maps elements/hero live state three to design state "gone", which neither the sketch nor the merged design has',
+    ]);
+  });
+
   it('lets the round of a variant drop a state on purpose, and no other', () => {
     const target = acme();
     const heroOf = (dir: string) => join(dir, 'elements/hero/hero.ts');
