@@ -1244,3 +1244,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   refusal; `verify` is only shown; a single `accept --by tom` takes free text, only batch entries need "Impl Qnn".
 - Impl Q124 duplicate matrix logic (Tom, 2026-11-01): keep the CLI copy (aktuell-placeholders.ts) until the MVP;
   after the MVP move the matrix into one module that app and CLI both import. Backlog.
+- Impl Q125 one canvas (Tom, 2026-11-01): "das sollte ein und der selbe dynamische canvas component sein. alles andere
+  wäre müll." System, Sketches and Flows use one and the same canvas component, not a shared input layer under two
+  implementations. Left drag on an empty area pans on every page; a left click on a frame selects it. Arrow-key pan,
+  double-click focus, Space/middle-button pan and window-wide Shift+1/2/0 work on every page. Finding 83.
