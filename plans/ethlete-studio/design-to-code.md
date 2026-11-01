@@ -344,6 +344,14 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     overlays); (f) the pointer-open "from" state skips states with an `interaction`. With d-f patched locally,
     disclosure was 0 px in 12 of 12; then `task --verify 071105769`. studio-menu open states ~52k px: the design
     draws the panel without the overlay pane (base surface, not elevated); decision open with the grill session.
+  - shell-collapse as built (`bdce4d13c`, `a7d9d5a47`, `4c03c7364`, `a8a74c218`, `f963b88aa`, `7cf4bd69e`, swap
+    `ce271784b`): compare 4 of 4 at 0 px, recorded; shell-main draws it (shell-main 15 of 15, inbox 10 of 10 at
+    0 px). A component drawn in a padded wrapper carries the padding on its host, no host background.
+    `task --verify` also refuses the design link file: commit component and changeset alone, the link separately.
+  - shell-project-switch, partial (`836113a8a`, `a0a86e3a9`, `e826d1ebc`, `da2823183`, `0005e8aca`): `closed` 0 px;
+    `open` 1144 px (the component owns the menu, the design draws the trigger only); forced states wait on gap (e).
+    shell-project-option not built: no part draws its custom row; shell-main uses SDK radio items. Both are design
+    questions with the grill session.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
