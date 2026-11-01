@@ -17,9 +17,9 @@ ausgeklammert.
 | components/tree-row             | ✅     |                                                                                                                         |                   |
 | components/zoom-chip            | ✅     |                                                                                                                         |                   |
 | elements/part-tree              | ✅     |                                                                                                                         |                   |
-| elements/studio-menu            | ✅     | Ein Look für alle Menüs (Q130) und Logo-Ecken (Befund 107) sind gebaut; Tom: „Änderung abnehmen“, dann „Go geben“       | Tom               |
+| elements/studio-menu            | ✅     | Go gegeben (23:32); Builder macht „ready“                                                                               | Builder           |
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
-| components/shell-project-switch | ❌     | Q130-Look und Fläche im Fokus (Q11) sind gebaut; Tom: „Änderung abnehmen“, dann „Go geben“                              | Tom               |
+| components/shell-project-switch | ❌     | Go gegeben (23:31); Builder macht „ready“                                                                               | Builder           |
 | elements/shell-main             | ❌     | Bild stimmt in allen 14 Zuständen; Prüfung der Aktionen hat Fehler im Werkzeug, wird behoben                            | Builder           |
 | pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“    | Builder, dann Tom |
 | pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                         | Builder, dann Tom |
