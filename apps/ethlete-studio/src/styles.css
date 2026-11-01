@@ -14,7 +14,7 @@
 @import './styles/sdk-token-map.css' layer(studio-sdk);
 
 /* The sizes design compare passes as a part's class prop; no app template uses them. */
-@source inline('h-56 w-128');
+@source inline('h-56 w-128 w-250');
 
 @theme {
   --spacing: 0.4rem;
