@@ -758,6 +758,7 @@ describe('sketchMatrixOf', () => {
 
     expect(current.map((frame) => [frame.row, frame.empty])).toEqual([
       ['fit', 'fit ist neu in diesem Sketch. Aktuell gibt es: part, empty'],
+      ['part', undefined],
     ]);
   });
 
@@ -890,6 +891,20 @@ describe('sketchMatrixOf', () => {
 
       expect(rowsOf(matrix)).toEqual(['hidden', 'inbox', 'system']);
       expect(matrix.rowHeads.map((head) => [head.open, head.before])).toEqual([[true, 'system']]);
+    });
+
+    it('opens the first folded state by default when no visible row draws the current part', () => {
+      const onlyUnchanged = part({ states: ['system'] });
+      const matrix = sketchMatrixOf({ ...source, part: onlyUnchanged, sketch: unchanging });
+      const current = matrix.frames.filter((frame) => frame.column === 'current');
+
+      expect(rowsOf(matrix)).toEqual(['hidden', 'inbox', 'system']);
+      expect(matrix.rowHeads.map((head) => head.open)).toEqual([true]);
+      expect(current.some((frame) => frame.src !== '' && frame.row === 'system')).toBe(true);
+      expect(
+        sketchMatrixOf({ ...source, part: onlyUnchanged, sketch: unchanging, openStates: { system: false } })
+          .rowHeads[0]?.open,
+      ).toBe(false);
     });
 
     it('keeps a state one variant changes, and folds nothing for a cli without unchanged states', () => {

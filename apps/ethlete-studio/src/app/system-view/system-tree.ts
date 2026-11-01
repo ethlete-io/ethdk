@@ -749,7 +749,7 @@ const rowKeyIn = (section: string | undefined, key: string) => (section === unde
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
  * several rounds or a titled one, each round is its own band, newest on top: an open round has its variant
  * columns under a round group, with the current column in the topmost open band, and a folded round is one
- * row head without frames. While the sketch is in progress, every frame of a variant in the newest round is
+ * row head without frames. When no visible row has a frame of the current part, the first unchanged row is open by default. While the sketch is in progress, every frame of a variant in the newest round is
  * pending. With
  * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
  * row per state in the picked interaction; the current states come first, then any state only a variant
@@ -909,7 +909,18 @@ export const sketchMatrixOf = ({
       variantColumns.every((column) => targetOf(column.key, key)?.unchanged?.includes(state) ?? false);
     const kept = (listed?.states ?? []).filter(unchanged);
     const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
-    const rowStates = ordered.filter((state) => !kept.includes(state) || openStates[stateKeyOf(state)] === true);
+    const drawsCurrent = (state: string) =>
+      !kept.includes(state) || openStates[stateKeyOf(state)] === true ? (listed?.states ?? []).includes(state) : false;
+    const firstKept = kept[0];
+    const defaultOpen =
+      listed !== null &&
+      firstKept !== undefined &&
+      openStates[stateKeyOf(firstKept)] === undefined &&
+      !ordered.some(drawsCurrent)
+        ? firstKept
+        : undefined;
+    const isOpen = (state: string) => openStates[stateKeyOf(state)] === true || state === defaultOpen;
+    const rowStates = ordered.filter((state) => !kept.includes(state) || isOpen(state));
     const named = (label: string) => (several ? `${key} · ${label}` : label);
     const rows: MatrixRow[] =
       states.length === 0
@@ -1028,7 +1039,7 @@ export const sketchMatrixOf = ({
 
     const rowHeads = kept.map((state): CanvasRowHead => {
       const stateKey = stateKeyOf(state);
-      const open = openStates[stateKey] === true;
+      const open = isOpen(state);
 
       return {
         key: stateRowKeyOf(stateKey),
