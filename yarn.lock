@@ -4307,6 +4307,7 @@ __metadata:
     "@tailwindcss/postcss": "npm:4.3.3"
     postcss: "npm:8.5.32"
     postcss-selector-parser: "npm:7.1.7"
+    rxjs: "npm:^7.8.0"
     typescript: "npm:6.0.3"
     vite: "npm:8.3.5"
   peerDependencies:
@@ -17051,7 +17052,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:7.8.2, rxjs@npm:^7.4.0, rxjs@npm:^7.8.1":
+"rxjs@npm:7.8.2, rxjs@npm:^7.4.0, rxjs@npm:^7.8.0, rxjs@npm:^7.8.1":
   version: 7.8.2
   resolution: "rxjs@npm:7.8.2"
   dependencies:
