@@ -280,3 +280,12 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   the editor showed it. The Q220 canonical-class rule (`libs/cli/src/lib/design/system/rules/tailwind-classes.ts`)
   covers the design parts, not the app templates. Lesson: the same check runs on the Tailwind classes in
   `apps/ethlete-studio/src` (lint or `design check`), so an implementation cannot add a non-canonical class.
+- **Studio app code quality (Tom, 2026-11-01), after the Studio implementation phase:** the app code in
+  `apps/ethlete-studio/src` has many basic flaws. Three groups:
+  1. Lint warnings, for example "Binding a static boolean is unnecessary if the `arrow` input uses a
+     `booleanAttribute` transform - use a static attribute instead". Goal: 0 warnings in `ethlete-studio`, then the
+     lint run fails on a new warning.
+  2. Inline SVGs in templates. Icons and logos come from one place (the foundations assets of Q233, or an icon
+     component), not pasted markup. Q233 makes this a finding for design parts only; the app code gets the same rule.
+  3. Inline components: covered by Q247 and Q248 (one component per part); this item only checks that nothing is left
+     after the phase.
