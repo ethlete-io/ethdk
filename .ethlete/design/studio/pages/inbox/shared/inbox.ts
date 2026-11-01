@@ -416,6 +416,7 @@ export const inbox = () =>
         '100%',
         {},
         'w-full',
+        true,
       );
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
