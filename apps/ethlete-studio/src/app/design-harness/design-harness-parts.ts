@@ -30,4 +30,5 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
   'pages/merge': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
   'pages/sketches': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
   'pages/system': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
+  'pages/start': () => import('../design-parts/start/start.component').then((m) => m.StartComponent),
 };

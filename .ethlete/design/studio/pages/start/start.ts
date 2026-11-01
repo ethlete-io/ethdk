@@ -58,6 +58,7 @@ const noProducts = (repo: string) =>
 export default definePart<Props>({
   note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it gives an example prompt for the agent, a copy button and the real CLI command.',
   madeBy: ['claude-opus-5-5'],
+  implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
   states: { 'no-repo': {}, 'no-products': { repo: 'ethlete-sdk' } },
   render: ({ repo }) =>
