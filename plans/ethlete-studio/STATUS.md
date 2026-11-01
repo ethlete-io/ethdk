@@ -30,7 +30,7 @@ ausgeklammert.
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
-Stand: 8 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 9 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
@@ -57,6 +57,7 @@ oben rechts in der Teil-Ansicht.
 ## Für später gesammelt
 
 - „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren (Befund 109), mit der Überarbeitung von Go.
+- Eigene Titelleiste mit Suche in der Mitte (Strg+K öffnet die Command Palette) und Knopf „Update“, wenn ein Update bereit ist. Projekt-Wechsel bleibt in der Seitenleiste. Arbeit (Rendern, Mergen) zeigt Studio nur in der Ansicht, auf die man wartet (01.11.).
 
 - Breite der Seitenleiste mit der Maus ziehen (Q133).
 

@@ -1494,3 +1494,17 @@ Tom: the find-error-fix loop runs for days; he wants out, and he is not always t
 6. Flows and inventory are out until the MVP (Tom, 2026-11-01): "es macht keinen sinn an extra features wie flows zu
    arbeiten wenn die basis mist ist"; the inventory gets reworked anyway (see plan). No work on pages/flows or
    pages/inventory; the one canvas covers System and Sketches (Flows follows later through the same component).
+
+### Title bar, search and activity decisions (Tom, 2026-11-01)
+
+After the MVP. Not part of the 17-part goal.
+
+1. Studio gets its own title bar instead of the OS default. Windows and Linux: Studio draws the drag region and the
+   window buttons (Tauri `decorations: false`). macOS keeps the native traffic lights (overlay title bar style).
+2. The centre of the title bar holds a search field like the VS Code command center. A click on it or Ctrl+K opens the
+   `command-palette` from `libs/components`. It finds parts, sketches and commands (for example "Go geben").
+3. The project switch stays in the sidebar. The only other title bar item is an "Update" button, shown only when an
+   update is ready to install.
+4. Activity (render, merge) shows only in the view the user waits on, for example the merge loading state. No spinner in
+   tree rows ("dann wird der tree so unruhig"), no global indicator. A global indicator comes only once Studio does
+   background work the user did not start.
