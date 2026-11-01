@@ -824,3 +824,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Flow pick camera (2026-11-01): a flow pick resets the camera to the opening view of Impl Q74 (100 %, first frame at
   the panel edge). Impl Q74 already decides this; no new question.
   vitest setup fail on any console error with an `ET\d+` code. Other console errors stay allowed. Finding 46.
+- Impl Q81 legacy chrome (Tom, 2026-11-01): remove from every live page each element that no page design shows (chat,
+  notes, top-right buttons, footer bar, and the rest of the builder's per-page list). The MVP is exactly the design;
+  Impl Q78 keeps it so. Anything Tom wants back goes to the backlog and gets a design first. Exception: an element
+  that is the only way to an important function (for example a design server restart) goes to Tom one by one before
+  it is removed. Finding 49.
