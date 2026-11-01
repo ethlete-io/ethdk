@@ -9,7 +9,15 @@ import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
 import { compareFrameOf, comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
 import { StartHarnessServer } from './harness-server';
-import { comparePngs, decodePng, encodePng, forcedElementsOf, harnessUrlOf, Pixels } from './part-compare';
+import {
+  comparePngs,
+  decodePng,
+  encodePng,
+  forcedElementsOf,
+  harnessUrlOf,
+  Pixels,
+  pointerOpensOf,
+} from './part-compare';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 
@@ -121,6 +129,40 @@ describe('part compare', () => {
       { interaction: 'active', label: 'Tom & Co' },
       { interaction: 'focus-visible', label: null },
     ]);
+  });
+
+  it('opens each surface state of a control by a click from the state nearest its props', () => {
+    expect(
+      pointerOpensOf({
+        states: {
+          picker: { panel: 'open', picker: 'open' },
+          open: { panel: 'open' },
+          hidden: { panel: 'hidden' },
+          'unchanged-open': { unchanged: true },
+          unchanged: { unchanged: false },
+        },
+        controls: {
+          project: { kind: 'select', surfaces: { open: 'picker' } },
+          toggle: { kind: 'disclosure', surfaces: { body: 'unchanged-open' } },
+          popover: { kind: 'disclosure', surfaces: { body: 'not-a-state' } },
+          collapse: { kind: 'button' },
+        },
+      }),
+    ).toEqual({
+      picker: { control: 'project', from: 'open' },
+      'unchanged-open': { control: 'toggle', from: 'unchanged' },
+    });
+  });
+
+  it('names the states a surface state is equally close to', () => {
+    expect(
+      pointerOpensOf({
+        states: { picker: { picker: 'open' }, a: {}, b: {} },
+        controls: { project: { surfaces: { open: 'picker' } } },
+      }),
+    ).toEqual({
+      picker: 'picker opens a surface of control project, but states a, b are equally close to click it open from',
+    });
   });
 
   it('builds the harness url with the props as encoded JSON', () => {
@@ -321,13 +363,15 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.includes('components%2Fhover')
-          ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-          : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-            ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-            : request.url?.startsWith('/__design-harness')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-              : '<body>no harness</body>',
+        request.url?.includes('components%2Fpicker')
+          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+          : request.url?.includes('components%2Fhover')
+            ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+            : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+              ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+              : request.url?.startsWith('/__design-harness')
+                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -372,6 +416,31 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('opens a surface by a pointer click on the trigger, then leaves it unhovered', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/picker', state: 'a', props: {} }),
+      opened: { control: 'pick', markup: '<button data-et-control="pick" aria-expanded="true"> Pick </button>' },
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('names the trigger the harness page lacks', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(
+      harnessShotOf({
+        browser,
+        url: harnessUrlOf({ url, part: 'components/picker', state: 'a', props: {} }),
+        opened: { control: 'pick', markup: '<button data-et-control="pick" aria-expanded="true">Other</button>' },
+        timeout: 500,
+      }),
+    ).rejects.toThrow('has no [aria-expanded] trigger named "Other" to click control pick open');
   });
 
   it('names the url when the page has no host element', async (context) => {

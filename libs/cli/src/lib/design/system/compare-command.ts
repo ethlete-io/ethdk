@@ -16,6 +16,7 @@ import {
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
+  pointerOpensOf,
 } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -77,15 +78,72 @@ export const compareFrameOf = (options: {
     : `the product has no preset "${preset}" - its presets: ${Object.keys(presets).join(', ')}`;
 };
 
+type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
+
+const clickOpen = async (options: {
+  page: Page;
+  host: ReturnType<Page['locator']>;
+  url: string;
+  control: string;
+  markup: string;
+  timeout: number;
+}) => {
+  const { page, host, url, control, timeout } = options;
+  const scratch = await page.context().newPage();
+  let name: { label: string | null; text: string } | null;
+
+  try {
+    await scratch.setContent(options.markup);
+    const trigger = scratch.locator(`[data-et-control=${JSON.stringify(control)}]`).first();
+
+    name =
+      (await trigger.count()) === 0
+        ? null
+        : {
+            label: await trigger.getAttribute('aria-label'),
+            text: ((await trigger.textContent()) ?? '').replace(/\s+/g, ' ').trim(),
+          };
+  } finally {
+    await scratch.close();
+  }
+
+  if (name === null)
+    throw new HarnessError(`the design picture has no [data-et-control="${control}"] trigger to click open`);
+
+  const triggers = host.locator('[aria-expanded]');
+  const trigger = (
+    name.label === null
+      ? triggers.filter({ hasText: name.text })
+      : triggers.and(host.locator(`[aria-label=${JSON.stringify(name.label)}]`))
+  ).first();
+  const named = name.label ?? name.text;
+
+  await trigger.waitFor({ state: 'visible', timeout }).catch(() => {
+    throw new HarnessError(
+      `the harness page ${url} has no [aria-expanded] trigger named "${named}" to click control ${control} open`,
+    );
+  });
+  await trigger.click({ timeout });
+  await page.mouse.move(-1, -1);
+  await trigger
+    .and(page.locator('[aria-expanded="true"]'))
+    .waitFor({ timeout })
+    .catch(() => {
+      throw new HarnessError(`a click on "${named}" in ${url} did not open control ${control}`);
+    });
+};
+
 /**
  * A PNG of the harness host element at `url`, in the viewport of `size` (a fitted frame's without) at device scale 1,
- * with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
+ * after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named `opened`, and with each
+ * `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
  */
 export const harnessShotOf = async (options: {
   browser: Browser;
   url: string;
   size?: DesignPreset | null;
   forced?: ForcedElement[];
+  opened?: { control: string; markup: string };
   timeout?: number;
 }) => {
   const { browser, url } = options;
@@ -107,6 +165,8 @@ export const harnessShotOf = async (options: {
       );
     });
     await page.evaluate('document.fonts.ready');
+
+    if (options.opened) await clickOpen({ page, host, url, timeout, ...options.opened });
 
     for (const { interaction, label } of options.forced ?? []) {
       if (label === null)
@@ -159,7 +219,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
 
     const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
     const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
-      default?: { states?: unknown };
+      default?: { states?: unknown; controls?: unknown };
     };
     const loaded = module.default?.states;
     const states =
@@ -168,6 +228,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
     if (only !== null && !(only in states))
       return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
 
+    const opens = pointerOpensOf({ states, controls: module.default?.controls });
     const shots: StateShot[] = [];
 
     for (const state of only === null ? Object.keys(states) : [only]) {
@@ -183,12 +244,17 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
         emptySlots: true,
         params: new URLSearchParams(),
       });
+      const open = opens[state];
+
+      if (typeof open === 'string') return open;
+
       const app = await queue.run((browser) =>
         harnessShotOf({
           browser,
-          url: harnessUrlOf({ url, part, state, props: states[state], layout: frame.layout }),
+          url: harnessUrlOf({ url, part, state, props: states[open?.from ?? state], layout: frame.layout }),
           size: frame.size,
           forced: forcedElementsOf(design.markup ?? ''),
+          ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }),
       );
 

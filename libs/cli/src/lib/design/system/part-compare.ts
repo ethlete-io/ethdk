@@ -36,6 +36,51 @@ export const forcedElementsOf = (markup: string): ForcedElement[] =>
       .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label) }));
   });
 
+/** A state compare reaches in the app by a pointer click on `control`'s trigger, from the props of state `from`. */
+export type PointerOpen = { control: string; from: string };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>) =>
+  new Set([...Object.keys(a), ...Object.keys(b)]).size -
+  Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
+
+/**
+ * Each state a part's `controls` names as a surface it opens, with the control and the other state whose props differ
+ * from it in the fewest keys; a string where no single such state exists.
+ */
+export const pointerOpensOf = (options: { states: Record<string, unknown>; controls: unknown }) => {
+  const { states } = options;
+  const opens: Record<string, PointerOpen | string> = {};
+
+  for (const [control, declared] of Object.entries(isRecord(options.controls) ? options.controls : {})) {
+    const surfaces = isRecord(declared) && isRecord(declared['surfaces']) ? declared['surfaces'] : {};
+
+    for (const state of Object.values(surfaces)) {
+      if (typeof state !== 'string' || !(state in states)) continue;
+
+      const props = isRecord(states[state]) ? states[state] : {};
+      const ranked = Object.entries(states)
+        .filter(([name]) => name !== state)
+        .map(([name, other]) => ({ name, distance: differingKeysOf(props, isRecord(other) ? other : {}) }))
+        .sort((a, b) => a.distance - b.distance);
+      const [nearest, next] = ranked;
+
+      opens[state] = !nearest
+        ? `${state} opens a surface of control ${control}, but the part has no other state to click it open from`
+        : next && next.distance === nearest.distance
+          ? `${state} opens a surface of control ${control}, but states ${ranked
+              .filter(({ distance }) => distance === nearest.distance)
+              .map(({ name }) => name)
+              .join(', ')} are equally close to click it open from`
+          : { control, from: nearest.name };
+    }
+  }
+
+  return opens;
+};
+
 export type Pixels = { width: number; height: number; data: Buffer };
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
