@@ -343,7 +343,7 @@
   },
   "elements/canvas-frames": {
     "go": {
-      "hash": "dc89aa310d9f6893",
+      "hash": "36063f35e143b64c",
       "states": {
         "default": "ed58c36697c0e0e9",
         "out": "b11bc239393d4710",
@@ -377,13 +377,14 @@
   },
   "elements/shell-main": {
     "review": {
-      "hash": "0da3aa1ff2582456",
+      "hash": "ae33c034c1dd289c",
       "states": {
-        "project-picker": "3764308b259b21b7",
-        "project-picker-focus-visible": "e03586860c52216a",
+        "project-picker": "de37d6bfa270bc81",
+        "project-picker-focus-visible": "bd6ce2309cc47997",
         "server-stopped": "40315785b46e7849",
         "server-starting": "cb79eb7ae748181d",
         "open": "e193e51195b4641f",
+        "open-focus-visible": "3090c60685e40469",
         "hidden": "e5e3dd625b652d33",
         "section": "e193e51195b4641f",
         "section-hover": "120d1e6f1c7e8fd9",
@@ -396,13 +397,14 @@
       }
     },
     "go": {
-      "hash": "cc49b525a2e29bc2",
+      "hash": "15cc00a7e540b1a9",
       "states": {
-        "project-picker": "3764308b259b21b7",
-        "project-picker-focus-visible": "e03586860c52216a",
+        "project-picker": "de37d6bfa270bc81",
+        "project-picker-focus-visible": "bd6ce2309cc47997",
         "server-stopped": "40315785b46e7849",
         "server-starting": "cb79eb7ae748181d",
         "open": "e193e51195b4641f",
+        "open-focus-visible": "3090c60685e40469",
         "hidden": "e5e3dd625b652d33",
         "section": "e193e51195b4641f",
         "section-hover": "120d1e6f1c7e8fd9",
@@ -539,7 +541,7 @@
       }
     },
     "go": {
-      "hash": "858f41633e0daf03",
+      "hash": "38caa44b543eecd0",
       "states": {
         "open": "e03b38f65a30e97b",
         "with-resolved": "d5f8e29bfac826d0",
@@ -597,7 +599,7 @@
       }
     },
     "go": {
-      "hash": "13887b35f18b1a70",
+      "hash": "ce8a9598326d4202",
       "states": {
         "page-sketch": "237b4c0eb1a892ae",
         "page-100": "4079c3f8cfb0c422",

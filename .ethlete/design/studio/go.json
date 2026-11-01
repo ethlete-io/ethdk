@@ -203,9 +203,31 @@
     "at": "2026-11-01T17:04:08.901Z"
   },
   "elements/canvas-frames": {
-    "hash": "dc89aa310d9f6893",
+    "hash": "36063f35e143b64c",
     "by": "tom",
-    "at": "2026-11-01T13:17:16.122Z"
+    "at": "2026-11-01T23:05:19.192Z",
+    "files": {
+      ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
+      ".ethlete/design/sdk/components/button/button.ts": "2db7ffb8295043f6",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "8af8e34c1b815043",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "194061e9f7ae9f6d",
+      ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "a6ee700418ae324d",
+      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/control.ts": "b0244bc4c0f922a6",
+      "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
+      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "auto": true
   },
   "elements/part-tree": {
     "hash": "4decbdf07174f4c8",
@@ -213,7 +235,7 @@
     "at": "2026-11-01T17:04:09.689Z"
   },
   "elements/shell-main": {
-    "hash": "cc49b525a2e29bc2",
+    "hash": "15cc00a7e540b1a9",
     "files": {
       ".ethlete/design/sdk/components/menu/menu.css": "debcde34bd850f14",
       ".ethlete/design/sdk/components/menu/menu.ts": "41081c4a032cf65d",
@@ -236,9 +258,9 @@
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
       ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "4d475fcc93ed85d7",
       ".ethlete/design/studio/components/shell-project-switch/shell-project-switch.css": "721acd6d48c3d157",
-      ".ethlete/design/studio/components/shell-project-switch/shell-project-switch.ts": "e9baa8ba02b20aaf",
+      ".ethlete/design/studio/components/shell-project-switch/shell-project-switch.ts": "005a140fbf467458",
       ".ethlete/design/studio/elements/shell-main/shared/picker.css": "c8a3b45a227840db",
-      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "08b15397e505bb03",
+      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "f7eae1a2ac15c5cc",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "2fffdfe62e64abd7",
       ".ethlete/design/studio/elements/shell-main/shell-main.ts": "74262591a567d192",
       ".ethlete/design/studio/foundations/icons/icons.ts": "9dfadae50297a76a",
@@ -265,7 +287,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-01T21:09:26.608Z",
+    "at": "2026-11-01T23:18:50.652Z",
     "note": "studio click"
   },
   "elements/studio-menu": {
@@ -309,7 +331,7 @@
     "at": "2026-11-01T15:35:49.809Z"
   },
   "pages/inbox": {
-    "hash": "858f41633e0daf03",
+    "hash": "38caa44b543eecd0",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "330868da6086adf8",
@@ -343,6 +365,8 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "8af8e34c1b815043",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "194061e9f7ae9f6d",
       ".ethlete/design/studio/components/comment-pin/comment-pin.ts": "0f0163d76f69b7fe",
       ".ethlete/design/studio/components/comment-pin/shared/comment-pin.ts": "8ba4829eff18a113",
       ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "4d475fcc93ed85d7",
@@ -350,7 +374,7 @@
       ".ethlete/design/studio/components/shell-project-switch/shell-project-switch.ts": "005a140fbf467458",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "50a04e20d141c65b",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "a6ee700418ae324d",
       ".ethlete/design/studio/elements/shell-main/shared/picker.css": "c8a3b45a227840db",
       ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "f7eae1a2ac15c5cc",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "2fffdfe62e64abd7",
@@ -393,7 +417,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-01T22:54:29.708Z",
+    "at": "2026-11-01T23:09:58.084Z",
     "note": "studio click",
     "auto": true
   },
@@ -482,7 +506,7 @@
     "note": "studio click"
   },
   "pages/sketches": {
-    "hash": "13887b35f18b1a70",
+    "hash": "ce8a9598326d4202",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "2db7ffb8295043f6",
@@ -529,10 +553,10 @@
       ".ethlete/design/studio/components/tree-row/tree-row.ts": "623660c0b12c32a5",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "50a04e20d141c65b",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "a6ee700418ae324d",
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "a32d99056bdc10cc",
       ".ethlete/design/studio/elements/shell-main/shared/picker.css": "c8a3b45a227840db",
-      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "08b15397e505bb03",
+      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "f7eae1a2ac15c5cc",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "2fffdfe62e64abd7",
       ".ethlete/design/studio/elements/shell-main/shell-main.ts": "74262591a567d192",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "deb8d411ad0b54db",
@@ -589,8 +613,9 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-01T22:41:10.233Z",
-    "note": "studio click"
+    "at": "2026-11-01T23:10:08.187Z",
+    "note": "studio click",
+    "auto": true
   },
   "pages/start": {
     "hash": "109488ca765065e5",
