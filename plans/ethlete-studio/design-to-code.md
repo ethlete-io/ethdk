@@ -662,6 +662,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     mock; 24f0de777 made the wait soft (3 s, then shoot, the pixel compare decides). Lesson: a verify must not depend
     on the commit touching only part files, and a compare wait must not assume the part and the design use the same
     overlay mechanism.
+41. `node_modules/.vitest-cache` served an old compiled `studio-labels.ts` after an edit; only deleting the stale
+    entries fixed it. Lesson: a spec that disagrees with the source after an edit is a cache suspect first.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
