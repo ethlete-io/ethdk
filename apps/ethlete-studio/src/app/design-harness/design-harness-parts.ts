@@ -29,7 +29,7 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
   'pages/inventory': () =>
     import('../design-parts/inventory-page/inventory-page.component').then((m) => m.InventoryPageComponent),
   'pages/merge': () => import('../design-parts/merge/merge.component').then((m) => m.MergeComponent),
-  'pages/sketches': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
+  'pages/sketches': () => import('../design-parts/sketches/sketches.component').then((m) => m.SketchesComponent),
   'pages/start': () => import('../design-parts/start/start.component').then((m) => m.StartComponent),
   'pages/system': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
 };
