@@ -715,6 +715,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     page wires the shell on its own, so one page can drift from the others and no check compares them; the shell
     must have one live wiring for all pages, and the Impl Q79 page clicks must run on every page. Cause: asked from
     the builder.
+51. The studio-menu entries ("Einstellungen…", "Erscheinungsbild…", "Tastenkürzel…", "Hilfe", "Über Studio…") passed
+    go, compare and ready, but none of them does anything (Tom, 2026-11-01). Lesson, system level: "ready" certifies
+    a picture, not a working product. Every check in the chain (go, task, compare, verify, ready) looks at pixels;
+    none asks what a control does. Findings 42, 45, 47, 49, 50 and 51 are all this one gap.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
