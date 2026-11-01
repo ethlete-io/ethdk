@@ -352,6 +352,11 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     `open` 1144 px (the component owns the menu, the design draws the trigger only); forced states wait on gap (e).
     shell-project-option not built: no part draws its custom row; shell-main uses SDK radio items. Both are design
     questions with the grill session.
+  - tree-row, partial (`3aa01050e` part, `c8f5b61bc` link and go): `TreeRowComponent` and `TreeRowItemComponent`
+    in `design-parts/tree-row/`. Real compare: 8 states 0 px, 5 states 1 px wide (gap a), 40 forced states wait on
+    gap (e); with both patched locally 53 of 53 were 0 px. No live swap yet: the live badges `from base`,
+    `overridden`, `changed`, `merging`, `question`/`answered`, `transferred` and the kit count have no design mark;
+    decision open with the grill session.
   - Impl Q29 as built (`dbc0eda7d` revert, `aae8c5d4c`): `design check` prints `DONE <product>: n of m` after the
     unchanged `PARTS` line, over own parts: `implemented.json` hash equals the `go.json` hash and the ready mark
     holds (`doneParts` in `part-task.ts`). Studio today: `DONE studio: 0 of 26` ; the ready marks of inbox and shell-collapse were stale and shell-main had none. After `task --verify` the builder runs `design ready --by <model id>`: `5e2743fd1` marked all three, so DONE should be 3 of 26 (not re-run). Verified: specs, tsc, eslint, a real studio check. Not verified:
