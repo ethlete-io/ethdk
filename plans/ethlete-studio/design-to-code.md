@@ -450,7 +450,7 @@ only; the builder starts when Tom gives the start.
 - Impl Q24 clean count (Tom, 2026-11-01): `PARTS <product>: n of m clean` counts a part clean only when it has no
   open point that blocks ready. One cli slice. This is the Q255 done number; expect far fewer than 26 at first.
 - Impl Q25 Tom's :4402 check (Tom, 2026-11-01): Tom checked the new shell and inbox on :4402 after slice 3. He has
-  feedback, all for after the MVP; he gives it in one collected round when the pilot is done (after Impl Q19, Q20
-  and Q24). No change from this check now.
+  feedback, all for after the MVP; he gives it in one collected round when the whole MVP is implemented (Q255:
+  every Studio part implemented, compare green, ready), not after Impl Q24. No change from this check now.
 - Impl Q26 load-error text (Tom, 2026-11-01): the second line of the inbox load-error state stays fixed text for the
   MVP. Showing the real `loadError` message is parked after the MVP.
