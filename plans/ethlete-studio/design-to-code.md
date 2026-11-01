@@ -367,6 +367,10 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     gap (e); with both patched locally 53 of 53 were 0 px. No live swap yet: the live badges `from base`,
     `overridden`, `changed`, `merging`, `question`/`answered`, `transferred` and the kit count have no design mark;
     decision open with the grill session.
+  - In progress (builder ethlete-sdk-cf, 2026-11-01, wave 4), six parallel subagents: part fixes (studio-menu Q51,
+    shell-project-switch Q52 design + cli harness room above, shell-main go, agent-logos accept Q33); pages
+    `system` with the part-tree and canvas-frames (Q32) live swaps; `sketches` + `merge`; `flows`; `inventory`;
+    `start`.
   - Impl Q29 as built (`dbc0eda7d` revert, `aae8c5d4c`): `design check` prints `DONE <product>: n of m` after the
     unchanged `PARTS` line, over own parts: `implemented.json` hash equals the `go.json` hash and the ready mark
     holds (`doneParts` in `part-task.ts`). Studio today: `DONE studio: 0 of 26` ; the ready marks of inbox and shell-collapse were stale and shell-main had none. After `task --verify` the builder runs `design ready --by <model id>`: `5e2743fd1` marked all three, so DONE should be 3 of 26 (not re-run). Verified: specs, tsc, eslint, a real studio check. Not verified:
