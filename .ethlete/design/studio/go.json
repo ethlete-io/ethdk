@@ -9,6 +9,26 @@
     "by": "tom",
     "at": "2026-10-31T23:33:53.181Z"
   },
+  "components/disclosure": {
+    "hash": "92834053fa3147f5",
+    "by": "tom",
+    "at": "2026-11-01T12:27:37.578Z"
+  },
+  "components/shell-collapse": {
+    "hash": "44e549b320e25b4a",
+    "by": "tom",
+    "at": "2026-11-01T12:27:37.742Z"
+  },
+  "components/shell-project-option": {
+    "hash": "4b7700d4ff35bdd4",
+    "by": "tom",
+    "at": "2026-11-01T12:27:37.915Z"
+  },
+  "components/shell-project-switch": {
+    "hash": "9e909353e9de59b6",
+    "by": "tom",
+    "at": "2026-11-01T12:27:38.105Z"
+  },
   "components/tree-row": {
     "hash": "b16b638082db1c13",
     "by": "tom",
@@ -19,6 +39,11 @@
     "by": "tom",
     "at": "2026-10-31T23:33:52.812Z"
   },
+  "elements/canvas-frames": {
+    "hash": "2ef65299d3a0c178",
+    "by": "tom",
+    "at": "2026-11-01T12:27:38.458Z"
+  },
   "elements/part-tree": {
     "hash": "ae2ab59f5379f752",
     "by": "tom",
@@ -28,6 +53,11 @@
     "hash": "4b64a4137ba97697",
     "by": "tom",
     "at": "2026-11-01T11:57:58.214Z"
+  },
+  "elements/studio-menu": {
+    "hash": "bcdb97275792be3b",
+    "by": "tom",
+    "at": "2026-11-01T12:27:38.281Z"
   },
   "pages/flows": {
     "hash": "142b826a05d31fbb",
@@ -53,6 +83,11 @@
     "hash": "16fe088b5d526705",
     "by": "tom",
     "at": "2026-10-31T23:15:16.036Z"
+  },
+  "pages/start": {
+    "hash": "28fd542da5c7fc82",
+    "by": "tom",
+    "at": "2026-11-01T12:27:38.634Z"
   },
   "pages/system": {
     "hash": "e82726307d35bbd4",
