@@ -30,6 +30,7 @@ export default definePart({
     { collapse: {} },
     { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
   ),
+  implements: 'apps/ethlete-studio/src/app/design-parts/shell-collapse/shell-collapse.component.ts',
   controls: { collapse: { kind: 'button', input: ['pointer', 'keyboard'] } },
   styles: buttonStyles,
   render: (props: Props) =>
