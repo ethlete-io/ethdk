@@ -153,6 +153,7 @@ describe('part ready', () => {
       hash,
       ready: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
       go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+      directEdit: false,
       drawn: false,
       points: [],
     });
