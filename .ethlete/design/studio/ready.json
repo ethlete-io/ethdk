@@ -25,9 +25,9 @@
     "at": "2026-10-31T23:31:46.914Z"
   },
   "components/tree-row": {
-    "hash": "fa60a2875f6c8ead",
+    "hash": "3f84d36591542970",
     "by": "claude-opus-5-5",
-    "at": "2026-11-01T13:12:09.591Z"
+    "at": "2026-11-01T13:29:15.851Z"
   },
   "components/zoom-chip": {
     "hash": "884e0e4485ab2ac4",
@@ -38,6 +38,11 @@
     "hash": "dc89aa310d9f6893",
     "by": "claude-opus-5-5",
     "at": "2026-11-01T13:18:03.690Z"
+  },
+  "elements/part-tree": {
+    "hash": "0e6d9ade300fc0c6",
+    "by": "claude-opus-5-5",
+    "at": "2026-11-01T13:29:27.941Z"
   },
   "elements/shell-main": {
     "hash": "4b64a4137ba97697",

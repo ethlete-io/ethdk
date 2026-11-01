@@ -82,8 +82,8 @@
     }
   },
   "components/tree-row": {
-    "hash": "fa60a2875f6c8ead",
-    "at": "2026-11-01T13:11:48.493Z",
+    "hash": "3f84d36591542970",
+    "at": "2026-11-01T13:28:45.934Z",
     "states": {
       "active": "ec6e20e91b227601",
       "focus-visible": "cbef4f2028c6a6e5",
@@ -171,6 +171,17 @@
       "in": "3b70b83e7e2db09f",
       "out": "6fa71d334277b14e",
       "reset": "06587f5fb701ca37"
+    }
+  },
+  "elements/part-tree": {
+    "hash": "0e6d9ade300fc0c6",
+    "at": "2026-11-01T13:28:58.510Z",
+    "states": {
+      "components-open": "651aa509deb1ffbf",
+      "row": "651aa509deb1ffbf",
+      "row-active": "c3c774aba810dfb4",
+      "row-focus-visible": "d4444fbf519f7ee4",
+      "row-hover": "88a4c9123dfa0ec5"
     }
   },
   "elements/shell-main": {
