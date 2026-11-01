@@ -302,11 +302,11 @@
 
 <ethlete-zoom-chip
   [percent]="zoomPercent()"
+  [class]="zoomChipClass()"
   (zoomOut)="zoomBy(1 / ZOOM_STEP)"
   (zoomReset)="resetZoom()"
   (zoomIn)="zoomBy(ZOOM_STEP)"
   (fit)="fitAll()"
-  class="absolute right-3 bottom-3"
 />
 <div
   #shellInsetProbe

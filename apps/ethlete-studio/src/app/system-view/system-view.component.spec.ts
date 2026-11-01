@@ -162,6 +162,13 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
+  it('places the zoom chip of a part at the bottom right of the first 1000 px, as the System page design', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const chip = (fixture.nativeElement as HTMLElement).querySelector('ethlete-design-canvas ethlete-zoom-chip');
+
+    expect(chip?.className).toContain('right-[max(var(--space-3),calc(100%-var(--spacing)*250+var(--space-3)))]');
+  });
+
   it('draws the shell with the product on the rail and the tree in the side panel', async () => {
     const fixture = await mount({});
     const shell = (fixture.nativeElement as HTMLElement).querySelector('ethlete-shell-main');

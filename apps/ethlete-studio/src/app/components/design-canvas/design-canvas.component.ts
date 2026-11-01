@@ -235,6 +235,8 @@ export class DesignCanvasComponent {
   /** What the camera fits when `cameraKey` changes: every frame, or the frames of the top row. */
   public fitTo = input<'all' | 'first row'>('all');
 
+  public zoomChipClass = input('absolute right-3 bottom-3');
+
   public pins = input<CanvasPin[]>([]);
 
   public outlines = input<FrameOutline[]>([]);

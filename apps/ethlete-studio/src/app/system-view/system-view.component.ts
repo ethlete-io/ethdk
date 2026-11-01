@@ -86,6 +86,9 @@ const BADGE =
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
   read && read.product === product ? read.items : null;
 
+const PART_ZOOM_CHIP_CLASS =
+  'absolute bottom-space-3 right-[max(var(--space-3),calc(100%-var(--spacing)*250+var(--space-3)))]';
+
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
@@ -208,6 +211,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               [frames]="frames()"
               [cameraKey]="cameraKey()"
               [restoredCamera]="restoredCamera()"
+              [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
               (cameraChange)="rememberCamera($event)"
               class="-ms-(--st-shell-inset-left) min-h-0"
             />
@@ -353,6 +357,7 @@ export class SystemViewComponent {
   protected readonly BADGE = BADGE;
 
   protected readonly NOTE = NOTE;
+  protected readonly PART_ZOOM_CHIP_CLASS = PART_ZOOM_CHIP_CLASS;
 
   protected readonly LABELS = STUDIO_LABELS.shell;
   protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
