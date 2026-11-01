@@ -138,9 +138,11 @@ const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>)
   new Set([...Object.keys(a), ...Object.keys(b)]).size -
   Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
 
-/** The `data-et-surface` ids a design picture's markup draws. */
+/** The `data-et-surface` ids a design picture's markup draws; a surface element marked `hidden` draws none. */
 export const drawnSurfacesOf = (markup: string) =>
-  [...markup.matchAll(/\sdata-et-surface="([^"]*)"/g)].map(([, id = '']) => id);
+  [...markup.matchAll(/<[^>]*\sdata-et-surface="([^"]*)"[^>]*>/g)]
+    .filter(([tag]) => !/\shidden(?=[\s=/>])/.test(tag))
+    .map(([, id = '']) => id);
 
 /**
  * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same

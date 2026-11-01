@@ -200,6 +200,14 @@ describe('part compare', () => {
     });
   });
 
+  it('reads no surface from a surface element marked hidden', () => {
+    expect(
+      drawnSurfacesOf(
+        '<div data-et-surface="menu.open" hidden><span></span></div><div\n  data-et-surface="menu.sub"\n  hidden\n></div><div data-et-surface="menu.other" data-hidden="x"></div>',
+      ),
+    ).toEqual(['menu.other']);
+  });
+
   it('names the states a surface state is equally close to', () => {
     expect(
       pointerOpensOf({
