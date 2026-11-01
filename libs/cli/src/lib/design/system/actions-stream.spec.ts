@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const probes = vi.hoisted(() => {
   const state = { calls: 0, release: () => undefined as void, slow: Promise.resolve() };
