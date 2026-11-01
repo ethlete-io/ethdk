@@ -1,8 +1,8 @@
 import { control } from '@ethlete/components/design/control';
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, slot } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
-import canvasFrames from '@system/elements/canvas-frames';
+import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -106,6 +106,24 @@ const popover = async (open: PartOpenPoints) => {
   };
 };
 
+const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
+
+const buttonGrid = async () => {
+  const rows = await Promise.all(
+    (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
+      label: variant,
+      cells: await Promise.all(
+        interactions.map(async (interaction) => {
+          const props = { label: 'Save', variant, pressed: interaction === 'pressed' };
+          const forced = interaction === 'rest' || interaction === 'pressed' ? {} : { interaction };
+          return (await button.render(props, forced)).body;
+        }),
+      ),
+    })),
+  );
+  return stateGrid({ columns: [...interactions], rows }, { cellWidth: '120px', place: 'center' });
+};
+
 const emptySide = html`<p class="px-space-3 py-space-2 text-et-surface-muted text-ui-sm">Noch keine Teile.</p>`;
 
 export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?: boolean; closed?: boolean }>({
@@ -145,7 +163,12 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     }
 
     const tree = await partTree.render(partTree.states['components-open']);
-    const frames = await canvasFrames.render(canvasFrames.states.default);
+    const frames = await canvasView(
+      [canvasFrame('button', html`<div ${slot('shot')}>${await buttonGrid()}</div>`)],
+      '100%',
+      {},
+      'w-250',
+    );
     const points = clear ? nothingOpen : buttonPoints;
     const toggle = await chip(points, !closed);
     const dialog = closed ? undefined : await popover(points);
@@ -155,7 +178,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
       section: 'System',
       product: 'studio',
       side: tree.body,
-      content: html`${frames.body}
+      content: html`${frames}
         <div class="absolute top-space-3 right-space-3">${toggle.body}</div>
         ${dialog?.body ?? ''}`,
     });
@@ -163,7 +186,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
     return drawing({
       body: shell.body,
       setup: menu.setup,
-      styles: shell.styles + menu.styles + tree.styles + frames.styles + toggle.styles + (dialog?.styles ?? ''),
+      styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles + toggle.styles + (dialog?.styles ?? ''),
     });
   },
 });

@@ -1,4 +1,4 @@
-import { drawing } from '@design-system';
+import { drawing, html, slot } from '@design-system';
 import treeRow from '@system/components/tree-row';
 import partTree from '@system/elements/part-tree';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
@@ -50,8 +50,8 @@ export const manyStatesView = async (grid: StateGridDrawing) => {
   const rowDrawing = await treeRow.render(treeRow.states.tree);
   const canvas = await canvasView(
     [
-      canvasFrame('grid', stateGrid(grid)),
-      canvasFrame('tree', `<div style="width: 280px">${rowDrawing.body}</div>`, '280'),
+      canvasFrame('grid', html`<div ${slot('shot')}>${stateGrid(grid)}</div>`),
+      canvasFrame('tree', html`<div style="width: 280px" ${slot('shot')}>${rowDrawing.body}</div>`, '280'),
     ],
     '75%',
   );
