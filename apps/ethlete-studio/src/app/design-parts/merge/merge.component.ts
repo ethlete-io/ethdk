@@ -191,7 +191,7 @@ export class MergeComponent {
   public selected = input(1);
   public unchangedStates = input(MERGE_SAMPLE_UNCHANGED);
   public shotTemplate = input<TemplateRef<{ $implicit: MergeRow; src: string }> | null>(null);
-  public cropLabel = input<string>(STUDIO_LABELS.start.copyPrompt);
+  public cropLabel = input<string>(STUDIO_LABELS.system.copyPrompt);
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
   public project = input('ethlete-sdk');
