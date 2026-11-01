@@ -4,8 +4,10 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { markPartGo } from './part-go';
+import { markPartReady, readyPartOf } from './part-ready';
 import {
   allowedFilesOf,
+  doneParts,
   filesOutsideOf,
   IMPLEMENTED_FILE,
   markImplemented,
@@ -319,5 +321,36 @@ describe('part task', () => {
     expect(lines).toContain('  libs/other/x.ts');
     expect(lines).not.toContain('  libs/chip/chip.component.ts');
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
+  });
+});
+
+describe('doneParts', () => {
+  it('counts a part only with an implemented record at its go hash and a ready mark', async () => {
+    const { target, chip } = checkout();
+    const product = () => productOf(target);
+    const ready = (part: string) =>
+      markPartReady({ product: product(), part, hash: readyHash(part), by: 'tom', pointsOf: async () => [] });
+    const readyHash = (part: string) => {
+      const found = readyPartOf({ product: product(), part });
+
+      return typeof found === 'string' ? found : found.hash;
+    };
+    const go = (part: string) => markPartGo({ product: product(), part, by: 'tom' });
+    const tag = join(chip, '../../tag/tag.ts');
+
+    go('components/chip');
+    go('components/tag');
+    go('pages/inbox');
+    markImplemented({ product: product(), part: 'components/chip', states: CHIP_STATES });
+    markImplemented({ product: product(), part: 'components/tag', states: { default: {} } });
+    markImplemented({ product: product(), part: 'pages/inbox', states: { default: {} } });
+    appendFileSync(tag, '// edited\n');
+    go('components/tag');
+    await ready('components/chip');
+    await ready('components/tag');
+
+    expect(
+      doneParts({ product: product(), parts: ['components/chip', 'components/tag', 'pages/inbox', 'pages/outbox'] }),
+    ).toEqual(['components/chip']);
   });
 });

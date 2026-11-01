@@ -2,7 +2,8 @@ import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { posix, resolve } from 'path';
-import { goPartOf, goStateOf } from './part-go';
+import { goPartOf, goStateOf, readGo } from './part-go';
+import { readyMarkOf } from './part-ready';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 
@@ -181,3 +182,19 @@ export const themingDirectivesOf = (source: string) => [
     (type) => `data-et-semantic-color="${type}" -> [etProvideColor] bound to injectSemanticColorTheme('${type}')`,
   ),
 ];
+
+/** The parts of a product whose implemented record matches their go entry and whose ready mark still holds. */
+export const doneParts = (options: { product: ResolvedProduct; parts: string[] }) =>
+  options.parts.filter((part) => {
+    const found = goPartOf({ product: options.product, part });
+
+    if (typeof found === 'string') return false;
+
+    const goHash = readGo(found.dir)[part]?.hash;
+
+    return (
+      goHash !== undefined &&
+      readImplemented(found.dir)[part]?.hash === goHash &&
+      readyMarkOf({ product: options.product, part }) !== null
+    );
+  });

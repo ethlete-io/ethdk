@@ -5,6 +5,7 @@ import { CompletenessGap, partsCompletenessOf } from './complete';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
 import { goPartsOf } from './part-go';
+import { doneParts } from './part-task';
 import { readyPartsOf } from './part-ready';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
@@ -126,7 +127,13 @@ const countText = (count: number, noun: string) => `${count} ${noun}${count === 
  * One line per part with findings, then one line with the count of clean parts; with `only`, one line for that part
  * even when it is clean.
  */
-export const summaryText = (options: { product: string; parts: string[]; tally: Tally; only?: string }): string[] => {
+export const summaryText = (options: {
+  product: string;
+  parts: string[];
+  tally: Tally;
+  only?: string;
+  done?: number;
+}): string[] => {
   const found = options.tally.get(options.product) ?? new Map<string, PartTally>();
   const keys = options.only ? [options.only] : [...new Set([...options.parts, ...found.keys()])];
   const lineOf = (key: string) => {
@@ -149,6 +156,7 @@ export const summaryText = (options: { product: string; parts: string[]; tally: 
   return [
     ...lines.flatMap(({ line }) => (line ? [line] : [])),
     `PARTS ${options.product}: ${clean} of ${options.parts.length} clean`,
+    ...(options.done === undefined ? [] : [`DONE ${options.product}: ${options.done} of ${options.parts.length}`]),
   ];
 };
 
@@ -444,13 +452,16 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     if (!entry) continue;
 
-    const own = resolveProduct({ target: options.target, name, config: entry }).parts.filter(
-      (part) => part.origin !== 'base',
-    );
+    const resolved = resolveProduct({ target: options.target, name, config: entry });
+    const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
 
-    summaryText({ product: name, parts: own.map(partKeyOf), tally, only: options.part }).forEach((line) =>
-      console.log(line),
-    );
+    summaryText({
+      product: name,
+      parts,
+      tally,
+      only: options.part,
+      done: doneParts({ product: resolved, parts }).length,
+    }).forEach((line) => console.log(line));
   }
 
   if (code === 0) console.log('ok');

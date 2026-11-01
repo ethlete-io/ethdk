@@ -34,7 +34,8 @@ const withoutOpenPoints = (lines: string[]) =>
       !line.startsWith('UNLINKED ') &&
       !line.startsWith('  ') &&
       !line.startsWith('PART ') &&
-      !line.startsWith('PARTS '),
+      !line.startsWith('PARTS ') &&
+      !line.startsWith('DONE '),
   );
 
 const renderWarningsOf = (lines: string[]) =>
@@ -471,6 +472,13 @@ describe('summaryText', () => {
   it('prints a clean line for the one part asked for', () => {
     expect(summaryText({ product: 'acme', parts: ['pages/home'], tally: new Map(), only: 'pages/home' })).toEqual([
       'PART acme pages/home: clean',
+    ]);
+  });
+
+  it('ends with the done count over the own parts', () => {
+    expect(summaryText({ product: 'acme', parts: ['a/x', 'a/y'], tally: new Map(), done: 1 })).toEqual([
+      'PARTS acme: 2 of 2 clean',
+      'DONE acme: 1 of 2',
     ]);
   });
 });
