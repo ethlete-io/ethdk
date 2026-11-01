@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
-import { ShellMainComponent } from '../shell-main/shell-main.component';
+import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
@@ -26,6 +26,10 @@ export class InboxComponent {
   public activePart = input('button');
   public selectedId = input<string | null>('c1');
   public product = input('studio');
+  public products = input(['studio', 'timetrack', 'docs']);
+  public project = input('ethlete-sdk');
+  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
+  public panel = input<'open' | 'hidden'>('open');
   public showResolved = model(false);
   public openOn = input<InboxOpenOn>('all');
   public draft = input(false);
@@ -33,6 +37,12 @@ export class InboxComponent {
 
   public collapse = output();
   public send = output<string>();
+  public pick = output<string>();
+  public sectionChange = output<ShellSection>();
+  public productChange = output<string>();
+  public allProducts = output();
+  public projectChange = output<string>();
+  public openProject = output();
 
   protected readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
 

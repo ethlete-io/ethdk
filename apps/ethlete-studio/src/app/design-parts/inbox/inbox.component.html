@@ -1,4 +1,18 @@
-<ethlete-shell-main [product]="product()" (collapse)="collapse.emit()" fill section="Inbox">
+<ethlete-shell-main
+  [product]="product()"
+  [products]="products()"
+  [project]="project()"
+  [projects]="projects()"
+  [panel]="panel()"
+  (collapse)="collapse.emit()"
+  (sectionChange)="sectionChange.emit($event)"
+  (productChange)="productChange.emit($event)"
+  (allProducts)="allProducts.emit()"
+  (projectChange)="projectChange.emit($event)"
+  (openProject)="openProject.emit()"
+  fill
+  section="Inbox"
+>
   <div class="relative size-10" shellMainStudio>
     <button
       class="size-10 p-0 [--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
@@ -166,7 +180,14 @@
 <ng-template #row let-comment>
   @let selected = comment.id === selectedId();
   @let strong = comment.resolved ? 'text-et-surface-muted' : 'text-et-surface';
-  <div [class]="selected ? 'bg-et-theme/20' : ''" class="flex gap-space-2 rounded-control-md p-space-2">
+  <div
+    [class]="selected ? 'bg-et-theme/20' : ''"
+    (click)="pick.emit(comment.id)"
+    (keydown.enter)="pick.emit(comment.id)"
+    class="flex gap-space-2 rounded-control-md p-space-2"
+    role="button"
+    tabindex="0"
+  >
     <span
       class="flex size-5 flex-none items-center justify-center rounded-full bg-et-surface-bg font-ui-strong text-(length:--text-xs) text-et-surface"
       etAutoSurface
