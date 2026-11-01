@@ -305,6 +305,12 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     `dist/libs/<name>`, for the render libs and their `@ethlete/*` deps (13 ms). Verified: design specs 1126 of
     1126, both new specs fail without the fix, tsc, eslint; `check --product studio` 6:28 against 4:22 before, same
     output as the old `--complete`. Not verified: the stale warning on the real checkout (all builds were fresh).
+  - Impl Q10 as built (`07ff69494`): hover and active rules use `:not([disabled], [aria-disabled='true'])` in the
+    button, properties-styles and icon-button CSS (this clears button, carousel, copy-button, pagination, scrollable
+    and toolbar), the calendar nav buttons and the chip (`[data-disabled]`, remove button), and in the sdk design part
+    `button.css`. `design check --product sdk`: 48 `DISABLED-INTERACTION` findings before, 0 after. Verified: build
+    and lint of components. Not verified: components specs, a visual check; `fab` and `text-button` have the same
+    unguarded pattern but the check does not flag them.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
