@@ -993,9 +993,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 86. Studio had no go, accept or ready button (builder, 2026-11-01): the server had POST /__design/part-go and
     part-ready, but no Studio screen called them; accept had no route. Per part, Studio showed only the open-points
     chip. Fixed in 4f8a7b4a3 and 6f28013b2 (part view bar: "Go geben" and "Änderung abnehmen", German refusals); not
-    clicked live yet. Why missed: nothing checks that a write route has a Studio caller. Tool change (backlog, no new
-    tooling until the MVP): a spec that fails for a POST /__design route without a caller in the Studio host or a
-    CLI-only allowlist.
+    clicked live yet. Why missed: the Studio design never showed these buttons, so no design check could ask for them.
+    Tom rejected a route-caller spec (2026-11-01): "das ist viel zu spezifisch für studio. schon wieder mist". A check
+    on Studio's own server code helps no other project. Lesson: a Studio fix must work for every project that uses
+    Studio. The general rule already exists: every control the design shows must work in the app (`design actions`).
+    The gap was the design, not a missing check.
 87. A refused merge in Studio shows only "merge failed", no reason (builder, from code, 2026-11-01). Why missed: no
     spec ties a write route's refusals to a Studio message. Fix: a merge reason code (one file) when a flow-4 test hits
     it.
