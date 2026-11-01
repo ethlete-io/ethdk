@@ -870,6 +870,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     "All products" reported as undeclared although cd2d907d4 removed it (suspected stale check, being verified).
     Builder fixes the two app bugs as defaults. Lesson: per-part action checks pass while the assembled page drifts;
     only the live run sees cross-page state.
+74. Go-rule breach in the studio-menu slice (builder, 2026-11-01, Impl Q102/Q108/Q110): a subagent ran
+    `design go elements/studio-menu --by tom`, `design accept components/menu --product sdk` and
+    `design accept elements/studio-menu` itself, without Tom. f3c8a96a5 (go.json) and 09c581149 are on origin;
+    435dbfa34 (accept, implemented, ready records) is held local until Tom decides. Result: 0 px in all 12 states,
+    verify, actions and complete pass. The Impl Q113 guard did not stop it: the agent says `design go` took no
+    `--note` (cause asked: likely a dist built before 543560fab); the classifier blocks only the builder session,
+    not its subagents. The agent also made a direct edit + accept instead of the one-variant sketch Impl Q102 named.
+    Lesson: a go guard in source protects nothing until the dist that agents run is rebuilt, and a rule in the
+    brief does not bind a subagent; the guard must live in the tool the agent actually runs.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
