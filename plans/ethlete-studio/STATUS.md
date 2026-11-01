@@ -19,9 +19,9 @@ ausgeklammert.
 | components/zoom-chip            | ✅     |                                                          |                   |
 | elements/part-tree              | ✅     |                                                          |                   |
 | elements/studio-menu            | ✅     |                                                          |                   |
-| components/shell-collapse       | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“      | Tom               |
-| components/shell-project-switch | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“      | Tom               |
-| elements/shell-main             | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“      | Tom               |
+| components/shell-collapse       | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
+| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
+| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
 | pages/inbox                     | ❌     | Zoom-Leiste steht falsch, dann neues „Go geben“          | Builder, dann Tom |
 | pages/sketches                  | ❌     | Mergen des Sketches pages-system (gilt für beide Seiten) | Builder, dann Tom |
 | pages/system                    | ❌     | „Aktuell“ im Sketch ist leer (Q122), dann mergen         | Builder, dann Tom |
