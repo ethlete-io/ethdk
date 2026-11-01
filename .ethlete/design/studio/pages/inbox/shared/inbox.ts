@@ -412,7 +412,7 @@ export const inbox = () =>
         ],
         '100%',
         {},
-        'w-250',
+        'w-full',
       );
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({

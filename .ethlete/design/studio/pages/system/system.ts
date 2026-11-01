@@ -172,7 +172,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
       [canvasFrame('button', html`<div ${slot('shot')}>${await buttonGrid()}</div>`)],
       '100%',
       {},
-      'w-250',
+      'w-full',
     );
     const points = clear ? nothingOpen : buttonPoints;
     const toggle = await chip(points, !closed);
