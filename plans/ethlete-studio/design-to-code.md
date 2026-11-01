@@ -517,3 +517,40 @@ only; the builder starts when Tom gives the start.
 - Impl Q33 agent logos (Tom, 2026-11-01): the Impl Q11 trigger is met (inbox and comment pin). The claude, codex and
   gemini SVGs move to one shared icon file in `apps/ethlete-studio`, used by app and design, as part of the pin swap.
   Rail icons and the Studio mark stay inline until a second part needs them.
+- Impl Q34 studio-menu open panel (Tom, 2026-11-01): redraw the open panel with the SDK menu mock
+  (`@system/components/menu`), as shell-main's project picker does; go `--by tom`; Tom reviews it in his collected
+  round. Also a system finding (see Impl findings).
+- Impl Q35 shell-project-switch open (Tom, 2026-11-01): the `open` state draws the picker like shell-main's
+  `project-picker`; go `--by tom`.
+- Impl Q36 shell-project-option (Tom, 2026-11-01): retire `components/shell-project-option` and drop it from the
+  shell-main note; the picker keeps the SDK `et-menu-radio-item` rows. Not a general rule: a product may give an SDK
+  component a new look (the point of the tier 2 and tier 3 system). The system must prevent sprawl instead, for
+  example ten menu styles in one app. Retired here only because no part uses the custom row.
+- Impl Q37 host padding (Tom, 2026-11-01): keep the convention: a component drawn in a padded wrapper carries that
+  padding on its host, no host background. If the padding breaks a consuming page, compare of that page shows it.
+- Impl Q38 ready by the builder (Tom, 2026-11-01): after a green `task --verify` the builder runs `design ready` for
+  the part itself. Tom checks everything in his collected round after the MVP.
+- Impl Q39 tree badges (Tom, 2026-11-01): drop the badges the tree-row design has no mark for (`from base`,
+  `overridden`, `changed`, `merging`, `question` vs `answered`, `transferred`, kit count) in the live swap. Tom looks
+  at them in his collected round after the pilot. Also a system finding.
+
+### Impl findings: system lessons (Tom, 2026-11-01)
+
+Tom: the most important output of the implementation phase. Every design defect the implementation finds is fixed in
+the system (rules, checks, mocks, the drawing kit) so it does not happen again; the part fix alone is not enough.
+Worked through after the pilot (all Studio parts implemented), with Tom's collected feedback. Collected so far:
+
+1. A design draws an SDK overlay (menu) as a static element without the overlay pane, so surface and offsets differ
+   from the real SDK overlay (Impl Q8/Q12, Q34). Lesson candidate: overlays must use the SDK mock; a check flags a
+   static `et-menu` in a design.
+2. A design inherits a font the app does not (Impl Q12): design and app font cascade differ.
+3. A transformed SDK pane antialiases corners differently (Impl Q13).
+4. A part render mixes the part with its demo content and a fixed size (Impl Q31).
+5. Controls without an accessible name (Impl Q30); compare also needs it to force states.
+6. A list drawn `overflow-hidden` that real data overflows (Impl Q20); a long-list state was missing.
+7. Missing loading and error states (Impl Q19).
+8. A state names a surface (`open`) but the design draws only the trigger (Impl Q35).
+9. A part no other part uses (Impl Q36): an orphan check.
+10. The live UI shows information the design has no mark for (Impl Q39): the design missed a real data inventory.
+11. Live data lacks fields the design shows (Impl Q32, Q18).
+12. The go hash counts the `implements` link (Impl Q28).
