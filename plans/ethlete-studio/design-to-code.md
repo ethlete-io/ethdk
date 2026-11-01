@@ -643,6 +643,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 36. The builder session restarted twice in one afternoon at 85 % context while it led 4-6 parallel subagents; each
     restart costs a handoff and a re-read. Lesson: the lead session keeps only reports in context, and subagent
     reports stay short (shas, px, one line per open point).
+37. The system design measures the popover arrow offset from the chip label width, so a label change (for example a
+    translation) means a re-measure. The popover drew in Jost because the SDK overlay sits on the body, outside the
+    app's `font-ui` host (app defect, fixed in a4ad19ba9). Lesson: overlays need the app font at the overlay root, and
+    a design must not hardcode a measure that depends on text.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
