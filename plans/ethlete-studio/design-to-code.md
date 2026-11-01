@@ -888,6 +888,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     spec names `page-100` before it exists (builder, 2026-11-01). Tool fix (builder default):
     `compare --live --sketch <variant>`, and sketch check reads design-live.json. Done in d85d4129c, 622f8dbe4. Lesson: every check must be able to run on a sketch, or a
     decided change cannot be verified before its merge.
+76. A pointer click into the canvas draws a teal frame around the whole canvas viewport (Tom, 2026-11-01, screenshot
+    of pages/system round 1): a focus ring that shows on a mouse click, not only on keyboard focus. Cause: asked the
+    builder. Lesson + tool change: open until the cause is known (why did `design actions` / the focus checks not
+    flag a ring on pointer focus?).
+77. pages/system round 1: the "Aktuell" column is an empty dark frame; only variant a renders (Tom, 2026-11-01,
+    screenshot). Cause: asked the builder. Lesson + tool change: open until the cause is known (why does no check
+    fail when the current side of a sketch renders nothing?).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
