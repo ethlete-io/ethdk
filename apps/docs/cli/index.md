@@ -329,13 +329,15 @@ lists them; it draws that part as `design check` does, which takes seconds. A ba
 unknown part 404, and a draw that cannot run 503. The one-part answer also holds the part `hash` and its `ready`
 mark, or `null`.
 
-A part is ready only when its open-point list is empty.
-`et design ready components/chip --product app-a --by tom` draws the part, prints its open points and exits 1 while
-there are any; otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
+A part is ready only when its open-point list is empty and `et design actions` passes for it.
+`et design ready components/chip --product app-a --by tom [--url …]` draws the part, prints its open points and exits 1
+while there are any; then it runs the action check on the harness app (`--url`, or one it starts) and exits 1 with the
+failed lines; otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
 (the base's file for a part the product takes from its base). Any edit of the part changes its hash, and the mark
 then reads as not ready. Studio sends `POST /__design/part-ready?product=` with `{ part, hash, by }`: 400 without
 `by` or `hash`, 404 for an unknown part, 409 when the part changed since `hash`, 422 with `{ error, points }` while it
-has open points, 503 when it cannot draw. `et design check` prints a `READY <product>: <parts>` line after the open
+has open points, 422 with `{ error, actions }` while an action check fails, 503 when it cannot draw or check the
+actions. `et design check` prints a `READY <product>: <parts>` line after the open
 points when a mark holds.
 
 A go releases a part for implementation. `et design go components/chip --product app-a --by tom` stores the part hash,

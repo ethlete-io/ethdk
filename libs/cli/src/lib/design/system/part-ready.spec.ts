@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { openPointsAnswer, partReadyAnswer } from '../studio-api';
+import { checkActions, partActionFailuresOf } from './actions-command';
 import { drawnFindingsOf } from './drawn-open-points';
 import { readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
 import { markPartGo } from './part-go';
@@ -15,6 +16,12 @@ import { resolveProduct } from './resolve-product';
 vi.mock('./drawn-open-points', () => ({
   drawnFindingsOf: vi.fn(async () => ({ contrasts: [], missingStates: [] })),
 }));
+
+vi.mock('./actions-command', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./actions-command')>();
+
+  return { ...original, partActionFailuresOf: vi.fn(async () => []) };
+});
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-part-ready-'));
@@ -163,5 +170,66 @@ describe('part ready', () => {
     expect(await ready('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
     expect(lines.at(-1)).toBe('components/chip is ready in app-a');
     expect(Object.keys(readReady(dir))).toEqual(['components/chip']);
+  });
+
+  it('refuses ready with the failed action checks, and answers 503 while they cannot run', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+    const failed = ['default button "remove" click FAILED the output remove did not fire'];
+
+    goOf(target);
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
+
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
+      status: 422,
+      body: { error: 'components/chip fails 1 action check - fix them before ready', actions: failed },
+    });
+
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce(failed);
+
+    expect(
+      await designReady({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--by', 'tom'],
+        invocation: 'et design',
+      }),
+    ).toBe(1);
+    expect(lines).toContain(`  ${failed[0]}`);
+    expect(lines).toContain('components/chip fails 1 action check - fix them before ready');
+
+    vi.mocked(partActionFailuresOf).mockResolvedValueOnce({ unavailable: 'no harness' });
+
+    expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
+      status: 503,
+      body: { error: 'cannot check the actions of components/chip: no harness' },
+    });
+    expect(readReady(dir)).toEqual({});
+  });
+
+  it('answers only the failed lines of design actions', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    const check = vi.fn<typeof checkActions>(async () => ({
+      lines: [
+        { state: 'default', element: 'button "remove"', input: 'click', failure: null },
+        { state: 'default', element: 'button "remove"', input: 'Enter', failure: 'the output remove did not fire' },
+      ],
+      pictures: null,
+    }));
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product: productOf(target),
+        part: 'components/chip',
+        url: 'http://localhost:1',
+        check,
+      }),
+    ).toEqual(['default button "remove" Enter FAILED the output remove did not fire']);
+    expect(check).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:1', only: null }),
+    );
   });
 });

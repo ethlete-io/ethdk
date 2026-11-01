@@ -369,7 +369,14 @@ describe('doneParts', () => {
     const { target, chip } = checkout();
     const product = () => productOf(target);
     const ready = (part: string) =>
-      markPartReady({ product: product(), part, hash: readyHash(part), by: 'tom', pointsOf: async () => [] });
+      markPartReady({
+        product: product(),
+        part,
+        hash: readyHash(part),
+        by: 'tom',
+        pointsOf: async () => [],
+        actionsOf: async () => [],
+      });
     const readyHash = (part: string) => {
       const found = readyPartOf({ product: product(), part });
 

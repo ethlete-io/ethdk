@@ -1,3 +1,4 @@
+import { partActionFailuresOf } from './actions-command';
 import { openPointsText } from './open-points';
 import { drawnPartPointsOf, markPartReady, readyPartOf } from './part-ready';
 import { partKeyOf } from './resolve-product';
@@ -5,12 +6,15 @@ import { staleDistWarningsOf } from './stale-dist';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 
-export const READY_USAGE = 'ready <layer>/<name> --product <name> --by <name>';
+export const READY_USAGE = 'ready <layer>/<name> --product <name> --by <name> [--url <app dev server url>]';
 
-/** `et design ready <layer>/<name> …` marks a part ready, and exits 1 with its open points while it has any. */
+/**
+ * `et design ready <layer>/<name> …` marks a part ready, and exits 1 with its open points or its failed `design actions`
+ * lines while it has any.
+ */
 export const designReady = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--by']);
+  const args = argsOf(argv, ['--product', '--by', '--url']);
   const usage = `usage: ${invocation} ${READY_USAGE}`;
 
   if (typeof args === 'string' || authorOf(args) === null || args.positional.length !== 1) {
@@ -53,11 +57,20 @@ export const designReady = async (options: { target: string; argv: string[]; inv
 
       return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
     },
+    actionsOf: async () => {
+      const failures = await partActionFailuresOf({ target, config, product, part, url: args.values['--url'] });
+
+      return Array.isArray(failures)
+        ? failures
+        : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
+    },
   });
 
   if ('status' in marked) {
     if (marked.points)
       openPointsText(product.name, [{ part, points: marked.points }]).forEach((line) => console.error(line));
+
+    marked.actions?.forEach((line) => console.error(`  ${line}`));
 
     console.error(marked.error);
 

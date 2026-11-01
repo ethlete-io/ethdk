@@ -13,7 +13,7 @@ export const READY_FILE = 'ready.json';
 /** Who marked a part ready, and at which part hash; the mark holds only while the hash does. */
 export type PartReady = { hash: string; by: string; at: string };
 
-export type ReadyRefusal = { status: number; error: string; points?: OpenPoint[] };
+export type ReadyRefusal = { status: number; error: string; points?: OpenPoint[]; actions?: string[] };
 
 const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 
@@ -81,7 +81,8 @@ export const readyPartsOf = (product: ResolvedProduct) =>
 
 /**
  * Marks a part ready at `hash`, or answers why not: 400 without `by` or `hash`, 404 for an unknown part, 409 when the
- * part changed since `hash`, 422 while `pointsOf` lists any open point. `pointsOf` runs only after the hash holds.
+ * part changed since `hash`, 422 while `pointsOf` lists any open point or `actionsOf` any failed action check.
+ * `pointsOf` runs only after the hash holds, `actionsOf` only after the open-point list is empty.
  */
 export const markPartReady = async (options: {
   product: ResolvedProduct;
@@ -89,6 +90,7 @@ export const markPartReady = async (options: {
   hash: unknown;
   by: unknown;
   pointsOf: () => Promise<OpenPoint[] | ReadyRefusal>;
+  actionsOf: () => Promise<string[] | ReadyRefusal>;
   at?: string;
 }): Promise<PartReady | ReadyRefusal> => {
   const { product, part, hash, by } = options;
@@ -110,6 +112,16 @@ export const markPartReady = async (options: {
       status: 422,
       error: `${part} has ${points.length} open point${points.length === 1 ? '' : 's'} - close them before ready`,
       points,
+    };
+
+  const actions = await options.actionsOf();
+
+  if (!Array.isArray(actions)) return actions;
+  if (actions.length > 0)
+    return {
+      status: 422,
+      error: `${part} fails ${actions.length} action check${actions.length === 1 ? '' : 's'} - fix them before ready`,
+      actions,
     };
 
   const mark: PartReady = { hash, by: by.trim(), at: options.at ?? new Date().toISOString() };

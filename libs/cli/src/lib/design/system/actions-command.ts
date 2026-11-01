@@ -410,6 +410,34 @@ export const checkActions = async (options: {
 export const actionLineOf = ({ state, element, input, failure }: Line) =>
   `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? 'ok' : `FAILED ${failure}`}`;
 
+/** The failed lines `design actions` prints for a part, or why the check could not run. */
+export const partActionFailuresOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  part: string;
+  url?: string;
+  start?: StartHarnessServer;
+  check?: typeof checkActions;
+}): Promise<string[] | { unavailable: string }> => {
+  const { target, config, product, part } = options;
+  const stale = harnessStaleOf({ target, product });
+
+  if (stale !== null) return { unavailable: stale };
+
+  const checked = await withHarnessUrl({
+    target,
+    product,
+    url: options.url,
+    start: options.start,
+    run: (url) => (options.check ?? checkActions)({ target, config, product, part, url, only: null }),
+  });
+
+  if (typeof checked === 'string') return { unavailable: checked };
+
+  return checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
+};
+
 /**
  * `et design actions <layer>/<name> …` clicks and presses Enter and Space on each interactive element of a part in the
  * app's harness page and fails unless each reaches the state or fires the output its design's `data-et-action` declares.

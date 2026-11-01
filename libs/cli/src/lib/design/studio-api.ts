@@ -26,6 +26,7 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
+import { partActionFailuresOf } from './system/actions-command';
 import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
 import { goMarkOf, markPartGo } from './system/part-go';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
@@ -762,6 +763,14 @@ const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer =
     : failure(404, `product "${product.name}" has no part "${part}"`);
 };
 
+const actionFailuresOf = async ({ asked, config, product }: Found, part: string) => {
+  const failures = await partActionFailuresOf({ target: asked.target, config, product, part });
+
+  return Array.isArray(failures)
+    ? failures
+    : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
+};
+
 const drawnPointsOf = async ({ asked, config, product }: Found, part: string) => {
   const points = await drawnPartPointsOf({ target: asked.target, config, product, part });
 
@@ -803,7 +812,8 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
 
 /**
  * POST `?product=`, body `{ part, hash, by }`: marks a part ready at the hash Studio showed. It draws the part and
- * refuses with 422 and the `points` while its open-point list is not empty.
+ * refuses with 422 and the `points` while its open-point list is not empty, and with the failed `actions` lines while
+ * `design actions` fails for it.
  */
 export const partReadyAnswer = withProduct('POST', async (found) => {
   const body = await bodyOf(found.asked.request);
@@ -820,12 +830,17 @@ export const partReadyAnswer = withProduct('POST', async (found) => {
     hash: body['hash'],
     by: body['by'],
     pointsOf: () => drawnPointsOf(found, part),
+    actionsOf: () => actionFailuresOf(found, part),
   });
 
   if ('status' in marked)
     return {
       status: marked.status,
-      body: { error: marked.error, ...(marked.points ? { points: marked.points } : {}) },
+      body: {
+        error: marked.error,
+        ...(marked.points ? { points: marked.points } : {}),
+        ...(marked.actions ? { actions: marked.actions } : {}),
+      },
     };
 
   return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
