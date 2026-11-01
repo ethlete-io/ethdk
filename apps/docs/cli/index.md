@@ -350,10 +350,31 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 `GO <product>: <parts>` line when a go holds.
 
 `--by tom` is the guarded path: `et design go <part> --product app-a --by tom --note "Impl Q113"` needs a note that names
-an `Impl Qnn` entry of the current `plans/**/*.md`. It refuses while the part's design files (the files of its design
-hash) have uncommitted changes, or when their newest commit is not an ancestor of the commit that recorded the entry; the
-refusal names the Impl Q, that decision commit and the newer design commit. The note is stored in the go entry. Any other
-`--by` and Studio's go button need no note.
+an `Impl Qnn` entry of the current `plans/**/*.md`, committed. It shows the go and asks `Record this as Tom? [y/N]`, and
+records nothing without a yes. When stdin is not a TTY it refuses and names `et design go --batch <file>`, so an agent
+cannot give Tom's go. A design file of the part that is uncommitted or committed after the decision is no refusal: the
+confirm line names it, for example `go studio components/chip - Impl Q98 - design changed after Impl Q98 (5e554809b)`.
+The note is stored in the go entry. `et design accept --by tom` asks the same way. Any other `--by` and Studio's go
+button need no note and no confirm.
+
+An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
+
+```json
+[
+  {
+    "part": "components/chip",
+    "product": "studio",
+    "action": "go",
+    "note": "Impl Q98",
+    "verify": "d85d4129c"
+  }
+]
+```
+
+`action` is `go` or `accept`, `note` names the `Impl Qnn` decision (an accept entry uses it as its note) and the optional
+`verify` names the commit of the part, which must exist. The command checks every entry first and refuses the whole list
+when one fails, then lists all entries with their notes in one `Record these <n> as Tom? [y/N]` prompt and records them
+all, by `tom`, on a yes.
 
 The part hash of ready, go and implemented is the design hash: the part folder, the shared and asset files it uses, and
 every file it reaches through imports - other `@system` parts, `@ethlete/<lib>/design` mocks and the fixtures. Each
@@ -374,7 +395,7 @@ the part as `design compare` draws the design side and store the hash of each pi
 `et design check` stores the pictures of a review or go that holds and has none at its hash yet, which covers Studio's
 go button and sketch merges. When the hash of a part with stored pictures moves, `et design check` draws every state
 again: with the same states and every picture identical, it records the review as `merged.json` does after a merge and
-logs an `auto` acceptance in `accepted.json`, and writes the go at the new hash with `auto: true`, keeping its `by` and
+logs an `auto` acceptance in `accepted.json` with the `by` of the last acceptance, and writes the go at the new hash with `auto: true`, keeping its `by` and
 `note`, and prints `AUTO ACCEPTED <product> <part> (review, go)`. Otherwise it prints
 `PICTURES CHANGED <product> <part>: <states>` and the part stays unreviewed or stale. A go without pictures from while
 it held is never carried, so an automatic go only carries a decision forward to an identical look.

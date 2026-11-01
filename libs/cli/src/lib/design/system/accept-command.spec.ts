@@ -8,6 +8,7 @@ import { DrawStates } from './accepted-pictures';
 import { resolveProduct } from './resolve-product';
 import { ACCEPTED_FILE, changedOutsideSketchOf, readAccepted, recordMerged } from './sketch/merged-parts';
 import { createSketch } from './sketch/sketch';
+import { TomPrompt } from './tom-confirm';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-accept-'));
@@ -89,5 +90,24 @@ describe('designAccept', () => {
     expect(await accept(target, ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5'])).toBe(2);
     expect(readFileSync(join(productDir, 'merged.json'), 'utf8')).toContain('elements/hero');
     expect(changedOutsideSketchOf(productOf(target))).toEqual(['elements/hero']);
+  });
+
+  it('--by tom needs a TTY and a yes', async () => {
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation((line) => void errors.push(String(line)));
+
+    const { target, productDir } = editedHero();
+    const tom = ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Impl Q7'];
+    const acceptAs = (prompt: TomPrompt) => designAccept({ target, argv: tom, invocation: 'et design', draw, prompt });
+
+    expect(await acceptAs({ isTTY: false, ask: async () => 'y' })).toBe(1);
+    expect(errors.at(-1)).toContain('et design go --batch <file>');
+    expect(await acceptAs({ isTTY: true, ask: async () => '' })).toBe(1);
+    expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
+
+    expect(await acceptAs({ isTTY: true, ask: async () => 'yes' })).toBe(0);
+    expect(readAccepted(productDir)).toEqual([expect.objectContaining({ part: 'elements/hero', by: 'tom' })]);
   });
 });

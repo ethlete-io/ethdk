@@ -1,59 +1,49 @@
-import { DrawStates, storePictures } from './accepted-pictures';
-import { tomGoRefusalOf } from './go-guard';
-import { goPartOf, markPartGo } from './part-go';
-import { repoRootOf } from './reachable-files';
-import { partKeyOf } from './resolve-product';
-import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
-import { parseTarget } from './sketch/sketch';
+import { goBatch } from './go-batch';
+import { goStepOf } from './go-step';
+import { argsOf, authorOf, NEEDS_AUTHOR } from './sketch/cli-args';
+import { isTom, runSteps, tomConfirmRefusalOf, ttyPrompt, WriteCommandOptions } from './tom-confirm';
 
-export const GO_USAGE = 'go <layer>/<name> --product <name> --by <name> [--note "Impl Qnn"]';
+export const GO_USAGE =
+  'go <layer>/<name> --product <name> --by <name> [--note "Impl Qnn"] | go --batch <file> (Tom confirms every entry)';
 
-/** `et design go <layer>/<name> …` releases a part for implementation at its current hash. */
-export const designGo = async (options: { target: string; argv: string[]; invocation: string; draw?: DrawStates }) => {
+/** `et design go <layer>/<name> …` releases a part for implementation at its current hash; `--batch` runs a go list. */
+export const designGo = async (options: WriteCommandOptions) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--by', '--note']);
+  const args = argsOf(argv, ['--product', '--by', '--note', '--batch']);
   const usage = `usage: ${invocation} ${GO_USAGE}`;
+  const prompt = options.prompt ?? ttyPrompt();
 
-  if (typeof args === 'string' || authorOf(args) === null || args.positional.length !== 1) {
+  if (typeof args !== 'string' && args.values['--batch'] !== undefined && args.positional.length === 0)
+    return goBatch({ target, file: args.values['--batch'], invocation, draw: options.draw, prompt });
+
+  const by = typeof args === 'string' ? null : authorOf(args);
+
+  if (typeof args === 'string' || by === null || args.positional.length !== 1 || args.values['--batch']) {
     if (typeof args === 'string') console.error(args);
-    else if (authorOf(args) === null) console.error(`go ${NEEDS_AUTHOR}`);
+    else if (by === null) console.error(`go ${NEEDS_AUTHOR}`);
 
     console.error(usage);
 
     return 2;
   }
 
-  const config = configOf(target);
-  const parsed = parseTarget(args.positional[0]);
+  const step = goStepOf({
+    target,
+    product: args.values['--product'],
+    part: args.positional[0] ?? '',
+    by,
+    note: args.values['--note']?.trim() || undefined,
+    draw: options.draw,
+  });
 
-  if (typeof config === 'string' || typeof parsed === 'string') {
-    console.error(typeof config === 'string' ? config : parsed);
-
-    return 1;
-  }
-
-  const product = oneProductOf({ target, config, asked: args.values['--product'] });
-
-  if (typeof product === 'string') {
-    console.error(product);
+  if (typeof step === 'string') {
+    console.error(step);
 
     return 1;
   }
 
-  const part = partKeyOf(parsed);
-  const located = goPartOf({ product, part });
-
-  if (typeof located === 'string') {
-    console.error(located);
-
-    return 1;
-  }
-
-  const by = authorOf(args);
-  const note = args.values['--note']?.trim() || undefined;
-
-  if (by?.toLowerCase() === 'tom') {
-    const refusal = tomGoRefusalOf({ root: repoRootOf(product), note, files: located.design.files });
+  if (isTom(by)) {
+    const refusal = await tomConfirmRefusalOf({ steps: [step], invocation, prompt });
 
     if (refusal) {
       console.error(refusal);
@@ -62,27 +52,5 @@ export const designGo = async (options: { target: string; argv: string[]; invoca
     }
   }
 
-  const marked = markPartGo({ product, part, by, note });
-
-  if ('status' in marked) {
-    console.error(marked.error);
-
-    return 1;
-  }
-
-  console.log(`${part} has a go in ${product.name}`);
-
-  const unstored = await storePictures({
-    target,
-    config,
-    product,
-    part,
-    kind: 'go',
-    hash: marked.hash,
-    draw: options.draw,
-  });
-
-  if (unstored) console.warn(`PICTURES NOT STORED ${part}: ${unstored} - design check draws them`);
-
-  return 0;
+  return runSteps([step]);
 };
