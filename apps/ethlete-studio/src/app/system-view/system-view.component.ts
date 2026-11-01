@@ -918,8 +918,10 @@ export class SystemViewComponent {
   protected inboxComments = computed(() => {
     const now = Date.now();
 
+    const userName = this.commentStore.userName();
+
     return [...this.commentStore.comments(), ...this.commentStore.resolved()].map((comment) =>
-      inboxCommentOf(comment, now),
+      inboxCommentOf(comment, now, userName),
     );
   });
 

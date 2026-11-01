@@ -625,7 +625,11 @@ export type ListedComment = CommentPlace & {
   resolved?: CommentResolution;
 };
 
-export type ListedComments = { comments: ListedComment[]; unreadable: { file: string; problem: string }[] };
+export type ListedComments = {
+  comments: ListedComment[];
+  unreadable: { file: string; problem: string }[];
+  userName?: string | null;
+};
 
 export type ProductAddress = { port: number; product: string };
 

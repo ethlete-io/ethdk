@@ -93,6 +93,9 @@ export class CommentStore {
 
   private listed = computed(() => this.reading().list ?? NO_COMMENTS);
 
+  /** The `git config user.name` of the checkout, or `null`. */
+  public userName = computed(() => this.listed().userName ?? null);
+
   /** Whether the list of the product loaded at least once; an empty inbox is only real after that. */
   public loaded = computed(() => this.reading().list !== null);
 

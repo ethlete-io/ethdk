@@ -43,6 +43,13 @@ describe('inboxCommentOf', () => {
     });
   });
 
+  it('names a comment by the user with the git user name and its initials', () => {
+    expect(inboxCommentOf(comment({}), NOW, 'Tom Bornholdt')).toMatchObject({
+      author: 'Tom Bornholdt',
+      initials: 'TB',
+    });
+  });
+
   it('shows the last reply by its agent, and marks a thread that waits for the user', () => {
     const row = inboxCommentOf(
       comment({

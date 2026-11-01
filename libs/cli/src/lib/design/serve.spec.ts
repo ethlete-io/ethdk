@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import {
   cpSync,
   existsSync,
@@ -1091,6 +1092,9 @@ describe('the design server for sketches and comments', () => {
 
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
+    execFileSync('git', ['init', '--quiet'], { cwd: target });
+    execFileSync('git', ['config', 'user.name', 'Tom Test'], { cwd: target });
+
     const { ask } = await serveAcme(target);
     const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };
     const added = await ask('/__design/comment', '?product=acme', 'POST', { ...on, point: { x: 12, y: 30 } });
@@ -1103,6 +1107,7 @@ describe('the design server for sketches and comments', () => {
       comments: [{ id, text: on.text }],
     });
     expect((await ask('/__design/comments', '?product=acme&part=pages/other')).body).toMatchObject({ comments: [] });
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ userName: 'Tom Test' });
     expect(await ask('/__design/comment-reply', '?product=acme', 'POST', { id, text: 'The title.' })).toMatchObject({
       status: 200,
       body: { id, replies: [{ by: 'user', text: 'The title.', createdAt: expect.any(String) }], stale: null },

@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { repoInvocation } from '../invocation';
@@ -475,9 +476,24 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
   return problem ? failure(422, problem) : { status: 200, body: { discarded: sketch.target } };
 });
 
+const userNameOf = (dir: string) => {
+  try {
+    return (
+      execFileSync('git', ['config', 'user.name'], {
+        cwd: dir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim() || null
+    );
+  } catch {
+    return null;
+  }
+};
+
 /**
  * `?product=[&part=<layer>/<name>]`: every comment with its `replies`, oldest first, each with the reason it
- * is stale or `null`, its `threadState` (`agent`, `question` or `answered`) and, once closed, its `resolved`.
+ * is stale or `null`, its `threadState` (`agent`, `question` or `answered`) and, once closed, its `resolved`; `userName` is
+ * the `git config user.name` of the checkout, or `null`.
  */
 export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   const part = asked.url.searchParams.get('part');
@@ -490,6 +506,7 @@ export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
         .filter((comment) => !part || comment.part === part)
         .map((comment) => commentOf({ comment, target: asked.target, product })),
       unreadable: unreadable.map(({ file, problem }) => ({ file: relative(asked.target, file), problem })),
+      userName: userNameOf(product.dir),
     },
   };
 });
