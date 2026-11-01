@@ -198,3 +198,9 @@
   - The crash-fix subagent was still running at the restart; check `git log` for a `fix(cli)` commit and
     /tmp/studio-check8.txt before starting it again.
   - Push next after these commits.
+
+## Builder ethlete-sdk-4b (third fresh context, 2026-11-01)
+
+- In progress: sdk components/checkbox + components/radio-group variant d to the current control rules (no visual
+  change), then `sketch ready` and `design sketch merge --variant d`. One sonnet subagent.
+- In progress: the crash-fix subagent from the last context (libs/cli complete.ts, uncommitted).
