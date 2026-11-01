@@ -1,4 +1,4 @@
-import { definePart, drawing, html, ng } from '@design-system';
+import { definePart, drawing, html, ng, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { commentPinMark } from '@system/components/comment-pin';
@@ -371,7 +371,7 @@ export const inbox = () =>
         section: 'Inbox',
         product: 'studio',
         side,
-        content: pinned(
+        content: `<div class="contents" ${slot('canvas')}>${pinned(
           frames.body,
           draft || entry
             ? visible
@@ -389,7 +389,7 @@ export const inbox = () =>
                 })
             : visible,
           (c) => (c.id === 'draft' ? '' : (pins.get(c.id) ?? '')),
-        ),
+        )}</div>`,
       });
 
       return drawing({
