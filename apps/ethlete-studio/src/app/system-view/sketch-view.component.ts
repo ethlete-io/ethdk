@@ -13,6 +13,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { DomSanitizer } from '@angular/platform-browser';
 import { Observable, catchError, concatMap, finalize, of, switchMap, tap } from 'rxjs';
 import {
+  ListedComment,
   ListedPart,
   ListedProduct,
   ListedSketch,
@@ -29,7 +30,7 @@ import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchPin, SketchVariant } from '../design-parts/sketches/sketches-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
-import { NumberedComment, isInSketch } from './comment-pins';
+import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
@@ -369,7 +370,7 @@ export class SketchViewComponent {
   );
 
   /** Shows the round of the comment's variant. */
-  public jumpTo(comment: NumberedComment) {
+  public jumpTo(comment: ListedComment) {
     const variant = comment.sketch?.variant;
     const other = this.shownRounds().find((round) => !round.open && variant && round.variants.includes(variant));
 

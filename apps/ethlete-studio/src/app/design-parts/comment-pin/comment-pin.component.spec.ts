@@ -30,6 +30,20 @@ describe('CommentPinComponent', () => {
     );
   });
 
+  it('draws a resolved pin muted with a check mark instead of the initials and the count, also when selected', async () => {
+    const fixture = await render({ author: 'Tom', initials: 'TB', count: 3, selected: true, resolved: true });
+    const host = fixture.nativeElement as HTMLElement;
+    const button = host.querySelector('button');
+
+    expect(button?.getAttribute('aria-label')).toBe('Comment by Tom, 3 messages, resolved');
+    expect(button?.getAttribute('aria-pressed')).toBe('true');
+    expect(button?.classList).toContain('text-text-muted');
+    expect(button?.classList).not.toContain('bg-et-theme');
+    expect(button?.querySelector('svg path')?.getAttribute('d')).toBe('m3.5 8.5 3 3 6-7');
+    expect(button?.textContent?.trim()).toBe('');
+    expect(host.textContent).not.toContain('3');
+  });
+
   it('emits pinToggle on a click', async () => {
     const fixture = await render({ author: 'Tom', initials: 'TB', selected: true });
     let toggles = 0;

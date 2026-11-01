@@ -351,6 +351,76 @@ describe('SystemViewComponent on a reload', () => {
     expectPicked('elements/badge', '2', 'Badge too loud', 'Too light');
   });
 
+  it('selects a picked resolved Inbox comment and shows its pin resolved on the canvas, by click, Enter and Space', async () => {
+    const resolvedComment: ListedComment = {
+      ...HOVER_COMMENT,
+      id: '2',
+      part: 'elements/badge',
+      interaction: undefined,
+      text: 'Badge too loud',
+      createdAt: '2026-10-27T11:00:00Z',
+      resolved: { by: 'user', resolvedAt: '2026-10-28T09:00:00Z' },
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) {
+        return json([{ ...PRODUCT, parts: [...PRODUCT.parts, part('elements', 'badge')] }]);
+      }
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) {
+        return json({ comments: [HOVER_COMMENT, resolvedComment], unreadable: [] });
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating', resolvedShown: true });
+    const element: HTMLElement = fixture.nativeElement;
+    const view = fixture.componentInstance;
+
+    view['pickSection']('Inbox');
+    await settle(fixture);
+
+    const rowOf = (text: string) =>
+      [...element.querySelectorAll<HTMLElement>('ethlete-inbox [role="button"]')].find((row) =>
+        row.textContent?.includes(text),
+      );
+    const expectResolvedPicked = () => {
+      expect(view['selectedKey']()).toBe('elements/badge');
+      expect(rowOf('Badge too loud')?.classList).toContain('bg-et-theme/20');
+      expect(
+        view
+          .partCanvas()
+          ?.pins()
+          .find((pin) => pin.id === '2')?.resolved,
+      ).toBe(true);
+      expect(view.partCanvas()?.openPinId()).toBe('2');
+    };
+
+    rowOf('Badge too loud')?.click();
+    await settle(fixture);
+    expectResolvedPicked();
+
+    rowOf('Too light')?.click();
+    await settle(fixture);
+    expect(
+      view
+        .partCanvas()
+        ?.pins()
+        .some((pin) => pin.id === '2'),
+    ).toBe(false);
+
+    rowOf('Badge too loud')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle(fixture);
+    expectResolvedPicked();
+
+    rowOf('Too light')?.click();
+    await settle(fixture);
+    rowOf('Badge too loud')?.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await settle(fixture);
+    expectResolvedPicked();
+  });
+
   it('shows a failed comment load in the Inbox and loads the list again on retry', async () => {
     let failing = true;
 

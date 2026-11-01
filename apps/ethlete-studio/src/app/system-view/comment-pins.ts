@@ -55,7 +55,7 @@ export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) =
 };
 
 /** One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. */
-export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): CanvasPin[] =>
+export const pinsOf = (frames: CanvasFrame[], comments: (ListedComment & { number?: number })[]): CanvasPin[] =>
   comments.flatMap((comment) => {
     const frameId = otherSizeFrameOf(frames, comment);
     const last = comment.replies.at(-1);
@@ -65,10 +65,11 @@ export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): Canv
           {
             id: comment.id,
             frameId,
-            label: String(comment.number),
+            label: String(comment.number ?? ''),
             text: comment.text,
             ...senderOf(last?.by ?? 'user', last?.author),
             count: comment.replies.length + 1,
+            ...(comment.resolved ? { resolved: true } : {}),
             ...(comment.point ? { point: comment.point } : {}),
           },
         ]

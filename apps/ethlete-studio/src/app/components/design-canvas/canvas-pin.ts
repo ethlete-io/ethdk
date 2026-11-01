@@ -10,6 +10,7 @@ export type CanvasPin = {
   initials: string;
   agent?: AgentLogoName;
   count: number;
+  resolved?: boolean;
   /** CSS pixels from the frame's top left corner. */
   point?: { x: number; y: number };
 };

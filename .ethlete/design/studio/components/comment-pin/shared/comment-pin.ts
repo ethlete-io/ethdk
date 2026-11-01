@@ -1,6 +1,7 @@
 import { control } from '@ethlete/components/design/control';
 import { forceInteraction, interactionRows } from '@design-system';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { icon } from '@system/foundations/icons';
 
 type PinInteraction = 'hover' | 'focus-visible' | 'active';
 
@@ -10,11 +11,12 @@ export type Props = {
   agent?: Agent;
   count?: number;
   selected?: boolean;
+  resolved?: boolean;
   interaction?: PinInteraction;
 };
 
-const label = ({ author, count }: Props) =>
-  count && count > 1 ? `Comment by ${author}, ${count} messages` : `Comment by ${author}`;
+const label = ({ author, count, resolved }: Props) =>
+  `Comment by ${author}${count && count > 1 ? `, ${count} messages` : ''}${resolved ? ', resolved' : ''}`;
 
 type CountPlacement = 'beside' | 'inside';
 
@@ -22,7 +24,12 @@ const shape = 'rounded-[50%_50%_50%_0]';
 
 const pinBase = `group/pin relative inline-flex size-5.5 cursor-pointer items-center justify-center ${shape} border-0 p-0 text-ui-xs font-ui-strong leading-none focus-visible:outline-2 focus-visible:outline-focus-ring`;
 
-const pinClass = ({ agent, selected }: Props) => {
+const resolvedClass = ({ selected }: Pick<Props, 'selected'>) =>
+  `${pinBase} bg-et-surface-bg text-text-muted hover:text-text active:text-text ${selected ? 'ring-2 ring-text-muted focus-visible:outline-offset-[5px]' : 'ring-1 ring-et-surface-border hover:ring-text-muted focus-visible:outline-offset-2'}`;
+
+const pinClass = ({ agent, selected, resolved }: Props) => {
+  if (resolved) return resolvedClass({ selected });
+
   if (!selected) {
     return `${pinBase} bg-et-surface-bg text-text-muted ring-1 ring-et-surface-border hover:text-text hover:ring-text-muted active:text-text focus-visible:outline-offset-2`;
   }
@@ -35,14 +42,19 @@ const pinClass = ({ agent, selected }: Props) => {
     : `${pinBase} bg-et-theme ring-et-surface-bg ${rings} hover:bg-et-theme-hover active:bg-et-theme-active`;
 };
 
-const faceClass = ({ agent, selected }: Props) =>
-  `flex size-full items-center justify-center ${shape}${selected && !agent ? '' : ' group-hover/pin:bg-et-surface-interaction/9 group-active/pin:bg-et-surface-interaction/15'}`;
+const faceClass = ({ agent, selected, resolved }: Props) =>
+  `flex size-full items-center justify-center ${shape}${selected && !agent && !resolved ? '' : ' group-hover/pin:bg-et-surface-interaction/9 group-active/pin:bg-et-surface-interaction/15'}`;
 
-const face = (p: Props, inner = '') =>
-  `<span class="${faceClass(p)}">${p.agent ? agentLogo(p.agent, 'size-3') : (p.initials ?? '')}${inner}</span>`;
+const mark = (p: Props) => {
+  if (p.resolved) return icon('check', { size: 12 });
 
-const countBadge = ({ count }: Props) =>
-  count && count > 1
+  return p.agent ? agentLogo(p.agent, 'size-3') : (p.initials ?? '');
+};
+
+const face = (p: Props, inner = '') => `<span class="${faceClass(p)}">${mark(p)}${inner}</span>`;
+
+const countBadge = ({ count, resolved }: Props) =>
+  !resolved && count && count > 1
     ? `<span aria-hidden="true" class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 text-ui-xs font-ui-strong leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg">${count}</span>`
     : '';
 
@@ -52,7 +64,7 @@ export const pin = (p: Props, placement: CountPlacement = 'beside') => {
   const markup = `<button
         type="button"
         class="${pinClass(p)}"
-        ${p.selected && !p.agent ? '' : 'data-et-auto-surface'}
+        ${p.selected && !p.agent && !p.resolved ? '' : 'data-et-auto-surface'}
         data-et-surface-interactive
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}
@@ -80,6 +92,8 @@ export const { states, grid } = interactionRows(
     'selected-logo-count': { ...selectedClaude, count: 3 },
     'count-12': { ...tom, count: 12 },
     'selected-logo-count-12': { ...selectedClaude, count: 12 },
+    resolved: { ...tom, count: 3, resolved: true },
+    'selected-resolved': { ...selectedTom, count: 3, resolved: true },
   },
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );

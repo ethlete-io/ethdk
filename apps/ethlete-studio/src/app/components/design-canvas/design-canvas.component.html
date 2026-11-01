@@ -181,6 +181,7 @@
         [agent]="placed.pin.agent"
         [count]="placed.pin.count"
         [selected]="placed.open"
+        [resolved]="!!placed.pin.resolved"
         (pinToggle)="togglePin(placed.pin.id)"
         (click)="$event.stopPropagation()"
         data-comment-pin

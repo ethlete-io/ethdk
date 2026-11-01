@@ -20,6 +20,7 @@ import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
 import {
   ListedCall,
+  ListedComment,
   ListedProduct,
   ListedSketch,
   Themes,
@@ -58,7 +59,7 @@ import {
   pickedPartKeyOf,
   treeOf,
 } from './system-tree';
-import { NumberedComment, otherSizeFrameOf, pinsOf } from './comment-pins';
+import { otherSizeFrameOf, pinsOf } from './comment-pins';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
@@ -877,8 +878,14 @@ export class SystemViewComponent {
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
 
+  private pickedResolved = computed(() =>
+    this.commentStore.resolved().filter((comment) => comment.id === this.pickedCommentId()),
+  );
+
   protected partPins = computed(() =>
-    this.section() === 'Inbox' ? pinsOf(this.placeableFrames(), this.commentStore.comments()) : [],
+    this.section() === 'Inbox'
+      ? pinsOf(this.placeableFrames(), [...this.commentStore.comments(), ...this.pickedResolved()])
+      : [],
   );
 
   protected sketchPage = computed(() => {
@@ -956,7 +963,7 @@ export class SystemViewComponent {
   }
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
-  public jumpTo(comment: NumberedComment) {
+  public jumpTo(comment: ListedComment) {
     const sketchKey = sketchKeyOf(comment.part);
     const key = comment.sketch && this.nodes().entries.has(sketchKey) ? sketchKey : comment.part;
 
@@ -977,7 +984,9 @@ export class SystemViewComponent {
   }
 
   protected jumpToComment(id: string) {
-    const comment = this.commentStore.comments().find((open) => open.id === id);
+    const comment = [...this.commentStore.comments(), ...this.commentStore.resolved()].find(
+      (listed) => listed.id === id,
+    );
 
     if (!comment) return;
 
@@ -1132,7 +1141,7 @@ export class SystemViewComponent {
     afterNextRender(() => this.partCanvas()?.focusFrame(frame), { injector: this.injector });
   }
 
-  private focusComment(comment: NumberedComment) {
+  private focusComment(comment: ListedComment) {
     const sketchView = this.sketchView();
     const canvas = this.partCanvas();
 

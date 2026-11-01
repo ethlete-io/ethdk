@@ -1,6 +1,21 @@
 <ng-template #face>
   <span [class]="faceClass()">
-    @if (agent(); as agent) {
+    @if (resolved()) {
+      <svg
+        class="size-3"
+        width="12"
+        height="12"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m3.5 8.5 3 3 6-7" />
+      </svg>
+    } @else if (agent(); as agent) {
       <svg [agent]="agent" class="size-3" ethlete-agent-logo></svg>
     } @else {
       {{ initials() }}
@@ -9,7 +24,7 @@
 </ng-template>
 
 <span class="relative inline-flex">
-  @if (selected() && !agent()) {
+  @if (filled()) {
     <button
       [class]="pinClass()"
       [attr.aria-label]="label()"
@@ -33,7 +48,7 @@
       <ng-container *ngTemplateOutlet="face" />
     </button>
   }
-  @if (count() > 1) {
+  @if (count() > 1 && !resolved()) {
     <span
       class="absolute -top-1.5 left-4.5 box-border flex h-4 min-w-4 items-center justify-center rounded-pill bg-et-theme px-1 font-ui-strong text-ui-xs leading-none text-et-on-theme tabular-nums ring-2 ring-et-surface-bg"
       aria-hidden="true"
