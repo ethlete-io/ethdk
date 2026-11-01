@@ -56,6 +56,24 @@ describe('DesignCanvasComponent', () => {
     expect(host.getAttribute('aria-label')).toBe('Design Canvas');
   });
 
+  it('leaves Space alone on a button inside the canvas', async () => {
+    const fixture = await render([FITTED]);
+    const button = document.createElement('button');
+
+    (fixture.nativeElement as HTMLElement).appendChild(button);
+
+    const onButton = new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true, cancelable: true });
+
+    button.dispatchEvent(onButton);
+    expect(onButton.defaultPrevented).toBe(false);
+
+    const onCanvas = new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true, cancelable: true });
+
+    fixture.nativeElement.dispatchEvent(onCanvas);
+    expect(onCanvas.defaultPrevented).toBe(true);
+    button.remove();
+  });
+
   it('hides a fitted frame until its size is known', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture);

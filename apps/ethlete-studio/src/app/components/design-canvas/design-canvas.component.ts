@@ -172,6 +172,19 @@ type PlacedFrame = Rect & {
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
+const INTERACTIVE =
+  'button, a[href], input, select, textarea, summary, [contenteditable], [role="button"], [role="option"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="link"], [role="treeitem"]';
+
+const isInteractive = (target: EventTarget | null) => {
+  if (!(target instanceof Element)) return false;
+
+  for (let element: Element | null = target; element; element = element.parentElement) {
+    if (isEditable(element) || element.matches(INTERACTIVE) || element.localName.startsWith('et-')) return true;
+  }
+
+  return false;
+};
+
 @Component({
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
@@ -902,6 +915,8 @@ export class DesignCanvasComponent {
     if (isEditable(event.target)) return;
 
     if (event.code === 'Space') {
+      if (isInteractive(event.target)) return;
+
       event.preventDefault();
       this.spaceHeld.set(true);
 
