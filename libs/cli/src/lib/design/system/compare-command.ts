@@ -450,6 +450,9 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
       drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
     });
     const shots: StateShot[] = [];
+    const forcing = new Set(
+      [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
+    );
 
     for (const state of only === null ? Object.keys(states) : [only]) {
       const design = designs.get(state);
@@ -490,6 +493,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
               opens,
               state,
               forced: forced.map(({ interaction }) => interaction),
+              forcing,
             }),
           },
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,

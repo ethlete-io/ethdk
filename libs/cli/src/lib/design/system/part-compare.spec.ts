@@ -692,10 +692,11 @@ describe('harnessShotOf', () => {
 
 describe('dropped design props', () => {
   const states = {
-    closed: { open: false },
-    open: { open: true },
-    stopped: { open: true, server: 'stopped' },
-    'row-hover': { open: false, force: { label: 'Go', interaction: 'hover' } },
+    closed: { open: false, content: '' },
+    open: { open: true, content: '' },
+    stopped: { open: true, server: 'stopped', content: '' },
+    'row-hover': { open: false, force: { label: 'Go', interaction: 'hover' }, content: '' },
+    'chip-hover': { open: false, target: 'out', interaction: 'hover', content: '' },
   };
   const opens = pointerOpensOf({
     states,
@@ -706,18 +707,22 @@ describe('dropped design props', () => {
     droppedPropsOf({
       props: states[state],
       inputs: [],
-      designOnly: designOnlyPropsOf({ states, opens, state, forced }),
+      designOnly: designOnlyPropsOf({ states, opens, state, forced, forcing: new Set(['row-hover', 'chip-hover']) }),
     });
 
-  it('lets the harness drop the props compare reproduces: a pointer open and a forced interaction', () => {
+  it('lets the harness drop the props compare reproduces: one no state differs by, a pointer open, a forced interaction', () => {
     expect(droppedOf('closed')).toEqual([]);
     expect(droppedOf('row-hover', ['hover'])).toEqual([]);
+    expect(droppedOf('chip-hover', ['hover'])).toEqual([]);
   });
 
   it('names a prop the app component has no input for and compare cannot reproduce', () => {
     expect(droppedOf('stopped')).toEqual(['server']);
     expect(droppedOf('row-hover')).toEqual(['force']);
-    expect(droppedPropsOf({ props: states.stopped, inputs: ['server'], designOnly: new Set(['open']) })).toEqual([]);
+    expect(droppedOf('chip-hover')).toEqual(['target', 'interaction']);
+    expect(
+      droppedPropsOf({ props: states.stopped, inputs: ['server'], designOnly: new Set(['open', 'content']) }),
+    ).toEqual([]);
   });
 });
 

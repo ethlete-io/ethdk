@@ -392,16 +392,18 @@ export const compareLineOf = (state: string, result: PixelCompare) =>
 
 /**
  * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,
- * each prop a pointer open toggles (it clicks them), and each prop whose value, or its `interaction`, names an
- * interaction the state's design forces on an element (compare forces it in the app).
+ * a prop every state sets to the same value (no state differs by it), each prop a pointer open toggles (it clicks
+ * them), each prop whose value, or its `interaction`, names an interaction the state's design forces on an
+ * element (compare forces it in the app), and, in a state that forces one, each prop only the `forcing` states set.
  */
 export const designOnlyPropsOf = (options: {
   states: Record<string, unknown>;
   opens: Record<string, PointerOpen | string>;
   state: string;
   forced: readonly string[];
+  forcing: ReadonlySet<string>;
 }): Set<string> => {
-  const { states, opens, state, forced } = options;
+  const { states, opens, state, forced, forcing } = options;
   const designOnly = new Set(['class']);
 
   for (const [opened, open] of Object.entries(opens)) {
@@ -418,7 +420,16 @@ export const designOnlyPropsOf = (options: {
 
   const stateProps = states[state];
 
+  const all = Object.values(states).map((props) => (isRecord(props) ? props : {}));
+
   for (const [key, value] of Object.entries(isRecord(stateProps) ? stateProps : {})) {
+    if (all.every((props) => key in props && JSON.stringify(props[key]) === JSON.stringify(value))) designOnly.add(key);
+    if (
+      forced.length > 0 &&
+      Object.entries(states).every(([name, props]) => forcing.has(name) || !isRecord(props) || props[key] === undefined)
+    )
+      designOnly.add(key);
+
     const interaction = isRecord(value) ? value['interaction'] : value;
 
     if (typeof interaction === 'string' && forced.includes(interaction)) designOnly.add(key);
