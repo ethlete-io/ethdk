@@ -199,13 +199,15 @@ const isInteractive = (target: EventTarget | null) => {
   hostDirectives: [FocusRingDirective],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
+      'group/canvas relative block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px] data-pointer-focus:outline-transparent',
     tabindex: '0',
     'aria-label': STUDIO_LABELS.canvas.label,
     '[class.overflow-hidden]': 'clip()',
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
+    '[attr.data-pointer-focus]': 'pointerFocus() || null',
+    '(blur)': 'pointerFocus.set(false)',
     '(wheel)': 'moveCameraByWheel($event)',
     '(pointerdown)': 'startPan($event)',
     '(click)': 'clickCanvas($event)',
@@ -316,6 +318,7 @@ export class DesignCanvasComponent {
   public activeId = signal<string | null>(null);
   protected spaceHeld = signal(false);
   protected panning = signal(false);
+  protected pointerFocus = signal(false);
   private measured = linkedSignal<string | null, Record<string, FrameSize>>({
     source: this.cameraKey,
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
@@ -849,6 +852,7 @@ export class DesignCanvasComponent {
     const middle = event.button === 1;
     const spaced = event.button === 0 && this.spaceHeld();
 
+    if (event.button === 0 && !isInteractive(event.target)) this.pointerFocus.set(true);
     if (!middle && !spaced && (event.button !== 0 || isInteractive(event.target))) return;
 
     if (middle || spaced) event.preventDefault();

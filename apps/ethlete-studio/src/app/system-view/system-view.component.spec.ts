@@ -164,11 +164,13 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
-  it('places the zoom chip of a part at the bottom right of the first 1000 px, as the System page design', async () => {
+  it('places the zoom chip of a part at the bottom right of the canvas, as the System page design', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const chip = (fixture.nativeElement as HTMLElement).querySelector('ethlete-design-canvas ethlete-zoom-chip');
 
-    expect(chip?.className).toContain('right-[max(var(--space-3),calc(100%-var(--spacing)*250+var(--space-3)))]');
+    expect([...(chip?.classList ?? [])]).toEqual(
+      expect.arrayContaining(['absolute', 'right-space-3', 'bottom-space-3']),
+    );
   });
 
   it('shows the open points of the shown part in a chip at the top right, and lists them in its popover', async () => {

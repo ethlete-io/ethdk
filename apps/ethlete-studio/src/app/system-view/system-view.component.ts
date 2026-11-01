@@ -91,8 +91,7 @@ const BADGE =
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
   read && read.product === product ? read.items : null;
 
-const PART_ZOOM_CHIP_CLASS =
-  'absolute bottom-space-3 right-[max(var(--space-3),calc(100%-var(--spacing)*250+var(--space-3)))]';
+const PART_ZOOM_CHIP_CLASS = 'absolute right-space-3 bottom-space-3';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
