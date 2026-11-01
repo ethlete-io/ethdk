@@ -709,6 +709,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     the MVP, the footer and the top-right buttons were overlooked. Cause: the live page is hand-written and was never
     compared to its design (finding 43); Impl Q67 swapped only the empty state. Lesson: a partial swap leaves old
     chrome around the new part, and only a whole-page compare (Impl Q78) shows it.
+50. The Studio logo in the rail behaves differently per page (Tom, 2026-11-01, screenshots): on System it is no
+    button, on Flows it is a button and opens the studio menu, on Inbox it looks like a button but opens nothing.
+    Wanted: on every page the logo is a button that opens the studio menu (the studio-menu part). Lesson: each live
+    page wires the shell on its own, so one page can drift from the others and no check compares them; the shell
+    must have one live wiring for all pages, and the Impl Q79 page clicks must run on every page. Cause: asked from
+    the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
