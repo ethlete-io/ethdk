@@ -267,3 +267,8 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
     on the CI runner.
   - The tomflix design server and the docs-examples app both use port 4403 (`.ethlete/design/config.json`,
     `apps/docs-examples`); the default ports must not collide.
+- **Studio MVP reached (2026-11-01):** `design check --product studio --complete` reports 26 of 26 Studio parts
+  clean after the Q249 merges, the checkbox and radio-group d merge (e855918d4) and the embedded-control checker fix
+  (e0bf58dca). Left on purpose, after the MVP: the 8 UNLINKED parts and `studio-view.component.ts` without a part
+  (Q247, Q248), the 48 SDK parts with open points, the lib port of checkbox and radio-group d, and every parked item
+  above.
