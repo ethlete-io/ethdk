@@ -1720,5 +1720,13 @@
     "note": "approved by a click in Studio",
     "hash": "ae33c034c1dd289c",
     "at": "2026-11-01T23:18:46.324Z"
+  },
+  {
+    "part": "pages/inbox",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "906d659aaeb8d41a",
+    "at": "2026-11-01T23:25:32.586Z",
+    "auto": true
   }
 ]

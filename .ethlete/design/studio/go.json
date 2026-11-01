@@ -331,7 +331,7 @@
     "at": "2026-11-01T15:35:49.809Z"
   },
   "pages/inbox": {
-    "hash": "38caa44b543eecd0",
+    "hash": "38d5fca8fc2bb6ce",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "330868da6086adf8",
@@ -387,7 +387,7 @@
       ".ethlete/design/studio/foundations/logo/logo.ts": "c6fdcd018df6d00f",
       ".ethlete/design/studio/pages/inbox/inbox.ts": "90c2d261b42a83de",
       ".ethlete/design/studio/pages/inbox/shared/inbox.css": "2da6d9ed3559b108",
-      ".ethlete/design/studio/pages/inbox/shared/inbox.ts": "49971fd543a91213",
+      ".ethlete/design/studio/pages/inbox/shared/inbox.ts": "5c7a6c30b881a675",
       "apps/ethlete-studio/src/app/icons/agent-logos.ts": "7141b2172d570bee",
       "libs/components/design/anchored-dialog.ts": "0ed80bf859add3e9",
       "libs/components/design/button.ts": "ce30348dc93a258d",
@@ -417,7 +417,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-01T23:09:58.084Z",
+    "at": "2026-11-01T23:25:32.600Z",
     "note": "studio click",
     "auto": true
   },

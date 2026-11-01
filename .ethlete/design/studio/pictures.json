@@ -526,7 +526,7 @@
   },
   "pages/inbox": {
     "review": {
-      "hash": "2d8267ff43d1abba",
+      "hash": "906d659aaeb8d41a",
       "states": {
         "open": "e03b38f65a30e97b",
         "with-resolved": "d5f8e29bfac826d0",
@@ -541,7 +541,7 @@
       }
     },
     "go": {
-      "hash": "38caa44b543eecd0",
+      "hash": "38d5fca8fc2bb6ce",
       "states": {
         "open": "e03b38f65a30e97b",
         "with-resolved": "d5f8e29bfac826d0",
