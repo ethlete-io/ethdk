@@ -107,35 +107,35 @@
   },
   "components/shell-project-switch": {
     "review": {
-      "hash": "741176665ea29f40",
+      "hash": "9928826b58573f38",
       "states": {
         "closed": "957ecf97b7264ab9",
         "closed-hover": "69c002a92c93cbe2",
         "closed-active": "c2dbfb62aec1a240",
         "closed-focus-visible": "dd777f3236724c4e",
-        "open": "a852836d936b52f0",
-        "open-hover": "7c9b8c2164f1b425",
-        "open-active": "1225ebb672ae9934",
-        "open-focus-visible": "60f7f04dda7abf95",
-        "project.option-hover": "e1f97cc079cd60a8",
-        "project.option-focus-visible": "e63622df51a02cd2",
-        "project.option-selected": "a852836d936b52f0"
+        "open": "d358745c9d1db36b",
+        "open-hover": "5b39ad0078eea9a8",
+        "open-active": "0317de375b2eb3ed",
+        "open-focus-visible": "e0c505163c9f2488",
+        "project.option-hover": "6d2098c678e16050",
+        "project.option-focus-visible": "4463d4d7328f8585",
+        "project.option-selected": "d358745c9d1db36b"
       }
     },
     "go": {
-      "hash": "1cb1eb5895c7ed30",
+      "hash": "c50d2fb5eef0e812",
       "states": {
         "closed": "957ecf97b7264ab9",
         "closed-hover": "69c002a92c93cbe2",
         "closed-active": "c2dbfb62aec1a240",
         "closed-focus-visible": "dd777f3236724c4e",
-        "open": "a852836d936b52f0",
-        "open-hover": "7c9b8c2164f1b425",
-        "open-active": "1225ebb672ae9934",
-        "open-focus-visible": "60f7f04dda7abf95",
-        "project.option-hover": "e1f97cc079cd60a8",
-        "project.option-focus-visible": "e63622df51a02cd2",
-        "project.option-selected": "a852836d936b52f0"
+        "open": "d358745c9d1db36b",
+        "open-hover": "5b39ad0078eea9a8",
+        "open-active": "0317de375b2eb3ed",
+        "open-focus-visible": "e0c505163c9f2488",
+        "project.option-hover": "6d2098c678e16050",
+        "project.option-focus-visible": "4463d4d7328f8585",
+        "project.option-selected": "d358745c9d1db36b"
       }
     }
   },
@@ -356,37 +356,37 @@
   },
   "elements/studio-menu": {
     "review": {
-      "hash": "3b9b10d017b5ad08",
+      "hash": "df8fdeeec31f2ec1",
       "states": {
-        "closed": "a7a885a768ce1d5f",
-        "closed-hover": "99eae6f2e416b875",
-        "closed-active": "f987d00c8c5515d2",
-        "closed-focus-visible": "e8bb9a0d99f2ec6a",
-        "open": "14d9070d80456e97",
-        "open-hover": "eb5736ebe71b5677",
-        "open-active": "85e6b7a85d5cf295",
-        "open-focus-visible": "7a83aef623040f7f",
-        "studio-menu.stopped": "70dd3d15257ce495",
-        "studio-menu.option-hover": "eb5736ebe71b5677",
-        "studio-menu.option-focus-visible": "7a83aef623040f7f",
-        "studio-menu.option-active": "85e6b7a85d5cf295"
+        "closed": "f3dd9d24f52f32bb",
+        "closed-hover": "564c419701f79b50",
+        "closed-active": "f7e867ee3a2304fc",
+        "closed-focus-visible": "dcaa269e7dec8723",
+        "open": "5fcc882a1c0be5ca",
+        "open-hover": "5c56162286cec138",
+        "open-active": "5789225e9323665f",
+        "open-focus-visible": "4112ef92ca7a6281",
+        "studio-menu.stopped": "5f87d68bce71615e",
+        "studio-menu.option-hover": "5c56162286cec138",
+        "studio-menu.option-focus-visible": "4112ef92ca7a6281",
+        "studio-menu.option-active": "5789225e9323665f"
       }
     },
     "go": {
-      "hash": "f0ea58606ac8b853",
+      "hash": "8fa16006875b4154",
       "states": {
-        "closed": "a7a885a768ce1d5f",
-        "closed-hover": "99eae6f2e416b875",
-        "closed-active": "f987d00c8c5515d2",
-        "closed-focus-visible": "e8bb9a0d99f2ec6a",
-        "open": "14d9070d80456e97",
-        "open-hover": "eb5736ebe71b5677",
-        "open-active": "85e6b7a85d5cf295",
-        "open-focus-visible": "7a83aef623040f7f",
-        "studio-menu.stopped": "70dd3d15257ce495",
-        "studio-menu.option-hover": "eb5736ebe71b5677",
-        "studio-menu.option-focus-visible": "7a83aef623040f7f",
-        "studio-menu.option-active": "85e6b7a85d5cf295"
+        "closed": "f3dd9d24f52f32bb",
+        "closed-hover": "564c419701f79b50",
+        "closed-active": "f7e867ee3a2304fc",
+        "closed-focus-visible": "dcaa269e7dec8723",
+        "open": "5fcc882a1c0be5ca",
+        "open-hover": "5c56162286cec138",
+        "open-active": "5789225e9323665f",
+        "open-focus-visible": "4112ef92ca7a6281",
+        "studio-menu.stopped": "5f87d68bce71615e",
+        "studio-menu.option-hover": "5c56162286cec138",
+        "studio-menu.option-focus-visible": "4112ef92ca7a6281",
+        "studio-menu.option-active": "5789225e9323665f"
       }
     }
   },
@@ -505,12 +505,24 @@
     }
   },
   "pages/merge": {
-    "go": {
-      "hash": "d69d86327f199fdd",
+    "review": {
+      "hash": "c017306ebbc49a60",
       "states": {
-        "open": "b77454e67a69fda4",
-        "unchanged-open": "81be6be52104abde",
-        "merge-error": "f69ce992cfedccfa"
+        "open": "636461b061c19ca6",
+        "unchanged-open": "0383a210ee024bb7",
+        "merge-error": "83f3503f133635b1",
+        "added": "a59af58e135ddf8f",
+        "merging": "d666ba1d85cab779"
+      }
+    },
+    "go": {
+      "hash": "634f233d8e84e8ee",
+      "states": {
+        "open": "636461b061c19ca6",
+        "unchanged-open": "0383a210ee024bb7",
+        "merge-error": "83f3503f133635b1",
+        "added": "a59af58e135ddf8f",
+        "merging": "d666ba1d85cab779"
       }
     }
   },
@@ -520,6 +532,14 @@
       "states": {
         "page-sketch": "d228520f36a4f3a4",
         "zoomed-page": "2b347c0c52412451"
+      }
+    },
+    "review": {
+      "hash": "9e3f9d5a092a70c3",
+      "states": {
+        "page-sketch": "237b4c0eb1a892ae",
+        "page-100": "4079c3f8cfb0c422",
+        "zoomed-page": "50aead7e94eae58d"
       }
     }
   },
