@@ -309,7 +309,7 @@
     "at": "2026-11-01T15:35:49.809Z"
   },
   "pages/inbox": {
-    "hash": "e2f5b0881c1b83c7",
+    "hash": "858f41633e0daf03",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "330868da6086adf8",
@@ -352,7 +352,7 @@
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "50a04e20d141c65b",
       ".ethlete/design/studio/elements/shell-main/shared/picker.css": "c8a3b45a227840db",
-      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "08b15397e505bb03",
+      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "f7eae1a2ac15c5cc",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "2fffdfe62e64abd7",
       ".ethlete/design/studio/elements/shell-main/shell-main.ts": "74262591a567d192",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "deb8d411ad0b54db",
@@ -393,8 +393,9 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-01T22:48:44.598Z",
-    "note": "studio click"
+    "at": "2026-11-01T22:54:29.708Z",
+    "note": "studio click",
+    "auto": true
   },
   "pages/inventory": {
     "hash": "963f56a2b935222b",

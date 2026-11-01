@@ -9,8 +9,8 @@
     }
   },
   "components/comment-pin": {
-    "go": {
-      "hash": "1e54d6686d2c6c57",
+    "review": {
+      "hash": "e921df24e18554e3",
       "states": {
         "initials": "d12cb5d531da963b",
         "initials-hover": "7167613dee3e5e9b",
@@ -51,7 +51,68 @@
         "selected-logo-count-12": "37d08db9e2169f43",
         "selected-logo-count-12-hover": "62b30d851c734438",
         "selected-logo-count-12-active": "aedd4417e9c6655e",
-        "selected-logo-count-12-focus-visible": "d21ca9775c7d7a85"
+        "selected-logo-count-12-focus-visible": "d21ca9775c7d7a85",
+        "resolved": "b85a2829c0b648bb",
+        "resolved-hover": "9b0a5f2e4684d0da",
+        "resolved-active": "89f72a8ebcb99cc3",
+        "resolved-focus-visible": "9d750a855dfa3933",
+        "selected-resolved": "cd63a2692df4007d",
+        "selected-resolved-hover": "ba09fbffd7412460",
+        "selected-resolved-active": "976fcaea7b76ceee",
+        "selected-resolved-focus-visible": "54223a8a9863cb01"
+      }
+    },
+    "go": {
+      "hash": "26edf8a5ce1cb8d5",
+      "states": {
+        "initials": "d12cb5d531da963b",
+        "initials-hover": "7167613dee3e5e9b",
+        "initials-active": "e30ed53e72984487",
+        "initials-focus-visible": "fe8c6c0a1d1f1d62",
+        "logo": "4350ff6da580037b",
+        "logo-hover": "e7fe6007e9dde1ae",
+        "logo-active": "be5aa6aa2ee1c9e4",
+        "logo-focus-visible": "d085ca044ee069e4",
+        "selected": "4ba931e89b90780a",
+        "selected-hover": "e8b54d5815270959",
+        "selected-active": "e877af63ed304f5a",
+        "selected-focus-visible": "af777a74c07a1c53",
+        "selected-logo": "f2ca4f3581a701d3",
+        "selected-logo-hover": "4d6ca1c6cdfc6524",
+        "selected-logo-active": "4bb28e30936ac024",
+        "selected-logo-focus-visible": "1afa092340dc9c10",
+        "count": "9bde1d89e012d7e1",
+        "count-hover": "a69b0c913e32542b",
+        "count-active": "6bf14ee0392cb901",
+        "count-focus-visible": "15a47e564606d862",
+        "logo-count": "121793663d5d58f7",
+        "logo-count-hover": "dac45406f7ecf578",
+        "logo-count-active": "7b4c23ab95610b50",
+        "logo-count-focus-visible": "a706b9f54d82c827",
+        "selected-count": "cdabafcc96f4d267",
+        "selected-count-hover": "26dc1c8e8102c851",
+        "selected-count-active": "3bf599b399aaa2c2",
+        "selected-count-focus-visible": "3ceea6689e00a6ef",
+        "selected-logo-count": "f4750d613467bb18",
+        "selected-logo-count-hover": "33b12e487d922a94",
+        "selected-logo-count-active": "60a58bf267f7b75a",
+        "selected-logo-count-focus-visible": "b2694a9ff983c8de",
+        "count-12": "b3ba290c78f15260",
+        "count-12-hover": "0f71bf27af44c192",
+        "count-12-active": "be7a1f2d3a9e9f0e",
+        "count-12-focus-visible": "3cc6fd7f2bbf90f9",
+        "selected-logo-count-12": "37d08db9e2169f43",
+        "selected-logo-count-12-hover": "62b30d851c734438",
+        "selected-logo-count-12-active": "aedd4417e9c6655e",
+        "selected-logo-count-12-focus-visible": "d21ca9775c7d7a85",
+        "resolved": "b85a2829c0b648bb",
+        "resolved-hover": "9b0a5f2e4684d0da",
+        "resolved-active": "89f72a8ebcb99cc3",
+        "resolved-focus-visible": "9d750a855dfa3933",
+        "selected-resolved": "cd63a2692df4007d",
+        "selected-resolved-hover": "ba09fbffd7412460",
+        "selected-resolved-active": "976fcaea7b76ceee",
+        "selected-resolved-focus-visible": "54223a8a9863cb01"
       }
     }
   },
@@ -463,33 +524,33 @@
   },
   "pages/inbox": {
     "review": {
-      "hash": "48331e96cc534bae",
+      "hash": "2d8267ff43d1abba",
       "states": {
-        "open": "0c117cdd03cbe213",
-        "with-resolved": "e15a0d09c4ea62a4",
-        "active-only": "17d18f47444479f4",
-        "active-clear": "e4f4737e263f7b8f",
-        "all-clear": "eb5c029f266bfb0f",
-        "comment-draft": "b2fd84e871abb5a3",
-        "comment-entry": "5f9be0eeb239d0fb",
-        "loading": "55793e26f696b193",
-        "load-error": "a492fa30ebcfd520",
-        "long-list": "a9bda2a909e49520"
+        "open": "e03b38f65a30e97b",
+        "with-resolved": "d5f8e29bfac826d0",
+        "active-only": "fb9a03214943a523",
+        "active-clear": "facaa8c8b618d0bb",
+        "all-clear": "80b600dbe9b1988c",
+        "comment-draft": "7039d1f3f6226770",
+        "comment-entry": "3f296b2b05e23880",
+        "loading": "c229ea46641daa62",
+        "load-error": "e1741df9cde9b1e0",
+        "long-list": "5654149ec34ca87e"
       }
     },
     "go": {
-      "hash": "1e5237a2654701d7",
+      "hash": "858f41633e0daf03",
       "states": {
-        "open": "0c117cdd03cbe213",
-        "with-resolved": "e15a0d09c4ea62a4",
-        "active-only": "17d18f47444479f4",
-        "active-clear": "e4f4737e263f7b8f",
-        "all-clear": "eb5c029f266bfb0f",
-        "comment-draft": "b2fd84e871abb5a3",
-        "comment-entry": "5f9be0eeb239d0fb",
-        "loading": "55793e26f696b193",
-        "load-error": "a492fa30ebcfd520",
-        "long-list": "a9bda2a909e49520"
+        "open": "e03b38f65a30e97b",
+        "with-resolved": "d5f8e29bfac826d0",
+        "active-only": "fb9a03214943a523",
+        "active-clear": "facaa8c8b618d0bb",
+        "all-clear": "80b600dbe9b1988c",
+        "comment-draft": "7039d1f3f6226770",
+        "comment-entry": "3f296b2b05e23880",
+        "loading": "c229ea46641daa62",
+        "load-error": "e1741df9cde9b1e0",
+        "long-list": "5654149ec34ca87e"
       }
     }
   },
