@@ -1616,3 +1616,10 @@ MVP, pulled forward from finding 109 ("dieser prozess ist so beknackt"). When a 
 edit to accept and a go to give), it shows one primary button "Abnehmen und Go" that writes `accepted.json` and
 `go.json` in one click. When only one step is open, the view keeps the single button it has now. The full go rework stays
 after the MVP.
+
+### System fit state decision (Tom, 2026-11-01)
+
+- pages/system `fit` (finding 120): the design gives the fit frame a fixed body size (like many-states `w-md`) and reads
+  the panel inset from `--st-shell-inset-left`, so the fitted frame sits centred in the visible canvas area, clear of
+  the side panel, like the real System canvas. Re-check the app fit x after the design fix. pages/system then needs
+  accept + go.

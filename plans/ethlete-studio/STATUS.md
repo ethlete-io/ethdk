@@ -22,7 +22,7 @@ ausgeklammert.
 | components/shell-project-switch | ❌     | Go gegeben (23:31); Builder macht „ready“                                                                            | Builder           |
 | elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“          | Builder, dann Tom |
 | pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“ | Builder, dann Tom |
-| pages/system                    | ❌     | Frage an Tom: Zustand „fit“ liegt unter dem Panel (Q13); danach Abnahme und Go                                       | Tom, dann Builder |
+| pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                           | Builder, dann Tom |
 | pages/sketches                  | ❌     | Kamera (Q135) und Zustand page-100 sind gebaut; Builder schickt Bild, dann „Go geben“                                | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                              | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                  | Builder           |
