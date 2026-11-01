@@ -703,6 +703,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     treat the area under the panel as covered. Neither showed in compare: it renders each state fresh, never a pick
     after a pan, and never runs Fit, zoom or 100 %. Lesson: camera defects need sequences and camera actions in the
     checks; Impl Q78 and Q79 now cover them. Also, dfbccb99f alone fails lint and tsc (fixed in 50de3cbfb).
+49. The live System page still shows legacy chrome that no page design shows (Tom, 2026-11-01, screenshot): top
+    right "gemacht von claude-opus-5-5 +1", "Notizen zeigen", "Notiz", "Kommentar"; the "Chat" strip at the right
+    edge; the footer bar "Reload", "Design server 4402 · stale", "Restart", "Stop". Chat and notes were parked after
+    the MVP, the footer and the top-right buttons were overlooked. Cause: the live page is hand-written and was never
+    compared to its design (finding 43); Impl Q67 swapped only the empty state. Lesson: a partial swap leaves old
+    chrome around the new part, and only a whole-page compare (Impl Q78) shows it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
