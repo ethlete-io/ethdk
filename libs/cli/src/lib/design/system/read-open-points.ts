@@ -64,7 +64,15 @@ export const readOpenPoints = (
     sketches: listSketches(source).flatMap((sketch) =>
       typeof sketch === 'string'
         ? []
-        : [{ targets: sketch.targets, status: sketch.status, decision: sketch.decision?.kind ?? null }],
+        : [
+            {
+              name: sketch.name,
+              target: sketch.target,
+              targets: sketch.targets,
+              status: sketch.status,
+              decision: sketch.decision?.kind ?? null,
+            },
+          ],
     ),
     ...rendered,
   });

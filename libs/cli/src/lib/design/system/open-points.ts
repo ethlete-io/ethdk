@@ -29,7 +29,13 @@ export type OpenPoint =
   | { kind: 'missing-state'; control: string | null }
   | { kind: 'contrast'; state: string; path: string }
   | { kind: 'open-comment'; comment: string; state: string; answered: boolean }
-  | { kind: 'unmerged-sketch'; status: SketchStatus; decision: SketchDecision['kind'] | null }
+  | {
+      kind: 'unmerged-sketch';
+      sketch: string;
+      primary: boolean;
+      status: SketchStatus;
+      decision: SketchDecision['kind'] | null;
+    }
   | { kind: 'no-go' }
   | { kind: 'stale-go' }
   | { kind: 'missing-motion'; from: string; to: string };
@@ -56,7 +62,13 @@ export type OpenPointsInput = {
     motion?: PartMotions;
   }[];
   comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
-  sketches: { targets: string[]; status: SketchStatus; decision: SketchDecision['kind'] | null }[];
+  sketches: {
+    name: string;
+    target: string;
+    targets: string[];
+    status: SketchStatus;
+    decision: SketchDecision['kind'] | null;
+  }[];
   missingStates?: { part: string; control: string }[];
   contrasts?: { part: string; state: string; path: string }[];
 };
@@ -103,7 +115,13 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
       ...missingMotionsOf(layer, motion),
       ...input.sketches
         .filter((sketch) => sketch.targets.includes(key))
-        .map((sketch) => ({ kind: 'unmerged-sketch' as const, status: sketch.status, decision: sketch.decision })),
+        .map((sketch) => ({
+          kind: 'unmerged-sketch' as const,
+          sketch: sketch.name,
+          primary: sketch.target === key,
+          status: sketch.status,
+          decision: sketch.decision,
+        })),
       ...input.comments
         .filter((comment) => comment.part === key && !comment.resolved)
         .map((comment) => ({
@@ -158,14 +176,18 @@ export const sketchAddedPointsOf = (
   };
 };
 
-const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) =>
-  point.decision === 'pick'
-    ? 'sketch picked, not merged'
-    : point.decision === 'discard'
-      ? 'sketch discarded, not removed'
-      : point.status === 'ready'
-        ? 'sketch ready, not merged'
-        : 'sketch in progress';
+const sketchText = (point: Extract<OpenPoint, { kind: 'unmerged-sketch' }>) => {
+  const state =
+    point.decision === 'pick'
+      ? 'picked, not merged'
+      : point.decision === 'discard'
+        ? 'discarded, not removed'
+        : point.status === 'ready'
+          ? 'is ready, not merged'
+          : 'is in progress';
+
+  return `sketch ${point.sketch} ${state}${point.primary ? '' : ' (it also targets this part)'}`;
+};
 
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 

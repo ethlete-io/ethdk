@@ -36,7 +36,15 @@ describe('openPointsOf', () => {
     const [part] = openPointsOf(
       input({
         parts: [{ key: 'components/a', layer: 'components', linked: false, controls: true }],
-        sketches: [{ targets: ['components/x', 'components/a'], status: 'ready', decision: null }],
+        sketches: [
+          {
+            name: 'components-x',
+            target: 'components/x',
+            targets: ['components/x', 'components/a'],
+            status: 'ready',
+            decision: null,
+          },
+        ],
         comments: [comment('c-1', 'components/a')],
       }),
     );
@@ -166,17 +174,36 @@ describe('openPointsText', () => {
           { key: 'components/b', layer: 'components', linked: true, controls: true },
         ],
         sketches: [
-          { targets: ['components/a'], status: 'in progress', decision: null },
-          { targets: ['components/b'], status: 'ready', decision: 'pick' },
+          {
+            name: 'components-a',
+            target: 'components/a',
+            targets: ['components/a'],
+            status: 'in progress',
+            decision: null,
+          },
+          {
+            name: 'components-b',
+            target: 'components/b',
+            targets: ['components/b'],
+            status: 'ready',
+            decision: 'pick',
+          },
+          {
+            name: 'components-x',
+            target: 'components/x',
+            targets: ['components/x', 'components/b'],
+            status: 'ready',
+            decision: null,
+          },
         ],
         comments: [comment('c-1', 'components/a'), comment('c-2', 'components/a', { answered: true })],
       }),
     );
 
     expect(openPointsText('acme', list)).toEqual([
-      'OPEN POINTS acme: 4 in 2 parts',
-      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch in progress',
-      '  components/b: sketch picked, not merged',
+      'OPEN POINTS acme: 5 in 2 parts',
+      '  components/a: 2 open comments (c-1, c-2 addressed, waits on the user); sketch components-a is in progress',
+      '  components/b: sketch components-b picked, not merged; sketch components-x is ready, not merged (it also targets this part)',
     ]);
   });
 
