@@ -58,7 +58,7 @@ import {
   pickedPartKeyOf,
   treeOf,
 } from './system-tree';
-import { NumberedComment, otherSizeFrameOf } from './comment-pins';
+import { NumberedComment, otherSizeFrameOf, pinsOf } from './comment-pins';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
@@ -221,6 +221,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <ethlete-design-canvas
               #partCanvas
               [frames]="frames()"
+              [pins]="partPins()"
               [cameraKey]="cameraKey()"
               [restoredCamera]="restoredCamera()"
               [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
@@ -249,7 +250,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       <ethlete-inbox
         [comments]="inboxComments()"
         [activePart]="activePart()"
-        [selectedId]="null"
+        [selectedId]="pickedCommentId()"
         [showResolved]="commentStore.resolvedShown()"
         [shell]="pageShell()"
         [load]="inboxLoad()"
@@ -855,6 +856,8 @@ export class SystemViewComponent {
 
   public placeableFrames = computed(() => placeableFramesOf(this.frames()));
 
+  protected pickedCommentId = signal<string | null>(null);
+
   public shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
   public panel = signal<'open' | 'hidden'>('open');
@@ -873,6 +876,10 @@ export class SystemViewComponent {
   );
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
+
+  protected partPins = computed(() =>
+    this.section() === 'Inbox' ? pinsOf(this.placeableFrames(), this.commentStore.comments()) : [],
+  );
 
   protected sketchPage = computed(() => {
     const read = this.reading();
@@ -972,7 +979,10 @@ export class SystemViewComponent {
   protected jumpToComment(id: string) {
     const comment = this.commentStore.comments().find((open) => open.id === id);
 
-    if (comment) this.jumpTo(comment);
+    if (!comment) return;
+
+    this.pickedCommentId.set(id);
+    this.jumpTo(comment);
   }
 
   protected rememberOpen(expanded: readonly string[]) {
@@ -1128,6 +1138,8 @@ export class SystemViewComponent {
 
     if (sketchView) return sketchView.jumpTo(comment);
     if (!canvas) return;
+
+    if (canvas.pins().some((pin) => pin.id === comment.id)) return canvas.openPin(comment.id);
 
     const frame = otherSizeFrameOf(this.placeableFrames(), comment);
 

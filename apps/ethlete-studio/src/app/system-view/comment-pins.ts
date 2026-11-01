@@ -1,5 +1,7 @@
 import { CommentPlace, CommentResolution, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
+import { CanvasPin } from '../components/design-canvas/canvas-pin';
+import { senderOf } from './inbox-comments';
 
 export type NumberedComment = ListedComment & { number: number };
 
@@ -51,3 +53,24 @@ export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) =
 
   return frame?.id ?? null;
 };
+
+/** One pin per comment that sits on one of `frames`, on the frame `otherSizeFrameOf` picks for it. */
+export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): CanvasPin[] =>
+  comments.flatMap((comment) => {
+    const frameId = otherSizeFrameOf(frames, comment);
+    const last = comment.replies.at(-1);
+
+    return frameId
+      ? [
+          {
+            id: comment.id,
+            frameId,
+            label: String(comment.number),
+            text: comment.text,
+            ...senderOf(last?.by ?? 'user', last?.author),
+            count: comment.replies.length + 1,
+            ...(comment.point ? { point: comment.point } : {}),
+          },
+        ]
+      : [];
+  });

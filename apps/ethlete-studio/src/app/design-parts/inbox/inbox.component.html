@@ -184,6 +184,7 @@
     [class]="selected ? 'bg-et-theme/20' : ''"
     (click)="pick.emit(comment.id)"
     (keydown.enter)="pick.emit(comment.id)"
+    (keydown.space)="$event.preventDefault(); pick.emit(comment.id)"
     class="flex gap-space-2 rounded-control-md p-space-2"
     role="button"
     tabindex="0"
