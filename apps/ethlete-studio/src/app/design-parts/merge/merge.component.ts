@@ -32,7 +32,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
     >
       <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
       <div class="box-border flex h-full flex-col gap-space-2 px-space-1 pt-space-1 pb-space-2" shellMainSide>
-        <div class="-mt-space-1 ml-[calc(var(--space-3)*-1_-_var(--space-1)/2)] flex">
+        <div class="-mt-space-1 ml-[calc(var(--space-3)*-1-var(--space-1)/2)] flex">
           <button (click)="back.emit()" et-button type="button" variant="transparent" size="sm">
             <svg
               width="14"
