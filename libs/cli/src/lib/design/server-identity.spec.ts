@@ -116,6 +116,16 @@ describe('judgeServerIdentity', () => {
     expect(judgeServerIdentity({ expectedApiLevel: 2, identity: identity({ installed: null }) }).verdict).toBe('ok');
   });
 
+  it('asks for an update when the api level is below expected, even with equal build times', () => {
+    const result = judgeServerIdentity({
+      expectedApiLevel: 2,
+      expectedBuiltAt: 2000,
+      identity: identity({ apiLevel: 1 }),
+    });
+
+    expect(result.verdict).toBe('update');
+  });
+
   it('asks for a restart when the installed cli is newer than the running one', () => {
     const result = judgeServerIdentity({
       expectedApiLevel: 2,
