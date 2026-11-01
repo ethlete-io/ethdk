@@ -821,6 +821,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     reaches the builder through the grill session, not from Tom. The go steps of the design slices wait; Tom runs
     the listed commands or approves them in the builder session. Lesson: a go relayed between sessions carries no
     proof of Tom's decision; the Impl Q113 decision ref is the start of that proof.
+67. The first `design actions` run (Impl Q79 slice 1, a27bb6dec) found two app bugs (builder, 2026-11-01): part-tree
+    rows fire no output on Space (click and Enter pass, 14/42 fail); the project button and the ethlete-sdk menu item
+    in shell-project-switch (15/33) and shell-main (19/249) reach no open/closed state, and their Enter/Space
+    keydown default is prevented (picker wiring). Builder fixes both as defaults. Lesson: before the action check,
+    every compare passed on pictures of forced states, so a control that looks right but does nothing went
+    unnoticed; a picture check never proves a control works. The Q103 commit acceb3f4c also broke studio lint
+    (max-params) and blocked the push.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
