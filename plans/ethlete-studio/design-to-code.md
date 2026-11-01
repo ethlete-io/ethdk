@@ -1599,3 +1599,10 @@ After the MVP, except item 5.
 - components/shell-project-switch `project.option-focus-visible`: the design draws the row fill together with the focus
   ring, like the SDK menu on a keyboard-focused row and like the design's own `open-focus-visible`. No app override of
   the SDK menu CSS.
+
+### One-click accept and go decision (Tom, 2026-11-01)
+
+MVP, pulled forward from finding 109 ("dieser prozess ist so beknackt"). When a part view has both steps open (a direct
+edit to accept and a go to give), it shows one primary button "Abnehmen und Go" that writes `accepted.json` and
+`go.json` in one click. When only one step is open, the view keeps the single button it has now. The full go rework stays
+after the MVP.
