@@ -256,6 +256,16 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Pilot, in progress (builder ethlete-sdk-57): the pilot (Studio `elements/shell-main` b, `pages/inbox` d through go, task and compare). Slice 1 `pages/inbox` d: implements link
     `{ route: '', component: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts' }`, go, a
     presentational component, harness map, compare, `task --verify`. Slice 2 `elements/shell-main` b with its controls.
+  - Pilot slice 1 built (`1c6bf2291`, `bf6f3d455`): `pages/inbox` compare is 0 px in all 7 states, and
+    `task --verify` recorded it in `implemented.json`. The last diff was the comment editor arrow: the app now draws
+    the SDK `et-overlay-arrow` geometry (20 px box at 16 px, clipped 14.14 px square, `translate3d(0,0,0)` for the
+    same antialiasing), and the pane is `isolate` so the pin stays on top. The harness map was stale (the older
+    `implements` links of 10 parts); regenerated. Verified: a real compare and `task --verify` with the harness app,
+    ethlete-studio lint. Not verified: the real Studio route; `/` still renders `StudioViewComponent`, not the
+    inbox component.
+  - Pilot slice 2, in progress (builder, 2026-11-01): `elements/shell-main` as its own component, linked, go, task,
+    compare and `task --verify`; then the inbox uses it and its shell copy is deleted, with the inbox compare still
+    green (Impl Q3).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
