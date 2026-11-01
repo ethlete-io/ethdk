@@ -1,6 +1,7 @@
 {
   "host": "ethlete-shell-main",
   "frame": "design-live/frame.png",
+  "now": "2026-11-04T12:00:00Z",
   "invoke": {
     "design_roots": {
       "search": "",
@@ -150,6 +151,12 @@
       "states": {
         "empty": {
           "design": "empty"
+        },
+        "flow": {
+          "design": "flow",
+          "answers": {
+            "/__design/flows": "design-live/flows-flow.json"
+          }
         }
       }
     },
@@ -158,6 +165,31 @@
       "states": {
         "all-clear": {
           "design": "all-clear"
+        },
+        "open": {
+          "design": "open",
+          "answers": {
+            "/__design/comments": "design-live/comments-open.json"
+          }
+        },
+        "with-resolved": {
+          "design": "with-resolved",
+          "answers": {
+            "/__design/comments": "design-live/comments-open.json"
+          },
+          "click": ["Erledigte zeigen"]
+        },
+        "active-only": {
+          "design": "active-only",
+          "answers": {
+            "/__design/comments": "design-live/comments-active.json"
+          }
+        },
+        "active-clear": {
+          "design": "active-clear",
+          "answers": {
+            "/__design/comments": "design-live/comments-others.json"
+          }
         }
       }
     },
@@ -186,6 +218,28 @@
         "ethlete-studio.call-view": {
           "inventoryShown": true,
           "systemEntry": "pages/system"
+        }
+      },
+      "states": {
+        "open": {
+          "design": "open"
+        }
+      }
+    },
+    "pages/merge": {
+      "answers": {
+        "/__design/sketches": "design-live/merge-sketches.json",
+        "/__design/sketch-compare": "design-live/merge-compare.json",
+        "/__design/sketch-preview": "design-live/merge-preview.json"
+      },
+      "storage": {
+        "ethlete-studio.call-view": {
+          "systemEntry": "sketch:components/button",
+          "sketchViews": {
+            "studio sketch:components/button": {
+              "merge": true
+            }
+          }
         }
       },
       "states": {

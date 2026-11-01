@@ -1,0 +1,46 @@
+{
+  "sketches": [
+    {
+      "target": "components/button",
+      "status": "ready",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "baseline": {},
+      "rounds": [{ "key": "r1", "title": "", "note": "Radius" }],
+      "variantInfo": {
+        "a": { "authors": ["claude-opus-5-5"], "round": "r1", "note": "" },
+        "b": { "authors": ["gpt-6.1-terra"], "round": "r1", "note": "Pill-Radius in jeder Größe" }
+      },
+      "product": "studio",
+      "layer": "components",
+      "name": "button",
+      "variants": ["a", "b"],
+      "targetParts": ["components/button"],
+      "dir": ".ethlete/design/studio/sketches/components-button",
+      "problems": [
+        { "variant": "a", "problems": [] },
+        { "variant": "b", "problems": [] }
+      ],
+      "targets": [
+        {
+          "part": "components/button",
+          "variant": "a",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "changes": { "added": [], "dropped": [], "note": null }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "changes": { "added": [], "dropped": [], "note": null }
+        }
+      ],
+      "report": null,
+      "decision": { "kind": "pick", "variant": "b" }
+    }
+  ],
+  "unreadable": []
+}

@@ -5,10 +5,24 @@
       "status": "in progress",
       "createdAt": "2026-11-01T12:00:00.000Z",
       "baseline": {},
-      "rounds": [{ "key": "r1", "title": "", "note": "Panel" }],
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Mehr Platz für die Leinwand",
+          "note": "Panel"
+        }
+      ],
       "variantInfo": {
-        "a": { "authors": ["claude-opus-5-5"], "round": "r1" },
-        "b": { "authors": ["gpt-6.1-terra"], "round": "r1" }
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Panel ausgeblendet"
+        },
+        "b": {
+          "authors": ["gpt-6.1-terra"],
+          "round": "r1",
+          "note": "Panel 200 px"
+        }
       },
       "product": "studio",
       "layer": "pages",
@@ -17,8 +31,14 @@
       "targetParts": ["pages/system"],
       "dir": ".ethlete/design/studio/sketches/pages-system",
       "problems": [
-        { "variant": "a", "problems": [] },
-        { "variant": "b", "problems": [] }
+        {
+          "variant": "a",
+          "problems": []
+        },
+        {
+          "variant": "b",
+          "problems": []
+        }
       ],
       "targets": [
         {
@@ -27,7 +47,11 @@
           "states": ["part"],
           "interactions": [],
           "unchanged": [],
-          "changes": { "added": [], "dropped": [], "note": null }
+          "changes": {
+            "added": [],
+            "dropped": [],
+            "note": null
+          }
         },
         {
           "part": "pages/system",
@@ -35,7 +59,11 @@
           "states": ["part"],
           "interactions": [],
           "unchanged": [],
-          "changes": { "added": [], "dropped": [], "note": null }
+          "changes": {
+            "added": [],
+            "dropped": [],
+            "note": null
+          }
         }
       ],
       "report": null

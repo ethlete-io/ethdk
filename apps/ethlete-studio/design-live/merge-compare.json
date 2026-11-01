@@ -1,0 +1,66 @@
+{
+  "target": "components/button",
+  "variant": "b",
+  "changed": [
+    {
+      "part": "elements/canvas-frames",
+      "state": "default",
+      "width": 1440,
+      "outlines": {
+        "now": [
+          { "x": 24, "y": 24, "width": 96, "height": 32 },
+          { "x": 244, "y": 24, "width": 96, "height": 32 },
+          { "x": 464, "y": 24, "width": 96, "height": 32 },
+          { "x": 684, "y": 24, "width": 96, "height": 32 },
+          { "x": 904, "y": 24, "width": 96, "height": 32 },
+          { "x": 1124, "y": 24, "width": 96, "height": 32 },
+          { "x": 24, "y": 194, "width": 96, "height": 32 },
+          { "x": 244, "y": 194, "width": 96, "height": 32 },
+          { "x": 464, "y": 194, "width": 96, "height": 32 },
+          { "x": 684, "y": 194, "width": 96, "height": 32 },
+          { "x": 904, "y": 194, "width": 96, "height": 32 },
+          { "x": 1124, "y": 194, "width": 96, "height": 32 },
+          { "x": 24, "y": 364, "width": 96, "height": 32 },
+          { "x": 244, "y": 364, "width": 96, "height": 32 },
+          { "x": 464, "y": 364, "width": 96, "height": 32 },
+          { "x": 684, "y": 364, "width": 96, "height": 32 },
+          { "x": 904, "y": 364, "width": 96, "height": 32 },
+          { "x": 1124, "y": 364, "width": 96, "height": 32 }
+        ],
+        "merged": [
+          { "x": 24, "y": 24, "width": 96, "height": 32 },
+          { "x": 244, "y": 24, "width": 96, "height": 32 },
+          { "x": 464, "y": 24, "width": 96, "height": 32 },
+          { "x": 684, "y": 24, "width": 96, "height": 32 },
+          { "x": 904, "y": 24, "width": 96, "height": 32 },
+          { "x": 1124, "y": 24, "width": 96, "height": 32 },
+          { "x": 24, "y": 194, "width": 96, "height": 32 },
+          { "x": 244, "y": 194, "width": 96, "height": 32 },
+          { "x": 464, "y": 194, "width": 96, "height": 32 },
+          { "x": 684, "y": 194, "width": 96, "height": 32 },
+          { "x": 904, "y": 194, "width": 96, "height": 32 },
+          { "x": 1124, "y": 194, "width": 96, "height": 32 },
+          { "x": 24, "y": 364, "width": 96, "height": 32 },
+          { "x": 244, "y": 364, "width": 96, "height": 32 },
+          { "x": 464, "y": 364, "width": 96, "height": 32 },
+          { "x": 684, "y": 364, "width": 96, "height": 32 },
+          { "x": 904, "y": 364, "width": 96, "height": 32 },
+          { "x": 1124, "y": 364, "width": 96, "height": 32 }
+        ]
+      }
+    },
+    {
+      "part": "pages/system",
+      "state": "empty",
+      "width": 1440,
+      "outlines": {
+        "now": [{ "x": 24, "y": 24, "width": 96, "height": 32 }],
+        "merged": [{ "x": 24, "y": 24, "width": 96, "height": 32 }]
+      }
+    }
+  ],
+  "unchanged": [
+    { "part": "pages/inbox", "state": "all", "width": 1440, "outlines": { "now": [], "merged": [] } },
+    { "part": "pages/inbox", "state": "none", "width": 1440, "outlines": { "now": [], "merged": [] } }
+  ]
+}
