@@ -288,7 +288,12 @@ export const exemptFromDeclaringOf = (options: {
 export const elementNameOf = (element: ActionElement) =>
   element.occurrence === 0 ? element.key : `${element.key} (${element.occurrence + 1}.)`;
 
-export type ActionOutcome = { emitted: string[]; prevented: boolean; compare: { ok: boolean; detail: string } | null };
+export type ActionOutcome = {
+  emitted: string[];
+  prevented: boolean;
+  compare: { ok: boolean; detail: string } | null;
+  reached?: string | null;
+};
 
 /** Why one input on an element missed its declared action, or `null` when it reached it. */
 export const actionFailureOf = (options: {
@@ -305,7 +310,7 @@ export const actionFailureOf = (options: {
   const missed =
     action.kind === 'emit'
       ? `fired no ${action.output} output${outcome.emitted.length > 0 ? ` (fired ${outcome.emitted.join(', ')})` : ''}`
-      : `does not reach state ${target}${outcome.compare === null ? '' : ` (${outcome.compare.detail})`}`;
+      : `does not reach state ${target}${outcome.compare === null ? '' : ` (${outcome.compare.detail})`}${outcome.reached ? `; ${outcome.reached}` : ''}`;
 
   return input !== 'click' && outcome.prevented ? `${missed}; its keydown default was prevented` : missed;
 };

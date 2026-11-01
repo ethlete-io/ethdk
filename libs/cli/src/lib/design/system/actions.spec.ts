@@ -201,6 +201,19 @@ describe('actions', () => {
         outcome: { emitted: [], prevented: false, compare: { ok: false, detail: 'DIFF 12 px' } },
       }),
     ).toBe('does not reach state open-focus-visible (DIFF 12 px)');
+    expect(
+      actionFailureOf({
+        action: { kind: 'state', state: 'open' },
+        target: 'open',
+        input: 'Space',
+        outcome: {
+          emitted: [],
+          prevented: true,
+          compare: { ok: false, detail: 'DIFF 456 px' },
+          reached: 'reaches state fit instead',
+        },
+      }),
+    ).toBe('does not reach state open (DIFF 456 px); reaches state fit instead; its keydown default was prevented');
   });
 
   it('needs no go, prints a line per element and input and exits 1 on any failure', async () => {

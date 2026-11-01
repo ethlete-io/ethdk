@@ -31,6 +31,7 @@ import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from 
 import { compareFrameOf } from './compare-command';
 import { checkLiveActions, liveLineOf, liveStateCompareOf } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
+import { reachedStateOf } from './reached-state';
 import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
 import { inOrderAtOnce } from './in-order-at-once';
@@ -619,6 +620,22 @@ export const checkActions = async (options: {
                       ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
                       : null,
               };
+              const app = run.app;
+
+              if (action.kind === 'state' && result && result.kind !== 'ok' && goalPicture && app)
+                outcome.reached = await reachedStateOf({
+                  goal,
+                  states: names,
+                  compare: async (candidate) => {
+                    if (candidate === goal) return result;
+
+                    const reopened = openedFromOf({ goal: candidate, start: state, states, open: opens[candidate] });
+                    const picture = await draw(reopened ? state : candidate, reopened);
+
+                    return comparePngs({ design: picture.png, app });
+                  },
+                });
+
               const failure = actionFailureOf({ action, target: goal, input, outcome });
 
               if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
