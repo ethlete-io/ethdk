@@ -734,8 +734,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     that does not wait for the data compares an empty page as fine, and hand-written live code drifts from the
     design in many small places that only a whole-page compare shows.
 54. `design check --product studio` timed out after 900 s with no DONE line (builder, 2026-11-01): the design harness
-    logs "ResizeObserver loop completed" errors without end. Cause: open, asked the builder. Lesson so far: a check
-    that never ends gives no measure at all; it must fail fast with the cause, not hang until a timeout.
+    logs "ResizeObserver loop completed" errors without end. Cause: not a hang. A product run renders ~57 sdk base
+    parts plus the studio parts in one Chromium with no progress output; alone it took 384 s (`DONE studio: 10 of
+    25`), the >900 s came from machine load (7-10, parallel agents). The ResizeObserver noise is the tool's own:
+    `libs/cli/design/web/frame.ts:462` observes root while `fitOutOfFlow` (`define-call.ts:301`) writes
+    root.style.paddingTop (only sdk bracket and scheduler); harmless. Tool fix (builder default): a progress line
+    per part, a 120 s per-part timeout that reports a RENDER issue naming the part (render-check.ts:494), and no
+    padding write when unchanged. Lesson: a long check with no progress output looks like a hang; every check must
+    show which target it is on and bound each target, so a slow run and a stuck part read differently.
 55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
     the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
     (partial swap, finding 43 class); "Auf 100 % zoomen" keeps the viewport point, but Impl Q74 says 100 % = the
