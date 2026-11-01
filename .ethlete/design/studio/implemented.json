@@ -295,5 +295,16 @@
       "no-products": "051c266151f3b445",
       "no-repo": "44136fa355b3678a"
     }
+  },
+  "pages/system": {
+    "hash": "e89d4aa02f6db78c",
+    "at": "2026-11-01T14:30:00.748Z",
+    "states": {
+      "empty": "ded3eb2608a70a2e",
+      "many-states": "4c3a4133c1cee222",
+      "nothing-open": "2d88fa9358c0fbf3",
+      "part": "44136fa355b3678a",
+      "points-closed": "fc77b5831e1795c8"
+    }
   }
 }
