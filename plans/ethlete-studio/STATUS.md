@@ -20,7 +20,7 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: C3, C5 und ein Test für C2, der den Fehler fängt. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B29, C3, C5 und ein Test für C2, der den Fehler fängt. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
@@ -92,7 +92,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 8. Wiederholte Gruppen brauchen ein Control (Befund 102).
 9. Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 10. Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-11. Lint-Regel gegen native `title` (Befund 116). **Erledigt** (4c60be59e), aber nur opt-in. Als Fehler an, wenn A8 und D12 fertig sind.
+11. Lint-Regel gegen native `title` (Befund 116). **Erledigt** (4c60be59e), aber nur opt-in. Als Fehler an, wenn A8 und D12 fertig sind; A8 umfasst auch die 7 Stellen in den Studio-Design-Dateien.
 12. Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 13. Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Erledigt** (cf2565685).
@@ -110,6 +110,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`. **Erledigt** (85a028f16).
 27. Kanonische Tailwind-Klassen im App-Code prüfen.
 28. Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
+29. Design-Regel NATIVE-TITLE: findet `title=` im Markup der Design-Dateien, opt-in pro Produkt; Studio schaltet sie mit A8 ein (7 Stellen in .ethlete/design/studio). **Läuft.**
 
 ## C. CLI: Tempo und Ablauf
 
