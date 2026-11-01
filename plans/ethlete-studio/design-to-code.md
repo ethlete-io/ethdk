@@ -1000,3 +1000,47 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q91 exceptions (Tom, 2026-11-01): the "Ausnahmen N" popover stays as it is; no new design now (that was scope
   creep). Design after the MVP.
 - Impl Q92 legacy call view (Tom, 2026-11-01): stays as it is, with "Als übertragen markieren".
+- Impl Q93 start logo (Tom, 2026-11-01): the Start page shows the plain Studio mark, no menu (no project, no server).
+- Impl Q94 tree-row actions (Tom, 2026-11-01): a part whose interactive elements the embedding part owns is exempt
+  from the action check; tree-row declares nothing, part-tree declares the actions.
+- Impl Q95 project-switch keyboard open (Tom, 2026-11-01): new design state `open-focus-visible` (menu open, first
+  option ringed); go `--by tom`.
+- Impl Q96 actions for every product (Tom, 2026-11-01): ACTION-UNDECLARED stays for all products; each product
+  declares its actions when its parts get worked on.
+- Impl Q97 hide panel camera (Tom, 2026-11-01): the app keeps the frame in place when the panel hides; the compare
+  uses its own sample camera for that state. No design change.
+- Impl Q98 inbox canvas (Tom, 2026-11-01): the inbox design gets the system page's inset padding and zoom chip;
+  go `--by tom`.
+- Impl Q99 canvas zoom states (Tom, 2026-11-01): add `fit` to pages/system and `100 %` to pages/sketches, one-variant
+  sketch each, so the Fit/100 % checks (finding 48) run on every canvas page; go `--by tom`.
+- Impl Q100 inventory entry (Tom, 2026-11-01): the inventory toggle on the System parts stays as it is (the Impl Q81
+  exception, as Impl Q91/Q92); no new design now, design after the MVP.
+- Impl Q101 "All products" (Tom, 2026-11-01): remove the rail button from the shell-main design and the app; a target
+  is planned after the MVP.
+- Impl Q102 sdk menu keyboard background (Tom, 2026-11-01): the sdk components/menu mock draws the keyboard-active
+  background on a forced focus-visible row (one-variant sketch); then verify and ready studio-menu. Finding 58.
+- Impl Q103 inbox authors (Tom, 2026-11-01): the inbox shows the comment author's name from `git config user.name`,
+  as the design does, not "Du".
+- Impl Q104 canvas first open (Tom, 2026-11-01): the first open of a canvas uses the design's opening view (zoom 1,
+  frames at panel edge + 40/48 px), the same as the 100 % button.
+- Impl Q105 folder refusal (Tom, 2026-11-01): an error toast when the chosen folder has no design work, one design
+  state. Strictly minimal: no other error cases, no error system. Finding 60.
+- Impl Q106 live no-change check (Tom, 2026-11-01): Impl Q79 slice 2 (live pages) gets a before/after shot per press
+  (focus ring masked) and flags "no visible change and no navigation", with a host stub that records native calls
+  (dialog, updater). Finding 60.
+- Impl Q107 shell backdrop go (Tom, 2026-11-01): accept + go `--by tom` for components/shell-collapse and
+  components/shell-project-switch after the Impl Q86 backdrop removal (0987a5490). Finding 62.
+- Impl Q108 studio-menu backdrop (Tom, 2026-11-01): drop the fill in the Impl Q87 redraw, in the design and the app
+  host.
+- Impl Q109 auto acceptance (Tom, 2026-11-01): when a part's hash changes, render every state; if each is
+  pixel-identical to the picture at the last acceptance, write an `auto` acceptance for review and go (same rule as
+  sketch merges, merged-parts.ts:154). Finding 62.
+- Impl Q110 menu mock row attributes (Tom, 2026-11-01): the sdk menu mock keeps the row attributes (data-et-force),
+  so the studio-menu option-* states compare for real. Finding 63.
+- Impl Q111 shell-main at-rest force (Tom, 2026-11-01): remove `force` from the section/product/products rows at rest
+  in the design. Finding 63.
+- Impl Q112 transitive hash (Tom, 2026-11-01): the design hash covers transitive imports (reachableFilesOf);
+  `task --verify` stores the app component's transitive imports in implemented.json; `design check` marks a
+  ready/done part STALE and names the changed files. Together with Impl Q109. Finding 58.
+- Impl Q113 go guard (Tom, 2026-11-01): `design go --by tom` needs a decision ref (`--note "Impl Qnn"`) and refuses
+  when the design commit is newer than that decision. Finding 64.
