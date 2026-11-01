@@ -20,17 +20,17 @@ ausgeklammert.
 | elements/studio-menu            | ✅     |                                                                                                                                                            |                   |
 | components/shell-collapse       | ✅     |                                                                                                                                                            |                   |
 | components/shell-project-switch | ✅     |                                                                                                                                                            |                   |
-| elements/shell-main             | ❌     | Abnahme und Go gegeben (00:18); Builder macht „ready“                                                                                                      | Builder           |
-| pages/inbox                     | ❌     | Go gilt weiter (Q15). „ready“ wartet auf den neuen Canvas in canvas-frames (Q-A); ändert er kein Bild der Seite, bleibt das Go                             | Builder           |
+| elements/shell-main             | ✅     |                                                                                                                                                            |                   |
+| pages/inbox                     | ❌     | Go gilt. „ready“ meldet 20 Aktions-Fehler (Canvas nicht fokussierbar, Schalter „Erledigte zeigen“ reagiert nicht auf Enter); Builder behebt beide          | Builder           |
 | pages/system                    | ❌     | „fit“ liegt jetzt rechts neben dem Panel, Bild geprüft. Builder setzt noch Aktions-Marken ohne sichtbare Änderung; dann „Änderung abnehmen“ und „Go geben“ | Builder, dann Tom |
-| pages/sketches                  | ❌     | Go gegeben, Aktions-Fehler behoben. „ready“ wartet auf den neuen Canvas in canvas-frames (Q-A); ändert er kein Bild der Seite, bleibt das Go               | Builder           |
+| pages/sketches                  | ✅     |                                                                                                                                                            |                   |
 | components/canvas-viewport      | ✅     |                                                                                                                                                            |                   |
-| elements/canvas-frames          | ❌     | Entwurf bekommt denselben Canvas wie die App (mit Fokus-Rahmen); dann Bild und „Go geben“                                                                  | Builder, dann Tom |
+| elements/canvas-frames          | ✅     |                                                                                                                                                            |                   |
 | pages/start                     | ✅     |                                                                                                                                                            |                   |
 | pages/merge                     | ✅     |                                                                                                                                                            |                   |
 | components/error-toast          | ✅     |                                                                                                                                                            |                   |
 
-Stand: 12 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 15 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
@@ -43,6 +43,8 @@ oben rechts in der Teil-Ansicht.
 
 ## Erledigt
 
+- Schnellere Design-CLI: Aktions-Prüfungen laufen parallel, shell-main jetzt 80 s statt 322 s (Q16, 02.11.).
+
 - Ein Canvas für System und Sketches (01.11.). Sketches verschiebt jetzt mit gedrückter linker Maustaste wie System.
 - Zoom-Leiste wieder unten rechts, kein türkiser Rahmen mehr nach einem Klick in den Canvas (01.11.).
 - Spalte „Aktuell“ im Sketch zeigt immer einen Rahmen (01.11.).
@@ -50,8 +52,6 @@ oben rechts in der Teil-Ansicht.
 - Knopf „2 offen“ bleibt nicht mehr gedrückt, wenn das Popup schließt (01.11.).
 
 ## Gerade in Arbeit
-
-- Schnellere Design-CLI: Aktions-Prüfungen parallel, Bedingung statt fester Wartezeit von 400 ms (Q16, 02.11.).
 
 - Go erst, wenn alle Prüfungen grün sind (Q14). Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, fertig 02.11.).
 
