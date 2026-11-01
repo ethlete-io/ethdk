@@ -11,6 +11,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, TextareaComponent
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { draftKeyOf } from './comment-pins';
 import { injectNoteStore } from './note-store';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 @Component({
   selector: 'ethlete-note-form',
@@ -23,9 +24,9 @@ import { injectNoteStore } from './note-store';
       <et-form-field appearance="box">
         <et-textarea
           [(value)]="text"
+          [attr.aria-label]="LABELS.note"
+          [placeholder]="LABELS.placeholder"
           (keydown)="handleKey($event)"
-          aria-label="Note"
-          placeholder="Enter saves, Shift+Enter breaks the line"
           rows="3"
         />
       </et-form-field>
@@ -46,11 +47,11 @@ import { injectNoteStore } from './note-store';
             color="surface"
             size="xs"
           >
-            Delete
+            {{ LABELS.delete }}
           </button>
         }
         <button (click)="store.cancel()" et-button type="button" variant="transparent" color="surface" size="xs">
-          Cancel
+          {{ LABELS.cancel }}
         </button>
         <button
           [disabled]="store.busy() || text().trim() === ''"
@@ -60,7 +61,7 @@ import { injectNoteStore } from './note-store';
           variant="filled"
           size="xs"
         >
-          Save
+          {{ LABELS.save }}
         </button>
       </div>
     </div>
@@ -72,11 +73,12 @@ export class NoteFormComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected store = injectNoteStore();
   public initial = input('');
-
   /** Saves into the note being changed instead of writing a new one, and offers Delete. */
   public changing = input(false, { transform: booleanAttribute });
 
   private field = viewChild.required(TextareaComponent);
+
+  protected readonly LABELS = STUDIO_LABELS.noteForm;
 
   protected text = linkedSignal(() => this.initial());
 

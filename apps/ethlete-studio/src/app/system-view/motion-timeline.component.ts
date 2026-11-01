@@ -16,6 +16,7 @@ import { BUTTON_IMPORTS, SLIDER_IMPORTS } from '@ethlete/components';
 import { EMPTY, animationFrames, combineLatest, map, of, pairwise, switchMap, tap } from 'rxjs';
 import { MotionAnswer, keyframeAt, tokenLabelOf, trackBarOf } from '../../host/design-motion';
 import { MotionDriveMessage, drivenFrame$, postDrive } from './motion-drive';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
 
@@ -29,9 +30,11 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
     >
       <header class="flex flex-wrap items-center gap-2">
         <span class="font-mono text-small text-text">{{ shown.motion }}</span>
-        <span class="text-small text-text-muted">{{ shown.from }} → {{ shown.to }}, {{ shown.mode }}</span>
+        <span class="text-small text-text-muted"
+          >{{ shown.from }} → {{ shown.to }}, {{ LABELS.modes[shown.mode] }}</span
+        >
         @if (driven()) {
-          <span class="text-small text-text-muted" data-motion-driven>in the live frame</span>
+          <span class="text-small text-text-muted" data-motion-driven>{{ LABELS.driven }}</span>
         }
         <span class="flex-1"></span>
         @for (speed of SPEEDS; track speed) {
@@ -49,29 +52,29 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
           </button>
         }
         <button (click)="dismiss.emit()" et-button type="button" variant="outline" color="surface" size="sm">
-          Close
+          {{ LABELS.close }}
         </button>
       </header>
       @if (!driven() && picture(); as keyframe) {
         <img
           [src]="keyframe.src"
-          [alt]="shown.motion + ' at ' + keyframe.ms + ' ms'"
+          [alt]="LABELS.keyframeAlt(shown.motion, keyframe.ms)"
           class="max-h-80 self-start rounded-sm border border-(--et-surface-border-solid)"
           data-motion-picture
         />
       }
       <div class="flex items-center gap-3">
         <button (click)="toggle()" et-button type="button" variant="filled" size="sm" data-motion-play>
-          {{ playing() ? 'Pause' : 'Play' }}
+          {{ playing() ? LABELS.pause : LABELS.play }}
         </button>
         <et-slider
           [value]="time()"
           [min]="0"
           [max]="shown.end"
           [step]="1"
+          [attr.aria-label]="LABELS.time"
           (valueChange)="seek($event)"
           class="flex-1"
-          aria-label="Time"
         />
         <span class="w-24 text-right font-mono text-small text-text-muted" data-motion-time>
           {{ roundedTime() }} / {{ shown.end }} ms
@@ -103,7 +106,7 @@ export const MOTION_SPEEDS = [0.1, 0.25, 0.5, 1] as const;
             </span>
           </li>
         } @empty {
-          <li class="text-small text-text-muted">No animation ran.</li>
+          <li class="text-small text-text-muted">{{ LABELS.noAnimation }}</li>
         }
       </ul>
     </section>
@@ -117,11 +120,12 @@ export class MotionTimelineComponent {
   public answer = input.required<MotionAnswer>();
   /** The time in ms the timeline opens at. */
   public start = input(0);
-
   /** The live frame the timeline drives once it answers ready; the keyframe images show until then. */
   public frame = input<Window | null>(null);
 
   public dismiss = output();
+
+  protected readonly LABELS = STUDIO_LABELS.motions;
   protected readonly SPEEDS = MOTION_SPEEDS;
   protected time = linkedSignal(() => Math.min(this.start(), this.answer().end));
 

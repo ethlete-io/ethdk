@@ -61,7 +61,7 @@ describe('changedAreaViewOf', () => {
     expect(cropped[0]?.width).toBe(1440);
     expect(cropped[0]?.height).toBe(180 + 24 + 54 * 2);
     expect(view.frames.find((frame) => frame.column === 'in context a')?.crop).toBeUndefined();
-    expect(switchOf(view)).toMatchObject({ label: 'Changed area', on: true });
+    expect(switchOf(view)).toMatchObject({ label: 'Geänderter Bereich', on: true });
   });
 
   it('stacks one enlarged crop per cluster of changes below the small whole page', () => {

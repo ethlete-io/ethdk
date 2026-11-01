@@ -190,7 +190,7 @@ describe('isGroupOpen and isSectionOpen', () => {
     expect(tree.map((group) => [group.label, group.entries.map((entry) => entry.key)])).toEqual([
       ['Components', ['components/button']],
       ['Pages', ['pages/home']],
-      ['Not used in Acme', []],
+      ['Nicht verwendet in Acme', []],
     ]);
     expect(unused.sections!.map((section) => [section.label, section.entries.map((entry) => entry.key)])).toEqual([
       ['Components', ['components/chip']],
@@ -606,7 +606,7 @@ describe('pages that use a part', () => {
     const both = product([all, system, part({ layer: 'pages', name: 'start', states: ['open'] })]);
     const used = framesOf({ port: 4400, product: both, part: all }).filter((frame) => frame.row === 'used in');
 
-    expect(used).toMatchObject([{ rowLabel: 'used in all 2 pages', empty: expect.any(String) }]);
+    expect(used).toMatchObject([{ rowLabel: 'verwendet in allen 2 Seiten', empty: expect.any(String) }]);
   });
 
   it('adds the pages that use any target part of a sketch to its in context band, each page once', () => {
@@ -694,7 +694,7 @@ describe('sketchMatrixOf', () => {
     expect(hover.frames.map((frame) => [frame.id, frame.place?.interaction, frame.empty])).toEqual([
       ['current solid hover', 'hover', undefined],
       ['a solid hover', 'hover', undefined],
-      ['b solid hover', undefined, 'b has no hover interaction'],
+      ['b solid hover', undefined, 'b hat keine Interaktion hover'],
     ]);
     expect(hover.frames[1]?.src).toContain('&interaction=hover');
     expect(hover.frames[1]?.screenshot).toContain('&interaction=hover');
@@ -719,10 +719,10 @@ describe('sketchMatrixOf', () => {
         .map((frame) => [frame.row, frame.rowLabel, frame.rowGroup, frame.place?.interaction, frame.empty]),
     ).toEqual([
       ['solid · rest', undefined, 'solid', undefined, undefined],
-      ['solid · hover', 'hover', 'solid', undefined, 'b has no hover interaction'],
+      ['solid · hover', 'hover', 'solid', undefined, 'b hat keine Interaktion hover'],
       ['solid · disabled', 'disabled', 'solid', 'disabled', undefined],
       ['outline · rest', undefined, 'outline', undefined, undefined],
-      ['outline · hover', 'hover', 'outline', undefined, 'b has no hover interaction'],
+      ['outline · hover', 'hover', 'outline', undefined, 'b hat keine Interaktion hover'],
       ['outline · disabled', 'disabled', 'outline', 'disabled', undefined],
     ]);
     expect(all.frames.find((frame) => frame.id === 'current outline hover')?.src).toContain('&interaction=hover');
@@ -772,8 +772,8 @@ describe('sketchMatrixOf', () => {
     const empty = matrix.frames.filter((frame) => frame.empty !== undefined);
 
     expect(empty.map((frame) => [frame.column, frame.row, frame.empty, frame.place])).toEqual([
-      ['current', 'disabled', 'new in this sketch', undefined],
-      ['a', 'disabled', 'a has no disabled state', undefined],
+      ['current', 'disabled', 'neu in diesem Sketch', undefined],
+      ['a', 'disabled', 'a hat keinen Zustand disabled', undefined],
     ]);
     expect(empty.every((frame) => frame.src === '' && frame.screenshot === undefined)).toBe(true);
   });
@@ -813,7 +813,7 @@ describe('sketchMatrixOf', () => {
 
     expect(drawing.columns.find((column) => column.key === 'b')).toEqual({
       key: 'b',
-      label: 'b · drawing …',
+      label: 'b · wird gezeichnet …',
       drawing: true,
     });
     expect(drawing.frames.some((frame) => frame.column === 'b')).toBe(false);
@@ -829,7 +829,7 @@ describe('sketchMatrixOf', () => {
 
     expect(fresh.columns.find((column) => column.key === 'b')).toEqual({
       key: 'b',
-      label: 'b · drawing …',
+      label: 'b · wird gezeichnet …',
       drawing: true,
     });
     expect(fresh.frames.some((frame) => frame.column === 'b')).toBe(false);
@@ -837,7 +837,7 @@ describe('sketchMatrixOf', () => {
       key: 'b',
       label: 'b',
       drawing: false,
-      note: 'No report for 30 min',
+      note: 'Seit 30 Minuten kein Bericht',
     });
     expect(silent.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
@@ -854,8 +854,8 @@ describe('sketchMatrixOf', () => {
     const unauthored = sketchMatrixOf({ ...source, part: part(), sketch: sketch({ status: 'ready' }) });
 
     expect(matrix.columns.slice(1)).toEqual([
-      { key: 'a', label: 'a · gemini-3-argon', title: 'a by gemini-3-argon', drawing: false },
-      { key: 'b', label: 'b · gpt-5.6-sol +1', title: 'b by gpt-5.6-sol, claude-opus-5-5', drawing: false },
+      { key: 'a', label: 'a · gemini-3-argon', title: 'a von gemini-3-argon', drawing: false },
+      { key: 'b', label: 'b · gpt-5.6-sol +1', title: 'b von gpt-5.6-sol, claude-opus-5-5', drawing: false },
     ]);
     expect(unauthored.columns.slice(1)).toEqual([
       { key: 'a', label: 'a', drawing: false },
@@ -894,8 +894,8 @@ describe('sketchMatrixOf', () => {
       expect(matrix.rowHeads).toEqual([
         {
           key: stateRowKeyOf('system'),
-          label: 'system · unchanged in a b',
-          title: 'Open system: every shown variant draws it as current does',
+          label: 'system · unverändert in a b',
+          title: 'system aufklappen: jede gezeigte Variante zeichnet ihn wie current',
           open: false,
           before: 'system',
         },
@@ -965,7 +965,7 @@ describe('sketchMatrixOf', () => {
       ).toEqual(['components/card', 'components/card']);
       expect(
         matrix.frames.find((frame) => frame.row === 'components/card flat' && frame.column === 'current')?.empty,
-      ).toBe('new in this sketch');
+      ).toBe('neu in diesem Sketch');
 
       const single = sketchMatrixOf({
         ...source,
@@ -985,7 +985,7 @@ describe('sketchMatrixOf', () => {
 
     it('folds and opens an unchanged state of a later target by its part and state', () => {
       expect(matrixOf().rowHeads.map((head) => [head.key, head.label])).toEqual([
-        [stateRowKeyOf('components/card plain'), 'components/card · plain · unchanged in a'],
+        [stateRowKeyOf('components/card plain'), 'components/card · plain · unverändert in a'],
       ]);
       expect(matrixOf({ 'components/card plain': true }).frames.map((frame) => frame.row)).toContain(
         'components/card plain',

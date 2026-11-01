@@ -43,7 +43,7 @@ describe('flowFramesOf', () => {
       { id: 'pages/cart filled', width: 1280, height: 800, at: undefined, error: undefined },
       { id: 'pages/cart checkout', width: 1280, height: 800, at: { x: 900, y: 0 }, error: undefined },
       { id: 'elements/toast saved', width: 1280, height: undefined, at: undefined, error: undefined },
-      { id: 'pages/cart gone', width: 1280, height: 800, at: undefined, error: 'pages/cart has no state "gone"' },
+      { id: 'pages/cart gone', width: 1280, height: 800, at: undefined, error: 'pages/cart hat keinen Zustand „gone“' },
     ]);
     expect(frames[0]?.screenshot).toContain('preset=desktop');
     expect(lines).toEqual([{ from: 'pages/cart filled', to: 'pages/cart checkout', label: 'pay' }]);
@@ -89,7 +89,7 @@ describe('flowFramesOf with a sketch-only page', () => {
 
     expect(frames.map(({ id, width, height, error }) => ({ id, width, height, error }))).toEqual([
       { id: 'pages/pay open', width: 1280, height: 800, error: undefined },
-      { id: 'pages/pay closed', width: 1280, height: 800, error: 'pages/pay has no state "closed"' },
+      { id: 'pages/pay closed', width: 1280, height: 800, error: 'pages/pay hat keinen Zustand „closed“' },
     ]);
     expect(frames[0]?.src).toContain('&sketch=pages%2Fpay&variant=a');
     expect(frames[0]?.screenshot).toContain('&sketch=pages%2Fpay&variant=a');
@@ -98,7 +98,7 @@ describe('flowFramesOf with a sketch-only page', () => {
   it('still fails a part with neither a part nor a sketch', () => {
     const { frames } = flowFramesOf({ port: 4500, product, flow: paying, preset: 'desktop', sketches: [] });
 
-    expect(frames[0]?.error).toBe('no part pages/pay');
+    expect(frames[0]?.error).toBe('kein Teil pages/pay');
   });
 });
 

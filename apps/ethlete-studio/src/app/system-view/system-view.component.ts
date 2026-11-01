@@ -99,7 +99,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
 const BADGE =
   'shrink-0 whitespace-nowrap rounded-full border border-(--et-surface-border-solid) px-1.5 py-px text-[1rem] text-(--et-surface-color-subtle-solid)';
 
-const CHANGED_OUTSIDE_SKETCH = 'changed outside a sketch';
+const CHANGED_OUTSIDE_SKETCH = STUDIO_LABELS.shell.changedOutsideSketch;
 
 /** A product switch keeps the old read until the new product answers; that read must not show. */
 const itemsOf = <T>(read: { product: string; items: T[] } | null, product: string | undefined) =>
@@ -124,10 +124,10 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     <ng-template #sideTree>
       <ethlete-part-tree
         [layers]="partTreeLayers()"
+        [label]="LABELS.designSystem"
         (expandedChange)="rememberOpen($event)"
         (activate)="activate($event)"
         class="p-2"
-        label="Design system"
       />
     </ng-template>
 
@@ -170,40 +170,40 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         size="sm"
         data-notes-shown
       >
-        Show notes
+        {{ LABELS.showNotes }}
       </button>
       <button
         [pressed]="noteStore.active()"
+        [title]="LABELS.noteMode"
         (click)="toggleNotes()"
         et-button
         type="button"
         variant="outline"
         color="surface"
         size="sm"
-        title="Note mode"
         data-note-mode
       >
-        Note
+        {{ LABELS.note }}
       </button>
     </ng-template>
 
     <ng-template #commentModeButton>
       <button
         [pressed]="commentStore.active()"
+        [title]="LABELS.commentMode"
         (click)="toggleComments()"
         et-button
         type="button"
         variant="outline"
         color="surface"
         size="sm"
-        title="Comment mode (C)"
       >
-        Comment
+        {{ LABELS.comment }}
       </button>
       @if (commentStore.questions().length; as questions) {
         <button
-          [title]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
-          [attr.aria-label]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
+          [title]="LABELS.questionsForYou(questions)"
+          [attr.aria-label]="LABELS.questionsForYou(questions)"
           (click)="pickSection('Inbox')"
           class="-ml-1.5"
           et-button
@@ -225,17 +225,17 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
           }
         }
-        <p>Or run this in the checkout:</p>
+        <p>{{ LABELS.runInCheckout }}</p>
         <div class="my-3 flex items-center gap-2">
           <pre class="m-0 flex-1 rounded-md border border-(--et-surface-border-solid) p-3 font-mono text-text">{{
             NEW_PRODUCT_COMMAND
           }}</pre>
           <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
-            {{ copied() ? 'Copied' : 'Copy' }}
+            {{ copied() ? LABELS.copied : LABELS.copy }}
           </button>
         </div>
         <p>
-          Its parts live in
+          {{ LABELS.partsLiveIn }}
           <code class="font-mono">.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.
         </p>
       </div>
@@ -244,11 +244,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     <ng-template #shellCanvas>
       <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
         @if (!port()) {
-          <p [class]="NOTE">Start the design server to see the design system.</p>
+          <p [class]="NOTE">{{ LABELS.startServer }}</p>
         } @else if (creating()) {
           <ng-container
             [ngTemplateOutlet]="newProductScreen"
-            [ngTemplateOutletContext]="{ $implicit: 'New product' }"
+            [ngTemplateOutletContext]="{ $implicit: LABELS.newProduct }"
           />
         } @else if (call(); as shown) {
           <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
@@ -263,7 +263,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </div>
               <ng-container [ngTemplateOutlet]="themeBar" />
               @if ('transferred' in shown && shown.transferred) {
-                <span [class]="BADGE">transferred</span>
+                <span [class]="BADGE">{{ LABELS.transferred }}</span>
               } @else if (!('error' in shown)) {
                 <button
                   [disabled]="transferring()"
@@ -274,7 +274,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   color="surface"
                   size="sm"
                 >
-                  Mark transferred
+                  {{ LABELS.markTransferred }}
                 </button>
               }
               @if (transferError(); as message) {
@@ -297,7 +297,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           } @else if (read.products.length === 0) {
             <ng-container
               [ngTemplateOutlet]="newProductScreen"
-              [ngTemplateOutletContext]="{ $implicit: 'No product yet' }"
+              [ngTemplateOutletContext]="{ $implicit: LABELS.noProductYet }"
             />
           } @else if (sketchShown(); as shown) {
             <ethlete-sketch-view
@@ -348,17 +348,17 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <div class="absolute top-3 right-4 z-1 flex gap-2">
               @if (partShown.listed.changedOutsideSketch) {
                 <span [class]="BADGE + ' self-center'" [title]="CHANGED_OUTSIDE_SKETCH" data-changed-outside-sketch>
-                  changed
+                  {{ LABELS.changed }}
                 </span>
               }
               @let madeBy = partShown.listed.madeBy ?? [];
               @if (madeBy.length > 0) {
                 <span
-                  [title]="'made by ' + madeBy.join(', ')"
+                  [title]="LABELS.madeBy + ' ' + madeBy.join(', ')"
                   class="self-center font-mono text-small whitespace-nowrap text-(--et-surface-color-subtle-solid)"
                   data-made-by
                 >
-                  made by {{ AUTHORS_LABEL_OF(madeBy) }}
+                  {{ LABELS.madeBy }} {{ AUTHORS_LABEL_OF(madeBy) }}
                 </span>
               }
               @if (port(); as port) {
@@ -395,7 +395,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 [restoredCamera]="restoredCamera()"
                 [pins]="partPins()"
                 [pointing]="commentStore.active() || noteStore.active()"
-                [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+                [pointingLabel]="noteStore.active() ? LABELS.noteOn : LABELS.commentOn"
                 [draft]="noteStore.draft() ?? commentStore.draft()"
                 [pinPopover]="pinThread"
                 [notes]="notesShown() ? partNotes() : []"
@@ -432,7 +432,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               }
             </div>
           } @else {
-            <p [class]="NOTE">This product has no parts yet.</p>
+            <p [class]="NOTE">{{ LABELS.noParts }}</p>
           }
         }
       </main>
@@ -459,6 +459,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         (allProducts)="pickProduct(NEW_PRODUCT)"
         (projectChange)="projectChange.emit($event)"
         (openProject)="openProject.emit()"
+        class="h-full!"
       >
         <ng-container [ngTemplateOutlet]="shellCanvas" />
       </ethlete-inbox>
@@ -565,6 +566,7 @@ export class SystemViewComponent {
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
   protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
+  protected readonly LABELS = STUDIO_LABELS.shell;
 
   protected readonly NEW_PRODUCT = NEW_PRODUCT;
 
@@ -850,8 +852,8 @@ export class SystemViewComponent {
     if (!themes) return [];
 
     return [
-      { kind: 'surface' as const, label: 'Surface theme', ...themes.surface },
-      { kind: 'color' as const, label: 'Colour theme', ...themes.color },
+      { kind: 'surface' as const, label: STUDIO_LABELS.shell.surfaceTheme, ...themes.surface },
+      { kind: 'color' as const, label: STUDIO_LABELS.shell.colorTheme, ...themes.color },
     ].filter((theme) => theme.names.length > 1);
   });
 

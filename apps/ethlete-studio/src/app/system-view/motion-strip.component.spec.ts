@@ -127,7 +127,7 @@ describe('MotionStripComponent', () => {
     expect(element.querySelector('[data-motion-time]')?.textContent?.trim()).toBe('200 / 400 ms');
 
     [...element.querySelectorAll<HTMLButtonElement>('[data-motion-timeline] button')]
-      .find((button) => button.textContent?.trim() === 'Close')
+      .find((button) => button.textContent?.trim() === 'Schließen')
       ?.click();
     await settle(fixture);
 
@@ -272,7 +272,7 @@ describe('MotionStripComponent driving the live frame', () => {
     expect(messages()).toContainEqual({ type: 'design-explore:motion-play', ms: 200, rate: 0.25 });
 
     [...element.querySelectorAll<HTMLButtonElement>('[data-motion-timeline] button')]
-      .find((button) => button.textContent?.trim() === 'Close')
+      .find((button) => button.textContent?.trim() === 'Schließen')
       ?.click();
     await settle(fixture);
 

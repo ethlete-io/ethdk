@@ -271,7 +271,7 @@ describe('SystemViewComponent on a reload', () => {
     view['pickProduct'](view['NEW_PRODUCT']);
     await settle(fixture);
 
-    expect(element.querySelector('main h2')?.textContent?.trim()).toBe('New product');
+    expect(element.querySelector('main h2')?.textContent?.trim()).toBe('Neues Produkt');
     expect(element.querySelector('main pre')?.textContent).toBe('npx et design product new web');
     expect(view['creating']()).toBe(true);
     expect(rememberedView().systemProduct).toBe('web');
@@ -573,7 +573,9 @@ describe('SystemViewComponent on a merge', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const root: HTMLElement = fixture.nativeElement;
 
-    expect(root.querySelector('[data-changed-outside-sketch]')?.getAttribute('title')).toBe('changed outside a sketch');
+    expect(root.querySelector('[data-changed-outside-sketch]')?.getAttribute('title')).toBe(
+      'außerhalb eines Sketches geändert',
+    );
   });
 });
 
@@ -650,7 +652,7 @@ describe('SystemViewComponent on a flow', () => {
     const shownNotes = () => flowView['notes']().map((shown) => shown.id);
 
     expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([
-      '1 comment at another size',
+      '1 Kommentar in einer anderen Größe',
       undefined,
     ]);
     expect(shownNotes()).toEqual(['n1']);
@@ -658,7 +660,10 @@ describe('SystemViewComponent on a flow', () => {
     flowView['pickPreset']('desktop');
     await settle(fixture);
 
-    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([undefined, '1 note at another size']);
+    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([
+      undefined,
+      '1 Notiz in einer anderen Größe',
+    ]);
     expect(shownNotes()).toEqual([]);
   });
 
@@ -667,7 +672,7 @@ describe('SystemViewComponent on a flow', () => {
     const view = fixture.componentInstance;
     const flowRoot: HTMLElement = fixture.debugElement.query(By.directive(FlowViewComponent)).nativeElement;
 
-    expect(flowRoot.querySelector('[title="Comment mode (C)"]')).not.toBeNull();
+    expect(flowRoot.querySelector('[title="Kommentar-Modus (C)"]')).not.toBeNull();
 
     view['toggleNotes']();
     view['handleCommentKey'](new KeyboardEvent('keydown', { key: 'c' }));

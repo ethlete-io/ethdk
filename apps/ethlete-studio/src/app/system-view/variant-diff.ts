@@ -3,6 +3,7 @@ import { designAnswer$, ListedSketch } from '../../host/design';
 import { FrameOutline } from '../components/design-canvas/canvas-pin';
 import { CompareRect, SketchCompareAddress } from './merge-preview';
 import { sketchStateKeyOf } from './system-tree';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 /** One state of the sketched part: the box of the pixels the variant changes (`null` for none), `new`, or why it was not drawn. */
 export type StateDiff =
@@ -71,13 +72,13 @@ export const sketchDiffLinesOf = ({
 /** The summary of a variant's lines, for example "2 of 8 states change pixels", and the lines worth listing. */
 export const diffSummaryOf = (lines: DiffLine[]) => {
   const listed = lines.filter((line) => !line.unchanged);
-  const states = `${lines.length} ${lines.length === 1 ? 'state' : 'states'}`;
+  const states = `${lines.length} ${STUDIO_LABELS.variantDiff.states(lines.length)}`;
 
   return {
     text:
       listed.length === 0
-        ? `No pixel change in ${states}`
-        : `${listed.length} of ${states} ${listed.length === 1 ? 'differs' : 'differ'} in pixels`,
+        ? STUDIO_LABELS.variantDiff.noChange(states)
+        : STUDIO_LABELS.variantDiff.differs(listed.length, states),
     listed,
   };
 };

@@ -3,6 +3,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, TextareaComponent
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 @Component({
   selector: 'ethlete-comment-draft',
@@ -13,9 +14,9 @@ import { injectCommentStore } from './comment-store';
       <et-form-field appearance="box">
         <et-textarea
           [(value)]="text"
+          [attr.aria-label]="LABELS.comment"
+          [placeholder]="LABELS.placeholder"
           (keydown)="handleKey($event)"
-          aria-label="Comment"
-          placeholder="Enter sends, Shift+Enter breaks the line"
           rows="3"
         />
       </et-form-field>
@@ -26,7 +27,7 @@ import { injectCommentStore } from './comment-store';
       }
       <div class="flex justify-end gap-2">
         <button (click)="store.cancel()" et-button type="button" variant="transparent" color="surface" size="xs">
-          Cancel
+          {{ LABELS.cancel }}
         </button>
         <button
           [disabled]="store.busy() || text().trim() === ''"
@@ -36,7 +37,7 @@ import { injectCommentStore } from './comment-store';
           variant="filled"
           size="xs"
         >
-          Send
+          {{ LABELS.send }}
         </button>
       </div>
     </div>
@@ -48,6 +49,7 @@ export class CommentDraftComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected store = injectCommentStore();
   private field = viewChild.required(TextareaComponent);
+  protected readonly LABELS = STUDIO_LABELS.commentDraft;
 
   protected text = linkedSignal({ source: this.store.draft, computation: () => '' });
 

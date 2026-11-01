@@ -1,4 +1,5 @@
 import { ListedSketch, SketchTargetChanges } from '../../host/design';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export type PixelFreeLine = {
   variant: string;
@@ -7,8 +8,7 @@ export type PixelFreeLine = {
   variantNote: string | null;
 };
 
-const droppedText = (states: string[]) =>
-  states.length === 0 ? null : `${states.length === 1 ? 'state' : 'states'} ${states.join(', ')} dropped`;
+const droppedText = (states: string[]) => (states.length === 0 ? null : STUDIO_LABELS.pixelFree.dropped(states));
 
 /** One line per variant in `variants` whose every state draws as the part does now, saying what it changes instead. */
 export const pixelFreeLinesOf = (
@@ -22,12 +22,12 @@ export const pixelFreeLinesOf = (
     if (!target || !changes || target.error || !target.states.every((state) => target.unchanged?.includes(state)))
       return [];
 
-    const facts = [changes.note && 'part note changed', droppedText(changes.dropped)].filter(Boolean);
+    const facts = [changes.note && STUDIO_LABELS.pixelFree.noteChanged, droppedText(changes.dropped)].filter(Boolean);
 
     return [
       {
         variant,
-        text: `${variant} changes no pixel${facts.length > 0 ? `: ${facts.join(', ')}` : ''}`,
+        text: STUDIO_LABELS.pixelFree.changesNoPixel(variant, facts.join(', ')),
         note: changes.note,
         variantNote: sketch.variantInfo?.[variant]?.note ?? null,
       },

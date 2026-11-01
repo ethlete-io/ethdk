@@ -104,7 +104,7 @@ describe('comment pins', () => {
       ['2026-10-27T11:59:30Z', '2026-10-27T11:55:00Z', '2026-10-27T09:00:00Z', '2026-10-25T12:00:00Z'].map(
         (createdAt) => ageOf(createdAt, now),
       ),
-    ).toEqual(['now', '5 min', '3 h', '2 d']);
+    ).toEqual(['jetzt', '5 min', '3 h', '2 T']);
   });
 
   it('notes the comments at other sizes on a label, and finds the frame of their state', () => {
@@ -112,9 +112,9 @@ describe('comment pins', () => {
     const others = [wide, comment('2', { size: 'fitted' }), comment('3', {})];
     const [plain, variant] = withOtherSizeNotes([frame('f'), frame('g', 'a')], { comments: others });
 
-    expect(plain?.note).toBe('2 comments at other sizes');
+    expect(plain?.note).toBe('2 Kommentare in anderen Größen');
     expect(variant?.note).toBeUndefined();
-    expect(withOtherSizeNotes([frame('f')], { comments: [wide] })[0]?.note).toBe('1 comment at another size');
+    expect(withOtherSizeNotes([frame('f')], { comments: [wide] })[0]?.note).toBe('1 Kommentar in einer anderen Größe');
     expect(otherSizeFrameOf([frame('g', 'a'), frame('f')], wide)).toBe('f');
 
     const pointed = { part: 'components/card', state: 'empty', point: { x: 1, y: 2 } };
@@ -125,13 +125,13 @@ describe('comment pins', () => {
     ];
     const [noted, sketched] = withOtherSizeNotes([frame('f'), frame('g', 'a')], { comments: [wide], notes });
 
-    expect(noted?.note).toBe('1 comment, 1 note at another size');
+    expect(noted?.note).toBe('1 Kommentar, 1 Notiz in einer anderen Größe');
     expect(sketched?.note).toBeUndefined();
     expect(withOtherSizeNotes([frame('f')], { comments: others, notes })[0]?.note).toBe(
-      '2 comments, 1 note at other sizes',
+      '2 Kommentare, 1 Notiz in anderen Größen',
     );
     expect(withOtherSizeNotes([frame('f')], { comments: [], notes: [{ ...pointed, size: 'fitted' }] })[0]?.note).toBe(
-      '1 note at another size',
+      '1 Notiz in einer anderen Größe',
     );
     expect(otherSizeFrameOf([frame('g', 'a')], wide)).toBeNull();
   });
@@ -149,9 +149,9 @@ describe('comment pins', () => {
     ]);
     expect(
       withOtherSizeNotes([frame('f'), hoverFrame], { comments: [hoverComment] }).map((noted) => noted.note),
-    ).toEqual(['1 comment in another interaction', undefined]);
+    ).toEqual(['1 Kommentar in einer anderen Interaktion', undefined]);
     expect(withOtherSizeNotes([hoverFrame], { comments: [onRest, comment('4', { size: 520 })] })[0]?.note).toBe(
-      '1 comment at another size, 1 comment in another interaction',
+      '1 Kommentar in einer anderen Größe, 1 Kommentar in einer anderen Interaktion',
     );
     expect(
       withOtherSizeNotes([frame('f'), hoverFrame], {

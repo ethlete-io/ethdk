@@ -85,12 +85,12 @@ describe('ExceptionListComponent', () => {
   it('lists the pending and reopened exceptions of the part with their reason and state', async () => {
     const { element } = await render();
 
-    expect(element.querySelector('[data-exceptions-toggle]')?.textContent?.trim()).toBe('Exceptions 2');
+    expect(element.querySelector('[data-exceptions-toggle]')?.textContent?.trim()).toBe('Ausnahmen 2');
     expect(keysOf(element)).toEqual(['components/button.submit.focus', 'components/button.icon.touch']);
     expect(element.textContent).toContain('never takes focus');
     expect([...element.querySelectorAll('[data-exception-state]')].map((state) => state.textContent?.trim())).toEqual([
-      'pending',
-      'reopened - the part changed',
+      'offen',
+      'wieder offen - der Teil hat sich geändert',
     ]);
   });
 

@@ -91,7 +91,7 @@ describe('NewProductFormComponent', () => {
       .queryAll(By.css('et-select-option'))
       .map((option) => option.injector.get(SelectOptionDirective).label());
 
-    expect(labels).toEqual(['No base', '@ethlete/components']);
+    expect(labels).toEqual(['Keine Basis', '@ethlete/components']);
   });
 
   it('shows a refusal of the server in the error theme', async () => {

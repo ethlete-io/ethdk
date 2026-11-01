@@ -5,6 +5,7 @@ import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import { ListedException, approveException$, listedExceptions$, openExceptionsOf } from '../../host/design-exceptions';
 import { INVENTORY_APPROVER } from './inventory';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 type Reading = { exceptions: ListedException[]; error: string | null };
 
@@ -18,16 +19,16 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     @if (open().length > 0) {
       <button
         [pressed]="expanded()"
+        [title]="LABELS.toggleTitle"
         (click)="expanded.set(!expanded())"
         et-button
         type="button"
         variant="outline"
         color="surface"
         size="sm"
-        title="Exceptions of this part that wait for your approval"
         data-exceptions-toggle
       >
-        Exceptions {{ open().length }}
+        {{ LABELS.toggle }} {{ open().length }}
       </button>
       @if (expanded()) {
         <section
@@ -50,7 +51,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                   <span class="font-mono break-all text-text">{{ exception.key.slice(part().length + 1) }}</span>
                   <span class="text-text-muted">{{ exception.reason }}</span>
                   <span class="text-text-muted" data-exception-state>
-                    {{ exception.state === 'reopened' ? 'reopened - the part changed' : 'pending' }}
+                    {{ exception.state === 'reopened' ? LABELS.reopened : LABELS.pending }}
                   </span>
                 </span>
                 <button
@@ -62,7 +63,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                   size="sm"
                   data-exception-approve
                 >
-                  Approve
+                  {{ LABELS.approve }}
                 </button>
               </li>
             }
@@ -83,6 +84,7 @@ export class ExceptionListComponent {
   public part = input.required<string>();
   /** Lists the exceptions anew on each change. */
   public revision = input(0);
+  protected readonly LABELS = STUDIO_LABELS.exceptions;
 
   public reading = toSignal(
     toObservable(computed(() => ({ port: this.port(), product: this.product(), revision: this.revision() }))).pipe(

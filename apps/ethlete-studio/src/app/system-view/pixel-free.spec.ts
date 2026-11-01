@@ -20,7 +20,7 @@ describe('pixelFreeLinesOf', () => {
     expect(pixelFreeLinesOf(sketch, ['c'])).toEqual([
       {
         variant: 'c',
-        text: 'c changes no pixel: part note changed, state comment-draft-focus dropped',
+        text: 'c ändert kein Pixel: Teil-Notiz geändert, Zustand comment-draft-focus entfernt',
         note,
         variantNote: 'Restores L.',
       },
@@ -39,7 +39,7 @@ describe('pixelFreeLinesOf', () => {
     };
 
     expect(pixelFreeLinesOf(sketch, ['a', 'b', 'c', 'd']).map((line) => line.text)).toEqual([
-      'd changes no pixel: states open, closed dropped',
+      'd ändert kein Pixel: Zustände open, closed entfernt',
     ]);
   });
 });

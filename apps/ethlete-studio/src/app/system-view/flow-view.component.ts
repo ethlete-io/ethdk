@@ -15,15 +15,16 @@ import { NoteBodyComponent } from './note-body.component';
 import { NoteFormComponent } from './note-form.component';
 import { flowNotesOf } from './note-places';
 import { injectNoteStore } from './note-store';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 @Component({
   selector: 'ethlete-flow-view',
   template: `
     <div class="absolute top-3 right-4 z-1 flex gap-2">
       <div
+        [attr.aria-label]="LABELS.preset"
         class="flex gap-0.5 rounded-[0.6rem] border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-0.5"
         role="group"
-        aria-label="Preset"
       >
         @for (name of presets(); track name) {
           <button
@@ -58,7 +59,7 @@ import { injectNoteStore } from './note-store';
       [pins]="pins()"
       [pinPopover]="pinThread"
       [pointing]="noteStore.active() || commentStore.active()"
-      [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+      [pointingLabel]="noteStore.active() ? LABELS.noteOn : LABELS.commentOn"
       [draft]="noteStore.draft() ?? commentStore.draft()"
       (cameraChange)="cameraChange.emit($event)"
       (pointPick)="pick($event)"
@@ -99,10 +100,11 @@ export class FlowViewComponent {
   public cameraKey = input<string | null>(null);
   public notesShown = input(true);
   public restoredCamera = input<Camera | null>(null);
-
   public cameraChange = output<Camera | null>();
 
   private canvas = viewChild.required(DesignCanvasComponent);
+
+  protected readonly LABELS = STUDIO_LABELS.shell;
 
   protected presets = computed(() => Object.keys(this.product().presets));
 

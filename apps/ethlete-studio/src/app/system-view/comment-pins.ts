@@ -2,6 +2,7 @@ import { CommentAddressed, CommentPlace, CommentReply, CommentResolution, Listed
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
 import { senderOf } from './inbox-comments';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export type NumberedComment = ListedComment & { number: number };
 
@@ -12,7 +13,10 @@ export const isQuestion = (comment: Pick<ListedComment, 'threadState'>) => comme
 
 export const isAnswered = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'answered';
 
-export const SENDER_LABELS: Record<CommentReply['by'], string> = { user: 'You', agent: 'Agent' };
+export const SENDER_LABELS: Record<CommentReply['by'], string> = {
+  user: STUDIO_LABELS.commentPins.you,
+  agent: STUDIO_LABELS.commentPins.agent,
+};
 
 /** Numbers the open comments of a product from 1, oldest first, so the list and the pins agree. */
 export const numberedCommentsOf = (comments: ListedComment[]): NumberedComment[] =>
@@ -29,17 +33,18 @@ export const resolvedCommentsOf = (comments: ListedComment[]): ResolvedComment[]
     .sort((a, b) => b.resolved.resolvedAt.localeCompare(a.resolved.resolvedAt) || a.id.localeCompare(b.id));
 
 const ADDRESS_LABELS: Record<Exclude<CommentAddressed['reason'], 'round'>, string> = {
-  done: 'Addressed',
-  merge: 'Addressed by the merge',
-  discard: 'Addressed by the discard',
+  done: STUDIO_LABELS.commentPins.addressed,
+  merge: STUDIO_LABELS.commentPins.addressedByMerge,
+  discard: STUDIO_LABELS.commentPins.addressedByDiscard,
 };
 
 /** What answered a thread, e.g. `Addressed in round r2` or `Addressed by the merge`. */
 export const addressedLabelOf = ({ reason, round }: CommentAddressed) =>
-  reason === 'round' ? `Addressed in ${round ? `round ${round}` : 'a new round'}` : ADDRESS_LABELS[reason];
+  reason === 'round' ? STUDIO_LABELS.commentPins.addressedInRound(round) : ADDRESS_LABELS[reason];
 
 /** Who answered a thread: the agent's model id, `you` or `the agent`. */
-export const addressedByOf = ({ by, author }: CommentAddressed) => author ?? (by === 'user' ? 'you' : 'the agent');
+export const addressedByOf = ({ by, author }: CommentAddressed) =>
+  author ?? (by === 'user' ? STUDIO_LABELS.commentPins.byYou : STUDIO_LABELS.commentPins.byAgent);
 
 const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
 
@@ -132,28 +137,33 @@ const MINUTE = 60_000;
 export const ageOf = (createdAt: string, now: number) => {
   const minutes = Math.floor((now - Date.parse(createdAt)) / MINUTE);
 
-  if (!(minutes >= 1)) return 'now';
-  if (minutes < 60) return `${minutes} min`;
-  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h`;
+  if (!(minutes >= 1)) return STUDIO_LABELS.commentPins.now;
+  if (minutes < 60) return `${minutes} ${STUDIO_LABELS.commentPins.minutes}`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} ${STUDIO_LABELS.commentPins.hours}`;
 
-  return `${Math.floor(minutes / (60 * 24))} d`;
+  return `${Math.floor(minutes / (60 * 24))} ${STUDIO_LABELS.commentPins.days}`;
 };
 
-const countOf = (count: number, noun: string) => (count === 1 ? `1 ${noun}` : `${count} ${noun}s`);
+const countOf = (count: number, [one, many]: readonly [string, string]) =>
+  count === 1 ? `1 ${one}` : `${count} ${many}`;
 
-const countNoteOf = (count: number, [one, many]: [string, string]) =>
-  count === 0 ? [] : [`${countOf(count, 'comment')} ${count === 1 ? one : many}`];
+const countNoteOf = (count: number, [one, many]: readonly [string, string]) =>
+  count === 0 ? [] : [`${countOf(count, STUDIO_LABELS.commentPins.comment)} ${count === 1 ? one : many}`];
 
 const otherSizeNoteOf = (place: FramePlace, { comments, notes }: { comments: CommentPlace[]; notes: SizedNote[] }) => {
   const sizedComments = otherSizeCommentsOf(place, comments);
   const sizedNotes = otherSizeNotesOf(place, notes);
   const counts = [
-    ...(sizedComments.length > 0 ? [countOf(sizedComments.length, 'comment')] : []),
-    ...(sizedNotes.length > 0 ? [countOf(sizedNotes.length, 'note')] : []),
+    ...(sizedComments.length > 0 ? [countOf(sizedComments.length, STUDIO_LABELS.commentPins.comment)] : []),
+    ...(sizedNotes.length > 0 ? [countOf(sizedNotes.length, STUDIO_LABELS.commentPins.note)] : []),
   ];
   const sizes = new Set([...sizedComments, ...sizedNotes].map((item) => item.size));
 
-  return counts.length === 0 ? [] : [`${counts.join(', ')} ${sizes.size === 1 ? 'at another size' : 'at other sizes'}`];
+  return counts.length === 0
+    ? []
+    : [
+        `${counts.join(', ')} ${sizes.size === 1 ? STUDIO_LABELS.commentPins.anotherSize : STUDIO_LABELS.commentPins.otherSizes}`,
+      ];
 };
 
 /**
@@ -176,8 +186,8 @@ export const withOtherSizeNotes = (
       ...(everyInteraction
         ? []
         : countNoteOf(otherInteractionCountOf(frame.place, comments), [
-            'in another interaction',
-            'in other interactions',
+            STUDIO_LABELS.commentPins.anotherInteraction,
+            STUDIO_LABELS.commentPins.otherInteractions,
           ])),
     ];
 

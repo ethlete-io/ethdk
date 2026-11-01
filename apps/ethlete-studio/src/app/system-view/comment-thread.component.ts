@@ -4,6 +4,7 @@ import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { CommentReply } from '../../host/design';
 import { SENDER_LABELS, addressedByOf, addressedLabelOf, ageOf, draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 @Component({
   selector: 'ethlete-comment-thread',
@@ -35,9 +36,9 @@ import { injectCommentStore } from './comment-store';
       <et-form-field class="w-full" appearance="box">
         <et-textarea
           [(value)]="text"
+          [attr.aria-label]="LABELS.reply"
+          [placeholder]="LABELS.placeholder"
           (keydown)="handleKey($event)"
-          aria-label="Reply"
-          placeholder="Reply - Enter sends, Shift+Enter breaks the line"
           rows="2"
           data-comment-reply
         />
@@ -57,7 +58,7 @@ import { injectCommentStore } from './comment-store';
           size="xs"
           data-comment-withdraw
         >
-          Withdraw
+          {{ LABELS.withdraw }}
         </button>
         <span class="flex gap-2">
           <button
@@ -70,7 +71,7 @@ import { injectCommentStore } from './comment-store';
             size="xs"
             data-comment-resolve
           >
-            Resolve
+            {{ LABELS.resolve }}
           </button>
           <button
             [disabled]="store.busy() || text().trim() === ''"
@@ -80,7 +81,7 @@ import { injectCommentStore } from './comment-store';
             variant="filled"
             size="xs"
           >
-            Reply
+            {{ LABELS.reply }}
           </button>
         </span>
       </div>
@@ -93,8 +94,9 @@ import { injectCommentStore } from './comment-store';
 export class CommentThreadComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   protected store = injectCommentStore();
-
   public commentId = input.required<string>();
+
+  protected readonly LABELS = STUDIO_LABELS.commentThread;
 
   protected comment = computed(() => this.store.comments().find((comment) => comment.id === this.commentId()) ?? null);
 

@@ -5,6 +5,7 @@ import { CanvasNote } from '../components/design-canvas/canvas-note';
 import { CanvasColumnGroup } from '../components/design-canvas/design-canvas.component';
 import { CompareRect } from './merge-preview';
 import { MatrixColumn } from './system-tree';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 /** One crop per cluster of the pixels some variants change, and the size of the frame they sit in. */
 export type ChangedArea = { frame: { width: number; height: number }; crops: CompareRect[] };
@@ -58,10 +59,9 @@ export type AreaRound = { key: string; group: string; columns: string[] };
 
 export type ChangedAreaColumn = Omit<MatrixColumn, 'group'> & { group?: CanvasColumnGroup };
 
-const CHANGED_AREA_LABEL = 'Changed area';
+const CHANGED_AREA_LABEL = STUDIO_LABELS.changedArea.label;
 
-const switchTitleOf = (on: boolean) =>
-  on ? 'Show the whole page in every column' : 'Show only the area the variants change, enlarged, in every column';
+const switchTitleOf = (on: boolean) => (on ? STUDIO_LABELS.changedArea.showWhole : STUDIO_LABELS.changedArea.showArea);
 
 /**
  * The matrix with each open round cropped to its changed area while that is shown: as the user chose in `choices`, else

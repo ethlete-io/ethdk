@@ -4,6 +4,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } fro
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, finalize, tap } from 'rxjs';
 import { ListedProduct, designAnswer$ } from '../../host/design';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 const NO_BASE = '';
 const BUILT_IN_BASE = '@ethlete/components';
@@ -13,13 +14,13 @@ const BUILT_IN_BASE = '@ethlete/components';
   template: `
     <form (submit)="submit($event)" class="my-3 flex flex-col gap-3">
       <et-form-field appearance="box">
-        <et-label>Name</et-label>
+        <et-label>{{ LABELS.name }}</et-label>
         <et-input [(value)]="name" class="font-mono" placeholder="web" />
       </et-form-field>
       <et-form-field appearance="box">
-        <et-label>Base</et-label>
+        <et-label>{{ LABELS.base }}</et-label>
         <et-select [(value)]="base">
-          <et-select-option [value]="NO_BASE" label="No base">No base</et-select-option>
+          <et-select-option [value]="NO_BASE" [label]="LABELS.noBase">{{ LABELS.noBase }}</et-select-option>
           @for (listed of bases(); track listed.name) {
             <et-select-option [value]="listed.name" [label]="listed.name">{{ listed.name }}</et-select-option>
           }
@@ -33,7 +34,7 @@ const BUILT_IN_BASE = '@ethlete/components';
       }
       <div class="flex justify-end">
         <button [disabled]="busy() || name().trim() === ''" et-button type="submit" variant="filled" size="sm">
-          Create product
+          {{ LABELS.create }}
         </button>
       </div>
     </form>
@@ -47,6 +48,7 @@ export class NewProductFormComponent {
   public port = input.required<number>();
   public products = input<ListedProduct[]>([]);
   public create = output<string>();
+  protected readonly LABELS = STUDIO_LABELS.newProductForm;
   protected readonly NO_BASE = NO_BASE;
   protected readonly BUILT_IN_BASE = BUILT_IN_BASE;
 

@@ -17,6 +17,7 @@ import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export type SystemGroupKey =
   'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'unused' | 'sketches' | 'legacy';
@@ -36,7 +37,7 @@ export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds
     holds: (part) => part.layer === 'pages' && !isWireframe(part) && !part.unusedInProduct,
   },
   { key: 'wireframes', label: 'Wireframes', holds: (part) => isWireframe(part) && !part.unusedInProduct },
-  { key: 'unused', label: 'Not used', holds: (part) => part.unusedInProduct === true },
+  { key: 'unused', label: STUDIO_LABELS.systemTree.notUsed, holds: (part) => part.unusedInProduct === true },
   { key: 'sketches', label: 'Sketches', holds: () => false },
   { key: 'legacy', label: 'Legacy', holds: () => false },
 ];
@@ -166,7 +167,7 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
 
     return {
       key: groupKey,
-      label: split ? `Legacy · ${project}` : 'Legacy',
+      label: split ? `${STUDIO_LABELS.systemTree.legacy} · ${project}` : 'Legacy',
       entries,
       sections: [...sections.values()],
     };
@@ -184,7 +185,7 @@ const unusedGroupOf = (
 
   return {
     key: UNUSED_KEY,
-    label: name ? `Not used in ${name}` : 'Not used',
+    label: name ? STUDIO_LABELS.systemTree.notUsedIn(name) : STUDIO_LABELS.systemTree.notUsed,
     entries: [],
     sections: [...new Set(parts.map((part) => part.layer))].map((layer) => ({
       key: `${UNUSED_KEY}/${layer}`,
@@ -596,10 +597,10 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         src: '',
         width: 390,
         height: 120,
-        label: USED_IN,
+        label: STUDIO_LABELS.systemTree.usedIn,
         row: USED_IN,
-        rowLabel: `${USED_IN} all ${total} pages`,
-        empty: 'every page of the product uses it',
+        rowLabel: STUDIO_LABELS.systemTree.usedInAll(total),
+        empty: STUDIO_LABELS.systemTree.everyPage,
       },
     ];
 
@@ -615,7 +616,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
               ...frame,
               id: `${USED_IN} ${key}`,
               row: USED_IN,
-              rowLabel: USED_IN,
+              rowLabel: STUDIO_LABELS.systemTree.usedIn,
             },
           ]
         : [];
@@ -706,7 +707,7 @@ export const sketchStateKeyOf = ({
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
 /** The label over each frame of a variant the agent may still change. */
-export const PENDING_LABEL = 'Agent still drawing';
+export const PENDING_LABEL = STUDIO_LABELS.systemTree.pending;
 
 /** The first author and "+N" for the rest, or `null` without authors. */
 export const authorsLabelOf = (authors: string[]) =>
@@ -858,20 +859,22 @@ export const sketchMatrixOf = ({
 
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
     const rejected = rejectedLabelOf(sketch, variant);
-    const named = [variant, authorsLabelOf(authors), rejected && 'rejected'].filter(Boolean).join(' · ');
+    const named = [variant, authorsLabelOf(authors), rejected && STUDIO_LABELS.systemTree.rejected]
+      .filter(Boolean)
+      .join(' · ');
     const note = [
       rejected && `${rejected.text} (${rejected.by})`,
       sketch.variantInfo?.[variant]?.note,
-      silent && variant === reported && 'No report for 30 min',
+      silent && variant === reported && STUDIO_LABELS.systemTree.noReport,
     ]
       .filter(Boolean)
       .join('\n\n');
 
     return {
       key: variant,
-      label: variant === drawing ? `${named} · drawing …` : named,
+      label: variant === drawing ? `${named} · ${STUDIO_LABELS.systemTree.drawing}` : named,
       ...(note === '' ? {} : { note }),
-      ...(authors.length > 0 ? { title: `${variant} by ${authors.join(', ')}` } : {}),
+      ...(authors.length > 0 ? { title: STUDIO_LABELS.systemTree.variantBy(variant, authors.join(', ')) } : {}),
       drawing: variant === drawing,
       states: target?.states ?? part?.states ?? [],
       interactions: [REST, ...(target?.interactions ?? part?.interactions ?? [])],
@@ -1052,9 +1055,9 @@ export const sketchMatrixOf = ({
 
         const missing =
           row.state === undefined || !column.states.includes(row.state)
-            ? `${column.key} has no ${row.state} state`
+            ? STUDIO_LABELS.systemTree.noState(column.key, row.state)
             : !column.interactions.includes(row.interaction)
-              ? `${column.key} has no ${row.interaction} interaction`
+              ? STUDIO_LABELS.systemTree.noInteraction(column.key, row.interaction)
               : null;
 
         if (missing === null) return [frameOf(column, row)];
@@ -1068,7 +1071,7 @@ export const sketchMatrixOf = ({
             label: cell.label,
             ...rowOf(row, column.key),
             column: column.key,
-            empty: column.key === CURRENT ? 'new in this sketch' : missing,
+            empty: column.key === CURRENT ? STUDIO_LABELS.systemTree.newInSketch : missing,
           },
         ];
       });
@@ -1080,8 +1083,10 @@ export const sketchMatrixOf = ({
 
       return {
         key: stateRowKeyOf(stateKey),
-        label: named(`${state} · unchanged in ${variantColumns.map((column) => column.key).join(' ')}`),
-        title: `${open ? 'Fold' : 'Open'} ${named(state)}: every shown variant draws it as current does`,
+        label: named(
+          `${state} · ${STUDIO_LABELS.systemTree.unchangedIn(variantColumns.map((column) => column.key).join(' '))}`,
+        ),
+        title: STUDIO_LABELS.systemTree.foldTitle(open, named(state)),
         open,
         before: rowKeyIn(currentSection, grouped ? `${stateKey} · ${shownInteractions[0] ?? REST}` : stateKey),
         ...(currentSection === undefined ? {} : { section: currentSection }),
@@ -1133,7 +1138,7 @@ export const sketchMatrixOf = ({
               ...frame,
               id: `${IN_CONTEXT} ${column.key} ${key}`,
               row: `${IN_CONTEXT} ${key}`,
-              rowLabel: `in ${key}`,
+              rowLabel: STUDIO_LABELS.systemTree.inPage(key),
               column: contextColumnKeyOf(column.key),
               ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
               ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),
@@ -1208,8 +1213,8 @@ export const mergePreviewOf = ({
   color,
 }: MergePreviewSource): SketchMatrix => {
   const columns: MatrixColumn[] = [
-    { key: 'now', label: 'now', drawing: false },
-    { key: 'merged', label: `after merging ${variant}`, drawing: false },
+    { key: 'now', label: STUDIO_LABELS.systemTree.now, drawing: false },
+    { key: 'merged', label: STUDIO_LABELS.systemTree.afterMerging(variant), drawing: false },
   ];
   const frames = affected.flatMap((key) => {
     const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
@@ -1296,12 +1301,14 @@ export const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, varian
 
   const reasonBy =
     rejection.reason && rejection.reasonBy && rejection.reasonBy !== rejection.by
-      ? `, reason by the ${rejection.reasonBy}`
+      ? STUDIO_LABELS.systemTree.reasonBy(rejection.reasonBy)
       : '';
 
   return {
-    text: rejection.reason ? `Rejected: ${rejection.reason}` : 'Rejected',
-    by: `by the ${rejection.by}${reasonBy}`,
+    text: rejection.reason
+      ? STUDIO_LABELS.systemTree.rejectedWith(rejection.reason)
+      : STUDIO_LABELS.systemTree.rejectedLabel,
+    by: STUDIO_LABELS.systemTree.rejectedBy(rejection.by, reasonBy),
   };
 };
 

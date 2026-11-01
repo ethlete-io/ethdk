@@ -123,8 +123,8 @@ describe('SketchViewComponent merge preview', () => {
     const summaries = [...root.querySelectorAll<HTMLButtonElement>('[data-variant-diff-summary]')];
 
     expect(summaries.map((summary) => summary.textContent?.trim())).toEqual([
-      '1 of 2 states differs in pixels',
-      '1 of 2 states differs in pixels',
+      '1 von 2 Zuständen unterscheidet sich in Pixeln',
+      '1 von 2 Zuständen unterscheidet sich in Pixeln',
     ]);
     expect(root.querySelector('[data-variant-diff]')).toBeNull();
 
@@ -190,7 +190,7 @@ describe('SketchViewComponent merge preview', () => {
     const root: HTMLElement = fixture.nativeElement;
 
     expect(root.querySelector('[data-variant-diff-summary]')?.textContent?.trim()).toBe(
-      '1 of 2 states differs in pixels',
+      '1 von 2 Zuständen unterscheidet sich in Pixeln',
     );
     expect(asked.filter((url) => url.includes('/__design/sketch-diff')).map((url) => new URL(url).search)).toEqual([
       '?product=web&sketch=components%2Fcard&variant=a',
@@ -308,12 +308,12 @@ describe('SketchViewComponent merge preview', () => {
 
     const columnB = () => fixture.componentInstance.canvas().columns.find((column) => column.key === 'b');
 
-    expect(columnB()).toMatchObject({ label: 'b · drawing …', drawing: true });
+    expect(columnB()).toMatchObject({ label: 'b · wird gezeichnet …', drawing: true });
 
     await new Promise((resolve) => setTimeout(resolve, 2100));
     await settle(fixture);
 
-    expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'No report for 30 min' });
+    expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'Seit 30 Minuten kein Bericht' });
   });
 
   it('opens and folds a state no variant changes on a click on its row head, and remembers it', async () => {
@@ -348,7 +348,7 @@ describe('SketchViewComponent merge preview', () => {
     const rows = () => [...new Set(fixture.componentInstance.canvas().frames.map((frame) => frame.row))];
     const head = () =>
       [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].find(
-        (button) => button.textContent?.includes('default · unchanged in a b'),
+        (button) => button.textContent?.includes('default · unverändert in a b'),
       );
 
     expect(rows()).toEqual(['empty']);
@@ -710,10 +710,8 @@ describe('SketchViewComponent merge without a note', () => {
 
     expect(root.querySelectorAll('[data-rejected-variant]').length).toBe(1);
     expect(rejected?.classList).toContain('opacity-60');
-    expect(rejected?.querySelector('[data-rejected-reason]')?.textContent?.trim()).toBe('a · Rejected: too loud');
-    expect(rejected?.querySelector('[data-rejected-by]')?.textContent?.trim()).toBe(
-      'by the agent, reason by the designer',
-    );
+    expect(rejected?.querySelector('[data-rejected-reason]')?.textContent?.trim()).toBe('a · Abgelehnt: too loud');
+    expect(rejected?.querySelector('[data-rejected-by]')?.textContent?.trim()).toBe('von agent, Grund von designer');
     expect(rejected?.querySelector('[data-pick]')).toBeNull();
     expect([...root.querySelectorAll('[data-pick]')].map((button) => button.textContent?.trim())).toEqual([
       'Picked b',

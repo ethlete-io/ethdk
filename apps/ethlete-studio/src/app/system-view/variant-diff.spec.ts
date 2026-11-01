@@ -87,7 +87,10 @@ describe('diffSummaryOf', () => {
     const changed = { state: 'a', text: 'a · 8 × 4 px', box: { x: 0, y: 0, width: 8, height: 4 } };
     const same = { state: 'b', text: 'b · no pixel change', box: null, unchanged: true as const };
 
-    expect(diffSummaryOf([changed, same])).toEqual({ text: '1 of 2 states differs in pixels', listed: [changed] });
-    expect(diffSummaryOf([same]).text).toBe('No pixel change in 1 state');
+    expect(diffSummaryOf([changed, same])).toEqual({
+      text: '1 von 2 Zuständen unterscheidet sich in Pixeln',
+      listed: [changed],
+    });
+    expect(diffSummaryOf([same]).text).toBe('Keine Pixeländerung in 1 Zustand');
   });
 });

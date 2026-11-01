@@ -6,6 +6,7 @@ import { Observable, catchError, combineLatest, filter, map, of, pairwise, start
 import { ListedMotion, MotionAddress, MotionAnswer, MotionMode, motionAnswer$ } from '../../host/design-motion';
 import { MotionCanvas, motionFrameIdOf } from './motion-drive';
 import { MotionTimelineComponent } from './motion-timeline.component';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 type MotionRow = { name: string; listed: ListedMotion; answer: MotionAnswer | null; error: string | null };
 
@@ -36,7 +37,7 @@ const rowOf$ = ({
       data-motions
     >
       <header class="flex flex-wrap items-center gap-2">
-        <span class="text-small font-semibold text-text">Motions</span>
+        <span class="text-small font-semibold text-text">{{ LABELS.title }}</span>
         <span class="flex-1"></span>
         @for (name of presets(); track name) {
           <button
@@ -54,16 +55,16 @@ const rowOf$ = ({
         }
         <button
           [pressed]="mode() === 'reduced'"
+          [title]="LABELS.reducedTitle"
           (click)="mode.set(mode() === 'reduced' ? 'full' : 'reduced')"
           et-button
           type="button"
           variant="outline"
           color="surface"
           size="sm"
-          title="Draw the motions with reduced motion"
           data-motion-reduced
         >
-          Reduced
+          {{ LABELS.reduced }}
         </button>
       </header>
       @for (row of rows(); track row.name) {
@@ -94,13 +95,13 @@ const rowOf$ = ({
                   size="sm"
                   data-motion-keyframe
                 >
-                  <img [src]="keyframe.src" [alt]="row.name + ' at ' + keyframe.ms + ' ms'" class="h-20 w-auto" />
+                  <img [src]="keyframe.src" [alt]="LABELS.keyframeAlt(row.name, keyframe.ms)" class="h-20 w-auto" />
                   <span class="font-mono">{{ keyframe.ms }} ms</span>
                 </button>
               }
             </div>
           } @else {
-            <span class="text-small text-text-muted" data-motion-loading>Drawing…</span>
+            <span class="text-small text-text-muted" data-motion-loading>{{ LABELS.drawing }}</span>
           }
         </div>
       }
@@ -130,6 +131,7 @@ export class MotionStripComponent {
   public revision = input(0);
   /** The canvas whose frame an open timeline makes live and drives. */
   public canvas = input<MotionCanvas | null>(null);
+  protected readonly LABELS = STUDIO_LABELS.motions;
 
   protected preset = linkedSignal(() => this.presets()[0] ?? null);
   protected mode = signal<MotionMode>('full');
