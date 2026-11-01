@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
+import { signalElementDimensions } from '@ethlete/core';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
@@ -173,6 +174,11 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
             </header>
             <div #stage class="min-h-0 flex-1"></div>
           </div>
+          <div
+            #shellInsetProbe
+            class="pointer-events-none invisible absolute top-0 left-0 h-0 w-(--st-shell-inset-left,0px)"
+            aria-hidden="true"
+          ></div>
           <ethlete-zoom-chip
             [percent]="percent()"
             (zoomOut)="zoomBy(1 / ZOOM_STEP)"
@@ -248,8 +254,11 @@ export class FlowsPageComponent {
   private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
   private world = viewChild<ElementRef<HTMLElement>>('world');
 
-  private pickedFlow: string | null = null;
+  private shellInsetProbe = viewChild<ElementRef<HTMLElement>>('shellInsetProbe');
   private stage = viewChild<ElementRef<HTMLElement>>('stage');
+  private shellInset = signalElementDimensions(this.shellInsetProbe);
+  private covered = computed(() => this.shellInset().offset?.width ?? 0);
+  private pickedFlow: string | null = null;
   protected readonly LABELS = STUDIO_LABELS.flows;
   protected readonly ZOOM_STEP = ZOOM_STEP;
   private canvas: CanvasViewport | null = null;
@@ -320,6 +329,10 @@ export class FlowsPageComponent {
 
   public constructor() {
     afterRenderEffect(() => this.mountCamera());
+    afterRenderEffect(() => {
+      this.covered();
+      this.canvas?.refresh();
+    });
     afterRenderEffect(() => this.resetOnPick());
   }
 
@@ -344,7 +357,7 @@ export class FlowsPageComponent {
     const stage = this.stage()?.nativeElement;
     const previous = this.pickedFlow;
 
-    this.pickedFlow = selected;
+    this.pickedFlow = selected ?? null;
 
     if (previous === null || previous === selected || !this.canvas || !stage) return;
 
@@ -364,6 +377,7 @@ export class FlowsPageComponent {
       world,
       frameSelector: 'figure',
       padding: 24,
+      covered: () => this.covered(),
       start: { x: stage.offsetLeft, y: stage.offsetTop, zoom: 1 },
       onPaint: (camera) => this.zoom.set(camera.zoom),
     });

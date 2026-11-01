@@ -14,6 +14,8 @@ export type CanvasViewportOptions = {
   chip?: { fit: Element | null; reset: Element | null; label: Element | null };
   /** The camera to start at instead of fitting all. */
   start?: Camera;
+  /** The screen width at the left that floating UI hides; read on every camera command. */
+  covered?: () => number;
   /** Runs after every camera move with the frames measured in world space. */
   onPaint?: (camera: Camera, frames: Rect[]) => void;
 };
@@ -23,6 +25,8 @@ export type CanvasViewport = {
   show: (target: CameraTarget) => void;
   /** Moves the camera as the user would and stops it fitting all. */
   reset: (camera: Camera) => void;
+  /** Measures again and, while the camera still fits all, fits again. */
+  refresh: () => void;
 };
 
 export type { Camera, CameraTarget, Rect };
@@ -84,6 +88,7 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
       focused: focusedFrame ? padded(focusedFrame, outline) : null,
       bounds: padded({ x: 0, y: 0, width: world.offsetWidth, height: world.offsetHeight }, outline),
       padding,
+      covered: options.covered?.() ?? 0,
       align: 'start',
     };
   };
@@ -195,5 +200,5 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   settle();
   void document.fonts.ready.then(settle);
 
-  return { camera: () => camera, show, reset: move };
+  return { camera: () => camera, show, reset: move, refresh: settle };
 };
