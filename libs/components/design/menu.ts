@@ -13,6 +13,8 @@ type MenuMockRowState = {
   disabled?: boolean;
   /** The menu's active item: the keyboard or the pointer points at it. */
   active?: boolean;
+  /** What made the row active. `keyboard` draws the keyboard highlight on a focus-visible row. */
+  activeSource?: 'keyboard' | 'pointer';
   /** Extra attributes on the row's element, e.g. design markers. */
   attributes?: string;
 };
@@ -69,6 +71,7 @@ const rowAttributes = (row: MenuMockRowState) =>
     `tabindex="${row.active && !row.disabled ? 0 : -1}"`,
     row.disabled && 'aria-disabled="true"',
     row.active && 'data-active="true"',
+    row.active && row.activeSource && `data-active-source="${row.activeSource}"`,
   ].filter(Boolean);
 
 const menuItem = (row: MenuMockItem, submenuId: string) => {

@@ -42,20 +42,13 @@ const studioRows = (server: Server, option?: MenuInteraction): MenuMockRow[] => 
   ...SERVER_ACTIONS[server].map(({ name, label }, index) => ({
     label,
     active: index === 0 && !!option,
+    activeSource: index === 0 && option === 'focus-visible' ? ('keyboard' as const) : undefined,
     attributes: index === 0 && option ? `${action(name)} data-et-force="${option}"` : action(name),
   })),
 ];
 
-const studioPanel = async (server: Server, interaction?: MenuInteraction, option?: MenuInteraction) => {
-  if (option) return menu.render({ rows: studioRows(server, option) });
-
-  const panel = await menu.render({ rows: studioRows(server), forced: interaction });
-  // The SDK menu part replaces the attributes of its second row with its own force marks; this puts the action back.
-  return {
-    ...panel,
-    body: panel.body.replace('data-et-control="item"', action(SERVER_ACTIONS[server][0]?.name ?? '')),
-  };
-};
+const studioPanel = (server: Server, interaction?: MenuInteraction, option?: MenuInteraction) =>
+  menu.render({ rows: studioRows(server, option), forced: interaction });
 
 export const studioMenu = async ({ open, server = 'running', interaction, option }: Props) => {
   const panel =
@@ -102,9 +95,7 @@ export default definePart({
   render: async (props: Props) => {
     const menu = await studioMenu(props);
     return drawing({
-      body: html`<div class="box-border w-xl h-64 p-space-3 bg-et-surface-bg text-et-surface font-ui text-ui-md">
-        ${menu.body}
-      </div>`,
+      body: html`<div class="box-border w-xl h-64 p-space-3 text-et-surface font-ui text-ui-md">${menu.body}</div>`,
       setup: menu.setup,
       styles: menu.styles,
     });

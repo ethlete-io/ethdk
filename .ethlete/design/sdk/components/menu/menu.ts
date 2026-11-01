@@ -1,4 +1,10 @@
-import { menu, type MenuMockRow, menuStyles } from '@ethlete/components/design/menu';
+import {
+  menu,
+  type MenuMockItem,
+  type MenuMockRow,
+  type MenuMockSelectionItem,
+  menuStyles,
+} from '@ethlete/components/design/menu';
 import { definePart, drawing, interactionRows } from '@design-system';
 import edge from './menu.css?inline';
 
@@ -10,9 +16,6 @@ type Props = {
 };
 
 const MARK = 'data-et-control="item"';
-
-const force = (interaction?: ItemInteraction) =>
-  [MARK, interaction && `data-et-force="${interaction}"`].filter(Boolean).join(' ');
 
 const row = (label: string, extra: Partial<Extract<MenuMockRow, { label: string }>> = {}) =>
   ({ label, attributes: MARK, ...extra }) as MenuMockRow;
@@ -45,10 +48,18 @@ const FULL: MenuMockRow[] = [
   row('Delete', { destructive: true }),
 ];
 
+const isItemRow = (entry: MenuMockRow): entry is MenuMockItem | MenuMockSelectionItem =>
+  entry.kind === undefined || entry.kind === 'item' || entry.kind === 'checkbox' || entry.kind === 'radio';
+
 const withForced = (rows: MenuMockRow[], forced?: ItemInteraction): MenuMockRow[] =>
   rows.map((entry, index) =>
-    index === 1 && 'label' in entry && entry.kind !== 'label'
-      ? ({ ...entry, active: !!forced, attributes: force(forced) } as MenuMockRow)
+    forced && index === 1 && isItemRow(entry)
+      ? {
+          ...entry,
+          active: true,
+          activeSource: forced === 'focus-visible' ? 'keyboard' : entry.activeSource,
+          attributes: [entry.attributes, `data-et-force="${forced}"`].filter(Boolean).join(' '),
+        }
       : entry,
   );
 

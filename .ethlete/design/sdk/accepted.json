@@ -801,5 +801,12 @@
     "note": "merged without a pick: allowed by decisions-overnight.md Q102/Q113, Tom 2026-11-01 in chat",
     "hash": "a3c052aa816f53a9",
     "at": "2026-11-01T00:18:54.885Z"
+  },
+  {
+    "part": "components/menu",
+    "by": "claude-opus-5-5",
+    "note": "Impl Q102/Q110 (Tom, 2026-11-01): the menu part keeps the row attributes and marks a forced focus-visible row keyboard-active",
+    "hash": "f220b05e404df291",
+    "at": "2026-11-01T17:24:43.924Z"
   }
 ]
