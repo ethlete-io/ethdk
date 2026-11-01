@@ -651,6 +651,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     (e6d93a870, 14:13), and after Impl Q53 compare keeps the forced "Save" buttons in the inbox design. Nothing
     re-compared inbox. Lesson: a change to a part re-compares every ready part and page that embeds it (with finding
     22: go staleness and compare staleness need the same embed graph).
+39. The live swaps show what the page designs leave out: merge has no place for an error (a needs-rebase refusal is
+    silent), "Verwerfen" deletes a sketch on one click where the old view asked twice, merge text stayed English
+    because Impl Q58 named only three pages, the merge part shows unchanged rows of one part only, and the flows part
+    draws no pins, notes or drafts. Lesson: every page design needs error and confirm states for its destructive and
+    failing actions, and a decision about "all pages" must list them all.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
