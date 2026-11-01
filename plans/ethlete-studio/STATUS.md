@@ -12,7 +12,7 @@ ausgeklammert.
 
 | Teil                            | Fertig | Was fehlt                                                                                                   | Wer               |
 | ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ❌     | Neuer Zustand „erledigt“ (blass mit Haken) gebaut, Bild geprüft; Tom: Abnahme und Go                        | Tom               |
+| components/comment-pin          | ❌     | Go gegeben (23:48); Builder macht „ready“                                                                   | Builder           |
 | components/disclosure           | ✅     |                                                                                                             |                   |
 | components/tree-row             | ✅     |                                                                                                             |                   |
 | components/zoom-chip            | ✅     |                                                                                                             |                   |
@@ -21,7 +21,7 @@ ausgeklammert.
 | components/shell-collapse       | ✅     |                                                                                                             |                   |
 | components/shell-project-switch | ✅     |                                                                                                             |                   |
 | elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“ | Builder, dann Tom |
-| pages/inbox                     | ❌     | Erledigte Kommentare werden markiert und zeigen ihren Pin (Befund 113), Bild geprüft; Tom: Abnahme und Go   | Tom               |
+| pages/inbox                     | ❌     | Go gegeben (23:48); Builder macht „ready“                                                                   | Builder           |
 | pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                  | Builder, dann Tom |
 | pages/sketches                  | ❌     | Go gegeben; „ready“ meldet 9 Fehler bei den Aktionen, Builder prüft, ob das Werkzeug irrt                   | Builder           |
 | components/canvas-viewport      | ❌     | Go gilt; Fokus-Rahmen nach Klick + Shift wird behoben (Befund 123), dann „ready“                            | Builder           |
