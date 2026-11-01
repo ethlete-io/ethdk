@@ -16,7 +16,8 @@ import {
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { aktuellPlaceholderWarnings, shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { recordAutoMerge, recordMergeReason } from './system/sketch/merged-parts';
+import { mergeAndRecord } from './system/sketch/merge-step';
+import { recordAutoMerge } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -944,16 +945,6 @@ const previewed = (context: Context) =>
     return 0;
   });
 
-const allowedMergeOf = (options: { sketch: Sketch; variant: string }) => {
-  const { sketch, variant } = options;
-  const live = sketch.variants.filter((candidate) => !rejectionOf(sketch, candidate));
-
-  if (live.length !== 1 || live[0] !== variant)
-    return `${sketch.target} has ${live.length} live variants (${live.join(', ') || 'none'}), not only "${variant}" - the user picks in Studio`;
-
-  return decideSketch({ sketch, decision: { kind: 'pick', variant } });
-};
-
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const { '--note': note, '--variant': flagVariant, '--allowed-by': planRef } = context.args.values;
@@ -968,38 +959,25 @@ const merged = (context: Context) =>
         '--variant and --allowed-by go together: name the only live variant and the plan that allows the merge',
       );
 
-    const allowed = flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick';
-    const decidedSketch = allowed ? allowedMergeOf({ sketch, variant: flagVariant }) : sketch;
-
-    if (typeof decidedSketch === 'string') return fail(decidedSketch);
-
-    const result = mergeSketch({
+    const by = authorOf(context.args) ?? undefined;
+    const allowed =
+      flagVariant !== undefined && planRef !== undefined && sketch.decision?.kind !== 'pick'
+        ? { variant: flagVariant, planRef }
+        : undefined;
+    const result = mergeAndRecord({
       target: context.target,
       config: context.config,
       product,
-      sketch: decidedSketch,
+      sketch,
       note,
       replaceNote,
-      author: authorOf(context.args) ?? undefined,
+      by,
+      allowed,
     });
 
-    if (!Array.isArray(result)) return fail(result.reason);
+    if (typeof result === 'string') return fail(result);
 
-    const reason = note?.trim() || undefined;
-
-    if (allowed || reason)
-      for (const part of sketch.targets)
-        recordMergeReason({
-          product,
-          part,
-          by: authorOf(context.args) ?? 'user',
-          planRef: allowed ? planRef.trim() : undefined,
-          reason,
-        });
-
-    const variant = decidedSketch.decision?.kind === 'pick' ? decidedSketch.decision.variant : '';
-
-    console.log(`merged ${sketch.target} variant ${variant} into ${product.name}: ${result.join(', ')}`);
+    console.log(`merged ${sketch.target} variant ${result.variant} into ${product.name}: ${result.parts.join(', ')}`);
 
     return 0;
   });

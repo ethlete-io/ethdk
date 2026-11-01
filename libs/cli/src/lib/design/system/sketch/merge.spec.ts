@@ -283,7 +283,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     const config = readConfig(target) ?? {};
 
     expect(reasonOf(mergeSketch({ target, config, product, sketch, note: 'x' }))).toBe(
-      'elements/hero is in progress - mark it ready before a merge',
+      'elements/hero is in progress - mark it ready before a merge: design sketch ready elements/hero --by <model id> --product acme',
     );
 
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;

@@ -142,7 +142,8 @@ const mergeOrReason = (options: {
 }): string[] | string | MergeRefusal => {
   const { target, config, product, sketch, note, replaceNote, author } = options;
 
-  if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - mark it ready before a merge`;
+  if (sketch.status !== 'ready')
+    return `${sketch.target} is ${sketch.status} - mark it ready before a merge: design sketch ready ${sketch.target} --by <model id> --product ${product.name}`;
 
   const pick = pickOf(sketch);
 

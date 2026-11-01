@@ -371,7 +371,13 @@ An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `
 ]
 ```
 
-`action` is `go` or `accept`, `note` names the `Impl Qnn` decision (an accept entry uses it as its note) and the optional
+A sketch merge as Tom is an entry with `"action": "merge"` and no `verify`: `{ "part": "pages/system", "product": "studio",
+"action": "merge", "variant": "a", "note": "Impl Q99" }`. `variant` is optional and picks the only live variant of a
+sketch nobody picked in Studio; without it the sketch needs a pick. The check refuses a sketch that is missing or not
+ready, naming `design sketch ready <part> --by <model id> --product <name>`; a merge runs the same code as
+`et design sketch merge`, and its note is the reason and the plan reference.
+
+`action` is `go`, `accept` or `merge`, `note` names the `Impl Qnn` decision (an accept entry uses it as its note) and the optional
 `verify` names the commit of the part, which must exist. The command checks every entry first and refuses the whole list
 when one fails, then lists all entries with their notes in one `Record these <n> as Tom? [y/N]` prompt and records them
 all, by `tom`, on a yes.

@@ -5,22 +5,34 @@ import { acceptStepOf } from './accept-command';
 import { DrawStates } from './accepted-pictures';
 import { decisionOf } from './go-guard';
 import { goStepOf } from './go-step';
+import { mergeStepOf } from './sketch/merge-step';
 import { DesignStep, runSteps, TomPrompt, tomConfirmRefusalOf } from './tom-confirm';
 
-/** One entry of a go list: Tom's go or acceptance of a part, the decision that names it, and the commit it checks. */
-export type GoListEntry = { part: string; product: string; action: 'go' | 'accept'; note: string; verify?: string };
+/**
+ * One entry of a go list: Tom's go, acceptance or sketch merge of a part, the decision that names it, and the commit it
+ * checks; a merge may name the `variant` Tom picked.
+ */
+export type GoListEntry = {
+  part: string;
+  product: string;
+  action: 'go' | 'accept' | 'merge';
+  note: string;
+  verify?: string;
+  variant?: string;
+};
 
 const isEntry = (value: unknown): value is GoListEntry => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { part, product, action, note, verify } = value as Record<string, unknown>;
+  const { part, product, action, note, verify, variant } = value as Record<string, unknown>;
 
   return (
     typeof part === 'string' &&
     typeof product === 'string' &&
-    (action === 'go' || action === 'accept') &&
+    (action === 'go' || action === 'accept' || action === 'merge') &&
     typeof note === 'string' &&
-    (verify === undefined || typeof verify === 'string')
+    (verify === undefined || typeof verify === 'string') &&
+    (variant === undefined || (typeof variant === 'string' && action === 'merge'))
   );
 };
 
@@ -34,7 +46,7 @@ const readGoList = (file: string): GoListEntry[] | string => {
 
     return wrong === -1
       ? (parsed as GoListEntry[])
-      : `${file} entry ${wrong + 1}: needs part, product, action "go" or "accept", note "Impl Qnn" and an optional verify sha`;
+      : `${file} entry ${wrong + 1}: needs part, product, action "go", "accept" or "merge", note "Impl Qnn", an optional verify sha and, on a merge, an optional variant`;
   } catch (error) {
     return `${file}: ${error instanceof Error ? error.message : String(error)}`;
   }
@@ -55,6 +67,12 @@ const stepOf = (options: { target: string; entry: GoListEntry; draw?: DrawStates
   const note = entry.note.trim();
 
   if (entry.verify !== undefined && !isCommit(target, entry.verify)) return `verify ${entry.verify} is no commit`;
+
+  if (entry.action === 'merge') {
+    if (entry.verify !== undefined) return 'a merge takes no verify sha';
+
+    return mergeStepOf({ target, product: entry.product, part: entry.part, variant: entry.variant, note, by: 'tom' });
+  }
 
   if (entry.action === 'accept') {
     const decided = decisionOf({ root: target, note });
