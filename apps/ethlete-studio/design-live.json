@@ -139,11 +139,6 @@
           "design": "page-sketch",
           "click": ["Einpassen"]
         }
-      },
-      "storage": {
-        "ethlete-studio.call-view": {
-          "systemEntry": "sketch:pages/system"
-        }
       }
     },
     "pages/flows": {
