@@ -290,7 +290,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               [cameraKey]="cameraKey()"
               [restoredCamera]="restoredCamera()"
               (cameraChange)="rememberCamera($event)"
-              class="min-h-0"
+              class="-ms-(--st-shell-inset-left) min-h-0"
             />
           </div>
         } @else if (reading(); as read) {
@@ -357,7 +357,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 [noteTemplate]="noteBody"
                 (cameraChange)="rememberCamera($event)"
                 (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-                class="min-h-0"
+                class="-ms-(--st-shell-inset-left) min-h-0"
               >
                 @if (noteStore.draft()) {
                   @defer {

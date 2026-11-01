@@ -12,6 +12,7 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -44,7 +45,10 @@ import {
   cameraAfterWheel,
   cameraFor,
   firstRowBounds,
+  inUncoveredView,
   shortcutTarget,
+  uncoveredCentre,
+  UncoveredView,
 } from './canvas-camera';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
@@ -258,6 +262,7 @@ export class DesignCanvasComponent {
   private frameViews = viewChildren(CanvasFrameComponent);
   private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
   private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
+  private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
@@ -274,10 +279,12 @@ export class DesignCanvasComponent {
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
   });
   private measure$ = new Subject<{ cameraKey: string; frameId: string; size: FrameSize }>();
-  private userCamera$ = new Subject<Camera | null>();
 
+  private userCamera$ = new Subject<Camera | null>();
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
+  private shellInset = signalElementDimensions(this.shellInsetProbe);
+  private covered = computed(() => this.shellInset().offset?.width ?? 0);
 
   private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
 
@@ -654,6 +661,7 @@ export class DesignCanvasComponent {
       const viewport = this.viewport();
       const key = this.cameraKey();
 
+      this.covered();
       if (!bounds || viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
@@ -816,7 +824,7 @@ export class DesignCanvasComponent {
     this.selectedId.set(placed.owner);
     this.selectedCellId.set(placed.owner === id ? null : id);
 
-    const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
+    const camera = this.inView(this.viewport(), (view) => focusRect({ rect: placed, ...view, padding: FIT_PADDING }));
 
     if (camera) this.moveCamera(camera, true);
     this.following = { frame: id };
@@ -830,7 +838,10 @@ export class DesignCanvasComponent {
 
     this.selectedId.set(placed.owner);
     this.selectedCellId.set(placed.owner === id ? null : id);
-    this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING }), true);
+    this.moveCamera(
+      this.inView(this.viewport(), ({ viewport }) => fitRect({ rect: placed, viewport, padding: FIT_PADDING })),
+      true,
+    );
   }
 
   /** Makes the frame `id` live and active, as a double click on it does; a grid cell's `id` makes its grid frame live. */
@@ -944,9 +955,9 @@ export class DesignCanvasComponent {
   }
 
   public zoomTo(zoom: number) {
-    const { width, height } = this.viewport();
+    const point = uncoveredCentre({ viewport: this.viewport(), covered: this.covered() });
 
-    this.moveCamera(zoomAtPoint({ camera: this.camera(), point: { x: width / 2, y: height / 2 }, zoom }), true);
+    this.moveCamera(zoomAtPoint({ camera: this.camera(), point, zoom }), true);
   }
 
   protected zoomBy(factor: number) {
@@ -976,7 +987,7 @@ export class DesignCanvasComponent {
 
     const placed = this.framesById().get(following.frame);
 
-    return placed ? focusRect({ rect: placed, camera: this.camera(), viewport, padding: FIT_PADDING }) : null;
+    return placed ? this.inView(viewport, (view) => focusRect({ rect: placed, ...view, padding: FIT_PADDING })) : null;
   }
 
   private fitted({ bounds, viewport, fit }: { bounds: Rect; viewport: Size; fit: 'all' | 'start' }): Camera {
@@ -1001,11 +1012,16 @@ export class DesignCanvasComponent {
       focused: frames.find((placed) => placed.selected) ?? null,
       bounds,
       padding: FIT_PADDING,
+      covered: this.covered(),
       inset: {
         left: layout.rows.length + layout.rowHeads.length > 0 ? ROW_LABEL_GUTTER : 0,
         top: (layout.heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (layout.groups.length > 0 ? GROUP_HEAD_ROOM : 0),
       },
     };
+  }
+
+  private inView<T extends Camera | null>(viewport: Size, command: (view: UncoveredView) => T): T {
+    return inUncoveredView({ camera: this.camera(), viewport, covered: this.covered() }, command);
   }
 
   private moveCamera(camera: Camera, smooth = false) {

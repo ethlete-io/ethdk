@@ -3,9 +3,11 @@ import {
   cameraAfterWheel,
   cameraFor,
   firstRowBounds,
+  inUncoveredView,
   shortcutTarget,
   visibleFrame,
 } from './canvas-camera';
+import { focusRect, zoomAtPoint } from './canvas-math';
 
 const left = { x: 0, y: 0, width: 300, height: 200 };
 const right = { x: 400, y: 0, width: 300, height: 200 };
@@ -49,6 +51,39 @@ describe('cameraFor', () => {
     const camera = cameraFor({ kind: 'visible', zoom: 1 }, scene({ camera: { x: -150, y: 0, zoom: 0.5 } }));
 
     expect(camera).toEqual({ x: 10 - 400, y: 10, zoom: 1 });
+  });
+});
+
+describe('a viewport partly covered by the shell panel', () => {
+  it('fits every frame into the part right of the panel', () => {
+    expect(cameraFor({ kind: 'all' }, scene({ covered: 100 }))).toEqual({ x: 110, y: 10, zoom: 0.4 });
+  });
+
+  it('anchors the frame nearest the centre of the uncovered part, right of the panel', () => {
+    const camera = cameraFor(
+      { kind: 'visible', zoom: 1 },
+      scene({ camera: { x: 100, y: 0, zoom: 0.5 }, covered: 200 }),
+    );
+
+    expect(camera).toEqual({ x: -190, y: 10, zoom: 1 });
+  });
+
+  it('zooms at the centre of the uncovered part without frames', () => {
+    const camera = { x: 0, y: 0, zoom: 0.5 };
+
+    expect(cameraFor({ kind: 'visible', zoom: 1 }, scene({ camera, frames: [], covered: 200 }))).toEqual(
+      zoomAtPoint({ camera, point: { x: 300, y: 150 }, zoom: 1 }),
+    );
+  });
+
+  it('centres a focused frame in the uncovered part', () => {
+    const rect = { x: 1000, y: 0, width: 20, height: 20 };
+    const camera = inUncoveredView(
+      { camera: { x: 0, y: 0, zoom: 0.5 }, viewport: { width: 400, height: 300 }, covered: 200 },
+      (view) => focusRect({ rect, ...view, padding: 10 }),
+    );
+
+    expect(camera && camera.x + (rect.x + rect.width / 2) * camera.zoom).toBe(300);
   });
 });
 
