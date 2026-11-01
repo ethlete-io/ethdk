@@ -469,3 +469,8 @@ only; the builder starts when Tom gives the start.
 - Impl Q28 link-only go (Tom, 2026-11-01): when Q252 moves an inline part to its own component, only its `implements`
   link changes and the go goes stale. For a link-only change the builder re-records the go with `--by tom` and names
   Impl Q28 in the commit. Any visual design change still stops and asks. After the MVP: the go hash ignores the link.
+- Impl Q29 done number (Tom, 2026-11-01): replaces the Impl Q24 premise. The clean count was right: it uses the open
+  points that `ready` refuses on, and the 26 own Studio parts have none; the 57-73 open points sit on the 47 inherited
+  SDK base parts. Revert `fe709f9d8` (base parts belong to the SDK track, Q250). The Q255 done number is its own line
+  over the own parts: `DONE studio: n of 26`, where a part counts when its `implemented.json` entry matches the go
+  hash and it has a ready mark. One cli slice.
