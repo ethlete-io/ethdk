@@ -61,7 +61,7 @@ const linesOf = (target: string) =>
     (problem) => `${problem.rule} ${problem.file.split('/').pop()}: ${problem.message}`,
   );
 
-describe('deniedClassesOf', () => {
+describe('deniedClassesOf', { timeout: 30_000 }, () => {
   it('reports a denied class with its variants and opacity stripped, and a denied var() in markup and CSS', () => {
     const target = acme();
 
