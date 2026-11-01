@@ -197,6 +197,30 @@ const CASES = [
     },
   },
   {
+    name: 'open points chip pressed matches its popup',
+    pages: ['System'],
+    viewport: WIDE,
+    run: async (page) => {
+      const chip = page.locator('[data-open-points-chip]').first();
+      const steps = [];
+
+      for (let click = 1; click <= 4; click++) {
+        await chip.click();
+        await page.waitForTimeout(SETTLE_MS);
+        steps.push(
+          await page.evaluate(() => ({
+            pressed: document.querySelector('[data-open-points-chip]')?.getAttribute('aria-pressed') === 'true',
+            open: !!document.querySelector('[role="dialog"][aria-label="Offene Punkte"]'),
+          })),
+        );
+      }
+
+      const ok = steps.every((step, index) => step.pressed === step.open && step.open === (index % 2 === 0));
+
+      return { ok, detail: steps.map((step) => `${+step.pressed}/${+step.open}`).join(' ') };
+    },
+  },
+  {
     name: 'pointer click on an empty area keeps the ring off',
     pages: ['System', 'Sketches', 'Inbox'],
     viewport: WIDE,

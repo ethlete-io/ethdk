@@ -1,17 +1,17 @@
 import {
   Component,
   computed,
-  effect,
   ElementRef,
   inputBinding,
   input,
   model,
-  untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { anchoredDialogOverlayStrategy, BUTTON_IMPORTS, injectOverlayManager } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { defer, EMPTY, finalize, switchMap, tap } from 'rxjs';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { OpenPointGroup } from './system-page-sample';
@@ -85,24 +85,28 @@ export class OpenPointsChipComponent {
   protected count = computed(() => this.groups().reduce((sum, group) => sum + group.lines.length, 0));
 
   constructor() {
-    effect((onCleanup) => {
-      const origin = this.chip().nativeElement;
+    toObservable(this.closed)
+      .pipe(
+        switchMap((closed) =>
+          closed
+            ? EMPTY
+            : defer(() => {
+                const ref = this.overlay.open(OpenPointsPopoverComponent, {
+                  origin: this.chip().nativeElement,
+                  mode: 'non-modal',
+                  role: 'dialog',
+                  ariaLabel: this.LABELS.openPoints,
+                  autoFocus: false,
+                  strategies: anchoredDialogOverlayStrategy(),
+                  bindings: [inputBinding('part', this.part), inputBinding('groups', this.groups)],
+                });
 
-      if (this.closed()) return;
-
-      const ref = untracked(() =>
-        this.overlay.open(OpenPointsPopoverComponent, {
-          origin,
-          mode: 'non-modal',
-          role: 'dialog',
-          ariaLabel: this.LABELS.openPoints,
-          autoFocus: false,
-          strategies: anchoredDialogOverlayStrategy(),
-          bindings: [inputBinding('part', this.part), inputBinding('groups', this.groups)],
-        }),
-      );
-
-      onCleanup(() => ref.close());
-    });
+                return ref.beforeClosed().pipe(finalize(() => ref.close()));
+              }),
+        ),
+        tap(() => this.closed.set(true)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 }
