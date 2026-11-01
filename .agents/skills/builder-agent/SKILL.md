@@ -40,6 +40,13 @@ that talks with the user and records decisions. Talk English.
 - After a slice, write an "as built" section in the plan: what was built, the commits, and
   what you verified and what you did not verify.
 
+## Mission
+
+The Studio design work is a product test of the design CLI and Studio. For every defect you fix,
+also find why the tool (compare, verify, check) did not catch it. Report the cause and a tool fix
+with your recommendation to the grill session. A defect is not done with only the CSS or
+component fix.
+
 ## Questions
 
 - Never ask the user a question. This covers every kind: design, process ("where do I file

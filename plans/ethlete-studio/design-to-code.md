@@ -672,6 +672,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     a behavior test in `apps/storybook-e2e`.
 43. A canvas in Studio has its own background and covers the dot pattern of the page background (Tom, 2026-11-01).
     The canvas must be transparent so the dots show through. Check every live canvas (flows, sketches, system).
+    Cause: the live `design-canvas` host had `bg-(--et-surface-background-solid)` since 9e59cc6f5 (SDK themes); CSS
+    fix 8aa5dc611. No compare caught it because the live `design-canvas` is hand-written, not a design part (Impl Q59
+    kept it), and the system page compare empties the slot it sits in. Also, compare shoots on a transparent
+    background. Lesson: a hand-written live component inside a page has no compare at all; every live page needs a
+    compare that covers what is really inside it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -760,3 +765,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   fit-to-width scaling (a 10-page flow would be unreadable). The design does not show it, so go `--by tom`.
 - Impl Q75 phone frames (Tom, 2026-11-01): the fixed 16:10 frame box that clips a 390x844 page stays for the MVP; a
   per-preset box ratio goes to the backlog.
+- Impl Q76 verify of live swaps (Tom, 2026-11-01): `task --verify` also allows the app files that import the part (the
+  tool finds them); every other file outside the part stays refused. CLI change. Until then pages/system keeps its
+  earlier ready; flows gets a real part-only commit with the Impl Q74 camera work. Finding 40.
