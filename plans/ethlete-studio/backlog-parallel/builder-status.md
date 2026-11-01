@@ -188,6 +188,13 @@
   - `design check --product studio --complete` crashes: "page.screenshot: Clipped area is either empty or outside
     the resulting image". A subagent fixes it (libs/cli; finding per frame instead of a crash). Then send the gap
     (Studio's own parts) to the grill.
-  - sdk sketches components/checkbox + components/radio-group variant d: rebase, `sketch check`, `sketch ready`;
-    report blockers before fixing; no lib port before the MVP. A subagent runs it.
+  - sdk sketches components/checkbox + components/radio-group variant d: ready is blocked in all variants by the
+    newer control rules (no controls declared, CONTROL-PART-INPUT on et-checkbox/-option/-group-select-all/et-radio,
+    OPTION-VALUE-MISSING size/orientation/variant/controlPosition). Decision (grill, Tom): one subagent brings d of
+    both up to the current rules with no visual change (control() marks, controls declaration, omits with reasons),
+    then `sketch ready`, then `design sketch merge <part> --variant d --allowed-by "decisions-overnight.md Q102/Q113,
+    Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix changes a pixel or an omit needs a
+    design call. Do not widen to other SDK parts. No lib port before the MVP. NOT started yet.
+  - The crash-fix subagent was still running at the restart; check `git log` for a `fix(cli)` commit and
+    /tmp/studio-check8.txt before starting it again.
   - Push next after these commits.
