@@ -183,6 +183,7 @@ export const STUDIO_LABELS = {
     usedIn: (name: string) => `Wo ${name} vorkommt`,
     now: 'Jetzt',
     after: 'Nach dem Merge von',
+    addedIn: (variant: string) => `Neu in ${variant}`,
     instances: (count: number) => (count === 1 ? '1 Instanz' : `${count} Instanzen`),
     instance: (count: number) => `Instanz 1 von ${count} · 200 %`,
     unchanged: (count: number, part: string) => `${count} Zustände von ${part} ohne sichtbare Änderung`,

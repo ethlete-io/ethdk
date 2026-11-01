@@ -1,3 +1,7 @@
+export type MergeSide = 'now' | 'after';
+
+export type MergeRect = { x: number; y: number; width: number; height: number };
+
 export type MergeRow = {
   part: string;
   state: string;
@@ -6,6 +10,8 @@ export type MergeRow = {
   height: number;
   now: string;
   after: string;
+  missing?: MergeSide;
+  crop?: Record<MergeSide, MergeRect | null>;
 };
 
 export type MergeTarget = { part: string; name: string; variant: string; note: string };
@@ -39,6 +45,16 @@ export const MERGE_SAMPLE_CHANGED: MergeRow[] = [
     height: 900,
     now: frameSrc('pages/system', 'empty'),
     after: frameSrc('pages/system', 'empty'),
+  },
+  {
+    part: 'pages/system',
+    state: 'onboarding',
+    instances: 1,
+    width: 1440,
+    height: 900,
+    now: '',
+    after: frameSrc('pages/system', 'empty'),
+    missing: 'now',
   },
 ];
 

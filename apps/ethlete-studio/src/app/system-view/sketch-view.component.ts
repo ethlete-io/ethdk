@@ -60,6 +60,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [selected]="selected()"
         [unchangedStates]="unchangedStates()"
         [error]="mergeError()"
+        [merging]="busy() === 'merge'"
         [shotTemplate]="mergeShot"
         [shell]="shell()"
         (pick)="pickRow($event)"
@@ -140,7 +141,7 @@ export class SketchViewComponent {
   /** The sketch's target once its merge succeeded. */
   public mergeComplete = output<string>();
 
-  private busy = signal<Busy | null>(null);
+  protected busy = signal<Busy | null>(null);
 
   protected picked = computed(() => pickedVariantOf(this.sketch()));
 
@@ -246,18 +247,21 @@ export class SketchViewComponent {
     const frameOf = (place: { column: MergeColumn; part: string; state: string }) =>
       frames.find((frame) => frame.id === mergeFrameIdOf(place));
 
-    return rows.map(({ part, state, outlines }) => {
+    return rows.map(({ part, state, outlines, missing }) => {
       const now = frameOf({ column: 'now', part, state });
       const after = frameOf({ column: 'merged', part, state });
+      const size = now ?? after;
 
       return {
         part,
         state,
         instances: outlines.merged.length || outlines.now.length || 1,
-        width: now?.width ?? FALLBACK_SIZE.width,
-        height: now?.height ?? FALLBACK_SIZE.height,
+        width: size?.width ?? FALLBACK_SIZE.width,
+        height: size?.height ?? FALLBACK_SIZE.height,
         now: now?.src ?? '',
         after: after?.src ?? '',
+        missing: missing === 'merged' ? 'after' : missing,
+        crop: { now: outlines.now[0] ?? null, after: outlines.merged[0] ?? null },
       };
     });
   });

@@ -5,7 +5,14 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { DISCLOSURE_BODY_CLASS, DisclosureComponent } from '../disclosure/disclosure.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
-import { MergeRow, MERGE_SAMPLE_CHANGED, MERGE_SAMPLE_TARGET, MERGE_SAMPLE_UNCHANGED } from './merge-sample';
+import {
+  MergeRect,
+  MergeRow,
+  MergeSide,
+  MERGE_SAMPLE_CHANGED,
+  MERGE_SAMPLE_TARGET,
+  MERGE_SAMPLE_UNCHANGED,
+} from './merge-sample';
 
 const SCALE = 0.37;
 
@@ -83,7 +90,9 @@ const CROP = { width: 266, height: 64, scale: 2 };
         }
         <span class="flex-1"></span>
         <div class="flex flex-col gap-space-3 border-t border-et-surface-border pt-space-3">
-          <button (click)="merge.emit()" et-button type="button" variant="filled" size="sm">{{ LABELS.merge }}</button>
+          <button [loading]="merging()" (click)="merge.emit()" et-button type="button" variant="filled" size="sm">
+            {{ LABELS.merge }}
+          </button>
           @if (error(); as error) {
             <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
           }
@@ -108,45 +117,59 @@ const CROP = { width: 266, height: 64, scale: 2 };
           <div class="flex gap-space-4">
             <figure class="m-0 flex flex-col gap-space-2">
               <figcaption class="text-ui-xs text-et-surface-muted">{{ LABELS.now }}</figcaption>
-              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: current()?.now ?? '' }" />
+              @if (row.missing === 'now') {
+                <div
+                  [style.width.px]="row.width * SCALE"
+                  [style.height.px]="row.height * SCALE"
+                  class="flex flex-none items-center justify-center rounded-control-md bg-et-surface-bg text-ui-sm text-et-surface-muted shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                >
+                  {{ LABELS.addedIn(target().variant) }}
+                </div>
+              } @else {
+                <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: row.now }" />
+              }
             </figure>
             <figure class="m-0 flex flex-col gap-space-2">
               <figcaption class="text-ui-xs text-et-surface-muted">
                 {{ LABELS.after }} <code class="font-code text-et-theme-ink">{{ target().variant }}</code>
               </figcaption>
-              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: current()?.after ?? '' }" />
+              <ng-container
+                *ngTemplateOutlet="shot; context: { $implicit: row, src: row.missing === 'after' ? '' : row.after }"
+              />
             </figure>
           </div>
           <div class="flex flex-col gap-space-2">
             <span class="text-ui-xs text-et-surface-muted">{{ LABELS.instance(row.instances) }}</span>
             <div class="flex gap-space-4">
-              @for (after of [false, true]; track after) {
+              @for (side of SIDES; track side) {
                 <div
                   [style.width.px]="CROP.width * CROP.scale"
                   [style.height.px]="CROP.height * CROP.scale"
                   class="relative flex-none overflow-hidden rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
                   inert
                 >
-                  <div
-                    [style.width.px]="CROP.width"
-                    [style.height.px]="CROP.height"
-                    [style.transform]="'scale(' + CROP.scale + ')'"
-                    class="pointer-events-none origin-top-left"
-                  >
-                    <div class="flex size-full items-center justify-center">
-                      <button
-                        [class.rounded-(--radius-pill)]="after"
-                        class="outline-1 outline-offset-1 outline-(--et-theme-color-primary-solid)"
-                        et-button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        tabindex="-1"
-                      >
-                        {{ cropLabel() }}
-                      </button>
+                  @if (cropOf(row, side); as rect) {
+                    <div
+                      [style.width.px]="row.width"
+                      [style.height.px]="row.height"
+                      [style.transform]="cropTransform(rect)"
+                      class="pointer-events-none relative origin-top-left"
+                    >
+                      <ng-container
+                        *ngTemplateOutlet="
+                          shotTemplate();
+                          context: { $implicit: row, src: side === 'now' ? row.now : row.after }
+                        "
+                      />
+                      <div
+                        [style.left.px]="rect.x"
+                        [style.top.px]="rect.y"
+                        [style.width.px]="rect.width"
+                        [style.height.px]="rect.height"
+                        class="absolute outline-1 outline-offset-1 outline-(--et-theme-color-primary-solid)"
+                      ></div>
                     </div>
-                  </div>
+                  }
                 </div>
               }
             </div>
@@ -185,7 +208,7 @@ export class MergeComponent {
   public selected = input(1);
   public unchangedStates = input(MERGE_SAMPLE_UNCHANGED);
   public shotTemplate = input<TemplateRef<{ $implicit: MergeRow; src: string }> | null>(null);
-  public cropLabel = input<string>(STUDIO_LABELS.system.copyPrompt);
+  public merging = input(false);
   public error = input<string | null>(null);
 
   public shellAction = output<ShellAction>();
@@ -197,6 +220,18 @@ export class MergeComponent {
   protected readonly DISCLOSURE_BODY_CLASS = DISCLOSURE_BODY_CLASS;
   protected readonly SCALE = SCALE;
   protected readonly CROP = CROP;
+  protected readonly SIDES: readonly MergeSide[] = ['now', 'after'];
 
   protected current = computed(() => this.changed()[this.selected()] ?? this.changed()[0] ?? null);
+
+  protected cropOf(row: MergeRow, side: MergeSide) {
+    return row.missing === side ? null : (row.crop?.[side] ?? null);
+  }
+
+  protected cropTransform(rect: MergeRect) {
+    const x = CROP.width / 2 - (rect.x + rect.width / 2);
+    const y = CROP.height / 2 - (rect.y + rect.height / 2);
+
+    return `scale(${CROP.scale}) translate(${x}px, ${y}px)`;
+  }
 }
