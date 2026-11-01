@@ -15,12 +15,8 @@ import { isPlatformServer } from '@angular/common';
 import { injectBreakpointObserver } from '../providers/breakpoint-observer';
 import { defineProvider, toInjectFn, toProvideFn } from '../utils';
 import { COLOR_SCHEME_TYPE, COLOR_SCHEME_UNRESOLVED } from './color-scheme-type.token';
-import {
-  createCssColorThemeName,
-  injectColorThemes,
-  injectColorThemesPrefix,
-  resolveColorThemeVariant,
-} from './color-theme.util';
+import { createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
+import { resolveColorThemeVariant } from './color-theme-variant';
 import { injectSurfaceThemes, injectSurfaceThemesPrefix, SurfaceTheme, SurfaceType } from './surface-theme.util';
 
 export type ColorSchemeMode = SurfaceType | 'system';
