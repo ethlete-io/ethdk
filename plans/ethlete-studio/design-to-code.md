@@ -910,20 +910,20 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     matrix logic (aktuell-placeholders.ts), because the app takes "unchanged" from a pixel compare and cannot import
     CLI code. Known drift: the CLI counts all non-rejected variants, the view only open rounds. Lesson: two copies of
     the view logic drift; a later fix should move the matrix into one module both import.
-79. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
+78. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
     "stdin is not a TTY: write the entries to a go list and let Tom run `yarn design go --batch <file>`" (Tom,
     2026-11-01). The `!` shell has no TTY, so the Impl Q119 confirm cannot run there, and the message tells Tom to do
     the very thing he just did. Lesson: an error must name the next step that works for the person who reads it;
     a command for Tom needs a tested path, not only an agent-proof refusal. Tool change (builder work): the message
     says "run it in your own terminal, not through an agent shell"; the go list hand-off gives the exact command for
     a real terminal.
-80. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
+79. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
     "pages/system is in progress - mark it ready before a merge" (Tom, 2026-11-01). Nobody checked the
     precondition before the hand-off. Lesson: every command for Tom must pass a dry run of its checks first, or Tom
     becomes the test. Tool change (builder work): the batch file takes sketch merges too, and `--batch` checks
     every precondition (ready, product, go state) before the prompt; the merge refusal names the command that marks
     the sketch ready.
-78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+80. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
     decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
