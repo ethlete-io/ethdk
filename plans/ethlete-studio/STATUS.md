@@ -13,8 +13,8 @@ Studio ist fertig (MVP), wenn diese Abläufe funktionieren. Jeder Ablauf hat ein
 | 3   | Einen Sketch öffnen und die Varianten mit „Aktuell“ vergleichen  | ❌    |
 | 4   | Eine Variante mergen                                             | ❌    |
 | 5   | Einen Kommentar setzen und die Antwort des Agents im Inbox sehen | ❌    |
-| 6   | Flows ansehen                                                    | ❌    |
-| 7   | Im Inventar sehen, welcher Code zu welchem Teil gehört           | ❌    |
+
+Flows und Inventar sind bis nach dem MVP ausgeklammert. Das Inventar wird ohnehin neu gebaut.
 
 Entwurf: Tom korrigiert die Liste. ✅ heißt, der Klick-Test läuft grün.
 
@@ -28,4 +28,4 @@ Entwurf: Tom korrigiert die Liste. ✅ heißt, der Klick-Test läuft grün.
 
 ## Gerade in Arbeit
 
-- Ein Canvas für System, Sketches und Flows (Ablauf 2, 3, 6).
+- Ein Canvas für System und Sketches (Ablauf 2 und 3).

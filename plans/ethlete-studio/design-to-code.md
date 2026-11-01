@@ -1294,3 +1294,6 @@ Tom: the find-error-fix loop runs for days; he wants out, and he is not always t
 4. Every flow gets a Playwright test that clicks the real Studio. A defect Tom finds becomes a test first, then a fix.
 5. The builder never waits for Tom: Tom's approvals do not block work; one flow at a time. When Tom is there he gets a
    short round: what works now, at most 3 questions.
+6. Flows and inventory are out until the MVP (Tom, 2026-11-01): "es macht keinen sinn an extra features wie flows zu
+   arbeiten wenn die basis mist ist"; the inventory gets reworked anyway (see plan). No work on pages/flows or
+   pages/inventory; the one canvas covers System and Sketches (Flows follows later through the same component).
