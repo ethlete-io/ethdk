@@ -352,6 +352,11 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     `open` 1144 px (the component owns the menu, the design draws the trigger only); forced states wait on gap (e).
     shell-project-option not built: no part draws its custom row; shell-main uses SDK radio items. Both are design
     questions with the grill session.
+  - Impl Q29 as built (`dbc0eda7d` revert, `aae8c5d4c`): `design check` prints `DONE <product>: n of m` after the
+    unchanged `PARTS` line, over own parts: `implemented.json` hash equals the `go.json` hash and the ready mark
+    holds (`doneParts` in `part-task.ts`). Studio today: `DONE studio: 0 of 26` (inbox and shell-main are
+    implemented but carry no valid ready mark). Verified: specs, tsc, eslint, a real studio check. Not verified:
+    the full cli design folder after the last helper fix.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
