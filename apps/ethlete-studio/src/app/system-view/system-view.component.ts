@@ -75,6 +75,7 @@ import { ExceptionListComponent } from './exception-list.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
+import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -348,6 +349,8 @@ export class SystemViewComponent {
   public projectChange = output<string>();
 
   public openProject = output();
+
+  public serverAction = output<DesignServerAction>();
 
   public partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
 
@@ -1004,6 +1007,8 @@ export class SystemViewComponent {
         return this.projectChange.emit(action.name);
       case 'openProject':
         return this.openProject.emit();
+      case 'server':
+        return this.serverAction.emit(action.action);
     }
   }
 

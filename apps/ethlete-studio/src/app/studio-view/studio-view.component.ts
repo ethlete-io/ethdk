@@ -75,6 +75,7 @@ const SERVER_ANSWER_RETRY_MS = 1000;
         [projects]="checkouts.names()"
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.openFolder()"
+        (serverAction)="runServerAction($event)"
       />
     }
   `,
@@ -228,6 +229,12 @@ export class StudioViewComponent {
       .subscribe();
   }
 
+  protected runServerAction(action: DesignServerAction) {
+    if (action === 'start') this.startServer();
+    if (action === 'restart') this.restartServer();
+    if (action === 'stop') this.stopServer();
+  }
+
   private setCheckout(path: string) {
     this.checkout.set(path);
     this.design.set(null);
@@ -236,12 +243,6 @@ export class StudioViewComponent {
     rememberView({ checkout: path });
     this.read();
     this.readServer();
-  }
-
-  private runServerAction(action: DesignServerAction) {
-    if (action === 'start') this.startServer();
-    if (action === 'restart') this.restartServer();
-    if (action === 'stop') this.stopServer();
   }
 
   private absorbChanges(changes: DesignChange[]) {

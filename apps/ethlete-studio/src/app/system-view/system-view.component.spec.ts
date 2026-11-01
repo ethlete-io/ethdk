@@ -217,6 +217,16 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
+  it('passes a design server action of the studio menu on a system page to the host', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const actions: string[] = [];
+
+    fixture.componentInstance.serverAction.subscribe((action) => actions.push(action));
+    fixture.componentInstance['runShellAction']({ kind: 'server', action: 'restart' });
+
+    expect(actions).toEqual(['restart']);
+  });
+
   it('draws the shell with the product on the rail and the tree in the side panel', async () => {
     const fixture = await mount({});
     const shell = (fixture.nativeElement as HTMLElement).querySelector('ethlete-shell-main');
