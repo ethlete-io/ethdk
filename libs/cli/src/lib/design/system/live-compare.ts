@@ -9,7 +9,9 @@ import { ShootStates, StateShot } from './compare-command';
 import { harnessOf } from './harness-map';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
-import { createSystemModules, productModuleIdOf } from './system-modules';
+import { overlaySketch } from './sketch/overlay';
+import { findSketch, parseTarget } from './sketch/sketch';
+import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 
 type Storage = Record<string, unknown>;
 
@@ -392,8 +394,31 @@ export const liveShotOf = async (options: {
   }
 };
 
+/** The file and variant id of `part` as sketch variant `variant` draws it, or why no such sketch variant part exists. */
+export const liveSketchOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  variant: string;
+}): { file: string; drawn: SketchVariant } | string => {
+  const { product, part, variant } = options;
+  const target = parseTarget(part);
+
+  if (typeof target === 'string') return target;
+
+  const sketch = findSketch({ productDir: product.dir, product: product.name, sketch: target });
+
+  if (typeof sketch === 'string') return sketch;
+  if (!sketch) return `no open sketch targets ${part}`;
+  if (!sketch.variants.includes(variant))
+    return `sketch ${sketch.target} has no variant "${variant}" - its variants: ${sketch.variants.join(', ')}`;
+
+  const file = overlaySketch({ product, sketch, variant }).parts.find((entry) => partKeyOf(entry) === part)?.file;
+
+  return file ? { file, drawn: { target: sketch.target, variant } } : `variant "${variant}" holds no part ${part}`;
+};
+
 /** Draws each live state of a page part, or the `only` one: its design state, and the app's real page on the sample. */
-export const shootLiveStates: ShootStates = async ({ target, config, product, part, url, only, preset }) => {
+export const shootLiveStates: ShootStates = async ({ target, config, product, part, url, only, preset, sketch }) => {
   if (!part.startsWith('pages/')) return `--live compares a pages part only, not ${part}`;
 
   const live = liveSpecOf({ target, product });
@@ -405,6 +430,10 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
   if (!page) return `${part} has no live states in the live spec`;
   if (only !== null && !(only in page.states))
     return `${part} has no live state "${only}" - its live states: ${Object.keys(page.states).join(', ')}`;
+
+  const sketched = sketch ? liveSketchOf({ product, part, variant: sketch }) : null;
+
+  if (typeof sketched === 'string') return sketched;
 
   const presetName = preset ?? Object.keys(product.presets)[0] ?? '';
   const presetSize = product.presets[presetName];
@@ -426,8 +455,10 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
 
     shooter = createPartShooter({ target, base, system, queue });
 
-    const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
-    const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
+    const file = sketched?.file ?? product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
+    const module = (await server.ssrLoadModule(
+      productModuleIdOf({ file, product: product.name, sketch: sketched?.drawn }),
+    )) as {
       default?: { states?: unknown };
     };
     const loaded = module.default?.states;
@@ -452,7 +483,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
         state: state.design,
         preset: presetName,
         width: null,
-        sketch: null,
+        sketch: sketched?.drawn ?? null,
         interaction: null,
         pan: state.pan ?? null,
         emptySlots: slotFill !== null,

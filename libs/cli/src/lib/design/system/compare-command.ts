@@ -33,7 +33,7 @@ import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live]';
+  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
 
 export type StateShot = { state: string; design: Buffer; app: Buffer } | { state: string; problem: string };
 
@@ -45,6 +45,7 @@ export type ShootStates = (options: {
   url: string;
   only: string | null;
   preset?: string | null;
+  sketch?: string | null;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
 
 export type ComparePart = (options: {
@@ -55,6 +56,7 @@ export type ComparePart = (options: {
   url: string;
   only: string | null;
   preset?: string | null;
+  sketch?: string | null;
   shoot?: ShootStates;
 }) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
 
@@ -577,7 +579,7 @@ export const designCompare = async (options: {
   start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset']);
+  const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset', '--sketch']);
 
   if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);
@@ -605,6 +607,13 @@ export const designCompare = async (options: {
   }
 
   const live = args.flags.has('--live');
+
+  if (args.values['--sketch'] !== undefined && !live) {
+    console.error('--sketch compares live states only: pass --live');
+
+    return 2;
+  }
+
   const task = taskPartOf({ product, part: partKeyOf(parsed) });
   const refusal = typeof task === 'string' ? task : live ? null : harnessStaleOf({ target, product });
 
@@ -628,6 +637,7 @@ export const designCompare = async (options: {
         url,
         only: args.values['--state'] ?? null,
         preset: args.values['--preset'] ?? null,
+        sketch: args.values['--sketch'] ?? null,
         shoot: options.shoot ?? (live ? shootLiveStates : undefined),
       }),
   });
