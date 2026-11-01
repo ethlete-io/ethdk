@@ -184,7 +184,7 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-page="b"]')).not.toBeNull();
   });
 
-  it('picks a variant from its Merge button and opens the merge page with the changed rows, now and after', async () => {
+  it('picks a variant from its Wählen button and opens the merge page with the changed rows, now and after', async () => {
     const bodies: Record<string, unknown> = {};
     const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
     const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
@@ -207,13 +207,13 @@ describe('SketchViewComponent', () => {
     fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
     await settle(fixture);
 
-    const merges = [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
-      (button) => button.textContent?.trim() === 'Merge',
+    const picks = [...root.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (button) => button.textContent?.trim() === STUDIO_LABELS.sketches.merge,
     );
 
-    expect(merges).toHaveLength(2);
+    expect(picks).toHaveLength(2);
 
-    merges[0]?.click();
+    picks[0]?.click();
     await settle(fixture);
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
