@@ -1,5 +1,5 @@
 import { control } from '@ethlete/components/design/control';
-import { forceInteraction } from '@design-system';
+import { forceInteraction, interactionRows } from '@design-system';
 import { icon } from '@system/foundations/icons';
 
 type RowInteraction = 'hover' | 'focus-visible' | 'active';
@@ -83,18 +83,31 @@ const one = (r: Row): Props => ({ rows: [r] });
 
 const button: Row = { label: 'button', depth: 1, kind: 'leaf' };
 
+const others = interactionRows(
+  {
+    'group-closed': one({ label: 'Foundations', depth: 0, kind: 'group', expanded: false }),
+    'group-open': one({ label: 'Components', depth: 0, kind: 'group', expanded: true }),
+    'part-closed': one({ label: 'select', depth: 1, kind: 'part', expanded: false }),
+    'part-open': one({ label: 'form-field', depth: 1, kind: 'part', expanded: true }),
+    'leaf-flat': one({ label: 'Review a sketch', depth: 0, kind: 'leaf' }),
+    'mark-in-progress': one({ ...button, label: 'tree-row', status: 'in-progress' }),
+    'mark-ready': one({ ...button, label: 'part-tree', status: 'ready' }),
+    'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: 'Render check: 1 warning' }),
+    'mark-comments': one({ ...button, label: 'part-tree', comments: 3 }),
+    'selected-marks': one({ ...button, label: 'part-tree', selected: true, status: 'ready', comments: 3 }),
+    inert: one({ label: 'filled', depth: 2, kind: 'leaf', inert: true }),
+  } satisfies Record<string, Props>,
+  {
+    interactions: ['hover', 'active', 'focus-visible'],
+    force: ({ rows }, interaction) => ({ rows: rows.map((r) => ({ ...r, interaction })) }),
+  },
+);
+
+export const othersGrid = others.grid;
+
 export const states = {
   tree: { rows: tree },
-  'group-closed': one({ label: 'Foundations', depth: 0, kind: 'group', expanded: false }),
-  'group-open': one({ label: 'Components', depth: 0, kind: 'group', expanded: true }),
-  'part-closed': one({ label: 'select', depth: 1, kind: 'part', expanded: false }),
-  'part-open': one({ label: 'form-field', depth: 1, kind: 'part', expanded: true }),
   leaf: one(button),
-  'leaf-flat': one({ label: 'Review a sketch', depth: 0, kind: 'leaf' }),
-  'mark-in-progress': one({ ...button, label: 'tree-row', status: 'in-progress' }),
-  'mark-ready': one({ ...button, label: 'part-tree', status: 'ready' }),
-  'mark-warning': one({ label: 'select', depth: 1, kind: 'part', warning: 'Render check: 1 warning' }),
-  'mark-comments': one({ ...button, label: 'part-tree', comments: 3 }),
   hover: one({ ...button, interaction: 'hover' }),
   active: one({ ...button, interaction: 'active' }),
   'focus-visible': one({ ...button, interaction: 'focus-visible' }),
@@ -102,6 +115,5 @@ export const states = {
   'selected-hover': one({ ...button, selected: true, interaction: 'hover' }),
   'selected-active': one({ ...button, selected: true, interaction: 'active' }),
   'selected-focus-visible': one({ ...button, selected: true, interaction: 'focus-visible' }),
-  'selected-marks': one({ ...button, label: 'part-tree', selected: true, status: 'ready', comments: 3 }),
-  inert: one({ label: 'filled', depth: 2, kind: 'leaf', inert: true }),
-} satisfies Record<string, Props>;
+  ...others.states,
+};

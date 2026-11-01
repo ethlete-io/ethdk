@@ -37,6 +37,8 @@
     background: none;
     color: inherit;
     font: inherit;
+    outline: none;
+    transition: var(--transition-state);
   }
 
   .st-shell-slot[data-active]::before {
@@ -67,6 +69,10 @@
     height: 36px;
     margin-top: 2px;
     box-shadow: inset 0 0 0 1px var(--et-surface-border-solid);
+  }
+
+  .st-shell-slot[data-kind] .st-shell-bubble:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
   }
 
   .st-shell-side {

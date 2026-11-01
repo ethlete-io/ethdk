@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import { type Props, row, states } from './shared/tree-row';
+import { type Props, othersGrid, row, states } from './shared/tree-row';
 import styles from './tree-row.css?inline';
 
 export type { Row } from './shared/tree-row';
@@ -20,17 +20,7 @@ export default definePart({
         active: 'selected-active',
         'focus-visible': 'selected-focus-visible',
       },
-      'leaf-flat': { rest: 'leaf-flat' },
-      'group-closed': { rest: 'group-closed' },
-      'group-open': { rest: 'group-open' },
-      'part-closed': { rest: 'part-closed' },
-      'part-open': { rest: 'part-open' },
-      inert: { rest: 'inert' },
-      'mark-in-progress': { rest: 'mark-in-progress' },
-      'mark-ready': { rest: 'mark-ready' },
-      'mark-warning': { rest: 'mark-warning' },
-      'mark-comments': { rest: 'mark-comments' },
-      'selected-marks': { rest: 'selected-marks' },
+      ...othersGrid.rows,
     },
   },
   controls: { row: { kind: 'row', input: ['pointer', 'keyboard'] } },
