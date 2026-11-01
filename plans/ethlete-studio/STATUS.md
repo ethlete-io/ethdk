@@ -10,25 +10,25 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                    | Fertig | Was fehlt                                           | Wer     |
-| ----------------------- | ------ | --------------------------------------------------- | ------- |
-| Canvas-Ansicht          | ✅     |                                                     |         |
-| Kommentar-Pin           | ✅     |                                                     |         |
-| Aufklapper              | ✅     |                                                     |         |
-| Baumzeile               | ✅     |                                                     |         |
-| Zoom-Chip               | ✅     |                                                     |         |
-| Teile-Baum              | ✅     |                                                     |         |
-| Studio-Menü             | ✅     |                                                     |         |
-| Seitenleiste einklappen | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
-| Projektwechsel          | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
-| Hauptlayout             | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
-| Inbox                   | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
-| Sketches                | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
-| System                  | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
-| Canvas-Rahmen           | ❌     | App zeichnet ein Element, das der Entwurf nicht hat | Builder |
-| Start                   | ❌     | 3 Knöpfe ohne Aktion im Entwurf                     | Builder |
-| Merge                   | ❌     | Kopfzeile in der App weicht vom Entwurf ab          | Builder |
-| Fehler-Toast            | ❌     | Neu, noch in Arbeit                                 | Builder |
+| Teil                            | Fertig | Was fehlt                                           | Wer     |
+| ------------------------------- | ------ | --------------------------------------------------- | ------- |
+| components/canvas-viewport      | ✅     |                                                     |         |
+| components/comment-pin          | ✅     |                                                     |         |
+| components/disclosure           | ✅     |                                                     |         |
+| components/tree-row             | ✅     |                                                     |         |
+| components/zoom-chip            | ✅     |                                                     |         |
+| elements/part-tree              | ✅     |                                                     |         |
+| elements/studio-menu            | ✅     |                                                     |         |
+| components/shell-collapse       | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| components/shell-project-switch | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| elements/shell-main             | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| pages/inbox                     | ❌     | Entwurf hat sich geändert, braucht neues „Go geben“ | Tom     |
+| pages/sketches                  | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
+| pages/system                    | ❌     | Fertiger Sketch ist noch nicht gemergt              | Tom     |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat | Builder |
+| pages/start                     | ❌     | 3 Knöpfe ohne Aktion im Entwurf                     | Builder |
+| pages/merge                     | ❌     | Kopfzeile in der App weicht vom Entwurf ab          | Builder |
+| components/error-toast          | ❌     | Neu, noch in Arbeit                                 | Builder |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
