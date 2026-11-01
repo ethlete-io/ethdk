@@ -45,6 +45,33 @@
     "by": "claude-opus-5-5",
     "at": "2026-11-01T20:55:47.339Z"
   },
+  "components/error-toast": {
+    "hash": "6c84f7059293204c",
+    "files": {
+      ".ethlete/design/studio/components/error-toast/error-toast.ts": "23790e62a432eeb0",
+      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/icon.ts": "829a95253b948ba9",
+      "libs/components/design/notification.ts": "66f46c03a15c6daa",
+      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
+      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
+      "libs/components/src/lib/button/text-button.component.css": "9a6a4820c65b5c58",
+      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
+      "libs/components/src/lib/icon/headless/circle-check-icon.ts": "a120b0cfbd95a3dc",
+      "libs/components/src/lib/icon/headless/circle-info-icon.ts": "b1958f06984def38",
+      "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
+      "libs/components/src/lib/icon/headless/icon-styles.component.css": "c137a7a10599dc3f",
+      "libs/components/src/lib/icon/headless/times-icon.ts": "52047c20b1cf421d",
+      "libs/components/src/lib/icon/headless/triangle-exclamation-icon.ts": "2ddf3400138f653a",
+      "libs/components/src/lib/loader/spinner/spinner-styles.component.css": "7b1734d6a041ee8f",
+      "libs/components/src/lib/notification/notification.component.css": "0b65a939252b001a",
+      "libs/core/design/interactive-styles.ts": "781528322bd34499",
+      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
+      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "by": "claude-opus-5-5",
+    "at": "2026-11-01T21:48:15.197Z"
+  },
   "components/shell-collapse": {
     "hash": "5bd5c9ce8c762016",
     "files": {

@@ -76,12 +76,12 @@
   },
   "components/error-toast": {
     "go": {
-      "hash": "95f9bc1207ffe3ff",
+      "hash": "6c84f7059293204c",
       "states": {
-        "close": "569f78f7bacc22ab",
-        "close-hover": "f891457ead6bd61a",
-        "close-active": "6d2123d898830ffc",
-        "close-focus-visible": "9ff651fcae49125f"
+        "close": "e5e9c32d217dbe0c",
+        "close-hover": "ab32c0f8892b0cfc",
+        "close-active": "01c3d405bdced1c4",
+        "close-focus-visible": "30fae495207f195a"
       }
     }
   },
