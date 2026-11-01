@@ -26,9 +26,10 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../design-parts/studio-menu/studio-menu.component').then((m) => m.StudioMenuComponent),
   'pages/flows': () => import('../design-parts/flows-page/flows-page.component').then((m) => m.FlowsPageComponent),
   'pages/inbox': () => import('../design-parts/inbox/inbox.component').then((m) => m.InboxComponent),
-  'pages/inventory': () => import('../system-view/inventory-view.component').then((m) => m.InventoryViewComponent),
+  'pages/inventory': () =>
+    import('../design-parts/inventory-page/inventory-page.component').then((m) => m.InventoryPageComponent),
   'pages/merge': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
   'pages/sketches': () => import('../system-view/sketch-view.component').then((m) => m.SketchViewComponent),
-  'pages/system': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
   'pages/start': () => import('../design-parts/start/start.component').then((m) => m.StartComponent),
+  'pages/system': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
 };
