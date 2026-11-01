@@ -58,7 +58,7 @@ export const FRAME_HEAD_CLASS =
           (zoomReset)="zoomReset.emit()"
           (zoomIn)="zoomIn.emit()"
           (fit)="fit.emit()"
-          class="w-250"
+          class="w-full"
         >
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
