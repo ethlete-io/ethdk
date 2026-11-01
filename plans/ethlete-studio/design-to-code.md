@@ -816,6 +816,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 65. The shared node_modules/.vitest-cache served a stale studio-labels.ts while tests ran in /tmp/q78s* copies
     (builder, 2026-11-01). Fix: each agent passes its own --fsModuleCachePath (builder default, done). Lesson: a
     shared test cache across checkouts gives a result for code that is not the code under test.
+66. The builder session cannot run `design go/accept --by tom` for decisions Tom made in the grill session (builder,
+    2026-11-01, Impl Q93-Q113): the permission classifier refuses them as self-approval, because the decision
+    reaches the builder through the grill session, not from Tom. The go steps of the design slices wait; Tom runs
+    the listed commands or approves them in the builder session. Lesson: a go relayed between sessions carries no
+    proof of Tom's decision; the Impl Q113 decision ref is the start of that proof.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
