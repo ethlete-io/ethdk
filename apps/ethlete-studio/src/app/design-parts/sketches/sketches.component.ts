@@ -86,7 +86,6 @@ export class SketchesComponent {
   public roundChange = output<string>();
   public pinToggle = output<string>();
   public pick = output<string>();
-  public expandedChange = output<readonly string[]>();
   public collapse = output();
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
