@@ -255,6 +255,46 @@ describe('actions', () => {
     check.mockResolvedValueOnce({ lines: [], pictures: null });
     expect(await run()).toBe(0);
   });
+
+  it('prints a line as soon as the check reports it, once, with the summary last', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-actions-'));
+    const design = join(target, DESIGN_DIR);
+    const lines: string[] = [];
+
+    mkdirSync(join(design, 'app-a/components/chip'), { recursive: true });
+    writeFileSync(
+      join(design, 'app-a/components/chip/chip.ts'),
+      "export default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} } });\n",
+    );
+    writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
+    vi.spyOn(console, 'log').mockImplementation((line) => void lines.push(String(line)));
+
+    const first = { state: 'default', element: 'button "A"', input: 'click' as const, failure: null };
+    const second = { state: 'default', element: 'button "B"', input: 'click' as const, failure: 'fired no go output' };
+    const seen: string[][] = [];
+    const check = vi.fn<typeof checkActions>(async ({ onLine }) => {
+      onLine?.(first);
+      seen.push([...lines]);
+      onLine?.(second);
+      seen.push([...lines]);
+
+      return { lines: [first, second], pictures: null };
+    });
+
+    expect(
+      await designActions({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        check,
+      }),
+    ).toBe(1);
+    expect(seen).toEqual([
+      ['default button "A" click ok'],
+      ['default button "A" click ok', 'default button "B" click FAILED fired no go output'],
+    ]);
+    expect(lines).toEqual([...seen[1]!, 'components/chip: 1 of 2 action check(s) failed']);
+  });
 });
 
 describe('runActionInput', () => {

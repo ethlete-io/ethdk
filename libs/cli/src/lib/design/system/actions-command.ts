@@ -29,7 +29,7 @@ import {
 } from './actions';
 import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './compare-command';
-import { checkLiveActions, liveLineOf, liveStateCompareOf } from './live-actions';
+import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
 import { reachedStateOf } from './reached-state';
 import { liveSpecOf } from './live-compare';
@@ -219,8 +219,9 @@ export const checkActions = async (options: {
   part: string;
   url: string;
   only: string | null;
+  onLine?: (line: Line) => void;
 }): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[] } | string> => {
-  const { target, config, product, part, url, only } = options;
+  const { target, config, product, part, url, only, onLine } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
   if (typeof frame === 'string') return frame;
@@ -409,6 +410,10 @@ export const checkActions = async (options: {
       return cached;
     };
     const lines: Line[] = [];
+    const pushLine = (line: Line) => {
+      lines.push(line);
+      onLine?.(line);
+    };
     let dir: string | null = null;
 
     const checked = only === null ? names : [only];
@@ -426,7 +431,7 @@ export const checkActions = async (options: {
       const open = opens[state];
 
       if (typeof open === 'string') {
-        lines.push({ state, element: '-', input: null, failure: open });
+        pushLine({ state, element: '-', input: null, failure: open });
         continue;
       }
 
@@ -434,7 +439,7 @@ export const checkActions = async (options: {
       const opener = open ? (design.find((element) => element.control === open.control)?.key ?? null) : null;
 
       if (open && opener === null) {
-        lines.push({ state, element: '-', input: null, failure: `no ${open.control} trigger to open it with` });
+        pushLine({ state, element: '-', input: null, failure: `no ${open.control} trigger to open it with` });
         continue;
       }
 
@@ -465,7 +470,7 @@ export const checkActions = async (options: {
       const { paired, missing } = pairElementsOf({ design, app });
 
       for (const element of missing)
-        lines.push({
+        pushLine({
           state,
           element: elementNameOf(element),
           input: null,
@@ -477,6 +482,11 @@ export const checkActions = async (options: {
         limit: DRAWS_AT_ONCE,
         run: async ({ app: element, design: drawn }) => {
           const out: Line[] = [];
+          const finish = (): Line[] => {
+            for (const line of out) onLine?.(line);
+
+            return out;
+          };
 
           const name = elementNameOf(element);
 
@@ -554,13 +564,13 @@ export const checkActions = async (options: {
           const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
 
           if (drawn === null || action === null || typeof action === 'string') {
-            if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) return out;
+            if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) return finish();
             if (
               drawn !== null &&
               action === null &&
               exemptFromDeclaringOf({ owners: drawn.owners, within: drawn.within, controls: module.default?.controls })
             )
-              return out;
+              return finish();
 
             out.push({
               state,
@@ -574,7 +584,7 @@ export const checkActions = async (options: {
                     : 'the design declares no data-et-action',
             });
 
-            return out;
+            return finish();
           }
 
           for (const input of actionInputsOf(element.key)) {
@@ -654,7 +664,7 @@ export const checkActions = async (options: {
             }
           }
 
-          return out;
+          return finish();
         },
       });
 
@@ -770,6 +780,7 @@ export const designActions = async (options: {
     return 1;
   }
 
+  const printed = new Set<Line>();
   const checked = await withHarnessUrl({
     target,
     product,
@@ -783,6 +794,10 @@ export const designActions = async (options: {
         part: part,
         url,
         only: args.values['--state'] ?? null,
+        onLine: (line) => {
+          printed.add(line);
+          console.log(actionLineOf(line));
+        },
       }),
   });
 
@@ -792,7 +807,7 @@ export const designActions = async (options: {
     return 1;
   }
 
-  for (const line of checked.lines) console.log(actionLineOf(line));
+  for (const line of checked.lines) if (!printed.has(line)) console.log(actionLineOf(line));
 
   if (checked.pictures !== null) console.log(`pictures: ${checked.pictures}`);
 
@@ -849,12 +864,24 @@ const designLiveActions = async (options: {
     return 1;
   }
 
+  const printed = new Set<LiveLine>();
   const checked = await withHarnessUrl({
     target,
     product,
     url: args.values['--url'],
     start: options.start,
-    run: (url) => (options.checkLive ?? checkLiveActions)({ target, config, product, url, part }),
+    run: (url) =>
+      (options.checkLive ?? checkLiveActions)({
+        target,
+        config,
+        product,
+        url,
+        part,
+        onLine: (line) => {
+          printed.add(line);
+          console.log(liveLineOf(line));
+        },
+      }),
   });
 
   if (typeof checked === 'string') {
@@ -863,7 +890,7 @@ const designLiveActions = async (options: {
     return 1;
   }
 
-  for (const line of checked.lines) console.log(liveLineOf(line));
+  for (const line of checked.lines) if (!printed.has(line)) console.log(liveLineOf(line));
 
   const failed = checked.lines.filter((line) => line.failure !== null).length;
   const scope = part ?? 'the live pages';

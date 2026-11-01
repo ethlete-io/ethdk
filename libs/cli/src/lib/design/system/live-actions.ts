@@ -326,8 +326,9 @@ export const checkLiveActions = async (options: {
   product: ResolvedProduct;
   url: string;
   part: string | null;
+  onLine?: (line: LiveLine) => void;
 }): Promise<{ lines: LiveLine[] } | string> => {
-  const { target, config, product, url, part } = options;
+  const { target, config, product, url, part, onLine } = options;
   const live = liveSpecOf({ target, product });
 
   if (typeof live === 'string') return live;
@@ -444,6 +445,12 @@ export const checkLiveActions = async (options: {
       return first ? [{ name, page, state: first, design: first.design }] : [];
     });
     const lines: LiveLine[] = [];
+    const kept = (line: LiveLine) => part === null || line.parts.includes(part);
+    const pushLine = (line: LiveLine) => {
+      lines.push(line);
+
+      if (kept(line)) onLine?.(line);
+    };
     const presses: Parameters<typeof liveDriftOf>[0] = [];
 
     const press = async (options: {
@@ -639,7 +646,7 @@ export const checkLiveActions = async (options: {
                   : parseAction(declared, await statesOf(owner));
 
           if (action === null || typeof action === 'string') {
-            lines.push({
+            pushLine({
               page: run.name,
               element: name,
               input: null,
@@ -711,7 +718,7 @@ export const checkLiveActions = async (options: {
                       })
                     : null;
 
-                lines.push({
+                pushLine({
                   page: run.name,
                   element: name,
                   input,
@@ -724,7 +731,7 @@ export const checkLiveActions = async (options: {
                   }),
                 });
               } catch (error) {
-                lines.push({
+                pushLine({
                   page: run.name,
                   element: name,
                   input,
@@ -736,13 +743,13 @@ export const checkLiveActions = async (options: {
           );
 
           if (toggle !== undefined) {
-            lines.push({ page: run.name, element: `${name} toggle`, input: null, parts, failure: toggle });
+            pushLine({ page: run.name, element: `${name} toggle`, input: null, parts, failure: toggle });
           }
 
           if (rings.click !== null) {
             const { failure, warning } = pointerFocusVerdictOf({ ...rings, activatable: declared !== null });
 
-            lines.push({ page: run.name, element: `${name} pointer focus`, input: null, parts, failure, warning });
+            pushLine({ page: run.name, element: `${name} pointer focus`, input: null, parts, failure, warning });
           }
         }),
       );
@@ -800,7 +807,7 @@ export const checkLiveActions = async (options: {
           });
 
           if (app === null) {
-            lines.push({
+            pushLine({
               page: run.name,
               element: `(no ${shell} on the page)`,
               input: null,
@@ -838,7 +845,7 @@ export const checkLiveActions = async (options: {
             unique.filter((control) => relevant(control.parts)),
           );
         } catch (error) {
-          lines.push({
+          pushLine({
             page: run.name,
             element: '-',
             input: null,
@@ -851,8 +858,6 @@ export const checkLiveActions = async (options: {
 
     const order = (line: LiveLine) =>
       `${line.page}\n${line.element}\n${line.input === null ? '' : ACTION_INPUTS.indexOf(line.input)}`;
-    const kept = (line: LiveLine) => part === null || line.parts.includes(part);
-
     return {
       lines: [...lines.sort((a, b) => order(a).localeCompare(order(b))), ...liveDriftOf(presses)].filter(kept),
     };
