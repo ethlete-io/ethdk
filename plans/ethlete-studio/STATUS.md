@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B20, B21, B22, C1).
+Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, B22, C1).
 
 ## Erledigt
 
+- B20: `task --verify` führt die Aktions-Prüfung aus und bricht bei einem Fehlschlag ab (1855d1bc4, 02.11.).
 - MVP: alle 17 Teile fertig (02.11.).
 - Schnellere Design-CLI: Aktions-Prüfungen laufen parallel und warten auf eine Bedingung statt fester 400 ms;
   shell-main jetzt 80 s statt 322 s (Q16, 02.11.).
@@ -92,7 +93,7 @@ Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B20, B21, B22, C1).
 17. Zustände auch mit echten, großen Daten prüfen (Befund 118).
 18. Jede Zeilen-Variante drücken, auch hinter einem Schalter (Befund 121).
 19. `emit:`-Aktion prüft auch, was der Host daraus macht (Befund 113).
-20. `task --verify` führt die Aktions-Prüfung aus (Befunde 123, 127). **Läuft.**
+20. `task --verify` führt die Aktions-Prüfung aus (Befunde 123, 127). **Erledigt** (1855d1bc4).
 21. Ändert sich ein eingebettetes Teil, müssen die Aktionen der umgebenden Teile neu laufen (Befund 130). **Läuft.**
 22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Läuft.**
 23. Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
