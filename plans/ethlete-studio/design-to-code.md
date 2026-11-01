@@ -990,6 +990,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     (implemented.json); a second component with the same template structure fails, and so does more than one module
     with canvas input listeners. (3) `design actions --live` runs a part's action script on every page that shows
     it (from the import graph) and on every canvas page, and fails when the results differ.
+86. Studio had no go, accept or ready button (builder, 2026-11-01): the server had POST /__design/part-go and
+    part-ready, but no Studio screen called them; accept had no route. Per part, Studio showed only the open-points
+    chip. Fixed in 4f8a7b4a3 and 6f28013b2 (part view bar: "Go geben" and "Änderung abnehmen", German refusals); not
+    clicked live yet. Why missed: nothing checks that a write route has a Studio caller. Tool change (backlog, no new
+    tooling until the MVP): a spec that fails for a POST /__design route without a caller in the Studio host or a
+    CLI-only allowlist.
+87. A refused merge in Studio shows only "merge failed", no reason (builder, from code, 2026-11-01). Why missed: no
+    spec ties a write route's refusals to a Studio message. Fix: a merge reason code (one file) when a flow-4 test hits
+    it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
