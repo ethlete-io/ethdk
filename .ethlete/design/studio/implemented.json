@@ -201,8 +201,8 @@
     }
   },
   "elements/shell-main": {
-    "hash": "f84c628fc8ef9afa",
-    "at": "2026-11-01T15:42:55.129Z",
+    "hash": "71edde6c1106bd74",
+    "at": "2026-11-01T16:46:34.050Z",
     "states": {
       "hidden": "420d506c7ca5c37c",
       "open": "183b29e98916e996",
@@ -218,7 +218,9 @@
       "section": "88b387a9656dcfe6",
       "section-active": "5af9006ae77288f9",
       "section-focus-visible": "eee9916ddb31b52a",
-      "section-hover": "e602cc4eb53b1f08"
+      "section-hover": "e602cc4eb53b1f08",
+      "server-starting": "22fb07be5061be69",
+      "server-stopped": "5fb87f7441a96775"
     }
   },
   "elements/studio-menu": {
