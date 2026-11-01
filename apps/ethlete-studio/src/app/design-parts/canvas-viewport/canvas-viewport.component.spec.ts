@@ -42,7 +42,7 @@ describe('CanvasViewportComponent', () => {
 
     expect('pointerFocus' in viewport.dataset).toBe(true);
 
-    viewport.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', bubbles: true }));
+    viewport.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab', bubbles: true }));
     await fixture.whenStable();
 
     expect('pointerFocus' in viewport.dataset).toBe(false);
