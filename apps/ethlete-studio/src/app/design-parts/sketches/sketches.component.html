@@ -36,12 +36,12 @@
         [restoredCamera]="fixedCamera()"
         [fitPadding]="HEAD_INSET"
         [frameOutline]="1"
+        [opening]="opening()"
         zoomChip="false"
         coveredByShell="false"
         smoothCamera="false"
         clip="false"
         align="start"
-        opening="all"
       >
         <section class="grid w-max grid-cols-[repeat(3,1456px)] gap-x-space-4 gap-y-space-3 select-none">
           @for (variant of variants(); track variant.key) {

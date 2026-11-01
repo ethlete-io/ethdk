@@ -63,7 +63,7 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   public shell = input<ShellState>(SHELL_SAMPLE);
-  public camera = input<'fit' | Camera>('fit');
+  public camera = input<'fit' | '100' | Camera>('fit');
   public selected = input<string | undefined>(undefined);
   public part = input('pages/system');
   public variants = input<SketchVariant[]>(SKETCH_VARIANTS);
@@ -96,8 +96,9 @@ export class SketchesComponent {
   protected fixedCamera = computed(() => {
     const camera = this.camera();
 
-    return camera === 'fit' ? null : camera;
+    return camera === 'fit' || camera === '100' ? null : camera;
   });
+  protected opening = computed(() => (this.camera() === '100' ? 'visible' : 'all'));
 
   constructor() {
     afterRenderEffect(() => {

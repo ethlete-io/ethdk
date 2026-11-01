@@ -164,6 +164,8 @@ export type CanvasRowHead = {
   section?: string;
 };
 
+export type CanvasOpening = 'start' | 'all' | 'visible';
+
 type ColumnGroupHead = CanvasColumnGroup & { x: number; y: number; width: number };
 
 type PlacedFrame = Rect & {
@@ -254,8 +256,8 @@ export class DesignCanvasComponent {
   /** World pixels kept around each projected frame, so an outline drawn past its edge stays in view. */
   public frameOutline = input(0);
 
-  /** The camera a new `cameraKey` opens at without a `restoredCamera`: 100 % at the first frames, or every frame fitted. */
-  public opening = input<'start' | 'all'>('start');
+  /** The camera a new `cameraKey` opens at without a `restoredCamera`: 100 % at the first frames, every frame fitted, or 100 % at the frame the fit shows nearest the top centre. */
+  public opening = input<CanvasOpening>('start');
 
   /** Whether the shell's side panel floats over the canvas's left edge, so camera commands keep clear of it. */
   public coveredByShell = input(true, { transform: booleanAttribute });
@@ -602,7 +604,7 @@ export class DesignCanvasComponent {
 
   private coveredAtFit = 0;
 
-  private following: 'all' | 'start' | { frame: string } | null = null;
+  private following: CanvasOpening | { frame: string } | null = null;
 
   private followsResize = false;
 
@@ -983,7 +985,7 @@ export class DesignCanvasComponent {
   }: {
     bounds: Rect;
     viewport: Size;
-    following: 'all' | 'start' | { frame: string };
+    following: CanvasOpening | { frame: string };
   }): Camera | null {
     if (typeof following === 'string') return this.fitted({ bounds, viewport, fit: following });
 
@@ -992,10 +994,15 @@ export class DesignCanvasComponent {
     return placed ? this.inView(viewport, (view) => focusRect({ rect: placed, ...view, padding: FIT_PADDING })) : null;
   }
 
-  private fitted({ bounds, viewport, fit }: { bounds: Rect; viewport: Size; fit: 'all' | 'start' }): Camera {
+  private fitted({ bounds, viewport, fit }: { bounds: Rect; viewport: Size; fit: CanvasOpening }): Camera {
     if (fit === 'start') return this.openingCamera(bounds);
 
-    return cameraFor({ kind: 'all' }, this.scene(bounds, viewport)) ?? this.camera();
+    const scene = this.scene(bounds, viewport);
+    const all = cameraFor({ kind: 'all' }, scene) ?? this.camera();
+
+    if (fit === 'all') return all;
+
+    return cameraFor({ kind: 'visible', zoom: 1 }, { ...scene, camera: all }) ?? all;
   }
 
   private openingCamera(bounds: Rect): Camera {

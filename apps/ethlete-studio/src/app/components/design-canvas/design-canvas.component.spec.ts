@@ -153,7 +153,7 @@ describe('DesignCanvasComponent', () => {
   });
 
   describe('when the canvas width changes', () => {
-    const setup = async ({ opening = 'start' }: { opening?: 'start' | 'all' } = {}) => {
+    const setup = async ({ opening = 'start' }: { opening?: 'start' | 'all' | 'visible' } = {}) => {
       const size = { width: 1200, height: 1000, panel: 320 };
       const resized: (() => void)[] = [];
       let host: unknown = null;
@@ -235,6 +235,22 @@ describe('DesignCanvasComponent', () => {
       await resizeTo(600);
       await hidePanel();
       await resizeTo(1500);
+
+      expect(canvas.camera()).toEqual(opened);
+    });
+
+    it('opens at 100 % on the frame a fit shows nearest the top centre', async () => {
+      const { canvas, resizeTo } = await setup({ opening: 'visible' });
+      const opened = canvas.camera();
+
+      canvas.fitAll();
+      expect(canvas.camera().zoom).toBeLessThan(1);
+      canvas.show({ kind: 'visible', zoom: 1 });
+
+      expect(opened).toEqual(canvas.camera());
+      expect(opened.zoom).toBe(1);
+
+      await resizeTo(600);
 
       expect(canvas.camera()).toEqual(opened);
     });
