@@ -144,7 +144,7 @@ const FRAME_SCALE = 0.5;
                       >
                         <span
                           class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
-                          >{{ index + 1 }}</span
+                          >{{ index }}</span
                         >
                       </div>
                     }
@@ -157,7 +157,7 @@ const FRAME_SCALE = 0.5;
                 @for (entry of shown(); track entry.id; let index = $index) {
                   <li [etProvideColor]="themeOf(entry.status)" class="flex gap-space-2 text-ui-sm">
                     <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">{{
-                      index + 1
+                      index
                     }}</span>
                     <span class="flex min-w-0 flex-col">
                       @if (entry.label) {
