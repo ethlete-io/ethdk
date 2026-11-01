@@ -353,3 +353,10 @@ only; the builder starts when Tom gives the start.
   needs, for every server it talks to (own, tmux, other project). An older one shows a notice that names the cause
   and the fix: "restart the server" when the project's installed cli is newer than the running server, else "update
   `@ethlete/cli` in <project>". Studio shows the notice after pilot slice 3, when `studio-view` is free.
+- Impl Q8 picker font (Tom, 2026-11-01): a design defect, fixed on the design side. The Studio frame no longer takes
+  `--et-font-family` from the SDK foundations `colors.css` (`system-ui`), so the SDK menu in `elements/shell-main`
+  state `project-picker` draws in the Studio font, like the app. Then the builder closes the remaining 29 px
+  (antialiasing at the rounded corners of the transformed overlay pane) in the app.
+- Impl Q9 picker autofocus (Tom, 2026-11-01): the real app keeps `autoFocus` on for the project picker menu, so a
+  keyboard open focuses the first item. The design state `project-picker` means a pointer open; compare opens the
+  menu by pointer, so no focus ring shows.
