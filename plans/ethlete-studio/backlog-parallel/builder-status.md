@@ -201,6 +201,11 @@ Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix ch
 
 ## Builder ethlete-sdk-4b (third fresh context, 2026-11-01)
 
-- In progress: sdk components/checkbox + components/radio-group variant d to the current control rules (no visual
-  change), then `sketch ready` and `design sketch merge --variant d`. One sonnet subagent.
-- In progress: the crash-fix subagent from the last context (libs/cli complete.ts, uncommitted).
+- As built: checkbox + radio-group variant d declare controls and omits, no pixel change (contact sheets
+  byte-identical, light and dark) (3a8bfb612, d4d8ee5cd). Variants a, b, c rejected as lost to r2 (d00c0540c).
+  `sketch ready` counted render issues of rejected variants; fixed, spec bites (d46b8035a). Both parts ready and
+  merged with --allowed-by Q102/Q113 (e855918d4).
+- As built: `design check --complete` crash fixed (b8f798e65): a control clipped outside the page is skipped, a frame
+  that throws becomes a RENDER finding. Spec bites. Full Studio run: 24 of 26 parts clean; open: canvas-frames
+  (out, reset, in, fit are control ids no state draws), part-tree (state row).
+- Pushed next (96a2406d0).
