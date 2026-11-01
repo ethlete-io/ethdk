@@ -306,7 +306,7 @@ export const inbox = () =>
     },
     render: async ({ showResolved, openOn, draft, entry, load, comments: list = COMMENTS }) => {
       const controls = await ng(
-        `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" />`, 'resolved')}</span>`,
+        `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange" />`, 'resolved')}</span>`,
         { imports: ['SWITCH_IMPORTS'] },
       );
       const dialog =
