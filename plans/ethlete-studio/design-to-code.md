@@ -290,6 +290,15 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     `4b64a4137ba97697`); `part-compare.spec.ts` 17 of 17, the new tests fail without the fix; tsc and eslint on the
     cli files. Not verified: full cli and Studio suites, compare `pages/merge` (state `unchanged-open` now opens by
     click). `task --verify` without a revision checks HEAD, so it fails while other agents commit; pass the revision.
+  - Pilot slice 3 as built (`c41236520`, `55f20e053`): `system-view` draws `ShellMainComponent` around every view;
+    the tree sits in the side panel, the rail lists the design products, section Inbox draws `InboxComponent` with
+    live comment-store rows (`system-view/inbox-comments.ts`). The old comment panel, product `et-select` and
+    "Comments · n" button are deleted; "n ?" opens Inbox. The checkout picker moved from the footer into the shell
+    project picker ("Projekt öffnen…" opens the checkouts panel). Verified: compare `pages/inbox` 0 px in 7 of 7;
+    ngc, tsc, eslint; app vitest 443 of 444 (the stale canvas class spec, fixed in `d0d4df8fc`); headless on own
+    servers with a stubbed Tauri host: products, tree, 53 inbox rows, section switch, project switch, chat, no page
+    errors. Not verified: row click to an open comment in the browser (all comments resolved), real frames in the
+    shell, Studio on :4402 (Tom's check).
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
