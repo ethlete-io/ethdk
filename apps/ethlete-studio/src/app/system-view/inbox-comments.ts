@@ -42,9 +42,8 @@ const initialsOf = (name: string) =>
     .map((word) => word.charAt(0).toUpperCase())
     .join('');
 
-export const senderOf = (by: 'user' | 'agent', author: string | undefined, userName?: string | null) => {
-  if (by === 'user')
-    return userName ? { author: userName, initials: initialsOf(userName) } : { author: 'Du', initials: 'Du' };
+export const senderOf = (by: 'user' | 'agent', author: string | undefined) => {
+  if (by === 'user') return { author: 'Du', initials: 'Du' };
 
   const known = AGENTS.find(({ match }) => author && match.test(author));
 
@@ -53,7 +52,10 @@ export const senderOf = (by: 'user' | 'agent', author: string | undefined, userN
     : { author: author ?? 'Agent', initials: 'A' };
 };
 
-export const inboxCommentOf = (comment: ListedComment, now: number, userName?: string | null): InboxComment => {
+export const inboxCommentOf = (
+  comment: ListedComment,
+  { now, userName }: { now: number; userName?: string | null },
+): InboxComment => {
   const last = comment.replies.at(-1) ?? {
     by: 'user' as const,
     author: undefined,
@@ -64,7 +66,9 @@ export const inboxCommentOf = (comment: ListedComment, now: number, userName?: s
 
   return {
     id: comment.id,
-    ...senderOf(last.by, last.author, userName),
+    ...(last.by === 'user' && userName
+      ? { author: userName, initials: initialsOf(userName) }
+      : senderOf(last.by, last.author)),
     when: inboxAgeOf(last.createdAt, now),
     part: inboxPartOf(comment.part),
     state: `${comment.state}${interaction}`,

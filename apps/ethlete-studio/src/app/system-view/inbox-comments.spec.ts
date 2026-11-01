@@ -29,7 +29,7 @@ describe('inboxAgeOf', () => {
 
 describe('inboxCommentOf', () => {
   it('shows the first text by the user while nobody answered, and waits on the agent unmarked', () => {
-    expect(inboxCommentOf(comment({ interaction: 'hover' }), NOW)).toEqual({
+    expect(inboxCommentOf(comment({ interaction: 'hover' }), { now: NOW })).toEqual({
       id: 'a',
       author: 'Du',
       initials: 'Du',
@@ -44,7 +44,7 @@ describe('inboxCommentOf', () => {
   });
 
   it('names a comment by the user with the git user name and its initials', () => {
-    expect(inboxCommentOf(comment({}), NOW, 'Tom Bornholdt')).toMatchObject({
+    expect(inboxCommentOf(comment({}), { now: NOW, userName: 'Tom Bornholdt' })).toMatchObject({
       author: 'Tom Bornholdt',
       initials: 'TB',
     });
@@ -56,7 +56,7 @@ describe('inboxCommentOf', () => {
         threadState: 'question',
         replies: [{ by: 'agent', author: 'claude-opus-5-5', text: 'Darker?', createdAt: '2026-11-04T14:57:00' }],
       }),
-      NOW,
+      { now: NOW },
     );
 
     expect(row).toMatchObject({ author: 'Claude', agent: 'claude', text: 'Darker?', when: 'vor 3 Min', replies: 1 });
@@ -70,7 +70,7 @@ describe('inboxCommentOf', () => {
         resolved: { by: 'user', resolvedAt: '2026-11-04T14:58:00' },
         replies: [{ by: 'agent', author: 'mistral-large', text: 'Done', createdAt: '2026-11-04T14:00:00' }],
       }),
-      NOW,
+      { now: NOW },
     );
 
     expect(row).toMatchObject({ author: 'mistral-large', initials: 'A', resolved: true, unread: false });

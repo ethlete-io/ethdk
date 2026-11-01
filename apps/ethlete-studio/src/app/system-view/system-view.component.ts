@@ -921,7 +921,7 @@ export class SystemViewComponent {
     const userName = this.commentStore.userName();
 
     return [...this.commentStore.comments(), ...this.commentStore.resolved()].map((comment) =>
-      inboxCommentOf(comment, now, userName),
+      inboxCommentOf(comment, { now, userName }),
     );
   });
 
