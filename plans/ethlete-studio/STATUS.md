@@ -46,7 +46,9 @@ oben rechts in der Teil-Ansicht.
 - Ein Canvas für System und Sketches (01.11.). Sketches verschiebt jetzt mit gedrückter linker Maustaste wie System.
 - Zoom-Leiste wieder unten rechts, kein türkiser Rahmen mehr nach einem Klick in den Canvas (01.11.).
 - Spalte „Aktuell“ im Sketch zeigt immer einen Rahmen (01.11.).
+- Ausgewählter Rahmen in Sketches hat denselben Umriss wie in System; kein Rahmen mehr beim Hovern (01.11.).
+- Knopf „2 offen“ bleibt nicht mehr gedrückt, wenn das Popup schließt (01.11.).
 
 ## Gerade in Arbeit
 
-- Parallel: Umriss für den ausgewählten Rahmen in Sketches, Fehler-Toast, Start und Merge.
+- Parallel: leere Merge-Ansicht, Schrift im Baum 13 px, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.

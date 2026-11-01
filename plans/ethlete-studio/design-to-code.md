@@ -1362,6 +1362,7 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   `mountCanvasViewport` (parked until after MVP).
 - Impl Q126 Sketches selection mark (Tom, 2026-11-01): a selected frame in Sketches shows the same selection outline
   as System, from the one canvas component (no second outline implementation).
+  Done in d7451f821 (one `canvas-frame-border` for System and Sketches, e2e 31/31) with finding 96 (8ed75e200).
 - Impl Q127 tree text size (Tom, 2026-11-01): tree rows (components/tree-row) go from 11 px (`1.1rem`) to 13 px
   (`1.3rem`), the size of the open-points popup and menu items; the row height grows with it. Design change, so Tom
   gives a new go on components/tree-row (and on parts that embed it if their go goes stale).
