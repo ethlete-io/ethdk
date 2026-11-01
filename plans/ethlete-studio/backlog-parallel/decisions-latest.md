@@ -315,3 +315,4 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
 - After the MVP (Tom, 2026-11-01, Impl Q88-Q92): plan what Studio shows of the server status and diagnostics (old footer); "Scan" for checkouts; a design pass for an update hint; a design for the "Ausnahmen N" popover; the legacy design-call view keeps its old look.
 - After the MVP (Tom, 2026-11-01, Impl Q100/Q101): a design for the entry into the Inventory page (the System parts
   toggle stays until then); a target for the "All products" rail button, which leaves design and app now.
+- After the MVP (Tom, 2026-11-01, Impl Q116): `import/no-cycle` for libs/components and resolve its 71 in-lib cycles.

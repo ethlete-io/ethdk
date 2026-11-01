@@ -1125,3 +1125,20 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   ready/done part STALE and names the changed files. Together with Impl Q109. Finding 58.
 - Impl Q113 go guard (Tom, 2026-11-01): `design go --by tom` needs a decision ref (`--note "Impl Qnn"`) and refuses
   when the design commit is newer than that decision. Finding 64.
+- Impl Q114 auto go `by` (Tom, 2026-11-01): an auto go or acceptance (Impl Q109) keeps the previous `by` and adds
+  `auto: true`.
+- Impl Q115 decision ref vs later design (Tom, 2026-11-01): with Impl Q119, Tom's confirm is the proof. "Design newer
+  than the decision" is no longer a refusal but a note in the confirm list (for example "design changed after Impl
+  Q98 (5e554809b)"). `--note "Impl Qnn"` stays required. Changes Impl Q113. Finding 64.
+- Impl Q116 import cycles (Tom, 2026-11-01): `import/no-cycle` (or madge --circular) as a lint error for libs/core
+  now, and resolve its 24 cycles; libs/components (71 in-lib cycles) after the MVP. Finding 68.
+- Impl Q117 shell-main surface (Tom, 2026-11-01): the shell-main drawing root (shell-main.ts:233) gets
+  `data-et-surface`, because the app paints the same fill; the DEMO-BACKDROP exemption applies, no tool change. Do it
+  before Tom's shell-main go. Finding 71.
+- Impl Q118 compare without go (Tom, 2026-11-01): `design compare` runs on a part changed since its go and marks the
+  result "unapproved"; the go gate stays on `task --verify`, ready and accept. Finding 72.
+- Impl Q119 Tom go needs Tom (Tom, 2026-11-01): `--by tom` (go and accept) needs a TTY confirm or a Studio click,
+  which an agent cannot give. The builder writes a go list; Tom confirms it at once with
+  `et design go --batch <file>`, one prompt for all entries. The builder no longer writes a chat-approved go itself
+  (replaces Impl Q45). Finding 74.
+- Impl Q120 shell-main keyboard open (Tom, 2026-11-01): shell-main gets the `open-focus-visible` state, as Impl Q95.
