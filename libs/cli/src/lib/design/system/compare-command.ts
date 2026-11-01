@@ -27,6 +27,7 @@ import {
 } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { watchSdkErrors } from './sdk-errors';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
@@ -284,6 +285,7 @@ export const harnessShotOf = async (options: {
 
   try {
     const page = await context.newPage();
+    const sdkErrors = watchSdkErrors(page);
 
     await page.goto(url, { timeout }).catch((error: unknown) => {
       throw new HarnessError(`the harness page ${url} did not load: ${messageOf(error).split('\n')[0] ?? ''}`);
@@ -340,7 +342,13 @@ export const harnessShotOf = async (options: {
 
       await page.evaluate(checkerScriptOf(hostBox));
 
-      return await host.screenshot({ type: 'png', animations: 'disabled', timeout });
+      const png = await host.screenshot({ type: 'png', animations: 'disabled', timeout });
+
+      const sdkProblem = sdkErrors(`the harness page ${url}`);
+
+      if (sdkProblem) throw new HarnessError(sdkProblem);
+
+      return png;
     }
 
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
@@ -357,13 +365,19 @@ export const harnessShotOf = async (options: {
 
     await page.evaluate(checkerScriptOf(clip));
 
-    return await page.screenshot({
+    const png = await page.screenshot({
       type: 'png',
       fullPage: true,
       animations: 'disabled',
       clip,
       timeout,
     });
+
+    const sdkProblem = sdkErrors(`the harness page ${url}`);
+
+    if (sdkProblem) throw new HarnessError(sdkProblem);
+
+    return png;
   } finally {
     await context.close();
   }

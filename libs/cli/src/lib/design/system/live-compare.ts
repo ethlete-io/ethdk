@@ -8,6 +8,7 @@ import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { ShootStates, StateShot } from './compare-command';
 import { harnessOf } from './harness-map';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
+import { watchSdkErrors } from './sdk-errors';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 type Storage = Record<string, unknown>;
@@ -233,6 +234,7 @@ export const liveShotOf = async (options: {
 
   try {
     const page = await context.newPage();
+    const sdkErrors = watchSdkErrors(page);
 
     if (spec.now !== undefined) await page.clock.setFixedTime(spec.now);
     const answers = { ...spec.answers, ...options.page.answers, ...options.state.answers };
@@ -348,7 +350,13 @@ export const liveShotOf = async (options: {
       same = last !== null && shot.equals(last) ? same + 1 : 0;
       last = shot;
 
-      if (same >= STABLE_SHOTS - 1) return shot;
+      if (same >= STABLE_SHOTS - 1) {
+        const sdkProblem = sdkErrors(`the app page ${address}`);
+
+        if (sdkProblem) throw new LiveError(sdkProblem);
+
+        return shot;
+      }
       if (Date.now() > deadline)
         throw new LiveError(`the app page ${address} did not stop changing within ${timeout} ms`);
 

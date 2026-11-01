@@ -426,29 +426,31 @@ describe('harnessShotOf', () => {
       response.end(
         request.url?.includes('components%2Finputs')
           ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
-          : request.url?.includes('components%2Fclear')
-            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
-            : request.url?.includes('components%2Fupward')
-              ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
-              : request.url?.includes('components%2Ffraction')
-                ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
-                : request.url?.includes('components%2Fbadge')
-                  ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
-                  : request.url?.includes('components%2Fpicker')
-                    ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-                    : request.url?.includes('components%2Fpaned')
-                      ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
-                      : request.url?.includes('components%2Fportal')
-                        ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
-                        : request.url?.includes('components%2Ftwice')
-                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                          : request.url?.includes('components%2Fhover')
-                            ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                            : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                              ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                              : request.url?.startsWith('/__design-harness')
-                                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                                : '<body>no harness</body>',
+          : request.url?.includes('components%2Ferroring')
+            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script></body>'
+            : request.url?.includes('components%2Fclear')
+              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
+              : request.url?.includes('components%2Fupward')
+                ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
+                : request.url?.includes('components%2Ffraction')
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+                  : request.url?.includes('components%2Fbadge')
+                    ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+                    : request.url?.includes('components%2Fpicker')
+                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+                      : request.url?.includes('components%2Fpaned')
+                        ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
+                        : request.url?.includes('components%2Fportal')
+                          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
+                          : request.url?.includes('components%2Ftwice')
+                            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                            : request.url?.includes('components%2Fhover')
+                              ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                              : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                                ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                                : request.url?.startsWith('/__design-harness')
+                                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                                  : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -667,6 +669,16 @@ describe('harnessShotOf', () => {
         timeout: 500,
       }),
     ).rejects.toThrow('has no [aria-expanded] trigger named "Other" to click control pick open');
+  });
+
+  it('fails with the code and message of each SDK error the harness page logs', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = harnessUrlOf({ url, part: 'components/erroring', state: 'a', props: {} });
+
+    await expect(harnessShotOf({ browser, url: page })).rejects.toThrow(
+      `the harness page ${page} logged SDK errors:\n  ET1234: The control has no accessible name.`,
+    );
   });
 
   it('names the url when the page has no host element', async (context) => {

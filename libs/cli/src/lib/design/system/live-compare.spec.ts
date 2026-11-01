@@ -1,4 +1,7 @@
-import { answerFileOf, liveSpecProblemOf, mergedStorageOf, substitutedOf } from './live-compare';
+import { createServer, Server } from 'http';
+import { AddressInfo } from 'net';
+import { chromium, type Browser } from 'playwright';
+import { answerFileOf, liveShotOf, liveSpecProblemOf, mergedStorageOf, substitutedOf } from './live-compare';
 
 const SPEC = {
   host: 'app-shell',
@@ -92,3 +95,58 @@ describe('answerFileOf', () => {
     expect(answerFileOf(answers, new URL('http://localhost/__design/flows?product=b'))).toBeNull();
   });
 });
+
+describe('liveShotOf', () => {
+  let browser: Browser | undefined;
+  let server: Server;
+  let url = '';
+
+  beforeAll(async () => {
+    browser = await chromium.launch().catch(() => undefined);
+    server = createServer((request, response) => {
+      response.setHeader('content-type', 'text/html');
+      response.end(
+        `<body style="margin:0"><main style="display:block;width:7px;height:5px;background:#0000ff"></main>${
+          request.url === '/erroring'
+            ? '<script>console.error("ERROR", new Error("ET1234: The control has no accessible name."));console.error("plain error");</script>'
+            : ''
+        }</body>`,
+      );
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await browser?.close();
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  const shotOf = (path: string) =>
+    liveShotOf({
+      browser: browser as Browser,
+      url,
+      size: { width: 7, height: 5 },
+      spec: { host: 'main', pages: {} },
+      dir: '.',
+      page: { path, states: {} },
+      state: { design: 'a' },
+      server: 'http://localhost:1',
+      checkout: '.',
+      timeout: 5000,
+    });
+
+  it('shoots a page that logs no SDK error', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect((await shotOf('/fine')).length).toBeGreaterThan(0);
+  });
+
+  it('fails with the code and message of each SDK error the page logs', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(shotOf('/erroring')).rejects.toThrow(
+      `the app page ${url}/erroring logged SDK errors:\n  ET1234: The control has no accessible name.`,
+    );
+  });
+}, 30_000);
