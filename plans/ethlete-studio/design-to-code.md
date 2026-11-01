@@ -788,6 +788,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     and pass alone (flaky). Lesson: file-scoped lint cannot see a dependency change; a commit that adds a package
     import must also lint the project's package.json. Fix: done in the subagent brief
     (`npx eslint libs/<lib>/package.json` after `yarn install`).
+62. Impl Q86 DEMO-BACKDROP check (fc6803125) flags only elements/studio-menu after the shell-collapse and
+    shell-project-switch backdrops went (0987a5490, studio-menu.ts:105; its app host copies the fill). Both shell
+    parts already showed PART-UNREVIEWED before that edit, probably since f1fea4e17 (the Impl Q79 action attributes).
+    Cause: open, asked the builder. Accept + go for both: Impl Q107 (Tom); studio-menu backdrop: Impl Q108 (Tom).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
