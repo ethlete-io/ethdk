@@ -664,6 +664,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     overlay mechanism.
 41. `node_modules/.vitest-cache` served an old compiled `studio-labels.ts` after an edit; only deleting the stale
     entries fixed it. Lesson: a spec that disagrees with the source after an edit is a cache suspect first.
+42. SDK focus-visible defects seen in Studio (Tom, screenshots): (a) the select (Basis field, "Keine Basis") shows
+    the focus-visible ring on its selected option as soon as a mouse click opens it; the menu (project switcher) does
+    not. Wanted: an overlay shows focus-visible only when the keyboard opened it. (b) After arrow-key navigation, a
+    mouse move leaves the focus-visible ring on one option while hover highlights another. Wanted: the mouse takes
+    over, so pointer use ends the keyboard focus-visible state. Fix in `libs/components` (both select and menu), with
+    a behavior test in `apps/storybook-e2e`.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
