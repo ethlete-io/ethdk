@@ -563,6 +563,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 14. The SDK menu mock in the kit does not draw the real pane's padding and elevation, so a design that uses the mock
     is still darker and its rows sit about 5 px higher than the real SDK overlay (Impl Q34). Lesson candidate: kit
     mocks are checked against the real SDK component.
+15. The SDK menu mock can force only row index 1, so a part builds its own rows with `data-et-force` (Impl Q44).
+    Lesson candidate: the mock takes a forced row index.
+16. The check ignores the options of an embedded menu part until each row carries `data-et-slot="components/menu"`
+    (Impl Q44). Lesson candidate: the check attributes the rows of an embedded part without a manual marker.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
