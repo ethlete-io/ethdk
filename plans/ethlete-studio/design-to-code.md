@@ -1148,8 +1148,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      a declared action; a non-control still fails), 9f1d2ba78 lets Space pick a merge row.
 109. The part view shows "Go geben" and "Änderung abnehmen" side by side, both as primary buttons (Tom, 2026-11-01,
      screenshot): two approvals next to each other read as the same thing, and it is not clear which one to click.
-     Tom knows that go and inventory get reworked after MVP; park it there. Cause and the tool lesson: open, asked
-     the builder (when does "Änderung abnehmen" show, and how does it differ from a go?).
+     Tom knows that go and inventory get reworked after MVP; park it there. Fact (builder): "Änderung abnehmen" shows when a merged part was changed directly in its design files, outside a
+     sketch (`shown.directEdit`, part-approval.component.ts:50); it writes accepted.json (Tom accepts the design
+     change). "Go geben" writes go.json (Tom releases the part to be built). A direct edit needs both, so both show.
+     Lesson for the rework: one approval step per change, or a clear order (accept first, then go) with only the next
+     step as the primary button.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
