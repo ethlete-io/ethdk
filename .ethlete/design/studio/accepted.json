@@ -1533,5 +1533,12 @@
     "note": "Tom approved Impl Q44: draw the project option states",
     "hash": "252ddbc305698c72",
     "at": "2026-11-01T13:09:50.176Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "tom",
+    "note": "Impl Q34 (Q45): SDK menu mock redraw and forced rows, approved by Tom",
+    "hash": "d64b5062f9155b5a",
+    "at": "2026-11-01T13:17:41.442Z"
   }
 ]
