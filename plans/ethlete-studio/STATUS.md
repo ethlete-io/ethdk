@@ -26,8 +26,8 @@ ausgeklammert.
 | pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün                                         | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“                                                   | Builder, dann Tom |
-| pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“, Ladezustand am Merge-Knopf (Q132); Prüfung noch nicht grün | Builder           |
+| pages/start                     | ❌     | Prüfung grün, Vergleich 0 px; Live-Shot fehlt, dann „Go geben“                                                          | Builder, dann Tom |
+| pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ❌     | Go gegeben (22:47); Builder macht „ready“                                                                               | Builder           |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf

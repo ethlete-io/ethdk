@@ -1139,6 +1139,13 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 107. The logo button (the studio-menu trigger `.st-studio-trigger`) has a different corner radius on hover and
      active than at rest (Tom, 2026-11-01, two screenshots). Expected: one radius in every state. Cause and the tool
      lesson: open, asked the builder.
+108. `design actions` reported "app draws no such element" for merge-error on 2 of 3 loads (builder, 2026-11-01).
+     Cause: the page harness host showed before the lazy part rendered, so the scan found 0 buttons. Fix 0ec9cefca:
+     the scan waits for the mounted part. Why missed: the tool was tried only on parts that load fast, and a scan
+     with 0 controls never warns. Tool lesson (any project, built): an action scan that finds 0 controls where the
+     design declares some must retry or stop as a tool error, never report a missing app element. Same slice:
+     aacb82c2c corrects the pointer-focus probe of finding 91 (a key after a click may raise the ring on a control or
+     a declared action; a non-control still fails), 9f1d2ba78 lets Space pick a merge row.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
