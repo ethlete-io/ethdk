@@ -946,7 +946,7 @@ test('template/elements-content: hosts that render their own content are valid',
   }
 });
 
-const NOT_IN_RECOMMENDED = new Set(['no-cdk-import', 'no-legacy-query-import']);
+const NOT_IN_RECOMMENDED = new Set(['no-cdk-import', 'no-legacy-query-import', 'no-native-title']);
 
 test('every registered rule is in a recommended config or on the exclusion list', () => {
   const configured = new Set(

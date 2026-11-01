@@ -261,7 +261,7 @@ The custom rules that run on `**/*.html` files (via `recommendedTemplate`) inste
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
 | `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) - use a static attribute for coercing component inputs; native booleans are exempt |     | warn    |
 | `require-form-submit`              | Every `<form>` handles its own submission through `[etForm]`, `[formRoot]`, `(ngSubmit)`, `(submit)` or native submission                                       |     | error   |
-| `no-native-title`                  | No native `title` (`title="…"`, `[title]`, `[attr.title]`) on an HTML element - use the SDK tooltip; components keep their own `title` input                    |     | error   |
+| `no-native-title`                  | No native `title` (`title="…"`, `[title]`, `[attr.title]`) on an HTML element - use the SDK tooltip; components keep their own `title` input                    |     | off     |
 
 The rewrite is only equivalent when the input declares a `booleanAttribute` transform - otherwise a static attribute passes the _string_ `'true'` / `'false'` instead of a boolean. A template rule has no type information to verify that, so the fix is offered as an editor **suggestion** (💡) rather than applied by `--fix`, and the severity stays at `warn`. Keep the binding for inputs that take a plain boolean without a transform.
 
@@ -296,7 +296,7 @@ The rewrite is only equivalent when the input declares a `booleanAttribute` tran
 
 A form that declares native submission is left alone (`action`, `ngNoForm`, `method="dialog"`) - the platform handles those. A `[type]` _binding_ is also left alone, since a template rule cannot resolve what it evaluates to.
 
-`no-native-title` replaces the browser tooltip with the SDK tooltip: a native `title` is unstyled, ignores the theme, cannot be opened on touch and is not controllable. An element with a dash in its name is a component or custom element, so its own `title` input or attribute is left alone; `[attr.title]` is reported on every element.
+`no-native-title` is off in `recommendedTemplate`; turn it on per project. It replaces the browser tooltip with the SDK tooltip: a native `title` is unstyled, ignores the theme, cannot be opened on touch and is not controllable. An element with a dash in its name is a component or custom element, so its own `title` input or attribute is left alone; `[attr.title]` is reported on every element.
 
 ```html
 <!-- ❌ native browser tooltip -->

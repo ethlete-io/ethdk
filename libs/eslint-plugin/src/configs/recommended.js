@@ -427,8 +427,6 @@ const recommendedTemplate = {
     'ethlete/prefer-static-boolean-properties': 'warn',
     // A form must handle its own submission
     'ethlete/require-form-submit': 'error',
-    // No native title attribute - the SDK tooltip replaces the browser tooltip
-    'ethlete/no-native-title': 'error',
     // No static style attribute or [attr.style] binding - a strict CSP blocks both
     'ethlete/no-csp-unsafe': 'error',
   },
