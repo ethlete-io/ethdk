@@ -1098,7 +1098,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      on the inbox canvas, the frame with its pin. Fact: the pages/inbox design declares only the controls pin, send,
      resolved and retry; the rows have no control, although the design note says "the canvas shows the frame of the
      selected comment". Why missed: `design actions` checks only declared controls, so a list whose rows have no
-     control passes, and Tom gave the go on a design without the row action. Tool lesson: open, asked the builder.
+     control passes, and Tom gave the go on a design without the row action. Every action check starts from what the
+     design declares, so a missing interaction is silent. Tool fix (any project, after MVP): `design check` flags each
+     repeated sibling group (3+ items with the same structure, for example list rows or cards) whose items carry no
+     control and no explicit `data-et-static`; the author gives the rows an action or marks them static on purpose.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
