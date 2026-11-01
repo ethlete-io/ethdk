@@ -1561,5 +1561,35 @@
     "note": "Impl Q64: draw studio-menu option-hover, option-focus-visible, option-active with forced menu rows",
     "hash": "7d4694350dfb77c3",
     "at": "2026-11-01T14:21:53.439Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by plans/ethlete-studio/design-to-code.md Impl Q87 (Tom, 2026-11-01)",
+    "hash": "fe5532ca22863155",
+    "at": "2026-11-01T16:32:48.030Z"
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by plans/ethlete-studio/design-to-code.md Impl Q87 (Tom, 2026-11-01)",
+    "hash": "402e15d5e1e5eb7a",
+    "at": "2026-11-01T16:33:09.855Z"
+  },
+  {
+    "part": "elements/studio-menu",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "517f1a9d43ccf18e",
+    "at": "2026-11-01T16:34:06.949Z",
+    "auto": true
+  },
+  {
+    "part": "elements/shell-main",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "9cff163528746cb4",
+    "at": "2026-11-01T16:34:06.950Z",
+    "auto": true
   }
 ]

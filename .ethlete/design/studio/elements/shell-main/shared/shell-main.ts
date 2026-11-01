@@ -1,6 +1,6 @@
 import pickerStyles from './picker.css?inline';
 import { drawing, forceInteraction, html, interactionRows, slot, type Interaction } from '@design-system';
-import { buttonStyles } from '@ethlete/components/design/button';
+import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import menu from '@system/components/menu';
@@ -19,6 +19,8 @@ type Props = {
   projectPicker?: 'open';
   studio?: string;
   force?: RailForce;
+  server?: 'stopped' | 'starting';
+  log?: string[];
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -142,6 +144,44 @@ const picker = (placement: 'above' | 'beside', projectMenu: string) =>
     ${projectMenu}
   </div>`;
 
+const SERVER_LOG = [
+  'vite v7.1.4 dev server running at http://localhost:4402/',
+  'Error: EADDRINUSE: address already in use :::4402',
+  'design server exited with code 1',
+];
+
+const restartButton = button({
+  label: 'Neu starten',
+  variant: 'outline',
+  color: 'surface',
+  size: 'sm',
+}).replace(/^<button /, '<button data-et-control="restart" data-et-action="emit:restartServer" ');
+
+const serverScreen = (server: 'stopped' | 'starting', log: string[]) =>
+  html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">
+    ${
+      server === 'starting'
+        ? html`<div class="mx-auto mt-15 w-full max-w-6xl box-border px-space-5">
+            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server startet</h3>
+          </div>`
+        : html`<div
+            class="mx-auto mt-15 flex w-full max-w-6xl box-border flex-col items-start gap-space-3 px-space-5 text-ui-sm text-et-surface-muted"
+            role="alert"
+          >
+            <h3 class="m-0 text-ui-lg font-ui-strong text-et-surface">Design-Server gestoppt</h3>
+            ${
+              log.length
+                ? html`<pre
+                    class="m-0 box-border max-h-60 w-full overflow-auto rounded-control-md bg-et-surface-interaction/6 p-space-3 font-code text-ui-xs whitespace-pre-wrap"
+                  >
+${log.join('\n')}</pre>`
+                : ''
+            }
+            ${restartButton}
+          </div>`
+    }
+  </div>`;
+
 const BASE: Props = { section: 'System', product: 'studio', side: '', content: '' };
 
 const railRows = interactionRows<Props, 'section' | 'product' | 'products', RailInteraction>(
@@ -160,6 +200,8 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
   widths: [1440],
   states: {
     'project-picker': { ...BASE, projectPicker: 'open' },
+    'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
+    'server-starting': { ...BASE, server: 'starting' },
     open: BASE,
     hidden: { ...BASE, panel: 'hidden' },
     ...railRows.states,
@@ -170,13 +212,25 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     product: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     products: { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] },
     collapse: { kind: 'button' as const, part: 'components/shell-collapse' as const },
+    restart: { kind: 'button' as const, part: 'components/button' as const },
     project: {
       kind: 'select' as const,
       part: 'components/shell-project-switch' as const,
       surfaces: { open: 'project-picker' as const },
     },
   },
-  render: async ({ product, section, content, side, panel, projectPicker, studio = '', force }: Props) => {
+  render: async ({
+    product,
+    section,
+    content,
+    side,
+    panel,
+    projectPicker,
+    studio = '',
+    force,
+    server,
+    log = [],
+  }: Props) => {
     const projectMenu = await menu.render({ rows: PROJECT_ROWS });
 
     return drawing({
@@ -187,7 +241,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
         ${rail(section, product, panel === 'hidden', studio, force)}
         <div class="st-shell-stage relative min-w-0">
           <main class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg" ${slot('canvas')}>
-            ${content}
+            ${server ? serverScreen(server, log) : content}
           </main>
           ${panel === 'hidden' ? '' : sidePanel(product, side, projectPicker === 'open')}
           ${panel !== 'hidden' && projectPicker === 'open' ? picker(placement, projectMenu.body) : ''}

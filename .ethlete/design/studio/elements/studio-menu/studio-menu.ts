@@ -8,7 +8,9 @@ import styles from './studio-menu.css?inline';
 
 type MenuInteraction = Exclude<Interaction, 'disabled'>;
 
-type Props = { open: boolean; interaction?: MenuInteraction; option?: MenuInteraction };
+type Server = 'running' | 'stopped';
+
+type Props = { open: boolean; server?: Server; interaction?: MenuInteraction; option?: MenuInteraction };
 
 const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabled'>) => {
   const markup = button({
@@ -19,40 +21,47 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
     class: 'st-studio-trigger p-0',
   }).replace(
     /^<button /,
-    `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+    `<button data-et-control="studio-menu" data-et-action="${open ? 'closed' : 'open'}" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
   );
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const action = (name: string) => `data-studio-action="${name}" data-et-slot="components/menu"`;
+const action = (name: string) =>
+  `data-studio-action="${name}" data-et-action="emit:serverAction" data-et-slot="components/menu"`;
 
-const studioRows = (option?: MenuInteraction): MenuMockRow[] => [
-  { kind: 'label', label: 'Studio' },
-  {
-    label: 'Einstellungen…',
-    active: !!option,
-    attributes: option ? `${action('settings')} data-et-force="${option}"` : action('settings'),
-  },
-  { label: 'Erscheinungsbild…', attributes: action('appearance') },
-  { label: 'Tastenkürzel…', attributes: action('shortcuts') },
-  { kind: 'separator' },
-  { label: 'Hilfe', attributes: action('help') },
-  { label: 'Über Studio…', attributes: action('about') },
-];
-
-const studioPanel = async (interaction?: MenuInteraction, option?: MenuInteraction) => {
-  if (option) return menu.render({ rows: studioRows(option) });
-
-  const panel = await menu.render({ rows: studioRows(), forced: interaction });
-  // The SDK menu part replaces the attributes of its second row with its own force marks; this puts the action back.
-  return { ...panel, body: panel.body.replace('data-et-control="item"', action('settings')) };
+const SERVER_ACTIONS: Record<Server, { name: string; label: string }[]> = {
+  running: [
+    { name: 'restart', label: 'Design-Server neu starten' },
+    { name: 'stop', label: 'Design-Server stoppen' },
+  ],
+  stopped: [{ name: 'start', label: 'Design-Server starten' }],
 };
 
-export const studioMenu = async ({ open, interaction, option }: Props) => {
+const studioRows = (server: Server, option?: MenuInteraction): MenuMockRow[] => [
+  { kind: 'label', label: 'Studio' },
+  ...SERVER_ACTIONS[server].map(({ name, label }, index) => ({
+    label,
+    active: index === 0 && !!option,
+    attributes: index === 0 && option ? `${action(name)} data-et-force="${option}"` : action(name),
+  })),
+];
+
+const studioPanel = async (server: Server, interaction?: MenuInteraction, option?: MenuInteraction) => {
+  if (option) return menu.render({ rows: studioRows(server, option) });
+
+  const panel = await menu.render({ rows: studioRows(server), forced: interaction });
+  // The SDK menu part replaces the attributes of its second row with its own force marks; this puts the action back.
+  return {
+    ...panel,
+    body: panel.body.replace('data-et-control="item"', action(SERVER_ACTIONS[server][0]?.name ?? '')),
+  };
+};
+
+export const studioMenu = async ({ open, server = 'running', interaction, option }: Props) => {
   const panel =
     typeof location === 'undefined'
       ? { body: '', styles: '' }
-      : await studioPanel(open ? interaction : undefined, open ? option : undefined);
+      : await studioPanel(server, open ? interaction : undefined, open ? option : undefined);
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
       ${studioTrigger(open, open ? undefined : interaction)}
@@ -77,10 +86,11 @@ const menuRows = interactionRows<Props, 'closed' | 'open', MenuInteraction>(
 );
 
 export default definePart({
-  note: 'Studio-wide actions behind the neutral logo tile: settings, appearance, shortcuts, help and about. The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot. Menu destinations are separate work.',
-  madeBy: ['gpt-6'],
+  note: 'Studio-wide actions behind the neutral logo tile: the design server actions the server state allows (restart and stop while it runs, start while it is stopped). The element owns its trigger, SDK panel, styles, interaction states and prototype setup. Pages place its 40-px root in the shell rail slot.',
+  madeBy: ['gpt-6', 'claude-opus-5-5'],
   states: {
     ...menuRows.states,
+    'studio-menu.stopped': { open: true, server: 'stopped' },
     'studio-menu.option-hover': { open: true, option: 'hover' },
     'studio-menu.option-focus-visible': { open: true, option: 'focus-visible' },
     'studio-menu.option-active': { open: true, option: 'active' },
