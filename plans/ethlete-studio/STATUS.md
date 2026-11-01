@@ -10,27 +10,27 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                | Wer               |
-| ------------------------------- | ------ | -------------------------------------------------------- | ----------------- |
-| components/canvas-viewport      | ✅     |                                                          |                   |
-| components/comment-pin          | ✅     |                                                          |                   |
-| components/disclosure           | ✅     |                                                          |                   |
-| components/tree-row             | ✅     |                                                          |                   |
-| components/zoom-chip            | ✅     |                                                          |                   |
-| elements/part-tree              | ✅     |                                                          |                   |
-| elements/studio-menu            | ✅     |                                                          |                   |
-| components/shell-collapse       | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
-| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
-| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                | Builder           |
-| pages/inbox                     | ❌     | Zoom-Leiste steht falsch, dann neues „Go geben“          | Builder, dann Tom |
-| pages/sketches                  | ❌     | Mergen des Sketches pages-system (gilt für beide Seiten) | Builder, dann Tom |
-| pages/system                    | ❌     | „Aktuell“ im Sketch ist leer (Q122), dann mergen         | Builder, dann Tom |
-| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat      | Builder           |
-| pages/start                     | ❌     | 3 Knöpfe ohne Aktion im Entwurf                          | Builder           |
-| pages/merge                     | ❌     | Kopfzeile in der App weicht vom Entwurf ab               | Builder           |
-| components/error-toast          | ❌     | Neu, noch in Arbeit                                      | Builder           |
+| Teil                            | Fertig | Was fehlt                                                           | Wer     |
+| ------------------------------- | ------ | ------------------------------------------------------------------- | ------- |
+| components/comment-pin          | ✅     |                                                                     |         |
+| components/disclosure           | ✅     |                                                                     |         |
+| components/tree-row             | ✅     |                                                                     |         |
+| components/zoom-chip            | ✅     |                                                                     |         |
+| elements/part-tree              | ✅     |                                                                     |         |
+| elements/studio-menu            | ✅     |                                                                     |         |
+| components/shell-collapse       | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
+| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
+| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
+| pages/inbox                     | ❌     | Zoom-Leiste repariert, Entwurf geändert: neues „Go geben“           | Tom     |
+| pages/system                    | ❌     | Zoom-Leiste repariert: neues „Go geben“, Sketch pages-system mergen | Tom     |
+| pages/sketches                  | ❌     | Sketch pages-system mergen (gilt für beide Seiten)                  | Tom     |
+| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt             | Builder |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                 | Builder |
+| pages/start                     | ❌     | 3 Knöpfe ohne Aktion im Entwurf                                     | Builder |
+| pages/merge                     | ❌     | Kopfzeile in der App weicht vom Entwurf ab                          | Builder |
+| components/error-toast          | ❌     | Kontrast und Schließen-Zustände im Entwurf, dann „Go geben“         | Builder |
 
-Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 6 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
@@ -44,7 +44,9 @@ oben rechts in der Teil-Ansicht.
 ## Erledigt
 
 - Ein Canvas für System und Sketches (01.11.). Sketches verschiebt jetzt mit gedrückter linker Maustaste wie System.
+- Zoom-Leiste wieder unten rechts, kein türkiser Rahmen mehr nach einem Klick in den Canvas (01.11.).
+- Spalte „Aktuell“ im Sketch zeigt immer einen Rahmen (01.11.).
 
 ## Gerade in Arbeit
 
-- Umriss für den ausgewählten Rahmen in Sketches, dann Fehler-Toast, dann Canvas-Rahmen, Start und Merge.
+- Parallel: Umriss für den ausgewählten Rahmen in Sketches, Fehler-Toast, Start und Merge.
