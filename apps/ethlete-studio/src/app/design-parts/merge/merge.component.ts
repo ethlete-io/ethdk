@@ -1,12 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, input, model, output, ViewEncapsulation } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { DISCLOSURE_BODY_CLASS, DisclosureComponent } from '../disclosure/disclosure.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
-import { MERGE_SAMPLE_CHANGED, MERGE_SAMPLE_TARGET, MERGE_SAMPLE_UNCHANGED } from './merge-sample';
+import { MergeRow, MERGE_SAMPLE_CHANGED, MERGE_SAMPLE_TARGET, MERGE_SAMPLE_UNCHANGED } from './merge-sample';
 
 const SCALE = 0.37;
 
@@ -118,13 +117,13 @@ const CROP = { width: 266, height: 64, scale: 2 };
           <div class="flex gap-space-4">
             <figure class="m-0 flex flex-col gap-space-2">
               <figcaption class="text-ui-xs text-et-surface-muted">{{ LABELS.now }}</figcaption>
-              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: nowSrc() }" />
+              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: current()?.now ?? '' }" />
             </figure>
             <figure class="m-0 flex flex-col gap-space-2">
               <figcaption class="text-ui-xs text-et-surface-muted">
                 {{ LABELS.after }} <code class="font-code text-et-theme-ink">{{ target().variant }}</code>
               </figcaption>
-              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: afterSrc() }" />
+              <ng-container *ngTemplateOutlet="shot; context: { $implicit: row, src: current()?.after ?? '' }" />
             </figure>
           </div>
           <div class="flex flex-col gap-space-2">
@@ -176,13 +175,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
           [style.transform]="'scale(' + SCALE + ')'"
           class="pointer-events-none origin-top-left"
         >
-          <iframe
-            [src]="src"
-            [title]="row.part"
-            [style.width.px]="row.width"
-            [style.height.px]="row.height"
-            class="block border-0"
-          ></iframe>
+          <ng-container *ngTemplateOutlet="shotTemplate(); context: { $implicit: row, src: src }" />
         </div>
       </div>
     </ng-template>
@@ -192,13 +185,12 @@ const CROP = { width: 266, height: 64, scale: 2 };
   host: { class: 'block h-screen w-full' },
 })
 export class MergeComponent {
-  private sanitizer = inject(DomSanitizer);
-
   public unchanged = model(false);
   public target = input(MERGE_SAMPLE_TARGET);
   public changed = input(MERGE_SAMPLE_CHANGED);
   public selected = input(1);
   public unchangedStates = input(MERGE_SAMPLE_UNCHANGED);
+  public shotTemplate = input<TemplateRef<{ $implicit: MergeRow; src: string }> | null>(null);
   public cropLabel = input<string>(STUDIO_LABELS.start.copyPrompt);
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
@@ -223,8 +215,4 @@ export class MergeComponent {
   protected readonly CROP = CROP;
 
   protected current = computed(() => this.changed()[this.selected()] ?? this.changed()[0] ?? null);
-
-  protected nowSrc = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.current()?.now ?? ''));
-
-  protected afterSrc = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.current()?.after ?? ''));
 }
