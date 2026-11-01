@@ -24,6 +24,8 @@ type Props = { unchanged: boolean; error?: string };
 const SCALE = 0.37;
 const CROP_SCALE = 2;
 
+const act = (markup: string, action: string) => markup.replace(/<button /, `<button data-et-action="emit:${action}" `);
+
 const merge = await button.render({ label: 'Merge', variant: 'filled', size: 'sm' });
 const ARROW = icon('arrow-left', { size: 14 });
 const back = await button.render({
@@ -48,6 +50,8 @@ const listRow = (row: Row) =>
   html`<li
     class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-et-theme/20"
     data-et-control="row"
+    data-et-action="emit:pick"
+    tabindex="0"
     ${row === selected ? ' data-selected' : ''}
   >
     ${rowCaption(row, true)}
@@ -57,7 +61,7 @@ const ERROR = `${TARGET.part} hat sich seit dem Sketch geändert. Lass deinen Ag
 
 const panelOf = (unchanged: boolean, error: string) =>
   html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
-    <div class="mg-d-back flex">${back.body}</div>
+    <div class="mg-d-back flex">${act(back.body, 'back')}</div>
     <div class="flex flex-col gap-space-2 pb-space-3 border-b border-et-surface-border">
       <span class="font-code text-(length:--text-sm)">${TARGET.part}</span>
       <span class="flex items-center gap-space-2 text-et-surface-muted text-ui-xs"
@@ -73,7 +77,7 @@ const panelOf = (unchanged: boolean, error: string) =>
     </div>
     <span class="flex-1"></span>
     <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">
-      ${merge.body}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
+      ${act(merge.body, 'merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
     </div>
   </div>`;
 
