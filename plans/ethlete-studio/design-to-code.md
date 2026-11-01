@@ -740,7 +740,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     `libs/cli/design/web/frame.ts:462` observes root while `fitOutOfFlow` (`define-call.ts:301`) writes
     root.style.paddingTop (only sdk bracket and scheduler); harmless. Tool fix (builder default): a progress line
     per part, a 120 s per-part timeout that reports a RENDER issue naming the part (render-check.ts:494), and no
-    padding write when unchanged. Lesson: a long check with no progress output looks like a hang; every check must
+    padding write when unchanged. Done in e4254334c and 8bec8050a; the skip alone did not stop the loop, so the
+    observer now places in requestAnimationFrame (scheduler: 1 error before, 0 in 4 runs after). Lesson: a long check with no progress output looks like a hang; every check must
     show which target it is on and bound each target, so a slow run and a stuck part read differently.
 55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
     the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
