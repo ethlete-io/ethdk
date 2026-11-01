@@ -104,6 +104,16 @@ export const changedStatesOf = (before: StatePictures, now: StatePictures) =>
     .filter((state) => before[state] !== now[state])
     .sort((a, b) => a.localeCompare(b));
 
+const lostStatesOf = (before: StatePictures, now: StatePictures) =>
+  Object.keys(before)
+    .filter((state) => before[state] !== now[state])
+    .sort((a, b) => a.localeCompare(b));
+
+const addedStatesOf = (before: StatePictures, now: StatePictures) =>
+  Object.keys(now)
+    .filter((state) => !(state in before))
+    .sort((a, b) => a.localeCompare(b));
+
 export const drawStatePictures: DrawStates = async ({ target, config, product, parts, expected }) => {
   const drawn = new Map<string, StatePictures | string>();
 
@@ -230,6 +240,9 @@ export const storePictures = async (options: {
   return null;
 };
 
+export const newStatesLineOf = ({ product, part, states }: { product: string; part: string; states: string[] }) =>
+  `NEW STATES ${product} ${part}: ${states.join(', ')} - for Tom's next review`;
+
 type Need = { kind: PictureKind; hash: string; now: string; carry: AcceptedPictures | null };
 
 const currentHashOf = (options: { product: ResolvedProduct; resolved: ResolvedPart; kind: PictureKind }) => {
@@ -323,6 +336,7 @@ export const autoAcceptOf = async (options: {
     const { dir } = partOwnerOf({ product, part: resolved });
     const carried: PictureKind[] = [];
     const changed = new Set<string>();
+    const added: string[] = [];
 
     for (const need of ofPart) {
       if (currentHashOf({ product, resolved, kind: need.kind }) !== need.now) {
@@ -335,7 +349,8 @@ export const autoAcceptOf = async (options: {
         continue;
       }
 
-      const differs = changedStatesOf(need.carry.states, states);
+      const differs =
+        need.kind === 'go' ? lostStatesOf(need.carry.states, states) : changedStatesOf(need.carry.states, states);
 
       if (differs.length > 0) {
         differs.forEach((state) => changed.add(state));
@@ -354,8 +369,11 @@ export const autoAcceptOf = async (options: {
 
         if (!previous || previous.hash !== need.hash) continue;
 
+        const fresh = addedStatesOf(need.carry.states, states);
+        const review = [...new Set([...(previous.review ?? []), ...fresh])].sort((a, b) => a.localeCompare(b));
         const go: PartGo = {
           ...previous,
+          ...(review.length > 0 ? { review } : {}),
           hash: need.now,
           files: designHashOf({ product, part: resolved }).files,
           by: autoAcceptBy(previous.by),
@@ -364,6 +382,7 @@ export const autoAcceptOf = async (options: {
         };
 
         writeGo({ dir, part, go });
+        added.push(...fresh);
         writePictures({ dir, part, kind: 'go', pictures: { hash: need.now, states } });
       }
 
@@ -374,6 +393,7 @@ export const autoAcceptOf = async (options: {
       lines.push(
         `AUTO ACCEPTED ${product.name} ${part} (${carried.join(', ')}): every state draws as at the last acceptance`,
       );
+    if (added.length > 0) lines.push(newStatesLineOf({ product: product.name, part, states: added }));
     if (changed.size > 0)
       lines.push(
         `PICTURES CHANGED ${product.name} ${part}: ${[...changed].sort((a, b) => a.localeCompare(b)).join(', ')}`,

@@ -1,11 +1,11 @@
 import { dirname, relative } from 'path';
 import { DesignConfig } from '../paths';
-import { autoAcceptOf, DrawStates } from './accepted-pictures';
+import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
-import { goPartsOf } from './part-go';
+import { goMarkOf, goPartsOf } from './part-go';
 import { doneParts } from './part-task';
 import { readyPartsOf } from './part-ready';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
@@ -376,6 +376,12 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     const go = goPartsOf(product);
 
     if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
+
+    for (const part of go.filter((key) => !options.part || key === options.part)) {
+      const review = goMarkOf({ product, part })?.review ?? [];
+
+      if (review.length > 0) console.log(newStatesLineOf({ product: name, part, states: review }));
+    }
 
     stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));
   }

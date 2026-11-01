@@ -73,7 +73,7 @@ describe('autoAcceptOf', () => {
     expect(readPictures(dir)[CHIP]?.go?.hash).toBe(readGo(dir)[CHIP]?.hash);
   });
 
-  it('keeps a go stale when a state draws differently or the state set changed', async () => {
+  it('keeps a go stale when a state draws differently or a state is gone', async () => {
     const { target, dir, chip } = checkout();
     const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
 
@@ -85,11 +85,39 @@ describe('autoAcceptOf', () => {
     expect(await autoAccept(target, draw)).toEqual([`PICTURES CHANGED app-a ${CHIP}: hover`]);
     expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
 
-    pictures.now = { default: 'a1', hover: 'b2', focus: 'd4' };
+    pictures.now = { default: 'a1' };
 
-    expect(await autoAccept(target, draw)).toEqual([`PICTURES CHANGED app-a ${CHIP}: focus`]);
+    expect(await autoAccept(target, draw)).toEqual([`PICTURES CHANGED app-a ${CHIP}: hover`]);
     expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
     expect(readGo(dir)[CHIP]?.auto).toBeUndefined();
+  });
+
+  it('carries a go past a new state and keeps the new state for the next review', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, pictures } = drawing({ default: 'a1', hover: 'b2' });
+
+    markPartGo({ product: productOf(target), part: CHIP, by: 'tom' });
+    await autoAccept(target, draw);
+    appendFileSync(chip, '// new state\n');
+    pictures.now = { default: 'a1', hover: 'b2', focus: 'd4' };
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `AUTO ACCEPTED app-a ${CHIP} (go): every state draws as at the last acceptance`,
+      `NEW STATES app-a ${CHIP}: focus - for Tom's next review`,
+    ]);
+    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('current');
+    expect(readGo(dir)[CHIP]).toMatchObject({ by: 'tom', auto: true, review: ['focus'] });
+
+    appendFileSync(chip, '// another new state\n');
+    pictures.now = { default: 'a1', hover: 'b2', focus: 'd4', open: 'e5' };
+
+    await autoAccept(target, draw);
+
+    expect(readGo(dir)[CHIP]?.review).toEqual(['focus', 'open']);
+
+    markPartGo({ product: productOf(target), part: CHIP, by: 'tom' });
+
+    expect(readGo(dir)[CHIP]?.review).toBeUndefined();
   });
 
   it('never carries a stale go that has no pictures from while it held', async () => {

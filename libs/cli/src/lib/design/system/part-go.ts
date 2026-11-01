@@ -10,7 +10,15 @@ export const GO_FILE = 'go.json';
  * Who released a part for implementation, and at which design hash, with the hash of each file it covers; the go holds
  * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed.
  */
-export type PartGo = { hash: string; files?: FileHashes; by: string; at: string; note?: string; auto?: true };
+export type PartGo = {
+  hash: string;
+  files?: FileHashes;
+  by: string;
+  at: string;
+  note?: string;
+  auto?: true;
+  review?: string[];
+};
 
 export type GoRefusal = { status: number; error: string };
 
