@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import {
   actionFailureOf,
+  actionInputsOf,
   ActionElement,
   actionScanScriptOf,
   componentSelectorOf,
@@ -40,6 +41,16 @@ describe('actions', () => {
     expect(parseAction('emit:collapse', [])).toEqual({ kind: 'emit', output: 'collapse' });
     expect(parseAction('emit:', [])).toBe('data-et-action="emit:" names no output');
     expect(parseAction('shut', ['rest'])).toBe('data-et-action="shut" names no state of the part - its states: rest');
+  });
+
+  it('presses a checkable control with click and Space only, every other element with Enter too', () => {
+    expect(actionInputsOf('switch "Erledigtezeigen"')).toEqual(['click', 'Space']);
+    expect(actionInputsOf('checkbox "Alle"')).toEqual(['click', 'Space']);
+    expect(actionInputsOf('radio "Hell"')).toEqual(['click', 'Space']);
+    expect(actionInputsOf('input-checkbox "Alle"')).toEqual(['click', 'Space']);
+    expect(actionInputsOf('input-radio "Hell"')).toEqual(['click', 'Space']);
+    expect(actionInputsOf('button "Speichern"')).toEqual(['click', 'Enter', 'Space']);
+    expect(actionInputsOf('menuitemcheckbox "Raster"')).toEqual(['click', 'Enter', 'Space']);
   });
 
   it('sends a key press to the focus-visible row of the declared state where the part draws one', () => {

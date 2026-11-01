@@ -2,6 +2,12 @@ export const ACTION_INPUTS = ['click', 'Enter', 'Space'] as const;
 
 export type ActionInput = (typeof ACTION_INPUTS)[number];
 
+const SPACE_ONLY_ROLES = ['switch', 'checkbox', 'radio', 'input-checkbox', 'input-radio'];
+
+/** The inputs that press an element of `key`: a checkable control toggles on Space like a native checkbox, not on Enter. */
+export const actionInputsOf = (key: string): readonly ActionInput[] =>
+  SPACE_ONLY_ROLES.includes(key.slice(0, key.indexOf(' '))) ? ['click', 'Space'] : ACTION_INPUTS;
+
 /** What a design declares an interactive element does: reach a state of the part, or fire one of its outputs. */
 export type DeclaredAction = { kind: 'state'; state: string } | { kind: 'emit'; output: string };
 

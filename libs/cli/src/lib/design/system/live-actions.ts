@@ -6,7 +6,15 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
-import { ACTION_INPUTS, ActionElement, actionFailureOf, ActionInput, actionScanScriptOf, parseAction } from './actions';
+import {
+  ACTION_INPUTS,
+  ActionElement,
+  actionInputsOf,
+  actionFailureOf,
+  ActionInput,
+  actionScanScriptOf,
+  parseAction,
+} from './actions';
 import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
@@ -631,7 +639,7 @@ export const checkLiveActions = async (options: {
           let toggle: string | null | undefined;
 
           await Promise.all(
-            ACTION_INPUTS.map(async (input) => {
+            actionInputsOf(app.key).map(async (input) => {
               try {
                 const result = await press({ run, opener, pick: app, input });
                 const outcome = liveOutcomeOf(result);

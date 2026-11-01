@@ -441,7 +441,7 @@ interactive element of a design (button, link, field, an element with an interac
 declares its action in `data-et-action`: the state a press reaches (`data-et-action="open"`) or the output it fires
 (`data-et-action="emit:collapse"`). From each state that forces no interaction, and from each open-surface state
 after a click on its trigger, the command opens the harness page, clicks the element and, in fresh pages, presses
-Enter and Space on it. A state action passes when the host shot equals that state's design picture at 0 px; a key
+Enter and Space on it; a switch, checkbox or radio gets Space only, as a native checkbox does. A state action passes when the host shot equals that state's design picture at 0 px; a key
 compares with `<state>-focus-visible` where the part draws one. An output action passes when the mounted component
 emits it; the harness records outputs on `window.__etDesignEmits`. It fails on an app element whose design element
 declares nothing, on a declared design element the app lacks, and names a key whose keydown default the app prevented.

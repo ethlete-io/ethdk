@@ -8,7 +8,7 @@ import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
-  ACTION_INPUTS,
+  actionInputsOf,
   ActionElement,
   actionFailureOf,
   ActionInput,
@@ -576,7 +576,7 @@ export const checkActions = async (options: {
             return out;
           }
 
-          for (const input of ACTION_INPUTS) {
+          for (const input of actionInputsOf(element.key)) {
             const goal =
               action.kind === 'state'
                 ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
