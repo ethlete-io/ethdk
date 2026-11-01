@@ -627,3 +627,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q51 studio-menu pane corners (Tom, 2026-11-01): same one-line design fix as Impl Q13,
   `transform: translate3d(0,0,0)` on the studio-menu pane class in its design CSS; go `--by tom`. A shared compare rule
   for SDK pane corners goes to the backlog, after the MVP. Finding 23.
+- Impl Q52 shell-project-switch open menu (Tom, 2026-11-01): the design draws the open menu like shell-main's
+  project picker (Impl Q35): absolute above the trigger, `w-62` (248 px), same offset; go `--by tom`. The app does not
+  change. The cli harness leaves room above the host for a part whose surface opens above, so the overlay does not
+  flip. Finding 24.
