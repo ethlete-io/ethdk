@@ -1176,3 +1176,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   `design go --batch <file>` takes a JSON array of {part, product, action go|accept, note, verify?}, checks all
   entries first, then one prompt. Batch file for Tom: .claude/handoffs/tom-go-batch.json (gitignored).
 - Impl Q120 shell-main keyboard open (Tom, 2026-11-01): shell-main gets the `open-focus-visible` state, as Impl Q95.
+  Done in 4f571660e under the name `project-picker-focus-visible`: `targetStateOf` maps a key press to
+  `<target state>-focus-visible`, and the trigger's target in shell-main is `project-picker` (`open` there is the
+  closed-picker state). Q117 still runs: complete.ts needs every surface id as `<control>.<surface>`; the builder
+  lets a bare `data-et-surface` on the part root count as the part's own surface.
