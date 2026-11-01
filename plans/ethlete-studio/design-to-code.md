@@ -1225,6 +1225,13 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      fits clear of the panel. Why no check caught it: no design check rule that a forced fit keeps a frame out from
      under an overlay panel. Tool fix (general, after MVP): an OCCLUDED check for frames under fixed panels. The app fit
      x may also be off by about the panel width; re-check after the design fix.
+121. Finding 113 fixed in c53e20b09 (resolved row selects, opens its part, muted pin with check; new `resolved` input
+     on comment-pin, 8 new states). Second tool lesson (builder): `design actions` only pressed open rows; no fixture
+     had a resolved row. Tool fix (general, after MVP): actions press each declared row variant, including rows only
+     visible behind a switch.
+122. A comment from a merged sketch gets no pin, open or resolved: `pinsOf` matches the sketch target, and the merged
+     frame has none. Resolved comments get no pins in the Sketches view either (builder, 2026-11-01). Parked for after
+     the MVP (builder rec); tell Tom on return.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.

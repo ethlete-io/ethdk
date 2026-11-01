@@ -10,27 +10,27 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                                                                            | Wer               |
-| ------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ✅     |                                                                                                                      |                   |
-| components/disclosure           | ✅     |                                                                                                                      |                   |
-| components/tree-row             | ✅     |                                                                                                                      |                   |
-| components/zoom-chip            | ✅     |                                                                                                                      |                   |
-| elements/part-tree              | ✅     |                                                                                                                      |                   |
-| elements/studio-menu            | ✅     |                                                                                                                      |                   |
-| components/shell-collapse       | ✅     |                                                                                                                      |                   |
-| components/shell-project-switch | ✅     |                                                                                                                      |                   |
-| elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“          | Builder, dann Tom |
-| pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“ | Builder, dann Tom |
-| pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                           | Builder, dann Tom |
-| pages/sketches                  | ❌     | Kamera und page-100 gebaut; Prüfungen laufen zuerst, dann Bild, Abnahme und Go                                       | Builder, dann Tom |
-| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                              | Builder           |
-| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                  | Builder           |
-| pages/start                     | ✅     |                                                                                                                      |                   |
-| pages/merge                     | ✅     |                                                                                                                      |                   |
-| components/error-toast          | ✅     |                                                                                                                      |                   |
+| Teil                            | Fertig | Was fehlt                                                                                                   | Wer               |
+| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- | ----------------- |
+| components/comment-pin          | ❌     | Neuer Zustand „erledigt“ (blass mit Haken) gebaut, Bild geprüft; Tom: Abnahme und Go                        | Tom               |
+| components/disclosure           | ✅     |                                                                                                             |                   |
+| components/tree-row             | ✅     |                                                                                                             |                   |
+| components/zoom-chip            | ✅     |                                                                                                             |                   |
+| elements/part-tree              | ✅     |                                                                                                             |                   |
+| elements/studio-menu            | ✅     |                                                                                                             |                   |
+| components/shell-collapse       | ✅     |                                                                                                             |                   |
+| components/shell-project-switch | ✅     |                                                                                                             |                   |
+| elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“ | Builder, dann Tom |
+| pages/inbox                     | ❌     | Erledigte Kommentare werden markiert und zeigen ihren Pin (Befund 113), Bild geprüft; Tom: Abnahme und Go   | Tom               |
+| pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                  | Builder, dann Tom |
+| pages/sketches                  | ❌     | Kamera und page-100 gebaut; Prüfungen laufen zuerst, dann Bild, Abnahme und Go                              | Builder, dann Tom |
+| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                     | Builder           |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                         | Builder           |
+| pages/start                     | ✅     |                                                                                                             |                   |
+| pages/merge                     | ✅     |                                                                                                             |                   |
+| components/error-toast          | ✅     |                                                                                                             |                   |
 
-Stand: 11 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 10 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
