@@ -91,7 +91,7 @@ const FRAME_HEAD_CLASS =
             <figcaption [class]="FRAME_HEAD_CLASS">
               tree<span class="text-et-surface-muted tabular-nums">280</span>
             </figcaption>
-            <div class="w-70">
+            <div class="w-md">
               <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'tree' }" />
             </div>
           </figure>
