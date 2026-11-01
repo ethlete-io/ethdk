@@ -1439,6 +1439,8 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   panel shows a short centered text "Neu in a" (the variant letter).
 - Impl Q132 merge button loading (Tom, 2026-11-01, finding 106): while the merge runs, the Merge button shows the
   SDK button loading state (spinner, no second click). The pages/merge design gets a `merging` state.
+- Impl Q133 resizable sidebar (Tom, 2026-11-01): the user can drag the sidebar width (handle on its edge, min and
+  max width, a dragging state). After MVP: on the backlog, not built now.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 

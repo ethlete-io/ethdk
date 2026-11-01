@@ -56,4 +56,6 @@ oben rechts in der Teil-Ansicht.
 
 ## Für später gesammelt
 
+- Breite der Seitenleiste mit der Maus ziehen (Q133).
+
 - Teil-Baum verliert beim Neuladen die Scroll-Position (Befund 99).
