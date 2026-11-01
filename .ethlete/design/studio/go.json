@@ -57,7 +57,7 @@
   "pages/flows": {
     "hash": "818066f24de0642b",
     "by": "tom",
-    "at": "2026-11-01T14:05:19.643Z"
+    "at": "2026-11-01T14:19:08.612Z"
   },
   "pages/inbox": {
     "hash": "70d2d0c3f68b5b46",
@@ -65,9 +65,9 @@
     "at": "2026-11-01T12:14:56.604Z"
   },
   "pages/inventory": {
-    "hash": "b85ea9aa93bb79df",
+    "hash": "963f56a2b935222b",
     "by": "tom",
-    "at": "2026-11-01T13:50:23.300Z"
+    "at": "2026-11-01T14:19:08.452Z"
   },
   "pages/merge": {
     "hash": "b211d6b07c51585c",
@@ -77,7 +77,7 @@
   "pages/sketches": {
     "hash": "eddebb0e0fee0d94",
     "by": "tom",
-    "at": "2026-11-01T14:04:39.434Z"
+    "at": "2026-11-01T14:19:08.784Z"
   },
   "pages/start": {
     "hash": "d73fc4b2d7f8e2e0",

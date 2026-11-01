@@ -70,10 +70,17 @@ const SEMANTIC: Record<Status, string> = {
   unclassified: ' data-et-semantic-color="warning"',
 };
 
+const STATUS_TEXT: Record<Status, string> = {
+  declared: 'deklariert',
+  owned: 'zugeordnet',
+  undeclared: 'nicht deklariert',
+  unclassified: 'nicht eingeordnet',
+};
+
 const APPROVAL: Record<Props['inventory'], string> = {
-  open: 'Not approved yet',
-  approvable: 'Not approved yet',
-  approved: 'Approved by designer on 31.10.2026, 14:20:00',
+  open: 'Noch nicht freigegeben',
+  approvable: 'Noch nicht freigegeben',
+  approved: 'Vom Designer am 31.10.2026, 14:20:00 freigegeben',
   loading: '',
 };
 
@@ -95,15 +102,15 @@ const entryOf = (entry: Entry, number: number) =>
       ${entry.label ? `<span class="text-et-surface">${entry.label}</span>` : ''}
       <span class="font-code break-all text-et-surface">${entry.id}</span>
       <span class="text-et-surface-muted"
-        >${entry.owner ? `owned by ${entry.owner}` : entry.status} · ${entry.kind} · ${entry.states}
-        ${entry.states === 1 ? 'state' : 'states'}</span
+        >${entry.owner ? `gehört zu ${entry.owner}` : STATUS_TEXT[entry.status]} · ${entry.kind} · ${entry.states}
+        ${entry.states === 1 ? 'Zustand' : 'Zustände'}</span
       >
     </span>
   </li>`;
 
 const frameOf = (entries: Entry[]) =>
   html`<figure class="m-0 flex flex-col gap-space-2">
-    <figcaption class="font-code text-ui-sm text-et-surface-muted">flow · desktop · dark</figcaption>
+    <figcaption class="font-code text-ui-sm text-et-surface-muted">Flow · Desktop · Dunkel</figcaption>
     <div class="relative self-start border border-et-surface-border">
       <div class="bg-et-surface-bg" style="width:${1440 * SCALE}px;height:${900 * SCALE}px"></div>
       ${entries.map(boxOf).join('')}
@@ -139,9 +146,9 @@ export default definePart<Props>({
     const entries = inventory === 'open' ? ENTRIES : ENTRIES.map(resolvedOf);
     const loading = inventory === 'loading';
     const toggle = await button.render({ label: 'Inventory', variant: 'outline', size: 'sm', pressed: true });
-    const reload = await button.render({ label: 'Reload', variant: 'outline', size: 'sm', disabled: loading });
+    const reload = await button.render({ label: 'Neu laden', variant: 'outline', size: 'sm', disabled: loading });
     const approve = await button.render({
-      label: 'Approve inventory',
+      label: 'Inventory freigeben',
       variant: 'filled',
       size: 'sm',
       disabled: inventory !== 'approvable',
@@ -159,7 +166,7 @@ export default definePart<Props>({
       ],
     });
     const body = loading
-      ? html`<p class="m-0 p-space-4 text-ui-sm text-et-surface-muted">Drawing the inventory…</p>`
+      ? html`<p class="m-0 p-space-4 text-ui-sm text-et-surface-muted">Inventory wird gezeichnet …</p>`
       : html`<div class="grid min-h-0 grid-cols-[minmax(0,1fr)_32rem]">
           <div class="flex min-h-0 flex-col gap-space-6 overflow-auto p-space-4">${frameOf(entries)}</div>
           ${listOf(entries)}
