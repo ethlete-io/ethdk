@@ -101,7 +101,12 @@ const popover = async (open: PartOpenPoints) => {
     </div>`,
   });
   return {
-    body: html`<div class="absolute top-14 right-space-3">${dialog.body}</div>`,
+    body: html`<div
+      class="absolute top-full right-0 mt-2.5 [&_.et-overlay-arrow]:left-0"
+      style="--et-floating-arrow-translate: translate3d(${groups.length ? 327 : 314.6796875}px, 0, 0); transform: translate3d(0, 0, 0)"
+    >
+      ${dialog.body}
+    </div>`,
     styles: dialog.styles,
   };
 };
@@ -179,8 +184,7 @@ export default definePart<{ empty?: boolean; manyStates?: boolean; nothingOpen?:
       product: 'studio',
       side: tree.body,
       content: html`${frames}
-        <div class="absolute top-space-3 right-space-3">${toggle.body}</div>
-        ${dialog?.body ?? ''}`,
+        <div class="absolute top-space-3 right-space-3">${toggle.body}${dialog?.body ?? ''}</div>`,
     });
 
     return drawing({
