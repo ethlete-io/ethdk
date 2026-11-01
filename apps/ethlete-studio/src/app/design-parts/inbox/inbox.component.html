@@ -157,7 +157,15 @@
       }
     </div>
   </div>
-  <ng-content />
+  @if (canvas(); as canvas) {
+    <ng-container *ngTemplateOutlet="canvas" />
+  } @else {
+    <ethlete-canvas-frames class="w-250">
+      <figure [class]="FRAME_CLASS">
+        <figcaption [class]="FRAME_HEAD_CLASS">button</figcaption>
+      </figure>
+    </ethlete-canvas-frames>
+  }
 </ethlete-shell-page>
 
 <ng-template #groupHead let-title let-count="count">

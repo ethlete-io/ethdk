@@ -246,14 +246,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [showResolved]="commentStore.resolvedShown()"
         [shell]="pageShell()"
         [load]="inboxLoad()"
+        [canvas]="shellCanvas"
         (showResolvedChange)="commentStore.showResolved($event)"
         (retry)="commentStore.retry()"
         (pick)="jumpToComment($event)"
         (shellAction)="runShellAction($event)"
         class="h-full!"
-      >
-        <ng-container [ngTemplateOutlet]="shellCanvas" />
-      </ethlete-inbox>
+      />
     } @else if (flowsPage(); as page) {
       <ethlete-flow-view
         [port]="page.port"

@@ -8,9 +8,9 @@ import { SystemEmptyComponent } from './system-empty.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
-const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
+export const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
 
-const FRAME_HEAD_CLASS =
+export const FRAME_HEAD_CLASS =
   'absolute bottom-full left-0 flex gap-[0.6em] pb-space-2 text-[1.2rem]/[1.6rem] whitespace-nowrap text-et-surface';
 
 @Component({
