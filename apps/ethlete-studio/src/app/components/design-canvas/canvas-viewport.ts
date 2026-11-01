@@ -1,5 +1,6 @@
 import { CameraScene, CameraTarget, cameraAfterWheel, cameraFor, shortcutTarget, visibleFrame } from './canvas-camera';
 import { Camera, panCamera, Rect } from './canvas-math';
+import { trackPointerFocus } from './pointer-focus';
 
 export type CanvasViewportOptions = {
   /** The clipping element that takes wheel, drag, double-click and keys. */
@@ -60,6 +61,8 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
   let focused: HTMLElement | null = null;
   let pressed: HTMLElement | null = null;
   let following = !options.start;
+
+  trackPointerFocus(viewport);
 
   const measure = () => {
     const origin = world.getBoundingClientRect();
@@ -154,7 +157,6 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
     if (event.button !== 0 && event.button !== 1) return;
 
     pressed = frameOf(event.target);
-    viewport.dataset['pointerFocus'] = '';
     viewport.focus();
     viewport.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -180,11 +182,7 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
     show({ kind: 'focused' });
   });
 
-  viewport.addEventListener('blur', () => delete viewport.dataset['pointerFocus']);
-
   viewport.addEventListener('keydown', (event) => {
-    delete viewport.dataset['pointerFocus'];
-
     const target = shortcutTarget(event);
     const arrow = ARROWS[event.code];
 
