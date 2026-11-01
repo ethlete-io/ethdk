@@ -1,6 +1,7 @@
 import { definePart, drawing, html, slot } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
+import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import zoomChip from '@system/components/zoom-chip';
 import styles from './canvas-frames.css?inline';
 
@@ -9,7 +10,7 @@ export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 export type StateGridOptions = { cellWidth?: string; place?: 'fill' | 'center' };
 
 /** The CSS for `stateGrid`, the frame parts and `canvasView`, with the zoom chip's; add it once to the drawing's styles. */
-export const canvasFrameStyles = styles + buttonStyles;
+export const canvasFrameStyles = styles + buttonStyles + canvasViewportStyles;
 
 const perLine = 4;
 
@@ -91,16 +92,27 @@ export const canvasFrame = (name: string, body: string, width = '') =>
 type ChipState = { target?: 'out' | 'reset' | 'in' | 'fit'; interaction?: 'hover' | 'active' | 'focus-visible' };
 
 /** The canvas: the frames from the top left at the given zoom, and the zoom chip in the corner. */
-export const canvasView = async (frames: string[], zoom: string, chipState: ChipState = {}, extra = '') => {
+export const canvasView = async (
+  frames: string[],
+  zoom: string,
+  chipState: ChipState = {},
+  extra = '',
+  focusable = false,
+) => {
   const chip = await zoomChip.render({
     percent: parseFloat(zoom),
     class: 'absolute right-space-3 bottom-space-3',
     ...chipState,
   });
-  return html`<div class="st-canvas relative h-full min-h-120 overflow-hidden ${extra}" data-et-skip="CLIPPED">
-    <div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">${frames.join('')}</div>
-    ${chip.body}
-  </div>`;
+  const body = html`<div class="flex flex-col items-start gap-30 px-10 py-12" style="zoom: ${zoom}">
+      ${frames.join('')}
+    </div>
+    ${chip.body}`;
+  const classes = `st-canvas relative h-full min-h-120 overflow-hidden ${extra}`;
+
+  return focusable
+    ? canvasViewport({ class: classes, attrs: 'data-et-skip="CLIPPED"', body })
+    : html`<div class="${classes}" data-et-skip="CLIPPED">${body}</div>`;
 };
 
 type Props = { class?: string; part: string; states: string[]; zoom: string } & ChipState;
@@ -294,6 +306,7 @@ export default definePart({
           interaction,
         },
         extra,
+        true,
       ),
       styles: canvasFrameStyles,
     });
