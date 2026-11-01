@@ -724,6 +724,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     backdrop `bg-et-surface-bg` (shell-collapse.ts:38, shell-project-switch.ts:98); the app part is transparent and
     sits on the shell surface. Lesson: before Impl Q77, a transparent app pixel and an opaque design pixel compared as
     equal over a transparent page; a design must not mix a demo backdrop into the part (as Impl Q31).
+53. The first live-page compare (Impl Q78, pages/system) found: every live shot was an empty canvas until the shot
+    waited for networkidle (ea3a419c4); the app hard-codes the side tree group order Foundations, Components,
+    Elements, Pages while the design shows Foundations, Elements, Components, Pages (system-tree.ts); the zoom chip
+    sits bottom right in the app and centred in the design. App follows the design (Impl Q81 rule). Lesson: a shot
+    that does not wait for the data compares an empty page as fine, and hand-written live code drifts from the
+    design in many small places that only a whole-page compare shows.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
