@@ -863,6 +863,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     builder, 2026-11-01, Impl Q98 5e554809b/41d7343d1 and shell-main). So a design edit blocks the compare that
     would verify it before Tom's go, and Q98 0 px is not confirmed. Lesson: a read-only check must not sit behind an
     approval gate; the gate belongs on the steps that change state. Tool change: Impl Q118 (Tom).
+73. The first live `design actions` run (Impl Q79 slice 2, dev build, builder, 2026-11-01) failed 21/310: the current
+    project's menuitemradio "ethlete-sdk" does not close the picker on click or Space (Enter does; Space keydown
+    default prevented), on every page with a shell; rail "System" from pages/sketches and pages/merge fires
+    sectionChange but nothing gains aria-current (the sketch view keeps its own shell section, finding 50 class);
+    "All products" reported as undeclared although cd2d907d4 removed it (suspected stale check, being verified).
+    Builder fixes the two app bugs as defaults. Lesson: per-part action checks pass while the assembled page drifts;
+    only the live run sees cross-page state.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
