@@ -237,7 +237,7 @@
   },
   "pages/flows": {
     "hash": "818066f24de0642b",
-    "at": "2026-11-01T14:06:34.783Z",
+    "at": "2026-11-01T14:20:38.061Z",
     "states": {
       "empty": "807ded15636146c0",
       "flow": "23c74a9dbeee7e53"
@@ -260,8 +260,8 @@
     }
   },
   "pages/inventory": {
-    "hash": "b85ea9aa93bb79df",
-    "at": "2026-11-01T13:55:20.696Z",
+    "hash": "963f56a2b935222b",
+    "at": "2026-11-01T14:20:24.774Z",
     "states": {
       "approvable": "a252356de7161b82",
       "approved": "f8316a93dddbb106",
@@ -279,7 +279,7 @@
   },
   "pages/sketches": {
     "hash": "eddebb0e0fee0d94",
-    "at": "2026-11-01T14:07:54.929Z",
+    "at": "2026-11-01T14:20:53.840Z",
     "states": {
       "page-sketch": "4d60da5da9f10c6e",
       "zoomed-page": "3faff9a83787ed80"
