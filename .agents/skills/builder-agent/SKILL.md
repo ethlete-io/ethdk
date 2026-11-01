@@ -19,8 +19,11 @@ that talks with the user and records decisions. Talk English.
 
 ## Output
 
-- The user does not read your chat. End each turn with at most one line, for example
-  "Reported to the grill session." No summaries, no lists, no plans in the chat.
+- The user does not read your chat. Write no text between tool calls: no narration of what
+  you saw, what you decide or what an agent does next. Call the next tool without a preface.
+- End each turn with at most one line, for example "Reported to the grill session." No
+  summaries, no lists, no plans in the chat.
+- A finished subagent gets no chat text. Put its result into the report to the grill session.
 - Every report goes to the grill/docs session with `SendMessage`: short bullets, commits,
   what you verified and what you did not, open questions with your recommendation. No
   repetition of facts the grill session already has.
