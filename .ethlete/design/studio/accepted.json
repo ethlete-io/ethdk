@@ -1540,5 +1540,12 @@
     "note": "Impl Q34 (Q45): SDK menu mock redraw and forced rows, approved by Tom",
     "hash": "d64b5062f9155b5a",
     "at": "2026-11-01T13:17:41.442Z"
+  },
+  {
+    "part": "foundations/agent-logos",
+    "by": "tom",
+    "note": "Impl Q33: the claude, codex and gemini SVGs moved to one shared icon file used by app and design",
+    "hash": "46bcf29865e6c1f4",
+    "at": "2026-11-01T13:50:16.382Z"
   }
 ]
