@@ -742,6 +742,17 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     per part, a 120 s per-part timeout that reports a RENDER issue naming the part (render-check.ts:494), and no
     padding write when unchanged. Lesson: a long check with no progress output looks like a hang; every check must
     show which target it is on and bound each target, so a slow run and a stuck part read differently.
+55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
+    the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
+    (partial swap, finding 43 class); "Auf 100 % zoomen" keeps the viewport point, but Impl Q74 says 100 % = the
+    opening view; the live canvas draws a row label ("default") left of the frame, the design has none; with no
+    checkout the app shows the shell with "Starte den Design-Server…" instead of the start no-repo page (startPage
+    needs a port); the rail "Sketches" click shows the System canvas with a Sketches tree group and hides the side
+    panel, the design shows the sketch view and keeps the panel. Builder fixes all five as defaults (app follows the
+    design). Lesson: part passes prove nothing about the assembled page; only the live whole-page compare (Impl Q78)
+    shows a missing wire-up, a wrong route or a stray label. Start no-repo cause: `readServer()` returns early with no
+    checkout (studio-view.component.ts:471), so `startPage` returns null on no port (system-view.component.ts:1070);
+    fix: no-repo page before the port check (builder default).
 56. Compare passed shell-main `server-stopped` before any app code for it existed (builder, 2026-11-01, Q87): the
     compare empties projected slots and the server screen sat inside slot('canvas'); the harness also ignores a prop
     the component has no input for. The same gap lets studio-menu option-* states pass trivially. Tool fix (builder
@@ -756,16 +767,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     SDK menu keyboard styles after studio-menu was recorded, and the sdk components/menu design mock does not draw
     the keyboard-active background. Lesson: an SDK style change silently moves every part that embeds it; the tool
     did not flag the SDK menu mock or the dependent studio parts when c3082e0d3 landed. Design fix: Impl Q102 (Tom).
-55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
-    the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
-    (partial swap, finding 43 class); "Auf 100 % zoomen" keeps the viewport point, but Impl Q74 says 100 % = the
-    opening view; the live canvas draws a row label ("default") left of the frame, the design has none; with no
-    checkout the app shows the shell with "Starte den Design-Server…" instead of the start no-repo page (startPage
-    needs a port); the rail "Sketches" click shows the System canvas with a Sketches tree group and hides the side
-    panel, the design shows the sketch view and keeps the panel. Builder fixes all five as defaults (app follows the
-    design). Lesson: part passes prove nothing about the assembled page; only the live whole-page compare (Impl Q78)
-    shows a missing wire-up, a wrong route or a stray label. Open in the compare: start no-repo FAILED, inventory
-    501882 px not analysed, merge, flows `flow`, inbox with comments not yet compared.
+59. Live-page compare slice 4 (Impl Q78, 6d3588e6f, builder, 2026-11-01): merge failed with a 0x0 swapped host
+    (fix: wait for a sized host; fixed clock `now`); inventory 501029 px is mostly a sample mismatch (app showed
+    pages/system inventory, design pages/flows; 453k of it), the rest is list selectors full path vs short names,
+    panel tree order, "Inventory freigeben" enabled vs disabled, frame label "part · desktop" vs "Flow · Desktop ·
+    Dunkel"; the panel foot shows the checkout folder name, so compare only matches from a folder named ethlete-sdk;
+    prettier renumbered findings 55-58 in this plan (restored; do not prettier design-to-code.md). Lesson: a whole-page
+    compare must pin every input the page reads (data sample, clock, host size, folder name), or a big px number
+    mixes real drift with setup noise and nobody can read it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
