@@ -10,9 +10,9 @@
     "at": "2026-10-31T23:33:53.181Z"
   },
   "components/tree-row": {
-    "hash": "0a49f4052ad096c4",
+    "hash": "b16b638082db1c13",
     "by": "tom",
-    "at": "2026-10-31T23:33:52.130Z"
+    "at": "2026-11-01T00:00:19.240Z"
   },
   "components/zoom-chip": {
     "hash": "495a0ba0d6d2e17a",
@@ -23,6 +23,11 @@
     "hash": "ae2ab59f5379f752",
     "by": "tom",
     "at": "2026-10-31T23:49:17.786Z"
+  },
+  "elements/shell-main": {
+    "hash": "0487b6845f94fb8a",
+    "by": "tom",
+    "at": "2026-11-01T00:00:19.416Z"
   },
   "pages/flows": {
     "hash": "142b826a05d31fbb",
