@@ -1010,6 +1010,19 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     focus-within wrapper may draw the ring instead. Cause not checked yet. Fix in the inbox ready slice; no new tool
     change. Gap: the live check presses only controls on shown pages, so a part no live state renders is not covered
     (parked with Flows).
+90. The zoom chip on pages/system and pages/inbox is not right-aligned at a wide window: at 2000 px it sits at
+    x≈880-1050 (Tom, 2026-11-01, screenshot). Cause (builder): 0db02e383 pins the chip to x≈988 because the pages/system
+    design draws the canvas as a fixed 1000 px box (`w-250`); the app copied the design. Why missed: compare passed at
+    0 px - app and design match, and both are drawn at one width; the e2e runs at 1440 px with no chip case. Fix (any
+    project): `design check` draws every page also at a second, wider viewport and flags a region that keeps a fixed
+    width while its shell slot grows, with the elements anchored to its right or bottom edge.
+91. The teal canvas focus frame (finding 76) is back on pages/system (Tom, 2026-11-01, screenshot). Cause (builder):
+    00eecda8a gave the one canvas (`design-canvas`) the focus ring but not the pointer-focus fix of ee1299600; a click
+    shows no ring, but the next key (Shift, Space, an arrow) turns on :focus-visible. Why missed: the pointer-focus
+    check reads the ring once after the click and never presses a key; components/canvas-viewport was marked ready,
+    but no live page renders its code any more. Fix (any project): the check presses a lone Shift after the click and
+    fails if a ring appears; `design actions --live` names the live element it probed for each ready part and flags a
+    ready part that no live page renders.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
