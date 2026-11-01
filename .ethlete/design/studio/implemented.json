@@ -1,4 +1,12 @@
 {
+  "components/canvas-viewport": {
+    "hash": "a1b78e29542a5eb7",
+    "at": "2026-11-01T12:47:21.938Z",
+    "states": {
+      "canvas": "817390d43b97154e",
+      "canvas-focus-visible": "b86902211c3f293e"
+    }
+  },
   "components/shell-collapse": {
     "hash": "c2bff22ecd599c02",
     "at": "2026-11-01T12:39:01.292Z",
@@ -7,6 +15,28 @@
       "collapse-active": "5ea724df4cca1fcf",
       "collapse-focus-visible": "c4e5e28159e35ce1",
       "collapse-hover": "12b1b358429b1df5"
+    }
+  },
+  "components/zoom-chip": {
+    "hash": "884e0e4485ab2ac4",
+    "at": "2026-11-01T12:47:09.928Z",
+    "states": {
+      "fit": "1173d57d18acfdee",
+      "fit-active": "2d3aae70f8cb6aac",
+      "fit-focus-visible": "a4b3cddd36a3eba0",
+      "fit-hover": "856cf3d8372a9523",
+      "in": "0395591ba6551753",
+      "in-active": "4b41407ea623bb2e",
+      "in-focus-visible": "53533a1288479729",
+      "in-hover": "42e36ac7d5d2c3dd",
+      "out": "d9bf94577dc5d5f8",
+      "out-active": "9b7603c743dc0755",
+      "out-focus-visible": "22ad2c129ca8fb71",
+      "out-hover": "ed9893cba5b79784",
+      "reset": "d743997d42fea37c",
+      "reset-active": "d07ecbcb0ffefc9a",
+      "reset-focus-visible": "093d12e917f962dc",
+      "reset-hover": "607876aa1964dd84"
     }
   },
   "elements/shell-main": {
