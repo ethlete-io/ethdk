@@ -10,7 +10,7 @@ import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
-import { readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
+import { markPartReady, readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
 import { markPartGo } from './part-go';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
@@ -308,5 +308,65 @@ describe('part ready', () => {
       await failuresOf({ ...options, start: async () => ({ url: 'http://localhost:2', stop: async () => undefined }) }),
     ).toEqual([]);
     expect(checkLive).not.toHaveBeenCalled();
+  });
+});
+
+describe('ready on an unchanged part', () => {
+  const embeddingCheckout = () => {
+    const { target, dir } = checkout();
+
+    mkdirSync(join(dir, 'pages/inbox'), { recursive: true });
+    writeFileSync(
+      join(dir, 'pages/inbox/inbox.ts'),
+      "import chip from '@system/components/chip';\nexport default definePart({ implements: 'libs/inbox.component.ts', states: { default: {} } });\nexport const shown = chip;\n",
+    );
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(join(target, 'libs/chip.component.ts'), 'export class Chip {}\n');
+    writeFileSync(
+      join(target, 'libs/inbox.component.ts'),
+      "import { Chip } from './chip.component';\nexport class Inbox { chip = Chip; }\n",
+    );
+
+    return target;
+  };
+
+  const readyAs = (target: string, by: string, at: string) =>
+    markPartReady({
+      product: productOf(target),
+      part: 'pages/inbox',
+      hash: hashOf(target, 'pages/inbox'),
+      by,
+      at,
+      pointsOf: async () => [],
+      actionsOf: async () => [],
+    });
+
+  it('keeps by and at and refreshes the embedded record, and writes a new mark when the part changed', async () => {
+    const target = embeddingCheckout();
+    const dir = join(target, DESIGN_DIR, 'app-a');
+    const first = await readyAs(target, 'tom', '2026-01-01T00:00:00.000Z');
+
+    expect(first).toMatchObject({ by: 'tom' });
+
+    const marks = readReady(dir);
+
+    writeFileSync(
+      join(dir, 'ready.json'),
+      JSON.stringify({ ...marks, 'pages/inbox': { ...marks['pages/inbox'], embedded: undefined } }),
+    );
+
+    const again = await readyAs(target, 'claude-opus-5-5', '2026-02-02T00:00:00.000Z');
+
+    expect(again).toMatchObject({ by: 'tom', at: '2026-01-01T00:00:00.000Z' });
+    expect(again).toHaveProperty('embedded');
+    expect(readReady(dir)['pages/inbox']).toMatchObject({ by: 'tom', at: '2026-01-01T00:00:00.000Z' });
+    expect(readReady(dir)['pages/inbox']).toHaveProperty('embedded');
+
+    appendFileSync(join(dir, 'pages/inbox/inbox.ts'), 'export const more = 1;\n');
+
+    expect(await readyAs(target, 'claude-opus-5-5', '2026-03-03T00:00:00.000Z')).toMatchObject({
+      by: 'claude-opus-5-5',
+      at: '2026-03-03T00:00:00.000Z',
+    });
   });
 });

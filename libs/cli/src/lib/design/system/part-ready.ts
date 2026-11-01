@@ -111,6 +111,7 @@ export const readyPartsOf = (product: ResolvedProduct) =>
  * Marks a part ready at `hash`, or answers why not: 400 without `by` or `hash`, 404 for an unknown part, 409 when the
  * part changed since `hash`, 422 while `pointsOf` lists any open point or `actionsOf` any failed action check.
  * The failed-actions refusal names the embedded parts whose app files changed since the last ready.
+ * A part already marked at the same hash keeps its `by` and `at`; only the embedded record is refreshed.
  * `pointsOf` runs only after the hash holds, `actionsOf` only after the open-point list is empty.
  */
 export const markPartReady = async (options: {
@@ -160,14 +161,17 @@ export const markPartReady = async (options: {
       actions,
     };
 
+  const existing = readReady(found.dir);
+  const previous = existing[part];
+  const kept = previous?.hash === hash ? previous : undefined;
   const mark: PartReady = {
     hash,
     files: found.design.files,
     ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
-    by: by.trim(),
-    at: options.at ?? new Date().toISOString(),
+    by: kept?.by ?? by.trim(),
+    at: kept?.at ?? options.at ?? new Date().toISOString(),
   };
-  const marks = Object.entries({ ...readReady(found.dir), [part]: mark }).sort(([a], [b]) => a.localeCompare(b));
+  const marks = Object.entries({ ...existing, [part]: mark }).sort(([a], [b]) => a.localeCompare(b));
 
   writeFileSync(readyFileOf(found.dir), `${JSON.stringify(Object.fromEntries(marks), null, 2)}\n`);
 
