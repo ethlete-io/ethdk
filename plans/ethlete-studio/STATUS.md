@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder, allgemeine Werkzeug-Fixes ohne Entwurf (C1).
+Builder: CLI neu bauen, Ende-zu-Ende-Prüfung der fünf Fixes, Live-Vergleich aller pages-Teile, Fertig-Marken um den `embedded`-Eintrag ergänzen, dann pushen. Danach der Rest von Liste B und C. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- C1: Die Design-Befehle verwenden den letzten Harness-Build wieder, wenn sich keine Eingabe geändert hat (9cf6343a3, 02.11.).
 - B21: `design check` meldet ACTIONS RERUN, wenn sich ein eingebettetes Teil seit dem letzten Aktionslauf geändert hat. Alte Fertig-Marken bekommen den Eintrag erst beim nächsten `design ready` (7581e0cce, 02.11.).
 - B14 und B15: `design compare --live` meldet Rahmen unter einem Panel als OCCLUDED und wartet auf Overlay-Animationen (cf2565685, 02.11.).
 - B22: Ein Fehlschlag in `design actions` nennt den erreichten Zustand oder den nächsten. Offen: Fehlschläge, die nur aria-expanded prüft (a01d37d64, 02.11.).
@@ -108,7 +109,7 @@ Builder, allgemeine Werkzeug-Fixes ohne Entwurf (C1).
 
 ## C. CLI: Tempo und Ablauf
 
-1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Läuft.**
+1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
 2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111).
 3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124).
 4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
