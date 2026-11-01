@@ -735,8 +735,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     design in many small places that only a whole-page compare shows.
 54. `design check --product studio` timed out after 900 s with no DONE line (builder, 2026-11-01): the design harness
     logs "ResizeObserver loop completed" errors without end. Cause: not a hang. A product run renders ~57 sdk base
-    parts plus the studio parts in one Chromium with no progress output; alone it took 384 s (`DONE studio: 10 of
-    25`), the >900 s came from machine load (7-10, parallel agents). The ResizeObserver noise is the tool's own:
+    parts plus the studio parts in one Chromium with no progress output; alone it took 384 s
+    (`DONE studio: 10 of 25`), the >900 s came from machine load (7-10, parallel agents). The ResizeObserver noise is the tool's own:
     `libs/cli/design/web/frame.ts:462` observes root while `fitOutOfFlow` (`define-call.ts:301`) writes
     root.style.paddingTop (only sdk bracket and scheduler); harmless. Tool fix (builder default): a progress line
     per part, a 120 s per-part timeout that reports a RENDER issue naming the part (render-check.ts:494), and no
