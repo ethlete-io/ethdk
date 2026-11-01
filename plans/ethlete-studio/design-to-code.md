@@ -570,6 +570,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 17. `task --verify` refuses a part commit that touches a file all parts share, for example the label map (Impl Q46).
     Lesson: verify knows a list of shared paths. Also: a hand edit of `design-harness-parts.ts` makes every verify
     fail; agents regenerate it with `design harness`.
+18. The SDK menu mock's force marks overwrite the row's own attributes, so forced open pictures showed no hover,
+    active or focus (Impl Q34, fd93d9b24). With 15: the mock's force API needs a rework.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
