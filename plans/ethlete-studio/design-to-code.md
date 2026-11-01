@@ -1114,6 +1114,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 104. The merge view crop row shows a huge "Prompt kopieren" button on both sides for a state that only the variant
      adds (builder, 2026-11-01, /tmp/merge-view-live.png): the added state has no outline to crop, and the empty "Jetzt"
      panel has no label. Cause and the tool lesson: open, asked the builder; the label is a grill question to Tom.
+105. components/tree-row shows a UTILITY-CSS warning in Studio after the 13 px change (Tom, 2026-11-01). Likely
+     trigger: b57fb9729 moved the text size into tree-row.css as `font-size: var(--text-md)` and `line-height:
+var(--text-md-line)`, which a utility class can express. Why missed: open, asked the builder (was
+     `design check` run on the part before the commit?).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
