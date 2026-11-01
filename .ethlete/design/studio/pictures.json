@@ -527,15 +527,16 @@
     }
   },
   "pages/sketches": {
-    "go": {
-      "hash": "eddebb0e0fee0d94",
-      "states": {
-        "page-sketch": "d228520f36a4f3a4",
-        "zoomed-page": "2b347c0c52412451"
-      }
-    },
     "review": {
       "hash": "9e3f9d5a092a70c3",
+      "states": {
+        "page-sketch": "237b4c0eb1a892ae",
+        "page-100": "4079c3f8cfb0c422",
+        "zoomed-page": "50aead7e94eae58d"
+      }
+    },
+    "go": {
+      "hash": "13887b35f18b1a70",
       "states": {
         "page-sketch": "237b4c0eb1a892ae",
         "page-100": "4079c3f8cfb0c422",
