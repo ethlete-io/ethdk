@@ -776,9 +776,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     compare must pin every input the page reads (data sample, clock, host size, folder name), or a big px number
     mixes real drift with setup noise and nobody can read it.
 60. Studio refuses a folder without design work silently after the OS folder dialog (builder, 2026-11-01, Impl Q89,
-    521b2db01): no design state shows the refusal, so no check could ask for one. Lesson: the action check (Impl
-    Q79) should flag a user action that ends with no visible change, the same as a key press with no effect. Error
-    feedback: Impl Q105 (Tom).
+    521b2db01): no design state shows the refusal, so no check could ask for one. The part-level `design actions`
+    check cannot see it: the part fires its output correctly, the failure is in the host call on the live page.
+    Lesson: only a live-page action check sees a press that ends in a host error with no visible change; it needs a
+    host stub that records native calls (dialog, updater), because a native dialog is invisible to Playwright. Tool
+    change: Impl Q106 (Tom). Error feedback: Impl Q105 (Tom).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
