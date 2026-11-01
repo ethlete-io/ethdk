@@ -57,6 +57,7 @@ const preferStaticBooleanProperties = require('./rules/prefer-static-boolean-pro
 const noImpureTopLevelProvider = require('./rules/no-impure-top-level-provider');
 const noLegacyPrepareWithoutInjector = require('./rules/no-legacy-prepare-without-injector');
 const requireFormSubmit = require('./rules/require-form-submit');
+const noNativeTitle = require('./rules/no-native-title');
 const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
@@ -130,6 +131,7 @@ const plugin = {
     'prefer-static-boolean-properties': preferStaticBooleanProperties,
     'no-impure-top-level-provider': noImpureTopLevelProvider,
     'require-form-submit': requireFormSubmit,
+    'no-native-title': noNativeTitle,
     'no-cdk-import': noCdkImport,
     'no-legacy-query-import': noLegacyQueryImport,
     'no-async-await': noAsyncAwait,

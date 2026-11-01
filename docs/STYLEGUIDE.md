@@ -1,4 +1,4 @@
-# Style Guide v0.28.0
+# Style Guide v0.29.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -32,6 +32,7 @@ Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly aut
 | No `any` / `$any()`; use `unknown` + type guards                                                                                           | `@typescript-eslint/no-explicit-any`, `@angular-eslint/template/no-any`                                                                                                                                             |
 | No property bindings for static strings or coercing component booleans (`[etIcon]="'foo'"`, `[isReadonly]="true"`) - use static attributes | `@angular-eslint/template/prefer-static-string-properties`, `ethlete/prefer-static-boolean-properties`                                                                                                              |
 | A `<form>` handles its own submission (`[etForm]`, `[formRoot]`, `(ngSubmit)`, `(submit)`)                                                 | `ethlete/require-form-submit`                                                                                                                                                                                       |
+| No native `title` attribute - use the SDK tooltip (`etTooltip`)                                                                            | `ethlete/no-native-title`                                                                                                                                                                                           |
 | No `interface` - use `type` (module augmentations stay interfaces)                                                                         | `ethlete/consistent-type-definitions`                                                                                                                                                                               |
 | No `enum` and no `const enum` - use an `as const` object + derived union                                                                   | `ethlete/no-enum`                                                                                                                                                                                                   |
 | No `var`; prefer `const`; one declaration per statement                                                                                    | `no-var`, `prefer-const`, `one-var`                                                                                                                                                                                 |
