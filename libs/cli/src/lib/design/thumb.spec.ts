@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DRAWS_AT_ONCE, ShotTimeoutError, createDrawQueue, createThumbnailer, openFrame } from './thumb';
+import { DRAWS_AT_ONCE, ShotTimeoutError, createDrawQueue, createThumbnailer, finished, openFrame } from './thumb';
 
 const sent: Record<string, unknown>[] = [];
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -285,5 +285,26 @@ describe('openFrame', () => {
 
     await expect(openFrame(page, '/frame.html?b')).rejects.toBeInstanceOf(ShotTimeoutError);
     expect(visits).toHaveLength(2);
+  });
+});
+
+describe('finished', () => {
+  it('finishes finite time-based animations and leaves scroll-driven ones as the scroll position draws them', () => {
+    class ScrollTimeline {}
+    const animation = (endTime: number, timeline: unknown) => ({
+      timeline,
+      effect: { getComputedTiming: () => ({ endTime }) },
+      finish: vi.fn(),
+    });
+    const fade = animation(300, {});
+    const loop = animation(Infinity, {});
+    const scrollFade = animation(100, new ScrollTimeline());
+    const document = { getAnimations: () => [fade, loop, scrollFade] };
+
+    new Function('document', 'ScrollTimeline', finished)(document, ScrollTimeline);
+
+    expect(fade.finish).toHaveBeenCalled();
+    expect(loop.finish).not.toHaveBeenCalled();
+    expect(scrollFade.finish).not.toHaveBeenCalled();
   });
 });

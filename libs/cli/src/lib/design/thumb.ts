@@ -80,8 +80,10 @@ export const openFrame = async (page: Page, url: string) => {
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
+/** Finishes the page's finite time-based animations; scroll-driven ones keep the progress their scroll position gives. */
 export const finished = `document.getAnimations()
   .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+  .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
   .forEach((animation) => animation.finish())`;
 
 export type DrawPriority = 'high' | 'low';
