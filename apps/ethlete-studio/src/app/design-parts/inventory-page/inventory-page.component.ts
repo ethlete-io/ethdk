@@ -35,7 +35,7 @@ export const INVENTORY_PAGE_TREE: PartTreeLayer[] = [
       section="System"
     >
       <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
-      <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto" shellMainSide>
+      <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
         <ethlete-part-tree [layers]="tree()" (activate)="pick.emit($event)" />
       </div>
       <ng-content />
