@@ -670,6 +670,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     mouse move leaves the focus-visible ring on one option while hover highlights another. Wanted: the mouse takes
     over, so pointer use ends the keyboard focus-visible state. Fix in `libs/components` (both select and menu), with
     a behavior test in `apps/storybook-e2e`.
+43. A canvas in Studio has its own background and covers the dot pattern of the page background (Tom, 2026-11-01).
+    The canvas must be transparent so the dots show through. Check every live canvas (flows, sketches, system).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
