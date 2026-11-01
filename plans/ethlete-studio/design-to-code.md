@@ -1102,6 +1102,15 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      design declares, so a missing interaction is silent. Tool fix (any project, after MVP): `design check` flags each
      repeated sibling group (3+ items with the same structure, for example list rows or cards) whose items carry no
      control and no explicit `data-et-static`; the author gives the rows an action or marks them static on purpose.
+103. The Studio menu and the project switch menu have a different spacing, though both should look the same (Tom,
+     2026-11-01, two screenshots). Fact: both render `@system/components/menu`; elements/studio-menu sets
+     `--et-menu-item-height: var(--control-md)` and `--et-menu-item-font-size: var(--text-md)` on `.st-studio-menu`,
+     components/shell-project-switch keeps the SDK menu defaults. Why missed: each part is checked alone against its
+     own code; nothing compares two instances of the same SDK component across parts, so a local token override is
+     silent drift. Tool lesson: open, asked the builder. Decision on the one Studio menu look: grill round to Tom.
+104. The merge view crop row shows a huge "Prompt kopieren" button on both sides for a state that only the variant
+     adds (builder, 2026-11-01, /tmp/merge-view-live.png): the added state has no outline to crop, and the empty "Jetzt"
+     panel has no label. Cause and the tool lesson: open, asked the builder; the label is a grill question to Tom.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
