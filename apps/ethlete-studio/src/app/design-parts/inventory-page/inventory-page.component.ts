@@ -112,7 +112,11 @@ const FRAME_SCALE = 0.5;
     >
       <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
       <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
-        <ethlete-part-tree [layers]="tree()" (activate)="pick.emit($event)" />
+        <ethlete-part-tree
+          [layers]="tree()"
+          (expandedChange)="expandedChange.emit($event)"
+          (activate)="pick.emit($event)"
+        />
       </div>
       <div class="box-border flex h-full flex-col ps-(--st-shell-inset-left)">
         <div class="flex h-14 flex-none items-center gap-space-3 px-space-4">
@@ -244,6 +248,7 @@ export class InventoryPageComponent {
   public inventoryToggle = output();
 
   public pick = output<string>();
+  public expandedChange = output<readonly string[]>();
   public collapse = output();
 
   public sectionChange = output<ShellSection>();

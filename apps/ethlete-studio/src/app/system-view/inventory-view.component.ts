@@ -53,6 +53,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
       (reload)="reload()"
       (approve)="approve()"
       (inventoryToggle)="inventoryToggle.emit()"
+      (expandedChange)="expandedChange.emit($event)"
       (pick)="shellAction.emit({ kind: 'pick', key: $event })"
       (collapse)="shellAction.emit({ kind: 'collapse' })"
       (sectionChange)="shellAction.emit({ kind: 'section', section: $event })"
@@ -78,6 +79,7 @@ export class InventoryViewComponent {
   public part = input.required<string>();
   public shell = input.required<PageShell>();
   public inventoryToggle = output();
+  public expandedChange = output<readonly string[]>();
   public shellAction = output<PageShellAction>();
 
   private reloads = signal(0);
