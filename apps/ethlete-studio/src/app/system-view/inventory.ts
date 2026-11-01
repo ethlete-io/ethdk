@@ -1,22 +1,10 @@
-import { ColorThemeType } from '@ethlete/core';
-import {
-  Inventory,
-  InventoryBox,
-  InventoryControl,
-  InventoryRefusal,
-  InventoryStatus,
-} from '../../host/design-inventory';
+import { Inventory, InventoryControl, InventoryRefusal } from '../../host/design-inventory';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
+
+const LABELS = STUDIO_LABELS.inventory;
 
 /** The author Studio writes for its user, as in a sketch verdict. */
 export const INVENTORY_APPROVER = 'designer';
-
-/** `null` keeps the default (brand, green) theme. */
-export const INVENTORY_TONES: Record<InventoryStatus, ColorThemeType | null> = {
-  declared: null,
-  owned: null,
-  undeclared: 'error',
-  unclassified: 'warning',
-};
 
 /** Every control once, by its number, from all rest frames; it is covered only when every frame covers it. */
 export const inventoryControlsOf = (inventory: Inventory): InventoryControl[] => {
@@ -34,58 +22,43 @@ export const inventoryControlsOf = (inventory: Inventory): InventoryControl[] =>
   return [...byNumber.values()].sort((a, b) => a.number - b.number);
 };
 
-/** Why the approve button is off, or `null` when the inventory can be approved. */
-export const approveBlockOf = (inventory: Inventory): string | null => {
-  const open = inventoryControlsOf(inventory).filter(
+export const canApprove = (inventory: Inventory) =>
+  inventory.state.state !== 'approved' &&
+  inventory.findings === 0 &&
+  !inventoryControlsOf(inventory).some(
     (control) => control.status === 'undeclared' || control.status === 'unclassified',
-  ).length;
-
-  if (open > 0 || inventory.findings > 0)
-    return `${Math.max(open, inventory.findings)} control(s) are undeclared or unclassified`;
-  if (inventory.state.state === 'approved') return 'already approved';
-
-  return null;
-};
+  );
 
 const dateOf = (at: string) => {
   const date = new Date(at);
 
-  return Number.isNaN(date.getTime()) ? at : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? at : date.toLocaleString('de-DE');
 };
 
 export const approvalLabelOf = (inventory: Inventory) => {
   const { state, approval } = inventory;
 
-  if (state.state === 'none') return 'Not approved yet';
-  if (state.state === 'approved') return approval ? `Approved by ${approval.by} on ${dateOf(approval.at)}` : 'Approved';
+  if (state.state === 'none') return LABELS.notApproved;
+  if (state.state === 'approved')
+    return approval ? LABELS.approvedByOn(approval.by, dateOf(approval.at)) : LABELS.approved;
 
   const changes = [
-    state.added.length ? `added ${state.added.join(', ')}` : '',
-    state.removed.length ? `removed ${state.removed.join(', ')}` : '',
-    state.changed ? 'the part changed' : '',
+    state.added.length ? LABELS.added(state.added.join(', ')) : '',
+    state.removed.length ? LABELS.removed(state.removed.join(', ')) : '',
+    state.changed ? LABELS.partChanged : '',
   ].filter(Boolean);
 
-  return `Reopened: ${changes.join('; ') || 'the approval no longer holds'}`;
+  return LABELS.reopened(changes.join('; ') || LABELS.noLongerHolds);
 };
 
 export const refusalMessageOf = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (error instanceof InventoryRefusal && error.status === 409)
-    return `The page changed since this inventory was drawn. Reload it and check it again. (${message})`;
-  if (error instanceof InventoryRefusal && error.status === 422)
-    return `Declare or classify every red and amber control first. (${message})`;
+  if (error instanceof InventoryRefusal && error.status === 409) return LABELS.pageChanged(message);
+  if (error instanceof InventoryRefusal && error.status === 422) return LABELS.openControls(message);
 
   return message;
 };
-
-/** Places a box over a picture shown at any size, in percent of the shot's own pixels. */
-export const boxStyleOf = (box: InventoryBox, shot: { width: number; height: number }) => ({
-  left: `${(box.x / shot.width) * 100}%`,
-  top: `${(box.y / shot.height) * 100}%`,
-  width: `${(box.width / shot.width) * 100}%`,
-  height: `${(box.height / shot.height) * 100}%`,
-});
 
 export const frameLabelOf = (frame: { state: string; preset: string | null; width: number | null }) =>
   [frame.state, frame.preset ?? (frame.width === null ? null : `${frame.width}px`)].filter(Boolean).join(' · ');

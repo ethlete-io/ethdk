@@ -59,6 +59,14 @@ const render = async (inventory: Inventory, post?: (body: unknown) => Promise<Re
   fixture.componentRef.setInput('port', 4999);
   fixture.componentRef.setInput('product', 'studio');
   fixture.componentRef.setInput('part', 'pages/merge');
+  fixture.componentRef.setInput('shell', {
+    tree: [],
+    product: 'studio',
+    products: ['studio'],
+    project: 'ethlete-sdk',
+    projects: ['ethlete-sdk'],
+    panel: 'open',
+  });
   await settle(fixture);
 
   const image = fixture.nativeElement.querySelector('img') as HTMLImageElement;
@@ -71,7 +79,16 @@ const render = async (inventory: Inventory, post?: (body: unknown) => Promise<Re
   return { fixture, posts, element: fixture.nativeElement as HTMLElement };
 };
 
-const approveButton = (element: HTMLElement) => element.querySelector('[data-inventory-approve]') as HTMLButtonElement;
+const buttonNamed = (element: HTMLElement, name: string) =>
+  [...element.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
+
+const approveButton = (element: HTMLElement) => buttonNamed(element, 'Inventory freigeben') as HTMLButtonElement;
+
+const marksOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure .absolute.border-2')];
+
+const entriesOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('ol > li')];
+
+const approvalOf = (element: HTMLElement) => element.querySelector('header > span')?.textContent ?? '';
 
 const themeClassesOf = (element: Element | undefined) =>
   [...(element?.classList ?? [])].filter((name) => /danger|warning|brand/.test(name)).join(' ');
@@ -85,20 +102,13 @@ describe('InventoryViewComponent', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
-  it('lists a covered control as covered, with no outline or badge on the shot', async () => {
+  it('lists a covered control, with no outline or badge on the shot', async () => {
     const { element } = await render(
       inventoryOf([control(1, 'save', 'declared'), { ...control(2, 'under', 'declared'), covered: true }]),
     );
 
-    expect(
-      [...element.querySelectorAll<HTMLElement>('[data-inventory-box]')].map((box) => box.dataset['inventoryBox']),
-    ).toEqual(['1']);
-
-    const entries = [...element.querySelectorAll<HTMLElement>('[data-inventory-entry]')];
-
-    expect(entries).toHaveLength(2);
-    expect(entries[0]?.textContent).not.toContain('covered');
-    expect(entries[1]?.textContent).toContain('covered');
+    expect(marksOf(element).map((mark) => mark.textContent?.trim())).toEqual(['1']);
+    expect(entriesOf(element)).toHaveLength(2);
   });
 
   it('numbers each control on the shot and in the list, coloured by its status', async () => {
@@ -110,21 +120,20 @@ describe('InventoryViewComponent', () => {
       ]),
     );
 
-    const boxes = [...element.querySelectorAll<HTMLElement>('[data-inventory-box]')];
+    const boxes = marksOf(element);
 
-    expect(boxes.map((box) => [box.dataset['inventoryBox'], box.dataset['status'], box.textContent?.trim()])).toEqual([
-      ['1', 'declared', '1'],
-      ['2', 'undeclared', '2'],
-      ['3', 'unclassified', '3'],
-    ]);
+    expect(boxes.map((box) => box.textContent?.trim())).toEqual(['1', '2', '3']);
     expect(boxes[1]?.style.left).toBe('20%');
     expect(boxes[1]?.style.width).toBe('5%');
     expect(themeClassesOf(boxes[0])).not.toMatch(/danger|warning/);
     expect(themeClassesOf(boxes[1])).toContain('danger');
     expect(themeClassesOf(boxes[2])).toContain('warning');
-    expect(
-      [...element.querySelectorAll<HTMLElement>('[data-inventory-entry]')].map((entry) => entry.dataset['status']),
-    ).toEqual(['declared', 'undeclared', 'unclassified']);
+    expect(entriesOf(element).map((entry) => entry.textContent)).toEqual([
+      expect.stringContaining('deklariert'),
+      expect.stringContaining('nicht deklariert'),
+      expect.stringContaining('nicht eingeordnet'),
+    ]);
+    expect(themeClassesOf(entriesOf(element)[1])).toContain('danger');
   });
 
   it('keeps approve disabled while a control is red or amber', async () => {
@@ -138,10 +147,7 @@ describe('InventoryViewComponent', () => {
 
   it('lists a control an embedded part owns with its owner and keeps approve enabled', async () => {
     const { element } = await render(inventoryOf([control(1, 'main > et-button', 'owned')]));
-    const entry = element.querySelector<HTMLElement>('[data-inventory-entry]');
-
-    expect(entry?.dataset['status']).toBe('owned');
-    expect(entry?.textContent).toContain('owned by components/button');
+    expect(entriesOf(element)[0]?.textContent).toContain('gehört zu components/button');
     expect(approveButton(element).disabled).toBe(false);
   });
 
@@ -159,7 +165,7 @@ describe('InventoryViewComponent', () => {
     await settle(fixture);
 
     expect(posts).toEqual([{ part: 'pages/merge', hash: 'h1', by: 'designer' }]);
-    expect(element.querySelector('[data-inventory-approval]')?.textContent).toContain('Approved by designer');
+    expect(approvalOf(element)).toContain('Von designer am');
     expect(approveButton(element).disabled).toBe(true);
   });
 
@@ -171,8 +177,6 @@ describe('InventoryViewComponent', () => {
     approveButton(element).click();
     await settle(fixture);
 
-    expect(element.querySelector('[data-inventory-error]')?.textContent).toContain(
-      'The page changed since this inventory was drawn. Reload it',
-    );
+    expect(approvalOf(element)).toContain('Die Seite hat sich geändert, seit diese Inventory gezeichnet wurde.');
   });
 });

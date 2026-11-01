@@ -83,6 +83,8 @@ import { NoteBodyComponent } from './note-body.component';
 import { NoteFormComponent } from './note-form.component';
 import { partNotesOf } from './note-places';
 import { InventoryViewComponent } from './inventory-view.component';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
+import { PageShell, PageShellAction } from './page-shell';
 import { ExceptionListComponent } from './exception-list.component';
 import { MotionStripComponent } from './motion-strip.component';
 import { injectNoteStore, provideNoteStore } from './note-store';
@@ -376,73 +378,59 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   variant="outline"
                   color="surface"
                   size="sm"
-                  title="Show the controls of this page and approve them"
                   data-inventory-toggle
                 >
-                  Inventory
+                  {{ INVENTORY_LABELS.toggle }}
                 </button>
               }
-              @if (!inventoryShown() || partShown.listed.layer !== 'pages') {
-                <ng-container [ngTemplateOutlet]="themeBar" />
-                <ng-container [ngTemplateOutlet]="noteModeButton" />
-                <ng-container [ngTemplateOutlet]="commentModeButton" />
-              }
+              <ng-container [ngTemplateOutlet]="themeBar" />
+              <ng-container [ngTemplateOutlet]="noteModeButton" />
+              <ng-container [ngTemplateOutlet]="commentModeButton" />
             </div>
-            @if (inventoryShown() && partShown.listed.layer === 'pages' && port(); as port) {
-              @defer {
-                <ethlete-inventory-view
-                  [port]="port"
-                  [product]="product()?.name ?? ''"
-                  [part]="partShown.key"
-                  class="pt-14"
-                />
-              }
-            } @else {
-              <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
-                <ethlete-design-canvas
-                  #partCanvas
-                  [frames]="notedFrames()"
-                  [cameraKey]="cameraKey()"
-                  [restoredCamera]="restoredCamera()"
-                  [pins]="partPins()"
-                  [pointing]="commentStore.active() || noteStore.active()"
-                  [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
-                  [draft]="noteStore.draft() ?? commentStore.draft()"
-                  [pinPopover]="pinThread"
-                  [notes]="notesShown() ? partNotes() : []"
-                  [noteTemplate]="noteBody"
-                  (cameraChange)="rememberCamera($event)"
-                  (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
-                  class="min-h-0"
-                >
-                  @if (noteStore.draft()) {
-                    @defer {
-                      <ethlete-note-form canvasDraft />
-                    }
-                  } @else if (commentStore.draft()) {
-                    @defer {
-                      <ethlete-comment-draft canvasDraft />
-                    }
+            <div class="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
+              <ethlete-design-canvas
+                #partCanvas
+                [frames]="notedFrames()"
+                [cameraKey]="cameraKey()"
+                [restoredCamera]="restoredCamera()"
+                [pins]="partPins()"
+                [pointing]="commentStore.active() || noteStore.active()"
+                [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+                [draft]="noteStore.draft() ?? commentStore.draft()"
+                [pinPopover]="pinThread"
+                [notes]="notesShown() ? partNotes() : []"
+                [noteTemplate]="noteBody"
+                (cameraChange)="rememberCamera($event)"
+                (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
+                class="min-h-0"
+              >
+                @if (noteStore.draft()) {
+                  @defer {
+                    <ethlete-note-form canvasDraft />
                   }
-                </ethlete-design-canvas>
-                @if (partMotions(); as motions) {
-                  @if (port(); as port) {
-                    <ethlete-motion-strip
-                      [port]="port"
-                      [product]="product()?.name ?? ''"
-                      [part]="partShown.key"
-                      [motions]="motions"
-                      [presets]="presetNames()"
-                      [surface]="surface()"
-                      [color]="color()"
-                      [revision]="productsRevision()"
-                      [canvas]="partCanvas"
-                      class="max-h-[45vh] overflow-y-auto"
-                    />
+                } @else if (commentStore.draft()) {
+                  @defer {
+                    <ethlete-comment-draft canvasDraft />
                   }
                 }
-              </div>
-            }
+              </ethlete-design-canvas>
+              @if (partMotions(); as motions) {
+                @if (port(); as port) {
+                  <ethlete-motion-strip
+                    [port]="port"
+                    [product]="product()?.name ?? ''"
+                    [part]="partShown.key"
+                    [motions]="motions"
+                    [presets]="presetNames()"
+                    [surface]="surface()"
+                    [color]="color()"
+                    [revision]="productsRevision()"
+                    [canvas]="partCanvas"
+                    class="max-h-[45vh] overflow-y-auto"
+                  />
+                }
+              }
+            </div>
           } @else {
             <p [class]="NOTE">This product has no parts yet.</p>
           }
@@ -474,6 +462,17 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       >
         <ng-container [ngTemplateOutlet]="shellCanvas" />
       </ethlete-inbox>
+    } @else if (inventoryPage(); as page) {
+      @defer {
+        <ethlete-inventory-view
+          [port]="page.port"
+          [product]="product()?.name ?? ''"
+          [part]="page.part"
+          [shell]="pageShell()"
+          (inventoryToggle)="toggleInventory()"
+          (shellAction)="runShellAction($event)"
+        />
+      }
     } @else {
       <ethlete-shell-main
         [section]="section()"
@@ -565,6 +564,7 @@ export class SystemViewComponent {
   protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
+  protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
 
   protected readonly NEW_PRODUCT = NEW_PRODUCT;
 
@@ -1070,9 +1070,30 @@ export class SystemViewComponent {
 
   protected panel = signal<'open' | 'hidden'>('open');
 
+  protected pageShell = computed<PageShell>(() => ({
+    tree: this.partTreeLayers(),
+    product: this.product()?.name ?? '',
+    products: this.productNames(),
+    project: this.project(),
+    projects: this.projects(),
+    panel: this.panel(),
+  }));
+
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>('System');
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
+
+  protected inventoryPage = computed(() => {
+    const port = this.port();
+    const part = this.part();
+    const read = this.reading();
+
+    if (!port || !part || !read || read.error || read.products.length === 0) return null;
+    if (this.section() !== 'System' || this.creating() || this.call() || this.awaitingPicked()) return null;
+    if (this.sketchShown() || this.flowShown()) return null;
+
+    return this.inventoryShown() && part.listed.layer === 'pages' ? { port, part: part.key } : null;
+  });
 
   protected inboxLoad = computed<InboxLoad>(() => {
     if (this.commentStore.loaded()) return 'loaded';
@@ -1229,6 +1250,25 @@ export class SystemViewComponent {
 
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
+  }
+
+  protected runShellAction(action: PageShellAction) {
+    switch (action.kind) {
+      case 'pick':
+        return this.activate(action.key);
+      case 'collapse':
+        return this.panel.set('hidden');
+      case 'section':
+        return this.pickSection(action.section);
+      case 'product':
+        return this.pickProduct(action.name);
+      case 'allProducts':
+        return this.pickProduct(NEW_PRODUCT);
+      case 'project':
+        return this.projectChange.emit(action.name);
+      case 'openProject':
+        return this.openProject.emit();
+    }
   }
 
   protected toggleInventory() {

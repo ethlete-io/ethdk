@@ -1,4 +1,5 @@
-import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
@@ -21,14 +22,27 @@ export const INVENTORY_PAGE_TREE: PartTreeLayer[] = [
 
 export type InventoryPageStatus = 'declared' | 'owned' | 'undeclared' | 'unclassified';
 
+export type InventoryPageBox = { x: number; y: number; width: number; height: number };
+
 export type InventoryPageEntry = {
+  number?: number;
   id: string;
   label?: string;
   status: InventoryPageStatus;
   owner?: string;
   kind: string;
   states: number;
-  box: { x: number; y: number; width: number; height: number };
+  box?: InventoryPageBox;
+};
+
+export type InventoryPageMark = { number: number; status: InventoryPageStatus; box: InventoryPageBox };
+
+export type InventoryPageFrame = {
+  key: string;
+  label: string;
+  width: number;
+  height: number;
+  marks: InventoryPageMark[];
 };
 
 export const INVENTORY_PAGE_ENTRIES: InventoryPageEntry[] = [
@@ -102,9 +116,9 @@ const FRAME_SCALE = 0.5;
       </div>
       <div class="box-border flex h-full flex-col ps-(--st-shell-inset-left)">
         <div class="flex h-14 flex-none items-center gap-space-3 px-space-4">
-          <span class="text-ui-lg font-ui-strong">pages/flows</span>
+          <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
           <span class="flex-1"></span>
-          <button pressed et-button type="button" variant="outline" size="sm">
+          <button (click)="inventoryToggle.emit()" pressed et-button type="button" variant="outline" size="sm">
             {{ LABELS.toggle }}
           </button>
         </div>
@@ -114,13 +128,20 @@ const FRAME_SCALE = 0.5;
           >
             <h2 class="m-0 text-ui-lg font-ui-strong">{{ LABELS.title }}</h2>
             @if (!loading()) {
-              <span class="text-ui-sm text-et-surface-muted">{{ approval() }}</span>
+              <span class="text-ui-sm text-et-surface-muted">{{ approvalShown() }}</span>
             }
             <span class="flex-1"></span>
-            <button [disabled]="loading()" et-button type="button" variant="outline" size="sm">
+            <button [disabled]="loading()" (click)="reload.emit()" et-button type="button" variant="outline" size="sm">
               {{ LABELS.reload }}
             </button>
-            <button [disabled]="inventory() !== 'approvable'" et-button type="button" variant="filled" size="sm">
+            <button
+              [disabled]="approveBlocked()"
+              (click)="approve.emit()"
+              et-button
+              type="button"
+              variant="filled"
+              size="sm"
+            >
               {{ LABELS.approve }}
             </button>
           </header>
@@ -129,27 +150,37 @@ const FRAME_SCALE = 0.5;
           } @else {
             <div class="grid min-h-0 grid-cols-[minmax(0,1fr)_32rem]">
               <div class="flex min-h-0 flex-col gap-space-6 overflow-auto p-space-4">
-                <figure class="m-0 flex flex-col gap-space-2">
-                  <figcaption class="font-code text-ui-sm text-et-surface-muted">{{ LABELS.frame }}</figcaption>
-                  <div class="relative self-start border border-et-surface-border">
-                    <div [style.width.px]="1440 * SCALE" [style.height.px]="900 * SCALE" class="bg-et-surface-bg"></div>
-                    @for (entry of shown(); track entry.id; let index = $index) {
-                      <div
-                        [etProvideColor]="themeOf(entry.status)"
-                        [style.left.px]="entry.box.x * SCALE"
-                        [style.top.px]="entry.box.y * SCALE"
-                        [style.width.px]="entry.box.width * SCALE"
-                        [style.height.px]="entry.box.height * SCALE"
-                        class="pointer-events-none absolute border-2 border-et-theme"
-                      >
-                        <span
-                          class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
-                          >{{ index }}</span
+                @for (frame of framesShown(); track frame.key) {
+                  <figure class="m-0 flex flex-col gap-space-2">
+                    <figcaption class="font-code text-ui-sm text-et-surface-muted">{{ frame.label }}</figcaption>
+                    <div class="relative self-start border border-et-surface-border">
+                      @if (shotTemplate(); as shot) {
+                        <ng-container *ngTemplateOutlet="shot; context: { $implicit: frame }" />
+                      } @else {
+                        <div
+                          [style.width.px]="frame.width * SCALE"
+                          [style.height.px]="frame.height * SCALE"
+                          class="bg-et-surface-bg"
+                        ></div>
+                      }
+                      @for (mark of frame.marks; track mark.number) {
+                        <div
+                          [etProvideColor]="themeOf(mark.status)"
+                          [style.left]="PERCENT_OF(mark.box.x, frame.width)"
+                          [style.top]="PERCENT_OF(mark.box.y, frame.height)"
+                          [style.width]="PERCENT_OF(mark.box.width, frame.width)"
+                          [style.height]="PERCENT_OF(mark.box.height, frame.height)"
+                          class="pointer-events-none absolute border-2 border-et-theme"
                         >
-                      </div>
-                    }
-                  </div>
-                </figure>
+                          <span
+                            class="absolute -top-2 -left-2 rounded-full bg-et-theme px-1 font-code text-ui-xs leading-4 text-et-theme-ink"
+                            >{{ mark.number }}</span
+                          >
+                        </div>
+                      }
+                    </div>
+                  </figure>
+                }
               </div>
               <ol
                 class="m-0 flex min-h-0 list-none flex-col gap-space-2 overflow-auto border-l border-et-surface-border p-space-4"
@@ -157,7 +188,7 @@ const FRAME_SCALE = 0.5;
                 @for (entry of shown(); track entry.id; let index = $index) {
                   <li [etProvideColor]="themeOf(entry.status)" class="flex gap-space-2 text-ui-sm">
                     <span class="h-fit shrink-0 rounded-full bg-et-theme px-1.5 font-code text-et-theme-ink">{{
-                      index
+                      entry.number ?? index
                     }}</span>
                     <span class="flex min-w-0 flex-col">
                       @if (entry.label) {
@@ -179,7 +210,14 @@ const FRAME_SCALE = 0.5;
     </ethlete-shell-main>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ShellMainComponent, StudioMenuComponent, PartTreeComponent, BUTTON_IMPORTS, ProvideColorDirective],
+  imports: [
+    NgTemplateOutlet,
+    ShellMainComponent,
+    StudioMenuComponent,
+    PartTreeComponent,
+    BUTTON_IMPORTS,
+    ProvideColorDirective,
+  ],
   host: { class: 'block h-screen w-full' },
 })
 export class InventoryPageComponent {
@@ -194,7 +232,16 @@ export class InventoryPageComponent {
   public panel = input<'open' | 'hidden'>('open');
 
   public entries = input(INVENTORY_PAGE_ENTRIES);
+  public part = input('pages/flows');
+  public approval = input<string | null>(null);
+  public approvable = input<boolean | null>(null);
+  public frames = input<InventoryPageFrame[] | null>(null);
+  public shotTemplate = input<TemplateRef<{ $implicit: InventoryPageFrame }> | null>(null);
   public menuOpen = model(false);
+
+  public reload = output();
+  public approve = output();
+  public inventoryToggle = output();
 
   public pick = output<string>();
   public collapse = output();
@@ -210,10 +257,12 @@ export class InventoryPageComponent {
   public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.inventory;
   protected readonly SCALE = FRAME_SCALE;
+  protected readonly PERCENT_OF = percentOf;
   protected loading = computed(() => this.inventory() === 'loading');
-  protected approval = computed(() =>
-    this.inventory() === 'approved' ? this.LABELS.approvedBy : this.LABELS.notApproved,
+  protected approvalShown = computed(
+    () => this.approval() ?? (this.inventory() === 'approved' ? this.LABELS.approvedBy : this.LABELS.notApproved),
   );
+  protected approveBlocked = computed(() => !(this.approvable() ?? this.inventory() === 'approvable'));
   protected shown = computed(() =>
     this.inventory() === 'open'
       ? this.entries()
@@ -223,7 +272,23 @@ export class InventoryPageComponent {
             : entry,
         ),
   );
+  protected framesShown = computed<InventoryPageFrame[]>(
+    () =>
+      this.frames() ?? [
+        {
+          key: 'sample',
+          label: this.LABELS.frame,
+          width: 1440,
+          height: 900,
+          marks: this.shown().flatMap((entry, index) =>
+            entry.box ? [{ number: index, status: entry.status, box: entry.box }] : [],
+          ),
+        },
+      ],
+  );
   protected themeOf(status: InventoryPageStatus) {
     return status === 'undeclared' ? this.errorTheme() : status === 'unclassified' ? this.warningTheme() : undefined;
   }
 }
+
+const percentOf = (value: number, of: number) => `${(value / of) * 100}%`;

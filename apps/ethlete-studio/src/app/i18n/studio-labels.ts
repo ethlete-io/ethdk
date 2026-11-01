@@ -57,6 +57,16 @@ export const STUDIO_LABELS = {
       unclassified: 'nicht eingeordnet',
     },
     states: (count: number) => (count === 1 ? 'Zustand' : 'Zustände'),
+    approved: 'Freigegeben',
+    approvedByOn: (by: string, at: string) => `Von ${by} am ${at} freigegeben`,
+    reopened: (changes: string) => `Wieder offen: ${changes}`,
+    added: (ids: string) => `hinzugefügt ${ids}`,
+    removed: (ids: string) => `entfernt ${ids}`,
+    partChanged: 'der Teil hat sich geändert',
+    noLongerHolds: 'die Freigabe gilt nicht mehr',
+    pageChanged: (message: string) =>
+      `Die Seite hat sich geändert, seit diese Inventory gezeichnet wurde. Lade sie neu und prüfe sie noch einmal. (${message})`,
+    openControls: (message: string) => `Deklariere oder ordne zuerst jedes rote und gelbe Control ein. (${message})`,
   },
   start: {
     title: 'Ethlete Studio',
