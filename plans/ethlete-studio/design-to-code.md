@@ -631,6 +631,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     menu never reaches because it keeps focus inside the menu. studio-menu passed 8 of 8 at 0 px but misses
     `option-hover`, `option-focus-visible` and `option-active`, so `ready` refuses. Lesson: the state list of a part
     must come from the headless part's reachable states, checked before the freeze, not drawn by hand.
+34. pages/system draws the open-points popover at a fixed spot (16 px below the chip, arrow at a fixed offset), while
+    the SDK anchored dialog puts it 10 px below and centres the arrow on the chip. The app side of `nothing-open` is
+    also flaky (2 of 3 runs shot before the overlay opened). Lesson: a design that draws an SDK overlay must take its
+    position from the overlay's real config, and compare must wait for overlay panes.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
