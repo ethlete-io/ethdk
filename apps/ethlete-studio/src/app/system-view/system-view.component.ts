@@ -299,29 +299,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               [ngTemplateOutlet]="newProductScreen"
               [ngTemplateOutletContext]="{ $implicit: LABELS.noProductYet }"
             />
-          } @else if (sketchShown(); as shown) {
-            <ethlete-sketch-view
-              #sketchView
-              [port]="shown.port"
-              [product]="shown.product"
-              [sketch]="shown.sketch"
-              [part]="shown.part"
-              [epoch]="epoch()"
-              [revision]="sketchRevision()"
-              [view]="view()"
-              [surface]="surface()"
-              [color]="color()"
-              [cameraKey]="cameraKey()"
-              [restoredCamera]="restoredCamera()"
-              (cameraChange)="rememberCamera($event)"
-              (decide)="reloadSketches()"
-              (partOpen)="activate(shown.sketch.target)"
-              (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
-              (mergeComplete)="selectMerged($event)"
-            >
-              <ng-container [ngTemplateOutlet]="themeBar" />
-              <ng-container [ngTemplateOutlet]="commentModeButton" />
-            </ethlete-sketch-view>
+          } @else if (sketchShown()) {
           } @else if (flowShown(); as shown) {
             <ethlete-flow-view
               #flowView
@@ -463,6 +441,26 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       >
         <ng-container [ngTemplateOutlet]="shellCanvas" />
       </ethlete-inbox>
+    } @else if (sketchPage(); as shown) {
+      <ethlete-sketch-view
+        #sketchView
+        [port]="shown.port"
+        [product]="shown.product"
+        [sketch]="shown.sketch"
+        [part]="shown.part"
+        [epoch]="epoch()"
+        [revision]="sketchRevision()"
+        [view]="view()"
+        [surface]="surface()"
+        [color]="color()"
+        [cameraKey]="cameraKey()"
+        [shell]="pageShell()"
+        (decide)="reloadSketches()"
+        (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
+        (mergeComplete)="selectMerged($event)"
+        (expandedChange)="rememberOpen($event)"
+        (shellAction)="runShellAction($event)"
+      />
     } @else if (inventoryPage(); as page) {
       @defer {
         <ethlete-inventory-view
@@ -566,8 +564,8 @@ export class SystemViewComponent {
   protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
-  protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
   protected readonly LABELS = STUDIO_LABELS.shell;
+  protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
 
   protected readonly NEW_PRODUCT = NEW_PRODUCT;
 
@@ -1085,6 +1083,15 @@ export class SystemViewComponent {
   private railSection = signal<Exclude<ShellSection, 'Inbox'>>('System');
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
+
+  protected sketchPage = computed(() => {
+    const read = this.reading();
+
+    if (!read || read.error || read.products.length === 0) return null;
+    if (this.section() === 'Inbox' || this.creating() || this.call()) return null;
+
+    return this.sketchShown();
+  });
 
   protected inventoryPage = computed(() => {
     const port = this.port();

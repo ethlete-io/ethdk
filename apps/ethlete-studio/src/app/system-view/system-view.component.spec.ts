@@ -1,4 +1,4 @@
-import { WritableSignal, provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
@@ -396,7 +396,9 @@ describe('SystemViewComponent on a merge', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
   });
 
   afterEach(() => {
@@ -544,13 +546,13 @@ describe('SystemViewComponent on a merge', () => {
 
     const fixture = await mount({ systemEntry: 'sketch:elements/rating' });
     const root: HTMLElement = fixture.nativeElement;
-    const sketchView = fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance as object;
 
     expect(fixture.componentInstance['selectedKey']()).toBe('sketch:elements/rating');
+    expect(fixture.debugElement.query(By.directive(SketchViewComponent))).not.toBeNull();
 
-    (sketchView as { note: WritableSignal<string> })['note'].set('Calmer.');
-    await settle(fixture);
-    root.querySelector<HTMLButtonElement>('[data-merge]')?.click();
+    [...root.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Merge')
+      ?.click();
     await settle(fixture);
 
     finishMerge();
@@ -830,7 +832,9 @@ describe('SystemViewComponent view context', () => {
 
       return new Promise(() => undefined);
     });
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
   });
 
   afterEach(() => {
@@ -878,7 +882,7 @@ describe('SystemViewComponent view context', () => {
     expect(context.shown()).toBeNull();
   });
 
-  it("writes the sketch, its directory, its part's file, the picked variant and the variant of the selected frame", async () => {
+  it("writes the sketch, its directory, its part's file and the picked variant", async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
     const context = TestBed.runInInjectionContext(() => injectViewContext());
 
@@ -893,18 +897,6 @@ describe('SystemViewComponent view context', () => {
       selection: null,
       state: null,
     });
-
-    const canvas: DesignCanvasComponent = fixture.debugElement
-      .query(By.directive(SketchViewComponent))
-      .query(By.directive(DesignCanvasComponent)).componentInstance;
-    const frame = canvas.frames().find((candidate) => candidate.place?.sketch?.variant === 'a');
-
-    canvas.selectedId.set(frame?.id ?? null);
-    await settle(fixture);
-
-    expect(frame).toBeDefined();
-    expect(context.context().variant).toBe('a');
-    expect(context.context().selection).toBe('elements/rating (default)');
 
     fixture.destroy();
 

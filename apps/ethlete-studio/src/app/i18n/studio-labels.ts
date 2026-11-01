@@ -7,6 +7,9 @@ export const STUDIO_LABELS = {
     merge: 'Merge',
     variant: (label: string) => `Variante ${label}`,
     fitHint: 'Doppelklick zum Einpassen',
+    current: 'Aktuell',
+    roundSelect: 'Runde',
+    round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
   },
   treeRow: {
     sketchInProgress: 'Entwurf in Arbeit',

@@ -15,7 +15,11 @@
 >
   <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
   <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
-    <ethlete-part-tree [layers]="tree()" (expandedChange)="expandedChange.emit($event)" (activate)="pick.emit($event)" />
+    <ethlete-part-tree
+      [layers]="tree()"
+      (expandedChange)="expandedChange.emit($event)"
+      (activate)="pick.emit($event)"
+    />
   </div>
   <div
     #page
@@ -32,7 +36,7 @@
     </header>
     <div class="absolute top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 [&_.et-form-field]:w-auto">
       <et-form-field size="sm">
-        <et-select [value]="round()" (valueChange)="selectRound($event)">
+        <et-select [value]="round()" [aria-label]="LABELS.roundSelect" (valueChange)="selectRound($event)">
           @for (option of rounds(); track option.value) {
             <et-select-option [value]="option.value" [label]="option.label">{{ option.label }}</et-select-option>
           }
