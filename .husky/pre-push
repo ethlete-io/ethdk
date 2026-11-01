@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
-# Runs the CI "Checks" job over the committed state of HEAD in a throwaway clone, so a push never lands code
-# that job rejects and other sessions' uncommitted edits never block it. Skip once with `git push --no-verify`.
+# Runs the CI "Checks" job, plus the Studio specs and the static design check of the parts the pushed changes reach,
+# over the committed state of HEAD in a throwaway clone, so a push never lands code that job rejects and other
+# sessions' uncommitted edits never block it. Skip once with `git push --no-verify`.
 set -e
 
 export NX_NO_CLOUD=true
@@ -44,6 +45,10 @@ for check in agents:check versions:check lint:changesets lint:size docs:error-co
   yarn "$check" >"$tmp/$check.log" 2>&1 &
   pids="$pids $!:$check"
 done
+node tools/scripts/prepush-checks.mjs specs "$base" "$head" "$tmp/vitest-cache" >"$tmp/studio-specs.log" 2>&1 &
+pids="$pids $!:studio-specs"
+node tools/scripts/prepush-checks.mjs design "$base" "$head" >"$tmp/design-check.log" 2>&1 &
+pids="$pids $!:design-check"
 
 failed=0
 yarn nx format:check --base="$base" --head=HEAD || failed=1
@@ -51,7 +56,7 @@ yarn nx affected -t typecheck lint --base="$base" --head=HEAD --parallel=8 || fa
 
 for entry in $pids; do
   if ! wait "${entry%%:*}"; then
-    echo "pre-push: yarn ${entry#*:} failed:"
+    echo "pre-push: ${entry#*:} failed:"
     cat "$tmp/${entry#*:}.log"
     failed=1
   fi
