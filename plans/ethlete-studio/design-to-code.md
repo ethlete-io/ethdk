@@ -360,3 +360,9 @@ only; the builder starts when Tom gives the start.
 - Impl Q9 picker autofocus (Tom, 2026-11-01): the real app keeps `autoFocus` on for the project picker menu, so a
   keyboard open focuses the first item. The design state `project-picker` means a pointer open; compare opens the
   menu by pointer, so no focus ring shows.
+- Impl Q10 disabled guards (Tom, 2026-11-01): the new `DISABLED-INTERACTION` rule (0d1082d73) found missing
+  `:not([disabled])` guards, mostly `backgroundColor`, in 8 sdk parts: button 2, calendar 2, carousel 6, chip 8,
+  copy-button 2, pagination 4, scrollable 28, toolbar 2. Fix them now, beside the pilot, in one subagent slice in
+  `libs/components` CSS, with a patch changeset. Where a colour also lives in the sdk design part (for example
+  button), the slice changes that part too and rebuilds `dist/libs`, so design and lib do not drift. Done when
+  `design check --product sdk` reports no `DISABLED-INTERACTION`.
