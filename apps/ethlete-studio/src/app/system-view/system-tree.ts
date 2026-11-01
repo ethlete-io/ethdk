@@ -643,7 +643,7 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
 const REPORT_EXPIRY_MS = 30 * 60_000;
 
 /** When a drawing report stops blocking its variant's column, in ms; `null` for none or an unreadable `updatedAt`. */
-export const reportExpiryOf = (report: ListedSketch['report']) => {
+const reportExpiryOf = (report: ListedSketch['report']) => {
   const updatedAt = report ? Date.parse(report.updatedAt) : NaN;
 
   return Number.isNaN(updatedAt) ? null : updatedAt + REPORT_EXPIRY_MS;
@@ -1294,7 +1294,7 @@ export const pickedVariantOf = (sketch: ListedSketch) =>
     : null;
 
 /** "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; `null` while it is live. */
-export const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string) => {
+const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string) => {
   const rejection = rejectionOf(sketch, variant);
 
   if (!rejection) return null;

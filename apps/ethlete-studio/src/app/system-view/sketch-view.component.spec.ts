@@ -183,9 +183,15 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-page="b"]')).not.toBeNull();
   });
 
-  it('picks and merges a variant from its Merge button, without a note', async () => {
+  it('picks a variant from its Merge button and opens the merge page with the changed rows, now and after', async () => {
     const bodies: Record<string, unknown> = {};
+    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
+    const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
     const { fixture, root } = await render(SKETCH, (url, init) => {
+      if (url.includes('/__design/sketch-preview')) return json({ changed: [], affected: ['pages/home'] });
+      if (url.includes('/__design/sketch-compare'))
+        return json({ target: SKETCH.target, variant: 'a', changed: [changed], unchanged: [] });
+
       const path = ['sketch-decision', 'sketch-merge'].find((entry) => url.includes(`/__design/${entry}`));
 
       if (!path) return noComments(url);
@@ -196,6 +202,7 @@ describe('SketchViewComponent', () => {
     });
     const completed: string[] = [];
 
+    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
     fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
     await settle(fixture);
 
@@ -206,6 +213,28 @@ describe('SketchViewComponent', () => {
     expect(merges).toHaveLength(2);
 
     merges[0]?.click();
+    await settle(fixture);
+
+    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
+    expect(root.querySelector('ethlete-sketches')).toBeNull();
+    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
+
+    const frames = [...root.querySelectorAll('ethlete-merge iframe')].map(
+      (frame) => new URL(frame.getAttribute('src') ?? ''),
+    );
+
+    expect(frames.map((frame) => frame.searchParams.get('part'))).toEqual(['pages/home', 'pages/home']);
+    expect(frames.map((frame) => frame.searchParams.get('variant'))).toEqual([null, 'a']);
+
+    buttonNamed(root, 'Back to sketch')?.click();
+    await settle(fixture);
+
+    expect(root.querySelector('ethlete-merge')).toBeNull();
+    expect(root.querySelector('ethlete-sketches')).not.toBeNull();
+
+    fixture.componentInstance['pickForMerge']('a');
+    await settle(fixture);
+    buttonNamed(root, 'Merge')?.click();
     await settle(fixture);
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' }, 'sketch-merge': {} });

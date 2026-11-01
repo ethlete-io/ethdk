@@ -550,9 +550,14 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.componentInstance['selectedKey']()).toBe('sketch:elements/rating');
     expect(fixture.debugElement.query(By.directive(SketchViewComponent))).not.toBeNull();
 
-    [...root.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.trim() === 'Merge')
-      ?.click();
+    const clickMerge = () =>
+      [...root.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.trim() === 'Merge')
+        ?.click();
+
+    clickMerge();
+    await settle(fixture);
+    clickMerge();
     await settle(fixture);
 
     finishMerge();

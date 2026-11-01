@@ -127,22 +127,6 @@ export const STUDIO_LABELS = {
     anotherInteraction: 'in einer anderen Interaktion',
     otherInteractions: 'in anderen Interaktionen',
   },
-  changedArea: {
-    label: 'Geänderter Bereich',
-    showWhole: 'Die ganze Seite in jeder Spalte zeigen',
-    showArea: 'Nur den Bereich zeigen, den die Varianten ändern, vergrößert, in jeder Spalte',
-  },
-  variantDiff: {
-    states: (count: number) => (count === 1 ? 'Zustand' : 'Zuständen'),
-    noChange: (states: string) => `Keine Pixeländerung in ${states}`,
-    differs: (count: number, states: string) =>
-      `${count} von ${states} ${count === 1 ? 'unterscheidet sich' : 'unterscheiden sich'} in Pixeln`,
-  },
-  pixelFree: {
-    noteChanged: 'Teil-Notiz geändert',
-    dropped: (states: string[]) => `${states.length === 1 ? 'Zustand' : 'Zustände'} ${states.join(', ')} entfernt`,
-    changesNoPixel: (variant: string, facts: string) => `${variant} ändert kein Pixel${facts ? `: ${facts}` : ''}`,
-  },
   flowFrames: {
     group: 'Flows',
     noPart: (key: string) => `kein Teil ${key}`,

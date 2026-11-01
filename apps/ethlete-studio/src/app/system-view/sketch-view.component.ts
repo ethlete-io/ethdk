@@ -10,9 +10,9 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
-import { Observable, catchError, concatMap, finalize, of, tap } from 'rxjs';
+import { Observable, catchError, concatMap, finalize, of, switchMap, tap } from 'rxjs';
 import {
   ListedPart,
   ListedProduct,
@@ -21,7 +21,10 @@ import {
   decideSketch$,
   discardSketch$,
   mergeSketch$,
+  sketchPreview$,
 } from '../../host/design';
+import { MergeComponent } from '../design-parts/merge/merge.component';
+import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchPin, SketchVariant } from '../design-parts/sketches/sketches-sample';
 import { injectViewContext } from '../chat/view-context';
@@ -30,42 +33,92 @@ import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-vi
 import { NumberedComment, isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { senderOf } from './inbox-comments';
+import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { PageShell, PageShellAction } from './page-shell';
-import { CURRENT, partKeyOf, pickedVariantOf, sketchMatrixOf, sketchRoundsOf, sketchUsingPagesOf } from './system-tree';
+import {
+  CURRENT,
+  mergePreviewOf,
+  partKeyOf,
+  pickedVariantOf,
+  sketchMatrixOf,
+  sketchRoundsOf,
+  sketchUsingPagesOf,
+} from './system-tree';
 
-type Busy = 'merge' | 'discard';
+type Busy = 'pick' | 'merge' | 'discard';
+
+type Mode = 'sketches' | 'merge';
+
+const FALLBACK_SIZE = { width: 1440, height: 900 };
 
 @Component({
   selector: 'ethlete-sketch-view',
   template: `
-    <ethlete-sketches
-      [part]="sketch().target"
-      [variants]="variants()"
-      [rounds]="rounds()"
-      [round]="shownRoundKey()"
-      [pins]="variantPins()"
-      [selected]="picked() ?? undefined"
-      [shot]="shot"
-      [tree]="shell().tree"
-      [product]="shell().product"
-      [products]="shell().products"
-      [project]="shell().project"
-      [projects]="shell().projects"
-      [panel]="shell().panel"
-      (discard)="discard()"
-      (merge)="merge($event)"
-      (roundChange)="pickRound($event)"
-      (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
-      (expandedChange)="expandedChange.emit($event)"
-      (pick)="shellAction.emit({ kind: 'pick', key: $event })"
-      (collapse)="shellAction.emit({ kind: 'collapse' })"
-      (sectionChange)="shellAction.emit({ kind: 'section', section: $event })"
-      (productChange)="shellAction.emit({ kind: 'product', name: $event })"
-      (allProducts)="shellAction.emit({ kind: 'allProducts' })"
-      (projectChange)="shellAction.emit({ kind: 'project', name: $event })"
-      (openProject)="shellAction.emit({ kind: 'openProject' })"
-      class="h-full!"
-    />
+    @if (mode() === 'merge' && mergeVariant()) {
+      <ethlete-merge
+        [target]="mergeTarget()"
+        [changed]="changed()"
+        [selected]="selected()"
+        [unchangedStates]="unchangedStates()"
+        [shotTemplate]="mergeShot"
+        [product]="shell().product"
+        [products]="shell().products"
+        [project]="shell().project"
+        [projects]="shell().projects"
+        [panel]="shell().panel"
+        (pick)="pickRow($event)"
+        (back)="showSketches()"
+        (merge)="merge(mergeVariant()!)"
+        (collapse)="shellAction.emit({ kind: 'collapse' })"
+        (sectionChange)="shellAction.emit({ kind: 'section', section: $event })"
+        (productChange)="shellAction.emit({ kind: 'product', name: $event })"
+        (allProducts)="shellAction.emit({ kind: 'allProducts' })"
+        (projectChange)="shellAction.emit({ kind: 'project', name: $event })"
+        (openProject)="shellAction.emit({ kind: 'openProject' })"
+        class="h-full!"
+      />
+    } @else {
+      <ethlete-sketches
+        [part]="sketch().target"
+        [variants]="variants()"
+        [rounds]="rounds()"
+        [round]="shownRoundKey()"
+        [pins]="variantPins()"
+        [selected]="picked() ?? undefined"
+        [shot]="shot"
+        [tree]="shell().tree"
+        [product]="shell().product"
+        [products]="shell().products"
+        [project]="shell().project"
+        [projects]="shell().projects"
+        [panel]="shell().panel"
+        (discard)="discard()"
+        (merge)="pickForMerge($event)"
+        (roundChange)="pickRound($event)"
+        (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
+        (expandedChange)="expandedChange.emit($event)"
+        (pick)="shellAction.emit({ kind: 'pick', key: $event })"
+        (collapse)="shellAction.emit({ kind: 'collapse' })"
+        (sectionChange)="shellAction.emit({ kind: 'section', section: $event })"
+        (productChange)="shellAction.emit({ kind: 'product', name: $event })"
+        (allProducts)="shellAction.emit({ kind: 'allProducts' })"
+        (projectChange)="shellAction.emit({ kind: 'project', name: $event })"
+        (openProject)="shellAction.emit({ kind: 'openProject' })"
+        class="h-full!"
+      />
+    }
+
+    <ng-template #mergeShot let-row let-src="src">
+      @if (shotSources().get(src); as safe) {
+        <iframe
+          [src]="safe"
+          [title]="row.part + ' ' + row.state"
+          [style.width.px]="row.width"
+          [style.height.px]="row.height"
+          class="block border-0 scheme-normal"
+        ></iframe>
+      }
+    </ng-template>
 
     <ng-template #shot let-variant>
       @if (shots()[variant.key]; as src) {
@@ -74,7 +127,7 @@ type Busy = 'merge' | 'discard';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SketchesComponent],
+  imports: [SketchesComponent, MergeComponent],
   host: { class: 'block size-full' },
 })
 export class SketchViewComponent {
@@ -135,6 +188,106 @@ export class SketchViewComponent {
         value: round.key,
         label: STUDIO_LABELS.sketches.round(index + 1, round.title),
       })),
+  );
+
+  protected mode = linkedSignal<Mode>(() => (this.remembered().merge ? 'merge' : 'sketches'));
+
+  protected mergeVariant = linkedSignal<string | null>(() => this.picked());
+
+  private previewReading = toSignal(
+    toObservable(
+      computed(() => ({ address: this.address(), variant: this.mergeVariant(), revision: this.revision() })),
+    ).pipe(
+      switchMap(({ address, variant }) =>
+        variant ? sketchPreview$({ ...address, variant }).pipe(catchError(() => of(null))) : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  private compareReading = toSignal(
+    toObservable(
+      computed(() => ({
+        address: this.address(),
+        variant: this.mergeVariant(),
+        on: this.mode() === 'merge' && (this.previewReading()?.affected.length ?? 0) > 0,
+        surface: this.surface(),
+        color: this.color(),
+        revision: this.revision(),
+      })),
+    ).pipe(
+      switchMap(({ address, variant, on, surface, color }) =>
+        variant && on
+          ? sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null)))
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  protected mergeTarget = computed<MergeTarget>(() => {
+    const part = this.sketch().target;
+    const variant = this.mergeVariant() ?? '';
+
+    return { part, name: partNameOf(part), variant, note: this.sketch().variantInfo?.[variant]?.note ?? '' };
+  });
+
+  protected changed = computed<MergeRow[]>(() => {
+    const rows = this.compareReading()?.changed ?? [];
+    const variant = this.mergeVariant();
+
+    if (!variant || rows.length === 0) return [];
+
+    const frames = mergePreviewOf({
+      port: this.port(),
+      product: this.product(),
+      sketch: this.sketch(),
+      variant,
+      affected: [...new Set(rows.map((row) => row.part))],
+      rows,
+      epoch: this.epoch(),
+      revision: this.revision(),
+      view: this.view(),
+      surface: this.surface(),
+      color: this.color(),
+    }).frames;
+    const frameOf = (place: { column: MergeColumn; part: string; state: string }) =>
+      frames.find((frame) => frame.id === mergeFrameIdOf(place));
+
+    return rows.map(({ part, state, outlines }) => {
+      const now = frameOf({ column: 'now', part, state });
+      const after = frameOf({ column: 'merged', part, state });
+
+      return {
+        part,
+        state,
+        instances: outlines.merged.length || outlines.now.length || 1,
+        width: now?.width ?? FALLBACK_SIZE.width,
+        height: now?.height ?? FALLBACK_SIZE.height,
+        now: now?.src ?? '',
+        after: after?.src ?? '',
+      };
+    });
+  });
+
+  protected unchangedStates = computed<MergeUnchanged>(() => {
+    const rows = this.compareReading()?.unchanged ?? [];
+    const part = rows[0]?.part ?? '';
+
+    return { part, states: rows.filter((row) => row.part === part).map((row) => row.state) };
+  });
+
+  protected selected = linkedSignal({ source: this.changed, computation: () => 0 });
+
+  protected shotSources = computed(
+    () =>
+      new Map(
+        this.changed().flatMap((row) =>
+          [row.now, row.after]
+            .filter(Boolean)
+            .map((src) => [src, this.sanitizer.bypassSecurityTrustResourceUrl(src)] as const),
+        ),
+      ),
   );
 
   protected shownRoundKey = computed(() => this.shownRounds().find((round) => round.open)?.key ?? '');
@@ -239,6 +392,28 @@ export class SketchViewComponent {
     this.remember({ rounds, roundsFor: this.sketch().createdAt });
   }
 
+  protected pickForMerge(variant: string) {
+    this.run(
+      'pick',
+      decideSketch$(this.address(), { kind: 'pick', variant }).pipe(
+        tap(() => {
+          this.mergeVariant.set(variant);
+          this.showMode('merge');
+        }),
+      ),
+    );
+  }
+
+  protected showSketches() {
+    this.showMode('sketches');
+  }
+
+  protected pickRow(key: string) {
+    const index = this.changed().findIndex((row) => `${row.part} ${row.state}` === key);
+
+    if (index >= 0) this.selected.set(index);
+  }
+
   protected merge(variant: string) {
     const address = this.address();
 
@@ -257,6 +432,11 @@ export class SketchViewComponent {
 
   protected discard() {
     this.run('discard', discardSketch$(this.address()));
+  }
+
+  private showMode(mode: Mode) {
+    this.mode.set(mode);
+    this.remember({ merge: mode === 'merge' });
   }
 
   private remember(pick: SketchViewPick) {

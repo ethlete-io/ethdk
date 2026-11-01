@@ -18,7 +18,7 @@ import {
   stateRowKeyOf,
   treeOf,
 } from './system-tree';
-import { CompareRow, mergeOutlinesOf, unchangedLinesOf } from './merge-preview';
+import { CompareRow, mergeOutlinesOf } from './merge-preview';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -1216,19 +1216,6 @@ describe('mergePreviewOf with compared rows', () => {
 
     expect(outlines).toEqual([{ frameId: 'merged pages/library empty', ...rect }]);
     expect(outlines.every((outline) => ids.has(outline.frameId))).toBe(true);
-  });
-});
-
-describe('unchangedLinesOf', () => {
-  it('sums the unchanged states of each part into one line', () => {
-    const at = (part: string, state: string): CompareRow => ({ part, state, outlines: { now: [], merged: [] } });
-
-    expect(
-      unchangedLinesOf([at('pages/library', 'one'), at('elements/header', ''), at('pages/library', 'many')]),
-    ).toEqual([
-      { part: 'pages/library', text: '2 states of pages/library without visible change' },
-      { part: 'elements/header', text: '1 state of elements/header without visible change' },
-    ]);
   });
 });
 
