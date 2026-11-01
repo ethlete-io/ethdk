@@ -14,13 +14,16 @@ import {
   compareLineOf,
   comparePngs,
   ForcedElement,
+  designOnlyPropsOf,
   drawnSurfacesOf,
+  droppedPropsOf,
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
   hostBoxScriptOf,
   OVERLAY_PANES,
   pointerOpensOf,
+  slotOnlyStatesOf,
 } from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -59,6 +62,20 @@ const ROOM_PX = 1024;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 class HarnessError extends Error {}
+
+class DroppedPropsError extends Error {}
+
+const MOUNTED_INPUTS_SCRIPT = `(() => {
+  const mounted = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.firstElementChild;
+  const ng = window.ng;
+
+  if (!mounted || !ng?.getComponent || !ng.getDirectiveMetadata) return null;
+
+  const component = ng.getComponent(mounted);
+  const inputs = component ? ng.getDirectiveMetadata(component)?.inputs : null;
+
+  return inputs ? Object.keys(inputs) : null;
+})()`;
 
 /**
  * How compare draws a part: a page at a product preset, the asked one or the first, with the harness host filling
@@ -253,6 +270,8 @@ export const harnessShotOf = async (options: {
   roomAbove?: boolean;
   panes?: number;
   timeout?: number;
+  /** Fails with the props the mounted component has no input for, but `designOnly`; skipped in a production build. */
+  props?: { sent: unknown; designOnly: ReadonlySet<string> };
 }) => {
   const { browser, url } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
@@ -278,6 +297,16 @@ export const harnessShotOf = async (options: {
       );
     });
     await page.evaluate('document.fonts.ready');
+
+    if (options.props) {
+      const inputs = (await page.evaluate(MOUNTED_INPUTS_SCRIPT)) as string[] | null;
+      const dropped = inputs ? droppedPropsOf({ props: options.props.sent, inputs, ...options.props }) : [];
+
+      if (dropped.length > 0)
+        throw new DroppedPropsError(
+          `the design prop${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')} ${dropped.length > 1 ? 'have' : 'has'} no input on the app component - the harness drops ${dropped.length > 1 ? 'them' : 'it'}, so compare cannot check this state`,
+        );
+    }
 
     if (room) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
 
@@ -373,31 +402,33 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
     const controls = module.default?.controls;
     const pictures = shooter;
     const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
+    const pictureOf = (state: string, emptySlots: boolean) =>
+      pictures.pictureOf({
+        product: product.name,
+        part,
+        state,
+        preset: frame.preset,
+        width: null,
+        sketch: null,
+        interaction: null,
+        bare: true,
+        emptySlots,
+        checker: true,
+        params: new URLSearchParams(),
+      });
     const draw = async (state: string) =>
-      designs.get(state) ??
-      designs
-        .set(
-          state,
-          await pictures.pictureOf({
-            product: product.name,
-            part,
-            state,
-            preset: frame.preset,
-            width: null,
-            sketch: null,
-            interaction: null,
-            bare: true,
-            emptySlots: true,
-            checker: true,
-            params: new URLSearchParams(),
-          }),
-        )
-        .get(state);
-    const opened =
-      only !== null &&
-      (only in pointerOpensOf({ states, controls }) || drawnSurfacesOf((await draw(only))?.markup ?? '').length > 0);
+      designs.get(state) ?? designs.set(state, await pictureOf(state, true)).get(state);
 
-    for (const state of only === null || opened ? Object.keys(states) : [only]) await draw(state);
+    for (const state of Object.keys(states)) await draw(state);
+
+    const slotted = [...designs.values()].some((design) => design?.markup?.includes('data-et-projected'));
+    const slotOnly = slotted
+      ? await slotOnlyStatesOf({
+          states: Object.keys(states),
+          emptied: new Map([...designs].flatMap(([state, design]) => (design ? [[state, design.png]] : []))),
+          full: async (state) => (await pictureOf(state, false))?.png ?? null,
+        })
+      : new Map<string, string>();
 
     const opens = pointerOpensOf({
       states,
@@ -414,6 +445,18 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
 
       if (typeof open === 'string') return open;
 
+      const base = slotOnly.get(state);
+
+      if (base !== undefined) {
+        shots.push({
+          state,
+          problem: `draws like ${base} once compare empties its slots - it differs from ${base} only inside slot() regions, so compare cannot check it`,
+        });
+        continue;
+      }
+
+      const sent = open?.props ?? states[open?.from ?? state];
+      const forced = forcedElementsOf(design.markup ?? '');
       const app = await queue.run((browser) =>
         harnessShotOf({
           browser,
@@ -421,18 +464,31 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
             url,
             part,
             state,
-            props: open?.props ?? states[open?.from ?? state],
+            props: sent,
             layout: frame.layout,
           }),
           size: frame.size,
-          forced: forcedElementsOf(design.markup ?? ''),
+          forced,
+          props: {
+            sent,
+            designOnly: designOnlyPropsOf({
+              states,
+              opens,
+              state,
+              forced: forced.map(({ interaction }) => interaction),
+            }),
+          },
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           panes: drawnPaneCountOf(design.markup ?? ''),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
+        }).catch((error: unknown) => {
+          if (error instanceof DroppedPropsError) return { problem: error.message };
+
+          throw error;
         }),
       );
 
-      shots.push({ state, design: design.png, app });
+      shots.push(Buffer.isBuffer(app) ? { state, design: design.png, app } : { state, ...app });
     }
 
     return { states, shots };

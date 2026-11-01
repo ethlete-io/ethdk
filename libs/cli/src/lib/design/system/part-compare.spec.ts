@@ -12,12 +12,15 @@ import { StartHarnessServer } from './harness-server';
 import {
   comparePngs,
   decodePng,
+  designOnlyPropsOf,
   drawnSurfacesOf,
+  droppedPropsOf,
   encodePng,
   forcedElementsOf,
   harnessUrlOf,
   Pixels,
   pointerOpensOf,
+  slotOnlyStatesOf,
 } from './part-compare';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
@@ -421,29 +424,31 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.includes('components%2Fclear')
-          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
-          : request.url?.includes('components%2Fupward')
-            ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
-            : request.url?.includes('components%2Ffraction')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
-              : request.url?.includes('components%2Fbadge')
-                ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
-                : request.url?.includes('components%2Fpicker')
-                  ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-                  : request.url?.includes('components%2Fpaned')
-                    ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
-                    : request.url?.includes('components%2Fportal')
-                      ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
-                      : request.url?.includes('components%2Ftwice')
-                        ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                        : request.url?.includes('components%2Fhover')
-                          ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                          : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                            ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                            : request.url?.startsWith('/__design-harness')
-                              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                              : '<body>no harness</body>',
+        request.url?.includes('components%2Finputs')
+          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><i></i></div><script>window.ng={getComponent:()=>({}),getDirectiveMetadata:()=>({inputs:{label:"label"}})};</script></body>'
+          : request.url?.includes('components%2Fclear')
+            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"></div></body>'
+            : request.url?.includes('components%2Fupward')
+              ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"const {top,left}=this.getBoundingClientRect();this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+(top>=4?top-4:top+5)+'px;left:'+(left>=2?left-2:left)+'px></div></div>')\">Pick</button></div></body>"
+              : request.url?.includes('components%2Ffraction')
+                ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+                : request.url?.includes('components%2Fbadge')
+                  ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+                  : request.url?.includes('components%2Fpicker')
+                    ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+                    : request.url?.includes('components%2Fpaned')
+                      ? "<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;width:7px;height:4px;background:#ff0000}</style><body style=\"margin:0\"><div data-design-harness-host style=\"width:7px;height:5px\"><button aria-expanded=\"false\" onclick=\"this.setAttribute('aria-expanded', 'true');document.body.insertAdjacentHTML('beforeend', '<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane style=top:'+this.getBoundingClientRect().bottom+'px;left:'+this.getBoundingClientRect().left+'px></div></div>')\">Pick</button></div></body>"
+                      : request.url?.includes('components%2Fportal')
+                        ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:absolute;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><div class="et-overlay-runtime-root"><button> G o </button></div></div><p><button>Go</button></p></body>'
+                        : request.url?.includes('components%2Ftwice')
+                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                          : request.url?.includes('components%2Fhover')
+                            ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                            : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                              ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                              : request.url?.startsWith('/__design-harness')
+                                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                                : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -464,6 +469,22 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('fails a state whose design prop has no input on the mounted component', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const shoot = (sent: Record<string, unknown>) =>
+      harnessShotOf({
+        browser: browser as Browser,
+        url: harnessUrlOf({ url, part: 'components/inputs', state: 'a', props: sent }),
+        props: { sent, designOnly: new Set(['class']) },
+      });
+
+    await expect(shoot({ label: 'Go', class: 'x' })).resolves.toBeInstanceOf(Buffer);
+    await expect(shoot({ label: 'Go', server: 'stopped' })).rejects.toThrow(
+      'the design prop server has no input on the app component',
+    );
   });
 
   it('rounds a fractional host to whole pixels as the design picture does', async (context) => {
@@ -656,3 +677,64 @@ describe('harnessShotOf', () => {
     );
   });
 }, 30_000);
+
+describe('dropped design props', () => {
+  const states = {
+    closed: { open: false },
+    open: { open: true },
+    stopped: { open: true, server: 'stopped' },
+    'row-hover': { open: false, force: { label: 'Go', interaction: 'hover' } },
+  };
+  const opens = pointerOpensOf({
+    states,
+    controls: { menu: { surfaces: { open: 'open' } } },
+    drawn: { open: ['menu.open'], stopped: ['menu.open'] },
+  });
+  const droppedOf = (state: keyof typeof states, forced: string[] = []) =>
+    droppedPropsOf({
+      props: states[state],
+      inputs: [],
+      designOnly: designOnlyPropsOf({ states, opens, state, forced }),
+    });
+
+  it('lets the harness drop the props compare reproduces: a pointer open and a forced interaction', () => {
+    expect(droppedOf('closed')).toEqual([]);
+    expect(droppedOf('row-hover', ['hover'])).toEqual([]);
+  });
+
+  it('names a prop the app component has no input for and compare cannot reproduce', () => {
+    expect(droppedOf('stopped')).toEqual(['server']);
+    expect(droppedOf('row-hover')).toEqual(['force']);
+    expect(droppedPropsOf({ props: states.stopped, inputs: ['server'], designOnly: new Set(['open']) })).toEqual([]);
+  });
+});
+
+describe('slotOnlyStatesOf', () => {
+  const png = (text: string) => Buffer.from(text);
+
+  it('names a state that draws like an earlier one once its slots are emptied, but not with them', async () => {
+    const full = vi.fn(async (state: string) =>
+      png(
+        (
+          { open: 'shell+canvas', stopped: 'shell+log', hidden: 'narrow', twin: 'shell+canvas' } as Record<
+            string,
+            string
+          >
+        )[state] ?? '',
+      ),
+    );
+    const slotOnly = await slotOnlyStatesOf({
+      states: ['open', 'stopped', 'hidden', 'twin'],
+      emptied: new Map([
+        ['open', png('shell')],
+        ['stopped', png('shell')],
+        ['hidden', png('narrow')],
+        ['twin', png('shell')],
+      ]),
+      full,
+    });
+
+    expect([...slotOnly]).toEqual([['stopped', 'open']]);
+    expect(full).not.toHaveBeenCalledWith('hidden');
+  });
+});

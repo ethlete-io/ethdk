@@ -389,3 +389,81 @@ export const compareLineOf = (state: string, result: PixelCompare) =>
     : result.kind === 'diff'
       ? `${state} DIFF ${result.pixels} px`
       : `${state} SIZE ${result.design.width}x${result.design.height} vs ${result.app.width}x${result.app.height}`;
+
+/**
+ * The props of `state` that compare reproduces without a component input, so the harness may drop them: `class`,
+ * each prop a pointer open toggles (it clicks them), and each prop whose value, or its `interaction`, names an
+ * interaction the state's design forces on an element (compare forces it in the app).
+ */
+export const designOnlyPropsOf = (options: {
+  states: Record<string, unknown>;
+  opens: Record<string, PointerOpen | string>;
+  state: string;
+  forced: readonly string[];
+}): Set<string> => {
+  const { states, opens, state, forced } = options;
+  const designOnly = new Set(['class']);
+
+  for (const [opened, open] of Object.entries(opens)) {
+    if (typeof open === 'string') continue;
+
+    const ownProps = states[opened];
+    const own = isRecord(ownProps) ? ownProps : {};
+    const fromProps = states[open.from];
+    const sent = open.props ?? (isRecord(fromProps) ? fromProps : {});
+
+    for (const key of new Set([...Object.keys(own), ...Object.keys(sent)]))
+      if (JSON.stringify(own[key]) !== JSON.stringify(sent[key])) designOnly.add(key);
+  }
+
+  const stateProps = states[state];
+
+  for (const [key, value] of Object.entries(isRecord(stateProps) ? stateProps : {})) {
+    const interaction = isRecord(value) ? value['interaction'] : value;
+
+    if (typeof interaction === 'string' && forced.includes(interaction)) designOnly.add(key);
+  }
+
+  return designOnly;
+};
+
+/** The keys of `props` the harness drops because the mounted component has no input of that name, minus `designOnly`. */
+export const droppedPropsOf = (options: {
+  props: unknown;
+  inputs: readonly string[];
+  designOnly: ReadonlySet<string>;
+}): string[] =>
+  Object.keys(isRecord(options.props) ? options.props : {}).filter(
+    (key) => !options.inputs.includes(key) && !options.designOnly.has(key),
+  );
+
+/**
+ * Each state whose design picture with emptied slots equals that of an earlier state while its full picture does not:
+ * it differs from that base state only inside the emptied `slot()` regions, so compare cannot check it. Draws a full
+ * picture only for states that have such a twin. Answers state -> base state.
+ */
+export const slotOnlyStatesOf = async (options: {
+  states: readonly string[];
+  emptied: ReadonlyMap<string, Buffer>;
+  full: (state: string) => Promise<Buffer | null>;
+}): Promise<Map<string, string>> => {
+  const { states, emptied, full } = options;
+  const baseOf = new Map<string, string>();
+
+  for (const [index, state] of states.entries()) {
+    const picture = emptied.get(state);
+    const base = picture ? states.slice(0, index).find((earlier) => emptied.get(earlier)?.equals(picture)) : undefined;
+
+    if (base !== undefined) baseOf.set(state, baseOf.get(base) ?? base);
+  }
+
+  const slotOnly = new Map<string, string>();
+
+  for (const [state, base] of baseOf) {
+    const [own, based] = [await full(state), await full(base)];
+
+    if (own && based && !own.equals(based)) slotOnly.set(state, base);
+  }
+
+  return slotOnly;
+};
