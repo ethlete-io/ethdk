@@ -21,7 +21,7 @@ ausgeklammert.
 | components/shell-collapse       | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
 | components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
 | elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
-| pages/inbox                     | ❌     | Zoom-Leiste repariert, Entwurf geändert: neues „Go geben“           | Tom     |
+| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
 | pages/system                    | ❌     | Zoom-Leiste repariert: neues „Go geben“, Sketch pages-system mergen | Tom     |
 | pages/sketches                  | ❌     | Sketch pages-system mergen (gilt für beide Seiten)                  | Tom     |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt             | Builder |
