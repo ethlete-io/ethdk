@@ -154,12 +154,15 @@ describe('DesignCanvasComponent', () => {
 
   describe('when the canvas width changes', () => {
     const setup = async () => {
-      const size = { width: 1200, height: 1000 };
+      const size = { width: 1200, height: 1000, panel: 320 };
       const resized: (() => void)[] = [];
       let host: unknown = null;
 
       vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
         return this === host ? size.width : 0;
+      });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.matches('[class*="--st-shell-inset-left"]') ? size.panel : 0;
       });
       vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
         return this === host ? size.height : 0;
@@ -192,7 +195,13 @@ describe('DesignCanvasComponent', () => {
         await fixture.whenStable();
       };
 
-      return { canvas: fixture.componentInstance, resizeTo };
+      const hidePanel = async () => {
+        size.panel = 0;
+        resized.forEach((resize) => resize());
+        await fixture.whenStable();
+      };
+
+      return { canvas: fixture.componentInstance, resizeTo, hidePanel };
     };
 
     afterEach(() => {
@@ -200,8 +209,28 @@ describe('DesignCanvasComponent', () => {
       vi.restoreAllMocks();
     });
 
+    it('opens at 100 % with the frames at the panel edge plus the opening padding', async () => {
+      const { canvas, resizeTo } = await setup();
+
+      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+
+      await resizeTo(600);
+
+      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+    });
+
+    it('keeps the frames in place when the panel hides', async () => {
+      const { canvas, hidePanel } = await setup();
+
+      await hidePanel();
+
+      expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+    });
+
     it('fits the view again while it is still fitted', async () => {
       const { canvas, resizeTo } = await setup();
+
+      canvas.fitAll();
       const before = canvas.camera().zoom;
 
       await resizeTo(600);
