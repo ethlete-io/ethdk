@@ -16,6 +16,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } 
 import { ListedException, readExceptions, withExceptions } from './exceptions';
 import { inventoryReasonOf, InventoryState, inventoryStateOf, partOwnerOf, readInventory } from './inventory-approval';
 import { optionValuesChecker } from './rules/option-values';
+import { demoBackdropGapsOf, findDemoBackdrop } from './demo-backdrop';
 
 /** One requirement of a part that `design complete` finds without evidence. `target` is `<part>[.<control>[.<requirement>]]`. */
 export type CompletenessGap = { code: string; target: string; detail: string };
@@ -79,6 +80,7 @@ export type SeenFrame = {
   surfaces: { id: string; shown: boolean; options?: SeenOption[] }[];
   found?: FoundControl[];
   overrides?: FoundOverride[];
+  backdrop?: { path: string; fill: string } | null;
 };
 
 export type DeclaredControl = {
@@ -1332,6 +1334,7 @@ export const seeFrame = (options: {
     surfaces,
     found: discover ? ${discoverControls}(root) : [],
     overrides: discover ? ${findOverrides}(${JSON.stringify(options.ownCss)}) : [],
+    backdrop: discover ? ${findDemoBackdrop(options.part)}(root) : null,
   };
 })()`;
 
@@ -1375,6 +1378,7 @@ type Seen =
       surfaces: { id: string; shown: boolean; options: (Tagged & { named: boolean; keyboard: boolean })[] }[];
       found: FoundControl[];
       overrides: FoundOverride[];
+      backdrop: { path: string; fill: string } | null;
     };
 
 type CompleteFrame = {
@@ -1505,6 +1509,7 @@ const seeFrames = async (options: {
         surfaces,
         found: found.found,
         overrides: found.overrides,
+        backdrop: found.backdrop,
       });
     };
 
@@ -1781,19 +1786,22 @@ export const partsCompletenessOf = async (options: {
         part: key,
         exceptions: readExceptions(owner.dir),
         hash,
-        gaps: completenessGapsOf({
-          part: key,
-          controls: definition?.controls,
-          states,
-          frames: seen,
-          reviewed,
-          grid: definition?.grid,
-          referenced,
-          inventory:
-            resolved.layer === 'pages'
-              ? inventoryStateOf({ approval: readInventory(owner.dir)[key], ids: inventoryIdsOf(seen), hash })
-              : undefined,
-        }),
+        gaps: [
+          ...completenessGapsOf({
+            part: key,
+            controls: definition?.controls,
+            states,
+            frames: seen,
+            reviewed,
+            grid: definition?.grid,
+            referenced,
+            inventory:
+              resolved.layer === 'pages'
+                ? inventoryStateOf({ approval: readInventory(owner.dir)[key], ids: inventoryIdsOf(seen), hash })
+                : undefined,
+          }),
+          ...(resolved.layer === 'pages' ? [] : demoBackdropGapsOf({ part: key, frames: seen })),
+        ],
       });
 
       exceptions.push(...excepted.listed);
