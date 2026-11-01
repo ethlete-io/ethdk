@@ -949,6 +949,7 @@ export class SystemViewComponent {
 
     if (section !== 'Inbox') this.railSection.set(section);
     if (section === 'System' && this.flow()) this.activate(this.part()?.key ?? '');
+    if (section === 'Sketches' && !this.sketch()) this.openFirstSketch();
   }
 
   protected jumpToComment(id: string) {
@@ -1078,6 +1079,12 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private openFirstSketch() {
+    const first = this.sketches()[0];
+
+    if (first) this.activate(sketchKeyOf(first.target));
   }
 
   private flowRevisionOf(product: string, flow: ListedFlow) {

@@ -519,6 +519,41 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.nativeElement.querySelector('[data-merge]')).toBeNull();
   });
 
+  it('opens the first sketch with the side panel on a Sketches rail click from a part', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches: [sketch], unreadable: [] });
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const element: HTMLElement = fixture.nativeElement;
+
+    element.querySelector<HTMLButtonElement>('nav button[aria-label="Sketches"]')?.click();
+    await settle(fixture);
+
+    expect(element.querySelector('ethlete-sketch-view')).not.toBeNull();
+    expect(element.querySelector('ethlete-sketch-view aside')).not.toBeNull();
+    expect(fixture.componentInstance.panel()).toBe('open');
+    expect(rememberedView().systemEntry).toBe('sketch:elements/rating');
+  });
+
   it('shows the part a merged sketch targeted, once the sketches list no longer has the sketch', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',
