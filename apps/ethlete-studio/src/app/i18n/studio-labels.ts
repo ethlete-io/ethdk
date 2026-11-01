@@ -16,7 +16,7 @@ export const STUDIO_LABELS = {
   },
   sketches: {
     discard: 'Verwerfen',
-    merge: 'Merge',
+    merge: 'Wählen',
     variant: (label: string) => `Variante ${label}`,
     fitHint: 'Doppelklick zum Einpassen',
     current: 'Aktuell',
