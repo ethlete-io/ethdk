@@ -699,6 +699,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 47. `design-canvas` `handleShortcut` called preventDefault on every Space keydown outside editable targets, so Space
     activated no button anywhere in Studio. Fix queued: skip the shortcut on interactive targets. Lesson: no check
     presses Space; the Impl Q79 action check presses Space as well as Enter and click.
+48. Flows camera follow-ups (dfbccb99f, 50de3cbfb): a flow pick kept the old pan and zoom, and the flows canvas did not
+    treat the area under the panel as covered. Neither showed in compare: it renders each state fresh, never a pick
+    after a pan, and never runs Fit, zoom or 100 %. Lesson: camera defects need sequences and camera actions in the
+    checks; Impl Q78 and Q79 now cover them. Also, dfbccb99f alone fails lint and tsc (fixed in 50de3cbfb).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -798,6 +802,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   by a fixed sample, so hand-written live components inside a page (for example `design-canvas`) are covered.
   Each live-page compare uses a fixed camera with a sample frame that crosses the panel edge, panel open, plus a
   panel-hidden state, so a clipped canvas shows as missing pixels. Finding 44.
+  Canvas states also run the zoom-chip Fit and 100 % with the panel open. Finding 48.
   Finding 43.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
@@ -808,4 +813,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   because the active nav defect sat in the app wiring, not in the part. Each overlay opens once by click and once
   by key, and each result compares to its declared state (the click state has no focus ring). Findings 42, 45, 47.
 - Impl Q80 SDK runtime errors (Tom, 2026-11-01): the part harness, the Impl Q78 live-page compare and the Studio
+- Impl Q79 addition (2026-11-01): action sequences (for example pan, then pick a flow) compare their final frame, and
+  a key whose default the app prevents on an interactive element fails the check. Findings 47, 48.
+- Flow pick camera (2026-11-01): a flow pick resets the camera to the opening view of Impl Q74 (100 %, first frame at
+  the panel edge). Impl Q74 already decides this; no new question.
   vitest setup fail on any console error with an `ET\d+` code. Other console errors stay allowed. Finding 46.
