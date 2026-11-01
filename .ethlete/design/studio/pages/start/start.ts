@@ -17,11 +17,6 @@ const header = (repo?: string) =>
     ${repo ? html`<span class="text-et-surface-muted text-ui-sm">${repo}</span>${act(other.body, 'otherRepo')}` : ''}
   </header>`;
 
-const ghostFolder = html`<span
-  class="block w-24 h-16 rounded-sm outline outline-et-surface-border bg-et-surface-bg"
-  aria-hidden="true"
-></span>`;
-
 const ghostProduct =
   '<span class="block w-10 h-10 rounded-full outline outline-et-surface-border bg-et-surface-bg"></span>';
 
@@ -31,8 +26,7 @@ const card = (inner: string) =>
   </div>`;
 
 const noRepo = card(
-  html`${ghostFolder}
-    <p class="m-0 text-et-surface font-ui-strong text-ui-md">Kein Repo geöffnet</p>
+  html`<p class="m-0 text-et-surface font-ui-strong text-ui-md">Kein Repo geöffnet</p>
     <p class="m-0 text-et-surface-muted">
       Studio liest das Design-System aus einem Git-Checkout. Öffne den Ordner eines Repos, in dem die Produkte liegen
       oder entstehen sollen.
