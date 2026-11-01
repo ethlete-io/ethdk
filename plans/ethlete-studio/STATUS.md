@@ -20,10 +20,10 @@ ausgeklammert.
 | elements/studio-menu            | ✅     | Go gegeben (23:32); Builder macht „ready“                                                                            | Builder           |
 | components/shell-collapse       | ✅     |                                                                                                                      |                   |
 | components/shell-project-switch | ❌     | Go gegeben (23:31); Builder macht „ready“                                                                            | Builder           |
-| elements/shell-main             | ❌     | Bild stimmt in allen 14 Zuständen; Prüfung der Aktionen hat Fehler im Werkzeug, wird behoben                         | Builder           |
+| elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“          | Builder, dann Tom |
 | pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“ | Builder, dann Tom |
-| pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                      | Builder, dann Tom |
-| pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                 | Builder, dann Tom |
+| pages/system                    | ❌     | Frage an Tom: Zustand „fit“ liegt unter dem Panel (Q13); danach Abnahme und Go                                       | Tom, dann Builder |
+| pages/sketches                  | ❌     | Kamera (Q135) und Zustand page-100 sind gebaut; Builder schickt Bild, dann „Go geben“                                | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                              | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                  | Builder           |
 | pages/start                     | ✅     |                                                                                                                      |                   |

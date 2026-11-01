@@ -1190,7 +1190,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      (`project-picker`) fails when the app opens the target over another state; the check should expect start state
      plus the opening delta. (b) State name `open` of the host and of the embedded switch collide in the embedded-part
      code (db91bcbe1). Lesson: state names are scoped per part; a fixture with equal names in host and embed. Builder
-     fixes both now, test first.
+     fixes both now, test first. Fixed in d5ea7273a (11 -> 4 of 260 fail): (a) a press that opens a surface from
+     another state expects the start state plus only the surface props; (b) an embedded part whose aria-expanded
+     already matches its named state counts as settled. The 4 left are real design gaps: closing the switch by keyboard
+     returns focus to the trigger with a ring, and shell-main has no `open-focus-visible` state. Builder adds that state
+     to the design; shell-main then needs a new go.
 116. Studio shows native `title` tooltips instead of the `libs/components` tooltip (Tom, 2026-11-01). About 26 `title`
      bindings in apps/ethlete-studio/src and 7 in .ethlete/design/studio. Why no check caught it: no lint rule or design
      check flags a native `title` where the SDK has a tooltip; the compare cannot see a browser tooltip at all. Tool fix
