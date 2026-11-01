@@ -1412,6 +1412,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   selects the comment and opens its place on the inbox canvas: the frame of its part and state, with its pin. For a
   comment on another part, the canvas switches to that part first. In the MVP: the pages/inbox design gets a row
   action, so Tom gives a new go on pages/inbox.
+- Impl Q130 one Studio menu look (Tom, 2026-11-01, finding 103): every Studio menu uses the studio-menu values
+  (`--et-menu-item-height: var(--control-md)`, `--et-menu-item-font-size: var(--text-md)`), set once for all Studio
+  menus, not per part; the per-part override in studio-menu goes away. Tom gives a new go on elements/studio-menu and
+  components/shell-project-switch.
+- Impl Q131 merge view added state (Tom, 2026-11-01, finding 104): when a variant adds a state, the empty "Jetzt"
+  panel shows a short centered text "Neu in a" (the variant letter).
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
