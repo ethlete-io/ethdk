@@ -1,12 +1,13 @@
 import { dirname, relative } from 'path';
 import { DesignConfig } from '../paths';
 import { importProblemsOf } from './imports';
-import { partsCompletenessOf } from './complete';
-import { OpenPointsInput, openPointsText } from './open-points';
+import { CompletenessGap, partsCompletenessOf } from './complete';
+import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
+import { openPointsText } from './open-points';
 import { goPartsOf } from './part-go';
 import { readyPartsOf } from './part-ready';
 import { Problem } from './problem';
-import { contrastsOf, missingStatesOf, readOpenPoints, unlinkedPartsOf } from './read-open-points';
+import { readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
@@ -90,7 +91,6 @@ type CheckOptions = {
   config: DesignConfig;
   products: string[];
   known?: string[];
-  complete?: boolean;
   /** Only this part's findings, `<layer>/<name>`. */
   part?: string;
   tally?: Tally;
@@ -294,23 +294,35 @@ export const checkSystem = (options: CheckOptions) => {
   return code;
 };
 
-const drawnMissingStatesOf = async (
-  options: CheckOptions & { product: ResolvedProduct },
-): Promise<NonNullable<OpenPointsInput['missingStates']>> => {
-  const parts = options.product.parts
-    .filter((part) => part.layer !== 'pages' && part.layer !== 'foundations')
-    .map(partKeyOf);
-  const checked = await partsCompletenessOf({ ...options, parts });
+const drawnFindingsFor = async (
+  options: CheckOptions & { product: ResolvedProduct; rendered: RenderIssue[] },
+): Promise<DrawnFindings> => {
+  const { product, rendered } = options;
+  const stateful = statefulPartsOf(product, options.part ? [options.part] : null);
+  let gaps: Map<string, CompletenessGap[] | string> | null = null;
 
-  if ('unavailable' in checked) {
-    console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
+  if (stateful.length > 0) {
+    const checked = await partsCompletenessOf({ ...options, parts: stateful });
 
-    return [];
+    if ('unavailable' in checked) console.log(`COMPLETE CHECK SKIPPED - ${checked.unavailable}`);
+    else {
+      for (const hint of [...checked.hints.values()].flat()) console.log(hint);
+
+      gaps = checked.gaps;
+    }
   }
 
-  for (const hint of [...checked.hints.values()].flat()) console.log(hint);
+  const { failed, ...findings } = drawnFindingsFrom({ product, issues: rendered, gaps, stateful });
 
-  return missingStatesOf(checked.gaps);
+  for (const line of failed) {
+    console.log(`CANNOT DRAW ${product.name} ${line} - et design ready refuses the part until it draws`);
+
+    const counted = tallyOf(options.tally, { product: product.name, part: line.slice(0, line.indexOf(':')) });
+
+    if (counted) counted.open += 1;
+  }
+
+  return findings;
 };
 
 const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null }) => {
@@ -322,13 +334,7 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     if (!entry) continue;
 
     const product = resolveProduct({ target, name, config: entry });
-    const findings =
-      rendered === null
-        ? {}
-        : {
-            contrasts: contrastsOf(rendered.filter((issue) => issue.product === name && issue.sketch === null)),
-            missingStates: options.complete ? await drawnMissingStatesOf({ ...options, product }) : undefined,
-          };
+    const findings = rendered === null ? {} : await drawnFindingsFor({ ...options, product, rendered });
 
     const points = readOpenPoints(product, findings).filter(({ part }) => !options.part || part === options.part);
 
@@ -418,12 +424,14 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
  * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
- * It then lists the open points of each product's parts, with the contrasts the drawing found and, with `complete`,
- * the missing states of each component part as `design complete` draws them; they do not change the exit code.
+ * It then lists the open points of each product's parts, with the contrasts the drawing found and the missing states
+ * of each component part as `design complete` draws them, the blockers `design ready` refuses on; they do not change
+ * the exit code.
  */
 export const checkSystemRendered = async (options: CheckOptions) => {
   const tally: Tally = new Map();
   const counted = { ...options, tally };
+
   const { code, rendered } = await renderSystem(counted);
 
   await printOpenPoints({ ...counted, rendered });

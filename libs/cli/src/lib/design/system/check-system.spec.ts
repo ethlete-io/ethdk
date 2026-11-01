@@ -272,7 +272,11 @@ describe('checkDesign', () => {
     const lines = output();
 
     expect(await checkDesign({ target: acme(), argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(withoutOpenPoints(lines).filter((line) => !line.startsWith('RENDER CHECK SKIPPED'))).toEqual(['ok']);
+    expect(
+      withoutOpenPoints(lines).filter(
+        (line) => !line.startsWith('RENDER CHECK SKIPPED') && !line.startsWith('CONTROL-UNDECLARED'),
+      ),
+    ).toEqual(['ok']);
   }, 60_000);
 
   it('lists the open points of each part before ok, and still passes', async () => {
@@ -323,7 +327,7 @@ describe('checkDesign', () => {
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
 
-  it('lists the contrasts the render found and, with --complete, the missing states', async (context) => {
+  it('lists the contrasts the render found and the missing states', async (context) => {
     const target = acme();
     const lines = output();
     const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
@@ -338,7 +342,7 @@ describe('checkDesign', () => {
         .replace('<h1>${film.title}</h1>', '<h1>${film.title}</h1><p style="color: var(--acme-surface)">Faint</p>'),
     );
 
-    const code = await checkDesign({ target, argv: ['--product', 'acme', '--complete'], invocation: 'et design' });
+    const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
     if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
 

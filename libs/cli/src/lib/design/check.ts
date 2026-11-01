@@ -379,7 +379,6 @@ const checkAppClasses = (options: { target: string; config: DesignConfig; produc
 
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, invocation } = options;
-  const complete = options.argv.includes('--complete');
   const appClasses = options.argv.includes('--app-classes');
   const argv = options.argv.filter((argument) => argument !== '--complete' && argument !== '--app-classes');
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
@@ -387,7 +386,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const parts = flags['--part'];
 
   if (parts && parts.length !== 1) {
-    console.error(`usage: ${invocation} check [--product <name>…] --part <layer>/<name> [--complete]`);
+    console.error(`usage: ${invocation} check [--product <name>…] --part <layer>/<name>`);
 
     return 2;
   }
@@ -396,14 +395,14 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
 
   if (products) {
     if (products.length === 0) {
-      console.error(`usage: ${invocation} check --product <name>… [--part <layer>/<name>] [--complete]`);
+      console.error(`usage: ${invocation} check --product <name>… [--part <layer>/<name>]`);
 
       return 2;
     }
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, complete, part });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part });
   }
 
   if (part) {
@@ -420,19 +419,13 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
       return 1;
     }
 
-    return checkSystemRendered({ target, config, products: holding, complete, part });
+    return checkSystemRendered({ target, config, products: holding, part });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystemRendered({ target, config, products: Object.keys(config.products), complete });
-
-  if (complete) {
-    console.error(`usage: ${invocation} check [--product <name>…] --complete - --complete checks products only`);
-
-    return 2;
-  }
+    return checkSystemRendered({ target, config, products: Object.keys(config.products) });
 
   const slug = flags['--call']?.[0];
   let failure = '';
