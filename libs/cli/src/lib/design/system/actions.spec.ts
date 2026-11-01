@@ -6,7 +6,7 @@ import { join } from 'path';
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { actionFailureOf, ActionElement, pairElementsOf, parseAction, targetStateOf } from './actions';
+import { actionFailureOf, ActionElement, embeddersOf, pairElementsOf, parseAction, targetStateOf } from './actions';
 import { checkActions, designActions, runActionInput } from './actions-command';
 
 const element = (found: Partial<ActionElement>): ActionElement => ({
@@ -50,6 +50,21 @@ describe('actions', () => {
       ],
       missing: [design[1], design[2]],
     });
+  });
+
+  it('names the parts that declare a control drawn by the part, never the part itself', () => {
+    expect(
+      embeddersOf({
+        part: 'components/tree-row',
+        controls: {
+          'elements/part-tree': { row: { kind: 'row', part: 'components/tree-row' } },
+          'components/tree-row': { row: { kind: 'row', part: 'components/tree-row' } },
+          'elements/shell': { collapse: { kind: 'button', part: 'components/shell-collapse' } },
+          'components/plain': undefined,
+        },
+      }),
+    ).toEqual(['elements/part-tree']);
+    expect(embeddersOf({ part: 'components/shell-collapse', controls: { 'elements/shell': 'broken' } })).toEqual([]);
   });
 
   it('fails a missed output or state, and names a prevented keydown only for a key', () => {

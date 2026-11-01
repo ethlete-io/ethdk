@@ -15,6 +15,7 @@ import {
   ActionOutcome,
   actionScanScriptOf,
   elementNameOf,
+  embeddersOf,
   pairElementsOf,
   parseAction,
   targetStateOf,
@@ -192,7 +193,7 @@ export const checkActions = async (options: {
   part: string;
   url: string;
   only: string | null;
-}): Promise<{ lines: Line[]; pictures: string | null } | string> => {
+}): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[] } | string> => {
   const { target, config, product, part, url, only } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
@@ -225,6 +226,20 @@ export const checkActions = async (options: {
     const names = Object.keys(states);
 
     if (only !== null && !(only in states)) return `${part} has no state "${only}" - its states: ${names.join(', ')}`;
+
+    let embedders: Promise<string[]> | undefined;
+    const embeddersOfPart = () =>
+      (embedders ??= Promise.all(
+        product.parts.map(async (candidate) => {
+          const id = productModuleIdOf({ file: candidate.file, product: product.name });
+          const controls = await server.ssrLoadModule(id).then(
+            (loaded) => (loaded as { default?: { controls?: unknown } }).default?.controls,
+            () => undefined,
+          );
+
+          return [partKeyOf(candidate), controls] as const;
+        }),
+      ).then((entries) => embeddersOf({ part, controls: Object.fromEntries(entries) })));
 
     const pictures = shooter;
     const designs = new Map<string, Picture>();
@@ -333,6 +348,8 @@ export const checkActions = async (options: {
         const action = drawn ? parseAction(drawn.action, names) : null;
 
         if (drawn === null || action === null || typeof action === 'string') {
+          if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) continue;
+
           lines.push({
             state,
             element: name,
@@ -396,7 +413,7 @@ export const checkActions = async (options: {
       }
     }
 
-    return { lines, pictures: dir };
+    return { lines, pictures: dir, embedders: embedders ? await embedders : [] };
   } catch (error) {
     return messageOf(error);
   } finally {
@@ -517,7 +534,11 @@ export const designActions = async (options: {
   const failed = checked.lines.filter((line) => line.failure !== null).length;
 
   if (checked.lines.length === 0) {
-    console.log(`${part} has no interactive element`);
+    console.log(
+      checked.embedders?.length
+        ? `${part}: exempt - ${checked.embedders.join(', ')} declare(s) the actions of its elements`
+        : `${part} has no interactive element`,
+    );
 
     return 0;
   }

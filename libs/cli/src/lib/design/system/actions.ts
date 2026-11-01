@@ -125,3 +125,22 @@ export const actionFailureOf = (options: {
 
   return input !== 'click' && outcome.prevented ? `${missed}; its keydown default was prevented` : missed;
 };
+
+/**
+ * The parts whose `controls` name `part` as a control's `part`. They own the elements `part` draws and declare their
+ * actions, so `part` itself is exempt from declaring them.
+ */
+export const embeddersOf = (options: { part: string; controls: Record<string, unknown> }) =>
+  Object.entries(options.controls)
+    .filter(
+      ([key, declared]) =>
+        key !== options.part &&
+        typeof declared === 'object' &&
+        declared !== null &&
+        Object.values(declared).some(
+          (control) =>
+            typeof control === 'object' && control !== null && (control as { part?: unknown }).part === options.part,
+        ),
+    )
+    .map(([key]) => key)
+    .sort();
