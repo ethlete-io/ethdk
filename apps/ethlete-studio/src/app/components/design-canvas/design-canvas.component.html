@@ -1,4 +1,5 @@
 <div
+  #world
   [class]="smooth() ? 'transition-transform duration-250 ease-[ease]' : ''"
   [style.transform]="worldTransform()"
   [style.--et-design-canvas-label-scale]="labelScale()"
@@ -145,7 +146,7 @@
       [style.height.px]="placed.height"
       [attr.data-unsized]="placed.unsized || null"
       (click)="select(placed.frame.id, $event)"
-      (dblclick)="activate(placed.frame.id)"
+      (dblclick)="activateAndFocus(placed.frame.id)"
       (heightChange)="storeHeight(placed.frame.id, $event)"
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
@@ -194,16 +195,19 @@
       }
     </div>
   }
+  <ng-content />
 </div>
 
-<ethlete-zoom-chip
-  [percent]="zoomPercent()"
-  [class]="zoomChipClass()"
-  (zoomOut)="zoomBy(1 / ZOOM_STEP)"
-  (zoomReset)="resetZoom()"
-  (zoomIn)="zoomBy(ZOOM_STEP)"
-  (fit)="fitAll()"
-/>
+@if (zoomChip()) {
+  <ethlete-zoom-chip
+    [percent]="zoomPercent()"
+    [class]="zoomChipClass()"
+    (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+    (zoomReset)="resetZoom()"
+    (zoomIn)="zoomBy(ZOOM_STEP)"
+    (fit)="fitAll()"
+  />
+}
 <div
   #shellInsetProbe
   class="pointer-events-none invisible absolute top-0 left-0 h-0 w-(--st-shell-inset-left,0px)"

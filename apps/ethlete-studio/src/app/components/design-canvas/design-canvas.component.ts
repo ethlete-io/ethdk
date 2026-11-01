@@ -1,5 +1,8 @@
 import {
+  afterRenderEffect,
+  booleanAttribute,
   Component,
+  contentChildren,
   ElementRef,
   ViewEncapsulation,
   computed,
@@ -14,10 +17,11 @@ import {
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, FocusRingDirective } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
+import { CanvasFrameDirective } from './canvas-frame.directive';
 import { CanvasFrame, cropPointOf, cropRectOf, placeableFramesOf, schemeBoxOf } from './canvas-frame';
 import {
   CameraScene,
@@ -91,6 +95,34 @@ const MAX_LIVE_FRAMES = 6;
 const LABEL_MIN_ZOOM = 0.25;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
+const DRAG_THRESHOLD = 4;
+const ARROW_STEP = 80;
+
+const ARROWS: Record<string, Point> = {
+  ArrowLeft: { x: ARROW_STEP, y: 0 },
+  ArrowRight: { x: -ARROW_STEP, y: 0 },
+  ArrowUp: { x: 0, y: ARROW_STEP },
+  ArrowDown: { x: 0, y: -ARROW_STEP },
+};
+
+const padded = (rect: Rect, by: number): Rect => ({
+  x: rect.x - by,
+  y: rect.y - by,
+  width: rect.width + by * 2,
+  height: rect.height + by * 2,
+});
+
+const offsetIn = (element: HTMLElement, world: HTMLElement): Rect => {
+  let x = 0;
+  let y = 0;
+
+  for (let at: HTMLElement | null = element; at && at !== world; at = at.offsetParent as HTMLElement | null) {
+    x += at.offsetLeft;
+    y += at.offsetTop;
+  }
+
+  return { x, y, width: element.offsetWidth, height: element.offsetHeight };
+};
 
 /** Neighbouring columns with the same group `key` share one head above their own; a `switch` there emits `groupSwitch`. */
 export type CanvasColumnGroup = {
@@ -164,17 +196,20 @@ const isInteractive = (target: EventTarget | null) => {
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
+  hostDirectives: [FocusRingDirective],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
+      'group/canvas relative block h-full touch-none overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
     tabindex: '0',
     'aria-label': STUDIO_LABELS.canvas.label,
+    '[class.overflow-hidden]': 'clip()',
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
     '(wheel)': 'moveCameraByWheel($event)',
     '(pointerdown)': 'startPan($event)',
-    '(click)': 'clearSelection($event)',
+    '(click)': 'clickCanvas($event)',
+    '(dblclick)': 'focusProjectedFrame($event)',
     '(window:keydown)': 'handleShortcut($event)',
     '(window:keyup)': 'releaseSpace($event)',
     '(window:blur)': 'spaceHeld.set(false)',
@@ -183,7 +218,7 @@ const isInteractive = (target: EventTarget | null) => {
 export class DesignCanvasComponent {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  public frames = input.required<CanvasFrame[]>();
+  public frames = input<CanvasFrame[]>([]);
 
   /**
    * `sheet` puts each row of frames on its own line; `grid` flows the frames as tiles with their label below;
@@ -207,6 +242,25 @@ export class DesignCanvasComponent {
 
   public zoomChipClass = input('absolute right-3 bottom-3');
 
+  public zoomChip = input(true, { transform: booleanAttribute });
+
+  public align = input<'center' | 'start'>('center');
+
+  public fitPadding = input(FIT_PADDING);
+
+  /** World pixels kept around each projected frame, so an outline drawn past its edge stays in view. */
+  public frameOutline = input(0);
+
+  /** The camera a new `cameraKey` opens at without a `restoredCamera`: 100 % at the first frames, or every frame fitted. */
+  public opening = input<'start' | 'all'>('start');
+
+  /** Whether the shell's side panel floats over the canvas's left edge, so camera commands keep clear of it. */
+  public coveredByShell = input(true, { transform: booleanAttribute });
+
+  public smoothCamera = input(true, { transform: booleanAttribute });
+
+  public clip = input(true, { transform: booleanAttribute });
+
   public pins = input<CanvasPin[]>([]);
 
   public outlines = input<FrameOutline[]>([]);
@@ -224,7 +278,33 @@ export class DesignCanvasComponent {
   public groupSwitch = output<string>();
 
   private frameViews = viewChildren(CanvasFrameComponent);
+
+  /** Frames the page projects into the world instead of `frames`, each marked with `ethleteCanvasFrame`. */
+  private projected = contentChildren(CanvasFrameDirective, { descendants: true });
   private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
+  private world = viewChild.required<ElementRef<HTMLElement>>('world');
+
+  public projectedRects = signal<Rect[]>([], {
+    equal: (a, b) =>
+      a.length === b.length &&
+      a.every((rect, index) => {
+        const other = b[index];
+
+        return (
+          !!other &&
+          rect.x === other.x &&
+          rect.y === other.y &&
+          rect.width === other.width &&
+          rect.height === other.height
+        );
+      }),
+  });
+
+  private selectedProjected = signal<CanvasFrameDirective | null>(null);
+  private projectedWorld = signal<Rect>(
+    { x: 0, y: 0, width: 0, height: 0 },
+    { equal: (a, b) => a.width === b.width && a.height === b.height },
+  );
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
@@ -246,7 +326,7 @@ export class DesignCanvasComponent {
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
   private shellInset = signalElementDimensions(this.shellInsetProbe);
-  private covered = computed(() => this.shellInset().offset?.width ?? 0);
+  private covered = computed(() => (this.coveredByShell() ? (this.shellInset().offset?.width ?? 0) : 0));
 
   /** By grid frame id, the box of each of its cells from the frame's top left corner. */
   private cellRects = signal<Record<string, Record<string, Rect>>>({});
@@ -385,7 +465,18 @@ export class DesignCanvasComponent {
 
   protected groupHeads = computed(() => this.layout().groups);
 
+  private projectedScene = computed(() => {
+    const outline = this.frameOutline();
+    const rects = this.projectedRects().map((rect) => padded(rect, outline));
+    const selected = this.selectedProjected();
+    const index = selected ? this.projected().indexOf(selected) : -1;
+
+    return { frames: rects, focused: rects[index] ?? null };
+  });
+
   private bounds = computed(() => {
+    if (this.projected().length > 0) return padded(this.projectedWorld(), this.frameOutline());
+
     const { frames, heads, rowHeads } = this.layout();
     const thin = rowHeads.map((head) => ({ x: 0, y: head.y, width: head.width, height: head.height }));
 
@@ -500,7 +591,7 @@ export class DesignCanvasComponent {
 
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
-  private panStart$ = new Subject<PointerEvent>();
+  private panStart$ = new Subject<{ event: PointerEvent; threshold: number }>();
   private swallowNextClick = false;
 
   private fittedFor: string | null | undefined = undefined;
@@ -540,9 +631,24 @@ export class DesignCanvasComponent {
 
         this.fittedFor = key;
         this.coveredAtFit = covered;
-        this.following = restored === null ? 'start' : null;
-        this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: 'start' }));
+        this.following = restored === null ? this.opening() : null;
+        this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: this.opening() }));
       });
+    });
+
+    afterRenderEffect(() => {
+      const frames = this.projected();
+      const world = this.world().nativeElement;
+
+      this.viewport();
+      this.projectedRects.set(frames.map((frame) => offsetIn(frame.elementRef.nativeElement, world)));
+      this.projectedWorld.set({ x: 0, y: 0, width: world.offsetWidth, height: world.offsetHeight });
+    });
+
+    effect(() => {
+      const selected = this.selectedProjected();
+
+      for (const frame of this.projected()) frame.selected.set(frame === selected);
     });
 
     toObservable(this.wantedLiveIds)
@@ -583,8 +689,11 @@ export class DesignCanvasComponent {
 
     this.panStart$
       .pipe(
-        exhaustMap((event) => dragGestureFrom(event, this.host.nativeElement, { commitThreshold: 0 })),
+        exhaustMap(({ event, threshold }) =>
+          dragGestureFrom(event, this.host.nativeElement, { commitThreshold: threshold }),
+        ),
         tap((gesture) => {
+          if (gesture.type === 'start') this.swallowNextClick = true;
           if (gesture.type === 'move') {
             this.moveCamera(panCamera(this.camera(), { x: gesture.data.stepX, y: gesture.data.stepY }));
           }
@@ -692,12 +801,36 @@ export class DesignCanvasComponent {
     this.activeId.set(null);
   }
 
-  protected clearSelection(event: MouseEvent) {
+  protected clickCanvas(event: MouseEvent) {
     if (this.consumeSwallowedClick()) return;
-    if (event.target !== this.host.nativeElement) return;
+
+    const frame = this.projectedFrameOf(event.target);
+
+    if (frame) {
+      this.selectedProjected.set(frame);
+
+      return;
+    }
+
+    if (isInteractive(event.target)) return;
     this.openPinId.set(null);
     this.selectedId.set(null);
+    this.selectedProjected.set(null);
     this.activeId.set(null);
+  }
+
+  protected focusProjectedFrame(event: MouseEvent) {
+    const frame = this.projectedFrameOf(event.target);
+
+    if (!frame) return;
+
+    this.selectedProjected.set(frame);
+    this.show({ kind: 'focused' });
+  }
+
+  protected activateAndFocus(id: string) {
+    this.activate(id);
+    this.show({ kind: 'focused' });
   }
 
   protected storeHeight(id: string, height: number) {
@@ -714,12 +847,13 @@ export class DesignCanvasComponent {
 
   protected startPan(event: PointerEvent) {
     const middle = event.button === 1;
+    const spaced = event.button === 0 && this.spaceHeld();
 
-    if (!middle && !(event.button === 0 && this.spaceHeld())) return;
+    if (!middle && !spaced && (event.button !== 0 || isInteractive(event.target))) return;
 
-    event.preventDefault();
-    this.swallowNextClick = !middle;
-    this.panStart$.next(event);
+    if (middle || spaced) event.preventDefault();
+    this.swallowNextClick = spaced;
+    this.panStart$.next({ event, threshold: middle || spaced ? 0 : DRAG_THRESHOLD });
   }
 
   protected moveCameraByWheel(event: WheelEvent) {
@@ -742,7 +876,21 @@ export class DesignCanvasComponent {
     if (event.key === 'Escape') {
       if (this.openPinId()) this.openPinId.set(null);
       else if (this.activeId()) this.leaveActiveFrame();
-      else this.selectedId.set(null);
+      else {
+        this.selectedId.set(null);
+        this.selectedProjected.set(null);
+      }
+
+      return;
+    }
+
+    const arrow = ARROWS[event.code];
+
+    if (arrow && event.target instanceof Node && this.host.nativeElement.contains(event.target)) {
+      if (isInteractive(event.target) && event.target !== this.host.nativeElement) return;
+
+      event.preventDefault();
+      this.moveCamera(panCamera(this.camera(), arrow));
 
       return;
     }
@@ -846,14 +994,16 @@ export class DesignCanvasComponent {
   private scene(bounds: Rect | null, viewport: Size): CameraScene {
     const layout = this.layout();
     const frames = this.placedFrames();
+    const projected = this.projected().length > 0 ? this.projectedScene() : null;
 
     return {
       camera: this.camera(),
       viewport,
-      frames,
-      focused: frames.find((placed) => placed.selected) ?? null,
+      frames: projected?.frames ?? frames,
+      focused: projected ? projected.focused : (frames.find((placed) => placed.selected) ?? null),
       bounds,
-      padding: FIT_PADDING,
+      padding: this.fitPadding(),
+      align: this.align(),
       covered: this.covered(),
       inset: {
         left: layout.rowHeads.length > 0 ? ROW_HEAD_GUTTER : 0,
@@ -868,7 +1018,7 @@ export class DesignCanvasComponent {
 
   private moveCamera(camera: Camera, smooth = false) {
     this.following = null;
-    this.smooth.set(smooth);
+    this.smooth.set(smooth && this.smoothCamera());
     this.camera.set(camera);
     this.userCamera$.next(camera);
   }
@@ -877,6 +1027,12 @@ export class DesignCanvasComponent {
     const box = this.host.nativeElement.getBoundingClientRect();
 
     return { x: event.clientX - box.left, y: event.clientY - box.top };
+  }
+
+  private projectedFrameOf(target: EventTarget | null) {
+    return target instanceof Node
+      ? (this.projected().find((frame) => frame.elementRef.nativeElement.contains(target)) ?? null)
+      : null;
   }
 
   private consumeSwallowedClick() {

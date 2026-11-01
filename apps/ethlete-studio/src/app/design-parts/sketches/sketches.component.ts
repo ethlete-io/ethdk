@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  afterNextRender,
+  afterRenderEffect,
   Component,
   computed,
   ElementRef,
@@ -9,15 +9,15 @@ import {
   signal,
   TemplateRef,
   viewChild,
-  viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
-import { injectRenderer, injectSemanticColorTheme } from '@ethlete/core';
-import { Camera, CanvasViewport, mountCanvasViewport, Rect } from '../../components/design-canvas/canvas-viewport';
+import { injectSemanticColorTheme } from '@ethlete/core';
+import { Camera, Rect } from '../../components/design-canvas/canvas-math';
+import { CanvasFrameDirective } from '../../components/design-canvas/canvas-frame.directive';
+import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
-import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
@@ -51,7 +51,8 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
     SELECT_IMPORTS,
     NgTemplateOutlet,
     AgentLogoComponent,
-    CanvasViewportComponent,
+    CanvasFrameDirective,
+    DesignCanvasComponent,
     CommentPinComponent,
     PartTreeComponent,
     ShellPageComponent,
@@ -61,7 +62,6 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
 })
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
-  private renderer = injectRenderer();
   public shell = input<ShellState>(SHELL_SAMPLE);
   public camera = input<'fit' | Camera>('fit');
   public selected = input<string | undefined>(undefined);
@@ -83,19 +83,27 @@ export class SketchesComponent {
 
   private page = viewChild.required<ElementRef<HTMLElement>>('page');
 
-  private viewport = viewChild.required(CanvasViewportComponent, { read: ElementRef });
-  private world = viewChild.required<ElementRef<HTMLElement>>('world');
-  private frames = viewChildren<ElementRef<HTMLElement>>('frame');
+  private viewport = viewChild.required<ElementRef<HTMLElement>>('viewport');
+  private canvas = viewChild.required(DesignCanvasComponent);
+  protected readonly HEAD_INSET = HEAD_INSET;
   protected readonly LABELS = STUDIO_LABELS.sketches;
   protected readonly CURRENT = SKETCH_CURRENT;
 
   protected heads = signal<HeadPlace[]>([]);
-  public zoom = signal(1);
+  public zoom = computed(() => this.canvas().camera().zoom);
   protected percent = computed(() => Math.round(this.zoom() * 100));
-  private canvas: CanvasViewport | null = null;
+  protected fixedCamera = computed(() => {
+    const camera = this.camera();
+
+    return camera === 'fit' ? null : camera;
+  });
 
   constructor() {
-    afterNextRender(() => this.mountCamera());
+    afterRenderEffect(() => {
+      const canvas = this.canvas();
+
+      this.paint(canvas.camera(), canvas.projectedRects());
+    });
   }
 
   protected frameClass(key: string) {
@@ -113,7 +121,7 @@ export class SketchesComponent {
   }
 
   public zoomBy(factor: number) {
-    this.canvas?.show({ kind: 'visible', zoom: this.canvas.camera().zoom * factor });
+    this.canvas().show({ kind: 'visible', zoom: this.zoom() * factor });
   }
 
   protected zoomOut() {
@@ -125,40 +133,11 @@ export class SketchesComponent {
   }
 
   protected zoomReset() {
-    this.canvas?.show({ kind: 'visible', zoom: 1 });
+    this.canvas().show({ kind: 'visible', zoom: 1 });
   }
 
   protected fit() {
-    this.canvas?.show({ kind: 'all' });
-  }
-
-  private mountCamera() {
-    const viewport: HTMLElement = this.viewport().nativeElement;
-    const world = this.world().nativeElement;
-    const camera = this.camera();
-
-    if (camera !== 'fit') {
-      const frames = this.frames().map(({ nativeElement: element }) => ({
-        x: element.offsetLeft,
-        y: element.offsetTop,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-      }));
-
-      this.renderer.setStyle(world, { transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})` });
-      this.paint(camera, frames);
-
-      return;
-    }
-
-    this.canvas = mountCanvasViewport({
-      viewport,
-      world,
-      frameSelector: '[data-sk-frame]',
-      padding: HEAD_INSET,
-      outline: 1,
-      onPaint: (next, frames) => this.paint(next, frames),
-    });
+    this.canvas().show({ kind: 'all' });
   }
 
   private paint(camera: Camera, frames: Rect[]) {
@@ -166,7 +145,6 @@ export class SketchesComponent {
     const viewport: HTMLElement = this.viewport().nativeElement;
     const bound = viewport.offsetLeft + HEAD_INSET;
 
-    this.zoom.set(camera.zoom);
     this.heads.set(
       frames.map((column) => {
         const start = viewport.offsetLeft + camera.x + column.x * camera.zoom;
