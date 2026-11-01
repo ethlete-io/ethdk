@@ -682,9 +682,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 44. Layout defect (Tom, 2026-11-01, screenshot): in the page designs the canvas runs full width behind the floating
     sidebar panel (the dots show left of and behind the panel). The live app reserves space for the sidebar and
     shrinks the canvas instead. Fix: the live canvas fills the whole page area and the sidebar floats above it. The
-    camera must then treat the area under the panel as covered (start view, fit, centring). Cause of the miss: open,
-    asked from the builder. Expected lesson: the page compare checks the page design alone, never the layout of the
-    real app; Impl Q78 must compare the real page so this class shows as a diff.
+    camera must then treat the area under the panel as covered (start view, fit, centring). Done c5ff33545
+    (`CameraScene.covered`; flows still queued). Cause of the miss: the live system page is hand-written and never
+    shot; even a live start-view shot gives 0 px, because the dots come from the shell background, the panel is
+    opaque and the camera puts frames right of the panel. Lesson: a live-page compare needs a sample that crosses the
+    panel edge, or a clipped canvas stays invisible (Impl Q78).
 45. UX defect (Tom, 2026-11-01): only the "hide sidebar" button hides the sidebar; a click on the active nav item does
     nothing. Wanted: a click on the active nav item toggles the sidebar (hide, and show again). Lesson: a pixel compare
     cannot see behaviour, and the designs say nothing about what a click on each control does, so a dead control
@@ -794,6 +796,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q78 live page compare (Tom, 2026-11-01): in the MVP, after Impl Q77. One compare per product page (system,
   flows, sketches and the other live pages) shoots the real app page against the page design, with the slots filled
   by a fixed sample, so hand-written live components inside a page (for example `design-canvas`) are covered.
+  Each live-page compare uses a fixed camera with a sample frame that crosses the panel edge, panel open, plus a
+  panel-hidden state, so a clipped canvas shows as missing pixels. Finding 44.
   Finding 43.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
