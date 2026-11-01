@@ -6,7 +6,7 @@ import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.compo
 import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
 
-export const FLOWS_SAMPLE: string[] = [...STUDIO_LABELS.flows.sample.names];
+export const FLOWS_SAMPLE = ['Sketch prüfen', 'Kommentar beantworten', 'Produkt anlegen'];
 
 export type FlowsPageFrame = { id: string; title: string; src: string; col: number; row: number };
 
@@ -23,9 +23,9 @@ export const FLOWS_SAMPLE_FRAMES: FlowsPageFrame[] = [
 ];
 
 export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
-  { from: 'inbox', to: 'sketch', label: STUDIO_LABELS.flows.sample.lines[0] },
-  { from: 'inbox', to: 'resolved', label: STUDIO_LABELS.flows.sample.lines[1] },
-  { from: 'sketch', to: 'system', label: STUDIO_LABELS.flows.sample.lines[2] },
+  { from: 'inbox', to: 'sketch', label: "Nutzer klickt 'Sketches' in der Leiste" },
+  { from: 'inbox', to: 'resolved', label: "Nutzer klickt 'Erledigte zeigen'" },
+  { from: 'sketch', to: 'system', label: "Nutzer klickt 'Merge'" },
 ];
 
 const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
@@ -185,7 +185,7 @@ export class FlowsPageComponent {
   public selected = input(FLOWS_SAMPLE[0]);
   public frames = input(FLOWS_SAMPLE_FRAMES);
   public lines = input(FLOWS_SAMPLE_LINES);
-  public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
+  public preset = input('Desktop · 1440 × 900');
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
   public project = input('ethlete-sdk');

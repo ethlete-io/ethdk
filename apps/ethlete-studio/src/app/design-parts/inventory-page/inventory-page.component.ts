@@ -165,8 +165,8 @@ const FRAME_SCALE = 0.5;
                       }
                       <span class="font-code break-all text-et-surface">{{ entry.id }}</span>
                       <span class="text-et-surface-muted"
-                        >{{ entry.owner ? LABELS.ownedBy(entry.owner) : LABELS.status[entry.status] }} ·
-                        {{ entry.kind }} · {{ entry.states }} {{ LABELS.states(entry.states) }}</span
+                        >{{ entry.owner ? 'owned by ' + entry.owner : entry.status }} · {{ entry.kind }} ·
+                        {{ entry.states }} {{ entry.states === 1 ? 'state' : 'states' }}</span
                       >
                     </span>
                   </li>
