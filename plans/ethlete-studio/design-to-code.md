@@ -481,3 +481,14 @@ only; the builder starts when Tom gives the start.
   SDK base parts. Revert `fe709f9d8` (base parts belong to the SDK track, Q250). The Q255 done number is its own line
   over the own parts: `DONE studio: n of 26`, where a part counts when its `implemented.json` entry matches the go
   hash and it has a ready mark. One cli slice.
+- Impl Q30 zoom-chip labels (Tom, 2026-11-01): the zoom-chip buttons get German aria-labels (the Studio UI is
+  German): "Verkleinern", "Vergrößern", "Auf 100 % zoomen", "Einpassen". No pixel change; go `--by tom`.
+- Impl Q31 canvas-viewport render (Tom, 2026-11-01): a design defect (part mixed with its demo). The render draws only
+  the viewport; the sample cards move into an empty slot, and the size comes from a `class` prop. Visible change, so
+  go `--by tom` (Tom approved it here) and Tom looks at the result in Studio in his collected round.
+- Impl Q32 live comment pin data (Tom, 2026-11-01): map from the comment store: author to initials ("Du" for the
+  user, as Impl Q18), agent logo by sender, count = replies, selected = open thread. Built in the canvas-frames or
+  page slice.
+- Impl Q33 agent logos (Tom, 2026-11-01): the Impl Q11 trigger is met (inbox and comment pin). The claude, codex and
+  gemini SVGs move to one shared icon file in `apps/ethlete-studio`, used by app and design, as part of the pin swap.
+  Rail icons and the Studio mark stay inline until a second part needs them.
