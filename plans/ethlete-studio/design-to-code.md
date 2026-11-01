@@ -1129,6 +1129,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      `design check`, and nothing gates a commit on check. Process rule: a design edit runs `design check --part` before
      its commit. Tool fix (any project): the pre-push hook or `design compare` runs the static check problems for the
      touched parts and stops on UTILITY-CSS.
+106. The Merge button in the merge view shows no loading state while the merge runs (Tom, 2026-11-01, merge of
+     pages-system went through). Fact: neither the pages/merge design nor merge.component.ts has a loading or busy
+     state. Why missed: no check asks for a pending state on a control whose action is asynchronous (a server write).
+     Tool lesson: open, asked the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -1433,6 +1437,8 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   components/shell-project-switch.
 - Impl Q131 merge view added state (Tom, 2026-11-01, finding 104): when a variant adds a state, the empty "Jetzt"
   panel shows a short centered text "Neu in a" (the variant letter).
+- Impl Q132 merge button loading (Tom, 2026-11-01, finding 106): while the merge runs, the Merge button shows the
+  SDK button loading state (spinner, no second click). The pages/merge design gets a `merging` state.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 

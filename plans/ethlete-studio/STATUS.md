@@ -10,25 +10,25 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                                        | Wer               |
-| ------------------------------- | ------ | -------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ✅     |                                                                                  |                   |
-| components/disclosure           | ✅     |                                                                                  |                   |
-| components/tree-row             | ✅     | Studio baut wieder; Live-Shot mit 13 px fehlt noch, dann neues „Go geben“        | Builder, dann Tom |
-| components/zoom-chip            | ✅     |                                                                                  |                   |
-| elements/part-tree              | ✅     |                                                                                  |                   |
-| elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“       | Builder, dann Tom |
-| components/shell-collapse       | ✅     |                                                                                  |                   |
-| components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“             | Builder, dann Tom |
-| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                        | Builder           |
-| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129, wird gebaut); dann neues „Go geben“ | Builder, dann Tom |
-| pages/system                    | ❌     | Bereit: Tom mergt Sketch pages-system, dann „Go geben“                           | Tom               |
-| pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün  | Builder, dann Tom |
-| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                          | Builder           |
-| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                              | Builder           |
-| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“            | Builder, dann Tom |
-| pages/merge                     | ❌     | Merge-Ansicht zeigt Vorher/Nachher nicht; Prüfung noch nicht grün                | Builder           |
-| components/error-toast          | ❌     | Bereit: neues „Go geben“ (Schrift und Fläche repariert, Vergleich 0 px)          | Tom               |
+| Teil                            | Fertig | Was fehlt                                                                                                               | Wer               |
+| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| components/comment-pin          | ✅     |                                                                                                                         |                   |
+| components/disclosure           | ✅     |                                                                                                                         |                   |
+| components/tree-row             | ✅     | Go gegeben (22:38); Utility-Warnung wird behoben (Befund 105)                                                           | Builder           |
+| components/zoom-chip            | ✅     |                                                                                                                         |                   |
+| elements/part-tree              | ✅     |                                                                                                                         |                   |
+| elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
+| components/shell-collapse       | ✅     |                                                                                                                         |                   |
+| components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“                                                    | Builder, dann Tom |
+| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                                                               | Builder           |
+| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129, wird gebaut); dann neues „Go geben“                                        | Builder, dann Tom |
+| pages/system                    | ❌     | Sketch gemergt; Prüfung läuft, dann „Go geben“                                                                          | Builder, dann Tom |
+| pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün                                         | Builder, dann Tom |
+| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
+| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“                                                   | Builder, dann Tom |
+| pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“, Ladezustand am Merge-Knopf (Q132); Prüfung noch nicht grün | Builder           |
+| components/error-toast          | ❌     | Bereit: neues „Go geben“ (Schrift und Fläche repariert, Vergleich 0 px)                                                 | Tom               |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
