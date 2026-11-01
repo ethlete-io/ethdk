@@ -1246,7 +1246,7 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      2026-11-01). Tool fix (general, built now, test first): a block with `-webkit-line-clamp` is multi-line on purpose.
      No design edit, so no stale go.
 126. The design CLI is slow (Tom, 2026-11-01: "teils dauern diese befehle echt lange"). A read-only agent measured the
-     hot path; full report: `.claude/handoffs/agent-results/cli-perf-hot-path.md`. `design actions pages/system --state
+     hot path; this is the summary of its report. `design actions pages/system --state
 part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright calls (25.2 s fixed 400 ms waits, 18.9
      s settle, 8.7 s harness mount, 6 s for 131 page loads). Browser launch, screenshots and pixel diff cost almost
      nothing. Top proposals: (1) run action checks in parallel (actions-command.ts:400-608; the draw queue already
@@ -1254,6 +1254,12 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      rebuilding the harness app on every command (harness-server.ts:74-84, `--skipNxCache` into a new temp dir): about
      11 s per run measured, 72 % of a compare; (3) replace the fixed 400 ms emit wait with a condition
      (action-press.ts:7): 10-35 % of check time (estimate), less flaky under load. Which go into the MVP: Tom question.
+127. The canvas-viewport part kept a focus ring after a pointer click (builder, 2026-11-01). Two defects: the part
+     had `data-pointer-focus:outline-transparent` but nothing set the attribute (ee1299600 fixed only
+     `mountCanvasViewport`), and any key, also Shift, cleared the mark. Fixed with one shared `trackPointerFocus` in
+     components/design-canvas/pointer-focus.ts (0b53ff36b, 641e58125, 23b62ffc2, spec 9b39289c3). Why no check caught
+     it: compare shoots keyboard focus only, and the pointer-focus action check runs only in `design ready`; no check
+     pressed click and then Shift. Tool fix (after MVP): `task --verify` runs the actions check.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
