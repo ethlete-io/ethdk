@@ -15,9 +15,9 @@
     "at": "2026-10-31T23:31:35.491Z"
   },
   "components/shell-collapse": {
-    "hash": "44e549b320e25b4a",
+    "hash": "c2bff22ecd599c02",
     "by": "claude-opus-5-5",
-    "at": "2026-10-31T23:31:38.684Z"
+    "at": "2026-11-01T12:43:10.822Z"
   },
   "components/shell-project-switch": {
     "hash": "9e909353e9de59b6",
@@ -28,6 +28,11 @@
     "hash": "495a0ba0d6d2e17a",
     "by": "claude-opus-5-5",
     "at": "2026-10-31T23:34:18.094Z"
+  },
+  "elements/shell-main": {
+    "hash": "4b64a4137ba97697",
+    "by": "claude-opus-5-5",
+    "at": "2026-11-01T12:43:07.704Z"
   },
   "elements/studio-menu": {
     "hash": "bcdb97275792be3b",
@@ -40,9 +45,9 @@
     "at": "2026-10-31T23:32:06.945Z"
   },
   "pages/inbox": {
-    "hash": "ee3d99940358a87d",
+    "hash": "70d2d0c3f68b5b46",
     "by": "claude-opus-5-5",
-    "at": "2026-10-31T23:32:10.912Z"
+    "at": "2026-11-01T12:42:58.541Z"
   },
   "pages/inventory": {
     "hash": "a050641c3c773f51",
