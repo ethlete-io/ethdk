@@ -1245,6 +1245,15 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 125. The WRAP check on pages/inbox counted the hidden lines of a `line-clamp-2` comment text as a wrap (builder,
      2026-11-01). Tool fix (general, built now, test first): a block with `-webkit-line-clamp` is multi-line on purpose.
      No design edit, so no stale go.
+126. The design CLI is slow (Tom, 2026-11-01: "teils dauern diese befehle echt lange"). A read-only agent measured the
+     hot path; full report: `.claude/handoffs/agent-results/cli-perf-hot-path.md`. `design actions pages/system --state
+part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright calls (25.2 s fixed 400 ms waits, 18.9
+     s settle, 8.7 s harness mount, 6 s for 131 page loads). Browser launch, screenshots and pixel diff cost almost
+     nothing. Top proposals: (1) run action checks in parallel (actions-command.ts:400-608; the draw queue already
+     allows 8, thumb.ts:115): 6.9x measured in a bench, the 900 s run to about 130-160 s (estimate); (2) stop
+     rebuilding the harness app on every command (harness-server.ts:74-84, `--skipNxCache` into a new temp dir): about
+     11 s per run measured, 72 % of a compare; (3) replace the fixed 400 ms emit wait with a condition
+     (action-press.ts:7): 10-35 % of check time (estimate), less flaky under load. Which go into the MVP: Tom question.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
