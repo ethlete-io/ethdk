@@ -1,4 +1,4 @@
-import { embedPage, html } from '@design-system';
+import { embedPage, html, slot } from '@design-system';
 import { disclosureBodyClass } from '@system/components/disclosure';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
@@ -29,14 +29,16 @@ export const buttonTree = await partTree.render({
   ],
 });
 
-export const shot = (row: Row, side: 'now' | 'after', scale: number) =>
+export const shot = (row: Row, side: 'now' | 'after', scale: number, projected = true) =>
   html`<div
     class="mg-shot relative flex-none overflow-hidden rounded-control-md bg-et-surface-bg"
     data-et-skip="CLIPPED"
     data-side="${side}"
     style="--mg-scale: ${scale}; --mg-w: ${row.width}px; --mg-h: ${row.height}px"
   >
-    <div class="mg-shot-page pointer-events-none origin-top-left">${row.body}</div>
+    <div class="mg-shot-page pointer-events-none origin-top-left">
+      ${projected ? html`<div class="contents" ${slot('shot')}>${row.body}</div>` : row.body}
+    </div>
   </div>`;
 
 export const rowCaption = (row: Row, stacked = false) =>

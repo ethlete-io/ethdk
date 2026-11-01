@@ -253,6 +253,14 @@
       "open": "615516f17a04b81f"
     }
   },
+  "pages/merge": {
+    "hash": "cc89e89802425415",
+    "at": "2026-11-01T14:06:01.071Z",
+    "states": {
+      "open": "08a49b45331225b1",
+      "unchanged-open": "46c5c8e8f306f35c"
+    }
+  },
   "pages/start": {
     "hash": "d73fc4b2d7f8e2e0",
     "at": "2026-11-01T13:48:29.062Z",
