@@ -65,5 +65,5 @@ export class StartComponent {
   public otherRepo = output();
   public copyPrompt = output();
 
-  protected labels = STUDIO_LABELS.start;
+  protected readonly labels = STUDIO_LABELS.start;
 }
