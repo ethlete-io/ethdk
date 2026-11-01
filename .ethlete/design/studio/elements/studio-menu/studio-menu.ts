@@ -1,5 +1,7 @@
-import { definePart, drawing, forceInteraction, html, interactionRows, ng, type Interaction } from '@design-system';
+import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
+import type { MenuMockRow } from '@ethlete/components/design/menu';
+import menu from '@system/components/menu';
 import { studioMark } from '@system/foundations/logo';
 import { setupStudioMenu } from './setup';
 import styles from './studio-menu.css?inline';
@@ -20,31 +22,27 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
 
-const studioPanel = async (interaction?: Exclude<Interaction, 'disabled'>) => {
-  const settings = '<button et-menu-item data-studio-action="settings" type="button">Einstellungen…</button>';
-  const rendered = await ng(
-    html`<div [hoverOpen]="false" etMenu>
-      <et-menu aria-label="Studio">
-        <et-menu-group-label>Studio</et-menu-group-label>
-        ${settings}
-        <button et-menu-item data-studio-action="appearance" type="button">Erscheinungsbild…</button>
-        <button et-menu-item data-studio-action="shortcuts" type="button">Tastenkürzel…</button>
-        <et-menu-separator />
-        <button et-menu-item data-studio-action="help" type="button">Hilfe</button>
-        <button et-menu-item data-studio-action="about" type="button">Über Studio…</button>
-      </et-menu>
-    </div>`,
-    { imports: ['MENU_IMPORTS'] },
-  );
-  return interaction
-    ? rendered.replace(/<button\b[^>]*data-studio-action="settings"[^>]*>/, (tag) =>
-        forceInteraction(tag.replace(/>$/, ' data-active>'), interaction),
-      )
-    : rendered;
-};
+const action = (name: string) => `data-et-control="item" data-studio-action="${name}"`;
+
+const studioRows = (interaction?: Exclude<Interaction, 'disabled'>): MenuMockRow[] => [
+  { kind: 'label', label: 'Studio' },
+  {
+    label: 'Einstellungen…',
+    active: Boolean(interaction),
+    attributes: `${action('settings')}${interaction ? ` data-et-force="${interaction}"` : ''}`,
+  },
+  { label: 'Erscheinungsbild…', attributes: action('appearance') },
+  { label: 'Tastenkürzel…', attributes: action('shortcuts') },
+  { kind: 'separator' },
+  { label: 'Hilfe', attributes: action('help') },
+  { label: 'Über Studio…', attributes: action('about') },
+];
+
+const studioPanel = (interaction?: Exclude<Interaction, 'disabled'>) => menu.render({ rows: studioRows(interaction) });
 
 export const studioMenu = async ({ open, interaction }: Props) => {
-  const panel = typeof location === 'undefined' ? '' : await studioPanel(open ? interaction : undefined);
+  const panel =
+    typeof location === 'undefined' ? { body: '', styles: '' } : await studioPanel(open ? interaction : undefined);
   return {
     body: html`<div class="relative size-10" data-studio-menu-root>
       ${studioTrigger(open, open ? undefined : interaction)}
@@ -55,10 +53,10 @@ export const studioMenu = async ({ open, interaction }: Props) => {
         data-et-surface="studio-menu.open"
         ${open ? '' : ' hidden'}
       >
-        ${panel}
+        ${panel.body}
       </div>
     </div>`,
-    styles: styles + buttonStyles,
+    styles: styles + buttonStyles + panel.styles,
     setup: setupStudioMenu,
   };
 };
@@ -80,6 +78,7 @@ export default definePart({
         ${menu.body}
       </div>`,
       setup: menu.setup,
+      styles: menu.styles,
     });
   },
 });
