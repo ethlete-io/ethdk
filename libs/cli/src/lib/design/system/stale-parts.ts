@@ -1,5 +1,6 @@
+import { execFileSync } from 'child_process';
 import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { dirname, relative, resolve, sep } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, designHashOf, DesignHash, HashRecord, recordHolds } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
@@ -58,6 +59,30 @@ const rewrite = (file: string, entries: Record<string, unknown>) => {
   writeFileSync(file, `${JSON.stringify(Object.fromEntries(sorted), null, 2)}\n`);
 };
 
+const newerThanOf = ({ root, paths, at }: { root: string; paths: string[]; at: string }) => {
+  const since = Date.parse(at);
+
+  if (Number.isNaN(since) || paths.length === 0) return paths.length > 0;
+
+  try {
+    const git = (args: string[]) =>
+      execFileSync('git', ['-C', root, ...args], { maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] })
+        .toString()
+        .trim();
+    const dirty = git(['status', '--porcelain', '--', ...paths]);
+
+    if (dirty) return true;
+
+    return paths.some((path) => {
+      const committed = git(['log', '-1', '--format=%ct', '--', path]);
+
+      return committed === '' || Number(committed) * 1000 > since;
+    });
+  } catch {
+    return true;
+  }
+};
+
 const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   const part = partKeyOf(resolved);
   const { dir } = partOwnerOf({ product, part: resolved });
@@ -69,7 +94,11 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
   if (!legacy(go[part]) && !legacy(ready[part]) && !(implemented[part] && !implemented[part]?.app)) return [];
 
   const now = designHashOf({ product, part: resolved });
-  const holds = (record: HashRecord | undefined): record is HashRecord => legacy(record) && record?.hash === now.legacy;
+  const root = repoRootOf(product);
+  const folder = `${relative(root, dirname(resolved.file)).split(sep).join('/')}/`;
+  const outside = Object.keys(now.files).filter((path) => !path.startsWith(folder));
+  const holds = (record: (HashRecord & { at: string }) | undefined): record is HashRecord & { at: string } =>
+    legacy(record) && record?.hash === now.legacy && !newerThanOf({ root, paths: outside, at: record.at });
   const upgraded: string[] = [];
   const goEntry = go[part];
   const readyEntry = ready[part];
@@ -86,7 +115,13 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
 
   const component = linkedComponentOf(resolved.source);
 
-  if (implementedEntry && implementedEntry.hash === now.legacy && !implementedEntry.app && component !== null) {
+  if (
+    implementedEntry &&
+    implementedEntry.hash === now.legacy &&
+    !implementedEntry.app &&
+    component !== null &&
+    !newerThanOf({ root, paths: outside, at: implementedEntry.at })
+  ) {
     rewrite(resolve(dir, IMPLEMENTED_FILE), {
       ...implemented,
       [part]: { ...implementedEntry, hash: now.hash, app: appFilesOf({ root: repoRootOf(product), component }) },
@@ -100,7 +135,8 @@ const upgradeOf = (product: ResolvedProduct, resolved: ResolvedPart) => {
 /**
  * Moves each go, ready mark and implemented record stored before file lists to the design hash, with the hash of each
  * file it covers, while its folder-only hash still holds; an implemented record also gets its app file hashes. A
- * record whose folder changed since stays as it is and reads as stale.
+ * record whose folder changed since, or a file it reaches outside its folder that was committed or edited after the
+ * record's time, stays as it is and reads as stale.
  */
 export const upgradeLegacyMarksOf = (options: { product: ResolvedProduct; only?: string }) =>
   partsOf(options.product, options.only).flatMap((part) => upgradeOf(options.product, part));

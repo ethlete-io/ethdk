@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -54,6 +55,18 @@ const checkout = () => {
   writeFileSync(join(design, 'config.json'), JSON.stringify({ products: { 'app-a': {} } }));
 
   return { target, dir: join(design, 'app-a') };
+};
+
+const commitAt = (target: string, date: string) => {
+  const git = (...args: string[]) =>
+    execFileSync('git', args, {
+      cwd: target,
+      stdio: 'pipe',
+      env: { ...process.env, GIT_COMMITTER_DATE: date, GIT_AUTHOR_DATE: date },
+    });
+
+  git('add', '-A');
+  git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'x');
 };
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
@@ -138,6 +151,9 @@ describe('transitive part hash', () => {
     const legacy = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
     const at = '2026-10-01T00:00:00.000Z';
 
+    execFileSync('git', ['init', '-q'], { cwd: target });
+    commitAt(target, '2026-09-01T00:00:00Z');
+
     writeFileSync(
       join(dir, 'go.json'),
       JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at }, 'elements/icon': { hash: 'old', by: 'tom', at } }),
@@ -161,5 +177,20 @@ describe('transitive part hash', () => {
     expect(stalePartsOf({ product: productOf(target) })).toEqual([
       { part: 'elements/icon', design: [UNLISTED_FILES], app: [] },
     ]);
+  });
+
+  it('lists a legacy record stale when a file it reaches outside its folder was committed after the record', () => {
+    const { target, dir } = checkout();
+    const legacy = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
+    const at = '2026-10-01T00:00:00.000Z';
+
+    execFileSync('git', ['init', '-q'], { cwd: target });
+    commitAt(target, '2026-09-01T00:00:00Z');
+    writeFileSync(join(dir, 'go.json'), JSON.stringify({ [CHIP]: { hash: legacy, by: 'tom', at } }));
+    appendFileSync(join(dir, 'elements/icon/icon.ts'), '// moved\n');
+    commitAt(target, '2026-10-15T00:00:00Z');
+
+    expect(upgradeLegacyMarksOf({ product: productOf(target) })).toEqual([]);
+    expect(JSON.parse(readFileSync(join(dir, 'go.json'), 'utf8'))[CHIP]).toEqual({ hash: legacy, by: 'tom', at });
   });
 });
