@@ -126,6 +126,10 @@
             }
           },
           "click": ["Hide panel"]
+        },
+        "fit": {
+          "design": "fit",
+          "click": ["Einpassen"]
         }
       }
     },
@@ -138,6 +142,10 @@
         "fit": {
           "design": "page-sketch",
           "click": ["Einpassen"]
+        },
+        "100": {
+          "design": "page-100",
+          "click": ["Auf 100 % zoomen"]
         }
       }
     },
