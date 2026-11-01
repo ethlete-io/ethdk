@@ -280,6 +280,16 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
     SVGs (rail icons, Studio mark) have no shared app source; they moved over from the inbox copy.
   - In progress (builder ethlete-sdk-cf, 2026-11-01), in parallel: Impl Q6 items 1 and 2 (cli); Impl Q10 disabled
     guards (sdk CSS); Impl Q8 picker font and the 29 px (shell-main); pilot slice 3 real route (Impl Q5).
+  - Impl Q12-Q14 as built (`a136928b4`, `1302cdc3a`, `87562073c`, `43f647c10`, `f7fe9b71c`): `--et-font-family:
+var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.st-project-picker` and a new go
+    (recorded `--by tom`, from Impl Q13); `autoFocus="false"` removed. Compare opens a state that a control names in
+    `surfaces` by a real pointer click: it loads the nearest other state (fewest differing props; a tie stops with
+    an error), clicks the `[aria-expanded]` app element whose `aria-label` or text matches `[data-et-control=<id>]`,
+    moves the pointer off the page and waits for the open state. Verified: compare `elements/shell-main` 0 px in 15
+    of 15 states, `pages/inbox` 0 px in 7 of 7; `task --verify 43f647c10` recorded shell-main (hash
+    `4b64a4137ba97697`); `part-compare.spec.ts` 17 of 17, the new tests fail without the fix; tsc and eslint on the
+    cli files. Not verified: full cli and Studio suites, compare `pages/merge` (state `unchanged-open` now opens by
+    click). `task --verify` without a revision checks HEAD, so it fails while other agents commit; pass the revision.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
