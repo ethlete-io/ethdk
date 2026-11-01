@@ -1177,6 +1177,20 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      check Space for a switch, Enter only where the role needs it. Lesson: keyboard checks follow the ARIA pattern of the
      role, not one key set for all controls. The same run warns that the app `et-switch` shows no focus ring on keyboard
      focus; the builder checks it with the canvas focus-ring fix. Parked for after the MVP.
+113. A click on a resolved comment in pages/inbox selects no row and jumps nowhere (grill from the live shot,
+     2026-11-01). Cause: system-view `jumpToComment` looks the id up in `commentStore.comments()`, which holds open
+     comments only (comment-store.ts:109). Why no check caught it: compare sets `selectedId` directly, never through the
+     click; the Q129 spec and its shot used open comments only; the actions check sees the `pick` output fire and does
+     not follow what the host does with it. Tool fix (general, after MVP): an `emit:` action check also compares the
+     state after the host handles the output, when the design names one (here: row selected). App fix now: spec first.
+114. `design ready` ran 10+ min silent on shell parts (builder, 2026-11-01). Cause: settle waited forever on
+     scroll-driven menu fades. Fixed in a2b26738a (about 5 min per part). Lesson: every wait in the CLI needs a cap
+     and a line that names what it waits on.
+115. `design actions` on elements/shell-main: 11 false fails (builder, 2026-11-01). (a) A fixed action target
+     (`project-picker`) fails when the app opens the target over another state; the check should expect start state
+     plus the opening delta. (b) State name `open` of the host and of the embedded switch collide in the embedded-part
+     code (db91bcbe1). Lesson: state names are scoped per part; a fixture with equal names in host and embed. Builder
+     fixes both now, test first.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.

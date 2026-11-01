@@ -19,9 +19,9 @@ ausgeklammert.
 | elements/part-tree              | ✅     |                                                                                                                         |                   |
 | elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
-| components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“                                                    | Builder, dann Tom |
-| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                                                               | Builder           |
-| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129) ist gebaut; Builder schickt Bild, dann neues „Go geben“                    | Builder, dann Tom |
+| components/shell-project-switch | ❌     | Frage an Tom: Fläche hinter der Zeile im Fokus (Q11); danach Q130-Look und neues „Go geben“                             | Tom, dann Builder |
+| elements/shell-main             | ❌     | Bild stimmt in allen 14 Zuständen; Prüfung der Aktionen hat Fehler im Werkzeug, wird behoben                            | Builder           |
+| pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“    | Builder, dann Tom |
 | pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                         | Builder, dann Tom |
 | pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
