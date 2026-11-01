@@ -35,8 +35,6 @@ export default definePart({
   styles: buttonStyles,
   render: (props: Props) =>
     drawing({
-      body: html`<div class="inline-flex p-space-2 bg-et-surface-bg text-et-surface font-ui">
-        ${shellCollapse(props)}
-      </div>`,
+      body: html`<div class="inline-flex p-space-2 text-et-surface font-ui">${shellCollapse(props)}</div>`,
     }),
 });

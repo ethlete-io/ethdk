@@ -104,7 +104,7 @@ export default definePart({
     const projectMenu = props.open ? await menu.render({ rows: projectRows(props.option) }) : null;
 
     return drawing({
-      body: html`<div class="relative box-border w-62 p-space-2 bg-et-surface-bg text-et-surface font-ui text-ui-md">
+      body: html`<div class="relative box-border w-62 p-space-2 text-et-surface font-ui text-ui-md">
         ${shellProjectSwitch(props)}
         ${
           projectMenu
