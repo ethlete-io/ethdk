@@ -272,3 +272,6 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   (e0bf58dca). Left on purpose, after the MVP: the 8 UNLINKED parts and `studio-view.component.ts` without a part
   (Q247, Q248), the 48 SDK parts with open points, the lib port of checkbox and radio-group d, and every parked item
   above.
+- **Checkbox missing states (2026-11-01), with the checkbox and radio-group SDK track:** the merged variant d of sdk
+  `components/checkbox` lacks 4 states (option.disabled, select-all.hover, select-all.active, select-all.disabled).
+  One sketch round after the Studio implementation phase, before the lib port.
