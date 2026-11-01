@@ -445,6 +445,7 @@ describe('SystemViewComponent on a product without parts or without products', (
 
     expect(start).not.toBeNull();
     expect(start?.textContent).toContain(STUDIO_LABELS.start.noRepo);
+    expect(start?.querySelector('.outline-et-surface-border')).toBeNull();
     expect(fixture.nativeElement.querySelector('ethlete-shell-main')).toBeNull();
   });
 });

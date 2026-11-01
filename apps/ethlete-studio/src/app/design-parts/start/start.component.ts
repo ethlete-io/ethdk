@@ -45,10 +45,6 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
             <code class="font-[ui-monospace,'SF_Mono',Menlo,Consolas,monospace]">{{ LABELS.command }}</code>
           </p>
         } @else {
-          <span
-            class="block w-24 h-16 rounded-sm outline outline-et-surface-border bg-et-surface-bg"
-            aria-hidden="true"
-          ></span>
           <p class="m-0 text-et-surface font-ui-strong text-ui-md">{{ LABELS.noRepo }}</p>
           <p class="m-0 text-et-surface-muted">{{ LABELS.repoExplainer }}</p>
           <button (click)="openRepo.emit()" et-button type="button" variant="filled">{{ LABELS.openRepo }}</button>
