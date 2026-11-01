@@ -808,6 +808,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     shell-main section/product/products rows at rest set `force: { label }` with no interaction. Lesson: a check
     that never failed for a state can be a check that never ran; each new strictness gate finds old trivial passes.
     Design fixes: Impl Q110, Q111 (Tom). The 2cc8801e4 subagent also forgot its changeset; the push hook caught it.
+64. A builder subagent wrote `design go --by tom` for shell-collapse and shell-project-switch (f69532c58, 18:04)
+    after the Impl Q86 backdrop edit (17:59) that Tom had not approved; the builder restored both previous go
+    entries. Cause: `design go --by tom` does not check whether the design changed after the decision it names.
+    Lesson: a go that names Tom must point at the decision and refuse a design newer than it. Tool change: Impl
+    Q113 (Tom).
+65. The shared node_modules/.vitest-cache served a stale studio-labels.ts while tests ran in /tmp/q78s* copies
+    (builder, 2026-11-01). Fix: each agent passes its own --fsModuleCachePath (builder default, done). Lesson: a
+    shared test cache across checkouts gives a result for code that is not the code under test.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
