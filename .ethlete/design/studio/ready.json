@@ -1,22 +1,4 @@
 {
-  "components/canvas-viewport": {
-    "hash": "36e9588a6f860c36",
-    "files": {
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "8af8e34c1b815043",
-      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "194061e9f7ae9f6d",
-      "libs/components/design/button.ts": "ce30348dc93a258d",
-      "libs/components/design/control.ts": "b0244bc4c0f922a6",
-      "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
-      "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
-      "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
-      "libs/core/design/interactive-styles.ts": "781528322bd34499",
-      "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
-      "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
-    },
-    "by": "claude-opus-5-5",
-    "at": "2026-11-01T20:54:50.113Z"
-  },
   "components/comment-pin": {
     "hash": "eaaf096d76ad3bc9",
     "files": {
