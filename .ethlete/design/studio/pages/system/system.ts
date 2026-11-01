@@ -113,6 +113,19 @@ const popover = async (open: PartOpenPoints) => {
 
 const FIT_PADDING = 64;
 
+const insetOf = (canvas: HTMLElement) => {
+  const probe = document.createElement('div');
+
+  probe.style.width = 'var(--st-shell-inset-left, 0px)';
+  canvas.append(probe);
+
+  const inset = probe.offsetWidth;
+
+  probe.remove();
+
+  return inset;
+};
+
 const fitAll = (root: HTMLElement) => {
   const canvas = root.querySelector<HTMLElement>('.st-canvas');
   const strip = canvas?.firstElementChild as HTMLElement | null;
@@ -120,19 +133,20 @@ const fitAll = (root: HTMLElement) => {
 
   if (!canvas || !strip || !frame) return;
 
-  const covered = parseFloat(getComputedStyle(canvas).paddingLeft) || 0;
-  const width = canvas.clientWidth - covered;
+  const width = canvas.clientWidth - insetOf(canvas);
   const height = canvas.clientHeight;
   const zoom = Math.min(
     1,
     (width - FIT_PADDING * 2) / frame.offsetWidth,
     (height - FIT_PADDING * 2) / frame.offsetHeight,
   );
-  const left = covered + (width - frame.offsetWidth * zoom) / 2;
+  const left = (width - frame.offsetWidth * zoom) / 2;
   const top = Math.min((height - frame.offsetHeight * zoom) / 2, FIT_PADDING);
+  const frameLeft = frame.offsetLeft - strip.offsetLeft;
+  const frameTop = frame.offsetTop - strip.offsetTop;
 
   strip.style.transformOrigin = '0 0';
-  strip.style.transform = `translate(${left - covered - frame.offsetLeft * zoom}px, ${top - frame.offsetTop * zoom}px) scale(${zoom})`;
+  strip.style.transform = `translate(${left - frameLeft * zoom}px, ${top - frameTop * zoom}px) scale(${zoom})`;
 };
 
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
@@ -199,12 +213,10 @@ export default definePart<{
     }
 
     const tree = await partTree.render(partTree.states['components-open']);
-    const frames = await canvasView(
-      [canvasFrame('button', html`<div ${slot('shot')}>${await buttonGrid()}</div>`)],
-      '100%',
-      {},
-      'w-full',
-    );
+    const body = fit
+      ? html`<div class="w-md h-45" ${slot('shot')}></div>`
+      : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
+    const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full');
     const points = clear ? nothingOpen : buttonPoints;
     const toggle = await chip(points, !closed);
     const dialog = closed ? undefined : await popover(points);
