@@ -24,7 +24,7 @@ ausgeklammert.
 | pages/inbox                     | ❌     | Erledigte Kommentare werden markiert und zeigen ihren Pin (Befund 113), Bild geprüft; Tom: Abnahme und Go   | Tom               |
 | pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                  | Builder, dann Tom |
 | pages/sketches                  | ❌     | Kamera und page-100 gebaut; Prüfungen laufen zuerst, dann Bild, Abnahme und Go                              | Builder, dann Tom |
-| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                     | Builder           |
+| components/canvas-viewport      | ❌     | Go gilt; Fokus-Rahmen nach Klick + Shift wird behoben (Befund 123), dann „ready“                            | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                         | Builder           |
 | pages/start                     | ✅     |                                                                                                             |                   |
 | pages/merge                     | ✅     |                                                                                                             |                   |

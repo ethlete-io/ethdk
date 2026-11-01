@@ -1232,6 +1232,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 122. A comment from a merged sketch gets no pin, open or resolved: `pinsOf` matches the sketch target, and the merged
      frame has none. Resolved comments get no pins in the Sketches view either (builder, 2026-11-01). Parked for after
      the MVP (builder rec); tell Tom on return.
+123. components/canvas-viewport `ready` failed on the focus ring after a pointer click + Shift, the same defect
+     ee1299600 fixed in the live design-canvas but not in the part component (builder, 2026-11-01). Why no check caught
+     it: actions run only at `ready`; verify and compare never press keys after a pointer click. Tool fix (general,
+     after MVP): `design task --verify` runs the actions check too. Lesson: a fix in one of two copies of the same
+     behaviour leaves the other broken (rule "every thing only once"). Also: the STATUS row said "code used on no page";
+     wrong, canvas-frames and flows-page import it.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
