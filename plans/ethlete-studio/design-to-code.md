@@ -647,6 +647,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     translation) means a re-measure. The popover drew in Jost because the SDK overlay sits on the body, outside the
     app's `font-ui` host (app defect, fixed in a4ad19ba9). Lesson: overlays need the app font at the overlay root, and
     a design must not hardcode a measure that depends on text.
+38. pages/inbox was ready at 12:42 and broke later without anyone seeing it: canvas-frames got its own `slot('frames')`
+    (e6d93a870, 14:13), and after Impl Q53 compare keeps the forced "Save" buttons in the inbox design. Nothing
+    re-compared inbox. Lesson: a change to a part re-compares every ready part and page that embeds it (with finding
+    22: go staleness and compare staleness need the same embed graph).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
