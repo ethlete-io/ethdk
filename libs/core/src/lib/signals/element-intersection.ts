@@ -10,7 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { isElementVisible } from '../scrolling';
+import { isElementVisible } from '../scrolling/scrollable';
 import {
   ElementSignalValue,
   SignalElementBindingType,

@@ -1,8 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { MatchListView, ParticipantViewUnion } from '@ethlete/types';
 import { Translatable } from '../../utils';
-import { MatchStateType } from './normalize-match-score.pipe';
-import { normalizeMatchState } from './normalize-match-state.pipe';
+import { MatchStateType, normalizeMatchState } from './normalize-match-state.pipe';
 
 @Pipe({ name: 'etNormalizeMatchParticipants' })
 export class NormalizeMatchParticipantsPipe implements PipeTransform {

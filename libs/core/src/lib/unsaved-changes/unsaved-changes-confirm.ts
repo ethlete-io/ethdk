@@ -1,5 +1,19 @@
 import { InjectionToken, Provider } from '@angular/core';
-import { UnsavedChangesConfirmFn } from './unsaved-changes-tracker';
+import { Observable } from 'rxjs';
+import { UnsavedChangesConfirmContext } from './unsaved-changes-coordinator';
+
+/**
+ * Decides whether a value with unsaved changes may be discarded. Called with the current value when
+ * (and only when) changes exist. Return a truthy value / resolved Promise / emitted Observable value
+ * to allow the discard, falsy to keep the changes. Typically opens a confirm dialog.
+ *
+ * The second argument carries an {@link UnsavedChangesConfirmContext.signal} that aborts when the
+ * session ends underneath the confirm (a logout) - close your dialog when it fires.
+ */
+export type UnsavedChangesConfirmFn<T> = (
+  value: T,
+  context: UnsavedChangesConfirmContext,
+) => boolean | Promise<boolean> | Observable<boolean> | unknown;
 
 /** The confirm an unsaved-changes tracker or guard runs when its own config has none. */
 export const UNSAVED_CHANGES_CONFIRM = /* @__PURE__ */ new InjectionToken<UnsavedChangesConfirmFn<unknown>>(

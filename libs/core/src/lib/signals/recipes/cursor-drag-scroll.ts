@@ -1,7 +1,7 @@
 import { DOCUMENT, DestroyRef, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, map, merge, of, switchMap, take, takeUntil, tap } from 'rxjs';
-import { injectRenderer } from '../../providers';
+import { injectRenderer } from '../../providers/renderer';
 import { SignalElementBindingType, buildElementSignal, firstElementSignal } from '../element';
 import { signalElementScrollState } from '../element-scroll-state';
 import { MaybeSignal, maybeSignalValue } from '../signal-data-utils';

@@ -1,4 +1,4 @@
-import { clamp } from '../utils';
+import { clamp } from '../utils/math';
 
 export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' | 'y') => {
   const el = element || (typeof document === 'undefined' ? null : document.documentElement);

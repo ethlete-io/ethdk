@@ -1,5 +1,5 @@
 import { ElementRef, Signal, computed, effect, inject } from '@angular/core';
-import { equal } from '../utils';
+import { equal } from '../utils/comparison';
 import { SignalElementBindingType, buildElementSignal, firstElementSignal } from './element';
 import { NullableElementDimensions, signalElementDimensions } from './element-dimensions';
 import { signalElementMutations } from './element-mutations';

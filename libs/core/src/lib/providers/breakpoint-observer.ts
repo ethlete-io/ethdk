@@ -1,5 +1,5 @@
 import { DOCUMENT, DestroyRef, Signal, inject, signal } from '@angular/core';
-import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils/angular/di';
 
 export type Vec2 = [number, number];
 

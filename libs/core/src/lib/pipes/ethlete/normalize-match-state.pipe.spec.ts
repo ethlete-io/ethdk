@@ -1,5 +1,5 @@
 import { MatchListView } from '@ethlete/types';
-import { MatchStateType } from './normalize-match-score.pipe';
+import { MatchStateType } from './normalize-match-state.pipe';
 import { normalizeMatchState } from './normalize-match-state.pipe';
 
 describe('normalizeMatchState', () => {

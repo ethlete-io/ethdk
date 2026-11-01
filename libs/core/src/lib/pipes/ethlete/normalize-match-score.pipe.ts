@@ -1,21 +1,11 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { MatchListView, MatchRankingView } from '@ethlete/types';
-import { normalizeMatchState } from './normalize-match-state.pipe';
+import { MatchStateType, normalizeMatchState } from './normalize-match-state.pipe';
 
 @Pipe({ name: 'etNormalizeMatchScore' })
 export class NormalizeMatchScorePipe implements PipeTransform {
   transform = normalizeMatchScore;
 }
-
-export const MatchStateType = {
-  PREPARING_ROUND: 'preparingRound',
-  PRE_MATCH: 'preMatch',
-  LIVE: 'live',
-  POST_MATCH: 'postMatch',
-  AUTO_WIN: 'autoWin',
-} as const;
-
-export type MatchStateType = (typeof MatchStateType)[keyof typeof MatchStateType];
 
 export type NormalizedMatchScore = {
   home: {

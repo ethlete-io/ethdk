@@ -9,7 +9,7 @@ import {
   Signal,
   untracked,
 } from '@angular/core';
-import { injectRenderer } from '../providers';
+import { injectRenderer } from '../providers/renderer';
 import { buildElementSignal, SignalElementBindingType } from './element';
 
 export type BuildSignalEffectsConfig<T extends Record<string, Signal<unknown>>> = {

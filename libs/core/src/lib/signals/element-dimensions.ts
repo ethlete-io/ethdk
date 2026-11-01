@@ -11,7 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { equal } from '../utils';
+import { equal } from '../utils/comparison';
 import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
 import { signalIsRendered } from './render-utils';
 import { memoizeSignal } from './signal-data-utils';

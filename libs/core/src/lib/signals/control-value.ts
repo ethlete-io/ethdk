@@ -2,7 +2,7 @@ import { Signal, isSignal, linkedSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { Observable, debounceTime, distinctUntilChanged, map, merge, of, switchMap } from 'rxjs';
-import { equal } from '../utils';
+import { equal } from '../utils/comparison';
 
 export type ControlValueSignalOptions = {
   debounceTime?: number;

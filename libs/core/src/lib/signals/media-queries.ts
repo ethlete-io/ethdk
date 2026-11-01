@@ -4,8 +4,8 @@ import {
   BREAKPOINT_ORDER,
   BuildMediaQueryOptions,
   injectBreakpointObserver,
-  injectRenderer,
-} from '../providers';
+} from '../providers/breakpoint-observer';
+import { injectRenderer } from '../providers/renderer';
 import { createDocumentElementSignal } from './element';
 import { signalElementDimensions } from './element-dimensions';
 import { memoizeSignal } from './signal-data-utils';

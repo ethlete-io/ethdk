@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { SIGNAL } from '@angular/core/primitives/signals';
 import { BREAKPOINT_ORDER, Breakpoint } from '../providers/breakpoint-observer';
-import { setInputSignal } from '../utils';
+import { setInputSignal } from '../utils/angular/set-input-signal';
 import { injectCurrentBreakpoint } from './media-queries';
 
 export type BreakpointMap<T> = Partial<Record<Breakpoint, T>>;

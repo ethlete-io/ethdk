@@ -1,5 +1,5 @@
 import { inject, RendererFactory2, RendererStyleFlags2 } from '@angular/core';
-import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils/angular/di';
 
 const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {

@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { ApplicationRef, DOCUMENT, effect, EnvironmentInjector, inject, PLATFORM_ID } from '@angular/core';
-import { injectRenderer } from '../../providers';
+import { injectRenderer } from '../../providers/renderer';
 import { injectScrollbarDimensions, injectViewportDimensions } from '../media-queries';
 
 const scrollbarSizeWriters = /* @__PURE__ */ new WeakSet<EnvironmentInjector>();

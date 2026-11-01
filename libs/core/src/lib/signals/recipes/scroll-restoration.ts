@@ -3,7 +3,7 @@ import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
 import { filter, ignoreElements, isObservable, Observable, Subscription, tap } from 'rxjs';
-import { defineRootProvider, toInjectFn } from '../../utils';
+import { defineRootProvider, toInjectFn } from '../../utils/angular/di';
 import { createRoute, createRouterState } from '../router';
 
 /**

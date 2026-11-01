@@ -1,5 +1,5 @@
 import { computed, DOCUMENT, ElementRef, inject, signal } from '@angular/core';
-import { defineProvider, toInjectFn, toProvideFn, toToken } from '../utils';
+import { defineProvider, toInjectFn, toProvideFn, toToken } from '../utils/angular/di';
 
 const BOUNDARY_ELEMENT_DEF = /* @__PURE__ */ defineProvider(
   () => {

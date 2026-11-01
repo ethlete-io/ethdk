@@ -8,7 +8,7 @@ import {
   inject,
   Type,
 } from '@angular/core';
-import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils/angular/di';
 import { injectRenderer } from './renderer';
 
 export type StyleManager = {

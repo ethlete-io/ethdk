@@ -1,5 +1,5 @@
 import { ApplicationRef, DestroyRef, inject, signal } from '@angular/core';
-import { defineRootProvider, toInjectFn } from '../utils';
+import { defineRootProvider, toInjectFn } from '../utils/angular/di';
 
 const ANGULAR_ROOT_ELEMENT_DEF = /* @__PURE__ */ defineRootProvider(
   () => {

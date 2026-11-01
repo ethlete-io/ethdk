@@ -12,7 +12,7 @@ import {
   Router,
 } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { equal } from '../utils';
+import { equal } from '../utils/comparison';
 import { memoizeSignal, previousSignalValue } from './signal-data-utils';
 
 export type RouterState = {

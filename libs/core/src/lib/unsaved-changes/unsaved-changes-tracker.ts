@@ -23,24 +23,11 @@ import {
 } from 'rxjs';
 import { equal } from '../utils';
 import { RuntimeError } from '../utils/runtime-error';
-import { UNSAVED_CHANGES_CONFIRM } from './unsaved-changes-confirm';
-import { injectUnsavedChangesCoordinator, UnsavedChangesConfirmContext } from './unsaved-changes-coordinator';
+import { UNSAVED_CHANGES_CONFIRM, UnsavedChangesConfirmFn } from './unsaved-changes-confirm';
+import { injectUnsavedChangesCoordinator } from './unsaved-changes-coordinator';
 import { UNSAVED_CHANGES_ERROR_CODES } from './unsaved-changes-errors';
 import { normalizeUnsavedChangesSource, UnsavedChangesSource } from './unsaved-changes-source';
 import { createUnsavedChangesTabLock, UnsavedChangesTabConfig, UnsavedChangesTabLockRef } from './unsaved-changes-tab';
-
-/**
- * Decides whether a value with unsaved changes may be discarded. Called with the current value when
- * (and only when) changes exist. Return a truthy value / resolved Promise / emitted Observable value
- * to allow the discard, falsy to keep the changes. Typically opens a confirm dialog.
- *
- * The second argument carries an {@link UnsavedChangesConfirmContext.signal} that aborts when the
- * session ends underneath the confirm (a logout) - close your dialog when it fires.
- */
-export type UnsavedChangesConfirmFn<T> = (
-  value: T,
-  context: UnsavedChangesConfirmContext,
-) => boolean | Promise<boolean> | Observable<boolean> | unknown;
 
 export type CreateUnsavedChangesTrackerConfig<T> = {
   /** The form / value to watch. See {@link UnsavedChangesSource}. */
