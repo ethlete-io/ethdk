@@ -173,7 +173,7 @@ describe('part compare', () => {
     ).toEqual({ open: { control: 'toggle', from: 'rest' } });
   });
 
-  it('never opens a surface from a state that already draws it open', () => {
+  it('never opens a surface from a state that already draws it open, and opens every state drawing it by that click', () => {
     expect(
       pointerOpensOf({
         states: {
@@ -181,6 +181,7 @@ describe('part compare', () => {
           open: { open: true },
           'option-hover': { open: true, option: 'hover' },
           'option-selected': { open: true, option: 'selected' },
+          'open-hover': { open: true, interaction: 'hover' },
         },
         controls: { project: { surfaces: { open: 'open' } } },
         drawn: {
@@ -188,9 +189,15 @@ describe('part compare', () => {
           open: ['project.open'],
           'option-hover': ['project.open'],
           'option-selected': drawnSurfacesOf('<div data-et-surface="project.open"><span role="option"></span></div>'),
+          'open-hover': ['project.open'],
         },
       }),
-    ).toEqual({ open: { control: 'project', from: 'closed' } });
+    ).toEqual({
+      open: { control: 'project', from: 'closed' },
+      'option-hover': { control: 'project', from: 'closed', props: { open: false, option: 'hover' } },
+      'option-selected': { control: 'project', from: 'closed', props: { open: false, option: 'selected' } },
+      'open-hover': { control: 'project', from: 'closed', props: { open: false, interaction: 'hover' } },
+    });
   });
 
   it('names the states a surface state is equally close to', () => {

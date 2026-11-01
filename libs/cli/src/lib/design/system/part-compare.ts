@@ -118,7 +118,8 @@ export const forcedElementsOf = (markup: string): ForcedElement[] =>
   });
 
 /** A state compare reaches in the app by a pointer click on `control`'s trigger, from the props of state `from`. */
-export type PointerOpen = { control: string; from: string };
+/** A click on `control` from state `from`, its harness page loaded with `props`, or with `from`'s own props when left out. */
+export type PointerOpen = { control: string; from: string; props?: Record<string, unknown> };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -134,7 +135,8 @@ export const drawnSurfacesOf = (markup: string) =>
 /**
  * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same
  * `interaction` prop whose props differ from it in the fewest keys; a string where no single such state exists.
- * A state whose `drawn` surface ids already include the opened surface is never a state to click it open from.
+ * A state whose `drawn` surface ids already include the opened surface is never a state to click it open from;
+ * any other state that draws it is clicked open from the same state, with its own props but the opening ones of that state.
  */
 export const pointerOpensOf = (options: {
   states: Record<string, unknown>;
@@ -170,6 +172,27 @@ export const pointerOpensOf = (options: {
               .map(({ name }) => name)
               .join(', ')} are equally close to click it open from`
           : { control, from: nearest.name };
+
+      const open = opens[state];
+
+      if (typeof open === 'string') continue;
+
+      const fromState = states[open.from];
+      const from = isRecord(fromState) ? fromState : {};
+
+      for (const [name, other] of Object.entries(states)) {
+        if (name === state || name in opens || !drawn[name]?.includes(`${control}.${surface}`)) continue;
+
+        const opened = { ...(isRecord(other) ? other : {}) };
+
+        for (const key of new Set([...Object.keys(props), ...Object.keys(from)])) {
+          if (JSON.stringify(props[key]) === JSON.stringify(from[key])) continue;
+          if (key in from) opened[key] = from[key];
+          else delete opened[key];
+        }
+
+        opens[name] = { ...open, props: opened };
+      }
     }
   }
 

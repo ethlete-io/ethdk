@@ -295,25 +295,32 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
       return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;
 
     const controls = module.default?.controls;
-    const opened = only !== null && only in pointerOpensOf({ states, controls });
-    const designs = new Map<string, Awaited<ReturnType<typeof shooter.pictureOf>>>();
-
-    for (const state of only === null || opened ? Object.keys(states) : [only])
-      designs.set(
-        state,
-        await shooter.pictureOf({
-          product: product.name,
-          part,
+    const pictures = shooter;
+    const designs = new Map<string, Awaited<ReturnType<typeof pictures.pictureOf>>>();
+    const draw = async (state: string) =>
+      designs.get(state) ??
+      designs
+        .set(
           state,
-          preset: frame.preset,
-          width: null,
-          sketch: null,
-          interaction: null,
-          bare: true,
-          emptySlots: true,
-          params: new URLSearchParams(),
-        }),
-      );
+          await pictures.pictureOf({
+            product: product.name,
+            part,
+            state,
+            preset: frame.preset,
+            width: null,
+            sketch: null,
+            interaction: null,
+            bare: true,
+            emptySlots: true,
+            params: new URLSearchParams(),
+          }),
+        )
+        .get(state);
+    const opened =
+      only !== null &&
+      (only in pointerOpensOf({ states, controls }) || drawnSurfacesOf((await draw(only))?.markup ?? '').length > 0);
+
+    for (const state of only === null || opened ? Object.keys(states) : [only]) await draw(state);
 
     const opens = pointerOpensOf({
       states,
@@ -333,7 +340,13 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
       const app = await queue.run((browser) =>
         harnessShotOf({
           browser,
-          url: harnessUrlOf({ url, part, state, props: states[open?.from ?? state], layout: frame.layout }),
+          url: harnessUrlOf({
+            url,
+            part,
+            state,
+            props: open?.props ?? states[open?.from ?? state],
+            layout: frame.layout,
+          }),
           size: frame.size,
           forced: forcedElementsOf(design.markup ?? ''),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
