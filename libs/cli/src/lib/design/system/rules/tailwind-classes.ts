@@ -1,6 +1,6 @@
 import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { dirname, join, relative, resolve } from 'path';
 import postcss from 'postcss';
 import ts from 'typescript';
 import { ProductSource } from '../base';
@@ -31,7 +31,9 @@ export type PartClasses = {
   files: { file: string; source: string; candidates: string[]; classes: string[] }[];
 };
 
-const styleSourceOf = (product: ResolvedProduct) =>
+type StyleHolder = ProductSource & { base?: ProductSource | null };
+
+const styleSourceOf = (product: StyleHolder) =>
   [product, product.base].find((each): each is ProductSource => !!each?.config.styles?.length);
 
 const remOf = (files: Set<string>) => {
@@ -197,6 +199,44 @@ export const partClassesOf = (product: ResolvedProduct & SharedDirs): PartClasse
   return { target: resolve(dirname(product.configFile), '../..'), stylesheets, files };
 };
 
+const APP_SOURCE_EXTENSIONS = ['.ts', '.html'];
+
+const htmlCandidatesIn = (source: string) =>
+  [
+    ...[...source.matchAll(/\bclass\s*=\s*"([^"]*)"/gu)].map(([, value]) => value ?? ''),
+    ...[...source.matchAll(/\[(?:class|ngClass)\]\s*=\s*"([^"]*)"/gu)].flatMap(([, value]) =>
+      [...(value ?? '').matchAll(/'([^']*)'/gu)].map(([, text]) => text ?? ''),
+    ),
+  ].flatMap((text) => text.split(/\s+/u).filter(Boolean));
+
+/** The candidate classes in the templates and class strings of an app's source, with the stylesheet that app builds with. */
+export const appClassesOf = (options: { target: string; dir: string; stylesheet: string }) => {
+  const { target, dir, stylesheet } = options;
+  const files = (existsSync(dir) ? (readdirSync(dir, { recursive: true }) as string[]) : [])
+    .filter(
+      (path) =>
+        APP_SOURCE_EXTENSIONS.some((extension) => path.endsWith(extension)) &&
+        !path.endsWith('.d.ts') &&
+        !path.endsWith('.spec.ts'),
+    )
+    .map((path) => resolve(dir, path))
+    .sort((a, b) => a.localeCompare(b))
+    .map((file) => {
+      const source = readFileSync(file, 'utf8');
+      const candidates = file.endsWith('.html') ? htmlCandidatesIn(source) : candidatesIn(textsOf(source));
+
+      return { file, source, candidates: [...new Set(candidates)], classes: [] };
+    });
+  const holder: StyleHolder = {
+    name: 'app',
+    dir,
+    config: { styles: [relative(target, stylesheet)] },
+    configFile: join(target, '.ethlete', 'design', 'config.json'),
+  };
+
+  return { holder, classes: { target, stylesheets: [stylesheet], files } satisfies PartClasses };
+};
+
 /** The class names the product's own stylesheets, and every file they import, give a rule. */
 export const stylesheetClassesOf = (product: ResolvedProduct) => {
   const source = styleSourceOf(product);
@@ -218,7 +258,7 @@ export const stylesheetClassesOf = (product: ResolvedProduct) => {
 const factsCache = new Map<string, Map<string, ClassFacts>>();
 
 /** Tailwind's facts on each candidate under the product's stylesheets; the root font size they set on `html` is the rem base. */
-export const classFactsOf = (options: { product: ResolvedProduct; classes: PartClasses }) => {
+export const classFactsOf = (options: { product: StyleHolder; classes: PartClasses }) => {
   const { target, stylesheets, files } = options.classes;
   const source = styleSourceOf(options.product);
   const rem = remOf(source ? productStylesheetFilesOf(source) : new Set());

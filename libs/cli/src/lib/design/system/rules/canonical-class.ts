@@ -1,7 +1,10 @@
+import { existsSync, readFileSync } from 'fs';
+import { resolve } from 'path';
 import { SharedDirs } from '../imports';
 import { Problem } from '../problem';
+import { harnessOf } from '../harness-map';
 import { ResolvedProduct } from '../resolve-product';
-import { ClassFacts, classFactsOf, partClassesOf, tailwindFailureOf } from './tailwind-classes';
+import { appClassesOf, ClassFacts, classFactsOf, partClassesOf, tailwindFailureOf } from './tailwind-classes';
 
 /**
  * A Tailwind class in the markup of a part that has a canonical form under the product's stylesheets, as
@@ -11,17 +14,52 @@ import { ClassFacts, classFactsOf, partClassesOf, tailwindFailureOf } from './ta
 export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs): Problem[] => {
   const classes = partClassesOf(product);
 
-  if (!classes) return [];
+  return classes ? canonicalProblemsOf({ holder: product, classes }) : [];
+};
 
+const appStylesheetOf = (appDir: string) => {
+  const project = resolve(appDir, 'project.json');
+
+  if (!existsSync(project)) return null;
+
+  const styles = (
+    JSON.parse(readFileSync(project, 'utf8')) as { targets?: { build?: { options?: { styles?: unknown } } } }
+  ).targets?.build?.options?.styles;
+  const first = Array.isArray(styles) ? styles.find((style) => typeof style === 'string') : undefined;
+
+  return first ? resolve(appDir, '../..', first) : null;
+};
+
+/** Canonical-class problems in the `.html` templates and `.ts` class strings of the product's harness app, under the stylesheet that app builds with. */
+export const appCanonicalClassesOf = (target: string, product: ResolvedProduct): Problem[] => {
+  const harness = harnessOf(product);
+
+  if (harness === null || typeof harness === 'string') return [];
+
+  const appDir = resolve(target, harness.app);
+  const stylesheet = appStylesheetOf(appDir);
+
+  if (!stylesheet) return [];
+
+  const { holder, classes } = appClassesOf({ target, dir: resolve(appDir, 'src'), stylesheet });
+
+  return canonicalProblemsOf({ holder, classes });
+};
+
+const canonicalProblemsOf = (options: {
+  holder: Parameters<typeof classFactsOf>[0]['product'];
+  classes: NonNullable<ReturnType<typeof partClassesOf>>;
+}): Problem[] => {
+  const { holder, classes } = options;
   let facts: Map<string, ClassFacts>;
 
   try {
-    facts = classFactsOf({ product, classes });
+    facts = classFactsOf({ product: holder, classes });
   } catch (error) {
     return [
       {
         rule: 'CANONICAL-CLASS',
-        file: classes.stylesheets[0] ?? product.dir,
+        file: classes.stylesheets[0] ?? holder.dir,
         message: `no Tailwind design system - ${tailwindFailureOf(error)}`,
       },
     ];

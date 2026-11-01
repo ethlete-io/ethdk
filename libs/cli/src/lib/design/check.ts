@@ -1,12 +1,13 @@
 import { execFileSync } from 'child_process';
 import { mkdirSync, writeFileSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, relative } from 'path';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
-import { DEFAULT_PORT, portOf, readConfig } from './paths';
+import { DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
 import { checkSystemRendered } from './system/check-system';
+import { appCanonicalClassesOf } from './system/rules/canonical-class';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
@@ -357,10 +358,30 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
   }
 };
 
+const checkAppClasses = (options: { target: string; config: DesignConfig; products: string[] }) => {
+  const { target, config, products } = options;
+  const lines = products.flatMap((name) => {
+    const entry = config.products?.[name];
+
+    return entry
+      ? appCanonicalClassesOf(target, resolveProduct({ target, name, config: entry })).map(
+          (problem) => `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`,
+        )
+      : [`NO PRODUCT "${name}" in config.json.`];
+  });
+
+  for (const line of lines) console.log(line);
+
+  console.log(lines.length === 0 ? 'No class in the app source has a canonical form.' : `${lines.length} finding(s).`);
+
+  return lines.length === 0 ? 0 : 1;
+};
+
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, invocation } = options;
   const complete = options.argv.includes('--complete');
-  const argv = options.argv.filter((argument) => argument !== '--complete');
+  const appClasses = options.argv.includes('--app-classes');
+  const argv = options.argv.filter((argument) => argument !== '--complete' && argument !== '--app-classes');
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
   const products = flags['--product'];
   const parts = flags['--part'];
@@ -379,6 +400,8 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
 
       return 2;
     }
+
+    if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, complete, part });
   }

@@ -37,6 +37,7 @@
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "nx tauri:dev ethlete-studio",
+    "studio:classes:check": "nx build cli && node dist/libs/cli/src/index.js design check --product studio --app-classes",
     "studio:themes": "node tools/scripts/generate-studio-themes.mjs",
     "studio:verify": "node tools/scripts/verify-studio-headless.mjs",
     "timetrack": "nx tauri:dev timetrack-app",

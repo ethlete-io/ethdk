@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { ruleProblemsOf } from '../check-system';
 import { resolveProduct } from '../resolve-product';
-import { canonicalClassesOf } from './canonical-class';
+import { appCanonicalClassesOf, canonicalClassesOf } from './canonical-class';
 
 const write = (target: string, path: string, content: string) => {
   mkdirSync(dirname(join(target, DESIGN_DIR, path)), { recursive: true });
@@ -111,5 +111,41 @@ describe('canonicalClassesOf', { timeout: 30_000 }, () => {
     write(target, 'acme/pages/home/home.ts', part('<div class="flex w-105 hover:mt-4 grid-cols-3 acme-home"></div>'));
 
     expect(messagesOf(target)).toEqual([]);
+  });
+
+  it('flags a class with a canonical form in the templates and class strings of the harness app', () => {
+    const target = acme('html { font-size: 62.5%; }\n@theme { --spacing: 0.4rem; }\n');
+
+    mkdirSync(join(target, 'apps/web/src/app'), { recursive: true });
+    writeFileSync(
+      join(target, 'apps/web/project.json'),
+      JSON.stringify({ name: 'web', targets: { build: { options: { styles: ['.ethlete/design/acme/styles.css'] } } } }),
+    );
+    writeFileSync(join(target, 'apps/web/src/app/row.html'), '<div class="flex size-[22px]"></div>\n');
+    writeFileSync(
+      join(target, 'apps/web/src/app/row.ts'),
+      "export const tpl = '<i class=\"w-[420px] flex\"></i>';\nexport const cls = 'mt-4';\n",
+    );
+    write(
+      target,
+      'config.json',
+      JSON.stringify({
+        products: {
+          acme: {
+            styles: [`${DESIGN_DIR}/acme/styles.css`],
+            harness: { app: 'apps/web', map: 'apps/web/src/app/map.ts' },
+          },
+        },
+      }),
+    );
+
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(
+      appCanonicalClassesOf(target, product).map((problem) => `${problem.file.split('/').pop()}: ${problem.message}`),
+    ).toEqual([
+      'row.html: The class `size-[22px]` can be written as `size-5.5`',
+      'row.ts: The class `w-[420px]` can be written as `w-2xl`',
+    ]);
   });
 });
