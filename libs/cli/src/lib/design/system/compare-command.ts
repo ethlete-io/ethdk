@@ -9,7 +9,14 @@ import { createPartShooter, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
-import { compareLineOf, comparePngs, HARNESS_HOST_SELECTOR, harnessUrlOf } from './part-compare';
+import {
+  compareLineOf,
+  comparePngs,
+  ForcedElement,
+  forcedElementsOf,
+  HARNESS_HOST_SELECTOR,
+  harnessUrlOf,
+} from './part-compare';
 import { taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -70,11 +77,15 @@ export const compareFrameOf = (options: {
     : `the product has no preset "${preset}" - its presets: ${Object.keys(presets).join(', ')}`;
 };
 
-/** A PNG of the harness host element at `url`, in the viewport of `size` (a fitted frame's without) at device scale 1. */
+/**
+ * A PNG of the harness host element at `url`, in the viewport of `size` (a fitted frame's without) at device scale 1,
+ * with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
+ */
 export const harnessShotOf = async (options: {
   browser: Browser;
   url: string;
   size?: DesignPreset | null;
+  forced?: ForcedElement[];
   timeout?: number;
 }) => {
   const { browser, url } = options;
@@ -96,6 +107,30 @@ export const harnessShotOf = async (options: {
       );
     });
     await page.evaluate('document.fonts.ready');
+
+    for (const { interaction, label } of options.forced ?? []) {
+      if (label === null)
+        throw new HarnessError(
+          `the design forces ${interaction} on an element without an aria-label - compare cannot find it in the app`,
+        );
+
+      const element = host.locator(`[aria-label=${JSON.stringify(label)}]`).first();
+
+      await element.waitFor({ state: 'visible', timeout }).catch(() => {
+        throw new HarnessError(
+          `the harness page ${url} has no element with the aria-label "${label}" to force ${interaction} on`,
+        );
+      });
+
+      if (interaction === 'hover') await element.hover({ timeout });
+      else if (interaction === 'active') {
+        await element.hover({ timeout });
+        await page.mouse.down();
+      } else if (interaction === 'focus-visible') {
+        await page.keyboard.press('Shift');
+        await element.focus({ timeout });
+      } else throw new HarnessError(`compare cannot force ${interaction} on "${label}" in the app`);
+    }
 
     return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
   } finally {
@@ -153,6 +188,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           browser,
           url: harnessUrlOf({ url, part, state, props: states[state], layout: frame.layout }),
           size: frame.size,
+          forced: forcedElementsOf(design.markup ?? ''),
         }),
       );
 

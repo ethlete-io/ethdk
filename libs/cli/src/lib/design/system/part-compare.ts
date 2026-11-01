@@ -17,6 +17,25 @@ export const harnessUrlOf = (options: {
 }) =>
   `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}${options.layout ? `&layout=${options.layout}` : ''}`;
 
+/** An element the design picture forces into `interaction`, found in the app by its `aria-label`. */
+export type ForcedElement = { interaction: string; label: string | null };
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+
+const unescaped = (value: string) =>
+  value.replace(/&(amp|lt|gt|quot|#39);/g, (_, name: string) => ENTITIES[name] ?? '');
+
+/** The elements a design picture's markup forces with `data-et-force`, one entry per interaction. */
+export const forcedElementsOf = (markup: string): ForcedElement[] =>
+  [...markup.matchAll(/<[a-zA-Z][^>]*?\sdata-et-force="([^"]*)"[^>]*>/g)].flatMap(([tag, names = '']) => {
+    const label = /\saria-label="([^"]*)"/.exec(tag)?.[1];
+
+    return names
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label) }));
+  });
+
 export type Pixels = { width: number; height: number; data: Buffer };
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

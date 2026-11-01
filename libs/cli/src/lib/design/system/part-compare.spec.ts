@@ -9,7 +9,7 @@ import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
 import { compareFrameOf, comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
 import { StartHarnessServer } from './harness-server';
-import { comparePngs, decodePng, encodePng, harnessUrlOf, Pixels } from './part-compare';
+import { comparePngs, decodePng, encodePng, forcedElementsOf, harnessUrlOf, Pixels } from './part-compare';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 
@@ -110,6 +110,18 @@ const BLUE = 0x0000ffff;
 
 describe('part compare', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('reads the forced elements of a design picture with their aria-label', () => {
+    expect(
+      forcedElementsOf(
+        '<div><button class="a" aria-label="Tom &amp; Co" data-et-force="hover active">x</button><span data-et-force="focus-visible"></span></div>',
+      ),
+    ).toEqual([
+      { interaction: 'hover', label: 'Tom & Co' },
+      { interaction: 'active', label: 'Tom & Co' },
+      { interaction: 'focus-visible', label: null },
+    ]);
+  });
 
   it('builds the harness url with the props as encoded JSON', () => {
     expect(
@@ -309,11 +321,13 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-          ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-          : request.url?.startsWith('/__design-harness')
-            ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-            : '<body>no harness</body>',
+        request.url?.includes('components%2Fhover')
+          ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+          : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+            ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+            : request.url?.startsWith('/__design-harness')
+              ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+              : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -346,6 +360,18 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(40, 30, () => BLUE));
+  });
+
+  it('hovers a forced element before the shot', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/hover', state: 'a', props: {} }),
+      forced: [{ interaction: 'hover', label: 'Go' }],
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
   });
 
   it('names the url when the page has no host element', async (context) => {
