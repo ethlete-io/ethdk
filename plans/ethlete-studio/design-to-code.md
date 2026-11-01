@@ -608,6 +608,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 26. The auto-mode permission classifier denies the builder's `design go ... --by tom` (pages/start, link-only
     re-record per Impl Q28), although Tom approved the rule (Impl Q15, Q45): an approval in the grill session does not
     reach the builder session. Lesson: a `--by tom` rule needs a channel the builder's permission check accepts.
+27. Compare draws the design with `emptySlots: true` (Impl Q40), which also empties the slots of embedded parts:
+    shell-main's `<main>` is `slot('canvas')`, so every page's content is erased on the design side and a page 0 px is
+    a false green. Lesson: a check that reads green must prove it compared the content, not an empty frame.
+28. pages/sketches and pages/merge link the 1300-line `sketch-view` container, while the design shows an entirely
+    different layout, and the container renders blank in the harness. The design also drops features the container
+    has (reject/reopen, notes, diff lists) without a decision. Lesson: a page design that removes a feature must say so.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
