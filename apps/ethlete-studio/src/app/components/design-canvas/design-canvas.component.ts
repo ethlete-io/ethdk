@@ -175,7 +175,7 @@ const isEditable = (target: EventTarget | null) =>
   imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-(--et-surface-background-solid) text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
+      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
     tabindex: '0',
     'aria-label': STUDIO_LABELS.canvas.label,
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
