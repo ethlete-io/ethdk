@@ -6,6 +6,7 @@ import {
   liveOutcomeOf,
   liveStateCompareOf,
   nearestControlOf,
+  toggleSyncFailureOf,
 } from './live-actions';
 
 const control = (key: string, extra: Partial<LiveControl> = {}): LiveControl => ({
@@ -136,5 +137,34 @@ describe('nearestControlOf', () => {
 
     expect(nearestControlOf(app, design)).toBe(design[2]);
     expect(nearestControlOf({ ...app, key: 'button "c"' }, design)).toBeNull();
+  });
+});
+
+describe('toggleSyncFailureOf', () => {
+  const step = (pressed: string | null, overlays: number, expanded: string | null = null) => ({
+    pressed,
+    expanded,
+    overlays,
+  });
+
+  it('passes a toggle whose pressed state follows its overlay on every click', () => {
+    expect(toggleSyncFailureOf([step('true', 1), step('false', 0), step('true', 1), step('false', 0)])).toBeNull();
+  });
+
+  it('names the click where the pressed state and the overlay part', () => {
+    expect(toggleSyncFailureOf([step('true', 1), step('true', 0), step('false', 0), step('true', 1)])).toBe(
+      'click 2 leaves aria-pressed true, but its overlay is closed',
+    );
+  });
+
+  it('reads aria-expanded when the control has no aria-pressed', () => {
+    expect(toggleSyncFailureOf([step(null, 1, 'true'), step(null, 1, 'false')])).toBe(
+      'click 2 leaves aria-expanded false, but its overlay is open',
+    );
+  });
+
+  it('skips a control without toggle state or without an overlay', () => {
+    expect(toggleSyncFailureOf([step(null, 1), step(null, 0)])).toBeNull();
+    expect(toggleSyncFailureOf([step('true', 0), step('false', 0)])).toBeNull();
   });
 });

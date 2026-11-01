@@ -241,6 +241,33 @@ export const liveStateCompareOf = (options: {
   return { ok: wrong.length === 0, detail: wrong.join(', ') };
 };
 
+/** One click on a toggle: its `aria-pressed` and `aria-expanded`, and how many overlays are open beyond those before the first click. */
+export type ToggleStep = { pressed: string | null; expanded: string | null; overlays: number };
+
+/**
+ * Whether a toggle control that opens an overlay keeps its pressed or expanded state equal to the overlay's open state
+ * after every click; answers the first click where they part, or `null`.
+ */
+export const toggleSyncFailureOf = (steps: ToggleStep[]) => {
+  const first = steps[0];
+
+  if (!first || first.overlays === 0) return null;
+
+  const attribute = first.pressed !== null ? 'aria-pressed' : first.expanded !== null ? 'aria-expanded' : null;
+
+  if (attribute === null) return null;
+
+  for (const [index, step] of steps.entries()) {
+    const on = (attribute === 'aria-pressed' ? step.pressed : step.expanded) === 'true';
+    const open = step.overlays > 0;
+
+    if (on !== open)
+      return `click ${index + 1} leaves ${attribute} ${on}, but its overlay is ${open ? 'open' : 'closed'}`;
+  }
+
+  return null;
+};
+
 /** The line `design actions --live` prints for one checked control and input. */
 export const liveLineOf = ({ page, element, input, failure, warning }: LiveLine) =>
   `${page} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
@@ -252,6 +279,13 @@ const LOCATE_POLL_MS = 100;
 const STABLE_SCANS = 3;
 
 const STABLE_POLL_MS = 250;
+
+const TOGGLE_CLICKS = 3;
+
+const overlayCountOf = async (page: { evaluate: (script: string) => Promise<unknown> }) =>
+  (await page.evaluate(
+    `[...document.querySelectorAll(${JSON.stringify(OVERLAY_ROOTS)})].reduce((count, root) => count + root.children.length, 0)`,
+  )) as number;
 
 type Context = Awaited<ReturnType<Browser['newContext']>>;
 
@@ -481,11 +515,22 @@ export const checkLiveActions = async (options: {
           let clickRing: RingProbe | null = null;
           let clickThenKeyRing: RingProbe | null = null;
           let keyboardRing: PointerFocusProbes['keyboard'] = null;
+          const overlaysBefore = options.input === 'click' ? await overlayCountOf(page) : 0;
+          const toggleSteps: ToggleStep[] = [];
+          const readToggle = async () =>
+            toggleSteps.push({
+              ...(await control.evaluate((element) => ({
+                pressed: element.getAttribute('aria-pressed'),
+                expanded: element.getAttribute('aria-expanded'),
+              }))),
+              overlays: (await overlayCountOf(page)) - overlaysBefore,
+            });
 
           if (options.input === 'click') {
             await tabAwayFrom(page, control);
             await control.click({ timeout: DRAW_TIMEOUT_MS });
             await settle(page, DRAW_TIMEOUT_MS);
+            await readToggle();
             clickRing = await readRingProbe(control).catch(() => null);
             if (clickRing) {
               clickThenKeyRing = await readRingAfterKey({
@@ -520,7 +565,30 @@ export const checkLiveActions = async (options: {
           )) as string[];
           const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
 
-          return { before, after: await stableScan(), emitted, prevented, clickRing, clickThenKeyRing, keyboardRing };
+          const after = await stableScan();
+
+          const first = toggleSteps[0];
+          const isToggle = !!first && first.overlays > 0 && (first.pressed !== null || first.expanded !== null);
+
+          if (isToggle) {
+            for (let click = 0; click < TOGGLE_CLICKS - 1; click++) {
+              await control.click({ timeout: DRAW_TIMEOUT_MS });
+              await page.mouse.move(-1, -1);
+              await settle(page, DRAW_TIMEOUT_MS);
+              await readToggle();
+            }
+          }
+
+          return {
+            before,
+            after,
+            emitted,
+            prevented,
+            clickRing,
+            clickThenKeyRing,
+            keyboardRing,
+            toggle: isToggle ? toggleSyncFailureOf(toggleSteps) : undefined,
+          };
         } finally {
           await context.close();
         }
@@ -560,6 +628,7 @@ export const checkLiveActions = async (options: {
           }
 
           const rings: PointerFocusProbes = { click: null, keyboard: null };
+          let toggle: string | null | undefined;
 
           await Promise.all(
             ACTION_INPUTS.map(async (input) => {
@@ -570,6 +639,7 @@ export const checkLiveActions = async (options: {
                 rings.click ??= result.clickRing;
                 rings.clickThenKey ??= result.clickThenKeyRing;
                 rings.keyboard ??= result.keyboardRing;
+                if (input === 'click') toggle = result.toggle;
 
                 presses.push({ page: run.name, control: name, action: declared, input, outcome, parts });
 
@@ -637,6 +707,10 @@ export const checkLiveActions = async (options: {
               }
             }),
           );
+
+          if (toggle !== undefined) {
+            lines.push({ page: run.name, element: `${name} toggle`, input: null, parts, failure: toggle });
+          }
 
           if (rings.click !== null) {
             const { failure, warning } = pointerFocusVerdictOf(rings);
