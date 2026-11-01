@@ -14,6 +14,8 @@ type Props = {
   openOn: 'all' | 'active' | 'others' | 'none';
   draft?: boolean;
   entry?: boolean;
+  load?: 'loading' | 'error';
+  comments?: Comment[];
 };
 
 type Comment = {
@@ -125,6 +127,82 @@ const COMMENTS: Comment[] = [
   },
 ];
 
+const MORE: [string, string, Agent | undefined, string, string, string, string][] = [
+  [
+    'Claude',
+    'C',
+    'claude',
+    'Mo',
+    'card',
+    'elevated',
+    'Der Schatten von elevated liegt jetzt auf derselben Stufe wie beim Menü.',
+  ],
+  [
+    'Lena Krüger',
+    'LK',
+    undefined,
+    'Mo',
+    'tabs',
+    'overflow',
+    'QC: Die Pfeile verdecken den letzten Tab halb. Lieber ausblenden?',
+  ],
+  [
+    'Codex',
+    'CX',
+    'codex',
+    'So',
+    'dialog',
+    'open',
+    'Der Fokus springt beim Öffnen auf Schließen statt auf das erste Feld.',
+  ],
+  ['Gemini', 'G', 'gemini', 'So', 'tooltip', 'top', 'Der Pfeil sitzt einen Pixel neben der Mitte des Ankers.'],
+  ['Tom Bornholdt', 'TB', undefined, 'Sa', 'chip', 'removable', 'Das Schließen-Icon ist zu klein für den Daumen.'],
+  [
+    'Claude',
+    'C',
+    'claude',
+    'Sa',
+    'pagination',
+    'compact',
+    'Die Seitenzahl bricht bei drei Stellen um. Ich setze tabular-nums.',
+  ],
+  [
+    'Lena Krüger',
+    'LK',
+    undefined,
+    'Fr',
+    'table',
+    'sticky-header',
+    'QC: Der Kopf verliert beim Scrollen seine untere Linie.',
+  ],
+  ['Codex', 'CX', 'codex', 'Fr', 'slider', 'range', 'Beide Griffe lassen sich übereinander ziehen. Soll das gehen?'],
+  ['Tom Bornholdt', 'TB', undefined, 'Do', 'badge', 'dot', 'Der Punkt ist neben der Schrift kaum zu sehen.'],
+  [
+    'Gemini',
+    'G',
+    'gemini',
+    'Do',
+    'accordion',
+    'open',
+    'Die Öffnen-Bewegung ist eine Spur zu lang. Runde 2 zeigt 150 ms.',
+  ],
+];
+
+const LONG: Comment[] = [
+  ...COMMENTS,
+  ...MORE.map(([author, initials, agent, when, part, state, text], index): Comment => ({
+    id: `m${index + 1}`,
+    author,
+    initials,
+    ...(agent ? { agent } : {}),
+    when,
+    part,
+    state,
+    text,
+    replies: index % 3,
+  })),
+];
+
 const SELECTED = 'c1';
 const ACTIVE_PART = 'button';
 
@@ -177,6 +255,11 @@ const activeGroup = (comments: Comment[]) =>
 
 const empty = `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center">${icon('check', { size: 14, cls: 'size-5 mb-space-2 text-et-theme-ink' })}<p class="m-0 text-et-surface text-(length:--text-sm)">Keine offenen Kommentare</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
+const loadingNote = `<p class="m-0 px-space-2 pt-space-1 text-et-surface-muted text-(length:--text-sm)">Kommentare werden geladen…</p>`;
+
+const loadError = (retry: string) =>
+  `<div class="flex flex-col items-center gap-space-1 py-space-7 px-space-4 text-center"><span class="contents" data-et-semantic-color="error">${icon('error', { size: 14, cls: 'size-5 mb-space-2 text-et-theme' })}</span><p class="m-0 text-et-surface text-(length:--text-sm)">Kommentare nicht geladen</p><p class="m-0 text-et-surface-muted text-(length:--text-xs)">Die Liste kam nicht vom Design-Server an.</p><div class="mt-space-3">${retry}</div></div>`;
+
 const pinned = (body: string, comments: Comment[], pin: (c: Comment) => string) => {
   let index = -1;
   return body.replace(/<div class="(st-sgrid-cell[^"]*)">/gu, (match, cls: string) => {
@@ -195,7 +278,7 @@ const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export const inbox = () =>
   definePart<Props>({
-    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, and no open comments at all. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
+    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
     madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
     states: {
       open,
@@ -205,6 +288,9 @@ export const inbox = () =>
       'all-clear': allClear,
       'comment-draft': { ...open, draft: true },
       'comment-entry': { ...open, entry: true },
+      loading: { ...open, load: 'loading' },
+      'load-error': { ...open, load: 'error' },
+      'long-list': { ...open, comments: LONG },
     },
     controls: {
       pin: { kind: 'button' as const, part: 'components/comment-pin' },
@@ -212,8 +298,9 @@ export const inbox = () =>
       send: { kind: 'button' as const, part: 'components/button' },
       resolved: { kind: 'button' as const, part: 'components/switch' },
       row: { kind: 'row' as const, input: ['pointer' as const] },
+      retry: { kind: 'button' as const, part: 'components/button' },
     },
-    render: async ({ showResolved, openOn, draft, entry }) => {
+    render: async ({ showResolved, openOn, draft, entry, load, comments: list = COMMENTS }) => {
       const controls = await ng(
         `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" />`, 'resolved')}</span>`,
         { imports: ['SWITCH_IMPORTS'] },
@@ -236,7 +323,14 @@ export const inbox = () =>
             <div class="mt-1.25">${dialog.body}</div>
           </div>`
         : '';
-      const comments = COMMENTS.filter(
+      const retry = await ng(
+        control(
+          `<button et-button type="button" variant="outline" color="surface" size="sm">Erneut laden</button>`,
+          'retry',
+        ),
+        { imports: ['BUTTON_IMPORTS'] },
+      );
+      const comments = (load ? [] : list).filter(
         (c) =>
           c.resolved ||
           openOn === 'all' ||
@@ -261,11 +355,11 @@ export const inbox = () =>
         <div
           class="flex items-center justify-between gap-space-2 h-9 flex-none px-space-3 border-b border-et-surface-border text-ui-sm"
         >
-          <span class="text-et-surface-muted">${unresolved} offen</span>
+          <span class="text-et-surface-muted">${load ? '' : `${unresolved} offen`}</span>
           <div class="flex items-center gap-space-2 text-et-surface">Erledigte zeigen ${controls}${editor}</div>
         </div>
-        <div class="flex flex-col gap-px min-h-0 overflow-hidden p-space-2">
-          ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
+        <div class="flex flex-col gap-px min-h-0 overflow-auto p-space-2">
+          ${load === 'loading' ? loadingNote : load === 'error' ? loadError(retry) : visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
             'Andere',
             visible.filter((c) => c.part !== ACTIVE_PART),
           )}
