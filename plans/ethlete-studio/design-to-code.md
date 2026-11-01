@@ -1059,6 +1059,13 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     Why missed: `design actions --live` clicked each control once and read only aria-expanded. Tool fix (any project,
     built in cbde3e50d): for a control whose first click opens an overlay, the check clicks twice more and asserts
     aria-pressed/aria-expanded equal "overlay open". Studio fix: the chip closes on the overlay's beforeClosed, e2e case.
+98. The merge view for sketch pages-system shows an empty canvas and the text "0 Zustände von ohne sichtbare
+    Änderung" (Tom, 2026-11-01, screenshot). Cause (builder): merge compare draws only the parts that use a changed
+    part, never the changed part itself, so a page sketch (no users) draws nothing; the view then shows the empty
+    "unchanged" disclosure. Also the baseline went stale again (hover fix 8ed75e200), so the click would be refused.
+    Why missed: the compare spec covers only a sketched component with users; no merge e2e. Fix (any project, now):
+    merge compare also draws each changed element or page target; the view hides the disclosure at 0 states; rebase
+    after the hover fix.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
