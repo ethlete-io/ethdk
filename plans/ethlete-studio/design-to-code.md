@@ -328,7 +328,8 @@ only; the builder starts when Tom gives the start.
   2. `design check` and `design ready` warn when `dist/libs` is older than the lib sources.
   3. Forced interactions (hover, active) are not applied to disabled states.
   4. Studio says "restart the server" when the server runs an older `@ethlete/cli` than the installed one.
-  5. Studio writes `inventory.json` in the format Prettier accepts.
+  5. Studio writes `inventory.json` in the format Prettier accepts. Done before Impl Q6 in 3dd71ffb3; the spec
+     fails without the format step.
   6. Browser-backed cli specs that CI skips report the skip visibly.
   7. The canonical-class check also runs on the Tailwind classes in `apps/ethlete-studio/src`.
      Not now: the Inventory canvas, the sketch views (live iframe cap, changed-area context, multi-part title), and the
