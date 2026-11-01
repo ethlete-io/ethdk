@@ -368,3 +368,6 @@ only; the builder starts when Tom gives the start.
   `libs/components` CSS, with a patch changeset. Where a colour also lives in the sdk design part (for example
   button), the slice changes that part too and rebuilds `dist/libs`, so design and lib do not drift. Done when
   `design check --product sdk` reports no `DISABLED-INTERACTION`.
+- Impl Q11 inline SVGs (Tom, 2026-11-01): the rail icons and the Studio mark stay inline in `ShellMainComponent`
+  for now (design freeze, Q253). When a second part needs the same icon, the SVGs move to one shared icon file in
+  `apps/ethlete-studio` that both the app and the design use. Until then, compare guards against drift.
