@@ -578,6 +578,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     fail; agents regenerate it with `design harness`.
 18. The SDK menu mock's force marks overwrite the row's own attributes, so forced open pictures showed no hover,
     active or focus (Impl Q34, fd93d9b24). With 15: the mock's force API needs a rework.
+19. Designs draw interactive rows without the ARIA roles the SDK headless parts add: the tree-row design row is a
+    `<div tabindex="0">`, the app row gets `role="treeitem"` from `etTree`, so part-tree `row-hover` could not match
+    (Impl Q49). Lesson: a design row carries the same role and aria state as the headless part it stands for.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -600,3 +603,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   Second case of finding 4: lesson candidate, a check flags a part that takes its size from slot content.
 - Impl Q48 canvas-frames sample grid (Tom, 2026-11-01): keep the sample button grid in `slot('frames')` (picture
   byte-identical, same rule as Impl Q31/Q40).
+- Impl Q49 tree-row ARIA (Tom, 2026-11-01): the tree-row design row gets `role="treeitem"`, `aria-level` and
+  `aria-expanded` like the app row (no pixel change); go `--by tom`, then verify tree-row and part-tree again. No cli
+  exception for role-less rows. Finding 19.
