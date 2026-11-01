@@ -21,14 +21,17 @@
     }
   },
   "pages/inbox": {
-    "hash": "ee3d99940358a87d",
-    "at": "2026-11-01T11:07:30.194Z",
+    "hash": "70d2d0c3f68b5b46",
+    "at": "2026-11-01T12:17:16.789Z",
     "states": {
       "active-clear": "01e18e9a5ac20c9c",
       "active-only": "86f4e6f97c64a33b",
       "all-clear": "146fa4edcb1cb4bf",
       "comment-draft": "e9df4a28f8b0dcd9",
       "comment-entry": "dc9a7524de80dc82",
+      "load-error": "8e0e449dcee53cd5",
+      "loading": "d613de87a9e079e1",
+      "long-list": "612e294e61b95945",
       "open": "907d4007ec3b5b2f",
       "with-resolved": "dc287f827e0cbba9"
     }
