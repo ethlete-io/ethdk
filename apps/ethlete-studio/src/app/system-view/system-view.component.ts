@@ -1240,6 +1240,7 @@ export class SystemViewComponent {
     this.commentStore.showPanel(section === 'Inbox');
 
     if (section !== 'Inbox') this.railSection.set(section);
+    if (section === 'System' && this.flow()) this.activate(this.part()?.key ?? '');
   }
 
   protected jumpToComment(id: string) {

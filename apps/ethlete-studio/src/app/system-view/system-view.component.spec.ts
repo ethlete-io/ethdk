@@ -713,6 +713,16 @@ describe('SystemViewComponent on a flow', () => {
     expect(fixture.componentInstance['selectedKey']()).toBe('flow:sign-in');
   });
 
+  it('picks the first part when going back to System from a picked flow', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    fixture.componentInstance['pickSection']('System');
+    await settle(fixture);
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('pages/library');
+    expect(fixture.componentInstance['flowShown']()).toBeNull();
+  });
+
   it('remembers the picked preset per flow for the next start', async () => {
     const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
 
