@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, B22, C1).
+Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, C1).
 
 ## Erledigt
 
+- B22: Ein Fehlschlag in `design actions` nennt den erreichten Zustand oder den nächsten. Offen: Fehlschläge, die nur aria-expanded prüft (a01d37d64, 02.11.).
 - B20: `task --verify` führt die Aktions-Prüfung aus und bricht bei einem Fehlschlag ab (1855d1bc4, 02.11.).
 - MVP: alle 17 Teile fertig (02.11.).
 - Schnellere Design-CLI: Aktions-Prüfungen laufen parallel und warten auf eine Bedingung statt fester 400 ms;
@@ -95,7 +96,7 @@ Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, B22, C1).
 19. `emit:`-Aktion prüft auch, was der Host daraus macht (Befund 113).
 20. `task --verify` führt die Aktions-Prüfung aus (Befunde 123, 127). **Erledigt** (1855d1bc4).
 21. Ändert sich ein eingebettetes Teil, müssen die Aktionen der umgebenden Teile neu laufen (Befund 130). **Läuft.**
-22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Läuft.**
+22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Erledigt** (a01d37d64).
 23. Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
 24. Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
 25. `design dom <part>` gibt das HTML eines Teils aus.
