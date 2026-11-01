@@ -683,6 +683,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     camera must then treat the area under the panel as covered (start view, fit, centring). Cause of the miss: open,
     asked from the builder. Expected lesson: the page compare checks the page design alone, never the layout of the
     real app; Impl Q78 must compare the real page so this class shows as a diff.
+45. UX defect (Tom, 2026-11-01): only the "hide sidebar" button hides the sidebar; a click on the active nav item does
+    nothing. Wanted: a click on the active nav item toggles the sidebar (hide, and show again). Lesson: a pixel compare
+    cannot see behaviour, and the designs say nothing about what a click on each control does, so a dead control
+    passes every check.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
