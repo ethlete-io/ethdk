@@ -12,6 +12,7 @@ const PAGES = [
   { name: 'System', view: { systemProduct: 'studio', systemEntry: 'pages/system' } },
   { name: 'Sketches', view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' } },
   { name: 'Inbox', view: { systemProduct: 'studio', systemEntry: 'pages/system', commentsOpen: true } },
+  { name: 'Flow', view: { systemProduct: 'studio-lab', systemEntry: 'flow:sign-in' }, frame: 'figure' },
 ];
 
 const NARROW = { width: 1440, height: 900 };
@@ -426,6 +427,30 @@ const CASES = [
       return { ok: all && after.camera?.y !== before.camera?.y, detail: `${describe(before, after)} allInView=${all}` };
     },
   },
+  {
+    name: 'hiding the panel keeps the camera',
+    pages: ['System', 'Sketches', 'Flow'],
+    run: async (page) => {
+      const head = page.getByText('Aktuell', { exact: true });
+      const headOffset = async (state) =>
+        (await head.count()) ? (await head.first().boundingBox()).x - state.frames[0].left : 0;
+      const before = await probe(page);
+      const headBefore = await headOffset(before);
+
+      await page.getByRole('button', { name: 'Hide panel' }).first().click();
+      await settle(page);
+      const after = await probe(page);
+      const headAfter = await headOffset(after);
+      const kept =
+        !!before?.camera &&
+        !!after?.camera &&
+        moved(before, after, { x: 0, y: 0 }) &&
+        near(after.camera.zoom * 1000, before.camera.zoom * 1000) &&
+        near(headAfter, headBefore);
+
+      return { ok: kept, detail: `${describe(before, after)} head-frame ${headBefore} -> ${headAfter}` };
+    },
+  },
 ];
 
 const results = await withStudio(
@@ -433,23 +458,22 @@ const results = await withStudio(
     const rows = [];
 
     for (const target of PAGES) {
-      await page.goto(studioUrl);
-      await page.evaluate(
-        ({ view, checkout }) => {
-          localStorage.clear();
-          localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
-        },
-        { view: target.view, checkout: root },
-      );
-
       for (const testCase of CASES) {
         if (!(testCase.pages ?? ['System', 'Sketches']).includes(target.name)) continue;
 
+        await page.goto(studioUrl);
+        await page.evaluate(
+          ({ view, checkout }) => {
+            localStorage.clear();
+            localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout, ...view }));
+          },
+          { view: target.view, checkout: root },
+        );
         await page.setViewportSize(testCase.viewport ?? NARROW);
         await page.goto(studioUrl);
         await page.waitForFunction(
           ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
-          { CANVAS, FRAME },
+          { CANVAS, FRAME: target.frame ?? FRAME },
           { timeout: 30000 },
         );
         await page.waitForTimeout(2500);

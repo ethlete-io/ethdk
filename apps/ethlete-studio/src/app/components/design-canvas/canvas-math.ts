@@ -114,6 +114,9 @@ export const focusRect = ({ rect, camera, viewport, padding }: FocusRectOptions)
 export const rectsIntersect = (a: Rect, b: Rect) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
+export const sameRect = (a: Rect | null, b: Rect | null) =>
+  a === b || (!!a && !!b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
+
 export const boundingRect = (rects: Rect[]): Rect | null => {
   if (rects.length === 0) return null;
 

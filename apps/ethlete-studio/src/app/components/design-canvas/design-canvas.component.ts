@@ -43,6 +43,7 @@ import {
   boundingRect,
   fitRect,
   focusRect,
+  sameRect,
   layoutGrid,
   layoutMatrix,
   layoutMatrixSections,
@@ -603,6 +604,10 @@ export class DesignCanvasComponent {
 
   private following: 'all' | 'start' | { frame: string } | null = null;
 
+  private followsResize = false;
+
+  private followedBounds: Rect | null = null;
+
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
   constructor() {
@@ -623,6 +628,10 @@ export class DesignCanvasComponent {
             return;
           }
 
+          if (!this.followsResize && sameRect(bounds, this.followedBounds)) return;
+
+          this.followedBounds = bounds;
+
           const camera = this.following && this.followedCamera({ bounds, viewport, following: this.following });
 
           if (camera) this.camera.set(camera);
@@ -635,6 +644,8 @@ export class DesignCanvasComponent {
         this.fittedFor = key;
         this.coveredAtFit = covered;
         this.following = restored === null ? this.opening() : null;
+        this.followsResize = false;
+        this.followedBounds = bounds;
         this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: this.opening() }));
       });
     });
@@ -772,6 +783,7 @@ export class DesignCanvasComponent {
 
     if (camera) this.moveCamera(camera, true);
     this.following = { frame: id };
+    this.followsResize = true;
   }
 
   /** Selects a frame and zooms the camera so the frame fills the view. */
@@ -917,6 +929,7 @@ export class DesignCanvasComponent {
 
     if (bounds) this.moveCamera(this.fitted({ bounds, viewport: this.viewport(), fit: 'all' }), true);
     this.following = 'all';
+    this.followsResize = true;
     this.userCamera$.next(null);
   }
 

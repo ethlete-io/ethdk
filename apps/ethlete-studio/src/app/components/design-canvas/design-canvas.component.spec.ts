@@ -153,7 +153,7 @@ describe('DesignCanvasComponent', () => {
   });
 
   describe('when the canvas width changes', () => {
-    const setup = async () => {
+    const setup = async ({ opening = 'start' }: { opening?: 'start' | 'all' } = {}) => {
       const size = { width: 1200, height: 1000, panel: 320 };
       const resized: (() => void)[] = [];
       let host: unknown = null;
@@ -185,6 +185,7 @@ describe('DesignCanvasComponent', () => {
 
       const fixture = await render([{ ...FITTED, id: 'a', width: 1000, height: 600 }]);
 
+      fixture.componentRef.setInput('opening', opening);
       host = fixture.nativeElement;
       resized.forEach((resize) => resize());
       await fixture.whenStable();
@@ -201,7 +202,7 @@ describe('DesignCanvasComponent', () => {
         await fixture.whenStable();
       };
 
-      return { canvas: fixture.componentInstance, resizeTo, hidePanel };
+      return { fixture, canvas: fixture.componentInstance, resizeTo, hidePanel };
     };
 
     afterEach(() => {
@@ -225,6 +226,27 @@ describe('DesignCanvasComponent', () => {
       await hidePanel();
 
       expect(canvas.camera()).toEqual({ x: 360, y: 48, zoom: 1 });
+    });
+
+    it('keeps the camera of an opening fit when the canvas resizes', async () => {
+      const { canvas, resizeTo, hidePanel } = await setup({ opening: 'all' });
+      const opened = canvas.camera();
+
+      await resizeTo(600);
+      await hidePanel();
+      await resizeTo(1500);
+
+      expect(canvas.camera()).toEqual(opened);
+    });
+
+    it('fits an opening fit again when the frames change', async () => {
+      const { fixture, canvas } = await setup({ opening: 'all' });
+      const opened = canvas.camera().zoom;
+
+      fixture.componentRef.setInput('frames', [{ ...FITTED, id: 'a', width: 2000, height: 600 }]);
+      await fixture.whenStable();
+
+      expect(canvas.camera().zoom).toBeLessThan(opened);
     });
 
     it('fits the view again while it is still fitted', async () => {

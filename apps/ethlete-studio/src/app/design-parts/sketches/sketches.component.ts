@@ -12,7 +12,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
-import { injectSemanticColorTheme } from '@ethlete/core';
+import { injectSemanticColorTheme, signalElementDimensions } from '@ethlete/core';
 import { Camera, Rect } from '../../components/design-canvas/canvas-math';
 import { CanvasFrameDirective } from '../../components/design-canvas/canvas-frame.directive';
 import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
@@ -85,6 +85,7 @@ export class SketchesComponent {
 
   private viewport = viewChild.required<ElementRef<HTMLElement>>('viewport');
   private canvas = viewChild.required(DesignCanvasComponent);
+  private viewportSize = signalElementDimensions(this.viewport);
   protected readonly HEAD_INSET = HEAD_INSET;
   protected readonly LABELS = STUDIO_LABELS.sketches;
   protected readonly CURRENT = SKETCH_CURRENT;
@@ -102,6 +103,7 @@ export class SketchesComponent {
     afterRenderEffect(() => {
       const canvas = this.canvas();
 
+      this.viewportSize();
       this.paint(canvas.camera(), canvas.projectedRects());
     });
   }
