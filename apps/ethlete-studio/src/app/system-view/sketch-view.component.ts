@@ -191,12 +191,18 @@ export class SketchViewComponent {
     { initialValue: null },
   );
 
+  private drawsAnyPart = computed(() => {
+    const preview = this.previewReading();
+
+    return (preview?.changed.length ?? 0) + (preview?.affected.length ?? 0) > 0;
+  });
+
   private compareReading = toSignal(
     toObservable(
       computed(() => ({
         address: this.address(),
         variant: this.mergeVariant(),
-        on: this.mode() === 'merge' && (this.previewReading()?.affected.length ?? 0) > 0,
+        on: this.mode() === 'merge' && this.drawsAnyPart(),
         surface: this.surface(),
         color: this.color(),
         revision: this.revision(),

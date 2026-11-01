@@ -1185,10 +1185,14 @@ export const mergePreviewOf = ({
     const error = loadErrorOf(part.problems);
     const states = part.states.length > 0 ? part.states : [''];
     const rowOf = (state: string) => rows?.find((row) => row.part === key && (row.state === state || row.state === ''));
-    const shown = rows === null ? states : states.filter((state) => rowOf(state) !== undefined);
+    const added = (rows ?? []).filter((row) => row.part === key && !states.includes(row.state));
+    const shown =
+      rows === null
+        ? states
+        : [...states.filter((state) => rowOf(state) !== undefined), ...added.map((row) => row.state)];
 
     return shown.flatMap((state) =>
-      MERGE_COLUMNS.map((column): CanvasFrame => {
+      MERGE_COLUMNS.filter((column) => rowOf(state)?.missing !== column).map((column): CanvasFrame => {
         const rowError = rowOf(state)?.error;
         const address: PartAddress = {
           port,

@@ -4,13 +4,17 @@ import { FrameOutline } from '../components/design-canvas/canvas-pin';
 
 export type CompareRect = { x: number; y: number; width: number; height: number };
 
-/** One state of a part that shows the sketch target, with the target's outlines now and after the merge. */
+/**
+ * One state of a part that shows the sketch target, with the target's outlines now and after the merge. `missing`
+ * names the side that has no such state.
+ */
 export type CompareRow = {
   part: string;
   state: string;
   preset?: string;
   width?: number;
   outlines: { now: CompareRect[]; merged: CompareRect[] };
+  missing?: MergeColumn;
   error?: string;
 };
 

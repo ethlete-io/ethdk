@@ -242,6 +242,34 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual(['components/card']);
   });
 
+  it('compares a merge that changes only the sketched page, and draws a state only the variant has after the merge', async () => {
+    const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
+    const added = { part: 'pages/home', state: 'added', missing: 'now', outlines: { now: [], merged: [] } };
+    const { fixture, root } = await render(SKETCH, (url) => {
+      if (url.includes('/__design/sketch-preview')) return json({ changed: ['pages/home'], affected: [] });
+      if (url.includes('/__design/sketch-compare'))
+        return json({ target: SKETCH.target, variant: 'a', changed: [added], unchanged: [] });
+      if (url.includes('/__design/sketch-decision')) return json({});
+
+      return noComments(url);
+    });
+
+    fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
+    await settle(fixture);
+    fixture.componentInstance['pickForMerge']('a');
+    await settle(fixture);
+
+    expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
+
+    const frames = [...root.querySelectorAll('ethlete-merge iframe')].map(
+      (frame) => new URL(frame.getAttribute('src') ?? ''),
+    );
+
+    expect(frames.map((frame) => [frame.searchParams.get('state'), frame.searchParams.get('variant')])).toEqual([
+      ['added', 'a'],
+    ]);
+  });
+
   it('shows a merge refusal and a merge failure under the Merge button', async () => {
     let refusal: { status: number; body: unknown } = {
       status: 422,
