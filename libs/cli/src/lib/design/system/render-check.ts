@@ -16,6 +16,7 @@ import {
   PLAIN_CONTROL_SELECTOR,
   SDK_CONTROLS,
 } from './complete';
+import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
@@ -409,6 +410,7 @@ ${CONTRAST_STATEMENTS}
       const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
+${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
 

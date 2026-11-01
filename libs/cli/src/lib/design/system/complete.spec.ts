@@ -529,6 +529,34 @@ describe('completenessGapsOf', () => {
     ]);
   });
 
+  it('asks no interaction cell of a row whose rest state draws the control disabled', () => {
+    const frames = [
+      frame('rest'),
+      frame('off', { controls: [{ id: 'more', forced: [], disabled: true }] }),
+      frame('hovered', { controls: [{ id: 'more', forced: [{ interaction: 'hover', differs: true }] }] }),
+      frame('pressed', { controls: [{ id: 'more', forced: [{ interaction: 'active', differs: true }] }] }),
+      frame('focused', { controls: [{ id: 'more', forced: [{ interaction: 'focus-visible', differs: true }] }] }),
+      frame('open', { surfaces: [{ id: 'more.body', shown: true }] }),
+    ];
+    const gridGaps = (rows: unknown, seen = frames) =>
+      completenessGapsOf({
+        part: 'components/a',
+        controls: DECLARED,
+        states: [...STATES, 'off'],
+        frames: seen,
+        reviewed: true,
+        grid: { columns: COLUMNS, rows },
+      })
+        .filter((gap) => gap.code === 'CONTROL-GRID-MISSING')
+        .map(completenessGapLineOf);
+    const rows = { rest: ROWS.rest, off: { rest: 'off' } };
+
+    expect(gridGaps(rows)).toEqual([]);
+    expect(gridGaps(rows, [frame('rest'), ...frames.slice(2)])).toEqual([
+      expect.stringContaining('its grid draws no state in off hover, off active, off focus-visible'),
+    ]);
+  });
+
   it('fails a stale declaration, an undrawn control and an unknown marker', () => {
     const gaps = completenessGapsOf({
       part: 'components/a',

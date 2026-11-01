@@ -177,6 +177,45 @@ describe('renderIssuesOf', () => {
     expect('hints' in complete && complete.hints?.some((hint) => hint.includes('OPTION-VALUE-MISSING'))).toBe(true);
   }, 120_000);
 
+  it('flags a disabled control whose hover or active look differs, and not one with the guard', async (context) => {
+    const button = '<button disabled style="border: 1px solid">Save</button>';
+    const target = checkout({
+      'components/open': { body: button, css: 'button { background: white; } button:hover { background: red; }' },
+      'components/guarded': {
+        body: button,
+        css: 'button { background: white; } button:not([disabled]):hover { background: red; }',
+      },
+      'components/active-open': {
+        body: '<button aria-disabled="true">Save</button>',
+        css: 'button:active { transform: scale(0.9); }',
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'DISABLED-INTERACTION')
+        .map((issue) => [issue.part, issue.detail])
+        .sort(),
+    ).toEqual([
+      [
+        'components/active-open',
+        'hover/active styles apply while disabled - add a :not([disabled]) guard (changes transform)',
+      ],
+      [
+        'components/open',
+        'hover/active styles apply while disabled - add a :not([disabled]) guard (changes backgroundColor)',
+      ],
+    ]);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};

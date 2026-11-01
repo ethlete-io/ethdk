@@ -132,8 +132,13 @@ const requiredInteractionsOf = (control: DeclaredControl) => [
   ]),
 ];
 
-const gridGapOf = (options: { grid: unknown; states: string[]; interactions: string[] }) => {
-  const { grid, states, interactions } = options;
+const gridGapOf = (options: {
+  grid: unknown;
+  states: string[];
+  interactions: string[];
+  disabledStates?: ReadonlySet<string>;
+}) => {
+  const { grid, states, interactions, disabledStates = new Set<string>() } = options;
   const fix = `draw its states with interactionRows, which gives the grid a column per interaction (${interactions.join(', ')})`;
 
   if (!isRecord(grid) || !Array.isArray(grid['columns']) || !isRecord(grid['rows']))
@@ -145,13 +150,15 @@ const gridGapOf = (options: { grid: unknown; states: string[]; interactions: str
   if (missing.length > 0) return `its grid has no column ${missing.join(', ')} - ${fix}`;
 
   const holes = Object.entries(grid['rows']).flatMap(([row, cells]) =>
-    interactions
-      .filter((interaction) => {
-        const state = isRecord(cells) ? cells[interaction] : undefined;
+    isRecord(cells) && typeof cells['rest'] === 'string' && disabledStates.has(cells['rest'])
+      ? []
+      : interactions
+          .filter((interaction) => {
+            const state = isRecord(cells) ? cells[interaction] : undefined;
 
-        return typeof state !== 'string' || !states.includes(state);
-      })
-      .map((interaction) => `${row} ${interaction}`),
+            return typeof state !== 'string' || !states.includes(state);
+          })
+          .map((interaction) => `${row} ${interaction}`),
   );
 
   return holes.length > 0 ? `its grid draws no state in ${holes.join(', ')} - ${fix}` : null;
@@ -736,7 +743,12 @@ export const completenessGapsOf = (options: {
       });
 
     const interactions = control.part === null && !part.startsWith('pages/') ? requiredInteractionsOf(control) : [];
-    const gridGap = interactions.length > 0 ? gridGapOf({ grid, states, interactions }) : null;
+    const disabledStates = new Set(
+      frames
+        .filter((frame) => frame.interaction === null && frame.controls.some((seen) => seen.id === id && seen.disabled))
+        .map((frame) => frame.state),
+    );
+    const gridGap = interactions.length > 0 ? gridGapOf({ grid, states, interactions, disabledStates }) : null;
 
     if (gridGap) gaps.push({ code: 'CONTROL-GRID-MISSING', target: `${part}.${id}`, detail: gridGap });
 
