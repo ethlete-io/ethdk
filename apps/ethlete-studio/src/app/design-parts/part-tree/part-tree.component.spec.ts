@@ -78,4 +78,40 @@ describe('PartTreeComponent', () => {
     expect(activated).toEqual(['Foundations']);
     expect(labelsOf(element).slice(0, 3)).toEqual(['Foundations', 'colors', 'Components']);
   });
+
+  it('uses own keys, a closed part with states and an own warning title, and emits the open keys', async () => {
+    const fixture = await render([
+      {
+        title: 'Components',
+        key: 'components',
+        open: true,
+        parts: [
+          {
+            name: 'select',
+            key: 'components/select',
+            open: false,
+            warns: 'LOAD: broken',
+            states: [{ name: 'open', key: 'frame:select open' }],
+          },
+        ],
+      },
+    ]);
+    const element = fixture.nativeElement as HTMLElement;
+    const activated: string[] = [];
+    const expanded: (readonly string[])[] = [];
+
+    fixture.componentInstance.activate.subscribe((key) => activated.push(key));
+    fixture.componentInstance.expandedChange.subscribe((keys) => expanded.push(keys));
+
+    expect(labelsOf(element)).toEqual(['Components', 'select']);
+    expect(element.querySelector('[title="LOAD: broken"]')).not.toBeNull();
+
+    rowsOf(element)[1]?.click();
+    await fixture.whenStable();
+    rowsOf(element)[2]?.click();
+
+    expect(labelsOf(element)).toEqual(['Components', 'select', 'open']);
+    expect(expanded.at(-1)).toEqual(['components', 'components/select']);
+    expect(activated).toEqual(['components/select', 'frame:select open']);
+  });
 });

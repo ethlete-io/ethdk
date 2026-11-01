@@ -2,17 +2,21 @@ import { Component, computed, input, linkedSignal, output, ViewEncapsulation } f
 import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
 
-export type PartTreeState = { name: string; inert?: boolean; selected?: boolean };
+export type PartTreeState = { name: string; key?: string; inert?: boolean; selected?: boolean };
 
 export type PartTreePart = {
   name: string;
-  warns?: boolean;
+  key?: string;
+  /** A string is the warning's own title instead of `warningTitle`. */
+  warns?: boolean | string;
   leaf?: boolean;
   selected?: boolean;
+  /** Whether the part shows its states; without it, a part with `states` is open. */
+  open?: boolean;
   states?: PartTreeState[];
 };
 
-export type PartTreeLayer = { title: string; open: boolean; parts: PartTreePart[] };
+export type PartTreeLayer = { title: string; key?: string; open: boolean; parts: PartTreePart[] };
 
 type RowMarks = Pick<TreeRow, 'kind' | 'selected' | 'inert' | 'warning'>;
 
@@ -27,6 +31,7 @@ const keyOf = (...names: string[]) => names.join('/');
       [(expandedValues)]="expandedValues"
       [dataSource]="dataSource()"
       [attr.aria-label]="label()"
+      (expandedValuesChange)="expandedChange.emit($event)"
       (nodeActivate)="activate.emit($event.value)"
       class="flex flex-col gap-px"
       selectionMode="none"
@@ -60,8 +65,11 @@ export class PartTreeComponent {
   public label = input('Designsystem');
   public warningTitle = input('Render-Check: 1 Warnung');
 
-  /** The key of an activated row: `layer`, `layer/part` or `layer/part/state`. */
+  /** The key of an activated row: its own `key`, else `layer`, `layer/part` or `layer/part/state`. */
   public activate = output<string>();
+
+  /** The keys of the open layers and parts after the user opened or closed one. */
+  public expandedChange = output<readonly string[]>();
 
   protected model = computed(() => {
     const children = new Map<string | null, TreeNode<string>[]>();
@@ -70,7 +78,7 @@ export class PartTreeComponent {
     const warning = this.warningTitle();
 
     const stateNode = (partKey: string, state: PartTreeState): TreeNode<string> => {
-      const value = keyOf(partKey, state.name);
+      const value = state.key ?? keyOf(partKey, state.name);
 
       marks.set(value, { kind: 'leaf', inert: state.inert, selected: state.selected });
 
@@ -78,17 +86,17 @@ export class PartTreeComponent {
     };
 
     const partNode = (layerKey: string, part: PartTreePart): TreeNode<string> => {
-      const value = keyOf(layerKey, part.name);
+      const value = part.key ?? keyOf(layerKey, part.name);
 
       marks.set(value, {
         kind: part.leaf ? 'leaf' : 'part',
         selected: part.selected,
-        warning: part.warns ? warning : undefined,
+        warning: typeof part.warns === 'string' ? part.warns : part.warns ? warning : undefined,
       });
 
       if (part.leaf) return { value, label: part.name, isLeaf: true };
 
-      if (part.states) open.push(value);
+      if (part.open ?? part.states !== undefined) open.push(value);
       children.set(
         value,
         (part.states ?? []).map((state) => stateNode(value, state)),
@@ -100,14 +108,16 @@ export class PartTreeComponent {
     children.set(
       null,
       this.layers().map((layer) => {
-        marks.set(layer.title, { kind: 'group' });
-        if (layer.open) open.push(layer.title);
+        const value = layer.key ?? layer.title;
+
+        marks.set(value, { kind: 'group' });
+        if (layer.open) open.push(value);
         children.set(
-          layer.title,
-          layer.parts.map((part) => partNode(layer.title, part)),
+          value,
+          layer.parts.map((part) => partNode(value, part)),
         );
 
-        return { value: layer.title, label: layer.title };
+        return { value, label: layer.title };
       }),
     );
 
