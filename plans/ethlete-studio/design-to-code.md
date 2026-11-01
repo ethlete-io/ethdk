@@ -589,6 +589,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     state list must be a valid instance of the headless part, so the app can use the part; review in Tom's round.
 22. `elements/shell-main` shows a stale go after the shell-project-switch changes (Impl Q35/Q44), because it embeds
     that part. Lesson candidate: a change to an embedded part makes the go of every part that embeds it stale.
+23. studio-menu open states differ 35-39 px, only on the pane's rounded corners: the same corner antialias as finding 3
+    (Impl Q13), now in a second part. Lesson: one shared rule for SDK pane corners in compare, not a fix per part.
+24. shell-project-switch: the app opens the menu below the button and 8 px wider (256x223) than the design (above,
+    248x223). Lesson candidate: the design states fix the overlay position and width, but the app's overlay config
+    does not read them; the builder aligns the app like the shell-main picker.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
