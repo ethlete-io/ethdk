@@ -1269,6 +1269,20 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      frame, so the narrow column hid the button; presses now use the frame size. Why no check caught it: earlier pages
      shot on state actions at frame size, and none had a custom-element canvas or an SDK field with an app-only
      aria-label.
+129. The System fit put the frame about 260 px off, first under the side panel, then too far right (builder,
+     2026-11-02). Design b55c47899: the fit subtracted `frame.offsetLeft`, which already held the inset. App 3ba355aa2:
+     once the strip is transformed, Chromium makes it the frame's offsetParent, so the second fit run subtracted the
+     strip offset twice; offsets now walk the offsetParent chain (spec bites: 638 vs 378 px). Why no check caught it:
+     compare checks design against app, so a fit formula wrong on both sides passes; no check sees a frame under an
+     overlay panel; jsdom has no layout. Tool fixes (after MVP): an OCCLUDED check (a frame box under a fixed shell
+     panel, any project); compare waits for overlay enter animations before the shot (one fit run shot 118486 px with
+     the open-points popover missing); one shared, tested offset helper for fit and camera code.
+
+- Impl Q-A canvas-frames canvas (grill, 2026-11-02, from Impl Q59 and rule 2): the canvas-frames design draws its
+  canvas through `canvasViewport()` from components/canvas-viewport, so design and app share one focusable canvas. Needs
+  Tom's go on canvas-frames after a shot.
+- Impl Q-B system action marks (grill, 2026-11-02, no pixel change): pages/system adds `data-et-action` on the
+  open-points chip and "Prompt kopieren"; Q15 keeps the go.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
