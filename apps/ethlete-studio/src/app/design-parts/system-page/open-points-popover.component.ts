@@ -7,7 +7,7 @@ const SHOWN_LINES = 3;
 @Component({
   selector: 'ethlete-open-points-popover',
   template: `
-    <div class="w-96 text-ui-sm">
+    <div class="w-96 font-ui text-ui-sm">
       <header
         class="flex items-baseline gap-space-2 border-b border-(--et-surface-border-solid) px-space-3 pt-space-3 pb-space-2"
       >
