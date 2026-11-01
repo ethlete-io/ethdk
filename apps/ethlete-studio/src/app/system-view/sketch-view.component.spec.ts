@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
@@ -226,7 +227,7 @@ describe('SketchViewComponent', () => {
     expect(frames.map((frame) => frame.searchParams.get('part'))).toEqual(['pages/home', 'pages/home']);
     expect(frames.map((frame) => frame.searchParams.get('variant'))).toEqual([null, 'a']);
 
-    buttonNamed(root, 'Back to sketch')?.click();
+    buttonNamed(root, STUDIO_LABELS.merge.back)?.click();
     await settle(fixture);
 
     expect(root.querySelector('ethlete-merge')).toBeNull();
@@ -239,6 +240,40 @@ describe('SketchViewComponent', () => {
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' }, 'sketch-merge': {} });
     expect(completed).toEqual(['components/card']);
+  });
+
+  it('shows a merge refusal and a merge failure under the Merge button', async () => {
+    let refusal: { status: number; body: unknown } = {
+      status: 422,
+      body: { error: 'stale', changed: ['components/card'], rebase: 'design sketch rebase' },
+    };
+    const { fixture, root } = await render(SKETCH, (url) => {
+      if (url.includes('/__design/sketch-merge'))
+        return Promise.resolve(new Response(JSON.stringify(refusal.body), { status: refusal.status }));
+      if (url.includes('/__design/sketch-decision')) return json({});
+
+      return noComments(url);
+    });
+    const errorText = () => root.querySelector('ethlete-merge [role="alert"]')?.textContent?.trim();
+    const completed: string[] = [];
+
+    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.componentInstance['pickForMerge']('a');
+    await settle(fixture);
+
+    expect(errorText()).toBeUndefined();
+
+    buttonNamed(root, 'Merge')?.click();
+    await settle(fixture);
+
+    expect(errorText()).toBe(STUDIO_LABELS.merge.needsRebase(['components/card']));
+
+    refusal = { status: 500, body: { error: 'boom' } };
+    buttonNamed(root, 'Merge')?.click();
+    await settle(fixture);
+
+    expect(errorText()).toBe(STUDIO_LABELS.merge.failed);
+    expect(completed).toEqual([]);
   });
 
   it('discards the sketch from Verwerfen', async () => {

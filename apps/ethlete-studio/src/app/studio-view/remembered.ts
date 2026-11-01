@@ -36,9 +36,7 @@ export type ViewState = {
 
 /**
  * `rounds` holds whether the user opened (`true`) or folded (`false`) a round, by round key, for the sketch created
- * at `roundsFor`, and `states` the same for a state no shown variant changes, by state. `changedAreas` holds whether
- * the user showed (`true`) or hid (`false`) the changed area of a round, by round key, for the sketch created at
- * `changedAreasFor`.
+ * at `roundsFor`, and `states` the same for a state no shown variant changes, by state.
  */
 export type SketchViewPick = {
   size?: string;
@@ -47,8 +45,6 @@ export type SketchViewPick = {
   rounds?: Record<string, boolean>;
   roundsFor?: string;
   states?: Record<string, boolean>;
-  changedAreas?: Record<string, boolean>;
-  changedAreasFor?: string;
 };
 
 export type FrameSize = { width?: number; height?: number };
@@ -79,10 +75,8 @@ const sketchViewMap = (value: unknown): Record<string, SketchViewPick> | undefin
     Object.entries(value as Record<string, unknown>).flatMap(([key, pick]) => {
       if (!pick || typeof pick !== 'object') return [];
 
-      const { size, interaction, merge, rounds, roundsFor, states, changedAreas, changedAreasFor } =
-        pick as SketchViewPick;
+      const { size, interaction, merge, rounds, roundsFor, states } = pick as SketchViewPick;
       const openRounds = openFlags(rounds);
-      const shownAreas = openFlags(changedAreas);
       const openStates = openFlags(states);
       const valid: SketchViewPick = {
         ...(typeof size === 'string' && { size }),
@@ -92,9 +86,6 @@ const sketchViewMap = (value: unknown): Record<string, SketchViewPick> | undefin
           Object.keys(openRounds).length > 0 &&
           typeof roundsFor === 'string' && { rounds: openRounds, roundsFor }),
         ...(openStates && Object.keys(openStates).length > 0 && { states: openStates }),
-        ...(shownAreas &&
-          Object.keys(shownAreas).length > 0 &&
-          typeof changedAreasFor === 'string' && { changedAreas: shownAreas, changedAreasFor }),
       };
 
       return Object.keys(valid).length === 0 ? [] : [[key, valid]];

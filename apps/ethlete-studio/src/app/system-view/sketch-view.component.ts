@@ -17,6 +17,7 @@ import {
   ListedPart,
   ListedProduct,
   ListedSketch,
+  MergeNeedsRebaseError,
   SketchAddress,
   decideSketch$,
   discardSketch$,
@@ -60,6 +61,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [changed]="changed()"
         [selected]="selected()"
         [unchangedStates]="unchangedStates()"
+        [error]="mergeError()"
         [shotTemplate]="mergeShot"
         [product]="shell().product"
         [products]="shell().products"
@@ -193,6 +195,11 @@ export class SketchViewComponent {
   protected mode = linkedSignal<Mode>(() => (this.remembered().merge ? 'merge' : 'sketches'));
 
   protected mergeVariant = linkedSignal<string | null>(() => this.picked());
+
+  protected mergeError = linkedSignal<string | null, string | null>({
+    source: this.mergeVariant,
+    computation: () => null,
+  });
 
   private previewReading = toSignal(
     toObservable(
@@ -420,11 +427,21 @@ export class SketchViewComponent {
     if (this.busy()) return;
 
     this.merging.emit(true);
+    this.mergeError.set(null);
     this.run(
       'merge',
       decideSketch$(address, { kind: 'pick', variant }).pipe(
         concatMap(() => mergeSketch$(address)),
         tap(() => this.mergeComplete.emit(address.sketch)),
+        catchError((error: unknown) => {
+          this.mergeError.set(
+            error instanceof MergeNeedsRebaseError
+              ? STUDIO_LABELS.merge.needsRebase(error.changed)
+              : STUDIO_LABELS.merge.failed,
+          );
+
+          return of(null);
+        }),
         finalize(() => this.merging.emit(false)),
       ),
     );
