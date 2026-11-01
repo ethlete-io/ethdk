@@ -301,3 +301,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   design-only class needs no hand-written `@source inline` line in the app's `styles.css`.
 - After the MVP (Tom, 2026-11-01, Impl Q51): one shared compare rule for the corner antialias of SDK panes, so no part
   needs the `translate3d` design fix (findings 3 and 23).
+- After the MVP (Tom, 2026-11-01, Impl Q55): the sketch-view features the new sketches and merge pages drop: reject and
+  reopen a variant, notes, diff lists. Decide in Tom's round whether they come back and where the design shows them.

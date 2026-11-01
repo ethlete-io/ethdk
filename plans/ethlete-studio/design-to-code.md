@@ -652,3 +652,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   project picker (Impl Q35): absolute above the trigger, `w-62` (248 px), same offset; go `--by tom`. The app does not
   change. The cli harness leaves room above the host for a part whose surface opens above, so the overlay does not
   flip. Finding 24.
+- Impl Q53 compare slots on pages (Tom, 2026-11-01): compare empties only the slots the compared part declares itself,
+  never the slots of embedded parts; for `pages/*` it empties nothing. cli fix with a changeset and a test that fails
+  without it. Until then a page 0 px is no proof. Finding 27.
+- Impl Q54 sketches and merge pages (Tom, 2026-11-01): build presentational parts `design-parts/sketches/` and
+  `design-parts/merge/` (data in, events out) that reuse the ready parts, as for start and inbox; re-point both
+  `implements` links, go `--by tom`; live swap later. Finding 28.
+- Impl Q55 features the design drops (Tom, 2026-11-01): reject/reopen, notes and diff lists are out of the MVP. The new
+  parts do not build them, and the live swap does not need to keep them. They come back after the full MVP is
+  implemented (backlog). Keep the MVP strict, no scope growth. Finding 28.
+- Impl Q56 inventory frame (Tom, 2026-11-01): the inventory design draws a plain placeholder box for the frame in place
+  of the `embedPage('pages/flows')` iframe; go `--by tom`. The app does not embed the flows view. Finding 29.
