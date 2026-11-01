@@ -917,6 +917,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     a command for Tom needs a tested path, not only an agent-proof refusal. Tool change (builder work): the message
     says "run it in your own terminal, not through an agent shell"; the go list hand-off gives the exact command for
     a real terminal.
+80. The Impl Q99 merge handed to Tom failed: `design sketch merge pages/system --by tom --product studio` ->
+    "pages/system is in progress - mark it ready before a merge" (Tom, 2026-11-01). Nobody checked the
+    precondition before the hand-off. Lesson: every command for Tom must pass a dry run of its checks first, or Tom
+    becomes the test. Tool change (builder work): the batch file takes sketch merges too, and `--batch` checks
+    every precondition (ready, product, go state) before the prompt; the merge refusal names the command that marks
+    the sketch ready.
 78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
