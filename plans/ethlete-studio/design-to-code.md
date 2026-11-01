@@ -923,7 +923,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     becomes the test. Tool change (builder work): the batch file takes sketch merges too, and `--batch` checks
     every precondition (ready, product, go state) before the prompt; the merge refusal names the command that marks
     the sketch ready.
-80. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+80. Tom on the Impl Q121-Q124 round (2026-11-01): "wir sind mittlerweile bei so fragen angekommen die kein mensch
+    mehr versteht", and "nichts funktioniert hier" after two failed hand-off commands (findings 79, 80). The round
+    asked Tom about tool internals (go gates, matrix code copies) that he cannot judge from what he sees. Lesson: Tom
+    decides what he sees and does in Studio; the builder decides tool internals itself (builder default, recorded as a
+    finding) and Tom only gets them in the feedback round. Every command handed to Tom must be run once by an agent
+    up to its Tom-only step first.
+81. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
     decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
@@ -1194,3 +1200,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   Done in 4f571660e under the name `project-picker-focus-visible`: `targetStateOf` maps a key press to
   `<target state>-focus-visible`, and the trigger's target in shell-main is `project-picker` (`open` there is the
   closed-picker state).
+- Impl Q121 ready needs a current go (Tom, 2026-11-01): `markPartReady` refuses a part whose design changed since its
+  go ("changed since its go - it needs a new go first"). `design accept` gets no go gate: accept approves a direct
+  design edit before its go. Corrects Impl Q118. Finding 78.
+- Impl Q122 "Aktuell" with only placeholders (Tom, 2026-11-01): when the visible rows of the "Aktuell" column hold
+  no drawn frame, Studio opens the first folded unchanged row by default. No nearest-state reference frame.
+  Finding 77.
+- Impl Q123 Q119 details (Tom, 2026-11-01): keep as built. Uncommitted design files are a note in the confirm, not a
+  refusal; `verify` is only shown; a single `accept --by tom` takes free text, only batch entries need "Impl Qnn".
+- Impl Q124 duplicate matrix logic (Tom, 2026-11-01): keep the CLI copy (aktuell-placeholders.ts) until the MVP;
+  after the MVP move the matrix into one module that app and CLI both import. Backlog.
