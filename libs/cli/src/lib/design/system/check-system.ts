@@ -123,7 +123,7 @@ const tallyOf = (tally: Tally | undefined, at: { product: string; part: string }
 const countText = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 /**
- * One line per part with findings, then one line with the count of parts without a problem, warning or open point; with `only`, one line for that part
+ * One line per part with findings, then one line with the count of clean parts; with `only`, one line for that part
  * even when it is clean.
  */
 export const summaryText = (options: { product: string; parts: string[]; tally: Tally; only?: string }): string[] => {
@@ -444,9 +444,11 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
     if (!entry) continue;
 
-    const { parts } = resolveProduct({ target: options.target, name, config: entry });
+    const own = resolveProduct({ target: options.target, name, config: entry }).parts.filter(
+      (part) => part.origin !== 'base',
+    );
 
-    summaryText({ product: name, parts: parts.map(partKeyOf), tally, only: options.part }).forEach((line) =>
+    summaryText({ product: name, parts: own.map(partKeyOf), tally, only: options.part }).forEach((line) =>
       console.log(line),
     );
   }

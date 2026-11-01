@@ -422,7 +422,7 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
-  it('ends with one line per part with findings and the count of the clean parts, base parts included', async () => {
+  it('ends with one line per part with findings and the count of the clean parts', async () => {
     const target = acme();
     const lines = output();
 
@@ -431,9 +431,9 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
       'PART acme components/button: 3 open points',
-      'PART acme components/card: 3 open points',
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
-      'PARTS acme: 3 of 6 clean',
+      'PART acme components/card: 3 open points',
+      'PARTS acme: 2 of 4 clean',
     ]);
   }, 60_000);
 
