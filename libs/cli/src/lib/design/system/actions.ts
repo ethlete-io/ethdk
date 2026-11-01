@@ -80,6 +80,78 @@ export const parseAction = (value: string | null, states: readonly string[]): De
     : `data-et-action="${value}" names no state of the part - its states: ${states.join(', ')}`;
 };
 
+/**
+ * A script over a design picture that answers, per `data-et-action-probe`, the embedded parts that draw the element,
+ * innermost first: each `data-et-part` root around it whose markup was not passed into it through props, up to `part`.
+ */
+export const embeddedOwnersScriptOf = (part: string) => `(() => {
+  const keysOf = (element, name) => (element.getAttribute(name) ?? '').split(' ').filter(Boolean);
+  const owners = {};
+
+  for (const element of document.querySelectorAll('[data-et-action-probe]')) {
+    const slotted = keysOf(element, 'data-et-slot');
+    const chain = [];
+
+    walk: for (let at = element; at; at = at.parentElement)
+      for (const key of keysOf(at, 'data-et-part')) {
+        const index = slotted.indexOf(key);
+
+        if (index >= 0) slotted.splice(index, 1);
+        else if (key === ${JSON.stringify(part)}) break walk;
+        else if (!chain.includes(key)) chain.push(key);
+      }
+
+    owners[element.getAttribute('data-et-action-probe')] = chain;
+  }
+
+  return owners;
+})()`;
+
+/**
+ * Where a declared action resolves: an output against the components of the embedded parts that draw the element and
+ * of the page; a state against the innermost of those parts that has it, the page last.
+ */
+export const resolveActionOf = (options: {
+  value: string | null;
+  owners: { part: string; states: readonly string[] }[];
+  page: { part: string; states: readonly string[] };
+}): { action: DeclaredAction | string | null; owner: string } => {
+  const { value, owners, page } = options;
+  const trimmed = value?.trim() ?? '';
+  const owner = trimmed.startsWith('emit:')
+    ? page
+    : (owners.find((candidate) => candidate.states.includes(trimmed)) ?? page);
+
+  return { action: parseAction(value, owner.states), owner: owner.part };
+};
+
+/** The element selector of the Angular component `source` declares, or `null` without one. */
+export const componentSelectorOf = (source: string) =>
+  /@Component\s*\(\s*\{[\s\S]*?\bselector\s*:\s*(['"`])([^'"`]+)\1/u.exec(source)?.[2]?.trim() ?? null;
+
+/**
+ * A script that records each output the components under the `selectors` fire in `window.__etEmbeddedEmits`, and
+ * answers how many components it listens to; `-1` without `window.ng` (a production build).
+ */
+export const listenEmbeddedScriptOf = (selectors: string[]) => `(() => {
+  window.__etEmbeddedEmits = [];
+  if (!window.ng) return -1;
+  const listened = new Set();
+
+  for (const host of document.querySelectorAll(${JSON.stringify(selectors.join(', '))})) {
+    const component = window.ng.getComponent(host);
+
+    if (!component || listened.has(component)) continue;
+
+    listened.add(component);
+
+    for (const [output, property] of Object.entries(window.ng.getDirectiveMetadata(component)?.outputs ?? {}))
+      component[property]?.subscribe?.(() => window.__etEmbeddedEmits.push(output));
+  }
+
+  return listened.size;
+})()`;
+
 /** The state a key press on an element must reach: the declared state's `-focus-visible` row when the part draws one. */
 export const targetStateOf = (options: { state: string; input: ActionInput; states: readonly string[] }) => {
   const { state, input, states } = options;
@@ -89,7 +161,7 @@ export const targetStateOf = (options: { state: string; input: ActionInput; stat
 };
 
 /** The design and app elements of one state, paired by key and occurrence. */
-export const pairElementsOf = (options: { design: ActionElement[]; app: ActionElement[] }) => {
+export const pairElementsOf = <TDesign extends ActionElement>(options: { design: TDesign[]; app: ActionElement[] }) => {
   const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
   const designs = new Map(options.design.map((element) => [idOf(element), element]));
   const apps = new Set(options.app.map(idOf));

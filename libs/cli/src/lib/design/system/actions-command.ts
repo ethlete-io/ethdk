@@ -1,7 +1,7 @@
-import { mkdtempSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
@@ -14,15 +14,18 @@ import {
   ActionInput,
   ActionOutcome,
   actionScanScriptOf,
+  componentSelectorOf,
   elementNameOf,
+  embeddedOwnersScriptOf,
   embeddersOf,
+  listenEmbeddedScriptOf,
   pairElementsOf,
-  parseAction,
+  resolveActionOf,
   targetStateOf,
 } from './actions';
 import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
-import { checkLiveActions, liveLineOf } from './live-actions';
+import { checkLiveActions, liveLineOf, liveStateCompareOf } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
 import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
@@ -40,6 +43,7 @@ import {
 } from './part-compare';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
+import { partLinkOf } from './sketch/part-definition';
 import { parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -79,6 +83,11 @@ const harnessMountedOf = async (page: Page, timeout: number) => {
   await page.locator(`${HARNESS_HOST_SELECTOR} > *`).first().waitFor({ state: 'attached', timeout });
 };
 
+const expandedScanOf = async (page: Page, roots: string[]) =>
+  (await page.evaluate(
+    `${actionScanScriptOf(roots)}.map((found) => ({ key: found.key, expanded: document.querySelector('[data-et-action-probe="' + found.probe + '"]')?.getAttribute('aria-expanded') ?? null }))`,
+  )) as { key: string; expanded: string | null }[];
+
 const shotOf = async (options: { page: Page; size: DesignPreset | null; room: boolean; timeout: number }) => {
   const { page, size, room, timeout } = options;
   const host = page.locator(HARNESS_HOST_SELECTOR).first();
@@ -108,7 +117,9 @@ const shotOf = async (options: { page: Page; size: DesignPreset | null; room: bo
 
 /**
  * Loads the harness page of `start`, clicks its opener, then presses `input` on the element `pick` names and returns
- * the outputs it fired, whether its keydown default was prevented, and the host shot when `shoot` asks for one.
+ * the outputs it fired, whether its keydown default was prevented, and the host shot when `shoot` asks for one. The
+ * outputs include those of the components under the `listen` selectors; `expanded` adds each element's
+ * `aria-expanded` after the press.
  */
 export const runActionInput = async (options: {
   browser: Browser;
@@ -118,8 +129,10 @@ export const runActionInput = async (options: {
   input: ActionInput;
   shoot: { size: DesignPreset | null; room: boolean } | null;
   timeout: number;
+  listen?: string[];
+  expanded?: boolean;
 }) => {
-  const { browser, url, start, pick, input, shoot, timeout } = options;
+  const { browser, url, start, pick, input, shoot, timeout, listen = [], expanded = false } = options;
   const room = !!shoot && !shoot.size && shoot.room;
   const viewport = viewportOf(shoot?.size ?? null);
   const context = await browser.newContext({
@@ -160,6 +173,8 @@ export const runActionInput = async (options: {
 
     await page.evaluate('window.__etPrevented = []; (window.__etDesignEmits ?? []).length = 0;');
 
+    const listened = listen.length > 0 ? ((await page.evaluate(listenEmbeddedScriptOf(listen))) as number) : 0;
+
     const target = page.locator(probeOf(element.probe));
 
     if (input === 'click') {
@@ -175,10 +190,12 @@ export const runActionInput = async (options: {
     await settle(page, timeout);
 
     const emitted = (await page.evaluate('(window.__etDesignEmits ?? []).map((emit) => emit.output)')) as string[];
+    const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
     const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
+    const after = expanded ? await expandedScanOf(page, roots) : null;
     const app = shoot ? await shotOf({ page, size: shoot.size, room, timeout }) : null;
 
-    return { emitted, prevented, app };
+    return { emitted: [...emitted, ...embedded], prevented, app, ...(after && { after }) };
   } finally {
     await context.close();
   }
@@ -290,11 +307,87 @@ export const checkActions = async (options: {
 
           await page.setContent(markups.get(state) ?? '');
 
-          return await scanOf(page, ['body']);
+          const found = await scanOf(page, ['body']);
+          const owners = (await page.evaluate(embeddedOwnersScriptOf(part))) as Record<string, string[]>;
+
+          return found.map((element) => ({ ...element, owners: owners[String(element.probe)] ?? [] }));
         } finally {
           await context.close();
         }
       });
+    const embedded = new Map<string, Promise<{ part: string; states: string[]; selector: string | null }>>();
+    const embeddedOf = (key: string) => {
+      const cached =
+        embedded.get(key) ??
+        (async () => {
+          const found = product.parts.find((candidate) => partKeyOf(candidate) === key);
+          const loaded = found
+            ? (
+                (await server.ssrLoadModule(productModuleIdOf({ file: found.file, product: product.name }))) as {
+                  default?: { states?: unknown };
+                }
+              ).default?.states
+            : undefined;
+          const link = found ? partLinkOf(found.source) : null;
+          const component =
+            link?.kind === 'component' ? link.path : link?.kind === 'route' ? (link.component ?? null) : null;
+          const file = component === null ? null : resolve(target, component);
+
+          return {
+            part: key,
+            states: loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.keys(loaded) : [],
+            selector: file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null,
+          };
+        })();
+
+      embedded.set(key, cached);
+
+      return cached;
+    };
+    const expectedCache = new Map<string, Promise<Record<string, string>>>();
+    const expectedOf = (owner: string, state: string) => {
+      const key = `${owner}\n${state}`;
+      const cached =
+        expectedCache.get(key) ??
+        (async () => {
+          const ownerFrame = compareFrameOf({ presets: product.presets, part: owner, preset: null });
+          const size = typeof ownerFrame === 'string' ? null : ownerFrame.size;
+          const picture = await shooter.pictureOf({
+            product: product.name,
+            part: owner,
+            state,
+            preset: typeof ownerFrame === 'string' ? null : ownerFrame.preset,
+            width: null,
+            sketch: null,
+            interaction: null,
+            bare: true,
+            emptySlots: true,
+            params: new URLSearchParams(),
+          });
+
+          return queue.run(async (browser) => {
+            const context = await browser.newContext({ viewport: viewportOf(size) });
+
+            try {
+              const page = await context.newPage();
+
+              await page.setContent(picture.markup ?? '');
+
+              return Object.fromEntries(
+                (await expandedScanOf(page, ['body'])).flatMap(({ key, expanded }) =>
+                  expanded === null ? [] : [[key, expanded]],
+                ),
+              );
+            } finally {
+              await context.close();
+            }
+          });
+        })();
+
+      expectedCache.set(key, cached);
+
+      return cached;
+    };
     const lines: Line[] = [];
     let dir: string | null = null;
 
@@ -413,7 +506,12 @@ export const checkActions = async (options: {
             failure: messageOf(error).split('\n')[0] ?? '',
           });
         }
-        const action = drawn ? parseAction(drawn.action, names) : null;
+        const owners = drawn ? await Promise.all(drawn.owners.map(embeddedOf)) : [];
+        const { action, owner } = drawn
+          ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names } })
+          : { action: null, owner: part };
+        const embeddedState = owners.find((candidate) => candidate.part === owner);
+        const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
 
         if (drawn === null || action === null || typeof action === 'string') {
           if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) continue;
@@ -433,8 +531,11 @@ export const checkActions = async (options: {
         }
 
         for (const input of ACTION_INPUTS) {
-          const goal = action.kind === 'state' ? targetStateOf({ state: action.state, input, states: names }) : '';
-          const goalPicture = goal === '' ? null : await draw(goal);
+          const goal =
+            action.kind === 'state'
+              ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
+              : '';
+          const goalPicture = goal === '' || embeddedState ? null : await draw(goal);
 
           try {
             const run = await queue.run((browser) =>
@@ -451,15 +552,24 @@ export const checkActions = async (options: {
                     }
                   : null,
                 timeout: DRAW_TIMEOUT_MS,
+                listen: action.kind === 'emit' ? listen : [],
+                expanded: !!embeddedState && action.kind === 'state',
               }),
             );
             const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
             const outcome: ActionOutcome = {
               emitted: run.emitted,
               prevented: run.prevented,
-              compare: result
-                ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
-                : null,
+              compare:
+                embeddedState && action.kind === 'state'
+                  ? liveStateCompareOf({
+                      state: `${owner} ${goal}`,
+                      expected: await expectedOf(owner, goal),
+                      after: run.after ?? [],
+                    })
+                  : result
+                    ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
+                    : null,
             };
             const failure = actionFailureOf({ action, target: goal, input, outcome });
 

@@ -6,7 +6,18 @@ import { join } from 'path';
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { actionFailureOf, ActionElement, embeddersOf, pairElementsOf, parseAction, targetStateOf } from './actions';
+import {
+  actionFailureOf,
+  ActionElement,
+  actionScanScriptOf,
+  componentSelectorOf,
+  embeddedOwnersScriptOf,
+  embeddersOf,
+  pairElementsOf,
+  parseAction,
+  resolveActionOf,
+  targetStateOf,
+} from './actions';
 import { checkActions, designActions, runActionInput } from './actions-command';
 
 const element = (found: Partial<ActionElement>): ActionElement => ({
@@ -65,6 +76,35 @@ describe('actions', () => {
       }),
     ).toEqual(['elements/part-tree']);
     expect(embeddersOf({ part: 'components/shell-collapse', controls: { 'elements/shell': 'broken' } })).toEqual([]);
+  });
+
+  it('resolves a state declared inside an embedded part against the innermost part that has it, the page last', () => {
+    const page = { part: 'pages/page-a', states: ['open', 'busy'] };
+    const owners = [
+      { part: 'components/part-a', states: ['rest', 'open'] },
+      { part: 'elements/part-b', states: ['open', 'picker'] },
+    ];
+
+    expect(resolveActionOf({ value: 'open', owners, page })).toEqual({
+      action: { kind: 'state', state: 'open' },
+      owner: 'components/part-a',
+    });
+    expect(resolveActionOf({ value: 'picker', owners, page })).toEqual({
+      action: { kind: 'state', state: 'picker' },
+      owner: 'elements/part-b',
+    });
+    expect(resolveActionOf({ value: 'busy', owners, page }).owner).toBe('pages/page-a');
+    expect(resolveActionOf({ value: 'emit:x', owners, page }).action).toEqual({ kind: 'emit', output: 'x' });
+    expect(resolveActionOf({ value: 'gone', owners: [], page }).action).toBe(
+      'data-et-action="gone" names no state of the part - its states: open, busy',
+    );
+  });
+
+  it("reads the element selector of an app component's decorator", () => {
+    expect(componentSelectorOf("@Component({\n  selector: 'app-part-a',\n  template: ''\n})\nexport class A {}")).toBe(
+      'app-part-a',
+    );
+    expect(componentSelectorOf("@Component({ template: '' })\nexport class A {}")).toBeNull();
   });
 
   it('fails a missed output or state, and names a prevented keydown only for a key', () => {
@@ -144,8 +184,15 @@ describe('runActionInput', () => {
         <button aria-label="Go" onclick="__etDesignEmits.push({ output: 'go' })">Go</button>
         <button aria-label="Hide" onclick="__etDesignEmits.push({ output: 'hide' })">Hide</button>
         <button aria-label="Off" disabled>Off</button>
+        <app-part-a><button aria-label="Pick" onclick="__etDesignEmits.push({ output: 'pageAction' }); listeners.forEach((listener) => listener())">Pick</button></app-part-a>
       </div>
       <script>
+        const listeners = [];
+        const partA = { picked: { subscribe: (listener) => listeners.push(listener) } };
+        window.ng = {
+          getComponent: (element) => (element.localName === 'app-part-a' ? partA : null),
+          getDirectiveMetadata: () => ({ outputs: { x: 'picked' } }),
+        };
         window.__etDesignEmits = [];
         document.addEventListener('keydown', (event) => { if (event.key === ' ' && event.target.ariaLabel === 'Hide') event.preventDefault(); });
       </script></body>`);
@@ -182,6 +229,53 @@ describe('runActionInput', () => {
 
     expect(await press('button "Hide"', 'Space')).toEqual({ emitted: [], prevented: true, app: null });
     expect(await press('button "Hide"', 'Enter')).toEqual({ emitted: ['hide'], prevented: false, app: null });
+  });
+
+  it('records the outputs of an embedded component the page re-emits under another name', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    expect((await press('button "Pick"', 'click')).emitted).toEqual(['pageAction']);
+    expect(
+      (
+        await runActionInput({
+          browser: browser as Browser,
+          url,
+          start: { state: 'rest', props: {}, opener: null },
+          pick: { key: 'button "Pick"', occurrence: 0 },
+          input: 'click',
+          shoot: null,
+          timeout: 10_000,
+          listen: ['app-part-a'],
+        })
+      ).emitted,
+    ).toEqual(['pageAction', 'x']);
+  });
+
+  it('names the embedded parts that draw a design element, innermost first, and skips markup passed in as a slot', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    try {
+      await page.setContent(`<div data-et-part="pages/page-a">
+        <button aria-label="Own">Own</button>
+        <div data-et-part="elements/part-b">
+          <div data-et-part="components/part-a"><button aria-label="Inner" data-et-action="emit:x">Inner</button></div>
+          <div data-et-slot="elements/part-b"><button aria-label="Passed" data-et-slot="elements/part-b">Passed</button></div>
+        </div>
+      </div>`);
+
+      const found = (await page.evaluate(actionScanScriptOf(['body']))) as ActionElement[];
+      const owners = (await page.evaluate(embeddedOwnersScriptOf('pages/page-a'))) as Record<string, string[]>;
+
+      expect(Object.fromEntries(found.map((element) => [element.key, owners[String(element.probe)]]))).toEqual({
+        'button "Own"': [],
+        'button "Inner"': ['components/part-a', 'elements/part-b'],
+        'button "Passed"': [],
+      });
+    } finally {
+      await page.close();
+    }
   });
 
   it('never presses a disabled element', async (context) => {

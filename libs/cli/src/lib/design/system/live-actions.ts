@@ -222,7 +222,7 @@ export const liveDriftOf = (
 export const liveStateCompareOf = (options: {
   state: string;
   expected: Record<string, string>;
-  after: LiveControl[];
+  after: { key: string; expanded: string | null }[];
 }) => {
   const keys = Object.keys(options.expected);
 
