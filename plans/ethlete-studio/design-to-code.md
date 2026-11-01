@@ -695,7 +695,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     both.
 46. The flows preset `et-select` (and earlier the sketches round select) had no accessible name. The SDK form field
     logs ET2201 at runtime, but specs and compare still passed. Label fixed by the builder. Lesson: runtime `ET\d+`
-    errors from the SDK reach nobody; a check must fail on them (open question Impl Q80).
+    errors from the SDK reach nobody; a check must fail on them (Impl Q80).
 47. `design-canvas` `handleShortcut` called preventDefault on every Space keydown outside editable targets, so Space
     activated no button anywhere in Studio. Fix queued: skip the shortcut on interactive targets. Lesson: no check
     presses Space; the Impl Q79 action check presses Space as well as Enter and click.
@@ -807,3 +807,5 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   pages of the Impl Q78 compare, where the page must reach the declared page state (for example sidebar hidden),
   because the active nav defect sat in the app wiring, not in the part. Each overlay opens once by click and once
   by key, and each result compares to its declared state (the click state has no focus ring). Findings 42, 45, 47.
+- Impl Q80 SDK runtime errors (Tom, 2026-11-01): the part harness, the Impl Q78 live-page compare and the Studio
+  vitest setup fail on any console error with an `ET\d+` code. Other console errors stay allowed. Finding 46.
