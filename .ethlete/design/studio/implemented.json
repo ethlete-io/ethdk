@@ -1,4 +1,25 @@
 {
+  "elements/shell-main": {
+    "hash": "4b64a4137ba97697",
+    "at": "2026-11-01T12:00:00.710Z",
+    "states": {
+      "hidden": "420d506c7ca5c37c",
+      "open": "183b29e98916e996",
+      "product": "685904b021b2c882",
+      "product-active": "ca73dba23bfe5bda",
+      "product-focus-visible": "0ba8bbd0745f5dd7",
+      "product-hover": "41488736a3008fde",
+      "products": "b82d0be39191a17b",
+      "products-active": "dc9b5f0aa481d8d5",
+      "products-focus-visible": "4dcd6d6b217651ae",
+      "products-hover": "639b1e3047a6c399",
+      "project-picker": "a9eafa60d42ff718",
+      "section": "88b387a9656dcfe6",
+      "section-active": "5af9006ae77288f9",
+      "section-focus-visible": "eee9916ddb31b52a",
+      "section-hover": "e602cc4eb53b1f08"
+    }
+  },
   "pages/inbox": {
     "hash": "ee3d99940358a87d",
     "at": "2026-11-01T11:07:30.194Z",
