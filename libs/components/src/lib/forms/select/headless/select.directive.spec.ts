@@ -1693,7 +1693,7 @@ describe('SelectDirective (search)', () => {
   it('marks pointer-set virtual focus as such (the highlight only paints while hovered)', async () => {
     await driver.open();
 
-    expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
+    expect(driver.activeOption()?.getAttribute('data-active-source')).toBe('pointer');
 
     const banana = driver.visibleOptions()[1]!;
 

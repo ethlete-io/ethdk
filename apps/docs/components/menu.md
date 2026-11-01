@@ -176,6 +176,8 @@ This applies to root menus opening on the vertical axis. Submenus and context me
 | <kbd>Tab</kbd>                             | Close the whole menu tree                                                                                           |
 | Printable keys                             | Typeahead (repeating a letter cycles through the items it starts) - or forwarded into the search input when present |
 
+The active item shows its focus ring only while the keyboard moved it there. Moving the pointer hands the highlight to the item under it and ends the ring, also when the pointer was already resting on that item.
+
 ## Accessibility
 
 Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics are emitted automatically:

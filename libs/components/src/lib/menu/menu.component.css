@@ -245,7 +245,7 @@
         color 120ms ease,
         opacity 120ms ease;
 
-      &[data-active]:focus-visible {
+      &[data-active]:where([data-active-source='keyboard']):focus-visible {
         outline: 2px solid var(--et-theme-color-ink-solid);
         outline-offset: -2px;
       }
@@ -254,7 +254,7 @@
        of [data-active] alone) keeps the highlight from appearing without a hover or keyboard
        interaction; a trigger whose submenu is open stays highlighted the whole time, and an item
        activated from the keyboard keeps its highlight while the menu fades out */
-      &[data-active]:where(:focus-visible),
+      &[data-active]:where([data-active-source='keyboard']:focus-visible),
       &[data-highlight-held],
       &[data-menu-open] {
         background: var(--_et-menu-item-active-background);

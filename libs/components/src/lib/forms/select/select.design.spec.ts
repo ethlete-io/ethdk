@@ -105,7 +105,11 @@ const render = async (testCase: Case) => {
   fixture.detectChanges();
   await fixture.whenStable();
 
-  if (testCase.open) fixture.componentRef.setInput('open', true);
+  if (testCase.open) {
+    fixture.nativeElement
+      .querySelector('[role="combobox"]')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  }
 
   fixture.detectChanges();
   await fixture.whenStable();
@@ -160,7 +164,7 @@ describe('select design mock', () => {
             selectOption(option, {
               id: `option-${groupIndex}-${index}`,
               selected: option.value === 'f1',
-              active: option.value === 'f1' ? 'keyboard' : undefined,
+              active: option.value === 'f1' ? 'pointer' : undefined,
             }),
           )
           .join(''),

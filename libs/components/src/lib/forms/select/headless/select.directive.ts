@@ -558,6 +558,7 @@ export class SelectDirective<TValue = unknown>
 
   private pendingActiveScrollItem: SelectItem | null = null;
   private anchorBoxAtPointerMove: { left: number; top: number; bottom: number } | null = null;
+  private openSource: 'keyboard' | 'pointer' = 'pointer';
 
   /** @internal */
   public characterSeparators = computed(() => this.separators().filter((separator) => separator.length === 1));
@@ -837,7 +838,7 @@ export class SelectDirective<TValue = unknown>
         const next = this.reconciledActiveItem(enabled, navigable);
 
         if (next) {
-          this.setActiveItem(next, { scroll: !active });
+          this.setActiveItem(next, { scroll: !active, source: this.openSource });
         } else {
           this.activeItem.set(null);
         }
@@ -859,6 +860,7 @@ export class SelectDirective<TValue = unknown>
         tap((event) => {
           if (event.pointerType === 'mouse') {
             this.anchorBoxAtPointerMove = this.readAnchorBox();
+            this.handleMousePointerMove(event);
           }
         }),
         takeUntilDestroyed(),
@@ -1299,6 +1301,14 @@ export class SelectDirective<TValue = unknown>
     return committed;
   }
 
+  private showFromKeyboard() {
+    this.show();
+
+    if (this.open()) {
+      this.openSource = 'keyboard';
+    }
+  }
+
   // toggles by value arithmetic instead of the registry: `selection.select` recomputes the array
   // from registered options only, silently dropping values without a live option - custom values,
   // or options an external filter removed
@@ -1512,14 +1522,14 @@ export class SelectDirective<TValue = unknown>
           return;
         }
 
-        this.show();
+        this.showFromKeyboard();
 
         return;
       }
       case 'ArrowDown':
       case 'ArrowUp': {
         event.preventDefault();
-        this.show();
+        this.showFromKeyboard();
 
         return;
       }
@@ -1796,13 +1806,27 @@ export class SelectDirective<TValue = unknown>
       const target = this.selectedItems().find((item) => !item.disabled()) ?? this.enabledItems()[0] ?? null;
 
       if (target) {
-        this.setActiveItem(target);
+        this.setActiveItem(target, { source: this.openSource });
       }
     });
   }
 
+  private handleMousePointerMove(event: PointerEvent) {
+    if (this.activeItemSource() !== 'keyboard' || !(event.target instanceof Node)) {
+      return;
+    }
+
+    const target = event.target;
+    const item = this.navigableItems().find((candidate) => candidate.element()?.contains(target));
+
+    if (item) {
+      this.setActiveItem(item, { scroll: false, source: 'pointer' });
+    }
+  }
+
   private handlePanelBeforeClosed() {
     this.pendingActiveScrollItem = null;
+    this.openSource = 'pointer';
 
     if (this.allowCustomValues() && this.commitCustomValueOnClose()) {
       this.applyCustomValue(this.query());

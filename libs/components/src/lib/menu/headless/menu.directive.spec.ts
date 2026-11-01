@@ -604,6 +604,28 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(query('.item-charlie'));
   });
 
+  it('hands the active item back to the pointer when it moves again after keyboard navigation', async () => {
+    await openMenu();
+    const charlie = query('.item-charlie');
+
+    pointermove(charlie);
+    tick();
+
+    expect(charlie.getAttribute('data-active-source')).toBe('pointer');
+
+    keydown(charlie, 'ArrowUp');
+    tick();
+
+    expect(document.activeElement).not.toBe(charlie);
+    expect((document.activeElement as HTMLElement).getAttribute('data-active-source')).toBe('keyboard');
+
+    pointermove(charlie);
+    tick();
+
+    expect(document.activeElement).toBe(charlie);
+    expect(charlie.getAttribute('data-active-source')).toBe('pointer');
+  });
+
   it('keeps the active item when scrolling brings another under a pointer that did not move', async () => {
     await openMenu();
 

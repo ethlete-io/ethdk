@@ -30,6 +30,7 @@ export type MenuItemActivationEvent = {
     '[attr.tabindex]': 'tabIndex()',
     '[attr.aria-disabled]': 'isDisabled() || null',
     '[attr.data-active]': 'isActive() || null',
+    '[attr.data-active-source]': 'activeSource()',
     '[attr.data-highlight-held]': 'isHighlightHeld() || null',
     '(click)': 'handleClick($event)',
     '(keydown)': 'handleKeydown($event)',
@@ -65,6 +66,8 @@ export class MenuItemDirective {
   protected role = computed(() => this.roleOverride()?.() ?? 'menuitem');
 
   protected isActive = computed(() => this.owner?.activeItem() === this);
+
+  protected activeSource = computed(() => (this.isActive() ? (this.owner?.activeItemSource() ?? null) : null));
 
   protected isHighlightHeld = computed(() => this.isActive() && !!this.owner?.holdsActiveHighlight());
 
@@ -184,7 +187,7 @@ export class MenuItemDirective {
   // A move rather than pointerenter: scrolling an item under a resting pointer fires pointerenter too, and
   // would pull focus away from the item the arrow keys just reached.
   protected handlePointerMove(event: PointerEvent) {
-    if (event.pointerType === 'touch' || this.pointerInside) {
+    if (event.pointerType === 'touch' || (this.pointerInside && !this.keyboardTookOver())) {
       return;
     }
 
@@ -198,5 +201,9 @@ export class MenuItemDirective {
 
   protected handleFocus() {
     this.owner?.activeItem.set(this);
+  }
+
+  private keyboardTookOver() {
+    return this.owner?.activeItemSource() === 'keyboard' && !this.isDisabled();
   }
 }

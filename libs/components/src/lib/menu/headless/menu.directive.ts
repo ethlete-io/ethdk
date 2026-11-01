@@ -127,6 +127,8 @@ export class MenuDirective {
   public openSubmenu = signal<MenuDirective | null>(null);
   /** @internal */
   public activeItem = signal<MenuItemDirective | null>(null);
+  /** @internal */
+  public activeItemSource = signal<'keyboard' | 'pointer'>('keyboard');
   /** @internal Set when a close moves focus off a keyboard-highlighted item, until the pane has left. */
   public holdsActiveHighlight = signal(false);
   /** @internal */
@@ -362,8 +364,9 @@ export class MenuDirective {
   }
 
   /** @internal */
-  public setActiveItem(item: MenuItemDirective, options?: { focus?: boolean }) {
+  public setActiveItem(item: MenuItemDirective, options?: { focus?: boolean; source?: 'keyboard' | 'pointer' }) {
     this.activeItem.set(item);
+    this.activeItemSource.set(options?.source ?? 'keyboard');
 
     if (options?.focus !== false) {
       item.focus();
@@ -508,7 +511,7 @@ export class MenuDirective {
       // gesture that means "I am done typing".
       const searchFocused = this.registeredSearch()?.isFocused() ?? false;
 
-      this.setActiveItem(item, { focus: !searchFocused && this.isFocusInsideTree() });
+      this.setActiveItem(item, { focus: !searchFocused && this.isFocusInsideTree(), source: 'pointer' });
     }
 
     this.handleItemHover(item);
@@ -572,7 +575,10 @@ export class MenuDirective {
   }
 
   private holdFocusVisibleHighlights() {
-    if (this.activeItem()?.elementRef.nativeElement.matches(':focus-visible')) {
+    if (
+      this.activeItemSource() === 'keyboard' &&
+      this.activeItem()?.elementRef.nativeElement.matches(':focus-visible')
+    ) {
       this.holdsActiveHighlight.set(true);
     }
 

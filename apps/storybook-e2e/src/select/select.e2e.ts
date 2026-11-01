@@ -390,6 +390,79 @@ test.describe('select / position', () => {
   });
 });
 
+test.describe('select / focus ring source', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard and mouse');
+
+  test('a keyboard open rings the selected option', async ({ page }) => {
+    await openStory(page, PRESELECTED_STORY_ID);
+    const banana = page.getByRole('option', { name: 'Banana' });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+
+    await expect(banana).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(banana)).toBe('solid');
+  });
+
+  test('a click open leaves the selected option active without a ring', async ({ page }) => {
+    const root = await openStory(page, PRESELECTED_STORY_ID);
+    const banana = page.getByRole('option', { name: 'Banana' });
+
+    await root.getByRole('combobox').click();
+    await expect(page.locator('.et-select-overlay-pane.et-animation-enter-done')).toBeVisible();
+
+    await expect(banana).toHaveAttribute('data-active', 'true');
+    await settle(page, 200);
+    expect(await outlineStyleOf(banana)).toBe('none');
+  });
+
+  test('a mouse move after keyboard navigation hands the highlight to the hovered option', async ({ page }) => {
+    await openStory(page, DEFAULT_STORY_ID);
+    const banana = page.getByRole('option', { name: 'Banana' });
+    const dragonfruit = page.getByRole('option', { name: 'Dragonfruit' });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await expect(page.locator('.et-select-overlay-pane.et-animation-enter-done')).toBeVisible();
+    await pressArrowDown(page, 3);
+    await expect(dragonfruit).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(dragonfruit)).toBe('solid');
+
+    await banana.hover();
+
+    await expect(banana).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(dragonfruit)).toBe('none');
+    await expect.poll(() => outlineStyleOf(banana)).toBe('none');
+    await expect.poll(() => backgroundOf(banana)).not.toBe(TRANSPARENT);
+  });
+
+  test('a mouse nudge inside the hovered option after keyboard navigation takes the highlight back', async ({
+    page,
+  }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const banana = page.getByRole('option', { name: 'Banana' });
+    const cherry = page.getByRole('option', { name: 'Cherry' });
+
+    await root.getByRole('combobox').click();
+    await expect(page.locator('.et-select-overlay-pane.et-animation-enter-done')).toBeVisible();
+
+    const box = await boxOf(banana);
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(banana).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'ArrowDown');
+    await expect(cherry).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(cherry)).toBe('solid');
+
+    await page.mouse.move(box.x + box.width / 2 + 6, box.y + box.height / 2);
+
+    await expect(banana).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(cherry)).toBe('none');
+    await expect.poll(() => outlineStyleOf(banana)).toBe('none');
+  });
+});
+
 test.describe('select / pointer', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: hover');
 

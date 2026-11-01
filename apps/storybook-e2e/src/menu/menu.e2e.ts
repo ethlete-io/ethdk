@@ -54,6 +54,10 @@ async function activeBackgroundOf(item: Locator): Promise<string> {
   return item.evaluate((element) => getComputedStyle(element).backgroundColor);
 }
 
+async function outlineStyleOf(item: Locator): Promise<string> {
+  return item.evaluate((element) => getComputedStyle(element).outlineStyle);
+}
+
 async function waitForMenuOpen(page: Page): Promise<void> {
   await expect(page.locator('.et-overlay--menu.et-animation-enter-done').first()).toBeVisible();
 }
@@ -312,6 +316,66 @@ test.describe('menu / focus ring', () => {
 
     expect(samples.length).toBeGreaterThan(1);
     expect(samples.filter((sample) => sample !== active)).toEqual([]);
+  });
+});
+
+test.describe('menu / focus ring source', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard and mouse');
+
+  test('a click open leaves the first item focused without a ring', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const newFile = page.getByRole('menuitem', { name: 'New file' });
+
+    await root.getByRole('button', { name: 'File' }).click();
+    await waitForMenuOpen(page);
+
+    await expect(newFile).toBeFocused();
+    await settle(page, 200);
+    expect(await outlineStyleOf(newFile)).toBe('none');
+  });
+
+  test('a mouse move after keyboard navigation hands the highlight to the hovered item', async ({ page }) => {
+    await openStory(page, STORY_ID);
+    const newFile = page.getByRole('menuitem', { name: 'New file' });
+    const save = page.getByRole('menuitem', { name: 'Save' });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await waitForMenuOpen(page);
+    await pressKey(page, 'ArrowDown');
+    await expectItemFocusVisible(save);
+    await expect.poll(() => outlineStyleOf(save)).toBe('solid');
+
+    await newFile.hover();
+
+    await expect(newFile).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(save)).toBe('none');
+    await expect.poll(() => outlineStyleOf(newFile)).toBe('none');
+    await expect.poll(() => activeBackgroundOf(newFile)).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('a mouse nudge inside the hovered item after keyboard navigation takes the highlight back', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const newFile = page.getByRole('menuitem', { name: 'New file' });
+    const save = page.getByRole('menuitem', { name: 'Save' });
+
+    await root.getByRole('button', { name: 'File' }).click();
+    await waitForMenuOpen(page);
+
+    const box = await boxOf(save);
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(save).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'ArrowUp');
+    await expectItemFocusVisible(newFile);
+    await expect.poll(() => outlineStyleOf(newFile)).toBe('solid');
+
+    await page.mouse.move(box.x + box.width / 2 + 6, box.y + box.height / 2);
+
+    await expect(save).toHaveAttribute('data-active', 'true');
+    await expect.poll(() => outlineStyleOf(newFile)).toBe('none');
+    await expect.poll(() => outlineStyleOf(save)).toBe('none');
   });
 });
 

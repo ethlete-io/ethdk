@@ -469,7 +469,7 @@ Focus stays on the trigger the whole time; options receive _virtual_ focus, expo
 
 Typeahead follows the listbox pattern: repeating one character (<kbd>b</kbd>, <kbd>b</kbd>) cycles through the options that start with it, and a <kbd>Space</kbd> typed within the typeahead window is part of the query ("new york"), not a commit.
 
-Clicking anywhere on the form field's control frame - not just the trigger - opens the panel (the frame is the visual "input box", so all of it is clickable); clicking outside while open closes it. Hovering an option moves virtual focus to it, and the pointer highlight clears when the pointer leaves the list (like in the [menu](/components/menu)) - a keyboard-set highlight stays visible without hover.
+Clicking anywhere on the form field's control frame - not just the trigger - opens the panel (the frame is the visual "input box", so all of it is clickable); clicking outside while open closes it. Hovering an option moves virtual focus to it, and the pointer highlight clears when the pointer leaves the list (like in the [menu](/components/menu)) - a keyboard-set highlight stays visible without hover. The keyboard outline shows only when the keyboard opened the panel or moved the highlight: a click-opened panel marks the selected option active without an outline, and moving the pointer after arrow-key navigation hands the highlight to the option under it.
 
 ## Accessibility
 
