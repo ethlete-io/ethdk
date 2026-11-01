@@ -1284,8 +1284,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   wäre müll." System, Sketches and Flows use one and the same canvas component, not a shared input layer under two
   implementations. Left drag on an empty area pans on every page; a left click on a frame selects it. Arrow-key pan,
   double-click focus, Space/middle-button pan and window-wide Shift+1/2/0 work on every page. Finding 83.
-  In progress (builder, 2026-11-01): one subagent folds `mountCanvasViewport` into `ethlete-design-canvas` and adds a
-  Playwright canvas test against the real Studio for System, Sketches and Flows.
+  As built (builder, 2026-11-01): 70df9fec1 adds `yarn studio:e2e` (apps/ethlete-studio/e2e/canvas.e2e.mjs, real
+  Studio, 7 input cases on System and Sketches: 9/14 before, 14/14 after). 00eecda8a makes `ethlete-design-canvas` the
+  one canvas: Sketches projects its frames (`[ethleteCanvasFrame]`) and drops `mountCanvasViewport`. Compare 0 px:
+  pages/sketches, pages/system, components/canvas-viewport, elements/canvas-frames, pages/flows. Not verified: wheel,
+  Escape, Shift+2/0, the desktop app; zoom-chip compare blocked by a harness limit. Flows still uses
+  `mountCanvasViewport` (parked until after MVP).
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
