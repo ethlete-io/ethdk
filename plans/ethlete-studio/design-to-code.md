@@ -278,3 +278,23 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
 - Q196 page motions (Tom, 2026-10-31): open point 8 (missing motion between states) does not apply to the `pages`
   layer, like open point 1 (missing states) already does not. Page states are data scenarios; the components and
   elements inside a page carry their own motions.
+
+### Implementation phase decisions (Tom, 2026-11-01, Q250-Q255)
+
+The Studio MVP (design done, 26 of 26 parts clean) is reached. The next phase implements the design in code. Planned
+only; the builder starts when Tom gives the start.
+
+- Q250 scope: first the 26 Studio parts. Then the lib port of checkbox and radio-group variant d to
+  `libs/components` as its own SDK track. The 48 SDK parts with open points come later.
+- Q251 order: first the pilot, end to end through go, `design task`, `design compare` and `task --verify`:
+  `pages/inbox`, then `elements/shell-main`. Fix tool gaps on the way. Then the other parts in parallel, one
+  subagent per part.
+- Q252 components: every inline part (tree-row, part-tree, zoom-chip, comment-pin, canvas-viewport, the merge view)
+  becomes its own component when it is implemented, as Q248 planned. Parts with no app code yet (disclosure,
+  shell-collapse, shell-project-option, shell-project-switch, studio-menu, shell-main, pages/start) are built new. The
+  `implements` link points to the new component.
+- Q253 design freeze: a design change only when the implementation shows a design defect. Every other wish is parked.
+- Q254 parked items: none before the implementation, also no system lesson. First the implementation, then the
+  findings (system lessons and parked items in `backlog-parallel/decisions-latest.md`).
+- Q255 done: every Studio part has an `implemented.json` entry, a green compare and is ready.
+  `design check --product studio --complete` reports it as one number.
