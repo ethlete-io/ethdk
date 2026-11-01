@@ -1,4 +1,4 @@
-import { html } from '@design-system';
+import { html, slot } from '@design-system';
 import { type Props as CommentPinProps } from '@system/components/comment-pin';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
@@ -53,7 +53,7 @@ export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
     data-page="${variant}"
     title="Doppelklick zum Einpassen"
   >
-    <div class="pointer-events-none h-225 w-360 origin-top-left scale-100">${page}</div>
+    <div class="pointer-events-none h-225 w-360 origin-top-left scale-100" ${slot('shot')}>${page}</div>
     ${pin}
   </div>`;
 
