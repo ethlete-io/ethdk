@@ -567,6 +567,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     Lesson candidate: the mock takes a forced row index.
 16. The check ignores the options of an embedded menu part until each row carries `data-et-slot="components/menu"`
     (Impl Q44). Lesson candidate: the check attributes the rows of an embedded part without a manual marker.
+17. `task --verify` refuses a part commit that touches a file all parts share, for example the label map (Impl Q46).
+    Lesson: verify knows a list of shared paths. Also: a hand edit of `design-harness-parts.ts` makes every verify
+    fail; agents regenerate it with `design harness`.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -583,3 +586,5 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q45 accept by the builder (Tom, 2026-11-01): same rule as Impl Q15 for the go. When Tom approves a concrete
   design change in the chat, the builder may run `design accept` for it, always `--by tom` (not the model name), and
   names the decision. A new design Tom accepts himself. The Impl Q44 accept stays.
+- Impl Q46 shared label map in verify (Tom, 2026-11-01): `task --verify` allows `apps/ethlete-studio/src/app/i18n/**`
+  in a part commit, because the central label map is shared by all parts. Finding 17.
