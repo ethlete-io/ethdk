@@ -20,12 +20,12 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B11, B26, C3 und C5. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B26, C3, C5 und ein Test für C2, der den Fehler fängt. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- B11: Lint-Regel `ethlete/no-native-title`, vorerst opt-in (4c60be59e, 02.11.).
 - B25: `design dom <part>` gibt das HTML eines Zustands aus, aus dem Entwurf oder mit `--app` aus der App (2c74c7237, 02.11.).
-- C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet (28141b818, 02.11.).
 - `design ready` behält `by` und `at` einer Fertig-Marke, wenn sich das Teil nicht geändert hat (d7bdfb315, 02.11.).
 - C1: Die Design-Befehle verwenden den letzten Harness-Build wieder, wenn sich keine Eingabe geändert hat (9cf6343a3, 02.11.).
 - B21: `design check` meldet ACTIONS RERUN, wenn sich ein eingebettetes Teil seit dem letzten Aktionslauf geändert hat. Alte Fertig-Marken bekommen den Eintrag erst beim nächsten `design ready` (7581e0cce, 02.11.).
@@ -91,7 +91,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 8. Wiederholte Gruppen brauchen ein Control (Befund 102).
 9. Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 10. Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-11. Lint-Regel gegen native `title` (Befund 116). **Läuft.**
+11. Lint-Regel gegen native `title` (Befund 116). **Erledigt** (4c60be59e), aber nur opt-in. Als Fehler an, wenn A8 und D12 fertig sind.
 12. Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 13. Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Erledigt** (cf2565685).
@@ -113,7 +113,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 ## C. CLI: Tempo und Ablauf
 
 1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
-2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Erledigt** (28141b818).
+2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Läuft.** Code in 28141b818; der Test fängt den Fehler noch nicht.
 3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Läuft.**
 4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 5. Pre-push prüft geänderte Teile statisch (Befund 105). **Läuft.**
@@ -133,6 +133,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 9. Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 10. Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 11. 48 SDK-Teile haben noch offene Punkte.
+12. 10 native `title` in libs/components durch etTooltip ersetzen: cascader, password input, rich-text palette, grid-debug, scheduler (3), standings story, table (B11).
 
 ## E. Fragen und Entwürfe für Tom
 
