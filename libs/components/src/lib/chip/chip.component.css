@@ -74,7 +74,7 @@
         color 120ms ease;
 
       @media (hover: hover) {
-        &:hover:not([aria-checked='true']):not([data-readonly]) {
+        &:hover:not([aria-checked='true'], [data-readonly], [data-disabled]) {
           background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
         }
       }
@@ -99,7 +99,7 @@
       box-shadow: inset 0 0 0 1px light-dark(var(--et-theme-color-ink-solid), transparent);
 
       @media (hover: hover) {
-        &:hover:not([data-readonly]) {
+        &:hover:not([data-readonly], [data-disabled]) {
           background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
         }
       }
@@ -138,13 +138,13 @@
         color 120ms ease;
 
       @media (hover: hover) {
-        &:hover {
+        &:not([disabled]):hover {
           background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
           color: var(--et-surface-color-solid, currentColor);
         }
       }
 
-      &:active {
+      &:not([disabled]):active {
         background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 28%, transparent);
       }
 

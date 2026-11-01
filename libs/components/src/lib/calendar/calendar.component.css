@@ -38,12 +38,12 @@
       -webkit-tap-highlight-color: transparent;
 
       @media (hover: hover) {
-        &:hover {
+        &:not([disabled], [aria-disabled='true']):hover {
           background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
         }
       }
 
-      &:active {
+      &:not([disabled], [aria-disabled='true']):active {
         background: color-mix(in srgb, var(--et-surface-interaction-solid) 22%, transparent);
       }
 

@@ -75,7 +75,7 @@
     --et-theme-color-primary-opacity: 0;
 
     @media (hover: hover) {
-      &:hover {
+      &:not([disabled], [aria-disabled='true']):hover {
         --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
       }
     }
@@ -84,7 +84,7 @@
       --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
     }
 
-    &:active {
+    &:not([disabled], [aria-disabled='true']):active {
       --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
     }
   }
@@ -93,7 +93,7 @@
     --et-theme-color-primary-opacity: 0.16;
 
     @media (hover: hover) {
-      &:hover {
+      &:not([disabled], [aria-disabled='true']):hover {
         --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
       }
     }
@@ -102,7 +102,7 @@
       --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
     }
 
-    &:active {
+    &:not([disabled], [aria-disabled='true']):active {
       --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
     }
   }
@@ -112,7 +112,7 @@
     --et-theme-color-primary-opacity: 0.16;
 
     @media (hover: hover) {
-      &:hover {
+      &:not([disabled], [aria-disabled='true']):hover {
         --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
       }
     }
@@ -121,7 +121,7 @@
       --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
     }
 
-    &:active {
+    &:not([disabled], [aria-disabled='true']):active {
       --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
     }
   }

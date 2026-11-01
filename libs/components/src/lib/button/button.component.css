@@ -103,7 +103,7 @@
       --_et-button-border-color: var(--et-theme-color-ink-solid);
 
       @media (hover: hover) {
-        &:hover {
+        &:not([disabled], [aria-disabled='true']):hover {
           --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
         }
       }
@@ -112,7 +112,7 @@
         --et-theme-color-primary-opacity: var(--et-button-variant-opacity-focus-delta);
       }
 
-      &:active {
+      &:not([disabled], [aria-disabled='true']):active {
         --et-theme-color-primary-opacity: var(--et-button-variant-opacity-active-delta);
       }
 
@@ -137,7 +137,7 @@
 
     &:where([data-variant='filled']) {
       @media (hover: hover) {
-        &:hover {
+        &:not([disabled], [aria-disabled='true']):hover {
           --et-theme-color-primary-rgb: var(
             --et-color-primary-active,
             var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
@@ -161,7 +161,7 @@
       --_et-button-border-color: transparent;
 
       @media (hover: hover) {
-        &:hover {
+        &:not([disabled], [aria-disabled='true']):hover {
           --et-theme-color-primary-opacity: 1;
         }
       }
@@ -170,7 +170,7 @@
         --et-theme-color-primary-opacity: 1;
       }
 
-      &:active {
+      &:not([disabled], [aria-disabled='true']):active {
         --et-theme-color-primary-opacity: 1;
       }
     }
