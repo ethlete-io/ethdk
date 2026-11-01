@@ -34,7 +34,7 @@ export const FRAME_HEAD_CLASS =
           (zoomOut)="zoomOut.emit()"
           (zoomReset)="zoomReset.emit()"
           (zoomIn)="zoomIn.emit()"
-          (fit)="fit.emit()"
+          (fit)="fitAll.emit()"
           zoom="75%"
         >
           <figure [class]="FRAME_CLASS">
@@ -54,10 +54,11 @@ export const FRAME_HEAD_CLASS =
         </ethlete-canvas-frames>
       } @else {
         <ethlete-canvas-frames
+          [fitted]="fit()"
           (zoomOut)="zoomOut.emit()"
           (zoomReset)="zoomReset.emit()"
           (zoomIn)="zoomIn.emit()"
-          (fit)="fit.emit()"
+          (fit)="fitAll.emit()"
           class="w-full"
         >
           <figure [class]="FRAME_CLASS">
@@ -96,6 +97,7 @@ export class SystemPageComponent {
   public empty = input(false);
   public manyStates = input(false);
   public nothingOpen = input(false);
+  public fit = input(false);
   public closed = model(false);
   public layers = input(SYSTEM_LAYERS);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
@@ -111,7 +113,7 @@ export class SystemPageComponent {
   public zoomOut = output();
   public zoomReset = output();
   public zoomIn = output();
-  public fit = output();
+  public fitAll = output();
 
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly FRAME_CLASS = FRAME_CLASS;
