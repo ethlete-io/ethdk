@@ -101,8 +101,12 @@ export const markImplemented = (options: {
 };
 
 /** The part a task builds, or why it cannot get one: unknown part, no or a route-only `implements`, no or a stale go. */
-export const taskPartOf = (options: { product: ResolvedProduct; part: string }): TaskPart | string => {
-  const { product, part } = options;
+export const taskPartOf = (options: {
+  product: ResolvedProduct;
+  part: string;
+  allowStale?: boolean;
+}): (TaskPart & { unapproved?: true }) | string => {
+  const { product, part, allowStale } = options;
   const found = goPartOf({ product, part });
 
   if (typeof found === 'string') return found;
@@ -121,9 +125,15 @@ export const taskPartOf = (options: { product: ResolvedProduct; part: string }):
   const go = goStateOf({ product, part });
 
   if (go === 'missing') return `${part} has no go - run design go first`;
-  if (go === 'stale') return `${part} changed since its go - it needs a new go first`;
+  if (go === 'stale' && !allowStale) return `${part} changed since its go - it needs a new go first`;
 
-  return { part, hash: found.hash, dir: found.dir, component };
+  return {
+    ...(go === 'stale' ? { unapproved: true as const } : {}),
+    part,
+    hash: found.hash,
+    dir: found.dir,
+    component,
+  };
 };
 
 /** The states added or changed since the implemented record; without a record every state is added. */

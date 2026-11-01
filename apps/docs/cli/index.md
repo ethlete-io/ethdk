@@ -395,7 +395,9 @@ state is ok it records the part hash, the time and a props hash per state in `im
 against the design states of variant `a` of its open sketch instead of the merged design.
 
 `et design compare components/chip --product app-a --url http://localhost:4200` compares each state of a part, or the
-one `--state` names, with the app. It refuses a part as `task` does. For each state it draws the design frame and
+one `--state` names, with the app. It refuses a part as `task` does, except a part that changed since its go: that
+runs too and its output starts with an `unapproved:` line, because only `task --verify`, `ready` and `accept` hold the
+go gate. For each state it draws the design frame and
 opens `<url>/__design-harness?part=<part>&state=<state>&props=<JSON>` in the same Chromium, with the same viewport and
 device scale, and shoots the `[data-design-harness-host]` element. The app owns that dev-only route and mounts the
 `implements` component with the state's props inside the host. Pixels compare at tolerance 0, and a size mismatch

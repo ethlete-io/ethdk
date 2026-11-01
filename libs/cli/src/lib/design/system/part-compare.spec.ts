@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { createServer, Server } from 'http';
 import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
@@ -377,6 +377,27 @@ describe('part compare', () => {
     lines.length = 0;
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines).toEqual(['the harness page http://localhost:9/__design-harness did not load']);
+  });
+
+  it('compares a part changed since its go and marks the result unapproved', async () => {
+    const target = checkout();
+    const lines = output();
+    const shoot = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+    const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'];
+
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+    expect(await designCompare({ target, argv, invocation: 'et design', shoot })).toBe(0);
+    expect(lines.join('\n')).not.toContain('unapproved');
+
+    const source = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');
+
+    writeFileSync(source, `${readFileSync(source, 'utf8')}// changed\n`);
+    lines.length = 0;
+    expect(await designCompare({ target, argv, invocation: 'et design', shoot })).toBe(0);
+    expect(lines[0]).toContain('unapproved: components/chip changed since its go');
   });
 
   it('without --url starts the harness app, compares against it and always stops it', async () => {

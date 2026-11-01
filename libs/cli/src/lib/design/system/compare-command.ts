@@ -57,8 +57,9 @@ export type ComparePart = (options: {
   only: string | null;
   preset?: string | null;
   sketch?: string | null;
+  unapproved?: boolean;
   shoot?: ShootStates;
-}) => Promise<{ green: boolean; states: Record<string, unknown> } | string>;
+}) => Promise<{ green: boolean; unapproved?: true; states: Record<string, unknown> } | string>;
 
 const ROOM_PX = 1024;
 
@@ -529,6 +530,7 @@ export const comparePart: ComparePart = async (options) => {
 
   if (typeof shot === 'string') return shot;
   if (shot.shots.length === 0) return `${options.part} has no states to compare`;
+  if (options.unapproved) console.log(`unapproved: ${options.part} changed since its go - the result is not a gate`);
 
   let dir: string | null = null;
 
@@ -564,7 +566,11 @@ export const comparePart: ComparePart = async (options) => {
 
   if (dir !== null) console.log(`pictures: ${dir}`);
 
-  return { green: dir === null && !failed, states: shot.states };
+  return {
+    green: dir === null && !failed,
+    ...(options.unapproved ? { unapproved: true as const } : {}),
+    states: shot.states,
+  };
 };
 
 /**
@@ -614,7 +620,7 @@ export const designCompare = async (options: {
     return 2;
   }
 
-  const task = taskPartOf({ product, part: partKeyOf(parsed) });
+  const task = taskPartOf({ product, part: partKeyOf(parsed), allowStale: true });
   const refusal = typeof task === 'string' ? task : live ? null : harnessStaleOf({ target, product });
 
   if (typeof task === 'string' || refusal !== null) {
@@ -638,6 +644,7 @@ export const designCompare = async (options: {
         only: args.values['--state'] ?? null,
         preset: args.values['--preset'] ?? null,
         sketch: args.values['--sketch'] ?? null,
+        unapproved: task.unapproved === true,
         shoot: options.shoot ?? (live ? shootLiveStates : undefined),
       }),
   });
