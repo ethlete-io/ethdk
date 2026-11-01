@@ -1,5 +1,6 @@
 {
   "host": "ethlete-shell-main",
+  "shell": "ethlete-shell-page",
   "frame": "design-live/frame.png",
   "now": "2026-11-04T12:00:00Z",
   "invoke": {
