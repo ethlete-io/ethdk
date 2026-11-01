@@ -775,6 +775,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     prettier renumbered findings 55-58 in this plan (restored; do not prettier design-to-code.md). Lesson: a whole-page
     compare must pin every input the page reads (data sample, clock, host size, folder name), or a big px number
     mixes real drift with setup noise and nobody can read it.
+60. Studio refuses a folder without design work silently after the OS folder dialog (builder, 2026-11-01, Impl Q89,
+    521b2db01): no design state shows the refusal, so no check could ask for one. Lesson: the action check (Impl
+    Q79) should flag a user action that ends with no visible change, the same as a key press with no effect. Error
+    feedback: Impl Q105 (Tom).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
