@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: C3 und C5. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Alle parallelen Slices sind fertig. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- C3 und C5: Pre-push führt die betroffenen Studio-Tests und die statischen Design-Regeln der berührten Teile aus (cdf13257d, 02.11.).
 - B29: Design-Regel NATIVE-TITLE, opt-in mit `nativeTitle: 'deny'` (ed8457932, 02.11.).
 - C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet; der Test fängt das alte Verhalten (28141b818, e76c503fb, 02.11.).
 - B26: `design check` nennt jetzt auch Teile, die ohne Browser nicht zeichnen und an denen `design ready` scheitert (85a028f16, 02.11.).
@@ -118,9 +119,9 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 
 1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
 2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Erledigt** (28141b818, e76c503fb). Offen: ein Test für `--live`.
-3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Läuft.**
+3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Erledigt** (cdf13257d).
 4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-5. Pre-push prüft geänderte Teile statisch (Befund 105). **Läuft.**
+5. Pre-push prüft geänderte Teile statisch (Befund 105). **Erledigt** (cdf13257d). Offen: Design-Dateien aus libs/components lösen die Prüfung nicht aus; kein Produkt-tsc im Hook.
 6. Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
 7. Studio-App ohne Lint-Warnungen; danach ist jede neue Warnung ein Fehler.
 
