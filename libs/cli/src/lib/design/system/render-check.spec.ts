@@ -42,6 +42,9 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string; states
     body: '<div style="transform: translateX(4px)"><div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe data-et-embed="pages/tall" data-et-embed-scale="0.2" data-et-embed-drawn style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div></div>',
   },
   'components/wrapped': { body: '<button style="width: 60px">Save the draft now</button>' },
+  'components/clamped': {
+    body: '<button style="width: 60px"><p style="margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden">Save the draft now please</p></button>',
+  },
   'components/themed': {
     body: '<style>.et-color--known { color: red }</style><div class="et-color--known et-color--inherited"><p class="et-color--ghost" style="margin: 0">Themed</p></div>',
   },

@@ -371,6 +371,7 @@ const inspectFrame = (options: {
   for (const [block, nodes] of groups) {
     const style = getComputedStyle(block);
     if (!singleLine(block) && style.whiteSpace !== 'nowrap' && style.textWrapMode !== 'nowrap') continue;
+    if (style.webkitLineClamp !== 'none') continue;
     const lines = [];
     for (const node of nodes) {
       const range = document.createRange();
