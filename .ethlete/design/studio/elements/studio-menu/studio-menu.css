@@ -18,6 +18,7 @@
   .st-studio-menu {
     --et-menu-item-height: var(--control-md);
     --et-menu-item-font-size: var(--text-md);
+    transform: translate3d(0, 0, 0);
   }
 
   .st-studio-trigger path {
