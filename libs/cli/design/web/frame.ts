@@ -460,7 +460,7 @@ const drawFrame = async () => {
   };
 
   new MutationObserver(place).observe(root, { childList: true, subtree: true });
-  new ResizeObserver(place).observe(root);
+  new ResizeObserver(() => requestAnimationFrame(place)).observe(root);
   place();
 
   const reported = new ResizeObserver(report);

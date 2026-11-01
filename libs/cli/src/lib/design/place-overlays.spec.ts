@@ -283,3 +283,32 @@ describe('fitOutOfFlow', () => {
     expect([root.style.minHeight, root.style.minWidth]).toEqual(['', '']);
   });
 });
+
+describe('fitOutOfFlow writes', () => {
+  it('writes no style of the root again when a second run finds the same sizes', () => {
+    const root = mount(
+      `<button aria-expanded="true" aria-controls="panel">Status</button><div class="et-overlay-runtime-root">` +
+        `<div class="et-overlay-runtime-entry" id="panel" style="position: absolute">Panel</div></div>`,
+    );
+
+    rect(root, { top: 10, left: 0, width: 320, height: 40 });
+    rect(root.querySelector('#panel'), { top: 54, left: 0, width: 400, height: 200 });
+    fitOutOfFlow(root, { sideways: true });
+
+    const writes: string[] = [];
+
+    for (const property of ['paddingTop', 'minHeight', 'minWidth'] as const) {
+      const value = root.style[property];
+
+      Object.defineProperty(root.style, property, {
+        configurable: true,
+        get: () => value,
+        set: () => writes.push(property),
+      });
+    }
+
+    fitOutOfFlow(root, { sideways: true });
+
+    expect(writes).toEqual([]);
+  });
+});

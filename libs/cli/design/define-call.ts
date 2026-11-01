@@ -245,6 +245,15 @@ export const placeOverlays = (root: HTMLElement) => {
   }
 };
 
+const setStyle = (
+  element: HTMLElement,
+  write: { property: 'paddingTop' | 'minHeight' | 'minWidth'; value: string },
+) => {
+  const { property, value } = write;
+
+  if (element.style[property] !== value) element.style[property] = value;
+};
+
 const fitPaddingTops = new WeakMap<HTMLElement, string>();
 
 /**
@@ -298,7 +307,7 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
   if (options.sideways) {
     const fitted = fitPaddingTops.get(root);
 
-    if (fitted !== undefined) root.style.paddingTop = fitted;
+    if (fitted !== undefined) setStyle(root, { property: 'paddingTop', value: fitted });
 
     const top = Math.min(...outOfFlowOf().map((rect) => rect.top));
     const rootTop = root.getBoundingClientRect().top;
@@ -307,7 +316,7 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
       const padding = parseFloat(view.getComputedStyle(root).paddingTop) || 0;
 
       fitPaddingTops.set(root, root.style.paddingTop);
-      root.style.paddingTop = `${Math.ceil(2 * padding + rootTop - top)}px`;
+      setStyle(root, { property: 'paddingTop', value: `${Math.ceil(2 * padding + rootTop - top)}px` });
     } else fitPaddingTops.delete(root);
   }
 
@@ -323,16 +332,14 @@ export const fitOutOfFlow = (root: HTMLElement, options: { sideways: boolean }) 
     return `${style.boxSizing === 'border-box' ? extent + after : extent - before}px`;
   };
 
-  root.style.minHeight = extentOf({
-    side: 'bottom',
-    start: box.top,
-    paddings: [style.paddingTop, style.paddingBottom],
+  setStyle(root, {
+    property: 'minHeight',
+    value: extentOf({ side: 'bottom', start: box.top, paddings: [style.paddingTop, style.paddingBottom] }),
   });
   if (options.sideways)
-    root.style.minWidth = extentOf({
-      side: 'right',
-      start: box.left,
-      paddings: [style.paddingLeft, style.paddingRight],
+    setStyle(root, {
+      property: 'minWidth',
+      value: extentOf({ side: 'right', start: box.left, paddings: [style.paddingLeft, style.paddingRight] }),
     });
 };
 
