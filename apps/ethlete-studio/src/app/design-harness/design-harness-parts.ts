@@ -3,7 +3,7 @@ import { Type } from '@angular/core';
 
 export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> = {
   'components/canvas-viewport': () =>
-    import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
+    import('../design-parts/canvas-viewport/canvas-viewport.component').then((m) => m.CanvasViewportComponent),
   'components/comment-pin': () =>
     import('../design-parts/comment-pin/comment-pin.component').then((m) => m.CommentPinComponent),
   'components/disclosure': () =>
