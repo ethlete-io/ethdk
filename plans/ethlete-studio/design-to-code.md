@@ -669,7 +669,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     not. Wanted: an overlay shows focus-visible only when the keyboard opened it. (b) After arrow-key navigation, a
     mouse move leaves the focus-visible ring on one option while hover highlights another. Wanted: the mouse takes
     over, so pointer use ends the keyboard focus-visible state. Fix in `libs/components` (both select and menu), with
-    a behavior test in `apps/storybook-e2e`.
+    a behavior test in `apps/storybook-e2e`. Done c3082e0d3: the active option records its source (keyboard or
+    pointer) and the ring needs "keyboard". Lesson: the compare shoots static states set by the harness, never a real
+    click-open or a key-then-mouse sequence, so a ring from the input path is invisible; Impl Q79 covers it.
 43. A canvas in Studio has its own background and covers the dot pattern of the page background (Tom, 2026-11-01).
     The canvas must be transparent so the dots show through. Check every live canvas (flows, sketches, system).
     Cause: the live `design-canvas` host had `bg-(--et-surface-background-solid)` since 9e59cc6f5 (SDK themes); CSS
@@ -799,4 +801,5 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   fails when the state does not compare 0 px, the output does not fire, or an app element has no declared action.
   `design complete` refuses a design with an undeclared interactive element. The same clicks also run on the real
   pages of the Impl Q78 compare, where the page must reach the declared page state (for example sidebar hidden),
-  because the active nav defect sat in the app wiring, not in the part. Finding 45.
+  because the active nav defect sat in the app wiring, not in the part. Each overlay opens once by click and once
+  by key, and each result compares to its declared state (the click state has no focus ring). Findings 42, 45, 47.
