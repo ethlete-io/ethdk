@@ -15,12 +15,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
-import {
-  TreeRow as TreeRowItem,
-  TreeRowItemComponent,
-  TreeRowStatus,
-} from '../design-parts/tree-row/tree-row-item.component';
+import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
+import { PartTreeComponent, PartTreeLayer, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
@@ -50,7 +46,6 @@ import {
 import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
-  PartBadge,
   TreeEntry,
   TreeFrame,
   TreeGroup,
@@ -113,26 +108,6 @@ const NEW_PRODUCT = '/new';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-(--et-surface-color-subtle-solid)';
 
-type RowMarks = Pick<TreeRowItem, 'kind' | 'warning' | 'status' | 'comments'> & { title?: string };
-
-const GROUP_MARKS: RowMarks = { kind: 'group' };
-
-const ROW_STATUS: Partial<Record<PartBadge, TreeRowStatus>> = { 'in progress': 'in-progress', ready: 'ready' };
-
-const rowMarksOf = (entry: TreeEntry, sketchStatus: ListedSketch['status'] | undefined): RowMarks => {
-  const status =
-    entry.badges.map((badge) => ROW_STATUS[badge]).find(Boolean) ??
-    (entry.badges.includes('sketch open') && sketchStatus ? ROW_STATUS[sketchStatus] : undefined);
-  const warning = entry.badges.includes('error') ? (entry.title ?? 'error') : undefined;
-
-  return {
-    kind: entry.frames ? 'part' : 'leaf',
-    ...(warning ? { warning } : entry.title ? { title: entry.title } : {}),
-    ...(status ? { status } : {}),
-    ...(entry.comments ? { comments: entry.comments } : {}),
-  };
-};
-
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
 @Component({
@@ -145,37 +120,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     </ng-template>
 
     <ng-template #sideTree>
-      <div
-        #partTree="etTree"
-        [dataSource]="dataSource()"
-        [expandedValues]="expandedValues()"
-        (expandedValuesChange)="rememberOpen($event)"
-        (nodeActivate)="activate($event.value)"
-        class="flex flex-col gap-px p-2"
-        selectionMode="none"
-        aria-label="Design system"
-        etTree
-      >
-        @for (row of partTree.visibleRows(); track row.node.value) {
-          @let marks = marksOf(row.node.value);
-          <div
-            [row]="row"
-            [item]="{
-              label: row.node.label,
-              depth: row.level - 1,
-              kind: marks.kind,
-              expanded: row.isExpanded,
-              selected: row.node.value === selectedKey(),
-              warning: marks.warning,
-              status: marks.status,
-              comments: marks.comments,
-            }"
-            [attr.title]="marks.title"
-            etTreeNode
-            ethlete-tree-row-item
-          ></div>
-        }
-      </div>
+      <ethlete-part-tree
+        [layers]="partTreeLayers()"
+        (expandedChange)="rememberOpen($event)"
+        (activate)="activate($event)"
+        class="p-2"
+        label="Design system"
+      />
     </ng-template>
 
     <ng-template #themeBar>
@@ -550,8 +501,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   imports: [
     BUTTON_IMPORTS,
     NgTemplateOutlet,
-    TREE_IMPORTS,
-    TreeRowItemComponent,
+    PartTreeComponent,
     DesignCanvasComponent,
     ProvideColorDirective,
     SketchViewComponent,
@@ -907,13 +857,10 @@ export class SystemViewComponent {
 
   private nodes = computed(() => {
     const entries = new Map<string, TreeEntry>();
-    const marks = new Map<string, RowMarks>();
-    const sketchStatus = new Map(this.sketches().map((sketch) => [sketch.target, sketch.status]));
     const children = new Map<string | null, TreeNode<string>[]>();
     const frames = new Map<string, TreeFrame>();
     const leaf = (entry: TreeEntry): TreeNode<string> => {
       entries.set(entry.key, entry);
-      marks.set(entry.key, rowMarksOf(entry, sketchStatus.get(entry.key)));
 
       if (!entry.frames) return { value: entry.key, label: entry.name, isLeaf: true };
 
@@ -938,7 +885,7 @@ export class SystemViewComponent {
 
     children.set(null, this.tree().map(branch));
 
-    return { entries, marks, children, frames };
+    return { entries, children, frames };
   });
 
   /** True while the remembered entry may still be a call or a sketch whose list has not arrived. */
@@ -961,7 +908,7 @@ export class SystemViewComponent {
     return listed ? { key: partKeyOf(listed), listed } : null;
   });
 
-  protected selectedKey = computed(() => {
+  public selectedKey = computed(() => {
     const call = this.call();
     const sketch = this.sketch();
 
@@ -1056,13 +1003,7 @@ export class SystemViewComponent {
     hasProducts: this.products().length > 0,
   }));
 
-  protected dataSource = computed<TreeDataSource<string>>(() => {
-    const { children } = this.nodes();
-
-    return { loadChildren: (parent) => children.get(parent?.value ?? null) ?? [] };
-  });
-
-  protected expandedValues = computed(() => {
+  public expandedValues = computed(() => {
     const context = this.openContext();
     const open = (node: TreeGroup | TreeSection, isOpen: boolean) => (isOpen ? [node.key] : []);
     const openParts = (node: TreeGroup | TreeSection) =>
@@ -1076,6 +1017,33 @@ export class SystemViewComponent {
         ...openParts(section),
       ]),
     ]);
+  });
+
+  protected partTreeLayers = computed<PartTreeLayer[]>(() => {
+    const open = new Set(this.expandedValues());
+    const selected = this.selectedKey();
+    const partOf = (entry: TreeEntry): PartTreePart => ({
+      name: entry.name,
+      key: entry.key,
+      selected: entry.key === selected,
+      ...(entry.badges.includes('error') ? { warns: entry.title ?? true } : {}),
+      ...(entry.frames
+        ? { open: open.has(entry.key), states: entry.frames.map(({ key, name }) => ({ key, name })) }
+        : { leaf: true }),
+    });
+    const sectionOf = (section: TreeSection): PartTreePart => ({
+      name: section.label,
+      key: section.key,
+      open: open.has(section.key),
+      states: section.entries.map(({ key, name }) => ({ key, name, selected: key === selected })),
+    });
+
+    return this.tree().map((group) => ({
+      title: group.label,
+      key: group.key,
+      open: open.has(group.key),
+      parts: [...group.entries.map(partOf), ...(group.sections ?? []).map(sectionOf)],
+    }));
   });
 
   protected placeableFrames = computed(() => placeableFramesOf(this.frames()));
@@ -1227,10 +1195,6 @@ export class SystemViewComponent {
     const comment = this.commentStore.comments().find((open) => open.id === id);
 
     if (comment) this.jumpTo(comment);
-  }
-
-  protected marksOf(value: string): RowMarks {
-    return this.nodes().marks.get(value) ?? GROUP_MARKS;
   }
 
   protected rememberOpen(expanded: readonly string[]) {

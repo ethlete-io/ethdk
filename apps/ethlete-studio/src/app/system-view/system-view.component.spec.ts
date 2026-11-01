@@ -175,7 +175,7 @@ describe('SystemViewComponent on a reload', () => {
     expect(shell?.querySelector('aside header')?.textContent?.trim()).toBe('web');
   });
 
-  it('draws the part tree rows with the tree-row part and moves between them by keyboard', async () => {
+  it('draws the part tree with the part-tree part, without comment counts, and moves between them by keyboard', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const rows = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
@@ -191,7 +191,7 @@ describe('SystemViewComponent on a reload', () => {
       ['rating', 'leaf'],
     ]);
     expect(rating?.getAttribute('aria-current')).toBe('true');
-    expect(rating?.querySelector('[title="1 offener Kommentar"]')).not.toBeNull();
+    expect(rating?.querySelector('[title="1 offener Kommentar"]')).toBeNull();
     expect(rating?.style.getPropertyValue('--depth')).toBe('1');
 
     rating?.focus();
