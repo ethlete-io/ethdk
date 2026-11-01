@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { drawnFindingsOf } from './drawn-open-points';
+import { actionsRerunReasonOf, changedEmbeddedOf, EmbeddedHashes, embeddedHashesOf } from './embedded-actions';
 import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
@@ -10,8 +11,11 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 
 export const READY_FILE = 'ready.json';
 
-/** Who marked a part ready, and at which design hash, with the hash of each file it covers; the mark holds only while the hash does. */
-export type PartReady = { hash: string; files?: FileHashes; by: string; at: string };
+/**
+ * Who marked a part ready, and at which design hash, with the hash of each file it covers; the mark holds only while the
+ * hash does. `embedded` holds the app hash of each embedded part its actions ran against.
+ */
+export type PartReady = { hash: string; files?: FileHashes; embedded?: EmbeddedHashes; by: string; at: string };
 
 export type ReadyRefusal = { status: number; error: string; points?: OpenPoint[]; actions?: string[] };
 
@@ -20,9 +24,15 @@ const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 const isReady = (value: unknown): value is PartReady => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at, files } = value as Record<string, unknown>;
+  const { hash, by, at, files, embedded } = value as Record<string, unknown>;
 
-  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string' && isOptionalFileHashes(files);
+  return (
+    typeof hash === 'string' &&
+    typeof by === 'string' &&
+    typeof at === 'string' &&
+    isOptionalFileHashes(files) &&
+    isOptionalFileHashes(embedded)
+  );
 };
 
 export const readReady = (dir: string): Record<string, PartReady> => {
@@ -51,7 +61,7 @@ export const readyPartOf = (options: { product: ResolvedProduct; part: string })
 
   const design = designHashOf({ product: options.product, part: resolved });
 
-  return { dir: owner.dir, hash: design.hash, design };
+  return { dir: owner.dir, hash: design.hash, design, resolved };
 };
 
 /** The ready mark of a part while its hash still matches, `null` when it has none or the part changed since. */
@@ -63,6 +73,22 @@ export const readyMarkOf = (options: { product: ResolvedProduct; part: string })
   const mark = readReady(found.dir)[options.part];
 
   return mark && recordHolds(mark, found.design) ? mark : null;
+};
+
+/**
+ * The embedded parts whose app files changed since the actions of `part` ran for its ready mark, `[]` while the mark
+ * does not hold or predates the embedded record.
+ */
+export const actionsRerunOf = (options: { product: ResolvedProduct; part: string }): string[] => {
+  const found = readyPartOf(options);
+
+  if (typeof found === 'string') return [];
+
+  const mark = readReady(found.dir)[options.part];
+
+  if (!mark?.embedded || !recordHolds(mark, found.design)) return [];
+
+  return changedEmbeddedOf(mark.embedded, embeddedHashesOf({ product: options.product, part: found.resolved }));
 };
 
 /** Draws a part and answers its whole open-point list, or why it could not be drawn. */
@@ -84,6 +110,7 @@ export const readyPartsOf = (product: ResolvedProduct) =>
 /**
  * Marks a part ready at `hash`, or answers why not: 400 without `by` or `hash`, 404 for an unknown part, 409 when the
  * part changed since `hash`, 422 while `pointsOf` lists any open point or `actionsOf` any failed action check.
+ * The failed-actions refusal names the embedded parts whose app files changed since the last ready.
  * `pointsOf` runs only after the hash holds, `actionsOf` only after the open-point list is empty.
  */
 export const markPartReady = async (options: {
@@ -117,19 +144,26 @@ export const markPartReady = async (options: {
       points,
     };
 
+  const rerun = actionsRerunOf({ product, part });
+  const embedded = embeddedHashesOf({ product, part: found.resolved });
   const actions = await options.actionsOf();
+  const notes = [
+    ...(rerun.length > 0 ? [actionsRerunReasonOf(rerun)] : []),
+    ...(options.actionsNote ? [options.actionsNote] : []),
+  ];
 
   if (!Array.isArray(actions)) return actions;
   if (actions.length > 0)
     return {
       status: 422,
-      error: `${part} fails ${actions.length} action check${actions.length === 1 ? '' : 's'} - fix them before ready${options.actionsNote ? ` (${options.actionsNote})` : ''}`,
+      error: `${part} fails ${actions.length} action check${actions.length === 1 ? '' : 's'} - fix them before ready${notes.length > 0 ? ` (${notes.join('; ')})` : ''}`,
       actions,
     };
 
   const mark: PartReady = {
     hash,
     files: found.design.files,
+    ...(Object.keys(embedded).length > 0 ? { embedded } : {}),
     by: by.trim(),
     at: options.at ?? new Date().toISOString(),
   };

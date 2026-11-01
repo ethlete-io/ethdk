@@ -3,11 +3,12 @@ import { DesignConfig } from '../paths';
 import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
+import { actionsRerunLineOf } from './embedded-actions';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
 import { goMarkOf, goPartsOf } from './part-go';
 import { doneParts } from './part-task';
-import { readyPartsOf } from './part-ready';
+import { actionsRerunOf, readyPartsOf } from './part-ready';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
@@ -372,6 +373,18 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     const ready = readyPartsOf(product);
 
     if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
+
+    for (const part of ready.filter((key) => !options.part || key === options.part)) {
+      const embedded = actionsRerunOf({ product, part });
+
+      if (embedded.length === 0) continue;
+
+      console.log(actionsRerunLineOf({ product: name, part, embedded }));
+
+      const counted = tallyOf(options.tally, { product: name, part });
+
+      if (counted) counted.open += 1;
+    }
 
     const go = goPartsOf(product);
 
