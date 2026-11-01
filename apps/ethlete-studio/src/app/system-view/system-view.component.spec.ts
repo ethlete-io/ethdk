@@ -169,6 +169,52 @@ describe('SystemViewComponent on a reload', () => {
     expect(chip?.className).toContain('right-[max(var(--space-3),calc(100%-var(--spacing)*250+var(--space-3)))]');
   });
 
+  it('shows the open points of the shown part in a chip at the top right, and lists them in its popover', async () => {
+    const asked: string[] = [];
+
+    TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/open-points')) {
+        asked.push(url);
+
+        return json({
+          points: [
+            { kind: 'missing-motion', from: 'rest', to: 'hover' },
+            { kind: 'contrast', state: 'hover', path: 'label' },
+            { kind: 'no-go' },
+          ],
+        });
+      }
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const chip = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'main .absolute.top-space-3.right-space-3 [data-open-points-chip]',
+    );
+
+    expect(asked).toContain('http://localhost:4402/__design/open-points?product=web&part=elements%2Frating');
+    expect(chip?.textContent?.trim()).toBe('3 offen');
+    expect(document.querySelector('ethlete-open-points-popover')).toBeNull();
+
+    chip?.click();
+    await settle(fixture);
+
+    const lines = [...document.querySelectorAll('ethlete-open-points-popover li li')].map((line) =>
+      [...line.querySelectorAll('span')].map((span) => span.textContent?.trim()),
+    );
+
+    expect(lines).toEqual([
+      ['label liegt unter der Kontrastregel', 'hover'],
+      ['Noch kein Go', 'go'],
+      ['rest → hover', 'motion'],
+    ]);
+  });
+
   it('draws the shell with the product on the rail and the tree in the side panel', async () => {
     const fixture = await mount({});
     const shell = (fixture.nativeElement as HTMLElement).querySelector('ethlete-shell-main');

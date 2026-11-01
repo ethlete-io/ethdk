@@ -72,6 +72,9 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { ExceptionListComponent } from './exception-list.component';
+import { openPointGroupsOf } from './open-points';
+import { partOpenPoints$ } from '../../host/design-open-points';
+import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -182,7 +185,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           } @else if (flowShown()) {
           } @else if (awaitingPicked()) {
           } @else if (part(); as partShown) {
-            <div class="absolute top-3 right-4 z-1 flex gap-2">
+            <div class="absolute top-space-3 right-space-3 z-1 flex gap-2">
               @if (port(); as port) {
                 <ethlete-exception-list
                   [port]="port"
@@ -205,6 +208,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   {{ INVENTORY_LABELS.toggle }}
                 </button>
               }
+              <ethlete-open-points-chip [part]="partShown.key" [groups]="openPointGroups()" />
             </div>
             <ethlete-design-canvas
               #partCanvas
@@ -320,6 +324,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     StartComponent,
     InventoryViewComponent,
     ExceptionListComponent,
+    OpenPointsChipComponent,
   ],
   providers: [provideCommentStore()],
   host: { class: 'block size-full min-h-0' },
@@ -674,6 +679,28 @@ export class SystemViewComponent {
 
     return listed ? { key: partKeyOf(listed), listed } : null;
   });
+
+  protected openPointGroups = toSignal(
+    toObservable(
+      computed(() => {
+        const port = this.port();
+        const product = this.product()?.name;
+        const part = this.part()?.key;
+
+        return port && product && part ? { address: { port, product }, part, revision: this.allRevision() } : null;
+      }),
+    ).pipe(
+      switchMap((asked) =>
+        asked
+          ? partOpenPoints$(asked.address, asked.part).pipe(
+              map(openPointGroupsOf),
+              catchError(() => of([])),
+            )
+          : of([]),
+      ),
+    ),
+    { initialValue: [] },
+  );
 
   public selectedKey = computed(() => {
     const call = this.call();

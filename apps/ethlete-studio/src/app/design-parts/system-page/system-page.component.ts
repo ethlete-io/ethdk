@@ -1,26 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  inputBinding,
-  input,
-  model,
-  output,
-  TemplateRef,
-  untracked,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
-import { anchoredDialogOverlayStrategy, BUTTON_IMPORTS, injectOverlayManager } from '@ethlete/components';
-import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
-import { OpenPointsPopoverComponent } from './open-points-popover.component';
+import { OpenPointsChipComponent } from './open-points-chip.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
 const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
@@ -83,53 +68,7 @@ const FRAME_HEAD_CLASS =
           </figure>
         </ethlete-canvas-frames>
         <div class="absolute top-space-3 right-space-3">
-          <button
-            #chip
-            [pressed]="!closed()"
-            (click)="closed.set(!closed())"
-            et-button
-            type="button"
-            variant="outline"
-            size="sm"
-          >
-            @if (count()) {
-              <span [etProvideColor]="warningTheme()" class="contents" etIcon>
-                <svg
-                  class="text-et-theme"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M8 2.5 14 13H2z" />
-                  <path d="M8 6.5v3" />
-                  <path d="M8 11.25v.01" />
-                </svg>
-              </span>
-            } @else {
-              <svg
-                class="flex-none text-et-theme-ink"
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                etIcon
-              >
-                <path d="m3.5 8.5 3 3 6-7" />
-              </svg>
-            }
-            {{ count() ? LABELS.openCount(count()) : LABELS.nothingOpen }}
-          </button>
+          <ethlete-open-points-chip [(closed)]="closed" [part]="part()" [groups]="groups()" />
         </div>
       }
     </ethlete-shell-page>
@@ -142,19 +81,16 @@ const FRAME_HEAD_CLASS =
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BUTTON_IMPORTS,
     CanvasFramesComponent,
     NgTemplateOutlet,
+    OpenPointsChipComponent,
     PartTreeComponent,
-    ProvideColorDirective,
     ShellPageComponent,
     SystemEmptyComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
 export class SystemPageComponent {
-  private overlay = injectOverlayManager();
-  protected warningTheme = injectSemanticColorTheme('warning');
   public shell = input<ShellState>(SHELL_SAMPLE);
 
   public empty = input(false);
@@ -177,33 +113,9 @@ export class SystemPageComponent {
   public zoomIn = output();
   public fit = output();
 
-  private chip = viewChild('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 
   public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
-  protected count = computed(() => this.groups().reduce((sum, group) => sum + group.lines.length, 0));
-
-  constructor() {
-    effect((onCleanup) => {
-      const origin = this.chip()?.nativeElement;
-
-      if (!origin || this.closed()) return;
-
-      const ref = untracked(() =>
-        this.overlay.open(OpenPointsPopoverComponent, {
-          origin,
-          mode: 'non-modal',
-          role: 'dialog',
-          ariaLabel: this.LABELS.openPoints,
-          autoFocus: false,
-          strategies: anchoredDialogOverlayStrategy(),
-          bindings: [inputBinding('part', this.part), inputBinding('groups', this.groups)],
-        }),
-      );
-
-      onCleanup(() => ref.close());
-    });
-  }
 }
