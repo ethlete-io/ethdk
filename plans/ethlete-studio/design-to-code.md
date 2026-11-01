@@ -617,6 +617,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 29. The inventory design frame embeds another page (`embedPage('pages/flows')`, an iframe), while the live view shows a
     host screenshot `<img>`; the app can only match it by embedding the flows view at scale 0.5. Lesson: a design
     shows what the app will render, not a live embed the app has no way to draw.
+30. With parallel builder subagents, `implemented.json` broke at a commit (a second entry written after the closing
+    brace); repaired in 768228c78. Lesson: shared record files need a cli write path that is safe for parallel agents
+    (merge, not append), and a check that every record file parses.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
