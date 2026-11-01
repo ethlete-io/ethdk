@@ -41,3 +41,17 @@ et-form-field {
 .et-surface-interactive {
   --color-et-surface-interaction: rgb(var(--et-surface-interaction-rgb));
 }
+
+.et-notification {
+  --et-notification-message-opacity: 1;
+}
+
+.et-notification-dismiss-btn {
+  opacity: 0.6;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
