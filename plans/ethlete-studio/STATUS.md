@@ -19,7 +19,7 @@ ausgeklammert.
 | elements/part-tree              | ✅     |                                                                                                                         |                   |
 | elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
-| components/shell-project-switch | ❌     | Frage an Tom: Fläche hinter der Zeile im Fokus (Q11); danach Q130-Look und neues „Go geben“                             | Tom, dann Builder |
+| components/shell-project-switch | ❌     | Fläche hinter der Zeile im Fokus kommt in den Entwurf (Q11); danach Q130-Look und neues „Go geben“                      | Builder, dann Tom |
 | elements/shell-main             | ❌     | Bild stimmt in allen 14 Zuständen; Prüfung der Aktionen hat Fehler im Werkzeug, wird behoben                            | Builder           |
 | pages/inbox                     | ❌     | Klick auf erledigten Kommentar markiert nichts (Befund 113); blasser Pin wird gebaut; dann Bild und neues „Go geben“    | Builder, dann Tom |
 | pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                         | Builder, dann Tom |
@@ -52,7 +52,7 @@ oben rechts in der Teil-Ansicht.
 ## Gerade in Arbeit
 
 - Parallel: Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
-- Shell-Teile (shell-main, shell-project-switch, pages/inbox): Fix für eingebettete Teile ist da (01.11.), Prüfung läuft.
+- Shell-Teile (shell-main, shell-project-switch, pages/inbox): Fehler im Werkzeug bei shell-main werden behoben (Befund 115).
 - pages/system: Prüfung läuft, Live-Shot folgt. pages/sketches: Kamera (Q135) wird gebaut.
 
 ## Für später gesammelt
