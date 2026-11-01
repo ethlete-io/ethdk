@@ -1162,6 +1162,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      Lesson for the rework: one approval step per change, or a clear order (accept first, then go) with only the next
      step as the primary button. Also (Tom, elements/part-tree after Q127): the view shows "Go erteilt" next to "Änderung
      abnehmen", so a go reads as valid while a direct edit still waits for acceptance.
+110. `design actions` checked actions inside an embedded part against the host page component, so outputs and
+     aria-expanded states did not match: 277 false fails on pages/inbox, 9 on pages/merge (builder, 2026-11-01). Why no
+     check caught it: no spec had a page that embeds a part with its own actions. Tool fix (general): actions resolve
+     against the innermost embedded part that declares them; spec bites, 4 of 13 fail without the fix (db91bcbe1).
+     Lesson: the CLI specs need a fixture for every composition shape a project can build (part in page, part in part).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.

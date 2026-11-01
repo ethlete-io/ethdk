@@ -26,7 +26,7 @@ ausgeklammert.
 | pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Go gegeben (22:56); Builder macht „ready“                                                                               | Builder           |
+| pages/start                     | ❌     | Go gegeben (22:56); „ready“ läuft gerade                                                                                | Builder           |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
@@ -52,7 +52,8 @@ oben rechts in der Teil-Ansicht.
 ## Gerade in Arbeit
 
 - Parallel: Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
-- Shell-Teile (shell-main, shell-project-switch, pages/inbox): Prüfung wartet auf den Fix für eingebettete Teile.
+- Shell-Teile (shell-main, shell-project-switch, pages/inbox): Fix für eingebettete Teile ist da (01.11.), Prüfung läuft.
+- pages/system: Prüfung läuft, Live-Shot folgt. pages/sketches: Kamera (Q135) wird gebaut.
 
 ## Für später gesammelt
 
