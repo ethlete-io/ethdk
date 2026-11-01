@@ -104,7 +104,9 @@ export default definePart<Props>({
           </div>
           <div class="flex flex-col gap-space-2">
             <span class="text-et-surface-muted text-ui-xs">Instance 1 of ${row.instances} · 200 %</span>
-            <div class="flex gap-space-4">${shot(crop, 'now', CROP_SCALE, false)}${shot(crop, 'after', CROP_SCALE, false)}</div>
+            <div class="flex gap-space-4">
+              ${shot(crop, 'now', CROP_SCALE, false)}${shot(crop, 'after', CROP_SCALE, false)}
+            </div>
           </div>
         </div>`
       : '';
