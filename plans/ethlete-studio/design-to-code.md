@@ -1508,3 +1508,13 @@ After the MVP. Not part of the 17-part goal.
 4. Activity (render, merge) shows only in the view the user waits on, for example the merge loading state. No spinner in
    tree rows ("dann wird der tree so unruhig"), no global indicator. A global indicator comes only once Studio does
    background work the user did not start.
+
+### Handoff restart decisions (Tom, 2026-11-01)
+
+Cause: at 85 % context the builder had about 9 background agents running, one for over 40 minutes. The handoff skill
+forbids a restart while a sub-agent runs, so the builder stood still. Change the handoff skill
+(`.agents/skills/handoff/SKILL.md`), for every session:
+
+1. From 70 % (handoff mode on) start no new sub-agent. Running ones finish in peace.
+2. At 85 % stop only a sub-agent that surely hangs: no new step for more than 30 minutes. Write its remaining work into
+   the handoff file; the fresh session starts it again. Never stop a working agent ("a mit stoppen klingt zu aggro").
