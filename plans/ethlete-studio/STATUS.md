@@ -53,6 +53,7 @@ oben rechts in der Teil-Ansicht.
 
 - Parallel: Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
 - Shell-Teile (shell-main, shell-project-switch, pages/inbox): Fehler im Werkzeug bei shell-main werden behoben (Befund 115).
+- comment-pin bekommt einen neuen Zustand (erledigt, blass mit Haken). Danach brauchen comment-pin und pages/inbox je ein neues „Go geben“.
 - pages/system: Prüfung läuft, Live-Shot folgt. pages/sketches: Kamera (Q135) wird gebaut.
 
 ## Für später gesammelt
