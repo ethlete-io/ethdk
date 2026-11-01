@@ -154,20 +154,25 @@ export const allowedFilesOf = (options: {
 export const filesOutsideOf = (options: { files: string[]; allowed: string[] }) =>
   options.files.filter((file) => !options.allowed.some((pattern) => matchesPattern(file, pattern)));
 
-/** The files of a diff whose source imports the part: a relative import of the component file or its folder. */
+/**
+ * The files of a diff that import the part - a relative import of its component file, folder or a sibling in it - and
+ * the spec next to each importer.
+ */
 export const importersOf = (options: { files: string[]; component: string; read: (file: string) => string | null }) => {
-  const stem = options.component.replace(/\.ts$/u, '');
   const dir = posix.dirname(options.component);
-
-  return options.files.filter((file) => {
+  const importers = options.files.filter((file) => {
     const source = options.read(file);
 
-    if (source === null || !/\.ts$/u.test(file)) return false;
+    if (source === null || !/\.ts$/u.test(file) || file.endsWith('.spec.ts')) return false;
 
     return Array.from(source.matchAll(/(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]*)['"]/gu), ([, specifier]) =>
       posix.join(posix.dirname(file), specifier ?? ''),
-    ).some((target) => target === stem || target === dir || target === `${dir}/index`);
+    ).some((target) => target === dir || target.startsWith(`${dir}/`));
   });
+
+  return options.files.filter(
+    (file) => importers.includes(file) || importers.includes(file.replace(/\.spec\.ts$/u, '.ts')),
+  );
 };
 
 /** The content of a file at the end of a git range, or null when it is gone. */

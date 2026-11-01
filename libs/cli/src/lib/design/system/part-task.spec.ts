@@ -139,6 +139,8 @@ describe('part task', () => {
     const sources: Record<string, string> = {
       'apps/app-a/src/app/live/chip-live.component.ts': "import { ChipComponent } from '../chip/chip.component';",
       'apps/app-a/src/app/live/index-live.ts': "import { A } from '../chip';",
+      'apps/app-a/src/app/live/chip-live.component.spec.ts': "import { X } from './x';",
+      'apps/app-a/src/app/live/sibling.ts': "import { Y } from '../chip/chip-extra.component';",
       'apps/app-a/src/app/other/other.component.ts': "import { B } from '../b/b.component';",
       'apps/app-a/src/app/live/note.md': "import x from '../chip/chip.component'",
     };
@@ -147,6 +149,8 @@ describe('part task', () => {
     expect(importersOf({ files, component, read: (file) => sources[file] ?? null })).toEqual([
       'apps/app-a/src/app/live/chip-live.component.ts',
       'apps/app-a/src/app/live/index-live.ts',
+      'apps/app-a/src/app/live/chip-live.component.spec.ts',
+      'apps/app-a/src/app/live/sibling.ts',
     ]);
   });
 
