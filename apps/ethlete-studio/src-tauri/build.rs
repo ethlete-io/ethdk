@@ -19,7 +19,6 @@ fn main() {
             "design_server_restart",
             "design_server_state",
             "design_server_stop",
-            "update_install",
             "update_ready",
             "workspace_check",
             "workspace_diff",

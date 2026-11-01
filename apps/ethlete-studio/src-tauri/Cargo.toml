@@ -19,6 +19,8 @@ notify = "8.2.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 tauri = { version = "2.11.5", features = [] }
+# GTK 3 cannot start in the GTK 4 process of the CEF runtime, so Linux dialogs go through the portal.
+tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
 tauri-plugin-updater = "2.12.0"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "sync", "time"] }
@@ -43,5 +45,7 @@ tauri-macros = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e3
 tauri-plugin = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 tauri-runtime = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 tauri-utils = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+# The crates.io release asks for tauri's `wry` feature, which the feat/cef branch removed.
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "835adce473e8f059f6ba84660dd07bcb19fb9030" }
 # Must name the same git source winit-gtk4 uses for dpi, or two dpi crates meet; Cargo.lock pins the commit.
 dpi = { git = "https://github.com/tauri-apps/winit-gtk4", branch = "master" }

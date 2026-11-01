@@ -33,7 +33,7 @@ describe('injectUpdateCheck', () => {
 
     vi.advanceTimersByTime(0);
     expect(ready.next).toHaveBeenCalledTimes(1);
-    expect(update.state()).toBe('current');
+    expect(update.version()).toBeNull();
 
     vi.advanceTimersByTime(UPDATE_CHECK_INTERVAL_MS);
     expect(ready.next).toHaveBeenCalledTimes(2);
@@ -46,15 +46,15 @@ describe('injectUpdateCheck', () => {
     expect(ready.next).toHaveBeenCalledTimes(3);
   });
 
-  it('checks on request and reports a failure', () => {
-    ready.next.mockReturnValue(of(null));
+  it('keeps checking after a failed check', () => {
+    ready.next.mockReturnValue(throwError(() => new Error('offline')));
     const update = setup();
     vi.advanceTimersByTime(0);
 
-    ready.next.mockReturnValue(throwError(() => new Error('offline')));
-    update.check();
+    ready.next.mockReturnValue(of('1.2.3'));
+    vi.advanceTimersByTime(UPDATE_CHECK_INTERVAL_MS);
 
     expect(ready.next).toHaveBeenCalledTimes(2);
-    expect(update.state()).toBe('failed');
+    expect(update.version()).toBe('1.2.3');
   });
 });

@@ -31,16 +31,13 @@ pub async fn update_ready(app: AppHandle, pending: State<'_, PendingUpdate>) -> 
     Ok(Some(version))
 }
 
-/// Installs what `update_ready` downloaded and restarts into it.
-#[tauri::command]
-pub async fn update_install(app: AppHandle, pending: State<'_, PendingUpdate>) -> StudioResult<()> {
-    let taken = pending.0.lock().map_err(|_| StudioError::Poisoned)?.take();
-    let Some((update, bytes)) = taken else {
-        return Err(StudioError::Rejected("no update is downloaded".to_owned()));
+/// Installs what `update_ready` downloaded, so the next start runs the new release.
+pub fn install_pending(pending: &PendingUpdate) {
+    let Some((update, bytes)) = pending.0.lock().ok().and_then(|mut held| held.take()) else {
+        return;
     };
 
-    update.install(bytes).map_err(rejected)?;
-    app.request_restart();
-
-    Ok(())
+    if let Err(error) = update.install(bytes) {
+        eprintln!("update failed: {error}");
+    }
 }

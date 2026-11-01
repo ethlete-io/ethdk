@@ -32,11 +32,10 @@ import {
 import { DesignChange, designChanges$ } from '../../host/design-changes';
 import { PartsRedraw } from '../../host/design-parts';
 import { SystemViewComponent } from '../system-view/system-view.component';
-import { UpdateButtonComponent } from '../update-button.component';
-import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { ShellAction, ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
-import { CheckoutsComponent, folderNameOf } from './checkouts.component';
+import { injectUpdateCheck } from '../update-check';
+import { createCheckouts, folderNameOf } from './checkouts';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
 import { rememberView, rememberedView } from './remembered';
@@ -62,7 +61,7 @@ const SERVER_ANSWER_RETRY_MS = 1000;
           server: serverDown() ? 'stopped' : 'starting',
           serverLog: downLog(),
         }"
-        (action)="runShellAction($event, checkouts)"
+        (action)="runShellAction($event)"
       />
     } @else {
       <ethlete-system-view
@@ -75,37 +74,18 @@ const SERVER_ANSWER_RETRY_MS = 1000;
         [project]="projectName()"
         [projects]="checkouts.names()"
         (projectChange)="checkouts.chooseByName($event)"
-        (openProject)="checkouts.toggle()"
+        (openProject)="checkouts.openFolder()"
       />
     }
-
-    <footer
-      class="flex h-8 items-center gap-4 border-t border-(--et-surface-border-solid) bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
-    >
-      <ethlete-checkouts #checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
-
-      <span class="flex-1"></span>
-
-      <ethlete-update-button />
-      <ethlete-update-check-button />
-    </footer>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    CheckoutsComponent,
-    ShellPageComponent,
-    SystemViewComponent,
-    UpdateButtonComponent,
-    UpdateCheckButtonComponent,
-  ],
+  imports: [ShellPageComponent, SystemViewComponent],
   host: {
-    class: 'grid h-dvh grid-rows-[minmax(0,1fr)_auto] bg-(--et-surface-background-solid) text-text',
+    class: 'grid h-dvh grid-rows-[minmax(0,1fr)] bg-(--et-surface-background-solid) text-text',
   },
 })
 export class StudioViewComponent {
   private destroyRef = inject(DestroyRef);
-
-  protected remembered = rememberedView().checkout ?? '';
 
   public checkout = signal('');
   protected projectName = computed(() => folderNameOf(this.checkout()));
@@ -118,6 +98,11 @@ export class StudioViewComponent {
   public frameRevisions = signal(NO_FRAME_REVISIONS);
 
   private foreignWatch: Subscription | null = null;
+
+  protected checkouts = createCheckouts({
+    remembered: rememberedView().checkout ?? '',
+    pick: (checkout) => this.setCheckout(checkout),
+  });
 
   private listeningPort = computed(() => {
     const state = this.server();
@@ -145,6 +130,8 @@ export class StudioViewComponent {
   protected downLog = computed(() => (this.serverDown()?.log ?? []).slice(-10));
 
   constructor() {
+    injectUpdateCheck();
+
     toObservable(this.listeningPort)
       .pipe(
         switchMap((port) => {
@@ -182,22 +169,12 @@ export class StudioViewComponent {
       .subscribe();
   }
 
-  protected runShellAction(action: ShellAction, checkouts: CheckoutsComponent) {
+  protected runShellAction(action: ShellAction) {
     if (action.kind === 'collapse') this.serverPanel.set('hidden');
     if (action.kind === 'section') this.serverPanel.set('open');
-    if (action.kind === 'project') checkouts.chooseByName(action.name);
-    if (action.kind === 'openProject') checkouts.toggle();
+    if (action.kind === 'project') this.checkouts.chooseByName(action.name);
+    if (action.kind === 'openProject') this.checkouts.openFolder();
     if (action.kind === 'server') this.runServerAction(action.action);
-  }
-
-  protected setCheckout(path: string) {
-    this.checkout.set(path);
-    this.design.set(null);
-    this.foreignWatch?.unsubscribe();
-    this.foreignWatch = null;
-    rememberView({ checkout: path });
-    this.read();
-    this.readServer();
   }
 
   public startServer() {
@@ -249,6 +226,16 @@ export class StudioViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private setCheckout(path: string) {
+    this.checkout.set(path);
+    this.design.set(null);
+    this.foreignWatch?.unsubscribe();
+    this.foreignWatch = null;
+    rememberView({ checkout: path });
+    this.read();
+    this.readServer();
   }
 
   private runServerAction(action: DesignServerAction) {

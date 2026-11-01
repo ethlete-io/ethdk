@@ -4512,6 +4512,7 @@ __metadata:
     "@tailwindcss/postcss": "npm:4.3.3"
     "@tauri-apps/api": "npm:2.12.4"
     "@tauri-apps/cli": "npm:2.12.4"
+    "@tauri-apps/plugin-dialog": "npm:2.7.1"
     "@types/mdx": "npm:2.0.14"
     "@types/node": "npm:26.6.6"
     "@types/vscode": "npm:^1.90.0"
@@ -8100,7 +8101,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tauri-apps/api@npm:2.12.4":
+"@tauri-apps/api@npm:2.12.4, @tauri-apps/api@npm:^2.11.0":
   version: 2.12.4
   resolution: "@tauri-apps/api@npm:2.12.4"
   checksum: 10c0/4a5c492d17999dc393be617978aed52c133d999575e251f0166cd9f6838941a207b9302c153104dfe83b0f97a8bdc5fda8574dfee40eed457e551b1c6ca4f061
@@ -8225,6 +8226,15 @@ __metadata:
   bin:
     tauri: tauri.js
   checksum: 10c0/e1043cb0b0ab15ce24d1835bd3fc929ed1479d64d784459153d249ffa34a83c9020c4699520950373830112614bc8b71d9257e7db773481e73f73a8b97b69c45
+  languageName: node
+  linkType: hard
+
+"@tauri-apps/plugin-dialog@npm:2.7.1":
+  version: 2.7.1
+  resolution: "@tauri-apps/plugin-dialog@npm:2.7.1"
+  dependencies:
+    "@tauri-apps/api": "npm:^2.11.0"
+  checksum: 10c0/ae441f1fa34ef0c1494e4e4ee1d7e91ce7d140a1d6f7282c844c52fc5a021676570be4472473a8d3cfb404e42c2570caf4567d535f02bbeaf11da903c224c576
   languageName: node
   linkType: hard
 

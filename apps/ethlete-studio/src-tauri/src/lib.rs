@@ -181,6 +181,7 @@ pub fn run() {
     let builder = builder.on_web_content_process_terminate(webview_rebuild::on_terminate);
 
     builder
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
@@ -201,7 +202,6 @@ pub fn run() {
             design_server::design_server_state,
             design_server::design_server_stop,
             design_server::design_server_restart,
-            update::update_install,
             update::update_ready,
             workspace_check,
             workspace_diff,
@@ -213,6 +213,7 @@ pub fn run() {
         .run(|handle, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 design_server::stop_every(&handle.state::<design_server::DesignServers>());
+                update::install_pending(&handle.state::<update::PendingUpdate>());
             }
         });
 }
