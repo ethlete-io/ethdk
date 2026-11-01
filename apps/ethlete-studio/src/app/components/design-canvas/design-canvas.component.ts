@@ -99,7 +99,7 @@ const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
-const ROW_LABEL_GUTTER = 160;
+const ROW_HEAD_GUTTER = 160;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
 const ROW_HEAD_HEIGHT = 48;
@@ -448,7 +448,6 @@ export class DesignCanvasComponent {
     return {
       heads,
       groups,
-      rows: sheet.rows.filter((row) => row.name !== '' && !row.head),
       rowHeads: sheet.rows.flatMap((row) => {
         const head = row.head ? rowHeads.find((candidate) => candidate.key === row.name) : undefined;
 
@@ -461,8 +460,6 @@ export class DesignCanvasComponent {
       }),
     };
   });
-
-  protected rows = computed(() => this.layout().rows);
 
   protected placedRowHeads = computed(() => this.layout().rowHeads);
 
@@ -1029,7 +1026,7 @@ export class DesignCanvasComponent {
       padding: FIT_PADDING,
       covered: this.covered(),
       inset: {
-        left: layout.rows.length + layout.rowHeads.length > 0 ? ROW_LABEL_GUTTER : 0,
+        left: layout.rowHeads.length > 0 ? ROW_HEAD_GUTTER : 0,
         top: (layout.heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (layout.groups.length > 0 ? GROUP_HEAD_ROOM : 0),
       },
     };

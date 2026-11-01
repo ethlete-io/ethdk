@@ -74,6 +74,14 @@ describe('DesignCanvasComponent', () => {
     button.remove();
   });
 
+  it('draws no row label beside a frame row', async () => {
+    const fixture = await render([
+      { id: 'default 640', src: 'about:blank', label: 'button', row: 'default', width: 640 },
+    ]);
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('default');
+  });
+
   it('hides a fitted frame until its size is known', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture);

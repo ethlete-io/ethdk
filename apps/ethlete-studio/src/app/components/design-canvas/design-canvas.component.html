@@ -5,14 +5,6 @@
   (transitionend)="smooth.set(false)"
   class="absolute top-0 left-0 origin-top-left"
 >
-  @for (row of rows(); track row.name) {
-    <span
-      [style.top.px]="row.y"
-      class="absolute left-0 translate-x-[calc(-100%-4rem)] text-[calc(1.4rem*var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text-muted"
-      >{{ row.label ?? row.name }}</span
-    >
-  }
-
   @for (head of placedRowHeads(); track head.key) {
     <div
       [style.top.px]="head.y"
