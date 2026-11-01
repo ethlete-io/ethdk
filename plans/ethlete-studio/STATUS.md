@@ -18,14 +18,14 @@ Kurz: Das Design ist fast komplett. Die Umsetzung im Code ist fast nirgends abge
 
 ## Was gerade nicht gut läuft
 
-- Der Canvas in „Sketches“ verhält sich anders als in „System“. Der Builder sucht die Ursache.
+- Der Canvas in „Sketches“ verhält sich anders als in „System“: Es gibt zwei Canvas-Umsetzungen statt einer.
 - Du kannst in Studio noch nicht alles freigeben. Merge geht per Klick. Go und Accept haben noch keinen Button.
 - Viele kleine Fehler kommen erst raus, wenn du klickst. Die Prüf-Tools sehen zu wenig von der echten App.
 
 ## Nächste Schritte (in dieser Reihenfolge, langsam, eins nach dem anderen)
 
 1. Freigeben per Klick in Studio (Go und Accept). Danach gibst du nichts mehr über die Kommandozeile frei.
-2. Canvas-Fehler Sketches vs. System beheben.
+2. Ein einziger Canvas für System, Sketches und Flows. Linkes Ziehen verschiebt überall.
 3. Spalte „Aktuell“ im Sketch: zeigt immer einen echten Vergleich.
 4. Fehler-Toast fertig machen und mergen.
 5. Teil für Teil auf „ready“ bringen, bis 19 von 19.
