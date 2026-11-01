@@ -42,6 +42,8 @@ const frame = (id: string, variant?: string): CanvasFrame => ({
   },
 });
 
+const DU = { author: 'Du', initials: 'Du', count: 0 };
+
 describe('isQuestion', () => {
   it('is a question only when the server says the agent asked one', () => {
     expect(isQuestion({ threadState: 'agent' })).toBe(false);
@@ -51,6 +53,22 @@ describe('isQuestion', () => {
 });
 
 describe('comment pins', () => {
+  it('draws the pin face from the latest sender and counts the replies', () => {
+    const [pin] = pinsOf(
+      [frame('a')],
+      numberedCommentsOf([
+        comment('1', {
+          replies: [
+            { by: 'user', text: 'Why?', createdAt: '' },
+            { by: 'agent', author: 'claude-opus-5-5', text: 'Fixed.', createdAt: '' },
+          ],
+        }),
+      ]),
+    );
+
+    expect(pin).toMatchObject({ author: 'Claude', initials: 'C', agent: 'claude', count: 2 });
+  });
+
   const comments = numberedCommentsOf([
     comment('2', { point: { x: 10, y: 20 } }),
     comment('1', { size: 520 }),
@@ -64,8 +82,8 @@ describe('comment pins', () => {
       ['3', 3],
     ]);
     expect(pinsOf([frame('a'), frame('b', 'b')], comments)).toEqual([
-      { id: '2', frameId: 'a', label: '2', text: 'text 2', point: { x: 10, y: 20 } },
-      { id: '3', frameId: 'b', label: '3', text: 'text 3' },
+      { ...DU, id: '2', frameId: 'a', label: '2', text: 'text 2', point: { x: 10, y: 20 } },
+      { ...DU, id: '3', frameId: 'b', label: '3', text: 'text 3' },
     ]);
   });
 

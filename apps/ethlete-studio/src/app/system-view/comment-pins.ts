@@ -1,6 +1,7 @@
 import { CommentAddressed, CommentPlace, CommentReply, CommentResolution, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
+import { senderOf } from './inbox-comments';
 
 export type NumberedComment = ListedComment & { number: number };
 
@@ -73,6 +74,8 @@ export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): Canv
             frameId: frame.id,
             label: String(comment.number),
             text: comment.text,
+            ...senderOf(comment.replies.at(-1)?.by ?? 'user', comment.replies.at(-1)?.author),
+            count: comment.replies.length,
             ...(isQuestion(comment) ? { dot: true } : {}),
             ...(comment.point ? { point: comment.point } : {}),
           },

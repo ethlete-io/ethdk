@@ -190,8 +190,8 @@ describe('DesignCanvasComponent', () => {
       { id: 'm', text: 'Library', at: { x: 0, y: -160 } },
     ]);
     fixture.componentRef.setInput('pins', [
-      { id: 'p', frameId: 'a', label: '1', text: 'one' },
-      { id: 'q', frameId: 'a', label: '2', text: 'two' },
+      { id: 'p', frameId: 'a', label: '1', text: 'one', author: '1', initials: '1', count: 0 },
+      { id: 'q', frameId: 'a', label: '2', text: 'two', author: '2', initials: '2', count: 0 },
     ]);
     fixture.componentRef.setInput('draft', { frameId: 'a', point: { x: 10, y: 10 } });
     fixture.componentInstance.openPinId.set('q');
@@ -206,7 +206,8 @@ describe('DesignCanvasComponent', () => {
     const pinLayer = (label: string) =>
       Number(
         /(?:^|\s)z-(\d)(?:\s|$)/.exec(
-          host.querySelector(`[aria-label="Comment ${label}"]`)?.parentElement?.className ?? '',
+          host.querySelector(`[aria-label="Comment by ${label}"]`)?.closest('[data-comment-pin]')?.parentElement
+            ?.className ?? '',
         )?.[1] ?? 0,
       );
 

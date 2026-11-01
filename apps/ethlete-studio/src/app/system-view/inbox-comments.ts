@@ -34,7 +34,7 @@ export const inboxAgeOf = (iso: string, now: number) => {
 
 export const inboxPartOf = (part: string) => part.slice(part.indexOf('/') + 1);
 
-const senderOf = (by: 'user' | 'agent', author: string | undefined) => {
+export const senderOf = (by: 'user' | 'agent', author: string | undefined) => {
   if (by === 'user') return { author: 'Du', initials: 'Du' };
 
   const known = AGENTS.find(({ match }) => author && match.test(author));

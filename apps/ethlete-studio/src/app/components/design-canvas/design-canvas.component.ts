@@ -67,6 +67,7 @@ import {
 import { CanvasLine, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
+import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
@@ -173,7 +174,7 @@ const isEditable = (target: EventTarget | null) =>
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, ZoomChipComponent],
+  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
   host: {
     class:
       'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-(--et-surface-background-solid) text-text select-none',
@@ -822,8 +823,7 @@ export class DesignCanvasComponent {
     this.groupSwitch.emit(key);
   }
 
-  protected togglePin(id: string, event: MouseEvent) {
-    event.stopPropagation();
+  protected togglePin(id: string) {
     this.openPinId.set(this.openPinId() === id ? null : id);
   }
 
