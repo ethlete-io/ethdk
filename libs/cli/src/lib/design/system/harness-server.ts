@@ -6,6 +6,7 @@ import { createServer } from 'net';
 import { tmpdir } from 'os';
 import { extname, join, resolve, sep } from 'path';
 import { setTimeout as delay } from 'timers/promises';
+import { claimHarnessBuild, harnessBuildKeyOf, harnessCacheDirOf, storeHarnessBuild } from './harness-build-cache';
 import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
@@ -162,14 +163,15 @@ const serveStatic = (root: string, port: number) =>
 type BuildEnd = 'built' | 'failed' | 'busy' | 'timeout';
 
 /**
- * Builds the product's harness app in development mode into a temp folder and serves it on a free port, answering
- * unknown paths with its index.html. The caller must `stop` it.
+ * Builds the product's harness app in development mode and serves it on a free port, answering unknown paths with its
+ * index.html. Reuses the last build while no input of it changed. The caller must `stop` it.
  */
 export const startHarnessServer = async (options: {
   target: string;
   product: ResolvedProduct;
   commandOf?: BuildCommandOf;
   timeout?: number;
+  cacheDir?: string;
 }): Promise<HarnessServer | string> => {
   const { target, product } = options;
   const harness = harnessOf(product);
@@ -188,7 +190,11 @@ export const startHarnessServer = async (options: {
   let child: ChildProcess | null = null;
   let server: Server | null = null;
   let stopped: Promise<void> | null = null;
-  const removeDir = () => rmSync(dir, { recursive: true, force: true });
+  let release = () => undefined as void;
+  const removeDir = () => {
+    release();
+    rmSync(dir, { recursive: true, force: true });
+  };
   const killOnExit = () => {
     if (child?.pid !== undefined) killGroup(child.pid, 'SIGKILL');
     removeDir();
@@ -224,6 +230,21 @@ export const startHarnessServer = async (options: {
     await stop();
 
     return `cannot start ${task}: ${messageOf(error)}`;
+  }
+
+  const cacheDir = harnessCacheDirOf({ target, project: found.name, base: options.cacheDir });
+  const keyOf = () =>
+    harnessBuildKeyOf({
+      target,
+      command: [build.command, ...build.args.map((arg) => arg.split(outputPath).join('<out>'))],
+    });
+  const key = keyOf();
+  const cached = key === null ? null : claimHarnessBuild(cacheDir, key);
+
+  if (cached) {
+    release = cached.release;
+
+    return serveBuild({ task, output: cached.dir, stop, serving: (started) => (server = started) });
   }
 
   const spawned = spawn(build.command, build.args, {
@@ -267,13 +288,32 @@ export const startHarnessServer = async (options: {
     return `${task} ${ended === 'failed' ? 'failed' : `did not finish in ${Math.round((options.timeout ?? BUILD_TIMEOUT_MS) / 1000)} s`}:\n${tail.trim()}`;
   }
 
-  const browser = join(outputPath, 'browser');
-  const root = existsSync(browser) ? browser : outputPath;
+  const stored = key !== null && keyOf() === key ? storeHarnessBuild({ dir: cacheDir, key, outputPath }) : null;
+
+  if (stored) release = stored.release;
+
+  return serveBuild({
+    task,
+    output: stored?.dir ?? outputPath,
+    stop,
+    serving: (started) => (server = started),
+  });
+};
+
+const serveBuild = async (options: {
+  task: string;
+  output: string;
+  stop: () => Promise<void>;
+  serving: (server: Server) => void;
+}): Promise<HarnessServer | string> => {
+  const { task, output, stop } = options;
+  const browser = join(output, 'browser');
+  const root = existsSync(browser) ? browser : output;
   const port = await freePortOf();
   const url = `http://127.0.0.1:${port}`;
 
   try {
-    server = await serveStatic(root, port);
+    options.serving(await serveStatic(root, port));
   } catch (error) {
     await stop();
 

@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -142,6 +143,157 @@ describe('startHarnessServer', () => {
     expect(
       await startHarnessServer({ target, product: resolveProduct({ target, name: 'app-a', config: { harness } }) }),
     ).toBe('apps/app-a/project.json has no build target');
+  });
+
+  describe('build cache', () => {
+    const git = (target: string, ...args: string[]) =>
+      execFileSync(
+        'git',
+        [
+          '-c',
+          'user.name=t',
+          '-c',
+          'user.email=t@t',
+          '-c',
+          'commit.gpgsign=false',
+          '-c',
+          'core.hooksPath=/dev/null',
+          ...args,
+        ],
+        { cwd: target, stdio: 'ignore' },
+      );
+    const repo = () => {
+      const { target, product } = checkout();
+      const write = (path: string, source: string) => {
+        mkdirSync(dirname(join(target, path)), { recursive: true });
+        writeFileSync(join(target, path), source);
+      };
+
+      write('.gitignore', 'node_modules\n/dist\n');
+      write('apps/app-a/src/main.ts', 'boot()');
+      write('apps/app-a/src/harness/parts.ts', 'export const PARTS = {};');
+      write('node_modules/pkg-a/package.json', JSON.stringify({ name: 'pkg-a', version: '1.0.0' }));
+      write('node_modules/@scope/pkg-b/package.json', JSON.stringify({ name: '@scope/pkg-b', version: '1.0.0' }));
+      git(target, 'init', '-q');
+      git(target, 'add', '.');
+      git(target, 'commit', '-q', '-m', 'init');
+
+      return { target, product, write, cacheDir: mkdtempSync(join(tmpdir(), 'cli-design-harness-cache-')) };
+    };
+    const counted = (then = '', main = 'apps/app-a/src/main.ts') => {
+      const log = join(mkdtempSync(join(tmpdir(), 'cli-design-harness-builds-')), 'builds');
+      const commandOf = nodeBuilding(
+        `const fs = require('fs'); fs.appendFileSync(${JSON.stringify(log)}, 'x'); const out = process.argv[1] + '/browser'; fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(out + '/index.html', fs.readFileSync(${JSON.stringify(main)}, 'utf8')); ${then}`,
+      );
+
+      return { commandOf, builds: () => (existsSync(log) ? readFileSync(log, 'utf8').length : 0) };
+    };
+    const served = async (options: Parameters<typeof startHarnessServer>[0]) => {
+      const server = await startHarnessServer(options);
+
+      if (typeof server === 'string') throw new Error(server);
+
+      const text = await (await fetch(`${server.url}/__design-harness`)).text();
+
+      return { server, text };
+    };
+    const serveOnce = async (options: Parameters<typeof startHarnessServer>[0]) => {
+      const { server, text } = await served(options);
+
+      await server.stop();
+
+      return text;
+    };
+
+    it('reuses the last build while no input changed and rebuilds when a tracked, untracked or installed input changed', async () => {
+      const { target, product, write, cacheDir } = repo();
+      const { commandOf, builds } = counted();
+      const start = { target, product, commandOf, cacheDir };
+
+      expect(await serveOnce(start)).toBe('boot()');
+      expect(builds()).toBe(1);
+
+      expect(await serveOnce(start)).toBe('boot()');
+      expect(builds()).toBe(1);
+
+      write('apps/app-a/src/main.ts', 'boot(2)');
+      expect(await serveOnce(start)).toBe('boot(2)');
+      expect(builds()).toBe(2);
+
+      git(target, 'commit', '-q', '-am', 'edit');
+      expect(await serveOnce(start)).toBe('boot(2)');
+      expect(builds()).toBe(2);
+
+      write('dist/ignored.txt', 'x');
+      expect(await serveOnce(start)).toBe('boot(2)');
+      expect(builds()).toBe(2);
+
+      write('apps/app-a/src/new-part.ts', 'export const a = 1;');
+      await serveOnce(start);
+      expect(builds()).toBe(3);
+
+      write('apps/app-a/src/harness/parts.ts', 'export const PARTS = { a: 1 };');
+      await serveOnce(start);
+      expect(builds()).toBe(4);
+
+      write('node_modules/@scope/pkg-b/package.json', JSON.stringify({ name: '@scope/pkg-b', version: '1.0.10' }));
+      await serveOnce(start);
+      expect(builds()).toBe(5);
+
+      rmSync(join(target, 'apps/app-a/src/new-part.ts'));
+      await serveOnce(start);
+      expect(builds()).toBe(6);
+
+      expect(await serveOnce({ ...start, commandOf: vi.fn(HARNESS_BUILD) })).toBe('<script src="main.js"></script>');
+    });
+
+    it('does not keep a build whose inputs changed while it ran', async () => {
+      const { target, product, write, cacheDir } = repo();
+      const { commandOf, builds } = counted("fs.writeFileSync('apps/app-a/src/main.ts', 'boot(mid)');");
+
+      expect(await serveOnce({ target, product, commandOf, cacheDir })).toBe('boot()');
+
+      write('apps/app-a/src/main.ts', 'boot()');
+      await serveOnce({ target, product, commandOf, cacheDir });
+      expect(builds()).toBe(2);
+    });
+
+    it('builds into a temp folder it removes once the build is kept', async () => {
+      const { target, product, cacheDir } = repo();
+      const commandOf = vi.fn(HARNESS_BUILD);
+
+      await serveOnce({ target, product, commandOf, cacheDir });
+      expect(existsSync(dirname(outputOf(commandOf)))).toBe(false);
+    });
+
+    it('keeps a build another command still serves while newer builds replace old ones', async () => {
+      const { target, product, write, cacheDir } = repo();
+      const { commandOf } = counted();
+      const first = await served({ target, product, commandOf, cacheDir });
+
+      for (const version of [1, 2, 3, 4]) {
+        write('apps/app-a/src/main.ts', `boot(${version})`);
+        await serveOnce({ target, product, commandOf, cacheDir });
+      }
+
+      expect(await (await fetch(`${first.server.url}/__design-harness`)).text()).toBe('boot()');
+      await first.server.stop();
+
+      write('apps/app-a/src/main.ts', 'boot(5)');
+      await serveOnce({ target, product, commandOf, cacheDir });
+      expect(execFileSync('ls', [cacheDir], { encoding: 'utf8' }).trim().split('\n').length).toBeLessThanOrEqual(3);
+    });
+
+    it('builds every time outside a git checkout', async () => {
+      const { target, product } = checkout();
+      const { commandOf, builds } = counted('', 'apps/app-a/main.ts');
+      const cacheDir = mkdtempSync(join(tmpdir(), 'cli-design-harness-cache-'));
+
+      writeFileSync(join(target, 'apps/app-a/main.ts'), 'boot()');
+      await serveOnce({ target, product, commandOf, cacheDir });
+      await serveOnce({ target, product, commandOf, cacheDir });
+      expect(builds()).toBe(2);
+    });
   });
 
   it.runIf(process.env['ET_DESIGN_REAL_HARNESS'])(
