@@ -1031,6 +1031,7 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     unordered list and fell out. Why missed: a decision has no open state anywhere once the plan entry is written.
     Fix (process, now): a decided Impl Q stays in the builder's ordered queue until a commit names it. Fix (any
     project, after MVP): a decision that names a part shows as an open point of that part until a commit builds it.
+    Q122 built in 9a31fd997 (the sketch matrix keeps a drawn frame in each shown column); finding 93 in e7a578e72.
 93. The ready re-check reported "pages/sketches: sketch ready, not merged", and Tom found no such sketch (Tom,
     2026-11-01). Cause (builder): sketch pages-system targets both pages/system and pages/sketches, and the open
     point does not name the sketch. Fix (any project, with Q122): the open point names the sketch, for example
