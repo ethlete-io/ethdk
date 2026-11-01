@@ -773,7 +773,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     Cause: ready, go and implemented store `partHashOf` (baseline.ts:42) over the part's own folder plus
     @shared/@assets only; imported parts, @ethlete/*/design mocks, the app component and SDK runtime/CSS are not
     covered, and c3082e0d3 changed only menu.directive.ts, menu-item.directive.ts and menu.component.css.
-    `design check` lists ready parts (check-system.ts:364) but never re-compares them. Tool change: Impl Q112 (Tom).
+    `design check` lists ready parts (check-system.ts:364) but never re-compares them. Tool change: Impl Q112 (Tom), done in
+    3c0410ef6 (`STALE <part>: design <files>; app <files>`; drift from before the upgrade is not caught, Q109 is).
 59. Live-page compare slice 4 (Impl Q78, 6d3588e6f, builder, 2026-11-01): merge failed with a 0x0 swapped host
     (fix: wait for a sized host; fixed clock `now`); inventory 501029 px is mostly a sample mismatch (app showed
     pages/system inventory, design pages/flows; 453k of it), the rest is list selectors full path vs short names,
@@ -836,6 +837,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     bug reaches the first consumer. Also: the Q105 agent's `design go --by tom` for the new, unseen error-toast
     drawing passed the classifier (against finding 66); the builder removed the uncommitted go entry. Lesson: the
     classifier is no reliable guard for a go; only the Impl Q113 decision ref is.
+69. The Q112 push first failed on prettier (builder, 2026-11-01): the agent committed only its own hunks of
+    part-ready.ts, and the committed text was never formatted (fixed in a style(cli) commit). Lesson: a hunk-only
+    commit skips prettier on the text that gets committed; format the file before staging hunks.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
