@@ -1128,7 +1128,7 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      `text-ui-md` (the app already uses it since ef47f58b8). Why missed: the Q127 agent ran only compare (53/53 ok), not
      `design check`, and nothing gates a commit on check. Process rule: a design edit runs `design check --part` before
      its commit. Tool fix (any project): the pre-push hook or `design compare` runs the static check problems for the
-     touched parts and stops on UTILITY-CSS.
+     touched parts and stops on UTILITY-CSS. Fixed in 37655a447; check clean, pixels unchanged, the go carries over.
 106. The Merge button in the merge view shows no loading state while the merge runs (Tom, 2026-11-01, merge of
      pages-system went through). Fact: neither the pages/merge design nor merge.component.ts has a loading or busy
      state. Why missed: no check asks for a pending state on a control whose action is asynchronous (a server write).

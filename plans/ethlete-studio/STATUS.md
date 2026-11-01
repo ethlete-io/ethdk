@@ -14,7 +14,7 @@ ausgeklammert.
 | ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | components/comment-pin          | ✅     |                                                                                                                         |                   |
 | components/disclosure           | ✅     |                                                                                                                         |                   |
-| components/tree-row             | ✅     | Go gegeben (22:38); Utility-Warnung wird behoben (Befund 105)                                                           | Builder           |
+| components/tree-row             | ✅     |                                                                                                                         |                   |
 | components/zoom-chip            | ✅     |                                                                                                                         |                   |
 | elements/part-tree              | ✅     |                                                                                                                         |                   |
 | elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
