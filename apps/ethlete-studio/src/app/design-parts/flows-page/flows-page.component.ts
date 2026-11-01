@@ -1,5 +1,5 @@
-import { Component, computed, inject, input, model, output, ViewEncapsulation } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
@@ -116,16 +116,16 @@ const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, c
                 <figure [style.left.px]="box.x" [style.top.px]="box.y" class="absolute m-0 flex flex-col gap-space-1">
                   <span class="text-ui-sm text-et-surface-muted">{{ box.title }}</span>
                   <div class="rounded-sm outline outline-et-surface-border">
-                    <div [style.width.px]="graph().w" [style.height.px]="graph().h" class="overflow-hidden">
-                      <iframe
-                        [src]="box.src"
-                        [title]="box.title"
-                        [style.width.px]="SHOT.width"
-                        [style.height.px]="SHOT.height"
-                        [style.transform]="'scale(' + SHOT.scale + ')'"
-                        [style.transformOrigin]="'0 0'"
-                        class="block border-0"
-                      ></iframe>
+                    <div
+                      [style.width.px]="graph().w"
+                      [style.height.px]="graph().h"
+                      class="overflow-hidden"
+                      data-et-projected="shot"
+                    >
+                      <ng-container
+                        [ngTemplateOutlet]="frameTemplate()"
+                        [ngTemplateOutletContext]="{ $implicit: box }"
+                      />
                     </div>
                   </div>
                 </figure>
@@ -168,6 +168,7 @@ const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, c
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    NgTemplateOutlet,
     BUTTON_IMPORTS,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
@@ -178,7 +179,7 @@ const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, c
   host: { class: 'block h-screen w-full' },
 })
 export class FlowsPageComponent {
-  private sanitizer = inject(DomSanitizer);
+  public frameTemplate = input<TemplateRef<{ $implicit: FlowsPageFrame }> | null>(null);
   public flow = input<'open' | 'none'>('open');
   public flows = input(FLOWS_SAMPLE);
   public selected = input(FLOWS_SAMPLE[0]);
@@ -202,7 +203,7 @@ export class FlowsPageComponent {
 
   public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.flows;
-  protected readonly SHOT = SHOT;
+  public readonly SHOT = SHOT;
 
   protected graph = computed(() => {
     const { width, height, scale, colGap, rowGap, caption } = SHOT;
@@ -250,7 +251,6 @@ export class FlowsPageComponent {
       boxes: frames.map((frame) => ({
         ...frame,
         ...at(frame),
-        src: this.sanitizer.bypassSecurityTrustResourceUrl(frame.src),
       })),
       edges,
     };
