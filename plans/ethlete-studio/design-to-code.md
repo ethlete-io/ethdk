@@ -560,8 +560,16 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 12. The go hash counts the `implements` link (Impl Q28).
 13. UI text in the wrong language (English tooltips in a German UI, Impl Q41); Studio needs i18n later, so a check
     for hardcoded UI text, not only for the language.
+14. The SDK menu mock in the kit does not draw the real pane's padding and elevation, so a design that uses the mock
+    is still darker and its rows sit about 5 px higher than the real SDK overlay (Impl Q34). Lesson candidate: kit
+    mocks are checked against the real SDK component.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
 - Impl Q41 zoom-chip titles (Tom, 2026-11-01): German `title` tooltips, in Tom's collected round. Studio must not stay
   German-only: i18n comes later, so UI text should be ready for translation, not hardcoded per language. Finding 13.
+- Impl Q42 tree aria text (Tom, 2026-11-01): `TreeRowItemComponent` hardcodes English aria text ("Sketch in
+  progress", "N open comments"). Now, in a small builder slice: German text through one central label map, the first
+  i18n seam for Studio (finding 13); a later translation plugs in there without component changes.
+- Impl Q43 dead tree badges (Tom, 2026-11-01): `treeOf` still computes the dropped badges; delete that code after
+  Tom's collected round, not now.
