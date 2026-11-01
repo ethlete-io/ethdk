@@ -17,7 +17,7 @@ export const shellCollapse = ({ interaction }: Props = {}) => {
     class: 'size-control-sm p-0',
   }).replace(
     /^<button /,
-    '<button data-et-control="collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',
+    '<button data-et-control="collapse" data-et-action="emit:collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',
   );
 
   return interaction ? forceInteraction(markup, interaction) : markup;

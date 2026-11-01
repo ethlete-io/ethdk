@@ -62,6 +62,12 @@ const bubbleClass = (kind: RailKind, active: boolean, panelHidden: boolean) => {
 const railButton = (markup: string, label: string, force?: RailForce) =>
   force?.interaction && force.label === label ? forceInteraction(markup, force.interaction) : markup;
 
+const RAIL_ACTIONS: Record<RailKind, string> = {
+  section: 'emit:sectionChange',
+  product: 'emit:productChange',
+  all: 'emit:allProducts',
+};
+
 const railItem = (
   inner: string,
   label: string,
@@ -72,7 +78,7 @@ const railItem = (
 ) =>
   `<div class="st-shell-slot relative flex justify-center w-full ${active ? `before:absolute before:left-0 ${kind === 'section' ? 'before:bg-et-theme' : 'before:bg-text'}` : ''}" data-kind="${kind}"${active ? ' data-active' : ''}>${control(
     railButton(
-      `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
+      `<button type="button"${kind === 'product' ? ' data-et-auto-surface' : ''} class="st-shell-bubble flex items-center justify-center p-0 text-ui-sm font-ui-strong ${bubbleClass(kind, active, panelHidden)}" aria-label="${label}" data-et-action="${kind === 'section' && active && !panelHidden ? 'emit:collapse' : RAIL_ACTIONS[kind]}"${active ? ` aria-current="${kind === 'section' ? 'page' : 'true'}"` : ''}>${inner}</button>`,
       label,
       force,
     ),
@@ -101,7 +107,9 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
       ${shellCollapse()}
     </header>
     <div class="flex-1 min-h-0 overflow-hidden p-space-2">${side}</div>
-    <footer class="st-shell-side-foot p-space-2">${shellProjectSwitch({ open: pickerOpen })}</footer>
+    <footer class="st-shell-side-foot p-space-2">
+      ${shellProjectSwitch({ open: pickerOpen }, { open: 'project-picker', closed: 'open' })}
+    </footer>
   </aside>`;
 
 const MENU_ITEM = 'data-et-control="item"';
@@ -110,13 +118,19 @@ const PROJECT_ROWS: MenuMockRow[] = [
   {
     kind: 'radio-group',
     items: [
-      { kind: 'radio', label: 'ethlete-sdk', checked: true, active: true, attributes: MENU_ITEM },
-      { kind: 'radio', label: 'fut-frontend', attributes: MENU_ITEM },
-      { kind: 'radio', label: 'design-playground', attributes: MENU_ITEM },
+      {
+        kind: 'radio',
+        label: 'ethlete-sdk',
+        checked: true,
+        active: true,
+        attributes: `${MENU_ITEM} data-et-action="open"`,
+      },
+      { kind: 'radio', label: 'fut-frontend', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
+      { kind: 'radio', label: 'design-playground', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
     ],
   },
   { kind: 'separator' },
-  { label: 'Projekt öffnen…', attributes: MENU_ITEM },
+  { label: 'Projekt öffnen…', attributes: `${MENU_ITEM} data-et-action="emit:openProject"` },
 ];
 
 const picker = (placement: 'above' | 'beside', projectMenu: string) =>

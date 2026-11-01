@@ -23,6 +23,7 @@ export const disclosure = ({ label, body, open, size = 'sm', interaction }: Prop
     type="button"
     data-et-surface-interactive
     data-et-control="toggle"
+    data-et-action="${size === 'xs' ? 'emit:openChange' : open ? 'rest' : 'open'}"
     aria-expanded="${open}"
   >
     ${CHEVRON}<span>${label}</span>

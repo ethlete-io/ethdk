@@ -15,6 +15,7 @@ export type Row = {
   status?: 'in-progress' | 'ready';
   comments?: number;
   interaction?: RowInteraction;
+  action?: string;
 };
 
 export type Props = { rows: Row[] };
@@ -50,6 +51,7 @@ const rowMarkup = (r: Row) => {
         aria-level="${r.depth + 1}"
         ${r.kind === 'leaf' ? '' : `aria-expanded="${r.expanded === true}"`}
         tabindex="0"
+        ${r.action ? `data-et-action="${r.action}"` : ''}
         data-et-surface-interactive
         data-kind="${r.kind}"
         ${r.selected ? 'data-selected aria-current="true"' : ''}

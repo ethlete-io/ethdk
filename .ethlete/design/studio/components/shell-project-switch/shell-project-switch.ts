@@ -20,24 +20,33 @@ const projectRows = (option?: Props['option']): MenuMockRow[] => {
     {
       kind: 'radio-group',
       items: [
-        { kind: 'radio', label: 'ethlete-sdk', checked: true, active: !option, attributes: MENU_ITEM },
+        {
+          kind: 'radio',
+          label: 'ethlete-sdk',
+          checked: true,
+          active: !option,
+          attributes: `${MENU_ITEM} data-et-action="closed"`,
+        },
         {
           kind: 'radio',
           label: 'fut-frontend',
           active: !!forced,
-          attributes: forced ? `${MENU_ITEM} data-et-force="${forced}"` : MENU_ITEM,
+          attributes: `${MENU_ITEM} data-et-action="emit:projectChange"${forced ? ` data-et-force="${forced}"` : ''}`,
         },
-        { kind: 'radio', label: 'design-playground', attributes: MENU_ITEM },
+        { kind: 'radio', label: 'design-playground', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
       ],
     },
     { kind: 'separator' },
-    { label: 'Projekt öffnen…', attributes: MENU_ITEM },
+    { label: 'Projekt öffnen…', attributes: `${MENU_ITEM} data-et-action="emit:openProject"` },
   ];
 };
 
 export const shellProjectSwitchStyles = styles + buttonStyles;
 
-export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) => {
+export const shellProjectSwitch = (
+  { open = false, interaction }: Props = {},
+  actions: { open: string; closed: string } = { open: 'open', closed: 'closed' },
+) => {
   const markup = button({
     label: html`<span
         class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm bg-et-surface-bg text-et-surface text-ui-xs font-ui-strong"
@@ -51,7 +60,7 @@ export const shellProjectSwitch = ({ open = false, interaction }: Props = {}) =>
     class: 'w-full h-control-md justify-start gap-space-2 py-0 px-space-2 text-left [&>.et-button-contents]:flex-1',
   }).replace(
     /^<button /,
-    `<button data-et-control="project" aria-haspopup="listbox" aria-expanded="${open}" data-can-animate `,
+    `<button data-et-control="project" data-et-action="${open ? actions.closed : actions.open}" aria-haspopup="listbox" aria-expanded="${open}" data-can-animate `,
   );
 
   return interaction ? forceInteraction(markup, interaction) : markup;

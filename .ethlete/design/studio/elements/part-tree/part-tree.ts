@@ -20,6 +20,7 @@ const partRows = (part: TreePart): Row[] => [
     label: part.name,
     depth: 1,
     kind: part.leaf === true ? 'leaf' : 'part',
+    action: part.leaf === true ? 'emit:activate' : 'emit:expandedChange',
     expanded: part.states !== undefined,
     selected: part.selected === true,
     ...(part.interaction ? { interaction: part.interaction } : {}),
@@ -29,13 +30,14 @@ const partRows = (part: TreePart): Row[] => [
     label: state.name,
     depth: 2,
     kind: 'leaf',
+    action: 'emit:activate',
     inert: state.inert === true,
     selected: state.selected === true,
   })),
 ];
 
 const layerRows = (layer: TreeLayer): Row[] => [
-  { label: layer.title, depth: 0, kind: 'group', expanded: layer.open },
+  { label: layer.title, depth: 0, kind: 'group', expanded: layer.open, action: 'emit:expandedChange' },
   ...layer.parts.flatMap(partRows),
 ];
 
