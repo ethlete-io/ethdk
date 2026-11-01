@@ -1005,6 +1005,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     SDK files and any change there drops it. Why missed: a gate change is not a part change, but the tool treats it
     as one and leaves the re-check to an agent. Fix: when a gate gets stricter, the tool re-checks every marked part
     at once and keeps the mark of each part that passes; a mark drops only for a part that fails, with the reason.
+89. The pages/inbox switch "Erledigte zeigen" shows no focus ring on keyboard focus (builder, 2026-11-01). The tool
+    caught it: the finding-76 check in `design actions` (ab55b3263, 942b6b058) reports it as a warning, because a
+    focus-within wrapper may draw the ring instead. Cause not checked yet. Fix in the inbox ready slice; no new tool
+    change. Gap: the live check presses only controls on shown pages, so a part no live state renders is not covered
+    (parked with Flows).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
