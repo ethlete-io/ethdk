@@ -4,28 +4,43 @@ Stand: 01.11.2026
 
 ## Ziel
 
-Studio ist fertig (MVP), wenn diese Abläufe funktionieren. Jeder Ablauf hat einen Test, der die echte App klickt.
+Studio ist fertig (MVP), wenn jedes Studio-Teil im Code so aussieht wie sein gemergter Entwurf und keine offenen Punkte
+mehr hat („fertig“). Die Abläufe selbst funktionieren schon. Chat, Flows und Inventar sind bis nach dem MVP
+ausgeklammert.
 
-| #   | Ablauf                                                           | Stand |
-| --- | ---------------------------------------------------------------- | ----- |
-| 1   | Studio starten und ein Projekt wählen                            | ❌    |
-| 2   | Ein Teil im Baum öffnen und seine Zustände auf dem Canvas sehen  | ❌    |
-| 3   | Einen Sketch öffnen und die Varianten mit „Aktuell“ vergleichen  | ❌    |
-| 4   | Eine Variante mergen                                             | ❌    |
-| 5   | Einen Kommentar setzen und die Antwort des Agents im Inbox sehen | ❌    |
+## Teile
 
-Flows und Inventar sind bis nach dem MVP ausgeklammert. Das Inventar wird ohnehin neu gebaut.
+| Teil                    | Entwurf gemergt | Im Code | Fertig |
+| ----------------------- | --------------- | ------- | ------ |
+| Canvas-Ansicht          | ✅              | ✅      | ❌     |
+| Kommentar-Pin           | ✅              | ✅      | ❌     |
+| Aufklapper              | ✅              | ✅      | ❌     |
+| Seitenleiste einklappen | ✅              | ✅      | ❌     |
+| Projektwechsel          | ✅              | ✅      | ❌     |
+| Baumzeile               | ✅              | ✅      | ❌     |
+| Zoom-Chip               | ✅              | ✅      | ❌     |
+| Fehler-Toast            | ❌              | ❌      | ❌     |
+| Canvas-Rahmen           | ✅              | ✅      | ❌     |
+| Teile-Baum              | ✅              | ✅      | ❌     |
+| Hauptlayout             | ✅              | ✅      | ❌     |
+| Studio-Menü             | ✅              | ✅      | ✅     |
+| Start                   | ✅              | ✅      | ❌     |
+| System                  | ✅              | ✅      | ❌     |
+| Sketches                | ✅              | ✅      | ❌     |
+| Merge                   | ✅              | ✅      | ❌     |
+| Inbox                   | ✅              | ✅      | ❌     |
 
-Entwurf: Tom korrigiert die Liste. ✅ heißt, der Klick-Test läuft grün.
+Stand: 1 von 17 Teilen fertig. Der Fehler-Toast ist neu und noch in Arbeit.
 
 ## Regeln, bis das Ziel steht
 
-1. Gebaut wird nur, was einen Ablauf repariert. Neue Prozess-Werkzeuge kommen auf die Liste für später.
+1. Gebaut wird nur, was ein Teil fertig macht. Neue Prozess-Werkzeuge kommen auf die Liste für später.
 2. Jedes Ding gibt es nur einmal: ein Canvas, ein Picker, keine Kopien.
 3. Jeder Fehler wird zuerst ein Test, dann wird er behoben.
-4. Der Builder wartet nicht auf Tom. Er arbeitet einen Ablauf nach dem anderen. Tom schaut, wann er Zeit hat.
+4. Der Builder wartet nicht auf Tom. Tom schaut, wann er Zeit hat.
 5. Tom bekommt eine kurze Runde, wenn er da ist: was jetzt geht, höchstens 3 Fragen.
 
 ## Gerade in Arbeit
 
-- Ein Canvas für System und Sketches (Ablauf 2 und 3).
+- Ein Canvas für System und Sketches.
+- Fehler-Toast.
