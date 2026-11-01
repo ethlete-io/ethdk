@@ -213,17 +213,6 @@ export const designRoots$ = (): Observable<DesignRoots> => invokeHost$<DesignRoo
 export const designRootsAdd$ = (checkout: string): Observable<DesignRoots> =>
   invokeHost$<DesignRoots>('design_roots_add', { checkout });
 
-/** Drops a checkout from the list. The checkout itself is left alone. */
-export const designRootsForget$ = (checkout: string): Observable<DesignRoots> =>
-  invokeHost$<DesignRoots>('design_roots_forget', { checkout });
-
-/** Names the folder a scan walks. An empty name drops it again. */
-export const designRootsSearch$ = (folder: string): Observable<DesignRoots> =>
-  invokeHost$<DesignRoots>('design_roots_search', { folder });
-
-/** Reports every checkout under the folder that carries design work, kept or not. */
-export const designScan$ = (folder: string): Observable<string[]> => invokeHost$<string[]>('design_scan', { folder });
-
 export type PartOrigin = 'product' | 'base' | 'overridden';
 
 /** What a rule, or the loading of a part's module, finds wrong. `LOAD` means the part does not render. */
