@@ -52,7 +52,7 @@ export const actionScanScriptOf = (roots: string[]) => `(() => {
       seen.add(element);
       if (element.matches(':disabled, [aria-disabled="true"]') || element.closest('[inert], [aria-hidden="true"]')) continue;
       if (element.getClientRects().length === 0) continue;
-      const role = element.getAttribute('role') ?? (element.tagName === 'INPUT' ? 'input-' + element.type : implicit[element.tagName] ?? element.tagName.toLowerCase());
+      const role = element.getAttribute('role') ?? (element.tagName === 'INPUT' ? 'input-' + element.type : implicit[element.tagName] ?? (['DIV', 'SPAN'].includes(element.tagName) || element.tagName.includes('-') ? 'generic' : element.tagName.toLowerCase()));
       const key = role + ' "' + (element.getAttribute('aria-label') ?? element.textContent ?? '').replace(/\\s+/g, '') + '"';
       const occurrence = counts.get(key) ?? 0;
       counts.set(key, occurrence + 1);
@@ -210,10 +210,72 @@ export const pairElementsOf = <TDesign extends ActionElement>(options: { design:
   const designs = new Map(options.design.map((element) => [idOf(element), element]));
   const apps = new Set(options.app.map(idOf));
 
-  return {
-    paired: options.app.map((app) => ({ app, design: designs.get(idOf(app)) ?? null })),
-    missing: options.design.filter((design) => design.action !== null && !apps.has(idOf(design))),
+  const roleOf = (element: ActionElement) => element.key.slice(0, element.key.indexOf(' "'));
+  const leftOf = <T extends ActionElement>(elements: T[], paired: (element: T) => boolean) => {
+    const byRole = new Map<string, T[]>();
+
+    for (const element of elements.filter((candidate) => !paired(candidate)))
+      byRole.set(roleOf(element), [...(byRole.get(roleOf(element)) ?? []), element]);
+
+    return byRole;
   };
+  const designLeft = leftOf(options.design, (design) => apps.has(idOf(design)));
+  const appLeft = leftOf(options.app, (app) => designs.has(idOf(app)));
+  const renamed = new Map<ActionElement, TDesign>();
+
+  for (const [role, [app, ...moreApps]] of appLeft) {
+    const [design, ...moreDesigns] = designLeft.get(role) ?? [];
+
+    if (app && design && moreApps.length === 0 && moreDesigns.length === 0) renamed.set(app, design);
+  }
+
+  const renamedDesigns = new Set(renamed.values());
+
+  return {
+    paired: options.app.map((app) => ({ app, design: designs.get(idOf(app)) ?? renamed.get(app) ?? null })),
+    missing: options.design.filter(
+      (design) => design.action !== null && !apps.has(idOf(design)) && !renamedDesigns.has(design),
+    ),
+  };
+};
+
+/** A script over a design picture that answers, per `data-et-action-probe`, the `data-et-control` names around the element, innermost first. */
+export const enclosingControlsScriptOf = () => `(() => {
+  const within = {};
+
+  for (const element of document.querySelectorAll('[data-et-action-probe]')) {
+    const names = [];
+
+    for (let at = element.closest('[data-et-control]'); at; at = at.parentElement?.closest('[data-et-control]') ?? null)
+      names.push(at.getAttribute('data-et-control'));
+
+    within[element.getAttribute('data-et-action-probe')] = names;
+  }
+
+  return within;
+})()`;
+
+/**
+ * Whether a design element without a `data-et-action` is exempt from declaring one, as `design complete` exempts it from
+ * ACTION-UNDECLARED: an embedded part draws it, or it sits in a control the part declares with a `part`.
+ */
+export const exemptFromDeclaringOf = (options: {
+  owners: readonly string[];
+  within: readonly string[];
+  controls: unknown;
+}) => {
+  const controls = typeof options.controls === 'object' && options.controls !== null ? options.controls : {};
+
+  return (
+    options.owners.length > 0 ||
+    options.within.some((name) => {
+      const declared = (controls as Record<string, unknown>)[name];
+
+      return (
+        typeof declared === 'object' && declared !== null && typeof (declared as { part?: unknown }).part === 'string'
+      );
+    })
+  );
 };
 
 /** The name a report line gives an element. */

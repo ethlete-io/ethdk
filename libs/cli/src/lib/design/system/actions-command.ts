@@ -18,6 +18,8 @@ import {
   drawsStateAlreadyOf,
   elementNameOf,
   embeddedOwnersScriptOf,
+  enclosingControlsScriptOf,
+  exemptFromDeclaringOf,
   embeddersOf,
   listenEmbeddedScriptOf,
   pairElementsOf,
@@ -129,14 +131,15 @@ export const runActionInput = async (options: {
   start: ActionStart;
   pick: { key: string; occurrence: number };
   input: ActionInput;
-  shoot: { size: DesignPreset | null; room: boolean } | null;
+  size: DesignPreset | null;
+  shoot: { room: boolean } | null;
   timeout: number;
   listen?: string[];
   expanded?: boolean;
 }) => {
-  const { browser, url, start, pick, input, shoot, timeout, listen = [], expanded = false } = options;
-  const room = !!shoot && !shoot.size && shoot.room;
-  const viewport = viewportOf(shoot?.size ?? null);
+  const { browser, url, start, pick, input, size, shoot, timeout, listen = [], expanded = false } = options;
+  const room = !!shoot && !size && shoot.room;
+  const viewport = viewportOf(size);
   const context = await browser.newContext({
     viewport: room ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
     deviceScaleFactor: 1,
@@ -195,7 +198,7 @@ export const runActionInput = async (options: {
     const embedded = listened > 0 ? ((await page.evaluate('window.__etEmbeddedEmits')) as string[]) : [];
     const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
     const after = expanded ? await expandedScanOf(page, roots) : null;
-    const app = shoot ? await shotOf({ page, size: shoot.size, room, timeout }) : null;
+    const app = shoot ? await shotOf({ page, size, room, timeout }) : null;
 
     return { emitted: [...emitted, ...embedded], prevented, app, ...(after && { after }) };
   } finally {
@@ -313,8 +316,13 @@ export const checkActions = async (options: {
 
           const found = await scanOf(page, ['body']);
           const owners = (await page.evaluate(embeddedOwnersScriptOf(part))) as Record<string, string[]>;
+          const within = (await page.evaluate(enclosingControlsScriptOf())) as Record<string, string[]>;
 
-          return found.map((element) => ({ ...element, owners: owners[String(element.probe)] ?? [] }));
+          return found.map((element) => ({
+            ...element,
+            owners: owners[String(element.probe)] ?? [],
+            within: within[String(element.probe)] ?? [],
+          }));
         } finally {
           await context.close();
         }
@@ -532,6 +540,12 @@ export const checkActions = async (options: {
 
         if (drawn === null || action === null || typeof action === 'string') {
           if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) continue;
+          if (
+            drawn !== null &&
+            action === null &&
+            exemptFromDeclaringOf({ owners: drawn.owners, within: drawn.within, controls: module.default?.controls })
+          )
+            continue;
 
           lines.push({
             state,
@@ -563,9 +577,9 @@ export const checkActions = async (options: {
                 start,
                 pick: element,
                 input,
+                size: frame.size,
                 shoot: goalPicture
                   ? {
-                      size: frame.size,
                       room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
                     }
                   : null,

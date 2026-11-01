@@ -14,6 +14,8 @@ import {
   drawsStateAlreadyOf,
   embeddedOwnersScriptOf,
   embeddersOf,
+  enclosingControlsScriptOf,
+  exemptFromDeclaringOf,
   openedFromOf,
   pairElementsOf,
   parseAction,
@@ -63,6 +65,30 @@ describe('actions', () => {
       ],
       missing: [design[1], design[2]],
     });
+  });
+
+  it('pairs the only unpaired design and app elements of a role when their accessible names differ', () => {
+    const design = [
+      element({ key: 'combobox "Runde1·Mehr"' }),
+      element({ key: 'button "A"' }),
+      element({ key: 'button "B"' }),
+    ];
+    const app = [element({ key: 'combobox "Runde"' }), element({ key: 'button "C"' }), element({ key: 'button "D"' })];
+
+    expect(pairElementsOf({ design, app }).paired).toEqual([
+      { app: app[0], design: design[0] },
+      { app: app[1], design: null },
+      { app: app[2], design: null },
+    ]);
+  });
+
+  it('exempts an element without an action that an embedded part or a control declared with a part draws', () => {
+    const controls = { canvas: { kind: 'field', part: 'components/canvas-viewport' }, close: { kind: 'button' } };
+
+    expect(exemptFromDeclaringOf({ owners: [], within: ['canvas'], controls })).toBe(true);
+    expect(exemptFromDeclaringOf({ owners: ['components/select'], within: [], controls })).toBe(true);
+    expect(exemptFromDeclaringOf({ owners: [], within: ['close'], controls })).toBe(false);
+    expect(exemptFromDeclaringOf({ owners: [], within: [], controls: undefined })).toBe(false);
   });
 
   it('names the parts that declare a control drawn by the part, never the part itself', () => {
@@ -249,6 +275,7 @@ describe('runActionInput', () => {
       start: { state: 'rest', props: {}, opener: null },
       pick: { key, occurrence: 0 },
       input,
+      size: null,
       shoot: null,
       timeout: 10_000,
     });
@@ -279,6 +306,7 @@ describe('runActionInput', () => {
           start: { state: 'rest', props: {}, opener: null },
           pick: { key: 'button "Pick"', occurrence: 0 },
           input: 'click',
+          size: null,
           shoot: null,
           timeout: 10_000,
           listen: ['app-part-a'],
@@ -311,6 +339,58 @@ describe('runActionInput', () => {
       });
     } finally {
       await page.close();
+    }
+  });
+
+  it('keys an element without a role by its generic role, not its tag, and lists the controls around it', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    try {
+      await page.setContent(`<div data-et-control="canvas"><div tabindex="0" aria-label="Design Canvas"></div></div>
+        <app-canvas tabindex="0" aria-label="Design Canvas"></app-canvas>`);
+
+      const found = (await page.evaluate(actionScanScriptOf(['body']))) as ActionElement[];
+      const within = (await page.evaluate(enclosingControlsScriptOf())) as Record<string, string[]>;
+
+      expect(found.map(({ key, occurrence }) => `${key}#${occurrence}`)).toEqual([
+        'generic "DesignCanvas"#0',
+        'generic "DesignCanvas"#1',
+      ]);
+      expect(within).toEqual({ '0': ['canvas'], '1': [] });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('loads the page at the frame size when it takes no shot', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const wide = createServer((_, response) => {
+      response.setHeader('content-type', 'text/html');
+      response.end(`<body><style>@media (max-width: 1399px) { button { display: none } }</style>
+        <div data-design-harness-host><span>Frame</span><button aria-label="Wide" onclick="__etDesignEmits.push({ output: 'wide' })">Wide</button></div>
+        <script>window.__etDesignEmits = [];</script></body>`);
+    });
+
+    await new Promise<void>((resolve) => wide.listen(0, '127.0.0.1', resolve));
+
+    try {
+      const run = await runActionInput({
+        browser: browser as Browser,
+        url: `http://127.0.0.1:${(wide.address() as AddressInfo).port}/`,
+        start: { state: 'rest', props: {}, opener: null },
+        pick: { key: 'button "Wide"', occurrence: 0 },
+        input: 'click',
+        size: { width: 1440, height: 900 },
+        shoot: null,
+        timeout: 10_000,
+      });
+
+      expect(run.emitted).toEqual(['wide']);
+    } finally {
+      await new Promise((resolve) => wide.close(resolve));
     }
   });
 
