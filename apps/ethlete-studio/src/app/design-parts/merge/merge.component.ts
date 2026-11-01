@@ -64,20 +64,22 @@ const CROP = { width: 266, height: 64, scale: 2 };
             </li>
           }
         </ul>
-        <ethlete-disclosure
-          [(open)]="unchanged"
-          [label]="LABELS.unchanged(unchangedStates().states.length, unchangedStates().part)"
-          size="xs"
-        >
-          <ul [class]="DISCLOSURE_BODY_CLASS">
-            @for (state of unchangedStates().states; track state) {
-              <li>
-                <span class="font-code text-et-surface">{{ unchangedStates().part }}</span
-                ><span class="text-et-surface-muted">{{ state }}</span>
-              </li>
-            }
-          </ul>
-        </ethlete-disclosure>
+        @if (unchangedStates().states.length > 0) {
+          <ethlete-disclosure
+            [(open)]="unchanged"
+            [label]="LABELS.unchanged(unchangedStates().states.length, unchangedStates().part)"
+            size="xs"
+          >
+            <ul [class]="DISCLOSURE_BODY_CLASS">
+              @for (state of unchangedStates().states; track state) {
+                <li>
+                  <span class="font-code text-et-surface">{{ unchangedStates().part }}</span
+                  ><span class="text-et-surface-muted">{{ state }}</span>
+                </li>
+              }
+            </ul>
+          </ethlete-disclosure>
+        }
         <span class="flex-1"></span>
         <div class="flex flex-col gap-space-3 border-t border-et-surface-border pt-space-3">
           <button (click)="merge.emit()" et-button type="button" variant="filled" size="sm">{{ LABELS.merge }}</button>
@@ -122,6 +124,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
                   [style.width.px]="CROP.width * CROP.scale"
                   [style.height.px]="CROP.height * CROP.scale"
                   class="relative flex-none overflow-hidden rounded-control-md bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
+                  inert
                 >
                   <div
                     [style.width.px]="CROP.width"
