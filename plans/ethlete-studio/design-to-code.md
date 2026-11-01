@@ -905,7 +905,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     check caught it: sketch check reads only variant render problems; nothing evaluates the Studio matrix. Lesson: a
     check must judge what the reviewer sees, not only what each variant renders. Tool change (builder work): sketch
     check runs the shared matrix function and warns when the "Aktuell" column has no drawn frame in the visible rows.
-    Design question for Tom: Q122.
+    Design question for Tom: Q122. Tool change done in 2d2ba64ee: `design sketch check` warns (exit 0); the first
+    real run warns on pages/system and pages/sketches. Not wired into sketch ready. The CLI reimplements the
+    matrix logic (aktuell-placeholders.ts), because the app takes "unchanged" from a pixel compare and cannot import
+    CLI code. Known drift: the CLI counts all non-rejected variants, the view only open rounds. Lesson: two copies of
+    the view logic drift; a later fix should move the matrix into one module both import.
 78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
