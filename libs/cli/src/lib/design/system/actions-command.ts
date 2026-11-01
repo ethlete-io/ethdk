@@ -395,7 +395,7 @@ export const checkActions = async (options: {
           );
 
           if (probes) {
-            const { failure, warning } = pointerFocusVerdictOf(probes);
+            const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: drawn?.action != null });
 
             lines.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
           }

@@ -18,6 +18,7 @@ const probeOf = (style: RingStyle, extra: Partial<RingProbe> = {}): RingProbe =>
   style,
   focused: true,
   textEntry: false,
+  control: false,
   ...extra,
 });
 
@@ -61,6 +62,23 @@ describe('pointerFocusVerdictOf', () => {
     expect(pointerFocusVerdictOf({ click: probeOf(hidden), clickThenKey: probeOf(ring), keyboard }).failure).toContain(
       'after a pointer click and a Shift press',
     ));
+
+  it('passes a ring a Shift press brings up on a control, as browsers draw it on a plain button', () =>
+    expect(
+      pointerFocusVerdictOf({ click: probeOf(hidden), clickThenKey: probeOf(ring, { control: true }), keyboard })
+        .failure,
+    ).toBeNull());
+
+  it('passes a ring a Shift press brings up on an element the design declares an action for', () =>
+    expect(
+      pointerFocusVerdictOf({ click: probeOf(hidden), clickThenKey: probeOf(ring), keyboard, activatable: true })
+        .failure,
+    ).toBeNull());
+
+  it('still fails a ring after a click on a control', () =>
+    expect(
+      pointerFocusVerdictOf({ click: probeOf(ring, { control: true }), keyboard, activatable: true }).failure,
+    ).toContain('after a pointer click'));
 
   it('passes a click that stays without ring after a Shift press', () =>
     expect(

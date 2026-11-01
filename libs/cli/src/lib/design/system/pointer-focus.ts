@@ -6,8 +6,11 @@ type Locator = ReturnType<Page['locator']>;
 /** The computed style of an element that draws a focus ring. */
 export type RingStyle = { outlineStyle: string; outlineWidth: string; outlineColor: string; boxShadow: string };
 
-/** What a probe reads from an element: its ring style, whether it holds focus, and whether it takes text input. */
-export type RingProbe = { style: RingStyle; focused: boolean; textEntry: boolean };
+/**
+ * What a probe reads from an element: its ring style, whether it holds focus, whether it takes text input, and whether
+ * it is a control (a native interactive element or one with an ARIA widget role).
+ */
+export type RingProbe = { style: RingStyle; focused: boolean; textEntry: boolean; control: boolean };
 
 const TRANSPARENT = /^transparent$|\/\s*0(\.0+)?\s*\)$|,\s*0(\.0+)?\s*\)$/;
 
@@ -29,19 +32,22 @@ const ringAfter = (probe: RingProbe | null | undefined): probe is RingProbe =>
 const outlineOf = (style: RingStyle) => `outline ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
 
 /**
- * The verdict of a pointer-focus check. A pointer click must leave no ring, also after a following key press that does
- * not move focus (text entry is exempt: browsers always match `:focus-visible` there). Keyboard focus without a ring is
- * a warning, not a failure: another indicator, such as a focus-within wrapper, may draw it.
+ * The verdict of a pointer-focus check. A pointer click must leave no ring (text entry is exempt: browsers always match
+ * `:focus-visible` there). A focus target that is no control - neither a `control` probe nor `activatable`, an element
+ * the design declares an action for - must also stay without ring after a following key press that moves no focus;
+ * on a control, browsers match `:focus-visible` after any key. Keyboard focus without a ring is a warning, not a
+ * failure: another indicator, such as a focus-within wrapper, may draw it.
  */
 export const pointerFocusVerdictOf = (options: {
   click: RingProbe | null;
   clickThenKey?: RingProbe | null;
   keyboard: { before: RingStyle; probe: RingProbe } | null;
+  activatable?: boolean;
 }): { failure: string | null; warning: string | null } => {
   const { click, clickThenKey, keyboard } = options;
   const failure = ringAfter(click)
     ? `shows a focus ring after a pointer click (${outlineOf(click.style)})`
-    : ringAfter(clickThenKey)
+    : !options.activatable && !clickThenKey?.control && ringAfter(clickThenKey)
       ? `shows a focus ring after a pointer click and a Shift press (${outlineOf(clickThenKey.style)})`
       : null;
   const warning =
@@ -60,10 +66,38 @@ export const POINTER_FOCUS_SELECTOR =
 
 const TEXT_FREE_INPUTS = ['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'];
 
+const CONTROL_SELECTOR = [
+  'button',
+  'a[href]',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  ...[
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'option',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'treeitem',
+    'gridcell',
+    'combobox',
+    'textbox',
+    'searchbox',
+    'slider',
+    'spinbutton',
+  ].map((role) => `[role="${role}"]`),
+].join(', ');
+
 /** Reads the ring probe of the element a locator names; `null` when it is not one the check visits. */
 export const readRingProbe = async (locator: Locator) =>
   locator.evaluate(
-    (element, { selector, textFree }) => {
+    (element, { selector, textFree, control }) => {
       if (!element.matches(selector)) return null;
 
       const style = getComputedStyle(element);
@@ -81,9 +115,10 @@ export const readRingProbe = async (locator: Locator) =>
           element instanceof HTMLTextAreaElement ||
           (element instanceof HTMLElement && element.isContentEditable) ||
           (element instanceof HTMLInputElement && !textFree.includes(type)),
+        control: element.matches(control),
       };
     },
-    { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS },
+    { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS, control: CONTROL_SELECTOR },
   ) as Promise<RingProbe | null>;
 
 /** Presses Tab so the last input is a key and the element itself does not hold focus. */

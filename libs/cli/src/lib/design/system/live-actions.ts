@@ -713,7 +713,7 @@ export const checkLiveActions = async (options: {
           }
 
           if (rings.click !== null) {
-            const { failure, warning } = pointerFocusVerdictOf(rings);
+            const { failure, warning } = pointerFocusVerdictOf({ ...rings, activatable: declared !== null });
 
             lines.push({ page: run.name, element: `${name} pointer focus`, input: null, parts, failure, warning });
           }
