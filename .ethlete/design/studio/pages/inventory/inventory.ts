@@ -1,5 +1,5 @@
 import { control } from '@ethlete/components/design/control';
-import { definePart, drawing, embedPage, html } from '@design-system';
+import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -105,7 +105,7 @@ const frameOf = (entries: Entry[]) =>
   html`<figure class="m-0 flex flex-col gap-space-2">
     <figcaption class="font-code text-ui-sm text-et-surface-muted">flow · desktop · dark</figcaption>
     <div class="relative self-start border border-et-surface-border">
-      ${embedPage('pages/flows', { state: 'flow', width: 1440, height: 900, scale: SCALE }).body}
+      <div class="bg-et-surface-bg" style="width:${1440 * SCALE}px;height:${900 * SCALE}px"></div>
       ${entries.map(boxOf).join('')}
     </div>
   </figure>`;
