@@ -70,6 +70,15 @@ const scanOf = async (page: Page, roots: string[]) =>
 
 const probeOf = (probe: number) => `[data-et-action-probe="${probe}"]`;
 
+/**
+ * Waits until the harness host shows and holds the mounted part: a page-layout host fills the viewport before the
+ * lazily loaded part renders into it.
+ */
+const harnessMountedOf = async (page: Page, timeout: number) => {
+  await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout });
+  await page.locator(`${HARNESS_HOST_SELECTOR} > *`).first().waitFor({ state: 'attached', timeout });
+};
+
 const shotOf = async (options: { page: Page; size: DesignPreset | null; room: boolean; timeout: number }) => {
   const { page, size, room, timeout } = options;
   const host = page.locator(HARNESS_HOST_SELECTOR).first();
@@ -124,7 +133,7 @@ export const runActionInput = async (options: {
     const page = await context.newPage();
 
     await page.goto(url, { timeout });
-    await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout });
+    await harnessMountedOf(page, timeout);
     await page.evaluate('document.fonts.ready');
 
     if (room) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
@@ -325,7 +334,7 @@ export const checkActions = async (options: {
           const page = await context.newPage();
 
           await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
-          await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
+          await harnessMountedOf(page, DRAW_TIMEOUT_MS);
 
           if (opener !== null) {
             const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((element) => element.key === opener);
@@ -363,10 +372,7 @@ export const checkActions = async (options: {
 
                 try {
                   await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
-                  await page
-                    .locator(HARNESS_HOST_SELECTOR)
-                    .first()
-                    .waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
+                  await harnessMountedOf(page, DRAW_TIMEOUT_MS);
                   await page.mouse.move(-1, -1);
 
                   if (opener !== null) {
@@ -395,7 +401,7 @@ export const checkActions = async (options: {
           );
 
           if (probes) {
-            const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: drawn?.action != null });
+            const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: !!drawn?.action });
 
             lines.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
           }
