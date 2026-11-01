@@ -23,7 +23,7 @@ ausgeklammert.
 | elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                                                               | Builder           |
 | pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129, wird gebaut); dann neues „Go geben“                                        | Builder, dann Tom |
 | pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                         | Builder, dann Tom |
-| pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün                                         | Builder, dann Tom |
+| pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
 | pages/start                     | ❌     | Leerer Kasten fliegt raus (Q134); dann „Änderung abnehmen“ und „Go geben“                                               | Builder, dann Tom |
