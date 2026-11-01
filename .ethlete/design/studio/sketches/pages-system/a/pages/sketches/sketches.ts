@@ -43,7 +43,7 @@ const side = await partTree.render({
   ],
 });
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
-const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
+const merge = await button.render({ label: 'Wählen', variant: 'outline', size: 'sm' });
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = commentPinMark(pinProps(PAGE_PIN));
 const open = await systemPage();
