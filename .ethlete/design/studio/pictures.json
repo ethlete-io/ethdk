@@ -625,24 +625,29 @@
   },
   "pages/system": {
     "review": {
-      "hash": "ced076d5fcc8722b",
+      "hash": "e1357c586c79616d",
       "states": {
-        "part": "f356b0e4274a886f",
-        "empty": "fc8d5c3ae4430de4",
-        "many-states": "2b48b14c0c6f9e3b",
-        "fit": "1ce540ccd98284b6",
-        "points-closed": "051a80f3e1ab3116",
-        "nothing-open": "3411c51b4c744321"
+        "part": "ed4f54aa1dfb22dd",
+        "empty": "16defa3c206b227b",
+        "many-states": "ce733c8678999f8e",
+        "fit": "1d4b9ab81ead0681",
+        "points-closed": "6e32d8467e89c6fe",
+        "nothing-open": "74748f5130400465",
+        "part-focus-visible": "c2b8182bd699ca21",
+        "points-closed-focus-visible": "85902ac380c49a0a"
       }
     },
     "go": {
-      "hash": "e89d4aa02f6db78c",
+      "hash": "051c368c61f74fa9",
       "states": {
-        "part": "fd2b7c41d4aa46f9",
-        "empty": "fc8d5c3ae4430de4",
-        "many-states": "41235c1995242430",
-        "points-closed": "df71764b137f9d1a",
-        "nothing-open": "3e813095f62bf25f"
+        "part": "ed4f54aa1dfb22dd",
+        "empty": "16defa3c206b227b",
+        "many-states": "ce733c8678999f8e",
+        "fit": "1d4b9ab81ead0681",
+        "points-closed": "6e32d8467e89c6fe",
+        "nothing-open": "74748f5130400465",
+        "part-focus-visible": "c2b8182bd699ca21",
+        "points-closed-focus-visible": "85902ac380c49a0a"
       }
     }
   }
