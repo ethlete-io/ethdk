@@ -1094,6 +1094,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      the app gives it. Tool fix (any project, after MVP): at go and in `design check`, render each SDK design piece
      root in the design frame and in the harness, and flag a different computed font-family or `--et-surface-*`
      value; warn when dist is older than the design source.
+102. Inbox comment rows are not clickable (Tom, 2026-11-01). Expected (Tom): a click on a comment opens its place
+     on the inbox canvas, the frame with its pin. Fact: the pages/inbox design declares only the controls pin, send,
+     resolved and retry; the rows have no control, although the design note says "the canvas shows the frame of the
+     selected comment". Why missed: `design actions` checks only declared controls, so a list whose rows have no
+     control passes, and Tom gave the go on a design without the row action. Tool lesson: open, asked the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
