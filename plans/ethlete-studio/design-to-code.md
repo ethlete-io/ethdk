@@ -1172,6 +1172,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      result only at the end (actions-command.ts:725, `checked.lines`), so a killed run loses all results. Tool fix
      (general): print each check line as it finishes. Lesson: a long CLI command must stream its results. Parked for
      after the MVP.
+112. `design actions` demands that Enter toggles a `role="switch"` ("Erledigte zeigen" on pages/inbox) (builder,
+     2026-11-01). WAI-ARIA needs only Space for a switch; Enter is optional, so this is a false fail. Tool fix (general):
+     check Space for a switch, Enter only where the role needs it. Lesson: keyboard checks follow the ARIA pattern of the
+     role, not one key set for all controls. The same run warns that the app `et-switch` shows no focus ring on keyboard
+     focus; the builder checks it with the canvas focus-ring fix. Parked for after the MVP.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
