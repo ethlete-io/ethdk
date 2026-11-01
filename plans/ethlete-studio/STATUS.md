@@ -57,8 +57,10 @@ oben rechts in der Teil-Ansicht.
 
 ## Für später gesammelt
 
+- Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben im Kopf die Auswahl der Design-Systeme; schnelle Auswahl unten zeigt Logo oder zwei Buchstaben (01.11.).
+
 - „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren (Befund 109), mit der Überarbeitung von Go.
-- Eigene Titelleiste mit Suche in der Mitte (Strg+K öffnet die Command Palette) und Knopf „Update“, wenn ein Update bereit ist. Projekt-Wechsel bleibt in der Seitenleiste. Arbeit (Rendern, Mergen) zeigt Studio nur in der Ansicht, auf die man wartet (01.11.).
+- Eigene Titelleiste mit Suche in der Mitte (Strg+K öffnet die Command Palette) und Knopf „Update“, wenn ein Update bereit ist. Arbeit (Rendern, Mergen) zeigt Studio nur in der Ansicht, auf die man wartet (01.11.).
 
 - Breite der Seitenleiste mit der Maus ziehen (Q133).
 

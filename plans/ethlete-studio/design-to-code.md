@@ -1540,3 +1540,18 @@ forbids a restart while a sub-agent runs, so the builder stood still. Change the
    agents whose answer the session waits for.
 4. First check whether a background sub-agent keeps running after `/clear`. If it dies, rule 3 does not apply and only
    rules 1 and 2 hold.
+
+### Sidebar header and switch decisions (Tom, 2026-11-01)
+
+After the MVP, except item 5.
+
+1. Repo switch and "Projekt öffnen" move into the logo menu (elements/studio-menu).
+2. The design system select (for example `studio`, `sdk`, `studio-lab` in ethlete-sdk) replaces the static name in the
+   sidebar header. The repo select at the sidebar bottom (`components/shell-project-switch`) goes away.
+3. The select sits left in the header and looks like the current name with a small chevron when closed. The collapse
+   button stays right.
+4. The quick switch of recent design systems at the rail bottom stays. Each button shows the system logo (for example
+   `studio/foundations/logo`); without a logo, two letters that make the system unique (for example "St", "Sd", "SL"),
+   never the same single letter for all. A tooltip shows the full name.
+5. MVP, pages/inbox: a resolved comment shows its pin after a click in the inbox, muted and with a check mark, so the
+   click always shows a place.
