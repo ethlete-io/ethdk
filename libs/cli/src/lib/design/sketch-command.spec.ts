@@ -1203,7 +1203,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked',
     );
     expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
-    expect(lines.pop()).toBe('components/button is in progress - mark it ready before a merge: design sketch ready components/button --by <model id> --product acme');
+    expect(lines.pop()).toBe(
+      'components/button is in progress - mark it ready before a merge: design sketch ready components/button --by <model id> --product acme',
+    );
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.splice(-2)).toEqual(['components/button is ready', 'auto-merge skipped: variant a changes default']);
     expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
