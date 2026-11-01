@@ -61,12 +61,12 @@ const STATUS_ITEM =
   template: `
     @if (serverDown() || serverStarting()) {
       <ethlete-shell-main
-        product=""
         [products]="[]"
         [project]="projectName()"
         [projects]="checkouts.names()"
         (projectChange)="checkouts.chooseByName($event)"
         (openProject)="checkouts.toggle()"
+        product=""
         fill
       >
         <div class="size-full overflow-auto pl-(--st-shell-inset-left)">
