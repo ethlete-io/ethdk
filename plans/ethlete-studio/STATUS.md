@@ -40,7 +40,11 @@ Stand: 1 von 17 Teilen fertig. Der Fehler-Toast ist neu und noch in Arbeit.
 4. Der Builder wartet nicht auf Tom. Tom schaut, wann er Zeit hat.
 5. Tom bekommt eine kurze Runde, wenn er da ist: was jetzt geht, höchstens 3 Fragen.
 
+## Erledigt
+
+- Ein Canvas für System und Sketches (01.11.). Sketches verschiebt jetzt mit gedrückter linker Maustaste wie System.
+
 ## Gerade in Arbeit
 
-- Ein Canvas für System und Sketches.
-- Fehler-Toast.
+- Pause bis 21:40.
+- Danach: alle Teile neu prüfen (Finding 88), dann Fehler-Toast.
