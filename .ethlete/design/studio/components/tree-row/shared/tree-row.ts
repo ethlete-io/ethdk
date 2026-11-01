@@ -45,7 +45,7 @@ const rowMarkup = (r: Row) => {
   const color = r.selected ? 'text-et-theme-ink' : r.kind === 'group' ? 'text-et-surface-muted' : 'text-et-surface';
 
   return `<div
-        class="st-trow relative flex items-center gap-space-1 rounded-control-sm ${r.selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
+        class="st-trow relative flex items-center gap-space-1 text-ui-md rounded-control-sm ${r.selected ? 'bg-et-theme/20' : ''} hover:bg-et-surface-interaction/9 active:bg-et-surface-interaction/15 ${color} whitespace-nowrap outline-none cursor-default"
         style="--depth: ${r.depth}"
         role="treeitem"
         aria-level="${r.depth + 1}"
