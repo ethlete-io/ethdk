@@ -2,16 +2,22 @@ import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { posix, resolve } from 'path';
+import { appFilesOf } from './app-files';
+import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
 import { matchesPattern } from './harness-config';
 import { goPartOf, goStateOf, readGo } from './part-go';
 import { readyMarkOf } from './part-ready';
+import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 
 export const IMPLEMENTED_FILE = 'implemented.json';
 
-/** The part hash a part was last implemented at, when, and the props hash of each state it had then. */
-export type PartImplemented = { hash: string; at: string; states: Record<string, string> };
+/**
+ * The design hash a part was last implemented at, when, the props hash of each state it had then, and the hash of
+ * each repository file its app component reached.
+ */
+export type PartImplemented = { hash: string; at: string; states: Record<string, string>; app?: FileHashes };
 
 /** A part a task can build: its go hash, the component path its `implements` names, and the directory of its go.json. */
 export type TaskPart = { part: string; hash: string; dir: string; component: string };
@@ -29,7 +35,8 @@ const isImplemented = (value: unknown): value is PartImplemented =>
   typeof value['hash'] === 'string' &&
   typeof value['at'] === 'string' &&
   isRecord(value['states']) &&
-  Object.values(value['states']).every((hash) => typeof hash === 'string');
+  Object.values(value['states']).every((hash) => typeof hash === 'string') &&
+  isOptionalFileHashes(value['app']);
 
 const sortedKeys = (_key: string, value: unknown) =>
   isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value;
@@ -59,11 +66,15 @@ export const readImplemented = (dir: string): Record<string, PartImplemented> =>
   }
 };
 
-/** Records a part as implemented at its current hash with the props hash of each of its `states`, or says why not. */
+/**
+ * Records a part as implemented at its current hash with the props hash of each of its `states` and the `app` file
+ * hashes, or says why not.
+ */
 export const markImplemented = (options: {
   product: ResolvedProduct;
   part: string;
   states: Record<string, unknown>;
+  app?: FileHashes;
   at?: string;
 }): PartImplemented | string => {
   const found = goPartOf({ product: options.product, part: options.part });
@@ -78,6 +89,7 @@ export const markImplemented = (options: {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([state, props]) => [state, stateHashOf(props)]),
     ),
+    ...(options.app ? { app: options.app } : {}),
   };
   const entries = Object.entries({ ...readImplemented(found.dir), [options.part]: implemented }).sort(([a], [b]) =>
     a.localeCompare(b),
@@ -232,7 +244,27 @@ export const themingDirectivesOf = (source: string) => [
   ),
 ];
 
-/** The parts of a product whose implemented record matches their go entry and whose ready mark still holds. */
+/** The component an `implements` link names for compare, or `null` for none, an unreadable or a route-only link. */
+export const linkedComponentOf = (source: string) => {
+  const link = partLinkOf(source);
+
+  return link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
+};
+
+/** The repository files of a part's app component that changed since its implemented record, `[]` without app hashes. */
+export const changedAppFilesOf = (options: { product: ResolvedProduct; part: string; record: PartImplemented }) => {
+  const { product, part, record } = options;
+  const component = linkedComponentOf(product.parts.find((candidate) => partKeyOf(candidate) === part)?.source ?? '');
+
+  if (!record.app || component === null) return [];
+
+  return changedFilesOf(record.app, appFilesOf({ root: repoRootOf(product), component }));
+};
+
+/**
+ * The parts of a product whose implemented record matches their go entry, whose app files did not change since, and
+ * whose ready mark still holds.
+ */
 export const doneParts = (options: { product: ResolvedProduct; parts: string[] }) =>
   options.parts.filter((part) => {
     const found = goPartOf({ product: options.product, part });
@@ -240,10 +272,12 @@ export const doneParts = (options: { product: ResolvedProduct; parts: string[] }
     if (typeof found === 'string') return false;
 
     const goHash = readGo(found.dir)[part]?.hash;
+    const record = readImplemented(found.dir)[part];
 
     return (
       goHash !== undefined &&
-      readImplemented(found.dir)[part]?.hash === goHash &&
-      readyMarkOf({ product: options.product, part }) !== null
+      record?.hash === goHash &&
+      readyMarkOf({ product: options.product, part }) !== null &&
+      changedAppFilesOf({ product: options.product, part, record }).length === 0
     );
   });

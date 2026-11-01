@@ -348,6 +348,18 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 409 when the part changed since `hash`. The one-part open-point answer also holds `go`. `et design check` prints a
 `GO <product>: <parts>` line when a go holds.
 
+The part hash of ready, go and implemented is the design hash: the part folder, the shared and asset files it uses, and
+every file it reaches through imports - other `@system` parts, `@ethlete/<lib>/design` mocks and the fixtures. Each
+mark stores the hash of every one of those files next to it, so an edit of an imported part or an SDK mock makes the
+mark stale too. `task --verify` also stores in `implemented.json` the hash of each repository file the app component
+reaches: relative imports, `templateUrl` and `styleUrl` files, and for an `@ethlete/*` import (resolved through the
+`tsconfig.base.json` paths to `libs/*/src`) only the files that declare the imported names. `et design check` prints
+`STALE <product> <part>: design <files>; app <files>` for each part with a ready mark or an implemented record whose
+ready mark or go no longer holds, or whose app files changed, and names the changed files; such a part no longer
+counts as done. A mark stored before the file lists holds while the old folder-only hash does: the first
+`et design check` moves it to the design hash and prints `REHASHED <product>: <part> (go, ready, implemented)`, and one
+whose folder changed since stays stale, listed with `files unknown: recorded before file lists`.
+
 `et design task components/chip --product app-a` prints what implementing a part with a current go takes: the go hash,
 the `implements` component, each state with its props, the states new or changed since the last implementation, the
 allowed files and the target, compare green, then a line naming the SDK surface and colour theming and the theming skill; `sketch new` ends its next steps with the same line. The allowed files are the folder of the component,

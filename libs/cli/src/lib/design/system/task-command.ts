@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
+import { appFilesOf } from './app-files';
 import { comparePart, ComparePart } from './compare-command';
 import { appStylesheetOf } from './harness-config';
 import { harnessStaleOf } from './harness-map';
@@ -19,6 +20,7 @@ import {
   taskStatesOf,
   verifyRangeOf,
 } from './part-task';
+import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { THEMING_TEXT } from './theming-text';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
@@ -188,7 +190,12 @@ export const designTask = async (options: {
       return 1;
     }
 
-    const implemented = markImplemented({ product, part: task.part, states: compared.states });
+    const implemented = markImplemented({
+      product,
+      part: task.part,
+      states: compared.states,
+      app: appFilesOf({ root: repoRootOf(product), component: task.component }),
+    });
 
     if (typeof implemented === 'string') {
       console.error(implemented);
@@ -197,7 +204,7 @@ export const designTask = async (options: {
     }
 
     console.log(
-      `recorded ${task.part} as implemented at ${implemented.hash} (${implemented.at}), states: ${Object.keys(implemented.states).join(', ')}`,
+      `recorded ${task.part} as implemented at ${implemented.hash} (${implemented.at}), states: ${Object.keys(implemented.states).join(', ')}, app files: ${Object.keys(implemented.app ?? {}).length}`,
     );
 
     return 0;

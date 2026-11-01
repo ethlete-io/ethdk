@@ -1,17 +1,17 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { resolve } from 'path';
 import { DesignConfig } from '../paths';
+import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { drawnFindingsOf } from './drawn-open-points';
 import { partOwnerOf } from './inventory-approval';
 import { OpenPoint } from './open-points';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { partHashOf } from './sketch/baseline';
 
 export const READY_FILE = 'ready.json';
 
-/** Who marked a part ready, and at which part hash; the mark holds only while the hash does. */
-export type PartReady = { hash: string; by: string; at: string };
+/** Who marked a part ready, and at which design hash, with the hash of each file it covers; the mark holds only while the hash does. */
+export type PartReady = { hash: string; files?: FileHashes; by: string; at: string };
 
 export type ReadyRefusal = { status: number; error: string; points?: OpenPoint[]; actions?: string[] };
 
@@ -20,9 +20,9 @@ const readyFileOf = (dir: string) => resolve(dir, READY_FILE);
 const isReady = (value: unknown): value is PartReady => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at } = value as Record<string, unknown>;
+  const { hash, by, at, files } = value as Record<string, unknown>;
 
-  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string';
+  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string' && isOptionalFileHashes(files);
 };
 
 export const readReady = (dir: string): Record<string, PartReady> => {
@@ -41,7 +41,7 @@ export const readReady = (dir: string): Record<string, PartReady> => {
   }
 };
 
-/** The part hash of a part and the directory whose ready.json holds it, or why the product has no such part. */
+/** The design hash of a part and the directory whose ready.json holds it, or why the product has no such part. */
 export const readyPartOf = (options: { product: ResolvedProduct; part: string }) => {
   const resolved = options.product.parts.find((candidate) => partKeyOf(candidate) === options.part);
 
@@ -49,7 +49,9 @@ export const readyPartOf = (options: { product: ResolvedProduct; part: string })
 
   const owner = partOwnerOf({ product: options.product, part: resolved });
 
-  return { dir: owner.dir, hash: partHashOf({ product: owner, dir: dirname(resolved.file) }) };
+  const design = designHashOf({ product: options.product, part: resolved });
+
+  return { dir: owner.dir, hash: design.hash, design };
 };
 
 /** The ready mark of a part while its hash still matches, `null` when it has none or the part changed since. */
@@ -60,7 +62,7 @@ export const readyMarkOf = (options: { product: ResolvedProduct; part: string })
 
   const mark = readReady(found.dir)[options.part];
 
-  return mark?.hash === found.hash ? mark : null;
+  return mark && recordHolds(mark, found.design) ? mark : null;
 };
 
 /** Draws a part and answers its whole open-point list, or why it could not be drawn. */
@@ -124,7 +126,7 @@ export const markPartReady = async (options: {
       actions,
     };
 
-  const mark: PartReady = { hash, by: by.trim(), at: options.at ?? new Date().toISOString() };
+  const mark: PartReady = { hash, files: found.design.files, by: by.trim(), at: options.at ?? new Date().toISOString() };
   const marks = Object.entries({ ...readReady(found.dir), [part]: mark }).sort(([a], [b]) => a.localeCompare(b));
 
   writeFileSync(readyFileOf(found.dir), `${JSON.stringify(Object.fromEntries(marks), null, 2)}\n`);

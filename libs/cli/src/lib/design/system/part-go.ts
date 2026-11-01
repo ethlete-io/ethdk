@@ -1,13 +1,16 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { resolve } from 'path';
+import { designHashOf, FileHashes, isOptionalFileHashes, recordHolds } from './design-hash';
 import { partOwnerOf } from './inventory-approval';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { partHashOf } from './sketch/baseline';
 
 export const GO_FILE = 'go.json';
 
-/** Who released a part for implementation, and at which part hash; the go holds only while the hash does. */
-export type PartGo = { hash: string; by: string; at: string };
+/**
+ * Who released a part for implementation, and at which design hash, with the hash of each file it covers; the go holds
+ * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed.
+ */
+export type PartGo = { hash: string; files?: FileHashes; by: string; at: string; note?: string; auto?: true };
 
 export type GoRefusal = { status: number; error: string };
 
@@ -18,9 +21,9 @@ const goFileOf = (dir: string) => resolve(dir, GO_FILE);
 const isGo = (value: unknown): value is PartGo => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at } = value as Record<string, unknown>;
+  const { hash, by, at, files } = value as Record<string, unknown>;
 
-  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string';
+  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string' && isOptionalFileHashes(files);
 };
 
 export const readGo = (dir: string): Record<string, PartGo> => {
@@ -39,15 +42,16 @@ export const readGo = (dir: string): Record<string, PartGo> => {
   }
 };
 
-/** The part hash of a part and the directory whose go.json holds it, or why the product has no such part. */
+/** The design hash of a part and the directory whose go.json holds it, or why the product has no such part. */
 export const goPartOf = (options: { product: ResolvedProduct; part: string }) => {
   const resolved = options.product.parts.find((candidate) => partKeyOf(candidate) === options.part);
 
   if (!resolved) return `product "${options.product.name}" has no part "${options.part}"`;
 
   const owner = partOwnerOf({ product: options.product, part: resolved });
+  const design = designHashOf({ product: options.product, part: resolved });
 
-  return { dir: owner.dir, hash: partHashOf({ product: owner, dir: dirname(resolved.file) }) };
+  return { dir: owner.dir, hash: design.hash, design };
 };
 
 /** Whether a part has a go that still matches its hash, no go, or a go from before the part changed. */
@@ -58,7 +62,7 @@ export const goStateOf = (options: { product: ResolvedProduct; part: string }): 
 
   const go = readGo(found.dir)[options.part];
 
-  return !go ? 'missing' : go.hash === found.hash ? 'current' : 'stale';
+  return !go ? 'missing' : recordHolds(go, found.design) ? 'current' : 'stale';
 };
 
 /** The go of a part while its hash still matches, `null` when it has none or the part changed since. */
@@ -69,7 +73,7 @@ export const goMarkOf = (options: { product: ResolvedProduct; part: string }): P
 
   const go = readGo(found.dir)[options.part];
 
-  return go?.hash === found.hash ? go : null;
+  return go && recordHolds(go, found.design) ? go : null;
 };
 
 /** The parts of a product whose go still holds. */
@@ -97,10 +101,23 @@ export const markPartGo = (options: {
   if (options.hash !== undefined && options.hash !== found.hash)
     return { status: 409, error: `${part} changed since it was shown - reload and check it again` };
 
-  const go: PartGo = { hash: found.hash, by: by.trim(), at: options.at ?? new Date().toISOString() };
-  const entries = Object.entries({ ...readGo(found.dir), [part]: go }).sort(([a], [b]) => a.localeCompare(b));
+  const go: PartGo = {
+    hash: found.hash,
+    files: found.design.files,
+    by: by.trim(),
+    at: options.at ?? new Date().toISOString(),
+  };
 
-  writeFileSync(goFileOf(found.dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
+  writeGo({ dir: found.dir, part, go });
 
   return go;
+};
+
+/** Writes one entry of the go.json in `dir`, sorted by part. */
+export const writeGo = (options: { dir: string; part: string; go: PartGo }) => {
+  const entries = Object.entries({ ...readGo(options.dir), [options.part]: options.go }).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+
+  writeFileSync(goFileOf(options.dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
 };

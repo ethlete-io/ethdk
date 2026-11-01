@@ -71,7 +71,12 @@ describe('part go', () => {
     const answer = await post(target, { part: 'components/chip', by: 'tom', hash });
 
     expect(answer.status).toBe(200);
-    expect(readGo(dir)['components/chip']).toEqual({ hash, by: 'tom', at: expect.any(String) });
+    expect(readGo(dir)['components/chip']).toEqual({
+      hash,
+      files: { '.ethlete/design/app-a/components/chip/chip.ts': expect.any(String) },
+      by: 'tom',
+      at: expect.any(String),
+    });
     expect(goPartsOf(productOf(target))).toEqual(['components/chip', 'components/tag']);
 
     appendFileSync(join(dir, 'components/chip/chip.ts'), '// changed\n');

@@ -25,7 +25,7 @@ const hashOf = (paths: { root: string; files: string[]; assets?: Imported; share
 
 type Owner = { dir: string; config?: Pick<DesignProduct, 'generatedFiles'> };
 
-type HashedProduct = Owner & { base: Owner | null };
+export type HashedProduct = Owner & { base: Owner | null };
 
 const generatedFilesOf = (product: HashedProduct) =>
   new Set(
@@ -39,13 +39,17 @@ const generatedFilesOf = (product: HashedProduct) =>
  * `@shared/` and each `@assets/` file it or those files import, as `product` resolves them. A part that imports
  * neither hashes as its folder alone. Files the product or its base lists in `generatedFiles` are left out.
  */
-export const partHashOf = (options: { product: HashedProduct; dir: string }) => {
+export const partHashOf = (options: { product: HashedProduct; dir: string }) =>
+  hashOf({ root: options.dir, ...partInputsOf(options) });
+
+/** The files `partHashOf` reads: the part folder without generated files, and the shared and asset files it reaches. */
+export const partInputsOf = (options: { product: HashedProduct; dir: string }) => {
   const generated = generatedFilesOf(options.product);
   const files = filesBelow(options.dir).filter((file) => !generated.has(file));
   const shared = importedSharedOf({ product: options.product, files });
   const assets = importedAssetsOf({ product: options.product, files: [...files, ...shared.map(({ file }) => file)] });
 
-  return hashOf({ root: options.dir, files, assets, shared });
+  return { files, shared, assets, generated };
 };
 
 /**

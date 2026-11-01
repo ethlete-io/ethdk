@@ -82,7 +82,9 @@ describe('part ready', () => {
     const answer = await post(target, { part: 'components/chip', hash, by: 'tom' });
 
     expect(answer.status).toBe(200);
-    expect(readReady(dir)).toEqual({ 'components/chip': { hash, by: 'tom', at: expect.any(String) } });
+    expect(readReady(dir)).toEqual({
+      'components/chip': { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+    });
     expect(readyPartsOf(productOf(target))).toEqual(['components/chip']);
 
     appendFileSync(join(dir, 'components/chip/chip.ts'), '// changed\n');
@@ -147,8 +149,8 @@ describe('part ready', () => {
     expect(answer.body).toEqual({
       part: 'components/chip',
       hash,
-      ready: { hash, by: 'tom', at: expect.any(String) },
-      go: { hash, by: 'tom', at: expect.any(String) },
+      ready: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+      go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
       drawn: false,
       points: [],
     });

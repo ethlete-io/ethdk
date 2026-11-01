@@ -7,6 +7,7 @@ import { openPointsText } from './open-points';
 import { goPartsOf } from './part-go';
 import { doneParts } from './part-task';
 import { readyPartsOf } from './part-ready';
+import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
 import { Problem } from './problem';
 import { staleDistWarningsOf } from './stale-dist';
 import { readOpenPoints, unlinkedPartsOf } from './read-open-points';
@@ -361,6 +362,11 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
 
     if (unlinked.length > 0) console.log(`UNLINKED ${name}: ${unlinked.join(', ')}`);
 
+    const upgraded = upgradeLegacyMarksOf({ product, only: options.part });
+
+    if (upgraded.length > 0)
+      console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
+
     const ready = readyPartsOf(product);
 
     if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
@@ -368,6 +374,8 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     const go = goPartsOf(product);
 
     if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
+
+    stalePartsOf({ product, only: options.part }).forEach((stale) => console.log(staleLineOf(name, stale)));
   }
 };
 
