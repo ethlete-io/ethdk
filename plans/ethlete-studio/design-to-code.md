@@ -1113,7 +1113,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      named variant. Decision on the one Studio menu look: grill round to Tom.
 104. The merge view crop row shows a huge "Prompt kopieren" button on both sides for a state that only the variant
      adds (builder, 2026-11-01, /tmp/merge-view-live.png): the added state has no outline to crop, and the empty "Jetzt"
-     panel has no label. Cause and the tool lesson: open, asked the builder; the label is a grill question to Tom.
+     panel has no label. Cause (checked by the grill session, Tom asked "demo content again?"): yes, demo content in
+     the app. The pages/merge design fills the crop with a sample `button` "Prompt kopieren" (merge.ts:36), and the
+     app copied it as `cropLabel = input(STUDIO_LABELS.system.copyPrompt)` in merge.component.ts:188, so every crop
+     shows that button instead of the real crop. Same class as the demo backdrops (Impl Q86). Tool lesson: open,
+     asked the builder. The "Neu in a" label is Impl Q131.
 105. components/tree-row shows a UTILITY-CSS warning in Studio after the 13 px change (Tom, 2026-11-01). Likely
      trigger: b57fb9729 moved the text size into tree-row.css as `font-size: var(--text-md)` and `line-height:
 var(--text-md-line)`, which a utility class can express. Why missed: open, asked the builder (was
