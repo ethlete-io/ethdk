@@ -1215,6 +1215,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      the same bug, so compare was 0 px before and after. Why no check caught it: compare checks design = app, never an
      inner radius against its outer control. Tool fix (general, after MVP): a check that a control's radius matches a
      child that fills it.
+120. The pages/system `fit` state centres the button grid under the side panel; `design shot --state fit` shows the
+     frame head hidden behind it (builder, 2026-11-01). Cause: the design's `fitAll` fits the full sample grid before
+     compare empties the slot, and reads the panel inset from `.st-canvas` padding, which is 0. The real System canvas
+     fits clear of the panel. Why no check caught it: no design check rule that a forced fit keeps a frame out from
+     under an overlay panel. Tool fix (general, after MVP): an OCCLUDED check for frames under fixed panels. The app fit
+     x may also be off by about the panel width; re-check after the design fix.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
