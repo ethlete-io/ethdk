@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { SharedDirs } from '../imports';
 import { Problem } from '../problem';
+import { appStylesheetOf } from '../harness-config';
 import { harnessOf } from '../harness-map';
 import { ResolvedProduct } from '../resolve-product';
 import { appClassesOf, ClassFacts, classFactsOf, partClassesOf, tailwindFailureOf } from './tailwind-classes';
@@ -17,31 +17,21 @@ export const canonicalClassesOf = (product: ResolvedProduct & SharedDirs): Probl
   return classes ? canonicalProblemsOf({ holder: product, classes }) : [];
 };
 
-const appStylesheetOf = (appDir: string) => {
-  const project = resolve(appDir, 'project.json');
-
-  if (!existsSync(project)) return null;
-
-  const styles = (
-    JSON.parse(readFileSync(project, 'utf8')) as { targets?: { build?: { options?: { styles?: unknown } } } }
-  ).targets?.build?.options?.styles;
-  const first = Array.isArray(styles) ? styles.find((style) => typeof style === 'string') : undefined;
-
-  return first ? resolve(appDir, '../..', first) : null;
-};
-
 /** Canonical-class problems in the `.html` templates and `.ts` class strings of the product's harness app, under the stylesheet that app builds with. */
 export const appCanonicalClassesOf = (target: string, product: ResolvedProduct): Problem[] => {
   const harness = harnessOf(product);
 
   if (harness === null || typeof harness === 'string') return [];
 
-  const appDir = resolve(target, harness.app);
-  const stylesheet = appStylesheetOf(appDir);
+  const stylesheet = appStylesheetOf({ target, app: harness.app });
 
   if (!stylesheet) return [];
 
-  const { holder, classes } = appClassesOf({ target, dir: resolve(appDir, 'src'), stylesheet });
+  const { holder, classes } = appClassesOf({
+    target,
+    dir: resolve(target, harness.app, 'src'),
+    stylesheet: resolve(target, stylesheet),
+  });
 
   return canonicalProblemsOf({ holder, classes });
 };

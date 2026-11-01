@@ -58,6 +58,7 @@ const harness = (target: string, ...argv: string[]) =>
 describe('harness config', () => {
   it('accepts app and map repo paths with the map inside the app', () => {
     expect(harnessProblemOf(HARNESS)).toBeNull();
+    expect(harnessProblemOf({ ...HARNESS, shared: ['apps/app-a/src/i18n/**'] })).toBeNull();
   });
 
   it.each([
@@ -67,6 +68,8 @@ describe('harness config', () => {
     [{ app: 'apps/a', map: 'apps/a/parts.json' }, 'harness.map must be the repo path of a .ts file'],
     [{ app: 'apps/a', map: '../outside/parts.ts' }, 'harness.map must be the repo path of a .ts file'],
     [{ app: 'apps/a', map: 'apps/b/parts.ts' }, 'must lie inside harness.app'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', shared: 'apps/a/i18n/**' }, 'harness.shared must be a list'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', shared: ['apps/b/i18n/**'] }, 'harness.shared "apps/b/i18n/**" must be'],
   ])('refuses %j', (value, message) => {
     expect(harnessProblemOf(value)).toContain(message);
   });
@@ -184,5 +187,41 @@ describe('et design harness', () => {
     ).toBe(1);
     expect(lines.at(-1)).toBe(stale);
     expect(compare).not.toHaveBeenCalled();
+  });
+});
+
+describe('task --verify and the app stylesheet', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('allows only @source line changes in the global stylesheet the harness app builds with', async () => {
+    const lines = output();
+    const { target, write } = checkout();
+    const stylesheet = 'apps/app-a/src/styles.css';
+    const patch = (body: string) =>
+      `diff --git a/${stylesheet} b/${stylesheet}\n--- a/${stylesheet}\n+++ b/${stylesheet}\n@@ -3 +3 @@\n${body}`;
+    const verify = (changes: string) =>
+      designTask({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1', '--verify'],
+        invocation: 'et design',
+        load: async () => ({ default: {} }),
+        diff: () => [stylesheet, 'libs/chip/chip.component.ts'],
+        patch: () => patch(changes),
+        compare: vi.fn(async () => ({ green: true, states: {} })),
+      });
+
+    write('apps/app-a/project.json', JSON.stringify({ targets: { build: { options: { styles: [stylesheet] } } } }));
+    expect(harness(target)).toBe(0);
+    expect(
+      markPartGo({
+        product: resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } }),
+        part: 'components/chip',
+        by: 'tom',
+      }),
+    ).not.toBeTypeOf('string');
+
+    expect(await verify("-@source inline('w-12');\n+@source inline('w-12 w-128');\n")).toBe(0);
+    expect(await verify("-@source inline('w-12');\n+@source inline('w-12');\n+body { margin: 0; }\n")).toBe(1);
+    expect(lines).toContain(`  ${stylesheet}`);
   });
 });

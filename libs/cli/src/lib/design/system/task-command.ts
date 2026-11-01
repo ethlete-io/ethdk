@@ -1,12 +1,15 @@
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
 import { comparePart, ComparePart } from './compare-command';
+import { appStylesheetOf } from './harness-config';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
   allowedFilesOf,
+  changesOnlySourceLines,
   filesOutsideOf,
   gitDiffFilesOf,
+  gitDiffPatchOf,
   markImplemented,
   readImplemented,
   themingDirectivesOf,
@@ -25,6 +28,8 @@ export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>
 type LoadStates = (options: { target: string; product: ResolvedProduct; file: string }) => Promise<unknown>;
 
 type DiffFiles = (options: { root: string; range: string }) => string[];
+
+type DiffPatch = (options: { root: string; range: string; file: string }) => string;
 
 const loadStates: LoadStates = async ({ target, product, file }) => {
   const config = configOf(target);
@@ -69,6 +74,7 @@ export const designTask = async (options: {
   invocation: string;
   load?: LoadStates;
   diff?: DiffFiles;
+  patch?: DiffPatch;
   compare?: ComparePart;
   start?: StartHarnessServer;
 }) => {
@@ -113,7 +119,10 @@ export const designTask = async (options: {
     product: product.name,
     component: task.component,
     harnessMap: product.config.harness?.map ?? null,
+    shared: product.config.harness?.shared ?? [],
   });
+  const harnessApp = product.config.harness?.app;
+  const stylesheet = harnessApp ? appStylesheetOf({ target, app: harnessApp }) : null;
 
   if (rev !== null) {
     const stale = harnessStaleOf({ target, product });
@@ -125,22 +134,26 @@ export const designTask = async (options: {
     }
 
     const range = verifyRangeOf(rev);
+    const root = resolve(product.configFile, '../../..');
     let files: string[];
+    let outside: string[];
 
     try {
-      files = (options.diff ?? gitDiffFilesOf)({ root: resolve(product.configFile, '../../..'), range });
+      files = (options.diff ?? gitDiffFilesOf)({ root, range });
+      outside = filesOutsideOf({ files, allowed }).filter(
+        (file) =>
+          file !== stylesheet || !changesOnlySourceLines((options.patch ?? gitDiffPatchOf)({ root, range, file })),
+      );
     } catch (error) {
       console.error(`git diff ${range} failed: ${error instanceof Error ? error.message : String(error)}`);
 
       return 1;
     }
 
-    const outside = filesOutsideOf({ files, allowed });
-
     if (outside.length > 0) {
       console.error(`${outside.length} file${outside.length === 1 ? '' : 's'} of ${range} outside the allowed files:`);
       outside.forEach((file) => console.error(`  ${file}`));
-      console.error(`allowed: ${allowed.join(', ')}`);
+      console.error(`allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : [])].join(', ')}`);
 
       return 1;
     }
@@ -196,6 +209,7 @@ export const designTask = async (options: {
   if (since.added.length === 0 && since.changed.length === 0 && !since.all) console.log('  no change');
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
+  if (stylesheet) console.log(`  ${stylesheet} (@source lines)`);
   const directives = themingDirectivesOf(drawn?.source ?? '');
 
   if (directives.length > 0) {

@@ -132,19 +132,25 @@ export const taskStatesOf = (options: {
   return { added, changed, all: added.length === 0 && changed.length === 0 && record.hash !== hash };
 };
 
-/** The repo paths a task may change: the component folder, a changeset, the harness map, and for `sdk` a docs guide. */
+/**
+ * The repo paths a task may change: the component folder, a changeset, the harness map, the app files the harness
+ * shares with the design, and for `sdk` a docs guide.
+ */
 export const allowedFilesOf = (options: {
   product: string;
   component: string;
   harnessMap: string | null;
+  shared?: string[];
 }): string[] => [
   `${posix.dirname(options.component)}/**`,
   '.changeset/*.md',
   ...(options.harnessMap === null ? [] : [options.harnessMap]),
+  ...(options.shared ?? []),
   ...(options.product === 'sdk' ? ['apps/docs/components/**'] : []),
 ];
 
-const matchesPattern = (file: string, pattern: string) => {
+/** Whether a repo path matches a pattern of `allowedFilesOf`: `<folder>/**`, or a path where `*` stands for one segment's characters. */
+export const matchesPattern = (file: string, pattern: string) => {
   if (pattern.endsWith('/**')) return file.startsWith(pattern.slice(0, -2));
 
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
@@ -155,6 +161,21 @@ const matchesPattern = (file: string, pattern: string) => {
 /** The files of a diff outside the allowed patterns of `allowedFilesOf`. */
 export const filesOutsideOf = (options: { files: string[]; allowed: string[] }) =>
   options.files.filter((file) => !options.allowed.some((pattern) => matchesPattern(file, pattern)));
+
+/** Whether a `git diff -U0` patch adds or removes only Tailwind `@source` lines. */
+export const changesOnlySourceLines = (patch: string) =>
+  patch
+    .split('\n')
+    .filter((line) => /^[+-]/.test(line) && !/^(\+\+\+|---) /.test(line))
+    .every((line) => /^@source\b/.test(line.slice(1).trim()));
+
+/** The `git diff -U0` patch of one file in a range. */
+export const gitDiffPatchOf = (options: { root: string; range: string; file: string }) =>
+  execFileSync('git', ['diff', '-U0', options.range, '--', options.file], {
+    cwd: options.root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
 
 /** The git range `--verify` checks: a range as given, a single commit `x` as `x^..x`. */
 export const verifyRangeOf = (rev: string) => (rev.includes('..') ? rev : `${rev}^..${rev}`);

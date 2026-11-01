@@ -38,8 +38,12 @@ export type DesignColorScheme = 'light' | 'dark';
 /** A viewport a product's parts are drawn at. Without a height, the frame grows with its content. */
 export type DesignPreset = { width: number; height?: number };
 
-/** The Angular app that serves a product's design harness, and the part map `et design harness` writes into it; repo paths. */
-export type DesignHarness = { app: string; map: string };
+/**
+ * The Angular app that serves a product's design harness, the part map `et design harness` writes into it, and the
+ * app files the design shares with the app (`shared`, files or `<folder>/**`): a part may import them and a task may
+ * change them. All repo paths inside `app`.
+ */
+export type DesignHarness = { app: string; map: string; shared?: string[] };
 
 /**
  * One product's design system: the render settings of a project, the product folder it extends

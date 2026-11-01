@@ -133,6 +133,25 @@ describe('part task', () => {
     ).toEqual(['apps/app-a/src/app/design-harness/other.ts', 'apps/docs/components/chip.md']);
   });
 
+  it('allows the app files the harness shares with the design', () => {
+    const component = 'apps/app-a/src/app/chip/chip.component.ts';
+    const harnessMap = 'apps/app-a/src/app/design-harness/design-harness-parts.ts';
+    const shared = ['apps/app-a/src/app/i18n/**', 'apps/app-a/src/app/icons/logos.ts'];
+
+    expect(
+      filesOutsideOf({
+        allowed: allowedFilesOf({ product: 'app-a', component, harnessMap, shared }),
+        files: [
+          'apps/app-a/src/app/i18n/labels.ts',
+          'apps/app-a/src/app/i18n/de/labels.ts',
+          'apps/app-a/src/app/icons/logos.ts',
+          'apps/app-a/src/app/icons/other.ts',
+          'apps/app-a/src/app/i18n.ts',
+        ],
+      }),
+    ).toEqual(['apps/app-a/src/app/icons/other.ts', 'apps/app-a/src/app/i18n.ts']);
+  });
+
   it('lists every state as new without a record, then the added and changed states, then all states', () => {
     const states = { default: { label: 'a' }, open: { label: 'a', open: true } };
 
