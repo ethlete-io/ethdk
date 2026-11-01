@@ -673,3 +673,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   implemented (backlog). Keep the MVP strict, no scope growth. Finding 28.
 - Impl Q56 inventory frame (Tom, 2026-11-01): the inventory design draws a plain placeholder box for the frame in place
   of the `embedPage('pages/flows')` iframe; go `--by tom`. The app does not embed the flows view. Finding 29.
+- Impl Q57 frames on a page canvas (Tom, 2026-11-01): every frame on a page's canvas (an embedded page or a part state;
+  sketch variants, merge Now/After shots, flows graph frames, system state grids) is the page's own `slot('shot')`.
+  Compare empties it on both sides; the live app fills it with `/frame.html` iframes as today. The content is covered
+  by the part compares. One rule for system, sketches, merge and flows; design change, go `--by tom`. Inventory keeps
+  its placeholder box (Impl Q56). Findings 29, 31.
