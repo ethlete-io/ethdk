@@ -12,6 +12,8 @@ export type FlowsPageFrame = { id: string; title: string; src: string; col: numb
 
 export type FlowsPageLine = { from: string; to: string; label: string };
 
+export type FlowsPagePreset = { value: string; label: string };
+
 const frameSrc = (part: string, state: string) =>
   '/frame.html?' + new URLSearchParams({ product: 'studio', part: 'pages/' + part, state }).toString();
 
@@ -28,7 +30,7 @@ export const FLOWS_SAMPLE_LINES: FlowsPageLine[] = [
   { from: 'sketch', to: 'system', label: STUDIO_LABELS.flows.sample.lines[2] },
 ];
 
-const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
+export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, caption: 20 };
 
 @Component({
   selector: 'ethlete-flows-page',
@@ -78,8 +80,12 @@ const SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, rowGap: 56, c
             <span class="flex-1"></span>
             <div class="w-60">
               <et-form-field size="sm">
-                <et-select [value]="preset()">
-                  <et-select-option [value]="preset()" [label]="preset()">{{ preset() }}</et-select-option>
+                <et-select [value]="preset()" (valueChange)="pickPreset($event)">
+                  @for (option of presetOptions(); track option.value) {
+                    <et-select-option [value]="option.value" [label]="option.label">{{
+                      option.label
+                    }}</et-select-option>
+                  }
                 </et-select>
               </et-form-field>
             </div>
@@ -186,6 +192,7 @@ export class FlowsPageComponent {
   public frames = input(FLOWS_SAMPLE_FRAMES);
   public lines = input(FLOWS_SAMPLE_LINES);
   public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
+  public presets = input<FlowsPagePreset[]>([]);
   public product = input('studio');
   public products = input(['studio', 'timetrack', 'docs']);
   public project = input('ethlete-sdk');
@@ -195,6 +202,7 @@ export class FlowsPageComponent {
   public menuOpen = model(false);
   public pick = output<string>();
   public copyPrompt = output();
+  public presetChange = output<string>();
   public collapse = output();
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
@@ -203,10 +211,12 @@ export class FlowsPageComponent {
 
   public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.flows;
-  public readonly SHOT = SHOT;
+  protected presetOptions = computed(() =>
+    this.presets().length ? this.presets() : [{ value: this.preset(), label: this.preset() }],
+  );
 
   protected graph = computed(() => {
-    const { width, height, scale, colGap, rowGap, caption } = SHOT;
+    const { width, height, scale, colGap, rowGap, caption } = FLOWS_SHOT;
     const w = width * scale;
     const h = height * scale;
     const frames = this.frames();
@@ -214,8 +224,8 @@ export class FlowsPageComponent {
       x: frame.col * (w + colGap),
       y: frame.row * (h + caption + rowGap),
     });
-    const cols = Math.max(...frames.map((frame) => frame.col)) + 1;
-    const rows = Math.max(...frames.map((frame) => frame.row)) + 1;
+    const cols = Math.max(0, ...frames.map((frame) => frame.col)) + 1;
+    const rows = Math.max(0, ...frames.map((frame) => frame.row)) + 1;
 
     const edges = this.lines().flatMap((line) => {
       const from = frames.find((frame) => frame.id === line.from);
@@ -261,4 +271,8 @@ export class FlowsPageComponent {
       ? []
       : this.flows().map((label) => ({ label, depth: 0, kind: 'leaf', selected: label === this.selected() })),
   );
+
+  protected pickPreset(value: unknown) {
+    if (typeof value === 'string') this.presetChange.emit(value);
+  }
 }

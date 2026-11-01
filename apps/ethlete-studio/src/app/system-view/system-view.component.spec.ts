@@ -6,7 +6,6 @@ import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../ho
 import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
-import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { THEMES } from '../../themes';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
@@ -689,87 +688,29 @@ describe('SystemViewComponent on a flow', () => {
   const flowViewOf = (fixture: ComponentFixture<SystemViewComponent>): FlowViewComponent =>
     fixture.debugElement.query(By.directive(FlowViewComponent)).componentInstance;
 
-  it('pins a comment on a state at the shown preset to its flow frame, and nothing at another preset', async () => {
+  it('draws the picked flow on the flows page, its frames as iframes along its lines', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-    const flowView = flowViewOf(fixture);
+    const root: HTMLElement = fixture.nativeElement;
+    const frames = [...root.querySelectorAll<HTMLIFrameElement>('ethlete-flows-page iframe')];
 
-    expect(flowView['pins']()).toEqual([]);
-
-    flowView['pickPreset']('desktop');
-    await settle(fixture);
-
-    expect(flowView['pins']().map((pin) => [pin.frameId, pin.label])).toEqual([['pages/library one', '1']]);
+    expect(fixture.componentInstance['section']()).toBe('Flows');
+    expect(root.querySelector('[role="treeitem"]')?.textContent?.trim()).toBe('sign-in');
+    expect(frames.map((frame) => frame.title)).toEqual(['pages/library · empty', 'pages/library · one']);
+    expect(frames[0]?.src).toContain('/frame.html?');
   });
 
-  it('notes on a flow frame the comments and pointed notes made at another size, and shows a note only at its own', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-    const flowView = flowViewOf(fixture);
-    const noteOf = (id: string) => flowView['notedFrames']().find((frame) => frame.id === id)?.note;
-    const shownNotes = () => flowView['notes']().map((shown) => shown.id);
+  it('shows the first flow on the Flows section, and opens a flow from its list', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'pages/library' });
 
-    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([
-      '1 Kommentar in einer anderen Größe',
-      undefined,
-    ]);
-    expect(shownNotes()).toEqual(['n1']);
-
-    flowView['pickPreset']('desktop');
+    fixture.componentInstance['pickSection']('Flows');
     await settle(fixture);
 
-    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([
-      undefined,
-      '1 Notiz in einer anderen Größe',
-    ]);
-    expect(shownNotes()).toEqual([]);
-  });
+    expect(flowViewOf(fixture).flow()?.name).toBe('sign-in');
 
-  it('turns comment mode on with C, ends note mode, and drafts a comment at the preset on a frame click', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-    const view = fixture.componentInstance;
-    const flowRoot: HTMLElement = fixture.debugElement.query(By.directive(FlowViewComponent)).nativeElement;
-
-    expect(flowRoot.querySelector('[title="Kommentar-Modus (C)"]')).not.toBeNull();
-
-    view['toggleNotes']();
-    view['handleCommentKey'](new KeyboardEvent('keydown', { key: 'c' }));
+    fixture.nativeElement.querySelector('[role="treeitem"]')?.click();
     await settle(fixture);
-
-    expect(view['commentStore'].active()).toBe(true);
-    expect(view['noteStore'].active()).toBe(false);
-
-    flowViewOf(fixture)['pick']({ frameId: 'pages/library empty', point: { x: 4, y: 8 } });
-
-    expect(view['commentStore'].draft()).toEqual({
-      frameId: 'pages/library empty',
-      place: { part: 'pages/library', state: 'empty', size: 'phone' },
-      point: { x: 4, y: 8 },
-    });
-    expect(view['noteStore'].draft()).toBeNull();
-  });
-
-  it('opens the pin of a listed comment on the shown flow instead of leaving it', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-
-    flowViewOf(fixture)['pickPreset']('desktop');
-    await settle(fixture);
-    fixture.componentInstance['jumpTo']({ ...comment, number: 1 });
-    await settle(fixture);
-
-    const canvas: DesignCanvasComponent = fixture.debugElement.query(
-      By.directive(DesignCanvasComponent),
-    ).componentInstance;
 
     expect(fixture.componentInstance['selectedKey']()).toBe('flow:sign-in');
-    expect(canvas.openPinId()).toBe(comment.id);
-  });
-
-  it('starts no free note on empty space in comment mode', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-
-    fixture.componentInstance['toggleComments']();
-    flowViewOf(fixture)['startFreeNote']({ x: 10, y: 10 });
-
-    expect(fixture.componentInstance['noteStore'].draft()).toBeNull();
   });
 
   it('remembers the picked preset per flow for the next start', async () => {
@@ -812,7 +753,7 @@ describe('SystemViewComponent on a flow', () => {
     });
 
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
-    const shown = () => flowViewOf(fixture).flow().frames.length;
+    const shown = () => flowViewOf(fixture).flow()?.frames.length;
 
     expect(shown()).toBe(2);
 
@@ -824,7 +765,7 @@ describe('SystemViewComponent on a flow', () => {
   });
 
   it('shows the notes at start, hides them on "Show notes", and remembers that per product for the next start', async () => {
-    const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const first = await mount({ systemProduct: 'web', systemEntry: 'pages/library' });
     const host = (fixture: ComponentFixture<SystemViewComponent>) => fixture.nativeElement as HTMLElement;
     const toggle = host(first).querySelector<HTMLButtonElement>('[data-notes-shown]');
 
@@ -846,7 +787,7 @@ describe('SystemViewComponent on a flow', () => {
   });
 
   it('shows the notes again when note mode turns on, so a new note stays in view', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'pages/library' });
     const host = fixture.nativeElement as HTMLElement;
 
     host.querySelector<HTMLButtonElement>('[data-notes-shown]')?.click();

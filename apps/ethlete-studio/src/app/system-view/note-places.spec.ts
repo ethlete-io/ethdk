@@ -1,7 +1,6 @@
-import { ListedFlow } from '../../host/design-flows';
 import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
-import { flowNotesOf, partNotesOf } from './note-places';
+import { partNotesOf } from './note-places';
 
 const note = (id: string, state: string, point?: { x: number; y: number }, size?: string): ListedNote => ({
   id,
@@ -45,34 +44,6 @@ describe('partNotesOf', () => {
       { id: 'b', text: 'text b', frameId: 'three' },
       { id: 'c', text: 'text c', frameId: 'phone' },
       { id: 'c', text: 'text c', frameId: 'desktop' },
-    ]);
-  });
-});
-
-describe('flowNotesOf', () => {
-  it('puts each note on its state frame in the flow at the picked preset, and the free notes as headings', () => {
-    const flow: ListedFlow = {
-      name: 'sign-in',
-      file: 'flows/sign-in.json',
-      frames: [
-        { part: 'pages/library', state: 'empty' },
-        { part: 'pages/sign-in', state: 'default' },
-      ],
-      lines: [],
-      notes: [
-        { id: 'heading', text: 'Library before sign-in', at: { x: 0, y: -160 } },
-        { id: 'loose', text: 'Placed by Studio' },
-      ],
-      problems: [],
-    };
-
-    const notes = [note('a', 'empty', { x: 40, y: 120 }, 'phone'), note('b', 'three')];
-
-    expect(flowNotesOf(flow, { notes, preset: 'desktop' }).map(({ id }) => id)).toEqual(['heading', 'loose']);
-    expect(flowNotesOf(flow, { notes, preset: 'phone' })).toEqual([
-      { id: 'a', text: 'text a', frameId: 'pages/library empty', point: { x: 40, y: 120 } },
-      { id: 'heading', text: 'Library before sign-in', heading: true, at: { x: 0, y: -160 } },
-      { id: 'loose', text: 'Placed by Studio', heading: true },
     ]);
   });
 });

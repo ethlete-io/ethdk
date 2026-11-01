@@ -297,27 +297,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           @if (read.error) {
             <p [class]="NOTE">{{ read.error }}</p>
           } @else if (sketchShown()) {
-          } @else if (flowShown(); as shown) {
-            <ethlete-flow-view
-              #flowView
-              [notesShown]="notesShown()"
-              [port]="shown.port"
-              [product]="shown.product"
-              [flow]="shown.flow"
-              [sketches]="sketches()"
-              [epoch]="epoch()"
-              [revision]="shown.revision"
-              [view]="view()"
-              [surface]="surface()"
-              [color]="color()"
-              [cameraKey]="cameraKey()"
-              [restoredCamera]="restoredCamera()"
-              (cameraChange)="rememberCamera($event)"
-            >
-              <ng-container [ngTemplateOutlet]="themeBar" />
-              <ng-container [ngTemplateOutlet]="noteModeButton" />
-              <ng-container [ngTemplateOutlet]="commentModeButton" />
-            </ethlete-flow-view>
+          } @else if (flowShown()) {
           } @else if (awaitingPicked()) {
           } @else if (part(); as partShown) {
             <div class="absolute top-3 right-4 z-1 flex gap-2">
@@ -449,6 +429,21 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       >
         <ng-container [ngTemplateOutlet]="shellCanvas" />
       </ethlete-inbox>
+    } @else if (flowsPage(); as page) {
+      <ethlete-flow-view
+        [port]="page.port"
+        [product]="page.product"
+        [flows]="page.flows"
+        [flow]="page.flow"
+        [sketches]="sketches()"
+        [epoch]="epoch()"
+        [revision]="page.revision"
+        [view]="view()"
+        [surface]="surface()"
+        [color]="color()"
+        [shell]="pageShell()"
+        (shellAction)="runShellAction($event)"
+      />
     } @else if (sketchPage(); as shown) {
       <ethlete-sketch-view
         #sketchView
@@ -513,13 +508,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ProvideColorDirective,
     SketchViewComponent,
     FlowViewComponent,
-    SystemEmptyComponent,
-    StartComponent,
     NewProductFormComponent,
     CommentDraftComponent,
     CommentThreadComponent,
     InboxComponent,
     ShellMainComponent,
+    SystemEmptyComponent,
+    StartComponent,
     NoteBodyComponent,
     NoteFormComponent,
     InventoryViewComponent,
@@ -558,8 +553,6 @@ export class SystemViewComponent {
 
   private sketchView = viewChild<SketchViewComponent>('sketchView');
 
-  private flowView = viewChild<FlowViewComponent>('flowView');
-
   protected productsRevision = computed(() => this.lists().products);
 
   private callsRevision = computed(() => this.lists().calls);
@@ -570,14 +563,14 @@ export class SystemViewComponent {
   protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
 
   protected readonly NOTE = NOTE;
-  protected readonly START_LABELS = STUDIO_LABELS.start;
-  protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
   protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
   protected readonly LABELS = STUDIO_LABELS.shell;
   protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
+  protected readonly START_LABELS = STUDIO_LABELS.start;
+  protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
   protected readonly NEW_PRODUCT = NEW_PRODUCT;
 
@@ -768,14 +761,7 @@ export class SystemViewComponent {
 
     if (!port || !product || !flow) return null;
 
-    const revision = Math.max(
-      0,
-      ...flow.frames.map((frame) =>
-        revisionOf(this.frameRevisions(), { product: product.name, part: frame.part, sketch: null, errored: false }),
-      ),
-    );
-
-    return { port, product, flow, revision };
+    return { port, product, flow, revision: this.flowRevisionOf(product.name, flow) };
   });
 
   private sketch = computed(
@@ -1060,6 +1046,7 @@ export class SystemViewComponent {
   });
 
   protected placeableFrames = computed(() => placeableFramesOf(this.frames()));
+
   protected partPins = computed(() => pinsOf(this.placeableFrames(), this.commentStore.comments()));
   protected partNotes = computed(() => partNotesOf(this.placeableFrames(), this.noteStore.notes()));
   protected notedFrames = computed(() =>
@@ -1076,7 +1063,6 @@ export class SystemViewComponent {
   });
   protected presetNames = computed(() => Object.keys(this.product()?.presets ?? {}));
   public shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
-
   public commentable = computed(
     () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
   );
@@ -1092,7 +1078,9 @@ export class SystemViewComponent {
     panel: this.panel(),
   }));
 
-  private railSection = signal<Exclude<ShellSection, 'Inbox'>>('System');
+  private railSection = signal<Exclude<ShellSection, 'Inbox'>>(
+    rememberedView().systemEntry?.startsWith(flowKeyOf('')) ? 'Flows' : 'System',
+  );
 
   protected section = computed<ShellSection>(() => (this.commentStore.panelOpen() ? 'Inbox' : this.railSection()));
 
@@ -1103,6 +1091,8 @@ export class SystemViewComponent {
     if (this.section() === 'Inbox' || this.creating() || this.call()) return null;
 
     return this.sketchShown();
+  });
+
   protected startPage = computed(() => {
     const read = this.reading();
 
@@ -1111,6 +1101,18 @@ export class SystemViewComponent {
     return { repo: this.project() };
   });
 
+  protected flowsPage = computed(() => {
+    const port = this.port();
+    const product = this.product();
+    const read = this.reading();
+
+    if (!port || !product || !read || read.error || read.products.length === 0) return null;
+    if (this.section() !== 'Flows' || this.creating() || this.call()) return null;
+
+    const flows = this.flowList() ?? [];
+    const flow = this.flow() ?? flows[0] ?? null;
+
+    return { port, product, flows, flow, revision: flow ? this.flowRevisionOf(product.name, flow) : 0 };
   });
 
   protected inventoryPage = computed(() => {
@@ -1221,10 +1223,8 @@ export class SystemViewComponent {
     else if (isCommentModeKey(event) && !event.repeat) this.toggleComments();
   }
 
-  /** Opens the pin of a comment on the shown flow, else shows the part or sketch it sits on, moves the camera to its pin and opens it. */
+  /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
   public jumpTo(comment: NumberedComment) {
-    if (this.flowView()?.jumpTo(comment)) return;
-
     const sketchKey = sketchKeyOf(comment.part);
     const key = comment.sketch && this.nodes().entries.has(sketchKey) ? sketchKey : comment.part;
 
@@ -1270,6 +1270,7 @@ export class SystemViewComponent {
 
     this.creating.set(false);
     this.picked.set(key);
+    if (key.startsWith(flowKeyOf(''))) this.railSection.set('Flows');
     rememberView({ systemEntry: key });
   }
 
@@ -1340,6 +1341,15 @@ export class SystemViewComponent {
     rememberView({ movedCameras: cameras });
   }
 
+  protected copyText(text: string) {
+    from(navigator.clipboard.writeText(text))
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
   protected copyCommand() {
     from(navigator.clipboard.writeText(this.NEW_PRODUCT_COMMAND))
       .pipe(
@@ -1351,15 +1361,6 @@ export class SystemViewComponent {
   }
 
   protected selectMerged(target: string) {
-  protected copyText(text: string) {
-    from(navigator.clipboard.writeText(text))
-      .pipe(
-        catchError(() => of(null)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
     this.creating.set(false);
     this.picked.set(target);
     rememberView({ systemEntry: target });
@@ -1391,6 +1392,15 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private flowRevisionOf(product: string, flow: ListedFlow) {
+    return Math.max(
+      0,
+      ...flow.frames.map((frame) =>
+        revisionOf(this.frameRevisions(), { product, part: frame.part, sketch: null, errored: false }),
+      ),
+    );
   }
 
   private openFrame({ part, frame }: TreeFrame) {

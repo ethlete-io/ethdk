@@ -4,7 +4,7 @@ import { NoteFormComponent } from './note-form.component';
 import { injectNoteStore } from './note-store';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
-/** A note's text, which opens the note for a change on a click; a heading is a free note of `flow`. */
+/** A note's text, which opens the note for a change on a click. */
 @Component({
   selector: 'ethlete-note-body',
   template: `
@@ -29,8 +29,6 @@ export class NoteBodyComponent {
   private store = injectNoteStore();
   public note = input.required<CanvasNote>();
 
-  public flow = input<string | null>(null);
-
   protected readonly LABELS = STUDIO_LABELS.noteBody;
 
   protected changing = computed(() => this.store.editing()?.key === noteKeyOf(this.note()));
@@ -40,6 +38,6 @@ export class NoteBodyComponent {
 
     const note = this.note();
 
-    this.store.edit({ id: note.id, key: noteKeyOf(note), flow: note.heading ? this.flow() : null });
+    this.store.edit({ id: note.id, key: noteKeyOf(note), flow: null });
   }
 }
