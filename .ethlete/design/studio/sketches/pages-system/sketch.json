@@ -1,7 +1,7 @@
 {
   "target": "pages/system",
   "targets": ["pages/system", "pages/sketches"],
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-01T17:40:52.191Z",
   "baseline": {
     "foundations/agent-logos": "46bcf29865e6c1f4",
@@ -91,7 +91,7 @@
     {
       "key": "r1",
       "title": "",
-      "note": ""
+      "note": "System page and sketches page, variant a: shows the part states, the empty and many-states cases and the points panel"
     }
   ],
   "variantInfo": {
