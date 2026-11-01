@@ -1,5 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { THEMES } from '../../../themes';
 import { ShellMainComponent, ShellSection } from './shell-main.component';
 
 const setup = async (panel: 'open' | 'hidden') => {
@@ -42,5 +44,21 @@ describe('ShellMainComponent', () => {
     click('Flows');
 
     expect(events).toEqual(['section:Flows']);
+  });
+
+  it('closes the project picker when the current project is chosen again', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(ShellMainComponent);
+
+    fixture.componentRef.setInput('projectPicker', 'open');
+    await fixture.whenStable();
+
+    document.querySelector<HTMLElement>('[role="menuitemradio"][aria-checked="true"]')?.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.projectPicker()).toBe('closed');
   });
 });

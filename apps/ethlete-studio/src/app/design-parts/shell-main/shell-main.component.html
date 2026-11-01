@@ -204,7 +204,7 @@
               <et-menu class="box-border w-62">
                 <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
                   @for (name of projects(); track name) {
-                    <et-menu-radio-item [value]="name">{{ name }}</et-menu-radio-item>
+                    <et-menu-radio-item [value]="name" closeOnActivate>{{ name }}</et-menu-radio-item>
                   }
                 </et-menu-radio-group>
                 <et-menu-separator />
