@@ -177,3 +177,17 @@
   (4 states + 1 contrast). Sent to the grill with the go command for Tom and a recommendation.
 - In progress (Q249): one sketch round per part for the missing states, parallel subagents: tree-row, part-tree,
   shell-project-option, shell-main, canvas-frames (+ default contrast "Save" 3.81:1). Not merged; Tom picks.
+- As built (Q249): sketches for tree-row (b31384d3e), part-tree (a892f9b26), shell-project-option (9fa91c096),
+  shell-main (2c77beeab), canvas-frames (7a1875736); Tom merged all five (00be48487, d4c238ec0, 6fe725202); tree-row
+  aria-current auto-merge (cb89a56cf). Gos renewed by the grill (part-tree, tree-row, shell-main).
+- Canvas-frames "Save" contrast: cause was a stale dist/libs/components (built before 7385e470f). Rebuilt; filled
+  active now 4.63:1, no CONTRAST finding. Stale-dist warning parked after MVP.
+- Rule (grill, 2026-11-01): each turn run `design sketch list --product studio` and merge every "picked X" sketch with
+  `design sketch merge`; Studio "Pick" does not merge.
+- Open (handoff):
+  - `design check --product studio --complete` crashes: "page.screenshot: Clipped area is either empty or outside
+    the resulting image". A subagent fixes it (libs/cli; finding per frame instead of a crash). Then send the gap
+    (Studio's own parts) to the grill.
+  - sdk sketches components/checkbox + components/radio-group variant d: rebase, `sketch check`, `sketch ready`;
+    report blockers before fixing; no lib port before the MVP. A subagent runs it.
+  - Push next after these commits.
