@@ -42,8 +42,13 @@ either ending - you finish, or a fresh session takes over - stays cheap:
 - Write down each decision and dead end as you reach it, in the commit message or in the
   handoff file. Do not save them for a final summary you may have no room for.
 - Start nothing you cannot finish or hand off inside the remaining budget.
+- Spawn no new sub-agent. Sub-agents that already run finish their work.
 
-At the critical tier (85%) the hook asks you to choose one of two, and to tell the user
+At the critical tier (85%), stop a sub-agent only if it surely hangs: it made no new step
+for more than 30 minutes. Write its remaining work into the handoff file. Never stop a
+sub-agent that still works.
+
+At the critical tier the hook also asks you to choose one of two, and to tell the user
 which you chose:
 
 1. **Finish the task.** Only when you can name every step that is left, and they plainly
@@ -170,11 +175,20 @@ the agent-sessions script `restart` finds the session)? Then you may clear and
 resume yourself after the save, instead of asking the user to. You decide. Do it only if every line
 is true:
 
-- No sub-agent, workflow or background command still runs. A background command from the old
-  session reports back into the new one, and a sub-agent answer has no reader after the clear.
+- No sub-agent whose answer you need still runs, and no workflow or background command. A
+  background command from the old session reports back into the new one.
+- Each self-reporting sub-agent that still runs is named in the handoff file, with its result
+  file.
 - No answer you wait for is open: a peer session, a mailbox reply, a CI run.
 - The tree is committed, or the handoff file names every uncommitted change.
 - The handoff file is saved and its Next steps are concrete.
+
+When you spawn a sub-agent, decide which kind it is:
+
+- **Answer needed.** You act on its answer. A restart waits for it.
+- **Self-reporting.** It commits its own slice and writes its result to
+  `.claude/handoffs/agent-results/<name>.md`. Tell it so in its prompt. A restart does not wait
+  for it: the resumed session reads the result file.
 
 If one line is false, finish or collect that first. If you cannot, hand the prompt to the user as
 before. Then run, with the slug of the file you saved:
@@ -202,7 +216,9 @@ first line of the handoff file: `Restarted because: <one line>`. End the turn wi
    user first, then delete it from the file.
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
-   changed and adapt - the repo is the truth, the handoff is the guide.
+   changed and adapt - the repo is the truth, the handoff is the guide. Read each
+   result file in `.claude/handoffs/agent-results/` that the handoff names, act on it,
+   then delete it. A named agent without a result file still runs.
 4. **Read only what you are about to change.** The handoff already carries the
    decisions, the constraints and the dead ends, so do not re-read the plan files
    it summarises, and do not survey the directory. Open a source file when you are
