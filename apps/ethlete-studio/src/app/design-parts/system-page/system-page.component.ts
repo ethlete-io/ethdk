@@ -8,6 +8,7 @@ import {
   input,
   model,
   output,
+  TemplateRef,
   untracked,
   viewChild,
   ViewEncapsulation,
@@ -19,16 +20,8 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
-import { TreeRowComponent } from '../tree-row/tree-row.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
-import {
-  BUTTON_GRID,
-  MANY_STATES_LAYERS,
-  OPEN_POINTS_SAMPLE,
-  SYSTEM_LAYERS,
-  TREE_FRAME,
-  TREE_ROW_GRID,
-} from './system-page-sample';
+import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
 const FRAME_CLASS = 'relative m-0 bg-et-surface-bg shadow-[0_0_0_1px_var(--et-surface-border-solid)]';
 
@@ -90,15 +83,17 @@ const FRAME_HEAD_CLASS =
         >
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">grid</figcaption>
-            <ng-container
-              *ngTemplateOutlet="stateGrid; context: { $implicit: treeRowGrid(), cellWidth: 280, cell: treeRowCell }"
-            />
+            <div>
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'grid' }" />
+            </div>
           </figure>
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">
-              {{ treeFrame().name }}<span class="text-et-surface-muted tabular-nums">{{ treeFrame().width }}</span>
+              tree<span class="text-et-surface-muted tabular-nums">280</span>
             </figcaption>
-            <ethlete-tree-row [rows]="treeFrame().rows" [style.width.px]="treeFrame().width" />
+            <div class="w-70">
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: 'tree' }" />
+            </div>
           </figure>
         </ethlete-canvas-frames>
       } @else {
@@ -111,12 +106,9 @@ const FRAME_HEAD_CLASS =
         >
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
-            <ng-container
-              *ngTemplateOutlet="
-                stateGrid;
-                context: { $implicit: buttonGrid(), cellWidth: 120, center: true, cell: buttonCell }
-              "
-            />
+            <div>
+              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
+            </div>
           </figure>
         </ethlete-canvas-frames>
         <div class="absolute top-space-3 right-space-3">
@@ -171,53 +163,10 @@ const FRAME_HEAD_CLASS =
       }
     </ethlete-shell-main>
 
-    <ng-template #stateGrid let-grid let-cellWidth="cellWidth" let-center="center" let-cell="cell">
-      <div
-        class="flex w-max flex-col gap-6 bg-et-surface-bg px-6 pt-4 pb-6 text-[1.1rem]/[1.4rem] text-et-surface-muted"
-      >
-        <div
-          [style.grid-template-columns]="gridColumns(grid.columns.length, cellWidth)"
-          class="grid items-stretch gap-px"
-        >
-          <span
-            class="col-span-full mb-2 border-b border-et-surface-border pb-1 text-[1rem] tracking-[0.04em] text-(--text-subtle,var(--text-muted)) uppercase"
-          >
-            {{ LABELS.statesByInteraction }}
-          </span>
-          <span></span>
-          @for (column of grid.columns; track column) {
-            <span class="self-end pb-1 font-code">{{ column }}</span>
-          }
-          @for (row of grid.rows; track row.label) {
-            <span class="self-center font-code">{{ row.label }}</span>
-            @for (column of grid.columns; track column) {
-              <div
-                [class.grid]="center"
-                [class.place-items-center]="center"
-                class="bg-et-surface-bg px-space-1 py-space-2 shadow-[0_0_0_1px_var(--et-surface-border-solid)]"
-              >
-                <ng-container *ngTemplateOutlet="cell; context: { $implicit: row.cell, column }" />
-              </div>
-            }
-          }
-        </div>
-      </div>
-    </ng-template>
-
-    <ng-template #buttonCell let-button let-column="column">
-      <button
-        [variant]="button.variant"
-        [pressed]="column === 'pressed'"
-        [disabled]="column === 'disabled'"
-        et-button
-        type="button"
-      >
-        {{ button.label }}
-      </button>
-    </ng-template>
-
-    <ng-template #treeRowCell let-row>
-      <ethlete-tree-row [rows]="[row]" />
+    <ng-template #frameShot let-frame>
+      @if (shot(); as shot) {
+        <ng-container *ngTemplateOutlet="shot; context: { $implicit: frame }" />
+      }
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -229,7 +178,6 @@ const FRAME_HEAD_CLASS =
     ProvideColorDirective,
     ShellMainComponent,
     StudioMenuComponent,
-    TreeRowComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -244,9 +192,7 @@ export class SystemPageComponent {
   public layers = input(SYSTEM_LAYERS);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
   public frame = input('button');
-  public buttonGrid = input(BUTTON_GRID);
-  public treeRowGrid = input(TREE_ROW_GRID);
-  public treeFrame = input(TREE_FRAME);
+  public shot = input<TemplateRef<{ $implicit: string }> | null>(null);
   public part = input('components/button');
   public openPoints = input(OPEN_POINTS_SAMPLE);
   public product = input('studio');
@@ -297,9 +243,5 @@ export class SystemPageComponent {
 
       onCleanup(() => ref.close());
     });
-  }
-
-  protected gridColumns(columns: number, cellWidth: number) {
-    return `12rem repeat(${columns}, calc(${cellWidth}px + 2 * var(--space-1)))`;
   }
 }
