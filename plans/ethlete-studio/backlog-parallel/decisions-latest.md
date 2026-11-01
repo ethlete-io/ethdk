@@ -289,3 +289,7 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
      component), not pasted markup. Q233 makes this a finding for design parts only; the app code gets the same rule.
   3. Inline components: covered by Q247 and Q248 (one component per part); this item only checks that nothing is left
      after the phase.
+- After the MVP (Tom, 2026-11-01, Impl Q18-Q23): multi-user sessions bring a real user identity (the inbox shows
+  "Du" until then); the inbox interrupted state and the other old-panel states beyond loading and load error; the
+  rail letters (studio, studio-lab, sdk all "S") and the lost "inherits from" hint; per-section trees for Sketches
+  and Flows; a performance review that includes the `design check` time (studio ~6:30 since it draws all states).

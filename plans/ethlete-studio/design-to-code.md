@@ -421,3 +421,21 @@ only; the builder starts when Tom gives the start.
   decision. A new design or a larger change still needs Tom's own go. The Impl Q13 go stays.
 - Impl Q16 verify revision (Tom, 2026-11-01): no tool change. With parallel committers the builder passes the
   revision to `task --verify`; revisit only if a wrong record happens.
+- Impl Q17 inbox unread (Tom, 2026-11-01): the comment store has no read state; a row counts unread when it waits for
+  the user (`threadState` question or answered). Keep.
+- Impl Q18 user name (Tom, 2026-11-01): the store has no user name; the app shows "Du" (initials "Du") for the user's
+  own messages, the design "Tom Bornholdt"/"TB". Keep "Du". Real user identity comes with the multi-user sessions
+  work after the MVP.
+- Impl Q19 inbox load states (Tom, 2026-11-01): a design defect, fixed now under the freeze: `pages/inbox` gets a
+  loading state and a load-error state with retry. An interrupted state and other states the old panel had are
+  parked after the MVP. Then go (`--by tom`, Impl Q15), compare, `task --verify`.
+- Impl Q20 inbox scroll (Tom, 2026-11-01): a design defect, fixed now: the inbox list in `pages/inbox` scrolls in
+  place of `overflow-hidden` (53 real rows clip today). Then go (`--by tom`), compare, `task --verify`.
+- Impl Q21 rail letters (Tom, 2026-11-01): studio, studio-lab and sdk all show "S" in the rail, and the old picker's
+  "inherits from" hint is gone. Parked after the MVP as a rail design question.
+- Impl Q22 section trees (Tom, 2026-11-01): Sketches and Flows show the same full tree as System. Keep; per-section
+  trees are parked after the MVP.
+- Impl Q23 check speed (Tom, 2026-11-01): plain `design check` draws all states (studio ~6:30, was ~4:20). Keep; no
+  `--fast` now. The check time goes into the performance review after the MVP.
+- Impl Q24 clean count (Tom, 2026-11-01): `PARTS <product>: n of m clean` counts a part clean only when it has no
+  open point that blocks ready. One cli slice. This is the Q255 done number; expect far fewer than 26 at first.
