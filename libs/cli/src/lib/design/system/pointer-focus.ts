@@ -23,19 +23,26 @@ export const focusMarkedOf = (options: { before: RingStyle; after: RingStyle }) 
   ringVisibleOf(options.after) ||
   (options.after.boxShadow !== 'none' && options.after.boxShadow !== options.before.boxShadow);
 
+const ringAfter = (probe: RingProbe | null | undefined): probe is RingProbe =>
+  !!probe && !probe.textEntry && probe.focused && ringVisibleOf(probe.style);
+
+const outlineOf = (style: RingStyle) => `outline ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
+
 /**
- * The verdict of a pointer-focus check. A pointer click must leave no ring (text entry is exempt: browsers always
- * match `:focus-visible` there). Keyboard focus without a ring is a warning, not a failure: another indicator, such as
- * a focus-within wrapper, may draw it.
+ * The verdict of a pointer-focus check. A pointer click must leave no ring, also after a following key press that does
+ * not move focus (text entry is exempt: browsers always match `:focus-visible` there). Keyboard focus without a ring is
+ * a warning, not a failure: another indicator, such as a focus-within wrapper, may draw it.
  */
 export const pointerFocusVerdictOf = (options: {
   click: RingProbe | null;
+  clickThenKey?: RingProbe | null;
   keyboard: { before: RingStyle; probe: RingProbe } | null;
 }): { failure: string | null; warning: string | null } => {
-  const { click, keyboard } = options;
-  const failure =
-    click && !click.textEntry && click.focused && ringVisibleOf(click.style)
-      ? `shows a focus ring after a pointer click (outline ${click.style.outlineStyle} ${click.style.outlineWidth} ${click.style.outlineColor})`
+  const { click, clickThenKey, keyboard } = options;
+  const failure = ringAfter(click)
+    ? `shows a focus ring after a pointer click (${outlineOf(click.style)})`
+    : ringAfter(clickThenKey)
+      ? `shows a focus ring after a pointer click and a Shift press (${outlineOf(clickThenKey.style)})`
       : null;
   const warning =
     keyboard && (!keyboard.probe.focused || !focusMarkedOf({ before: keyboard.before, after: keyboard.probe.style }))
@@ -87,8 +94,24 @@ export const tabAwayFrom = async (page: Page, locator: Locator) => {
     await page.keyboard.press('Tab');
 };
 
-/** The ring probes of one element: after a pointer click, and after keyboard focus. */
-export type PointerFocusProbes = { click: RingProbe | null; keyboard: { before: RingStyle; probe: RingProbe } | null };
+/** Presses Shift, which moves no focus but makes the browser treat the last input as a key, and reads the probe again. */
+export const readRingAfterKey = async (options: {
+  page: Page;
+  locator: Locator;
+  settle: (page: Page) => Promise<void>;
+}) => {
+  await options.page.keyboard.press('Shift');
+  await options.settle(options.page);
+
+  return readRingProbe(options.locator).catch(() => null);
+};
+
+/** The ring probes of one element: after a pointer click, after a Shift press that follows it, and after keyboard focus. */
+export type PointerFocusProbes = {
+  click: RingProbe | null;
+  clickThenKey?: RingProbe | null;
+  keyboard: { before: RingStyle; probe: RingProbe } | null;
+};
 
 /**
  * Probes an element in two fresh pages: `open` returns the locator of the element on a freshly loaded page. The click
@@ -101,12 +124,14 @@ export const probePointerFocus = async (options: {
 }): Promise<PointerFocusProbes | null> => {
   const clicked = await options.open();
   let click: RingProbe | null;
+  let clickThenKey: RingProbe | null = null;
 
   try {
     await tabAwayFrom(clicked.page, clicked.locator);
     await clicked.locator.click();
     await options.settle(clicked.page);
     click = await readRingProbe(clicked.locator).catch(() => null);
+    if (click) clickThenKey = await readRingAfterKey({ ...clicked, settle: options.settle });
   } finally {
     await clicked.close();
   }
@@ -124,7 +149,7 @@ export const probePointerFocus = async (options: {
 
     const probe = await readRingProbe(focused.locator);
 
-    return { click, keyboard: before && probe ? { before, probe } : null };
+    return { click, clickThenKey, keyboard: before && probe ? { before, probe } : null };
   } finally {
     await focused.close();
   }

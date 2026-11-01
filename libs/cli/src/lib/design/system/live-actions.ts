@@ -14,6 +14,7 @@ import {
   PointerFocusProbes,
   tabAwayFrom,
   pointerFocusVerdictOf,
+  readRingAfterKey,
   readRingProbe,
   RingProbe,
   RingStyle,
@@ -478,6 +479,7 @@ export const checkLiveActions = async (options: {
           await page.evaluate('window.__etPrevented = [];');
 
           let clickRing: RingProbe | null = null;
+          let clickThenKeyRing: RingProbe | null = null;
           let keyboardRing: PointerFocusProbes['keyboard'] = null;
 
           if (options.input === 'click') {
@@ -485,6 +487,13 @@ export const checkLiveActions = async (options: {
             await control.click({ timeout: DRAW_TIMEOUT_MS });
             await settle(page, DRAW_TIMEOUT_MS);
             clickRing = await readRingProbe(control).catch(() => null);
+            if (clickRing) {
+              clickThenKeyRing = await readRingAfterKey({
+                page,
+                locator: control,
+                settle: (settled) => settle(settled, DRAW_TIMEOUT_MS),
+              });
+            }
             await page.mouse.move(-1, -1);
           } else {
             const before: RingStyle | undefined = (await readRingProbe(control).catch(() => null))?.style;
@@ -511,7 +520,7 @@ export const checkLiveActions = async (options: {
           )) as string[];
           const prevented = ((await page.evaluate('window.__etPrevented')) as string[]).length > 0;
 
-          return { before, after: await stableScan(), emitted, prevented, clickRing, keyboardRing };
+          return { before, after: await stableScan(), emitted, prevented, clickRing, clickThenKeyRing, keyboardRing };
         } finally {
           await context.close();
         }
@@ -559,6 +568,7 @@ export const checkLiveActions = async (options: {
                 const outcome = liveOutcomeOf(result);
 
                 rings.click ??= result.clickRing;
+                rings.clickThenKey ??= result.clickThenKeyRing;
                 rings.keyboard ??= result.keyboardRing;
 
                 presses.push({ page: run.name, control: name, action: declared, input, outcome, parts });

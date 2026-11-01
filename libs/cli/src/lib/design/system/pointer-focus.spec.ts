@@ -57,6 +57,16 @@ describe('pointerFocusVerdictOf', () => {
   it('fails a ring after a click', () =>
     expect(pointerFocusVerdictOf({ click: probeOf(ring), keyboard }).failure).toContain('after a pointer click'));
 
+  it('fails a ring that a Shift press after the click brings up', () =>
+    expect(pointerFocusVerdictOf({ click: probeOf(hidden), clickThenKey: probeOf(ring), keyboard }).failure).toContain(
+      'after a pointer click and a Shift press',
+    ));
+
+  it('passes a click that stays without ring after a Shift press', () =>
+    expect(
+      pointerFocusVerdictOf({ click: probeOf(hidden), clickThenKey: probeOf(hidden), keyboard }).failure,
+    ).toBeNull());
+
   it('exempts text entry', () =>
     expect(pointerFocusVerdictOf({ click: probeOf(ring, { textEntry: true }), keyboard }).failure).toBeNull());
 
