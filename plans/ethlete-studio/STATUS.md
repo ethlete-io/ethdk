@@ -21,7 +21,7 @@ ausgeklammert.
 | components/shell-collapse       | ✅     |                                                                                                                                                                       |                   |
 | components/shell-project-switch | ✅     |                                                                                                                                                                       |                   |
 | elements/shell-main             | ✅     |                                                                                                                                                                       |                   |
-| pages/inbox                     | ❌     | Go gilt, Aktions-Fehler behoben; „ready“ läuft                                                                                                                        | Builder           |
+| pages/inbox                     | ✅     |                                                                                                                                                                       |                   |
 | pages/system                    | ❌     | Bilder stimmen. Noch 16 Aktions-Fehler (Canvas fokussierbar machen, Chip „offen“ mit der Tastatur); Builder behebt sie, dann Bild, „Änderung abnehmen“ und „Go geben“ | Builder, dann Tom |
 | pages/sketches                  | ✅     |                                                                                                                                                                       |                   |
 | components/canvas-viewport      | ✅     |                                                                                                                                                                       |                   |
@@ -30,7 +30,7 @@ ausgeklammert.
 | pages/merge                     | ✅     |                                                                                                                                                                       |                   |
 | components/error-toast          | ✅     |                                                                                                                                                                       |                   |
 
-Stand: 15 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 16 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
