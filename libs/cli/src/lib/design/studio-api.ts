@@ -35,6 +35,7 @@ import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
 import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { recordMergeReason } from './system/sketch/merged-parts';
 import { readPartModule } from './system/list-system';
 import { compareMerge, PictureOf } from './merge-compare';
 import { BoxOf, changedAreaOf, diffVariant } from './variant-diff';
@@ -449,6 +450,9 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
   const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
+
+  if (Array.isArray(merged) && note?.trim())
+    for (const part of sketch.targets) recordMergeReason({ product, part, by: 'user', reason: note.trim() });
 
   if (Array.isArray(merged)) return { status: 200, body: { merged } };
   if (!merged.changed) return failure(422, merged.reason);

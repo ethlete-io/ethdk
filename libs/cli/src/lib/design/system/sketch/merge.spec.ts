@@ -61,6 +61,7 @@ const mergeResult = (target: string, found: { product: ReturnType<typeof resolve
     product: resolveAcme(target),
     sketch: found.sketch,
     note: 'Variant b, because it is calmer.',
+    replaceNote: true,
   });
 
 const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
@@ -155,6 +156,26 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.ts'))).toBe(true);
     expect(existsSync(found.sketch.dir)).toBe(false);
     expect(existsSync(sketchReportPath({ checkout: target, sketch: found.sketch }))).toBe(false);
+  }, 120_000);
+
+  it("keeps the target part's note when the merge gives a reason without replaceNote", () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+    const merged = mergeSketch({
+      target,
+      config: readConfig(target) ?? {},
+      product: resolveAcme(target),
+      sketch: picked(ready.sketch),
+      note: 'Variant b, because it is calmer.',
+    });
+
+    expect(reasonOf(merged)).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain(
+      "note: 'One featured film with its play button.'",
+    );
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).not.toContain('calmer');
   }, 120_000);
 
   it('keeps the note and madeBy of the variant file without a note or authors, and adds new authors to madeBy', () => {
@@ -296,6 +317,7 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
           product,
           sketch: picked(markSketchReady({ checkout: target, sketch: card }) as Sketch, 'a'),
           note: 'x',
+          replaceNote: true,
         }),
       ),
     ).toContain("holds no definePart({ note: '…' })");

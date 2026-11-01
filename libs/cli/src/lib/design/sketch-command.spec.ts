@@ -1347,6 +1347,43 @@ export default definePart({
       ]);
     });
 
+    it("logs the --note reason in accepted.json and keeps the part's note", async () => {
+      const { target } = await readied('a');
+      const buttonFile = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+      const noteLine = /note: .*/u.exec(readFileSync(buttonFile, 'utf8'))?.[0];
+
+      expect(
+        write(
+          target,
+          'merge',
+          'components/button',
+          '--variant',
+          'a',
+          '--allowed-by',
+          PLAN,
+          '--note',
+          'calmer',
+          '--product',
+          'acme',
+        ),
+      ).toBe(0);
+      expect(/note: .*/u.exec(readFileSync(buttonFile, 'utf8'))?.[0]).toBe(noteLine);
+      expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/accepted.json'), 'utf8'))).toMatchObject([
+        { part: 'components/button', note: `merged without a pick: allowed by ${PLAN} - merged: calmer` },
+      ]);
+    });
+
+    it('writes the --note over the part note with --replace-note', async () => {
+      const { target } = await readied('a');
+      const args = ['merge', 'components/button', '--variant', 'a', '--allowed-by', PLAN, '--product', 'acme'];
+
+      expect(write(target, ...args, '--replace-note')).toBe(1);
+      expect(write(target, ...args, '--note', 'Calmer button.', '--replace-note')).toBe(0);
+      expect(readFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), 'utf8')).toContain(
+        "note: 'Calmer button.'",
+      );
+    });
+
     it('refuses a sketch with two live variants', async () => {
       const { target, lines } = await readied('a,b');
 

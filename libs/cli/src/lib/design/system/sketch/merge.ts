@@ -76,8 +76,9 @@ const notedTargetOf = (options: {
   root: string;
   key: string;
   note?: string;
+  replaceNote?: boolean;
 }): NotedTarget | string => {
-  const { sketch, variant, parts, product, root, key, note } = options;
+  const { sketch, variant, parts, product, root, key, note, replaceNote } = options;
   const name = key.split('/')[1] ?? '';
   const targetDir = resolve(root, key);
   const noteFile = resolve(targetDir, `${name}.ts`);
@@ -90,7 +91,7 @@ const notedTargetOf = (options: {
 
   const source = readFileSync(held, 'utf8');
   const variantNote = sketch.variantInfo[variant]?.note;
-  const newNote = note?.trim() || (noteOf(source)?.trim() === '' ? variantNote : undefined);
+  const newNote = (replaceNote ? note?.trim() : undefined) || (noteOf(source)?.trim() === '' ? variantNote : undefined);
   const withNewNote = newNote ? withNote(source, newNote) : source;
   const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
   const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
@@ -136,9 +137,10 @@ const mergeOrReason = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   note?: string;
+  replaceNote?: boolean;
   author?: string;
 }): string[] | string | MergeRefusal => {
-  const { target, config, product, sketch, note, author } = options;
+  const { target, config, product, sketch, note, replaceNote, author } = options;
 
   if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - mark it ready before a merge`;
 
@@ -190,7 +192,7 @@ const mergeOrReason = (options: {
   const notedTargets: NotedTarget[] = [];
 
   for (const key of sketch.targets) {
-    const noted = notedTargetOf({ sketch, variant, parts, product, root: rootOf(key), key, note });
+    const noted = notedTargetOf({ sketch, variant, parts, product, root: rootOf(key), key, note, replaceNote });
 
     if (typeof noted === 'string') return noted;
 
@@ -276,7 +278,8 @@ const mergeOrReason = (options: {
 /**
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
  * over the product's - a part the product takes from its base over the base's, unless the sketch was opened with
- * `override`; `into-base` also removes the product copy and its `merged.json` entry - sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
+ * `override`; `into-base` also removes the product copy and its `merged.json` entry - keeps the target's note (replaces it with `note`
+ * only with `replaceNote`; an empty one takes the variant note) and sets `madeBy` (the file's own plus the variant's authors) on the target, runs the check
  * records each merged part's hash in `merged.json` and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. When the check fails, the
  * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
@@ -289,6 +292,7 @@ export const mergeSketch = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   note?: string;
+  replaceNote?: boolean;
   author?: string;
 }): string[] | MergeRefusal => {
   const merged = mergeOrReason(options);

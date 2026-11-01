@@ -166,15 +166,25 @@ export const recordAutoMerge = (options: { product: HashedProduct; part: string;
   });
 };
 
-/** Logs a sketch merged without a pick in Studio because a plan entry allows it, in `accepted.json`. */
-export const recordAllowedMerge = (options: { product: HashedProduct; part: string; by: string; planRef: string }) => {
-  const { part, by, planRef } = options;
+/**
+ * Logs a sketch merge with a reason in `accepted.json`: the plan entry that let it go without a pick in Studio
+ * (`planRef`), the merge reason (`reason`), or both.
+ */
+export const recordMergeReason = (options: {
+  product: HashedProduct;
+  part: string;
+  by: string;
+  planRef?: string;
+  reason?: string;
+}) => {
+  const { part, by, planRef, reason } = options;
   const product = holderOf(options);
+  const allowed = planRef ? `merged without a pick: allowed by ${planRef}` : '';
 
   logAcceptance(product.dir, {
     part,
     by,
-    note: `merged without a pick: allowed by ${planRef}`,
+    note: [allowed, reason ? `merged: ${reason}` : ''].filter(Boolean).join(' - '),
     hash: partHashOf({ product, dir: resolve(product.dir, part) }),
     at: new Date().toISOString(),
   });

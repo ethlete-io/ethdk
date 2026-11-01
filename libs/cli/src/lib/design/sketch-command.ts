@@ -16,7 +16,7 @@ import {
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
-import { recordAllowedMerge, recordAutoMerge } from './system/sketch/merged-parts';
+import { recordAutoMerge, recordMergeReason } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -65,7 +65,7 @@ export const SKETCH_USAGE = [
   'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> [--note <reason>] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason> [--replace-note]] [--variant <key> --allowed-by <plan ref>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
@@ -89,6 +89,7 @@ const FLAG_HELP: Record<string, string> = {
   '--variant': 'the variant the command is about; on merge, the only live variant of a sketch with no pick',
   '--allowed-by':
     'the plan entry that lets the merge go without a pick in Studio; logged in accepted.json, needs --variant',
+  '--replace-note': "on merge: also write --note over each target part's note",
   '--reason':
     'why; on reject of a variant that is rejected already it sets the reason of that rejection; stored with who wrote it',
   '--until': 'what the pending change waits on: an open decision, a helper still to land',
@@ -106,7 +107,7 @@ const NOTE_HELP: Record<string, string> = {
   new: 'what the first round shows',
   variant: 'why the running round lost; needed with --round',
   round: 'what the round shows',
-  merge: 'why this variant',
+  merge: "why this variant; logged in accepted.json, the part's note stays",
 };
 
 /** One line per flag the usage line names, for `sketch <command> --help`. */
@@ -954,8 +955,11 @@ const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const { '--note': note, '--variant': flagVariant, '--allowed-by': planRef } = context.args.values;
 
+    const replaceNote = context.args.flags.has('--replace-note');
+
     if (context.args.positional.length > 1)
       return fail(`usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked`);
+    if (replaceNote && (note ?? '').trim() === '') return fail('--replace-note needs --note <the new part note>');
     if ((flagVariant === undefined) !== (planRef === undefined))
       return fail(
         '--variant and --allowed-by go together: name the only live variant and the plan that allows the merge',
@@ -972,14 +976,23 @@ const merged = (context: Context) =>
       product,
       sketch: decidedSketch,
       note,
+      replaceNote,
       author: authorOf(context.args) ?? undefined,
     });
 
     if (!Array.isArray(result)) return fail(result.reason);
 
-    if (allowed)
+    const reason = note?.trim() || undefined;
+
+    if (allowed || reason)
       for (const part of sketch.targets)
-        recordAllowedMerge({ product, part, by: authorOf(context.args) ?? 'user', planRef: planRef.trim() });
+        recordMergeReason({
+          product,
+          part,
+          by: authorOf(context.args) ?? 'user',
+          planRef: allowed ? planRef.trim() : undefined,
+          reason,
+        });
 
     const variant = decidedSketch.decision?.kind === 'pick' ? decidedSketch.decision.variant : '';
 
