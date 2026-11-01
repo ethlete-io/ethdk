@@ -284,6 +284,55 @@ describe('SystemViewComponent on a reload', () => {
   });
 });
 
+describe('SystemViewComponent on a product without parts or without products', () => {
+  const stubProducts = (products: ListedProduct[]) =>
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json(products);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('draws the empty system card with the product name for a product without parts', async () => {
+    stubProducts([{ ...PRODUCT, parts: [] }]);
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const card = fixture.nativeElement.querySelector('ethlete-system-empty');
+
+    expect(card?.textContent).toContain('Noch keine Teile');
+    expect(card?.textContent).toContain('Lege die Foundations für web an');
+  });
+
+  it('draws the start page with the repo while the checkout has no products', async () => {
+    stubProducts([]);
+
+    const fixture = TestBed.createComponent(SystemViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('project', 'my-repo');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const start = fixture.nativeElement.querySelector('ethlete-start');
+
+    expect(start?.textContent).toContain('Noch keine Produkte');
+    expect(start?.textContent).toContain('Lege in my-repo das Produkt shop an');
+    expect(fixture.nativeElement.querySelector('ethlete-shell-main')).toBeNull();
+  });
+});
+
 describe('SystemViewComponent on a named list change', () => {
   const requests: string[] = [];
   const listings = (path: string) =>

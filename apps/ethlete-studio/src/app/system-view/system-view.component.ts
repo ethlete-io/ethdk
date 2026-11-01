@@ -73,6 +73,8 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
+import { StartComponent } from '../design-parts/start/start.component';
+import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
 import { ShellMainComponent, ShellSection } from '../design-parts/shell-main/shell-main.component';
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
@@ -294,11 +296,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         } @else if (reading(); as read) {
           @if (read.error) {
             <p [class]="NOTE">{{ read.error }}</p>
-          } @else if (read.products.length === 0) {
-            <ng-container
-              [ngTemplateOutlet]="newProductScreen"
-              [ngTemplateOutletContext]="{ $implicit: LABELS.noProductYet }"
-            />
           } @else if (sketchShown()) {
           } @else if (flowShown(); as shown) {
             <ethlete-flow-view
@@ -410,13 +407,24 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               }
             </div>
           } @else {
-            <p [class]="NOTE">{{ LABELS.noParts }}</p>
+            <ethlete-system-empty
+              [product]="product()?.name ?? ''"
+              (copyPrompt)="copyText(EMPTY_LABELS.emptyPrompt(product()?.name ?? ''))"
+              flush
+            />
           }
         }
       </main>
     </ng-template>
 
-    @if (section() === 'Inbox') {
+    @if (startPage(); as start) {
+      <ethlete-start
+        [repo]="start.repo"
+        (copyPrompt)="copyText(START_LABELS.prompt(start.repo))"
+        (otherRepo)="openProject.emit()"
+        (openRepo)="openProject.emit()"
+      />
+    } @else if (section() === 'Inbox') {
       <ethlete-inbox
         [comments]="inboxComments()"
         [activePart]="activePart()"
@@ -505,6 +513,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ProvideColorDirective,
     SketchViewComponent,
     FlowViewComponent,
+    SystemEmptyComponent,
+    StartComponent,
     NewProductFormComponent,
     CommentDraftComponent,
     CommentThreadComponent,
@@ -560,6 +570,8 @@ export class SystemViewComponent {
   protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
 
   protected readonly NOTE = NOTE;
+  protected readonly START_LABELS = STUDIO_LABELS.start;
+  protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
   protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
 
@@ -1091,6 +1103,14 @@ export class SystemViewComponent {
     if (this.section() === 'Inbox' || this.creating() || this.call()) return null;
 
     return this.sketchShown();
+  protected startPage = computed(() => {
+    const read = this.reading();
+
+    if (!this.port() || !read || read.error || read.products.length > 0 || this.creating()) return null;
+
+    return { repo: this.project() };
+  });
+
   });
 
   protected inventoryPage = computed(() => {
@@ -1331,6 +1351,15 @@ export class SystemViewComponent {
   }
 
   protected selectMerged(target: string) {
+  protected copyText(text: string) {
+    from(navigator.clipboard.writeText(text))
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
     this.creating.set(false);
     this.picked.set(target);
     rememberView({ systemEntry: target });

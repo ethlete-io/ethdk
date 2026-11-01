@@ -20,6 +20,7 @@ import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component'
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SystemEmptyComponent } from './system-empty.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
@@ -57,23 +58,7 @@ const FRAME_HEAD_CLASS =
         />
       }
       @if (empty()) {
-        <div class="flex h-full items-center justify-center ps-(--st-shell-inset-left)">
-          <div class="flex w-2xl flex-col items-center gap-space-4 text-center text-ui-sm">
-            <div class="grid grid-cols-2 gap-space-2" aria-hidden="true">
-              @for (box of GHOST_BOXES; track box) {
-                <span class="block h-10 w-15 rounded-sm bg-et-surface-bg outline outline-et-surface-border"></span>
-              }
-            </div>
-            <p class="m-0 text-ui-md font-ui-strong text-et-surface">{{ LABELS.emptyTitle }}</p>
-            <p class="m-0 text-et-surface-muted">{{ LABELS.emptyExplainer }}</p>
-            <p class="m-0 rounded-(--radius-control-md) bg-et-surface-bg p-space-3 text-ui-sm text-et-surface">
-              {{ LABELS.emptyPrompt }}
-            </p>
-            <button (click)="copyPrompt.emit()" et-button type="button" variant="outline" size="sm">
-              {{ LABELS.copyPrompt }}
-            </button>
-          </div>
-        </div>
+        <ethlete-system-empty [product]="product()" (copyPrompt)="copyPrompt.emit()" />
       } @else if (manyStates()) {
         <ethlete-canvas-frames
           (zoomOut)="zoomOut.emit()"
@@ -179,6 +164,7 @@ const FRAME_HEAD_CLASS =
     ProvideColorDirective,
     ShellMainComponent,
     StudioMenuComponent,
+    SystemEmptyComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -218,7 +204,6 @@ export class SystemPageComponent {
   public openProject = output();
   private chip = viewChild('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
-  protected readonly GHOST_BOXES = [0, 1, 2, 3];
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 

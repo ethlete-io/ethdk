@@ -21,7 +21,7 @@ export const STUDIO_LABELS = {
     emptyTitle: 'Noch keine Teile',
     emptyExplainer:
       'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',
-    emptyPrompt: 'Lege die Foundations für studio an: Farben, Schrift und Abstände.',
+    emptyPrompt: (product: string) => `Lege die Foundations für ${product} an: Farben, Schrift und Abstände.`,
     copyPrompt: 'Prompt kopieren',
     statesByInteraction: 'States by interaction',
     openCount: (count: number) => `${count} offen`,
@@ -47,7 +47,6 @@ export const STUDIO_LABELS = {
     partsLiveIn: 'Seine Teile liegen in',
     startServer: 'Starte den Design-Server, um das Design-System zu sehen.',
     newProduct: 'Neues Produkt',
-    noProductYet: 'Noch kein Produkt',
     noParts: 'Dieses Produkt hat noch keine Teile.',
     transferred: 'übertragen',
     markTransferred: 'Als übertragen markieren',
