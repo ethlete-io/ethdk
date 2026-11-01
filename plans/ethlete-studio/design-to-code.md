@@ -825,6 +825,17 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   panel-hidden state, so a clipped canvas shows as missing pixels. Finding 44.
   Canvas states also run the zoom-chip Fit and 100 % with the panel open. Finding 48.
   Finding 43.
+  As built (2026-11-01, in progress): spec `apps/ethlete-studio/design-live.json`, canned answers in
+  `apps/ethlete-studio/design-live/` (products studio/timetrack/docs; studio has colors, button, form-field, select,
+  shell-main, system), wired as `harness.live`. `pages/system` states: `part` (camera 300/48 at 100 %), `edge` (camera
+  and design pan shifted 323 px, so the frame crosses the rail-panel gap), `zoom-100` (camera 50 %, then the "Auf
+  100 % zoomen" click). Results (system, 2026-11-01): part 301765 px, edge 303639 px, zoom-100 303803 px. The CLI
+  now waits for network idle before the shot (ea3a419c4); before, it shot an empty canvas. Open: the frame contents
+  differ by design (the design slot draws a 3-row "Save" grid, the app the real button grid), so no state can reach
+  0 px and the edge bite only shows in the total (control 260376 px, without `-ms-(--st-shell-inset-left)` 294588 px),
+  not in the gap itself; the sample frame content must be the same on both sides first. Panel-hidden needs the CLI to
+  compose the shell-main hidden state (Impl Q85). Sketches, flows, inbox, inventory, merge, start have no live states
+  yet.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
   (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter and Space on each one, and
