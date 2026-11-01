@@ -46,5 +46,31 @@
       "round": "r2",
       "note": "c plus the required marker in the theme ink (Q113): danger ink in error, 6.47 / 6.48 vs page (dark was 3.71); brand ink otherwise, unchanged pixels. Error text unchanged at 6.47 / 6.48."
     }
+  },
+  "rejections": {
+    "a": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-01T00:15:04.144Z",
+        "reason": "lost to r2 d (Q102/Q113, Tom 2026-11-01 in chat)",
+        "reasonBy": "agent"
+      }
+    ],
+    "b": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-01T00:15:04.301Z",
+        "reason": "lost to r2 d (Q102/Q113, Tom 2026-11-01 in chat)",
+        "reasonBy": "agent"
+      }
+    ],
+    "c": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-01T00:15:04.466Z",
+        "reason": "lost to r2 d (Q102/Q113, Tom 2026-11-01 in chat)",
+        "reasonBy": "agent"
+      }
+    ]
   }
 }
