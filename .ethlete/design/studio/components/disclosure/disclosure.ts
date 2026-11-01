@@ -46,6 +46,7 @@ export const { states, grid } = interactionRows<Props, 'rest' | 'open' | 'xs', D
 );
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.ts',
   note: 'The disclosure toggle of the merge page: a muted chevron and label, text darkens on hover, focus-visible draws an inset ring, and the chevron turns 90 degrees when open.',
   madeBy: ['claude-sonnet-5-5', 'claude-opus-5-5'],
   widths: [320],
