@@ -600,6 +600,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     app already matches shell-main. In addition, the harness puts the host at the top of the viewport, so an overlay that
     opens above flips below. Lessons: "like part X" in a decision must be checked against X's drawn geometry; the
     harness must leave room on the side where a surface opens.
+25. Meta (Tom, 2026-11-01): the design was frozen, yet the implementation still raised many questions (today Impl
+    Q40-Q52). They fall in three groups: design defects a check could catch (missing ARIA role, geometry that differs
+    from the part a decision names), tool gaps (verify path lists, corner antialias, harness placement) and app
+    seams (i18n). Lesson: each group needs a check that runs before the design freeze, so the freeze means no more
+    design questions.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
