@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, C1).
+Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B21, C1).
 
 ## Erledigt
 
+- B14 und B15: `design compare --live` meldet Rahmen unter einem Panel als OCCLUDED und wartet auf Overlay-Animationen (cf2565685, 02.11.).
 - B22: Ein Fehlschlag in `design actions` nennt den erreichten Zustand oder den nächsten. Offen: Fehlschläge, die nur aria-expanded prüft (a01d37d64, 02.11.).
 - B20: `task --verify` führt die Aktions-Prüfung aus und bricht bei einem Fehlschlag ab (1855d1bc4, 02.11.).
 - MVP: alle 17 Teile fertig (02.11.).
@@ -88,8 +89,8 @@ Builder, allgemeine Werkzeug-Fixes ohne Entwurf (B14, B15, B21, C1).
 11. Lint-Regel gegen native `title` (Befund 116).
 12. Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 13. Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
-14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Läuft.**
-15. Vergleich wartet auf die Animation eines Overlays (Befund 129). **Läuft.**
+14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Erledigt** (cf2565685).
+15. Vergleich wartet auf die Animation eines Overlays (Befund 129). **Erledigt** (cf2565685).
 16. Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
 17. Zustände auch mit echten, großen Daten prüfen (Befund 118).
 18. Jede Zeilen-Variante drücken, auch hinter einem Schalter (Befund 121).
