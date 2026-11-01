@@ -17,6 +17,7 @@ type Props = {
   content: string;
   panel?: 'hidden';
   projectPicker?: 'open';
+  pickerKeyboard?: boolean;
   studio?: string;
   force?: RailForce;
   server?: 'stopped' | 'starting';
@@ -114,7 +115,7 @@ const sidePanel = (product: string, side: string, pickerOpen: boolean) =>
 
 const MENU_ITEM = 'data-et-control="item"';
 
-const PROJECT_ROWS: MenuMockRow[] = [
+const projectRows = (keyboard: boolean): MenuMockRow[] => [
   {
     kind: 'radio-group',
     items: [
@@ -123,7 +124,8 @@ const PROJECT_ROWS: MenuMockRow[] = [
         label: 'ethlete-sdk',
         checked: true,
         active: true,
-        attributes: `${MENU_ITEM} data-et-action="open"`,
+        ...(keyboard ? { activeSource: 'keyboard' as const } : {}),
+        attributes: `${MENU_ITEM} data-et-action="open"${keyboard ? ' data-et-force="focus-visible"' : ''}`,
       },
       { kind: 'radio', label: 'fut-frontend', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
       { kind: 'radio', label: 'design-playground', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },
@@ -195,6 +197,7 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
   widths: [1440],
   states: {
     'project-picker': { ...BASE, projectPicker: 'open' },
+    'project-picker-focus-visible': { ...BASE, projectPicker: 'open', pickerKeyboard: true },
     'server-stopped': { ...BASE, server: 'stopped', log: SERVER_LOG },
     'server-starting': { ...BASE, server: 'starting' },
     open: BASE,
@@ -221,12 +224,13 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     side,
     panel,
     projectPicker,
+    pickerKeyboard = false,
     studio = '',
     force,
     server,
     log = [],
   }: Props) => {
-    const projectMenu = await menu.render({ rows: PROJECT_ROWS });
+    const projectMenu = await menu.render({ rows: projectRows(pickerKeyboard) });
 
     return drawing({
       body: html`<div
