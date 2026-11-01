@@ -72,6 +72,7 @@ import { InventoryViewComponent } from './inventory-view.component';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { PageShell, PageShellAction } from './page-shell';
 import { ExceptionListComponent } from './exception-list.component';
+import { PartApprovalComponent } from './part-approval.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
@@ -188,6 +189,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           } @else if (part(); as partShown) {
             <div class="absolute top-space-3 right-space-3 z-1 flex gap-2">
               @if (port(); as port) {
+                <ethlete-part-approval
+                  [port]="port"
+                  [product]="product()?.name ?? ''"
+                  [part]="partShown.key"
+                  [revision]="allRevision()"
+                  (approve)="approvals.set(approvals() + 1)"
+                />
                 <ethlete-exception-list
                   [port]="port"
                   [product]="product()?.name ?? ''"
@@ -324,6 +332,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     StartComponent,
     InventoryViewComponent,
     ExceptionListComponent,
+    PartApprovalComponent,
     OpenPointsChipComponent,
   ],
   providers: [provideCommentStore()],
@@ -360,7 +369,8 @@ export class SystemViewComponent {
   private callsRevision = computed(() => this.lists().calls);
   private sketchesRevision = computed(() => this.lists().sketches);
   private flowsRevision = computed(() => this.lists().flows);
-  private allRevision = computed(() => this.lists().all);
+  protected allRevision = computed(() => this.lists().all);
+  protected approvals = signal(0);
   protected readonly BADGE = BADGE;
 
   protected readonly NOTE = NOTE;
@@ -689,7 +699,9 @@ export class SystemViewComponent {
         const product = this.product()?.name;
         const part = this.part()?.key;
 
-        return port && product && part ? { address: { port, product }, part, revision: this.allRevision() } : null;
+        return port && product && part
+          ? { address: { port, product }, part, revision: this.allRevision() + this.approvals() }
+          : null;
       }),
     ).pipe(
       switchMap((asked) =>

@@ -486,14 +486,32 @@ export class MergeNeedsRebaseError extends Error {
   }
 }
 
+/** A design server refusal that names its `reason`, with the `findings` lines that caused it, if any. */
+export class DesignRefusalError extends Error {
+  public readonly reason: string;
+  public readonly findings: string[];
+
+  public constructor(options: { message: string; reason: string; findings: string[] }) {
+    super(options.message);
+    this.reason = options.reason;
+    this.findings = options.findings;
+  }
+}
+
 const refusalOf = (body: unknown, status: number) => {
   const answer = body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : {};
   const message = typeof answer['error'] === 'string' ? answer['error'] : designReadError(status);
   const changed = answer['changed'];
   const rebase = answer['rebase'];
 
-  return Array.isArray(changed) && typeof rebase === 'string'
-    ? new MergeNeedsRebaseError({ message, changed: changed.map(String), rebase })
+  const reason = answer['reason'];
+  const findings = answer['findings'];
+
+  if (Array.isArray(changed) && typeof rebase === 'string')
+    return new MergeNeedsRebaseError({ message, changed: changed.map(String), rebase });
+
+  return typeof reason === 'string'
+    ? new DesignRefusalError({ message, reason, findings: Array.isArray(findings) ? findings.map(String) : [] })
     : new Error(message);
 };
 
