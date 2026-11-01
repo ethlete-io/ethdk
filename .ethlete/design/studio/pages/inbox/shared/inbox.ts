@@ -219,6 +219,9 @@ const row = (c: Comment) => {
   return html`<div
     class="flex gap-space-2 p-space-2 rounded-control-md cursor-pointer ${selected ? 'bg-et-theme/20' : ''}"
     data-et-control="row"
+    data-et-action="emit:pick"
+    role="button"
+    tabindex="0"
   >
     <span
       class="ib-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
@@ -279,7 +282,7 @@ const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export const inbox = () =>
   definePart<Props>({
-    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
+    note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. A click on a row, or Enter or Space on the focused row, selects its comment and opens its place on the canvas; for a comment on another part the canvas switches to that part first. States cover open comments only on the active part, an active part with no open comments, no open comments at all, the list while it loads, a load error with a retry, and a list longer than the panel, which scrolls. The comment editor is open only while focus is within it; moving focus between its controls keeps it open, and leaving the editor closes it.',
     madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
     states: {
       open,
@@ -298,7 +301,7 @@ export const inbox = () =>
       comment: { kind: 'field' as const, part: 'components/textarea' },
       send: { kind: 'button' as const, part: 'components/button' },
       resolved: { kind: 'button' as const, part: 'components/switch' },
-      row: { kind: 'row' as const, input: ['pointer' as const] },
+      row: { kind: 'row' as const, input: ['pointer' as const, 'keyboard' as const] },
       retry: { kind: 'button' as const, part: 'components/button' },
     },
     render: async ({ showResolved, openOn, draft, entry, load, comments: list = COMMENTS }) => {
