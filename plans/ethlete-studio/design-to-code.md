@@ -700,3 +700,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   keeps focus inside); `option-focus-visible` covers a focused row; go `--by tom`. Finding 33.
 - Impl Q64 studio-menu row states (Tom, 2026-11-01): draw `option-hover`, `option-focus-visible` and `option-active`
   with the menu mock's forced rows as Impl Q44; go `--by tom`. Finding 33.
+- Impl Q65 system open-points popover (Tom, 2026-11-01): the design takes the real anchored dialog position: pane
+  10 px below the chip bottom, arrow centred under the chip; go `--by tom`. The app does not change. If `nothing-open`
+  stays flaky after this, compare waits for overlay panes (cli). Finding 34.
