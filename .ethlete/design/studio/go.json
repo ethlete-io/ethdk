@@ -10,29 +10,29 @@
     "at": "2026-11-01T12:34:07.574Z"
   },
   "components/disclosure": {
-    "hash": "cb63b91b2b36656d",
+    "hash": "58b440ef4e8b0bc5",
     "by": "tom",
-    "at": "2026-11-01T12:30:33.455Z"
+    "at": "2026-11-01T17:04:09.094Z"
   },
   "components/shell-collapse": {
-    "hash": "c2bff22ecd599c02",
+    "hash": "661f6592c6280d88",
     "by": "tom",
-    "at": "2026-11-01T12:30:22.730Z"
+    "at": "2026-11-01T17:04:08.727Z"
   },
   "components/shell-project-switch": {
-    "hash": "330f0d4de9082165",
+    "hash": "46e7b34f3e286cfb",
     "by": "tom",
-    "at": "2026-11-01T14:16:55.496Z"
+    "at": "2026-11-01T17:04:09.297Z"
   },
   "components/tree-row": {
-    "hash": "3f84d36591542970",
+    "hash": "4a61550aab8efc15",
     "by": "tom",
-    "at": "2026-11-01T13:23:39.445Z"
+    "at": "2026-11-01T17:04:09.876Z"
   },
   "components/zoom-chip": {
-    "hash": "884e0e4485ab2ac4",
+    "hash": "19b060128f62ca4f",
     "by": "tom",
-    "at": "2026-11-01T12:40:17.027Z"
+    "at": "2026-11-01T17:04:08.901Z"
   },
   "elements/canvas-frames": {
     "hash": "dc89aa310d9f6893",
@@ -40,14 +40,14 @@
     "at": "2026-11-01T13:17:16.122Z"
   },
   "elements/part-tree": {
-    "hash": "0e6d9ade300fc0c6",
+    "hash": "4decbdf07174f4c8",
     "by": "tom",
-    "at": "2026-11-01T13:02:51.050Z"
+    "at": "2026-11-01T17:04:09.689Z"
   },
   "elements/shell-main": {
     "hash": "71edde6c1106bd74",
     "by": "tom",
-    "at": "2026-11-01T16:39:13.391Z"
+    "at": "2026-11-01T17:04:09.498Z"
   },
   "elements/studio-menu": {
     "hash": "517f1a9d43ccf18e",
