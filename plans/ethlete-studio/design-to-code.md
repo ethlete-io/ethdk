@@ -983,6 +983,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     the results differ.
     (4) The grill session tells Tom the why and the Studio fix in the same message as the defect, without being
     asked.
+    Builder plan (builder default, after the approval clicks and the one canvas): (1) a design shows an existing
+    part only through a kit import (imports.ts); `design check` flags a subtree that matches another part's drawn
+    structure without importing it, and merge refuses it; the code check fails when a page's app component does not
+    use the selector of each part its design imports. (2) Each part maps to exactly one app component
+    (implemented.json); a second component with the same template structure fails, and so does more than one module
+    with canvas input listeners. (3) `design actions --live` runs a part's action script on every page that shows
+    it (from the import graph) and on every canvas page, and fails when the results differ.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
