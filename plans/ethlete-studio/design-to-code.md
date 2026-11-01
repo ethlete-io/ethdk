@@ -1069,6 +1069,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     Not fixed live: after eca732f7a and "merge ok", Tom still saw an empty merge view (Tom, 2026-11-01, screenshot).
     The fix was checked by a cli spec only. Rule (process): a "Tom can click X" message needs a headless shot of
     that exact live Studio view with the expected content.
+    Second cause (builder): merge compare reads only the states of the current product part, so a variant that only
+    adds states (pages/system `fit`, pages/sketches `page-100`) shows no change; and the app asks for the compare
+    only when the preview lists affected users. Why the spec passed: its fixtures only change pixels of an existing
+    state, with a stubbed picture. Fix (any project): compare reads the states with and without the variant; a state
+    only in the variant is a changed row with only an "after" picture, a state only in the product one with only
+    "now"; the app asks for the compare when the preview lists any changed or affected part.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
