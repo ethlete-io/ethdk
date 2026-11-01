@@ -10,6 +10,8 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
   'components/zoom-chip': () =>
     import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
   'elements/part-tree': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
+  'elements/shell-main': () =>
+    import('../design-parts/shell-main/shell-main.component').then((m) => m.ShellMainComponent),
   'pages/flows': () => import('../system-view/flow-view.component').then((m) => m.FlowViewComponent),
   'pages/inbox': () => import('../design-parts/inbox/inbox.component').then((m) => m.InboxComponent),
   'pages/inventory': () => import('../system-view/inventory-view.component').then((m) => m.InventoryViewComponent),

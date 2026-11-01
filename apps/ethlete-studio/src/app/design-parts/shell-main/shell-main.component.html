@@ -1,0 +1,244 @@
+<div
+  class="relative grid size-full grid-cols-[64px_1fr] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface"
+>
+  <nav class="flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-bg py-space-3">
+    <div class="relative flex min-h-10 w-full justify-center">
+      <ng-content select="[shellMainStudio]">
+        <span
+          class="inline-flex size-10 items-center justify-center rounded-control-lg bg-et-surface-bg text-et-surface"
+          etAutoSurface
+          aria-label="Studio"
+        >
+          <svg width="28.8" height="28.8" viewBox="0 0 32 32" aria-hidden="true">
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M11.5 5.5H24.1C26 5.5 27 6.9 26.4 8.7L22.8 20.9C22.5 22 21.8 22.9 20.8 23.4L8 28L9 21.6L5.9 17.4C5.2 16.5 5.2 15.2 5.9 14.2L9.4 6.8C9.8 6 10.6 5.5 11.5 5.5ZM12.8 11.5C12 11.3 11.2 11.8 11 12.6L10.2 15.7C10 16.5 10.5 17.3 11.3 17.5C12.1 17.7 12.9 17.2 13.1 16.4L13.9 13.3C14.1 12.5 13.6 11.7 12.8 11.5ZM20.1 10.6C19.3 10.4 18.5 10.9 18.3 11.7L17.5 14.8C17.3 15.6 17.8 16.4 18.6 16.6C19.4 16.8 20.2 16.3 20.4 15.5L21.2 12.4C21.4 11.6 20.9 10.8 20.1 10.6Z"
+            />
+          </svg>
+        </span>
+      </ng-content>
+    </div>
+    <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
+    @for (item of SECTIONS; track item.label) {
+      @let active = item.label === section();
+      <div
+        [class]="
+          active
+            ? 'before:absolute before:top-2 before:left-0 before:h-6 before:w-0.75 before:rounded-r-[3px] before:bg-et-theme before:content-[\'\']'
+            : ''
+        "
+        class="relative flex w-full justify-center"
+      >
+        <button
+          [class]="sectionClass(active)"
+          [attr.aria-label]="item.label"
+          [attr.aria-current]="active ? 'page' : null"
+          (click)="sectionChange.emit(item.label)"
+          class="flex size-10 items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          et-button
+          type="button"
+          variant="transparent"
+          size="sm"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            @switch (item.icon) {
+              @case ('grid') {
+                <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+                <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+                <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+                <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
+              }
+              @case ('pencil') {
+                <path d="M10.5 3 13 5.5 6 12.5H3.5V10z" />
+                <path d="m9 4.5 2.5 2.5" />
+              }
+              @case ('flow') {
+                <circle cx="4" cy="4" r="1.75" />
+                <circle cx="12" cy="12" r="1.75" />
+                <path d="M5.75 4H9.5a2.5 2.5 0 0 1 2.5 2.5v3.75" />
+              }
+              @case ('inbox') {
+                <path d="M2.5 8.5 4.25 4h7.5l1.75 4.5V12a.75.75 0 0 1-.75.75h-9.5A.75.75 0 0 1 2.5 12z" />
+                <path d="M2.5 8.5h3l1 1.75h3l1-1.75h3" />
+              }
+            }
+          </svg>
+        </button>
+      </div>
+    }
+    <div class="flex-1"></div>
+    <div class="my-space-2 h-px w-6 bg-et-surface-border"></div>
+    @for (name of products(); track name) {
+      @let active = name === product();
+      <div
+        [class]="
+          active
+            ? 'before:absolute before:top-2.5 before:left-0 before:h-5 before:w-0.75 before:rounded-r-[3px] before:bg-text before:content-[\'\']'
+            : ''
+        "
+        class="relative flex w-full justify-center"
+      >
+        <button
+          [class]="productClass(active)"
+          [attr.aria-label]="name"
+          [attr.aria-current]="active ? 'true' : null"
+          (click)="productChange.emit(name)"
+          class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+          etAutoSurface
+          et-button
+          type="button"
+          variant="transparent"
+          color="surface"
+          size="sm"
+        >
+          {{ name.charAt(0).toUpperCase() }}
+        </button>
+      </div>
+    }
+    <div class="relative flex w-full justify-center">
+      <button
+        [class]="ALL_PRODUCTS_CLASS"
+        (click)="allProducts.emit()"
+        class="flex items-center justify-center border-0 p-0 font-ui-strong text-ui-sm outline-none [--et-surface-interaction-rgb:var(--et-surface-interaction)] [transition:var(--transition-state)] focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)]"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        aria-label="All products"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="3.5" cy="8" r=".75" />
+          <circle cx="8" cy="8" r=".75" />
+          <circle cx="12.5" cy="8" r=".75" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="relative min-w-0">
+    <main
+      [class]="
+        panel() === 'hidden' ? '[--st-shell-inset-left:0px]' : '[--st-shell-inset-left:calc(248px+var(--space-3))]'
+      "
+      class="absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg bg-[radial-gradient(circle,var(--et-surface-border-solid)_1px,transparent_1.2px)] bg-size-[16px_16px] bg-position-[8px_8px]"
+    >
+      <ng-content />
+    </main>
+    @if (panel() !== 'hidden') {
+      <aside
+        class="absolute top-space-3 bottom-space-3 left-space-3 flex min-h-0 w-62 flex-col overflow-hidden rounded-control-lg bg-et-surface-bg shadow-[inset_0_0_0_1px_var(--et-surface-border-solid),0_12px_32px_var(--surface-shadow)]"
+      >
+        <header
+          class="box-border flex h-12 items-center justify-between border-b border-et-surface-border pr-space-2 pl-space-4"
+        >
+          <span class="font-ui-strong text-ui-lg">{{ product() }}</span>
+          <button
+            (click)="collapse.emit()"
+            class="size-control-sm p-0"
+            et-button
+            type="button"
+            variant="transparent"
+            color="surface"
+            size="sm"
+            title="Hide panel"
+            aria-label="Hide panel"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2.5" y="3" width="11" height="10" rx="1.75" />
+              <path d="M6.5 3v10" />
+            </svg>
+          </button>
+        </header>
+        <div class="min-h-0 flex-1 overflow-hidden p-space-2">
+          <ng-content select="[shellMainSide]" />
+        </div>
+        <footer class="border-t border-et-surface-border p-space-2">
+          <div
+            [open]="projectPicker() === 'open'"
+            [offset]="{ mainAxis: 16, crossAxis: -8 }"
+            (openChange)="setProjectPicker($event)"
+            etMenu
+            arrow="false"
+            autoFocus="false"
+            placement="top-start"
+          >
+            <button
+              class="h-control-md w-full justify-start gap-space-2 px-space-2 py-0 text-left [&>.et-button-contents]:flex-1"
+              etMenuTrigger
+              et-button
+              type="button"
+              variant="transparent"
+              color="surface"
+              size="sm"
+            >
+              <span
+                class="flex size-5.5 flex-none items-center justify-center rounded-control-sm bg-et-surface-bg font-ui-strong text-ui-xs text-et-surface"
+                etAutoSurface
+                >{{ project().charAt(0).toUpperCase() }}</span
+              ><span class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-et-surface">{{
+                project()
+              }}</span
+              ><svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m5.5 6 2.5-2.5 2.5 2.5" />
+                <path d="m5.5 10 2.5 2.5 2.5-2.5" />
+              </svg>
+            </button>
+            <ng-template etMenuSurface>
+              <et-menu class="box-border w-62">
+                <et-menu-radio-group [value]="project()" (valueChange)="selectProject($event)">
+                  @for (name of projects(); track name) {
+                    <et-menu-radio-item [value]="name">{{ name }}</et-menu-radio-item>
+                  }
+                </et-menu-radio-group>
+                <et-menu-separator />
+                <button (click)="openProject.emit()" et-menu-item type="button">Projekt öffnen…</button>
+              </et-menu>
+            </ng-template>
+          </div>
+        </footer>
+      </aside>
+    }
+  </div>
+</div>
