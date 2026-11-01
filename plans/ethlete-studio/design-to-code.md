@@ -1260,6 +1260,15 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      components/design-canvas/pointer-focus.ts (0b53ff36b, 641e58125, 23b62ffc2, spec 9b39289c3). Why no check caught
      it: compare shoots keyboard focus only, and the pointer-focus action check runs only in `design ready`; no check
      pressed click and then Shift. Tool fix (after MVP): `task --verify` runs the actions check.
+128. `design actions pages/sketches` failed 9 checks, and all 9 were CLI defects (builder, 2026-11-02, fixed in
+     1cb02924d, 4 specs bite). (a) A role-less element was keyed by tag, so the design `div` and the app
+     `ethlete-design-canvas` did not pair; now both are `generic`. (b) The "Runde" combobox has an app-only
+     aria-label, and the SDK select in the design takes its name from the value; now one unpaired element per role on
+     each side pairs. An element that an embedded part draws, or that sits inside a control with a `part`, needs no
+     own `data-et-action` (same rule as `design complete`). (c) Emit actions loaded at 1280 px, not at the 1440 px
+     frame, so the narrow column hid the button; presses now use the frame size. Why no check caught it: earlier pages
+     shot on state actions at frame size, and none had a custom-element canvas or an SDK field with an app-only
+     aria-label.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
