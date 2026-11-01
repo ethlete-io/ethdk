@@ -371,3 +371,17 @@ only; the builder starts when Tom gives the start.
 - Impl Q11 inline SVGs (Tom, 2026-11-01): the rail icons and the Studio mark stay inline in `ShellMainComponent`
   for now (design freeze, Q253). When a second part needs the same icon, the SVGs move to one shared icon file in
   `apps/ethlete-studio` that both the app and the design use. Until then, compare guards against drift.
+- Impl Q12 picker font (Tom, 2026-11-01): replaces Impl Q8. Measured: the design frame does not take
+  `--et-font-family` from the SDK `colors.css`; the design menu inherits `--font-ui` from the Studio `type.css` body
+  rule. In the app that rule sits in `layer(studio-tokens)`, so the unlayered app body rule (`--font-sans`, Jost)
+  wins for the body-portaled menu. The app deviates, so the fix is in the app: `--et-font-family: var(--font-ui)`
+  app-wide in `apps/ethlete-studio/src/styles/sdk-token-map.css`. Measured: 2923 px → 29 px.
+- Impl Q13 corner antialiasing (Tom, 2026-11-01): the last 29 px sit at the 4 rounded corners of the menu pane,
+  because the SDK overlay puts `transform: translate3d(...)` on the pane (own layer). One-line design change allowed
+  under the freeze (a defect the implementation shows): `transform: translate3d(0,0,0)` on `.st-project-picker` in
+  `.ethlete/design/studio/elements/shell-main/shared/picker.css`; then a new go, compare, `task --verify`. If that
+  does not reach 0 px, the builder reports and stops; no tolerance.
+- Impl Q14 picker autofocus (Tom, 2026-11-01): replaces Impl Q9. The harness opens the picker by the input
+  `projectPicker='open'` (API), not by pointer, so autofocus drew a focus ring (8355 px). Autofocus stays on in the
+  app (keyboard open focuses the first item); the compare harness opens the picker by a real pointer click (cli
+  change), and the app drops `autoFocus="false"`.
