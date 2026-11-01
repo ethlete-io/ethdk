@@ -1,4 +1,4 @@
-import { embedPage, html } from '@design-system';
+import { embedPage, html, slot } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
 import treeRow from '@system/components/tree-row';
@@ -112,7 +112,7 @@ export const flowGraph = (scale: number, colGap: number) => {
 
   const frames = NODES.map((node) => {
     const { x, y } = at(node);
-    return `<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${x}px;top:${y}px">${caption(node.step.title)}<div class="rounded-sm outline outline-et-surface-border">${shot(node.step, scale)}</div></figure>`;
+    return `<figure class="absolute m-0 flex flex-col gap-space-1" style="left:${x}px;top:${y}px">${caption(node.step.title)}<div class="rounded-sm outline outline-et-surface-border"><div class="overflow-hidden" style="width:${w}px;height:${h}px" ${slot('shot')}>${shot(node.step, scale)}</div></div></figure>`;
   }).join('');
 
   const edges = EDGES.flatMap((edge) => {
