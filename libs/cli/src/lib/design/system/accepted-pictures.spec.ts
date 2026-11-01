@@ -8,7 +8,7 @@ import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepte
 import { designGo } from './go-command';
 import { goStateOf, markPartGo, readGo } from './part-go';
 import { resolveProduct } from './resolve-product';
-import { changedOutsideSketchOf, readAccepted, readMerged, recordMerged } from './sketch/merged-parts';
+import { acceptPart, changedOutsideSketchOf, readAccepted, readMerged, recordMerged } from './sketch/merged-parts';
 
 const CHIP = 'components/chip';
 
@@ -123,6 +123,21 @@ describe('autoAcceptOf', () => {
     expect(readAccepted(dir)).toEqual([
       expect.objectContaining({ part: CHIP, by: 'design check', auto: true, hash: readMerged(dir)[CHIP] }),
     ]);
+  });
+
+  it('keeps the by of the last acceptance when it accepts a direct edit by itself', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw } = drawing({ default: 'a1', hover: 'b2' });
+
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    appendFileSync(chip, '// direct edit\n');
+    expect(acceptPart({ product: productOf(target), part: CHIP, by: 'tom', note: 'Impl Q7' })).toBeNull();
+    await autoAccept(target, draw);
+
+    appendFileSync(chip, '// attribute-only edit\n');
+    await autoAccept(target, draw);
+
+    expect(readAccepted(dir).at(-1)).toMatchObject({ part: CHIP, by: 'tom', auto: true });
   });
 
   it('stores pictures after design go and design accept', async () => {
