@@ -266,6 +266,18 @@ geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go 
   - Pilot slice 2, in progress (builder, 2026-11-01): `elements/shell-main` as its own component, linked, go, task,
     compare and `task --verify`; then the inbox uses it and its shell copy is deleted, with the inbox compare still
     green (Impl Q3).
+  - Pilot slice 2 as built (`9cda20519`, `cea751f51`, `85e3a6796`, `aa9c3fb57`, `c8776fe99`): `ShellMainComponent`
+    (`apps/ethlete-studio/src/app/design-parts/shell-main/`) with slots `[shellMainStudio]` (falls back to the Studio
+    mark), `[shellMainSide]` and the canvas; rail buttons are `et-button`s; the picker is the SDK `etMenu`. A
+    component-only link is a string literal (`implements: '<path>'`); the object form is refused. Tool gap fixed:
+    compare now hovers, presses or keyboard-focuses each `data-et-force` element of the design picture, found in the
+    app by its `aria-label`. Compare `elements/shell-main`: 14 of 15 states 0 px; `project-picker` 2923 px, so
+    `--verify` recorded nothing. Cause, a design defect: the frame loads the SDK `--et-font-family: system-ui`, so
+    the design menu draws in system-ui, the app in the Studio font (with the token copied in, 29 px of corner
+    antialiasing remain from the overlay pane). The inbox draws inside the shell; `pages/inbox` is 0 px in all 7 states
+    and re-recorded. Verified: both compares, `task --verify`, lint, tsc, the app-classes check, the cli compare spec.
+    Not verified: the real Studio on :4402, keyboard opening of the picker (`autoFocus="false"`). Open: the inline
+    SVGs (rail icons, Studio mark) have no shared app source; they moved over from the inbox copy.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
