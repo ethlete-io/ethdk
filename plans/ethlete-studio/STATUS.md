@@ -28,7 +28,7 @@ ausgeklammert.
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
 | pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“                                                   | Builder, dann Tom |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“, Ladezustand am Merge-Knopf (Q132); Prüfung noch nicht grün | Builder           |
-| components/error-toast          | ❌     | Bereit: neues „Go geben“ (Schrift und Fläche repariert, Vergleich 0 px)                                                 | Tom               |
+| components/error-toast          | ❌     | Go gegeben (22:47); Builder macht „ready“                                                                               | Builder           |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
