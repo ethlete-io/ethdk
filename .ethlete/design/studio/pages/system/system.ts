@@ -39,19 +39,23 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
   </div>
 </div>`;
 
-const chip = async (open: PartOpenPoints, pressed: boolean) => {
+const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, acting: boolean) => {
   const count = open.points.length;
-  const drawn = await button.render({
-    label: count ? `${count} offen` : 'Nichts offen',
-    icon: count
-      ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`
-      : checkIcon(14),
-    variant: 'outline',
-    size: 'sm',
-    pressed,
-  });
+  const drawn = await button.render(
+    {
+      label: count ? `${count} offen` : 'Nichts offen',
+      icon: count
+        ? `<span class="contents" data-et-semantic-color="warning">${icon('warning', { size: 14, cls: 'text-et-theme' })}</span>`
+        : checkIcon(14),
+      variant: 'outline',
+      size: 'sm',
+      pressed,
+    },
+    focused ? { interaction: 'focus-visible' } : {},
+  );
+  const target = pressed ? 'points-closed' : 'part';
   return {
-    body: control(act(drawn.body, pressed ? 'points-closed' : 'part'), 'open-points'),
+    body: control(acting ? act(drawn.body, target) : drawn.body, 'open-points'),
     styles: drawn.styles,
   };
 };
@@ -177,6 +181,7 @@ export default definePart<{
   nothingOpen?: boolean;
   closed?: boolean;
   fit?: boolean;
+  chipFocus?: boolean;
 }>({
   note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
@@ -191,12 +196,14 @@ export default definePart<{
     fit: { fit: true },
     'points-closed': { closed: true },
     'nothing-open': { nothingOpen: true },
+    'part-focus-visible': { chipFocus: true },
+    'points-closed-focus-visible': { closed: true, chipFocus: true },
   },
   controls: {
     'open-points': { kind: 'button', part: 'components/button' },
     popover: { kind: 'disclosure', part: 'components/anchored-dialog', surfaces: { body: 'open-points' } },
   },
-  render: async ({ empty, manyStates, nothingOpen: clear, closed, fit }) => {
+  render: async ({ empty, manyStates, nothingOpen: clear, closed, fit, chipFocus = false }) => {
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
     }
@@ -220,7 +227,7 @@ export default definePart<{
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
-    const toggle = await chip(points, !closed);
+    const toggle = await chip(points, !closed, chipFocus, !fit && !clear);
     const dialog = closed ? undefined : await popover(points);
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
