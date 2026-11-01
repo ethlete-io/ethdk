@@ -1136,6 +1136,9 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      request. Tool fix (any project, after MVP): an action declares itself async in the design (`data-et-async`), or
      the actions probe finds a pending request in the app handler; then `design check` asks for a `pending` state on
      that control, and `design actions` checks that a second click while pending does nothing.
+107. The logo button (the studio-menu trigger `.st-studio-trigger`) has a different corner radius on hover and
+     active than at rest (Tom, 2026-11-01, two screenshots). Expected: one radius in every state. Cause and the tool
+     lesson: open, asked the builder.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
