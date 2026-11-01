@@ -51,6 +51,7 @@ const FRAME_HEAD_CLASS =
       } @else {
         <ethlete-part-tree
           [layers]="manyStates() ? manyStatesLayers() : layers()"
+          (expandedChange)="expandedChange.emit($event)"
           (activate)="activate.emit($event)"
           shellMainSide
         />
@@ -202,6 +203,7 @@ export class SystemPageComponent {
   public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
   public menuOpen = model(false);
   public activate = output<string>();
+  public expandedChange = output<readonly string[]>();
   public copyPrompt = output();
   public zoomOut = output();
   public zoomReset = output();
