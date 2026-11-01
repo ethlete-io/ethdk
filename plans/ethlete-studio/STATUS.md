@@ -10,25 +10,25 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                                         | Wer               |
-| ------------------------------- | ------ | --------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ✅     |                                                                                   |                   |
-| components/disclosure           | ✅     |                                                                                   |                   |
-| components/tree-row             | ✅     | Studio baut wieder; Live-Shot mit 13 px fehlt noch, dann neues „Go geben“         | Builder, dann Tom |
-| components/zoom-chip            | ✅     |                                                                                   |                   |
-| elements/part-tree              | ✅     |                                                                                   |                   |
-| elements/studio-menu            | ✅     |                                                                                   |                   |
-| components/shell-collapse       | ✅     |                                                                                   |                   |
-| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                                         | Builder           |
-| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                         | Builder           |
-| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                                         | Builder           |
-| pages/system                    | ❌     | Merge-Ansicht leer, Builder repariert; dann mergen und „Go geben“                 | Builder, dann Tom |
-| pages/sketches                  | ❌     | Hover-Rahmen raus aus Entwurf und App, dann Merge von pages-system und „Go geben“ | Builder, dann Tom |
-| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                           | Builder           |
-| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                               | Builder           |
-| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“             | Builder, dann Tom |
-| pages/merge                     | ❌     | Merge-Ansicht zeigt Vorher/Nachher nicht; Prüfung noch nicht grün                 | Builder           |
-| components/error-toast          | ❌     | Go gegeben, Prüfung läuft                                                         | Builder           |
+| Teil                            | Fertig | Was fehlt                                                                            | Wer               |
+| ------------------------------- | ------ | ------------------------------------------------------------------------------------ | ----------------- |
+| components/comment-pin          | ✅     |                                                                                      |                   |
+| components/disclosure           | ✅     |                                                                                      |                   |
+| components/tree-row             | ✅     | Studio baut wieder; Live-Shot mit 13 px fehlt noch, dann neues „Go geben“            | Builder, dann Tom |
+| components/zoom-chip            | ✅     |                                                                                      |                   |
+| elements/part-tree              | ✅     |                                                                                      |                   |
+| elements/studio-menu            | ✅     |                                                                                      |                   |
+| components/shell-collapse       | ✅     |                                                                                      |                   |
+| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
+| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
+| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                                            | Builder           |
+| pages/system                    | ❌     | Merge-Ansicht leer, Builder repariert; dann mergen und „Go geben“                    | Builder, dann Tom |
+| pages/sketches                  | ❌     | Hover-Rahmen raus aus Entwurf und App, dann Merge von pages-system und „Go geben“    | Builder, dann Tom |
+| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                              | Builder           |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                  | Builder           |
+| pages/start                     | ❌     | Knöpfe im Entwurf ergänzt, Prüfung noch nicht grün; danach „Go geben“                | Builder, dann Tom |
+| pages/merge                     | ❌     | Merge-Ansicht zeigt Vorher/Nachher nicht; Prüfung noch nicht grün                    | Builder           |
+| components/error-toast          | ❌     | Schrift und Fläche repariert, Vergleich 0 px; Live-Shot fehlt, dann neues „Go geben“ | Builder, dann Tom |
 
 Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.

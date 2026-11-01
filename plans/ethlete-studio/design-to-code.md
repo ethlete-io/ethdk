@@ -1083,6 +1083,17 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 100. In the Sketches view, hiding the sidebar changes the canvas: the frames grow and move (Tom, 2026-11-01, two
      screenshots of pages/system round 1). Expected: the camera keeps its zoom and position when the canvas width
      changes. The Flow view does the same (Tom). Cause and the tool lesson: open, asked the builder.
+101. The error toast had a compare diff of about 20k px after Tom's go (builder, 2026-11-01). Causes: the SDK
+     `.et-notification` used `font-family: inherit` and so drew the Studio body font Jost, not `--et-font-family`; the
+     design piece `notification()` drew the inherited surface, while the SDK component always draws elevation 1. Fix
+     in bee441f35: `var(--et-font-family, inherit)` and `data-et-auto-surface` on the piece; compare 0 px in all 4
+     states. The shared piece change voids the go, and the SDK design sdk/components/notification can draw differently
+     now. Trap: Studio designs load `@ethlete/components/design` from dist, so the compare stays stale until
+     `nx build components`, and the go hash covers source, not dist. Why missed: only compare checks design against
+     app, and only after implementation; nothing compares the font or surface that a design piece inherits with what
+     the app gives it. Tool fix (any project, after MVP): at go and in `design check`, render each SDK design piece
+     root in the design frame and in the harness, and flag a different computed font-family or `--et-surface-*`
+     value; warn when dist is older than the design source.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
