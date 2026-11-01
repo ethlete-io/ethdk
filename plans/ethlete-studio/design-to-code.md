@@ -848,6 +848,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 69. The Q112 push first failed on prettier (builder, 2026-11-01): the agent committed only its own hunks of
     part-ready.ts, and the committed text was never formatted (fixed in a style(cli) commit). Lesson: a hunk-only
     commit skips prettier on the text that gets committed; format the file before staging hunks.
+70. The Q113 commit 543560fab broke `cli:compile` (builder, 2026-11-01): go-guard.ts:43 used `decisions.at(-1)`,
+    but the cli tsconfig lib is below es2022 (TS2550); fixed in 394b7aff8. The agent ran vitest only, and vitest does
+    not typecheck. Lesson: a known rule that lives only in memory does not reach a subagent; it is now in the
+    subagent brief.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
