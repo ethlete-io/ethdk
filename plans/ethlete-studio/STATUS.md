@@ -26,7 +26,7 @@ ausgeklammert.
 | pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Bereit: „Änderung abnehmen“, dann „Go geben“ (Kasten entfernt, Shot geprüft)                                            | Tom               |
+| pages/start                     | ❌     | Go gegeben (22:56); Builder macht „ready“                                                                               | Builder           |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
