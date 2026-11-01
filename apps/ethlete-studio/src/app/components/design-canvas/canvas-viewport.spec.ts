@@ -26,7 +26,10 @@ const mount = (covered: number) => {
   Object.defineProperty(world, 'offsetHeight', { value: 200 });
   viewport.append(world);
 
-  return mountCanvasViewport({ viewport, world, frameSelector: 'figure', padding: 20, covered: () => covered });
+  return Object.assign(
+    mountCanvasViewport({ viewport, world, frameSelector: 'figure', padding: 20, covered: () => covered }),
+    { element: viewport },
+  );
 };
 
 describe('mountCanvasViewport', () => {
@@ -48,5 +51,24 @@ describe('mountCanvasViewport', () => {
     viewport.show({ kind: 'visible', zoom: 1 });
 
     expect(viewport.camera().x).toBeGreaterThanOrEqual(300);
+  });
+
+  it('marks a pointer focus and clears it on the next key press or blur', () => {
+    const viewport = mount(0);
+    const element = viewport.element;
+
+    element.setPointerCapture = () => undefined;
+    element.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
+
+    expect('pointerFocus' in element.dataset).toBe(true);
+
+    element.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab', bubbles: true }));
+
+    expect('pointerFocus' in element.dataset).toBe(false);
+
+    element.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
+    element.dispatchEvent(new FocusEvent('blur'));
+
+    expect('pointerFocus' in element.dataset).toBe(false);
   });
 });

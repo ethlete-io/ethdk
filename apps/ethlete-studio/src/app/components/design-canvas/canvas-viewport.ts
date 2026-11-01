@@ -154,6 +154,7 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
     if (event.button !== 0 && event.button !== 1) return;
 
     pressed = frameOf(event.target);
+    viewport.dataset['pointerFocus'] = '';
     viewport.focus();
     viewport.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -179,7 +180,11 @@ export const mountCanvasViewport = (options: CanvasViewportOptions): CanvasViewp
     show({ kind: 'focused' });
   });
 
+  viewport.addEventListener('blur', () => delete viewport.dataset['pointerFocus']);
+
   viewport.addEventListener('keydown', (event) => {
+    delete viewport.dataset['pointerFocus'];
+
     const target = shortcutTarget(event);
     const arrow = ARROWS[event.code];
 
