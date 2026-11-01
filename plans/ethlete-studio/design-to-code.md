@@ -954,10 +954,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     frame only in Sketches and Flows; Shift+1/2/0 work window-wide in System but only after a canvas click elsewhere.
     Why missed: `design actions` and compare check each part alone; no check compares one interaction across pages;
     the sketches design part copied the camera from the drawing instead of reusing the System canvas. Lesson: a
-    second copy of an interaction drifts silently (as finding 84). Tool change (builder default): a live "canvas
-    parity" action runs one input script on every canvas page and fails when the camera results differ, plus a check
-    that fails when more than one module attaches canvas input handlers. Code fix: one input layer for all canvas
-    pages; left-drag behaviour asked as Impl Q125.
+    second copy of an interaction drifts silently (as finding 84). Tool change: the general rules of finding 85 (embed, do not copy; the same
+    action on every page that shows a part). The "canvas parity" action and the "one module owns canvas input" check
+    are dropped: they only check Studio's own code. Code fix: one canvas component for all canvas pages (Impl Q125).
 84. Two live defects from the 705a39ce2 report (builder, 2026-11-01): (a) the picker in the live shell did not close
     on a pick, because shell-main.component.html holds its own inlined copy of the picker; d369ce390 fixed only the
     shell-project-switch part. (b) System from the sketch or merge page kept the sketch page: `pickSection` re-picked
@@ -965,10 +964,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     -> 1/261 failed. Why missed: the harness checks the standalone part and nothing asserts that an inlined copy
     matches it; the part tools never click across pages. Lesson: a part used as a copy instead of the component is
     untested code. Tool change (builder default): shell-main uses `ethlete-shell-project-switch` instead of its own
-    copy; live actions assert `aria-current=page` on the clicked rail section after each rail click.
-    Correction (builder, 2026-11-01, from code): the server has `part-go` and `part-ready`, but no Studio screen calls
-    them; there is no accept path. Studio does have a merge click (sketch view, `mergeSketch$`). In progress: go and
-    accept clicks in Studio with all preconditions checked first, and a live check of the merge click.
+    copy; live actions check, for any app, that a navigation item gets `aria-current=page` after its click
+    (general; parked until the MVP).
 85. Root cause behind findings 77, 83 and 84 (Tom, 2026-11-01: "dann notier mal wieso es dazu gekommen ist und was
     an studio besser gemacht werden muss. exakt das habe ich nun schon 20 mal geschrieben"). Why it happened: Studio
     lets a page or element design draw its own copy of a thing that already exists as a part (the picker inside
