@@ -218,7 +218,7 @@ export default definePart<{
     const body = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
-    const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full');
+    const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const toggle = await chip(points, !closed);
     const dialog = closed ? undefined : await popover(points);

@@ -54,6 +54,9 @@ export const manyStatesView = async (grid: StateGridDrawing) => {
       canvasFrame('tree', html`<div style="width: 280px" ${slot('shot')}>${rowDrawing.body}</div>`, '280'),
     ],
     '75%',
+    {},
+    '',
+    true,
   );
   const menu = await studioMenu({ open: false });
   const shell = await shellMain.render({
