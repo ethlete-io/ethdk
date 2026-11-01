@@ -1,5 +1,5 @@
-import { Component, computed, input, linkedSignal, output, ViewEncapsulation } from '@angular/core';
-import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
+import { Component, computed, input, linkedSignal, output, viewChild, ViewEncapsulation } from '@angular/core';
+import { TREE_IMPORTS, TreeDataSource, TreeDirective, TreeNode } from '@ethlete/components';
 import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
 
 export type PartTreeState = { name: string; key?: string; inert?: boolean; selected?: boolean };
@@ -58,7 +58,7 @@ const keyOf = (...names: string[]) => names.join('/');
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [TREE_IMPORTS, TreeRowItemComponent],
-  host: { class: 'block' },
+  host: { class: 'block', '(keydown.space)': 'activateFocused($event)' },
 })
 export class PartTreeComponent {
   public layers = input<PartTreeLayer[]>([]);
@@ -70,6 +70,8 @@ export class PartTreeComponent {
 
   /** The keys of the open layers and parts after the user opened or closed one. */
   public expandedChange = output<readonly string[]>();
+
+  public tree = viewChild(TreeDirective<string>);
 
   protected model = computed(() => {
     const children = new Map<string | null, TreeNode<string>[]>();
@@ -131,4 +133,14 @@ export class PartTreeComponent {
   });
 
   protected expandedValues = linkedSignal<readonly string[]>(() => this.model().open);
+
+  protected activateFocused(event: Event) {
+    const tree = this.tree();
+    const node = tree?.activeNode();
+
+    if (!tree || !node) return;
+
+    event.preventDefault();
+    tree.activate(node);
+  }
 }

@@ -79,6 +79,24 @@ describe('PartTreeComponent', () => {
     expect(labelsOf(element).slice(0, 3)).toEqual(['Foundations', 'colors', 'Components']);
   });
 
+  it('opens a closed layer on Space and emits the key of the activated row', async () => {
+    const fixture = await render();
+    const element = fixture.nativeElement as HTMLElement;
+    const activated: string[] = [];
+    const expanded: (readonly string[])[] = [];
+    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    fixture.componentInstance.activate.subscribe((key) => activated.push(key));
+    fixture.componentInstance.expandedChange.subscribe((keys) => expanded.push(keys));
+    rowsOf(element)[0]?.dispatchEvent(event);
+    await fixture.whenStable();
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(activated).toEqual(['Foundations']);
+    expect(expanded).toHaveLength(1);
+    expect(labelsOf(element).slice(0, 3)).toEqual(['Foundations', 'colors', 'Components']);
+  });
+
   it('uses own keys, a closed part with states and an own warning title, and emits the open keys', async () => {
     const fixture = await render([
       {
