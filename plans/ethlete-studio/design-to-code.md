@@ -456,3 +456,10 @@ only; the builder starts when Tom gives the start.
   every Studio part implemented, compare green, ready), not after Impl Q24. No change from this check now.
 - Impl Q26 load-error text (Tom, 2026-11-01): the second line of the inbox load-error state stays fixed text for the
   MVP. Showing the real `loadError` message is parked after the MVP.
+- Impl Q27 go for seven parts (Tom, 2026-11-01): Tom gives the go in the chat for `components/disclosure`,
+  `components/shell-collapse`, `components/shell-project-option`, `components/shell-project-switch`,
+  `elements/studio-menu`, `elements/canvas-frames` and `pages/start` (design-done at the MVP). The builder records each
+  with `--by tom` and names Impl Q27 in the commit; they run in wave 2.
+- Impl Q28 link-only go (Tom, 2026-11-01): when Q252 moves an inline part to its own component, only its `implements`
+  link changes and the go goes stale. For a link-only change the builder re-records the go with `--by tom` and names
+  Impl Q28 in the commit. Any visual design change still stops and asks. After the MVP: the go hash ignores the link.

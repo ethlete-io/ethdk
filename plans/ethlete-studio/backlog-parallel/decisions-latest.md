@@ -295,3 +295,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   and Flows; a performance review that includes the `design check` time (studio ~6:30 since it draws all states).
 - After the MVP (Tom, 2026-11-01, Impl Q26): the inbox load-error state shows the real `loadError` message in place of
   the fixed second line.
+- After the MVP (Tom, 2026-11-01, Impl Q28): the go hash ignores the `implements` link, so a link-only change does not
+  make the go stale.
