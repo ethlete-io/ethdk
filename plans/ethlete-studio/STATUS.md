@@ -58,6 +58,8 @@ oben rechts in der Teil-Ansicht.
 
 ## Für später gesammelt
 
+- Tooltips aus ethlete/components statt der nativen `title`-Tooltips (Befund 116, 01.11.).
+
 - Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben im Kopf die Auswahl der Design-Systeme; schnelle Auswahl unten zeigt Logo oder zwei Buchstaben (01.11.).
 
 - „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren (Befund 109), mit der Überarbeitung von Go.

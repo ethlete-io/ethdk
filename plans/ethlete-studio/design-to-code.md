@@ -1191,6 +1191,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      plus the opening delta. (b) State name `open` of the host and of the embedded switch collide in the embedded-part
      code (db91bcbe1). Lesson: state names are scoped per part; a fixture with equal names in host and embed. Builder
      fixes both now, test first.
+116. Studio shows native `title` tooltips instead of the `libs/components` tooltip (Tom, 2026-11-01). About 26 `title`
+     bindings in apps/ethlete-studio/src and 7 in .ethlete/design/studio. Why no check caught it: no lint rule or design
+     check flags a native `title` where the SDK has a tooltip; the compare cannot see a browser tooltip at all. Tool fix
+     (general): a lint rule in `@ethlete/eslint-plugin` that flags `title` and `[title]`/`[attr.title]` in app templates
+     and design files and points to the SDK tooltip. Parked for after the MVP.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
