@@ -583,6 +583,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     (Impl Q49). Lesson: a design row carries the same role and aria state as the headless part it stands for.
 20. A design class that no app template uses needs a Tailwind `@source inline` line in the app's `styles.css`, and
     `task --verify` refused that file, so canvas-frames verified against an older commit (Impl Q50, f4d10d1ba).
+21. The tree-row app stack sets `role="tree"` by hand, not through the headless `etTree`, because the design states
+    are a flat row list that is not always a valid tree (2c65a502d). To pass the lint rule `role-has-required-aria`
+    it binds `[attr.aria-selected]="null"`, which never renders: a lint workaround, not real ARIA. Lesson: a design
+    state list must be a valid instance of the headless part, so the app can use the part; review in Tom's round.
+22. `elements/shell-main` shows a stale go after the shell-project-switch changes (Impl Q35/Q44), because it embeds
+    that part. Lesson candidate: a change to an embedded part makes the go of every part that embeds it stale.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
