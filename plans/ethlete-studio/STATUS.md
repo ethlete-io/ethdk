@@ -10,25 +10,25 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                                                                                                                                                             | Wer               |
-| ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ✅     |                                                                                                                                                                                                       |                   |
-| components/disclosure           | ✅     |                                                                                                                                                                                                       |                   |
-| components/tree-row             | ✅     |                                                                                                                                                                                                       |                   |
-| components/zoom-chip            | ✅     |                                                                                                                                                                                                       |                   |
-| elements/part-tree              | ✅     |                                                                                                                                                                                                       |                   |
-| elements/studio-menu            | ✅     |                                                                                                                                                                                                       |                   |
-| components/shell-collapse       | ✅     |                                                                                                                                                                                                       |                   |
-| components/shell-project-switch | ✅     |                                                                                                                                                                                                       |                   |
-| elements/shell-main             | ❌     | Werkzeug-Fehler behoben; Entwurf bekommt Zustand mit Fokus-Rahmen nach dem Schließen; dann neues „Go geben“                                                                                           | Builder, dann Tom |
-| pages/inbox                     | ❌     | Go gegeben, aber „ready“ meldet das Go als veraltet: der neue Fokus-Zustand von shell-main ändert den Entwurf, kein Pixel. Q15 ist gebaut; „ready“ folgt, sobald shell-main fertig ist, ohne neues Go | Builder           |
-| pages/system                    | ❌     | „fit“ liegt jetzt rechts neben dem Panel, Bild geprüft. Builder setzt noch Aktions-Marken ohne sichtbare Änderung; dann „Änderung abnehmen“ und „Go geben“                                            | Builder, dann Tom |
-| pages/sketches                  | ❌     | Go gegeben; die 9 Fehler waren Werkzeug-Fehler und sind behoben. „ready“ wartet wie bei pages/inbox auf Q15 und den Fokus-Zustand von shell-main                                                      | Builder           |
-| components/canvas-viewport      | ✅     |                                                                                                                                                                                                       |                   |
-| elements/canvas-frames          | ❌     | Entwurf bekommt denselben Canvas wie die App (mit Fokus-Rahmen); dann Bild und „Go geben“                                                                                                             | Builder, dann Tom |
-| pages/start                     | ✅     |                                                                                                                                                                                                       |                   |
-| pages/merge                     | ✅     |                                                                                                                                                                                                       |                   |
-| components/error-toast          | ✅     |                                                                                                                                                                                                       |                   |
+| Teil                            | Fertig | Was fehlt                                                                                                                                                  | Wer               |
+| ------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| components/comment-pin          | ✅     |                                                                                                                                                            |                   |
+| components/disclosure           | ✅     |                                                                                                                                                            |                   |
+| components/tree-row             | ✅     |                                                                                                                                                            |                   |
+| components/zoom-chip            | ✅     |                                                                                                                                                            |                   |
+| elements/part-tree              | ✅     |                                                                                                                                                            |                   |
+| elements/studio-menu            | ✅     |                                                                                                                                                            |                   |
+| components/shell-collapse       | ✅     |                                                                                                                                                            |                   |
+| components/shell-project-switch | ✅     |                                                                                                                                                            |                   |
+| elements/shell-main             | ❌     | Zustand mit Fokus-Rahmen nach dem Schließen ist da, alle Prüfungen grün, Bild geprüft. Tom: „Go geben“                                                     | Tom               |
+| pages/inbox                     | ❌     | Go gilt weiter (Q15). „ready“ meldet noch 20 Aktions-Fehler; Builder baut die CLI neu und prüft erneut                                                     | Builder           |
+| pages/system                    | ❌     | „fit“ liegt jetzt rechts neben dem Panel, Bild geprüft. Builder setzt noch Aktions-Marken ohne sichtbare Änderung; dann „Änderung abnehmen“ und „Go geben“ | Builder, dann Tom |
+| pages/sketches                  | ❌     | Go gegeben; die 9 Fehler waren Werkzeug-Fehler und sind behoben. „ready“ wartet wie bei pages/inbox auf Q15 und den Fokus-Zustand von shell-main           | Builder           |
+| components/canvas-viewport      | ✅     |                                                                                                                                                            |                   |
+| elements/canvas-frames          | ❌     | Entwurf bekommt denselben Canvas wie die App (mit Fokus-Rahmen); dann Bild und „Go geben“                                                                  | Builder, dann Tom |
+| pages/start                     | ✅     |                                                                                                                                                            |                   |
+| pages/merge                     | ✅     |                                                                                                                                                            |                   |
+| components/error-toast          | ✅     |                                                                                                                                                            |                   |
 
 Stand: 12 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
@@ -53,7 +53,7 @@ oben rechts in der Teil-Ansicht.
 
 - Schnellere Design-CLI: Aktions-Prüfungen parallel, Bedingung statt fester Wartezeit von 400 ms (Q16, 02.11.).
 
-- Go erst, wenn alle Prüfungen grün sind (Q14). Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, gebaut 02.11.).
+- Go erst, wenn alle Prüfungen grün sind (Q14). Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, fertig 02.11.).
 
 - Ein Knopf „Abnehmen und Go“, wenn beide Schritte offen sind (Q12, 01.11.).
 
