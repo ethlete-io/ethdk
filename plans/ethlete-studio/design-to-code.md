@@ -1041,6 +1041,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     Rebased in 21418ef90 after 2f750eec7 carried the fix into variant a. Why missed: only `design inbox` shows a
     needed rebase; sketch check and the sketch view do not. Fix (any project, after MVP): a stale baseline is an open
     point on a ready sketch, in sketch check and in the Studio sketch view.
+95. `design actions` fails pages/merge on 106 of 119 actions (builder, 2026-11-01). Main cause (about 60): an action
+    declared by an embedded part (shell-main `emit:sectionChange`, disclosure `emit:openChange`, studio-menu state
+    `open`) is resolved against the page component, not the embedded part. Why missed: before the stricter gate,
+    actions ran only on parts without embedded parts. Fix (any project, builder builds it now): the check resolves an
+    embedded part's actions against that part's own component. Rest: missing `data-et-action` in the merge design
+    (builder adds it) and an inert preview in the app.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.

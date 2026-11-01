@@ -10,27 +10,27 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                           | Wer     |
-| ------------------------------- | ------ | ------------------------------------------------------------------- | ------- |
-| components/comment-pin          | ✅     |                                                                     |         |
-| components/disclosure           | ✅     |                                                                     |         |
-| components/tree-row             | ✅     |                                                                     |         |
-| components/zoom-chip            | ✅     |                                                                     |         |
-| elements/part-tree              | ✅     |                                                                     |         |
-| elements/studio-menu            | ✅     |                                                                     |         |
-| components/shell-collapse       | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
-| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
-| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
-| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                           | Builder |
-| pages/system                    | ❌     | Zoom-Leiste repariert: neues „Go geben“, Sketch pages-system mergen | Tom     |
-| pages/sketches                  | ❌     | Sketch pages-system mergen (gilt für beide Seiten)                  | Tom     |
-| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt             | Builder |
-| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                 | Builder |
-| pages/start                     | ❌     | 3 Knöpfe ohne Aktion im Entwurf                                     | Builder |
-| pages/merge                     | ❌     | Kopfzeile in der App weicht vom Entwurf ab                          | Builder |
-| components/error-toast          | ❌     | Kontrast und Schließen-Zustände im Entwurf, dann „Go geben“         | Builder |
+| Teil                            | Fertig | Was fehlt                                                           | Wer               |
+| ------------------------------- | ------ | ------------------------------------------------------------------- | ----------------- |
+| components/comment-pin          | ✅     |                                                                     |                   |
+| components/disclosure           | ✅     |                                                                     |                   |
+| components/tree-row             | ✅     |                                                                     |                   |
+| components/zoom-chip            | ✅     |                                                                     |                   |
+| elements/part-tree              | ✅     |                                                                     |                   |
+| elements/studio-menu            | ✅     |                                                                     |                   |
+| components/shell-collapse       | ✅     |                                                                     |                   |
+| components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                           | Builder           |
+| elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                           | Builder           |
+| pages/inbox                     | ❌     | Go gegeben, Prüfung läuft                                           | Builder           |
+| pages/system                    | ❌     | Zoom-Leiste repariert: neues „Go geben“, Sketch pages-system mergen | Tom               |
+| pages/sketches                  | ❌     | Sketch pages-system mergen (gilt für beide Seiten)                  | Tom               |
+| components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt             | Builder           |
+| elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                 | Builder           |
+| pages/start                     | ❌     | Builder ergänzt 3 Knöpfe im Entwurf, dann neues „Go geben“          | Builder, dann Tom |
+| pages/merge                     | ❌     | Prüfung liest eingebettete Teile falsch, Builder repariert          | Builder           |
+| components/error-toast          | ❌     | Entwurf repariert: „Go geben“                                       | Tom               |
 
-Stand: 6 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
