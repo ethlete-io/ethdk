@@ -16,7 +16,7 @@ ausgeklammert.
 | components/disclosure           | ✅     |                                                                                                                         |                   |
 | components/tree-row             | ✅     |                                                                                                                         |                   |
 | components/zoom-chip            | ✅     |                                                                                                                         |                   |
-| elements/part-tree              | ✅     |                                                                                                                         |                   |
+| elements/part-tree              | ✅     | Live-Shot mit 13 px geprüft; neues „Go geben“                                                                           | Tom               |
 | elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
 | components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“                                                    | Builder, dann Tom |
@@ -26,7 +26,7 @@ ausgeklammert.
 | pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün                                         | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Prüfung grün, Vergleich 0 px; Live-Shot fehlt, dann „Go geben“                                                          | Builder, dann Tom |
+| pages/start                     | ❌     | Shot geprüft; Frage zum leeren Kasten an Tom, dann „Änderung abnehmen“ und „Go geben“                                   | Tom               |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
@@ -51,7 +51,7 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
-- Parallel: Canvas ändert sich beim Auf- und Zuklappen der Seitenleiste (Befund 100), Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
+- Parallel: Merge-Ansicht: Ausschnitt-Zeile und Text „Neu in a“ (Befund 104), ein Look für alle Menüs (Q130), Prüfungen für Start und Merge.
 - Shell-Teile (shell-main, shell-project-switch, pages/inbox): Prüfung wartet auf den Fix für eingebettete Teile.
 
 ## Für später gesammelt

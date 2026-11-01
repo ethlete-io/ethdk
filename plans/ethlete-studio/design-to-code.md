@@ -1082,7 +1082,15 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     project, after MVP): a live-actions reload probe scrolls each scroll container, reloads, and compares scrollTop.
 100. In the Sketches view, hiding the sidebar changes the canvas: the frames grow and move (Tom, 2026-11-01, two
      screenshots of pages/system round 1). Expected: the camera keeps its zoom and position when the canvas width
-     changes. The Flow view does the same (Tom). Cause and the tool lesson: open, asked the builder.
+     changes. The Flow view does the same (Tom). Cause (builder): design-canvas kept following its
+     opening fit until the user moved the camera and re-fit on every size change; hiding the panel grew the Sketches
+     canvas from 1076 to 1336 px (zoom 0.243 -> 0.302). System was not affected (canvas under the floating panel);
+     Flow not reproduced (its `start` camera never auto-fits). Fix 475072ead: an opening fit re-fits only when the
+     content bounds change; explicit Fit and focusFrame still follow resizes; Sketches column heads track the
+     viewport. Why missed: no check or e2e resized a canvas, and the e2e Sketches page silently rendered the System
+     canvas. Tool fix (any project, after MVP): a live-actions resize probe per canvas view (fail when the camera
+     changes but the content does not; frame-bound overlays keep their offset) and a guard that fails when a seeded
+     page does not render its view.
 101. The error toast had a compare diff of about 20k px after Tom's go (builder, 2026-11-01). Causes: the SDK
      `.et-notification` used `font-family: inherit` and so drew the Studio body font Jost, not `--et-font-family`; the
      design piece `notification()` drew the inherited surface, while the SDK component always draws elevation 1. Fix
