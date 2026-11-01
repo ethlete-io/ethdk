@@ -219,6 +219,14 @@
       "open-hover": "0a3667d972683d58"
     }
   },
+  "pages/flows": {
+    "hash": "06aaa4572fd5828c",
+    "at": "2026-11-01T13:45:30.081Z",
+    "states": {
+      "empty": "807ded15636146c0",
+      "flow": "23c74a9dbeee7e53"
+    }
+  },
   "pages/inbox": {
     "hash": "70d2d0c3f68b5b46",
     "at": "2026-11-01T12:17:16.789Z",
@@ -234,13 +242,13 @@
       "open": "907d4007ec3b5b2f",
       "with-resolved": "dc287f827e0cbba9"
     }
+  },
+  "pages/start": {
+    "hash": "d73fc4b2d7f8e2e0",
+    "at": "2026-11-01T13:48:29.062Z",
+    "states": {
+      "no-products": "051c266151f3b445",
+      "no-repo": "44136fa355b3678a"
+    }
   }
 }
-  "pages/flows": {
-    "hash": "06aaa4572fd5828c",
-    "at": "2026-11-01T13:45:30.081Z",
-    "states": {
-      "empty": "807ded15636146c0",
-      "flow": "23c74a9dbeee7e53"
-    }
-  },
