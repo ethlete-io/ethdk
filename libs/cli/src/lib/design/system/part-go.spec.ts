@@ -248,6 +248,8 @@ describe('part go', () => {
 
     expect(await goWith(target, { isTTY: false, ask: async () => 'y' }).go('--batch', list)).toBe(1);
     expect(readGo(dir)).toEqual({});
+    expect(lines.join('\n')).toContain(`not through an agent shell: `);
+    expect(lines.join('\n')).toContain(` go --batch ${list}`);
 
     const confirmed = goWith(target, yes);
 

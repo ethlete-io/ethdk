@@ -35,11 +35,18 @@ export const ttyPrompt = (): TomPrompt => ({
  * Shows every step to Tom and asks once; answers why nothing may run, or `null` after a yes. Without a TTY it refuses,
  * so an agent cannot give the confirm.
  */
-export const tomConfirmRefusalOf = async (options: { steps: DesignStep[]; invocation: string; prompt: TomPrompt }) => {
-  const { steps, invocation, prompt } = options;
+export const tomConfirmRefusalOf = async (options: {
+  steps: DesignStep[];
+  invocation: string;
+  prompt: TomPrompt;
+  batchFile?: string;
+}) => {
+  const { steps, invocation, prompt, batchFile } = options;
 
   if (!prompt.isTTY)
-    return `--by tom needs Tom at a terminal, and stdin is not a TTY: write the entries to a go list and let Tom run \`${invocation} go --batch <file>\`, or give the go in Studio`;
+    return batchFile
+      ? `--by tom needs Tom at a terminal, and stdin is not a TTY: run this in your own terminal, not through an agent shell: ${invocation} go --batch ${batchFile}`
+      : `--by tom needs Tom at a terminal, and stdin is not a TTY: write the entries to a go list and let Tom run \`${invocation} go --batch <file>\` in his own terminal, not through an agent shell, or give the go in Studio`;
 
   console.log(steps.map((step) => `  ${step.line}`).join('\n'));
 

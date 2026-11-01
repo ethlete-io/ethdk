@@ -104,7 +104,12 @@ export const goBatch = async (options: {
   }
 
   const ready = steps.filter((step): step is DesignStep => typeof step !== 'string');
-  const refusal = await tomConfirmRefusalOf({ steps: ready, invocation: options.invocation, prompt: options.prompt });
+  const refusal = await tomConfirmRefusalOf({
+    steps: ready,
+    invocation: options.invocation,
+    prompt: options.prompt,
+    batchFile: options.file,
+  });
 
   if (refusal) {
     console.error(refusal);
