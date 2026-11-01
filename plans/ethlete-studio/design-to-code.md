@@ -1143,7 +1143,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   `data-et-surface`, because the app paints the same fill; the DEMO-BACKDROP exemption applies, no tool change. Do it
   before Tom's shell-main go. Finding 71.
 - Impl Q118 compare without go (Tom, 2026-11-01): `design compare` runs on a part changed since its go and marks the
-  result "unapproved"; the go gate stays on `task --verify`, ready and accept. Finding 72.
+  result "unapproved"; the go gate stays on `task --verify`, ready and accept. Finding 72. Done in 5c461eab7
+  (builder: ready and accept never used the taskPartOf gate; compare has no JSON output yet).
 - Impl Q119 Tom go needs Tom (Tom, 2026-11-01): `--by tom` (go and accept) needs a TTY confirm or a Studio click,
   which an agent cannot give. The builder writes a go list; Tom confirms it at once with
   `et design go --batch <file>`, one prompt for all entries. The builder no longer writes a chat-approved go itself
