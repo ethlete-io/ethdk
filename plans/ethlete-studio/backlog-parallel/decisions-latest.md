@@ -293,3 +293,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   "Du" until then); the inbox interrupted state and the other old-panel states beyond loading and load error; the
   rail letters (studio, studio-lab, sdk all "S") and the lost "inherits from" hint; per-section trees for Sketches
   and Flows; a performance review that includes the `design check` time (studio ~6:30 since it draws all states).
+- After the MVP (Tom, 2026-11-01, Impl Q26): the inbox load-error state shows the real `loadError` message in place of
+  the fixed second line.

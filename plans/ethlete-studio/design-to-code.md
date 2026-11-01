@@ -452,3 +452,5 @@ only; the builder starts when Tom gives the start.
 - Impl Q25 Tom's :4402 check (Tom, 2026-11-01): Tom checked the new shell and inbox on :4402 after slice 3. He has
   feedback, all for after the MVP; he gives it in one collected round when the pilot is done (after Impl Q19, Q20
   and Q24). No change from this check now.
+- Impl Q26 load-error text (Tom, 2026-11-01): the second line of the inbox load-error state stays fixed text for the
+  MVP. Showing the real `loadError` message is parked after the MVP.
