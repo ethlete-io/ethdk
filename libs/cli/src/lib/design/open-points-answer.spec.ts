@@ -60,6 +60,7 @@ describe('openPointsAnswer', () => {
         hash: expect.any(String),
         ready: null,
         go: null,
+        directEdit: false,
         drawn: false,
         points: [{ kind: 'no-go' }],
       },
@@ -77,6 +78,7 @@ describe('openPointsAnswer', () => {
         hash: expect.any(String),
         ready: null,
         go: null,
+        directEdit: false,
         drawn: true,
         points: [
           { kind: 'missing-state', control: 'remove' },

@@ -211,6 +211,7 @@ describe('task --verify and the app stylesheet', () => {
         diff: () => [stylesheet, 'libs/chip/chip.component.ts'],
         patch: () => patch(changes),
         compare: vi.fn(async () => ({ green: true, states: {} })),
+        actions: vi.fn(async () => []),
       });
 
     write('apps/app-a/project.json', JSON.stringify({ targets: { build: { options: { styles: [stylesheet] } } } }));
