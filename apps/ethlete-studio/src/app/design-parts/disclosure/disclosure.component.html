@@ -1,0 +1,42 @@
+<button
+  [class]="
+    size() === 'xs'
+      ? 'items-start text-start text-(length:--text-xs) [&>.et-button-contents]:items-start'
+      : 'items-center text-(length:--text-sm)'
+  "
+  [attr.aria-expanded]="open()"
+  (click)="open.set(!open())"
+  class="flex w-full cursor-pointer justify-start gap-space-2 rounded-none border-0 bg-transparent px-space-2 py-space-1 font-ui-regular leading-[inherit] whitespace-normal text-et-surface-muted outline-none hover:bg-transparent [&>.et-button-contents]:gap-space-2 [transition:var(--transition-state)] hover:text-et-surface focus-visible:rounded-control-sm focus-visible:text-et-surface focus-visible:shadow-[inset_0_0_0_1.5px_var(--focus-ring)] focus-visible:outline-none active:rounded-control-sm active:bg-et-surface-interaction/15 active:text-et-surface [&_svg]:[transition:rotate_var(--duration-appear)_var(--ease-standard)] aria-expanded:[&_svg]:rotate-90"
+  etSurfaceInteractive
+  et-button
+  type="button"
+  variant="transparent"
+  color="surface"
+  size="sm"
+>
+  <svg
+    class="flex-none"
+    width="14"
+    height="14"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="m6.5 4.5 3.5 3.5-3.5 3.5" />
+  </svg>
+  <span>{{ label() }}</span>
+</button>
+@if (open()) {
+  <div
+    class="pt-space-1 pl-[calc(var(--space-2)+14px+var(--space-2))] transition-opacity duration-(--duration-appear) ease-(--ease-standard) starting:opacity-0"
+  >
+    @if (body(); as html) {
+      <div [innerHTML]="html" class="contents"></div>
+    }
+    <ng-content />
+  </div>
+}

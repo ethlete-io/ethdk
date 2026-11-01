@@ -6,6 +6,8 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
     import('../components/design-canvas/design-canvas.component').then((m) => m.DesignCanvasComponent),
   'components/comment-pin': () =>
     import('../design-parts/comment-pin/comment-pin.component').then((m) => m.CommentPinComponent),
+  'components/disclosure': () =>
+    import('../design-parts/disclosure/disclosure.component').then((m) => m.DisclosureComponent),
   'components/shell-collapse': () =>
     import('../design-parts/shell-collapse/shell-collapse.component').then((m) => m.ShellCollapseComponent),
   'components/tree-row': () => import('../system-view/system-view.component').then((m) => m.SystemViewComponent),
