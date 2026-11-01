@@ -581,6 +581,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 19. Designs draw interactive rows without the ARIA roles the SDK headless parts add: the tree-row design row is a
     `<div tabindex="0">`, the app row gets `role="treeitem"` from `etTree`, so part-tree `row-hover` could not match
     (Impl Q49). Lesson: a design row carries the same role and aria state as the headless part it stands for.
+20. A design class that no app template uses needs a Tailwind `@source inline` line in the app's `styles.css`, and
+    `task --verify` refused that file, so canvas-frames verified against an older commit (Impl Q50, f4d10d1ba).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -606,3 +608,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q49 tree-row ARIA (Tom, 2026-11-01): the tree-row design row gets `role="treeitem"`, `aria-level` and
   `aria-expanded` like the app row (no pixel change); go `--by tom`, then verify tree-row and part-tree again. No cli
   exception for role-less rows. Finding 19.
+- Impl Q50 Tailwind source line in verify (Tom, 2026-11-01): `task --verify` allows a change to the `@source` lines
+  of the app's `styles.css` in a part commit; the running cli slice (Impl Q46) builds it. The harness emitting the
+  design classes itself goes to the backlog, after the MVP. Finding 20.

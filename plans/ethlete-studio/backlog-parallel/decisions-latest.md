@@ -297,3 +297,5 @@ theme type (kit attribute resolved like `injectSemanticColorTheme`), never by na
   the fixed second line.
 - After the MVP (Tom, 2026-11-01, Impl Q28): the go hash ignores the `implements` link, so a link-only change does not
   make the go stale.
+- After the MVP (Tom, 2026-11-01, Impl Q50): the design harness emits the Tailwind classes the designs use, so a
+  design-only class needs no hand-written `@source inline` line in the app's `styles.css`.
