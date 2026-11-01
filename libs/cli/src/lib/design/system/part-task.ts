@@ -154,6 +154,37 @@ export const allowedFilesOf = (options: {
 export const filesOutsideOf = (options: { files: string[]; allowed: string[] }) =>
   options.files.filter((file) => !options.allowed.some((pattern) => matchesPattern(file, pattern)));
 
+/** The files of a diff whose source imports the part: a relative import of the component file or its folder. */
+export const importersOf = (options: { files: string[]; component: string; read: (file: string) => string | null }) => {
+  const stem = options.component.replace(/\.ts$/u, '');
+  const dir = posix.dirname(options.component);
+
+  return options.files.filter((file) => {
+    const source = options.read(file);
+
+    if (source === null || !/\.ts$/u.test(file)) return false;
+
+    return Array.from(source.matchAll(/(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]*)['"]/gu), ([, specifier]) =>
+      posix.join(posix.dirname(file), specifier ?? ''),
+    ).some((target) => target === stem || target === dir || target === `${dir}/index`);
+  });
+};
+
+/** The content of a file at the end of a git range, or null when it is gone. */
+export const gitFileAtOf = (options: { root: string; range: string; file: string }) => {
+  const end = options.range.includes('..') ? options.range.split('..').pop() : options.range;
+
+  try {
+    return execFileSync('git', ['show', `${end}:${options.file}`], {
+      cwd: options.root,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+  } catch {
+    return null;
+  }
+};
+
 /** Whether a `git diff -U0` patch adds or removes only Tailwind `@source` lines. */
 export const changesOnlySourceLines = (patch: string) =>
   patch

@@ -9,6 +9,8 @@ import {
   changesOnlySourceLines,
   filesOutsideOf,
   gitDiffFilesOf,
+  gitFileAtOf,
+  importersOf,
   gitDiffPatchOf,
   markImplemented,
   readImplemented,
@@ -28,6 +30,8 @@ export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>
 type LoadStates = (options: { target: string; product: ResolvedProduct; file: string }) => Promise<unknown>;
 
 type DiffFiles = (options: { root: string; range: string }) => string[];
+
+type ReadFile = (options: { root: string; range: string; file: string }) => string | null;
 
 type DiffPatch = (options: { root: string; range: string; file: string }) => string;
 
@@ -75,6 +79,7 @@ export const designTask = async (options: {
   load?: LoadStates;
   diff?: DiffFiles;
   patch?: DiffPatch;
+  read?: ReadFile;
   compare?: ComparePart;
   start?: StartHarnessServer;
 }) => {
@@ -140,10 +145,17 @@ export const designTask = async (options: {
 
     try {
       files = (options.diff ?? gitDiffFilesOf)({ root, range });
-      outside = filesOutsideOf({ files, allowed }).filter(
+      const unlisted = filesOutsideOf({ files, allowed }).filter(
         (file) =>
           file !== stylesheet || !changesOnlySourceLines((options.patch ?? gitDiffPatchOf)({ root, range, file })),
       );
+      const importers = importersOf({
+        files: unlisted,
+        component: task.component,
+        read: (file) => (options.read ?? gitFileAtOf)({ root, range, file }),
+      });
+
+      outside = unlisted.filter((file) => !importers.includes(file));
     } catch (error) {
       console.error(`git diff ${range} failed: ${error instanceof Error ? error.message : String(error)}`);
 
@@ -153,7 +165,9 @@ export const designTask = async (options: {
     if (outside.length > 0) {
       console.error(`${outside.length} file${outside.length === 1 ? '' : 's'} of ${range} outside the allowed files:`);
       outside.forEach((file) => console.error(`  ${file}`));
-      console.error(`allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : [])].join(', ')}`);
+      console.error(
+        `allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : []), 'files importing the part'].join(', ')}`,
+      );
 
       return 1;
     }

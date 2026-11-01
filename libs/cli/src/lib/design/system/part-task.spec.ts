@@ -9,6 +9,7 @@ import {
   allowedFilesOf,
   doneParts,
   filesOutsideOf,
+  importersOf,
   IMPLEMENTED_FILE,
   markImplemented,
   readImplemented,
@@ -131,6 +132,22 @@ describe('part task', () => {
         ],
       }),
     ).toEqual(['apps/app-a/src/app/design-harness/other.ts', 'apps/docs/components/chip.md']);
+  });
+
+  it('finds the diff files that import the part', () => {
+    const component = 'apps/app-a/src/app/chip/chip.component.ts';
+    const sources: Record<string, string> = {
+      'apps/app-a/src/app/live/chip-live.component.ts': "import { ChipComponent } from '../chip/chip.component';",
+      'apps/app-a/src/app/live/index-live.ts': "import { A } from '../chip';",
+      'apps/app-a/src/app/other/other.component.ts': "import { B } from '../b/b.component';",
+      'apps/app-a/src/app/live/note.md': "import x from '../chip/chip.component'",
+    };
+    const files = Object.keys(sources);
+
+    expect(importersOf({ files, component, read: (file) => sources[file] ?? null })).toEqual([
+      'apps/app-a/src/app/live/chip-live.component.ts',
+      'apps/app-a/src/app/live/index-live.ts',
+    ]);
   });
 
   it('allows the app files the harness shares with the design', () => {
