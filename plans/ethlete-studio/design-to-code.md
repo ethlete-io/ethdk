@@ -1036,6 +1036,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     2026-11-01). Cause (builder): sketch pages-system targets both pages/system and pages/sketches, and the open
     point does not name the sketch. Fix (any project, with Q122): the open point names the sketch, for example
     "sketch pages-system is ready, not merged (it also targets this part)".
+94. Sketch pages-system stayed "ready" while its baseline went stale: the canvas fix (d7bb68aa7) changed pages/system
+    in the product, so Tom's merge click would have been refused (builder, 2026-11-01, caught before Tom clicked).
+    Rebased in 21418ef90 after 2f750eec7 carried the fix into variant a. Why missed: only `design inbox` shows a
+    needed rebase; sketch check and the sketch view do not. Fix (any project, after MVP): a stale baseline is an open
+    point on a ready sketch, in sketch check and in the Studio sketch view.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
