@@ -2,7 +2,8 @@ import { definePart, drawing, html, ng, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { commentPinMark } from '@system/components/comment-pin';
-import canvasFrames from '@system/elements/canvas-frames';
+import button from '@system/components/button';
+import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
@@ -339,7 +340,24 @@ export const inbox = () =>
       );
       const visible = comments.filter((c) => showResolved || !c.resolved);
       const unresolved = comments.filter((c) => !c.resolved).length;
-      const frames = await canvasFrames.render(canvasFrames.states.default);
+      const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
+      const gridRows = await Promise.all(
+        (['filled', 'outline', 'tonal'] as const).map(async (variant) => ({
+          label: variant,
+          cells: await Promise.all(
+            interactions.map(
+              async (interaction) =>
+                (
+                  await button.render(
+                    { label: 'Save', variant, pressed: interaction === 'pressed' },
+                    interaction === 'rest' || interaction === 'pressed' ? {} : { interaction },
+                  )
+                ).body,
+            ),
+          ),
+        })),
+      );
+      const grid = stateGrid({ columns: [...interactions], rows: gridRows }, { cellWidth: '120px', place: 'center' });
       const pins = new Map(
         visible.map((c) => [
           c.id,
@@ -365,37 +383,50 @@ export const inbox = () =>
           )}
         </div>
       </div>`;
+      const canvas = await canvasView(
+        [
+          canvasFrame(
+            'button',
+            html`<div ${slot('canvas')}>
+              ${pinned(
+                grid,
+                draft || entry
+                  ? visible
+                      .filter((c) => c.cell !== 12)
+                      .concat({
+                        id: 'draft',
+                        author: 'Tom Bornholdt',
+                        initials: 'TB',
+                        when: '',
+                        part: 'button',
+                        state: 'tonal · rest',
+                        text: '',
+                        replies: 0,
+                        cell: 12,
+                      })
+                  : visible,
+                (c) => (c.id === 'draft' ? '' : (pins.get(c.id) ?? '')),
+              )}
+            </div>`,
+          ),
+        ],
+        '100%',
+        {},
+        'w-250',
+      );
       const menu = await studioMenu({ open: false });
       const shell = await shellMain.render({
         studio: menu.body,
         section: 'Inbox',
         product: 'studio',
         side,
-        content: `<div class="contents" ${slot('canvas')}>${pinned(
-          frames.body,
-          draft || entry
-            ? visible
-                .filter((c) => c.cell !== 12)
-                .concat({
-                  id: 'draft',
-                  author: 'Tom Bornholdt',
-                  initials: 'TB',
-                  when: '',
-                  part: 'button',
-                  state: 'tonal · rest',
-                  text: '',
-                  replies: 0,
-                  cell: 12,
-                })
-            : visible,
-          (c) => (c.id === 'draft' ? '' : (pins.get(c.id) ?? '')),
-        )}</div>`,
+        content: canvas,
       });
 
       return drawing({
         body: shell.body,
         setup: menu.setup,
-        styles: shell.styles + menu.styles + frames.styles + (dialog?.styles ?? '') + styles,
+        styles: shell.styles + menu.styles + canvasFrameStyles + (dialog?.styles ?? '') + styles,
       });
     },
   });
