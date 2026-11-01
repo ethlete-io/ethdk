@@ -2,6 +2,7 @@ import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { posix, resolve } from 'path';
+import { matchesPattern } from './harness-config';
 import { goPartOf, goStateOf, readGo } from './part-go';
 import { readyMarkOf } from './part-ready';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -148,15 +149,6 @@ export const allowedFilesOf = (options: {
   ...(options.shared ?? []),
   ...(options.product === 'sdk' ? ['apps/docs/components/**'] : []),
 ];
-
-/** Whether a repo path matches a pattern of `allowedFilesOf`: `<folder>/**`, or a path where `*` stands for one segment's characters. */
-export const matchesPattern = (file: string, pattern: string) => {
-  if (pattern.endsWith('/**')) return file.startsWith(pattern.slice(0, -2));
-
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
-
-  return new RegExp(`^${escaped}$`).test(file);
-};
 
 /** The files of a diff outside the allowed patterns of `allowedFilesOf`. */
 export const filesOutsideOf = (options: { files: string[]; allowed: string[] }) =>

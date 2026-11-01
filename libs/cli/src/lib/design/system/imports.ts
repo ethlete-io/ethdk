@@ -3,6 +3,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { sourceFileOf } from '../vite-paths';
 import { ProductSource } from './base';
 import { assetFileOf, assetPathOf, ASSETS_PREFIX, cssAssetPathsOf } from './assets';
+import { matchesPattern } from './harness-config';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
@@ -99,6 +100,17 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
   const path = relative(folder, resolve(folder, specifier.split('?')[0] ?? specifier));
 
   return path.startsWith('..') || isAbsolute(path);
+};
+
+const reachesSharedAppFile = (options: { product: ResolvedProduct; part: ResolvedPart; specifier: string }) => {
+  const { product, part, specifier } = options;
+  const shared = product.config.harness?.shared ?? [];
+  const root = resolve(product.configFile, '../../..');
+  const file = relative(root, resolve(dirname(part.file), specifier.split('?')[0] ?? specifier))
+    .split(sep)
+    .join('/');
+
+  return [file, `${file}.ts`].some((candidate) => shared.some((pattern) => matchesPattern(candidate, pattern)));
 };
 
 export type SharedDirs = { sharedDir?: string; variantSharedDir?: string };
@@ -243,7 +255,11 @@ export const importProblemsOf = (product: ResolvedProduct & SharedDirs & { asset
         );
       if (imported.kind === 'asset' && !assetFileOf({ product, path: imported.path }))
         return problem(`${imported.specifier} resolves to no file in an assets/ folder`);
-      if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))
+      if (
+        imported.kind === 'relative' &&
+        leavesFolder(part, imported.specifier) &&
+        !reachesSharedAppFile({ product, part, specifier: imported.specifier })
+      )
         return problem(
           `"${imported.specifier}" leaves the part's folder - import another part as @system/<layer>/<name>`,
         );

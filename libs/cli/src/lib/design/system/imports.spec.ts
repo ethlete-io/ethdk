@@ -51,6 +51,27 @@ describe('importProblemsOf', () => {
     expect(importProblemsOf(resolveAcme(acme()))).toEqual([]);
   });
 
+  it("allows a relative import of an app file the harness shares, and flags any other escape from the part's folder", () => {
+    const target = acme();
+    const config = { harness: { app: 'apps/a', map: 'apps/a/parts.ts', shared: ['apps/a/src/icons/logos.ts'] } };
+
+    write(
+      target,
+      'acme/foundations/logos/logos.ts',
+      part(
+        "import { logo } from '../../../../../apps/a/src/icons/logos';\nimport { other } from '../../../../../apps/a/src/icons/other';",
+      ),
+    );
+
+    expect(
+      importProblemsOf(
+        resolveProduct({ target, name: 'acme', config: { ...readConfig(target)?.products?.['acme'], ...config } }),
+      ).map((problem) => problem.message),
+    ).toEqual([
+      `"../../../../../apps/a/src/icons/other" leaves the part's folder - import another part as @system/<layer>/<name>`,
+    ]);
+  });
+
   it("resolves @shared/ outside a sketch variant to the product's shared folder, and inside one to the sketch's too", () => {
     const target = acme();
 

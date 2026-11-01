@@ -51,3 +51,12 @@ export const appStylesheetOf = (options: { target: string; app: string }): strin
 
   return first ?? null;
 };
+
+/** Whether a repo path matches a pattern of `allowedFilesOf`: `<folder>/**`, or a path where `*` stands for one segment's characters. */
+export const matchesPattern = (file: string, pattern: string) => {
+  if (pattern.endsWith('/**')) return file.startsWith(pattern.slice(0, -2));
+
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
+
+  return new RegExp(`^${escaped}$`).test(file);
+};
