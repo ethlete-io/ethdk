@@ -20,7 +20,7 @@ import {
   verifyRangeOf,
 } from './part-task';
 import { resolveProduct } from './resolve-product';
-import { designTask } from './task-command';
+import { designTask, PartActionFailures } from './task-command';
 import { THEMING_TEXT } from './theming-text';
 import { ComparePart } from './compare-command';
 import { StartHarnessServer } from './harness-server';
@@ -70,6 +70,7 @@ const task = (
   diff = vi.fn((): string[] => []),
   compare: ComparePart = vi.fn(async () => 'compare must not run'),
   start: StartHarnessServer = vi.fn(async () => 'no server must start'),
+  actions: PartActionFailures = vi.fn(async () => []),
 ) =>
   designTask({
     target,
@@ -79,6 +80,7 @@ const task = (
     diff,
     compare,
     start,
+    actions,
   });
 
 describe('part task', () => {
@@ -306,6 +308,37 @@ describe('part task', () => {
       'target: compare green',
       THEMING_TEXT,
     ]);
+  });
+
+  it('fails the verify when the actions check misses or cannot run, and records nothing', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+
+    go(target);
+
+    const inside = vi.fn(() => ['libs/chip/chip.component.ts']);
+    const green = vi.fn<ComparePart>(async () => ({ green: true, states: CHIP_STATES }));
+    const missed = vi.fn<PartActionFailures>(async () => ['default button click FAILED nothing happened']);
+
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, green, undefined, missed)).toBe(1);
+    expect(missed).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:9' }),
+    );
+    expect(lines.join('\n')).toContain('default button click FAILED nothing happened');
+    expect(readImplemented(dir)).toEqual({});
+
+    const unavailable = vi.fn<PartActionFailures>(async () => ({ unavailable: 'no harness' }));
+
+    lines.length = 0;
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, green, undefined, unavailable)).toBe(
+      1,
+    );
+    expect(lines.join('\n')).toContain('no harness');
+    expect(readImplemented(dir)).toEqual({});
+
+    const clean = vi.fn<PartActionFailures>(async () => []);
+
+    expect(await task(target, ['--verify', '--url', 'http://localhost:9'], inside, green, undefined, clean)).toBe(0);
   });
 
   it('verifies the files of a commit or range, then records the part only when compare is green', async () => {

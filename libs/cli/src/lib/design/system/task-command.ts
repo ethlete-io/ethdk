@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { createDesignServer } from '../serve';
+import { partActionFailuresOf } from './actions-command';
 import { appFilesOf } from './app-files';
 import { comparePart, ComparePart } from './compare-command';
 import { appStylesheetOf } from './harness-config';
@@ -28,6 +29,8 @@ import { parseTarget } from './sketch/sketch';
 import { productModuleIdOf } from './system-modules';
 
 export const TASK_USAGE = 'task <layer>/<name> --product <name> [--verify [<rev>] [--url <app dev server url>]]';
+
+export type PartActionFailures = typeof partActionFailuresOf;
 
 type LoadStates = (options: { target: string; product: ResolvedProduct; file: string }) => Promise<unknown>;
 
@@ -71,8 +74,8 @@ const verifyOf = (argv: string[]) => {
 
 /**
  * `et design task <layer>/<name> …` prints what implementing a part with a current go takes; `--verify [<rev>]`
- * checks the files of a commit or range against the files the task allows, runs compare, and records the part as
- * implemented when both pass.
+ * checks the files of a commit or range against the files the task allows, runs compare and the actions check, and records the part as
+ * implemented when all pass.
  */
 export const designTask = async (options: {
   target: string;
@@ -84,6 +87,7 @@ export const designTask = async (options: {
   read?: ReadFile;
   compare?: ComparePart;
   start?: StartHarnessServer;
+  actions?: PartActionFailures;
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
@@ -186,6 +190,28 @@ export const designTask = async (options: {
 
     if (typeof compared === 'string' || !compared.green) {
       console.error(typeof compared === 'string' ? compared : 'compare is not green, so nothing was recorded');
+
+      return 1;
+    }
+
+    const failures = await (options.actions ?? partActionFailuresOf)({
+      target,
+      config,
+      product,
+      part: task.part,
+      url: args.values['--url'],
+      start: options.start,
+    });
+
+    if (!Array.isArray(failures)) {
+      console.error(`the actions check could not run, so nothing was recorded: ${failures.unavailable}`);
+
+      return 1;
+    }
+
+    if (failures.length > 0) {
+      failures.forEach((line) => console.error(line));
+      console.error(`${failures.length} action${failures.length === 1 ? '' : 's'} missed, so nothing was recorded`);
 
       return 1;
     }
