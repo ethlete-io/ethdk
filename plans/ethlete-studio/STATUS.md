@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B11, B25, B26, C3 und C5. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B11, B26, C3 und C5. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- B25: `design dom <part>` gibt das HTML eines Zustands aus, aus dem Entwurf oder mit `--app` aus der App (2c74c7237, 02.11.).
 - C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet (28141b818, 02.11.).
 - `design ready` behält `by` und `at` einer Fertig-Marke, wenn sich das Teil nicht geändert hat (d7bdfb315, 02.11.).
 - C1: Die Design-Befehle verwenden den letzten Harness-Build wieder, wenn sich keine Eingabe geändert hat (9cf6343a3, 02.11.).
@@ -104,7 +105,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Erledigt** (a01d37d64).
 23. Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
 24. Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
-25. `design dom <part>` gibt das HTML eines Teils aus. **Läuft.**
+25. `design dom <part>` gibt das HTML eines Teils aus. **Erledigt** (2c74c7237). Offen: `--app` lehnt Hover-, Active- und Klick-Zustände ab, statt sie herzustellen.
 26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`. **Läuft.**
 27. Kanonische Tailwind-Klassen im App-Code prüfen.
 28. Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
