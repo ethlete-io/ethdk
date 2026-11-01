@@ -193,7 +193,7 @@
     OPTION-VALUE-MISSING size/orientation/variant/controlPosition). Decision (grill, Tom): one subagent brings d of
     both up to the current rules with no visual change (control() marks, controls declaration, omits with reasons),
     then `sketch ready`, then `design sketch merge <part> --variant d --allowed-by "decisions-overnight.md Q102/Q113,
-    Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix changes a pixel or an omit needs a
+Tom 2026-11-01 in chat" --by <model> --product sdk`. Stop and report if a fix changes a pixel or an omit needs a
     design call. Do not widen to other SDK parts. No lib port before the MVP. NOT started yet.
   - The crash-fix subagent was still running at the restart; check `git log` for a `fix(cli)` commit and
     /tmp/studio-check8.txt before starting it again.
