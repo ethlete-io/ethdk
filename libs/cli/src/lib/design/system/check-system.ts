@@ -389,6 +389,7 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
 
   const rendered = await renderIssuesOf({
     ...options,
+    onProgress: (line) => console.log(line),
     jobs: options.products.map((product) => ({ product, sketch: null, parts: options.part ? [options.part] : null })),
   });
 

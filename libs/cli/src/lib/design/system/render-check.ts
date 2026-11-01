@@ -1,3 +1,4 @@
+import { firstValueFrom, from, map, race, timer } from 'rxjs';
 import { AddressInfo } from 'net';
 import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
@@ -451,33 +452,87 @@ const widthsOf = (value: unknown) =>
     ? value.filter((width): width is number => typeof width === 'number' && Number.isInteger(width) && width > 0)
     : [];
 
-const inspect = async (options: { browser: Browser; base: string; frames: Frame[] }) => {
+const PART_TIMEOUT_MS = 120_000;
+
+const inspect = async (options: {
+  browser: Browser;
+  base: string;
+  frames: Frame[];
+  timeoutMs?: number;
+  onPart?: (progress: { done: number; total: number; part: string; ms: number }) => void;
+}) => {
   const { browser, base, frames } = options;
+  const timeoutMs = options.timeoutMs ?? PART_TIMEOUT_MS;
   const context = await browser.newContext();
   const issues: RenderIssue[] = [];
+  const groups = new Map<string, Frame[]>();
+
+  for (const frame of frames) {
+    const { product, part, sketch } = frame.address;
+    const key = JSON.stringify([product, part, sketch]);
+
+    groups.set(key, [...(groups.get(key) ?? []), frame]);
+  }
 
   try {
-    const page = await context.newPage();
+    let page = await context.newPage();
+    let done = 0;
 
-    for (const frame of frames) {
-      await page.emulateMedia({ colorScheme: frame.contrast.scheme });
-      await page.setViewportSize(frame.viewport);
-      await openFrame(page, `${base}/frame.html?${frame.search}`);
-      await page.evaluate(settled);
+    for (const group of groups.values()) {
+      const started = Date.now();
+      const found: RenderIssue[] = [];
+      const current = page;
+      const drawn = (async () => {
+        for (const frame of group) {
+          await current.emulateMedia({ colorScheme: frame.contrast.scheme });
+          await current.setViewportSize(frame.viewport);
+          await openFrame(current, `${base}/frame.html?${frame.search}`);
+          await current.evaluate(settled);
 
-      const found = (await page.evaluate(
-        inspectFrame({
-          fixed: frame.fixed,
-          fit: frame.fit,
-          skips: frame.skips,
-          namespaces: frame.namespaces,
-          contrast: frame.contrast,
-          part: frame.controlInputs ? frame.address.part : null,
-        }),
-      )) as Found[];
-      const { product, part, state, sketch } = frame.address;
+          const inFrame = (await current.evaluate(
+            inspectFrame({
+              fixed: frame.fixed,
+              fit: frame.fit,
+              skips: frame.skips,
+              namespaces: frame.namespaces,
+              contrast: frame.contrast,
+              part: frame.controlInputs ? frame.address.part : null,
+            }),
+          )) as Found[];
+          const { product, part, state, sketch } = frame.address;
 
-      issues.push(...found.map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })));
+          found.push(...inFrame.map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })));
+        }
+      })();
+
+      drawn.catch(() => undefined);
+
+      const result = await firstValueFrom(
+        race(from(drawn).pipe(map(() => 'drawn' as const)), timer(timeoutMs).pipe(map(() => 'timeout' as const))),
+      );
+
+      const first = group[0]?.address;
+
+      if (result === 'timeout') {
+        await current.close().catch(() => undefined);
+        page = await context.newPage();
+
+        if (first)
+          issues.push({
+            rule: 'RENDER',
+            product: first.product,
+            part: first.part,
+            state: '-',
+            size: '-',
+            path: '-',
+            detail: `drawing the part did not finish within ${Math.round(timeoutMs / 1000)}s`,
+            sketch: first.sketch,
+          });
+      } else issues.push(...found);
+
+      done++;
+
+      if (first) options.onPart?.({ done, total: groups.size, part: first.part, ms: Date.now() - started });
     }
   } finally {
     await context.close();
@@ -496,6 +551,8 @@ export const renderIssuesOf = async (options: {
   config: DesignConfig;
   jobs: RenderJob[];
   chromiumOf?: typeof chromiumOf;
+  partTimeoutMs?: number;
+  onProgress?: (line: string) => void;
 }): Promise<
   | { issues: RenderIssue[]; warnings: RenderIssue[]; grids: RenderedGrid[]; drawn: RenderedState[] }
   | { unavailable: string }
@@ -754,7 +811,16 @@ export const renderIssuesOf = async (options: {
       }
     }
 
-    const inspected = await queue.run((browser) => inspect({ browser, base, frames }));
+    const inspected = await queue.run((browser) =>
+      inspect({
+        browser,
+        base,
+        frames,
+        timeoutMs: options.partTimeoutMs,
+        onPart: ({ done, total, part, ms }) =>
+          options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
+      }),
+    );
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
     const compared = [...new Set(sketched.map((issue) => JSON.stringify([issue.product, issue.part])))];

@@ -31,6 +31,7 @@ const withoutOpenPoints = (lines: string[]) =>
   lines.filter(
     (line) =>
       !line.startsWith('OPEN POINTS ') &&
+      !/^\[\d+\/\d+\] /.test(line) &&
       !line.startsWith('UNLINKED ') &&
       !line.startsWith('  ') &&
       !line.startsWith('PART ') &&
