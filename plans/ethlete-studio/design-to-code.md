@@ -329,6 +329,13 @@ var(--font-ui)` on `:root` in `sdk-token-map.css`; `translate3d(0, 0, 0)` on `.s
     pages `system`, `sketches`, `merge`, `flows`, `inventory`, `start`. Q24 count (`fe709f9d8`, not pushed) widened
     `PARTS` to base parts (34 of 81); the builder recommends a revert and a separate `DONE studio: n of 26` line,
     decision open with the grill session.
+  - Canvas parts, partial (`817d09b9b`, `752623638`, `249d2ab66`, `3c510d2bd`, `98f24fcec`): `ZoomChipComponent` and
+    `CommentPinComponent` in `design-parts/`, links and go (Impl Q28); the live canvas draws the zoom chip, not yet the
+    pin. Nothing recorded: zoom-chip `out` 0 px, `reset`/`in`/`fit` fail on size rounding (173 vs 174 px), its 12
+    forced states need `aria-label`s in the design; comment-pin 16 of 40 states 0 px, 24 count states fail on the
+    clipped badge, 2 `*-active` on forced active without hover. canvas-viewport not started: its design draws a
+    sample frame not from props. Tool gaps (a) rounding, (b) overflow, (c) active+hover in a cli slice; design
+    questions with the grill session.
 
 3. Not started: the list on the part in Studio, and `sketch ready` / part ready refused while the list is not empty.
 4. Last: point 5, open plan questions that name the part.
