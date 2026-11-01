@@ -356,52 +356,11 @@
   }
 </div>
 
-<div
-  class="absolute right-3 bottom-3 flex rounded-[0.3rem] border border-solid border-(--et-surface-border-solid) bg-(--et-surface-background-solid)"
->
-  <button
-    (click)="zoomBy(1 / ZOOM_STEP)"
-    et-button
-    type="button"
-    variant="transparent"
-    color="surface"
-    size="sm"
-    aria-label="Zoom out"
-  >
-    −
-  </button>
-  <button
-    (click)="show({ kind: 'visible', zoom: 1 })"
-    class="tabular-nums"
-    et-button
-    type="button"
-    variant="transparent"
-    color="surface"
-    size="sm"
-    title="Zoom to 100 % (Shift+0)"
-  >
-    {{ zoomPercent() }} %
-  </button>
-  <button
-    (click)="zoomBy(ZOOM_STEP)"
-    et-button
-    type="button"
-    variant="transparent"
-    color="surface"
-    size="sm"
-    aria-label="Zoom in"
-  >
-    +
-  </button>
-  <button
-    (click)="fitAll()"
-    et-button
-    type="button"
-    variant="transparent"
-    color="surface"
-    size="sm"
-    title="Zoom to fit (Shift+1)"
-  >
-    Fit
-  </button>
-</div>
+<ethlete-zoom-chip
+  [percent]="zoomPercent()"
+  (zoomOut)="zoomBy(1 / ZOOM_STEP)"
+  (zoomReset)="show({ kind: 'visible', zoom: 1 })"
+  (zoomIn)="zoomBy(ZOOM_STEP)"
+  (fit)="fitAll()"
+  class="absolute right-3 bottom-3"
+/>
