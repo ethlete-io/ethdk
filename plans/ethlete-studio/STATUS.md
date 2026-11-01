@@ -21,16 +21,16 @@ ausgeklammert.
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
 | components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“                                                    | Builder, dann Tom |
 | elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                                                               | Builder           |
-| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129, wird gebaut); dann neues „Go geben“                                        | Builder, dann Tom |
+| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129) ist gebaut; Builder schickt Bild, dann neues „Go geben“                    | Builder, dann Tom |
 | pages/system                    | ❌     | Sketch gemergt; Prüfung wartet auf den Canvas-Fix (Befund 100), dann „Go geben“                                         | Builder, dann Tom |
 | pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Go gegeben (22:56); „ready“ läuft gerade                                                                                | Builder           |
+| pages/start                     | ✅     |                                                                                                                         |                   |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
-Stand: 9 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 10 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
