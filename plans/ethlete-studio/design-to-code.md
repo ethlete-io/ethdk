@@ -935,6 +935,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     batch and CLI machinery leaked into Tom's work; Tom does not run CLI commands and does not follow the go system.
     Direction: Tom approves only by a click in Studio (the Impl Q119 Studio path); no batch files or commands for
     Tom. Tom's status is about Studio as he sees it: what works, what does not, what is next.
+    Builder state (2026-11-01, from code, not checked in Studio): Studio has a go click (`POST /__design/part-go`),
+    but no accept click and no merge click. The batch file is deleted. Next builder session: check Studio for real,
+    then build the missing clicks with all preconditions checked and a clear message in Studio. Finding 80 done in
+    36368703a (pages-system sketch ready, with a round note) and dc276d433 (batch merges, ready hint in the refusal).
 82. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
