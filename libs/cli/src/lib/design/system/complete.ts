@@ -1323,7 +1323,8 @@ export const seeFrame = (options: {
       ...tagged(element),
     };
   });
-  const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null).map((element) => ({
+  const partRoot = [root, ...root.querySelectorAll('[data-et-part]')].find((element) => (element.getAttribute('data-et-part') ?? '').split(' ').includes(${JSON.stringify(options.part)}));
+  const surfaces = [...root.querySelectorAll('[data-et-surface]')].filter((element) => ownerOf(element) === null && !(element === partRoot && element.getAttribute('data-et-surface') === '')).map((element) => ({
     id: element.getAttribute('data-et-surface'),
     shown: shown(element),
     options: [...element.querySelectorAll(${JSON.stringify(OPTION_SELECTOR)})].filter((option) => ownerOf(option) === null && shown(option)).map((option) => ({ ...tagged(option), named: option.id !== '' && named.has(option.id), keyboard: isKeyboard(option) })),

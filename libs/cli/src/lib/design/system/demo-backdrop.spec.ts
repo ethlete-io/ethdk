@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromiumOf } from '../browser';
-import { SeenFrame, seeFrame } from './complete';
+import { SeenFrame, completenessGapLineOf, completenessGapsOf, seeFrame } from './complete';
 import { demoBackdropGapsOf } from './demo-backdrop';
 
 const SURFACE = 'style="--et-surface-background: 20 30 40"';
@@ -11,6 +11,8 @@ const FRAMES: Record<string, string> = {
   ownSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" style="--et-surface-background: 60 70 80;background-color:rgb(var(--et-surface-background))"><button data-et-control="go">Go</button></div></div>`,
   ownFill: `<div id="root" ${SURFACE}><div class="chip" data-et-part="components/x" style="background-color:rgb(1 2 3)"><button data-et-control="go">Go</button></div></div>`,
   controlRoot: `<div id="root" ${SURFACE}><button data-et-part="components/x" data-et-control="go" style="background-color:rgb(var(--et-surface-background))">Go</button></div>`,
+  bareRootSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" data-et-surface><button data-et-control="go">Go</button></div></div>`,
+  bareInnerSurface: `<div id="root" ${SURFACE}><div class="card" data-et-part="components/x" data-et-surface><div data-et-surface></div></div></div>`,
 };
 
 describe('demo backdrop check', () => {
@@ -67,5 +69,23 @@ describe('demo backdrop check', () => {
     if (seen.size === 0) return context.skip('no browser');
 
     for (const name of ['transparent', 'ownSurface', 'ownFill', 'controlRoot']) expect(gapsOf(name)).toEqual([]);
+  });
+
+  it('reads a bare data-et-surface on the part root as its own surface and one anywhere else as a gap', (context) => {
+    if (seen.size === 0) return context.skip('no browser');
+
+    const gapsOf = (name: string) =>
+      completenessGapsOf({
+        part: 'components/x',
+        controls: { go: { kind: 'button', input: ['pointer'] } },
+        states: ['rest'],
+        frames: [seen.get(name) as SeenFrame],
+        reviewed: true,
+      })
+        .filter((gap) => gap.code === 'CONTROL-UNKNOWN')
+        .map(completenessGapLineOf);
+
+    expect(gapsOf('bareRootSurface')).toEqual([]);
+    expect(gapsOf('bareInnerSurface')).toHaveLength(1);
   });
 });

@@ -608,6 +608,8 @@ export default definePart({
 });
 ```
 
+A bare `data-et-surface` on the part's root element marks the part's own surface and needs no control; a bare one anywhere else is a gap.
+
 `pointer` input needs `hover` and `active`, and `keyboard` input needs `focus-visible`. The part
 draws them with `interactionRows`: its `grid` needs a column for each of them, and every row
 needs a state in each of those columns, so the open row is drawn hovered too. In any grid, a row that draws a state in one
