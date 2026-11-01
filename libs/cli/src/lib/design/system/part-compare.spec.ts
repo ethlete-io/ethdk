@@ -363,15 +363,19 @@ describe('harnessShotOf', () => {
     server = createServer((request, response) => {
       response.setHeader('content-type', 'text/html');
       response.end(
-        request.url?.includes('components%2Fpicker')
-          ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-          : request.url?.includes('components%2Fhover')
-            ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-            : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-              ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-              : request.url?.startsWith('/__design-harness')
-                ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                : '<body>no harness</body>',
+        request.url?.includes('components%2Ffraction')
+          ? '<body style="margin:0"><div data-design-harness-host style="width:7.25px;height:5px;background:#0000ff"></div></body>'
+          : request.url?.includes('components%2Fbadge')
+            ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
+            : request.url?.includes('components%2Fpicker')
+              ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
+              : request.url?.includes('components%2Fhover')
+                ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                  : request.url?.startsWith('/__design-harness')
+                    ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                    : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -392,6 +396,28 @@ describe('harnessShotOf', () => {
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('rounds a fractional host to whole pixels as the design picture does', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/fraction', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('grows the shot to the right and down over a positioned descendant, as a design frame grows its root', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/badge', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(9, 5, (x, y) => (y === 0 && x >= 5 ? RED : x < 7 ? BLUE : 0)));
   });
 
   it('shoots a page host in the viewport of the preset size', async (context) => {

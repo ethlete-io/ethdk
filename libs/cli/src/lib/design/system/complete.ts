@@ -982,7 +982,7 @@ const discoverControls = `((root) => {
   const sdk = ${JSON.stringify(SDK_CONTROLS.join(', '))};
   const rendered = (element) => element.getClientRects().length > 0;
   const HOVER = /(?<!\\\\):hover(?![\\w-])/g;
-  const FORCED_HOVER = /:is\\(:hover,\\s*\\[data-et-force~="?hover"?\\]\\)/g;
+  const FORCED_HOVER = /:is\\(:hover,\\s*\\[data-et-force~="?hover"?\\](?:,\\s*\\[data-et-force~="?active"?\\])?\\)/g;
   const hoveredOf = (written) => {
     const selector = written.replace(FORCED_HOVER, ':hover');
     const match = new RegExp(HOVER.source).exec(selector);

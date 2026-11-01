@@ -945,7 +945,7 @@ describe('completenessOf', () => {
 
     expect('gaps' in still && still.gaps.map(completenessGapLineOf)).toEqual([
       "CONTROL-TRANSITION-MISSING components/still.more.hover - state hovered changes background-color, color of button.aa-still in one frame - give them a transition with the product's motion tokens",
-      "CONTROL-TRANSITION-MISSING components/still.more.active - state pressed changes background-color of button.aa-still in one frame - give them a transition with the product's motion tokens",
+      "CONTROL-TRANSITION-MISSING components/still.more.active - state pressed changes background-color, color of button.aa-still in one frame - give them a transition with the product's motion tokens",
     ]);
 
     expect(await completenessOf({ target, config, product, part: 'components/clipped' })).toEqual({ gaps: [] });

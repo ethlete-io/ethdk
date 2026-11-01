@@ -5,7 +5,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { forceInteractions, forceInteractionsPlugin } from './force-interactions';
 
-const HOVER = ':is(:hover, [data-et-force~="hover"])';
+const HOVER = ':is(:hover, [data-et-force~="hover"], [data-et-force~="active"])';
 const FOCUS = ':is(:focus-visible, [data-et-force~="focus-visible"])';
 const ACTIVE = ':is(:active, [data-et-force~="active"])';
 
@@ -40,6 +40,16 @@ describe('forceInteractions', () => {
     const [forced, rest] = document.querySelectorAll('.field');
 
     expect(getComputedStyle(forced!).color).toBe('rgb(255, 0, 0)');
+    expect(getComputedStyle(rest!).color).not.toBe('rgb(255, 0, 0)');
+  });
+
+  it('matches :hover on an element forced to active, as a pointer press hovers it', () => {
+    const css = forceInteractions('.x:hover { color: red; }');
+    document.body.innerHTML = `<style>${css}</style><b class="x" data-et-force="active"></b><b class="x"></b>`;
+
+    const [pressed, rest] = document.querySelectorAll('.x');
+
+    expect(getComputedStyle(pressed!).color).toBe('rgb(255, 0, 0)');
     expect(getComputedStyle(rest!).color).not.toBe('rgb(255, 0, 0)');
   });
 

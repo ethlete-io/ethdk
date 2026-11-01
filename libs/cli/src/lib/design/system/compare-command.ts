@@ -5,7 +5,7 @@ import { join } from 'path';
 import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
-import { createPartShooter, viewportOf } from '../shot';
+import { createPartShooter, pixelBoxOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -16,6 +16,7 @@ import {
   forcedElementsOf,
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
+  HOST_BOX_SCRIPT,
   pointerOpensOf,
 } from './part-compare';
 import { taskPartOf } from './part-task';
@@ -134,7 +135,8 @@ const clickOpen = async (options: {
 };
 
 /**
- * A PNG of the harness host element at `url`, in the viewport of `size` (a fitted frame's without) at device scale 1,
+ * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
+ * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels,
  * after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named `opened`, and with each
  * `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
  */
@@ -192,7 +194,22 @@ export const harnessShotOf = async (options: {
       } else throw new HarnessError(`compare cannot force ${interaction} on "${label}" in the app`);
     }
 
-    return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
+    if (options.size)
+      return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
+
+    // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
+    await host.scrollIntoViewIfNeeded({ timeout });
+
+    const box = (await page.evaluate(HOST_BOX_SCRIPT)) as { x: number; y: number; width: number; height: number };
+
+    return await page.screenshot({
+      type: 'png',
+      fullPage: true,
+      omitBackground: true,
+      animations: 'disabled',
+      clip: pixelBoxOf(box),
+      timeout,
+    });
   } finally {
     await context.close();
   }

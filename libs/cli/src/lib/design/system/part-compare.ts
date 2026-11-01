@@ -17,6 +17,53 @@ export const harnessUrlOf = (options: {
 }) =>
   `${options.url.replace(/\/+$/, '')}${HARNESS_PATH}?part=${encodeURIComponent(options.part)}&state=${encodeURIComponent(options.state)}&props=${encodeURIComponent(JSON.stringify(options.props) ?? 'null')}${options.layout ? `&layout=${options.layout}` : ''}`;
 
+/**
+ * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right to cover each absolutely or fixed positioned descendant as far as the overflow boxes that clip it.
+ */
+export const HOST_BOX_SCRIPT = `(() => {
+  const host = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)});
+  const box = host.getBoundingClientRect();
+  const fillsViewport = (style) =>
+    style.position === 'fixed' && [style.top, style.right, style.bottom, style.left].every((edge) => parseFloat(edge) === 0);
+  const clips = (style) => [style.overflow, style.overflowX, style.overflowY].some((overflow) => overflow && overflow !== 'visible');
+  const holdsAbsolute = (style) => !['static', ''].includes(style.position) || !['none', ''].includes(style.transform);
+  const clipped = (element) => {
+    let { top, right, bottom, left } = element.getBoundingClientRect();
+    let escaping = true;
+
+    for (let ancestor = element.parentElement; ancestor && ancestor !== host; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor);
+
+      if (escaping && holdsAbsolute(style)) escaping = false;
+      if (!escaping && clips(style)) {
+        const outer = ancestor.getBoundingClientRect();
+
+        top = Math.max(top, outer.top);
+        right = Math.min(right, outer.right);
+        bottom = Math.min(bottom, outer.bottom);
+        left = Math.max(left, outer.left);
+      }
+      if (style.position === 'fixed') break;
+      if (style.position === 'absolute') escaping = true;
+    }
+
+    return { top, right, bottom, left, width: right - left, height: bottom - top };
+  };
+  const outOfFlow = [...host.querySelectorAll('*')]
+    .map((element) => ({ element, style: getComputedStyle(element) }))
+    .filter(({ style }) => ['absolute', 'fixed'].includes(style.position) && !fillsViewport(style))
+    .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const extentOf = (side, start) => Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
+
+  return {
+    x: box.left + scrollX,
+    y: box.top + scrollY,
+    width: Math.max(box.width, extentOf('right', box.left)),
+    height: Math.max(box.height, extentOf('bottom', box.top)),
+  };
+})()`;
+
 /** An element the design picture forces into `interaction`, found in the app by its `aria-label`. */
 export type ForcedElement = { interaction: string; label: string | null };
 

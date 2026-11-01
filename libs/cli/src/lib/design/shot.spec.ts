@@ -238,6 +238,17 @@ describe('createPartShooter', () => {
     );
   });
 
+  it('clips a fitted state to its root rounded to whole pixels', async () => {
+    const { shots } = acme();
+
+    boundingBox.mockResolvedValueOnce({ x: 0.25, y: 0, width: 173.046875, height: 29.5 });
+    await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'png', clip: { x: 0, y: 0, width: 173, height: 30 } }),
+    );
+  });
+
   it('fits a bare state without the frame padding, as a picture of its own', async () => {
     const { shots } = acme();
     const address = {

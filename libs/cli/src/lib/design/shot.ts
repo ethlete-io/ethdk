@@ -136,6 +136,14 @@ export type ShotSource = 'disk' | 'memory' | 'drawn';
 
 export type Picture = { png: Buffer; marks: PartMark[]; markup?: string };
 
+/** A box in CSS pixels rounded to whole pixels, the clip of a fitted design picture and of the app shot compare diffs it with. */
+export const pixelBoxOf = (box: { x: number; y: number; width: number; height: number }) => ({
+  x: Math.round(box.x),
+  y: Math.round(box.y),
+  width: Math.round(box.width),
+  height: Math.round(box.height),
+});
+
 const marksIn = (clip: boolean) => `(() => {
   const origin = ${clip} ? document.getElementById('root').getBoundingClientRect() : { left: -scrollX, top: -scrollY };
 
@@ -365,7 +373,7 @@ export const createPartShooter = (options: {
           crop
             ? page.screenshot({ ...SHOT_OPTIONS, clip: crop })
             : rootBox
-              ? page.screenshot({ ...SHOT_OPTIONS, clip: rootBox })
+              ? page.screenshot({ ...SHOT_OPTIONS, clip: pixelBoxOf(rootBox) })
               : page.screenshot(SHOT_OPTIONS)
         ).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
