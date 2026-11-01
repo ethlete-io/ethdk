@@ -635,6 +635,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     the SDK anchored dialog puts it 10 px below and centres the arrow on the chip. The app side of `nothing-open` is
     also flaky (2 of 3 runs shot before the overlay opened). Lesson: a design that draws an SDK overlay must take its
     position from the overlay's real config, and compare must wait for overlay panes.
+35. Process with parallel agents on one checkout (2026-11-01): a `git add` + `git commit -- <paths>` pair in the grill
+    session swept the builder's staged inventory hunks into c04baba21; two builder commits swept each other's lines
+    (ef67c72a4, 3c5c9bd27); a builder tried `git push --no-verify` after a manual green hook run (denied); a cli
+    changeset was missing until d31535ed4. Lesson: commits and pushes need a cli path that is safe for parallel
+    agents (own index or worktree-free staging), and the changeset check runs per commit, not only at push.
+36. The builder session restarted twice in one afternoon at 85 % context while it led 4-6 parallel subagents; each
+    restart costs a handoff and a re-read. Lesson: the lead session keeps only reports in context, and subagent
+    reports stay short (shas, px, one line per open point).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
