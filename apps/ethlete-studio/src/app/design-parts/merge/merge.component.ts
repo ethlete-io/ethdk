@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
+import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { DISCLOSURE_BODY_CLASS, DisclosureComponent } from '../disclosure/disclosure.component';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
@@ -96,6 +97,9 @@ const CROP = { width: 266, height: 64, scale: 2 };
         <span class="flex-1"></span>
         <div class="flex flex-col gap-space-3 border-t border-et-surface-border pt-space-3">
           <button (click)="merge.emit()" et-button type="button" variant="filled" size="sm">{{ LABELS.merge }}</button>
+          @if (error(); as error) {
+            <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
+          }
         </div>
       </div>
       @if (current(); as row) {
@@ -181,10 +185,18 @@ const CROP = { width: 266, height: 64, scale: 2 };
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, ShellMainComponent, StudioMenuComponent, DisclosureComponent],
+  imports: [
+    BUTTON_IMPORTS,
+    ProvideColorDirective,
+    NgTemplateOutlet,
+    ShellMainComponent,
+    StudioMenuComponent,
+    DisclosureComponent,
+  ],
   host: { class: 'block h-screen w-full' },
 })
 export class MergeComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   public unchanged = model(false);
   public target = input(MERGE_SAMPLE_TARGET);
   public changed = input(MERGE_SAMPLE_CHANGED);
@@ -199,6 +211,7 @@ export class MergeComponent {
   public panel = input<'open' | 'hidden'>('open');
   public menuOpen = model(false);
 
+  public error = input<string | null>(null);
   public pick = output<string>();
   public back = output();
   public merge = output();
@@ -207,8 +220,8 @@ export class MergeComponent {
   public productChange = output<string>();
   public allProducts = output();
   public projectChange = output<string>();
-  public openProject = output();
 
+  public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.merge;
   protected readonly DISCLOSURE_BODY_CLASS = DISCLOSURE_BODY_CLASS;
   protected readonly SCALE = SCALE;

@@ -214,15 +214,20 @@ export const STUDIO_LABELS = {
     command: 'et design product new shop',
   },
   merge: {
-    back: 'Back to sketch',
-    picked: 'Picked',
-    changed: 'Changed',
+    back: 'Zurück zum Sketch',
+    picked: 'Gewählt',
+    changed: 'Geändert',
     merge: 'Merge',
-    usedIn: (name: string) => `Where ${name} is used`,
-    now: 'Now',
-    after: 'After merging',
-    instances: (count: number) => (count === 1 ? '1 instance' : `${count} instances`),
-    instance: (count: number) => `Instance 1 of ${count} · 200 %`,
-    unchanged: (count: number, part: string) => `${count} states of ${part} without visible change`,
+    usedIn: (name: string) => `Wo ${name} vorkommt`,
+    now: 'Jetzt',
+    after: 'Nach dem Merge von',
+    instances: (count: number) => (count === 1 ? '1 Instanz' : `${count} Instanzen`),
+    instance: (count: number) => `Instanz 1 von ${count} · 200 %`,
+    unchanged: (count: number, part: string) => `${count} Zustände von ${part} ohne sichtbare Änderung`,
+    needsRebase: (parts: readonly string[]) =>
+      parts.length === 0
+        ? 'Der Sketch hat keine Baseline. Lass deinen Agent den Sketch rebasen.'
+        : `${parts.join(', ')} hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.`,
+    failed: 'Merge fehlgeschlagen.',
   },
 } as const;

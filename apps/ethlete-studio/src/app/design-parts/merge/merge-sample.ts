@@ -18,7 +18,7 @@ export const MERGE_SAMPLE_TARGET: MergeTarget = {
   part: 'components/button',
   name: 'button',
   variant: 'b',
-  note: 'Pill radius on every size',
+  note: 'Pill-Radius in jeder Größe',
 };
 
 export const MERGE_SAMPLE_CHANGED: MergeRow[] = [
