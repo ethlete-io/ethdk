@@ -53,6 +53,24 @@
       "selected-logo-hover": "adfa1a702c59dc1a"
     }
   },
+  "components/disclosure": {
+    "hash": "cb63b91b2b36656d",
+    "at": "2026-11-01T13:11:05.392Z",
+    "states": {
+      "open": "bd8ca6820a762e24",
+      "open-active": "388b366347ab38e2",
+      "open-focus-visible": "5c4acf47e9a5a05b",
+      "open-hover": "d391520fea988acb",
+      "rest": "76f33e3382e15155",
+      "rest-active": "c755ce72a29f14a7",
+      "rest-focus-visible": "9d3f1890a9a7c2b5",
+      "rest-hover": "a3355c803430ba87",
+      "xs": "987b027455b1d8f8",
+      "xs-active": "0ad07e7a9355a7a3",
+      "xs-focus-visible": "430a29e7001f442d",
+      "xs-hover": "fce9f3aa95b9b370"
+    }
+  },
   "components/shell-collapse": {
     "hash": "c2bff22ecd599c02",
     "at": "2026-11-01T12:39:01.292Z",
