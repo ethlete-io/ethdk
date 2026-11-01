@@ -51,10 +51,9 @@ oben rechts in der Teil-Ansicht.
 
 ## Gerade in Arbeit
 
-- Parallel: leere Merge-Ansicht, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.
+- Parallel: Canvas ändert sich beim Auf- und Zuklappen der Seitenleiste (Befund 100), leere Merge-Ansicht, Knopf „Wählen“, Prüfungen für Start und Merge, Fehler-Toast.
 - Shell-Teile (shell-main, shell-project-switch, pages/inbox): Prüfung wartet auf den Fix für eingebettete Teile.
 
 ## Für später gesammelt
 
 - Teil-Baum verliert beim Neuladen die Scroll-Position (Befund 99).
-- Canvas in Sketches und Flow ändert sich, wenn die Seitenleiste auf- oder zugeht (Befund 100).
