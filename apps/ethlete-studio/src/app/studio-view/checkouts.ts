@@ -1,9 +1,11 @@
 import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { injectNotificationManager } from '@ethlete/components';
 import { EMPTY, catchError, of, switchMap, tap } from 'rxjs';
 import { DesignRoots, designRoots$, designRootsAdd$ } from '../../host/design';
 import { pickFolder$ } from '../../host/dialog';
 import { workspaceRoot$ } from '../../host/workspace';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 
 export const folderNameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
@@ -18,6 +20,7 @@ export type CheckoutsOptions = {
 /** Keeps the list of checkouts and the picked one. Call it in an injection context. */
 export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
   const destroyRef = inject(DestroyRef);
+  const notifications = injectNotificationManager();
   const held = signal<DesignRoots>(NONE);
   const current = signal('');
 
@@ -72,7 +75,15 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
       pickFolder$()
         .pipe(
           switchMap((folder) => (folder ? keep(folder) : EMPTY)),
-          catchError(() => EMPTY),
+          catchError(() => {
+            notifications.open({
+              status: 'error',
+              title: STUDIO_LABELS.openFolder.refusedTitle,
+              message: STUDIO_LABELS.openFolder.refusedMessage,
+            });
+
+            return EMPTY;
+          }),
           takeUntilDestroyed(destroyRef),
         )
         .subscribe();

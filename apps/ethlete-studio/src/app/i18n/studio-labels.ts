@@ -7,6 +7,10 @@ export const STUDIO_LABELS = {
     starting: 'Design-Server startet',
     restartButton: 'Neu starten',
   },
+  openFolder: {
+    refusedTitle: 'Ordner nicht geöffnet',
+    refusedMessage: 'In diesem Ordner liegt keine Design-Arbeit.',
+  },
   canvas: {
     label: 'Design Canvas',
   },

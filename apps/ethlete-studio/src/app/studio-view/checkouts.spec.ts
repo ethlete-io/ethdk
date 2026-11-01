@@ -1,4 +1,6 @@
-import { EnvironmentInjector, Injector, createEnvironmentInjector, runInInjectionContext } from '@angular/core';
+import { EnvironmentInjector, createEnvironmentInjector, runInInjectionContext } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { injectNotificationManager, provideNotificationManager } from '@ethlete/components';
 import { createCheckouts } from './checkouts';
 
 type Answers = Record<string, (args: Record<string, unknown>) => unknown>;
@@ -25,14 +27,16 @@ const mount = async (answers: Answers, remembered: string) => {
   stubHost(answers);
 
   const picks: string[] = [];
-  const injector = createEnvironmentInjector([], Injector.NULL as EnvironmentInjector);
+  const injector = createEnvironmentInjector(provideNotificationManager(), TestBed.inject(EnvironmentInjector));
   const checkouts = runInInjectionContext(injector, () =>
     createCheckouts({ remembered, pick: (checkout) => picks.push(checkout) }),
   );
 
   await settle();
 
-  return { checkouts, picks };
+  const manager = runInInjectionContext(injector, () => injectNotificationManager());
+
+  return { checkouts, picks, manager };
 };
 
 const keeping = (roots: string[]): Answers => ({ design_roots: () => ({ search: '', roots }) });
@@ -89,6 +93,26 @@ describe('createCheckouts', () => {
     checkouts.openFolder();
     await settle();
 
+    expect(checkouts.current()).toBe('/dev/alpha');
+    expect(picks).toEqual(['/dev/alpha']);
+  });
+
+  it('shows the error toast and keeps the checkout when the folder has no design work', async () => {
+    const { checkouts, picks, manager } = await mount(
+      {
+        ...keeping(['/dev/alpha']),
+        'plugin:dialog|open': () => '/dev/empty',
+        design_roots_add: () => Promise.reject(new Error('no design work')),
+      },
+      '',
+    );
+
+    checkouts.openFolder();
+    await settle();
+
+    const shown = manager.notifications().map((ref) => ref.entry().config);
+
+    expect(shown).toEqual([expect.objectContaining({ status: 'error', title: 'Ordner nicht geöffnet' })]);
     expect(checkouts.current()).toBe('/dev/alpha');
     expect(picks).toEqual(['/dev/alpha']);
   });
