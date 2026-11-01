@@ -740,7 +740,6 @@ type MatrixRow = {
   stateKey?: string;
   interaction: string;
   key: string | undefined;
-  label?: string;
   group?: string;
 };
 
@@ -873,11 +872,8 @@ export const sketchMatrixOf = ({
   ];
   const rowOf = (row: MatrixRow, column: string) => {
     const section = sectionOf(column);
-    const label = section === undefined || row.key === undefined ? row.label : (row.label ?? row.key);
-
     return {
       row: row.key === undefined ? undefined : rowKeyIn(section, row.key),
-      ...(label === undefined ? {} : { rowLabel: label }),
       ...(row.group === undefined ? {} : { rowGroup: row.group }),
     };
   };
@@ -922,11 +918,11 @@ export const sketchMatrixOf = ({
               state: undefined,
               interaction: shownInteractions[0] ?? REST,
               key: primary ? undefined : key,
-              ...(primary ? {} : { stateKey: key, label: key, group: key }),
+              ...(primary ? {} : { stateKey: key, group: key }),
             },
           ]
         : rowStates.flatMap((state) =>
-            shownInteractions.map((shown, index): MatrixRow => {
+            shownInteractions.map((shown): MatrixRow => {
               const stateKey = stateKeyOf(state);
 
               return grouped
@@ -936,14 +932,13 @@ export const sketchMatrixOf = ({
                     interaction: shown,
                     key: `${stateKey} · ${shown}`,
                     group: stateKey,
-                    ...(index === 0 ? (several ? { label: named(`${state} · ${shown}`) } : {}) : { label: shown }),
                   }
                 : {
                     state,
                     stateKey,
                     interaction: shown,
                     key: stateKey,
-                    ...(several ? { label: named(state), group: key } : {}),
+                    ...(several ? { group: key } : {}),
                   };
             }),
           );
@@ -1092,7 +1087,6 @@ export const sketchMatrixOf = ({
               ...frame,
               id: `${IN_CONTEXT} ${column.key} ${key}`,
               row: `${IN_CONTEXT} ${key}`,
-              rowLabel: STUDIO_LABELS.systemTree.inPage(key),
               column: contextColumnKeyOf(column.key),
               ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
               ...(rejectionOf(sketch, column.key) ? { rejected: true } : {}),

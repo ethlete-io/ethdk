@@ -5,9 +5,6 @@ fn main() {
 
     tauri_build::try_build(
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
-            "agent_cancel",
-            "agent_list",
-            "agent_run",
             "design_project",
             "design_roots",
             "design_roots_add",

@@ -144,13 +144,11 @@
       [style.width.px]="placed.width"
       [style.height.px]="placed.height"
       [attr.data-unsized]="placed.unsized || null"
-      [captionPickable]="pointing() && placed.frame.place !== undefined"
       (click)="select(placed.frame.id, $event)"
       (dblclick)="activate(placed.frame.id)"
       (heightChange)="storeHeight(placed.frame.id, $event)"
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
-      (captionClick)="pickCaption(placed.frame, $event)"
       (cellsChange)="storeCells(placed.frame.id, $event)"
     />
   }
@@ -163,22 +161,6 @@
       [style.height.px]="outline.height"
       class="pointer-events-none absolute rounded-sm outline-2 outline-offset-2 outline-(--et-theme-color-primary-solid) outline-solid"
       data-part-outline
-    ></div>
-  }
-
-  @for (target of pointTargets(); track target.frame.id) {
-    <div
-      [style.left.px]="target.x"
-      [style.top.px]="target.y"
-      [style.width.px]="target.width"
-      [style.height.px]="target.height"
-      [title]="pointingLabel() + ' ' + target.frame.label"
-      (click)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
-      (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
-      class="absolute cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-      role="button"
-      tabindex="0"
-      data-comment-target
     ></div>
   }
 
@@ -207,95 +189,9 @@
           class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-3 text-[1.3rem] text-text shadow-lg"
           data-comment-text
         >
-          @if (pinPopover(); as popover) {
-            <ng-container *ngTemplateOutlet="popover; context: { $implicit: placed.pin }" />
-          } @else {
-            <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
-          }
+          <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
         </div>
       }
-    </div>
-  }
-
-  @if (noteConnectors().length > 0) {
-    <svg class="pointer-events-none absolute top-0 left-0 z-2 overflow-visible" width="1" height="1" aria-hidden="true">
-      @for (connector of noteConnectors(); track connector.key) {
-        <path
-          [attr.d]="connector.path"
-          [attr.stroke-width]="labelScale()"
-          [attr.data-note-connector]="connector.key"
-          class="fill-none stroke-text-muted"
-        />
-      }
-    </svg>
-  }
-
-  @for (marker of noteMarkers(); track marker.key) {
-    <span
-      [style.left.px]="marker.x"
-      [style.top.px]="marker.y"
-      [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
-      [attr.data-note-marker]="marker.key"
-      (pointerenter)="hoveredNote.set(marker.key)"
-      (pointerleave)="hoveredNote.set(null)"
-      class="absolute z-2 flex size-4.5 origin-top-left items-center justify-center rounded-full border-2 border-(--et-surface-background-solid) bg-text-muted text-[1.1rem] leading-none font-bold text-(--et-surface-background-solid)"
-      >{{ marker.number }}</span
-    >
-  }
-
-  @for (group of placedNotes(); track group.key) {
-    <div
-      #noteColumn
-      [style.left.px]="group.x"
-      [style.top.px]="group.y"
-      [style.transform]="
-        'scale(' + noteGroupScale(group) + ')' + (group.anchor === 'above' ? ' translateY(-100%)' : '')
-      "
-      [attr.data-note-anchor]="group.anchor"
-      [attr.data-note-frame]="group.frameId"
-      class="absolute z-2 flex w-max origin-top-left flex-col items-start gap-2 has-data-canvas-popover:z-4"
-    >
-      @for (note of group.notes; track NOTE_KEY_OF(note)) {
-        @if (note.heading || note.everyZoom || !notesCompact()) {
-          <div
-            #noteCard
-            [class]="
-              note.heading
-                ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-text'
-                : 'max-w-md rounded-sm border border-dashed border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-3 py-2 text-[1.3rem] text-text'
-            "
-            [attr.data-note]="note.id"
-            [attr.data-note-key]="NOTE_KEY_OF(note)"
-            (pointerenter)="hoveredNote.set(noteNumbers().has(NOTE_KEY_OF(note)) ? NOTE_KEY_OF(note) : null)"
-            (pointerleave)="hoveredNote.set(null)"
-          >
-            @if (noteNumbers().get(NOTE_KEY_OF(note)); as number) {
-              <span
-                class="float-left mt-px mr-2 flex size-4.5 items-center justify-center rounded-full bg-text-muted text-[1.1rem] leading-none font-bold text-(--et-surface-background-solid)"
-                data-note-number
-                >{{ number }}</span
-              >
-            }
-            @if (noteTemplate(); as template) {
-              <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />
-            } @else {
-              <p [textContent]="note.text" class="m-0 whitespace-pre-wrap"></p>
-            }
-          </div>
-        }
-      }
-    </div>
-  }
-
-  @if (placedDraft(); as placed) {
-    <div
-      [style.left.px]="placed.x"
-      [style.top.px]="placed.y"
-      [style.transform]="'scale(' + labelScale() + ')'"
-      class="absolute z-4 origin-top-left"
-      data-comment-draft
-    >
-      <ng-content select="[canvasDraft]" />
     </div>
   }
 </div>

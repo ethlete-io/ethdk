@@ -84,7 +84,6 @@ export const STUDIO_LABELS = {
     unchangedIn: (columns: string) => `unverändert in ${columns}`,
     foldTitle: (open: boolean, state: string) =>
       `${state} ${open ? 'einklappen' : 'aufklappen'}: jede gezeigte Variante zeichnet ihn wie current`,
-    inPage: (key: string) => `in ${key}`,
     now: 'jetzt',
     afterMerging: (variant: string) => `nach dem Merge von ${variant}`,
     reasonBy: (by: string) => `, Grund von ${by}`,

@@ -127,7 +127,7 @@ export const boundingRect = (rects: Rect[]): Rect | null => {
 
 export type SheetFrame = { id: string; width: number; height: number; row: string };
 
-export type SheetRow = { name: string; y: number; label?: string; head?: boolean };
+export type SheetRow = { name: string; y: number; head?: boolean };
 
 export type SheetLayout = { frames: (SheetFrame & Rect)[]; rows: SheetRow[] };
 
@@ -202,7 +202,7 @@ export const layoutGrid = (
   return { frames: placed, rows: [] };
 };
 
-export type MatrixFrame = SheetFrame & { column: string; rowLabel?: string; rowGroup?: string; fitted?: boolean };
+export type MatrixFrame = SheetFrame & { column: string; rowGroup?: string; fitted?: boolean };
 
 export type MatrixColumnPlace = { name: string; x: number; width: number; y?: number };
 
@@ -285,7 +285,7 @@ export const layoutMatrix = ({
       y += (spacing.groupGap ?? spacing.rowGap) - spacing.rowGap;
     group = first?.rowGroup;
     afterHead = false;
-    rows.push({ name, y, ...(first?.rowLabel === undefined ? {} : { label: first.rowLabel }) });
+    rows.push({ name, y });
 
     for (const frame of members) {
       const column = placedColumns.find((candidate) => candidate.name === frame.column);

@@ -100,28 +100,12 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         >
       }
     }
-    @if (captionPickable()) {
-      <span
-        [title]="'Comment on the state ' + frame().label"
-        [class]="labelPlacement()"
-        [style.max-width.px]="captionMaxWidth()"
-        (click)="captionClick.emit($event)"
-        (keydown.enter)="captionClick.emit($event)"
-        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))] cursor-crosshair"
-        role="button"
-        tabindex="0"
-        data-comment-caption
-      >
-        <ng-container [ngTemplateOutlet]="caption" />
-      </span>
-    } @else {
-      <span
-        [class]="labelPlacement()"
-        [style.max-width.px]="captionMaxWidth()"
-        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))]"
-        ><ng-container [ngTemplateOutlet]="caption"
-      /></span>
-    }
+    <span
+      [class]="labelPlacement()"
+      [style.max-width.px]="captionMaxWidth()"
+      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))]"
+      ><ng-container [ngTemplateOutlet]="caption"
+    /></span>
     @if (frame().empty; as empty) {
       <div
         class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
@@ -334,12 +318,10 @@ export class CanvasFrameComponent {
   public active = input(false);
   public selected = input(false);
   public captionBelow = input(false);
-  public captionPickable = input(false);
 
   public heightChange = output<number>();
   public widthChange = output<number>();
   public escapeKeydown = output();
-  public captionClick = output<Event>();
   public cellsChange = output<Record<string, Rect>>();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');

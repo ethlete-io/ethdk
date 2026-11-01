@@ -683,14 +683,14 @@ describe('sketchMatrixOf', () => {
     expect(
       all.frames
         .filter((frame) => frame.column === 'b')
-        .map((frame) => [frame.row, frame.rowLabel, frame.rowGroup, frame.place?.interaction, frame.empty]),
+        .map((frame) => [frame.row, frame.rowGroup, frame.place?.interaction, frame.empty]),
     ).toEqual([
-      ['solid · rest', undefined, 'solid', undefined, undefined],
-      ['solid · hover', 'hover', 'solid', undefined, 'b hat keine Interaktion hover'],
-      ['solid · disabled', 'disabled', 'solid', 'disabled', undefined],
-      ['outline · rest', undefined, 'outline', undefined, undefined],
-      ['outline · hover', 'hover', 'outline', undefined, 'b hat keine Interaktion hover'],
-      ['outline · disabled', 'disabled', 'outline', 'disabled', undefined],
+      ['solid · rest', 'solid', undefined, undefined],
+      ['solid · hover', 'solid', undefined, 'b hat keine Interaktion hover'],
+      ['solid · disabled', 'solid', 'disabled', undefined],
+      ['outline · rest', 'outline', undefined, undefined],
+      ['outline · hover', 'outline', undefined, 'b hat keine Interaktion hover'],
+      ['outline · disabled', 'outline', 'disabled', undefined],
     ]);
     expect(all.frames.find((frame) => frame.id === 'current outline hover')?.src).toContain('&interaction=hover');
     expect(sketchMatrixOf({ ...shown, sketch: withTargets, size: '520' }).interaction).toBe('all');
@@ -922,10 +922,10 @@ describe('sketchMatrixOf', () => {
       const matrix = matrixOf();
       const rows = [...new Map(matrix.frames.map((frame) => [frame.row, frame])).values()];
 
-      expect(rows.map((frame) => [frame.row, frame.rowLabel, frame.rowGroup])).toEqual([
-        ['default', 'components/button · default', 'components/button'],
-        ['components/card raised', 'components/card · raised', 'components/card'],
-        ['components/card flat', 'components/card · flat', 'components/card'],
+      expect(rows.map((frame) => [frame.row, frame.rowGroup])).toEqual([
+        ['default', 'components/button'],
+        ['components/card raised', 'components/card'],
+        ['components/card flat', 'components/card'],
       ]);
       expect(
         matrix.frames.filter((frame) => frame.row === 'components/card raised').map((frame) => frame.place?.part),
@@ -944,9 +944,9 @@ describe('sketchMatrixOf', () => {
         }),
       });
 
-      expect(single.frames.map((frame) => [frame.row, frame.rowLabel, frame.rowGroup])).toEqual([
-        ['default', undefined, undefined],
-        ['default', undefined, undefined],
+      expect(single.frames.map((frame) => [frame.row, frame.rowGroup])).toEqual([
+        ['default', undefined],
+        ['default', undefined],
       ]);
     });
 
@@ -998,15 +998,15 @@ describe('sketchMatrixOf', () => {
         ['a', 'round r1'],
         ['b', 'round r1'],
       ]);
-      expect(matrix.frames.map((frame) => [frame.column, frame.row, frame.rowLabel])).toEqual([
-        ['current', 'round r2 default', 'default'],
-        ['current', 'round r2 disabled', 'disabled'],
-        ['c', 'round r2 default', 'default'],
-        ['c', 'round r2 disabled', 'disabled'],
-        ['a', 'round r1 default', 'default'],
-        ['a', 'round r1 disabled', 'disabled'],
-        ['b', 'round r1 default', 'default'],
-        ['b', 'round r1 disabled', 'disabled'],
+      expect(matrix.frames.map((frame) => [frame.column, frame.row])).toEqual([
+        ['current', 'round r2 default'],
+        ['current', 'round r2 disabled'],
+        ['c', 'round r2 default'],
+        ['c', 'round r2 disabled'],
+        ['a', 'round r1 default'],
+        ['a', 'round r1 disabled'],
+        ['b', 'round r1 default'],
+        ['b', 'round r1 disabled'],
       ]);
     });
 

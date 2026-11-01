@@ -1,6 +1,3 @@
-mod agent;
-mod agent_claude;
-mod agent_codex;
 mod call_source;
 mod call_status;
 mod child_env;
@@ -183,14 +180,10 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
         .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
         .invoke_handler(tauri::generate_handler![
-            agent::agent_cancel,
-            agent::agent_list,
-            agent::agent_run,
             call_status::design_status_watch,
             design::design_project,
             design_roots::design_roots,

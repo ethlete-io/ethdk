@@ -1,9 +1,7 @@
 import {
   Component,
   ElementRef,
-  TemplateRef,
   ViewEncapsulation,
-  afterEveryRender,
   computed,
   effect,
   inject,
@@ -15,30 +13,12 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
-import {
-  CanvasFrame,
-  FrameCrop,
-  cropPointOf,
-  cropRectOf,
-  pagePointOfCrop,
-  placeableFramesOf,
-  schemeBoxOf,
-} from './canvas-frame';
-import {
-  CanvasNote,
-  NOTE_BELOW_GAP,
-  PlacedNoteGroup,
-  noteConnectorPath,
-  noteKeyOf,
-  placeNoteMarkers,
-  placeNotes,
-} from './canvas-note';
+import { CanvasFrame, cropPointOf, cropRectOf, placeableFramesOf, schemeBoxOf } from './canvas-frame';
 import {
   CameraScene,
   CameraTarget,
@@ -50,7 +30,7 @@ import {
   uncoveredCentre,
   UncoveredView,
 } from './canvas-camera';
-import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
+import { CanvasPin, FrameOutline } from './canvas-pin';
 import {
   Camera,
   Point,
@@ -65,7 +45,6 @@ import {
   layoutMatrixSections,
   layoutSheet,
   panCamera,
-  screenToWorld,
   zoomAtPoint,
 } from './canvas-math';
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
@@ -75,9 +54,6 @@ import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.compon
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
-
-const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
-  Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, top]) => b[key] === top);
 
 const cellAt = (event: MouseEvent) => {
   const frame = event.currentTarget;
@@ -114,8 +90,6 @@ const LIVE_REST_MS = 250;
 const LIVE_GRACE_MS = 5000;
 const MAX_LIVE_FRAMES = 6;
 const LABEL_MIN_ZOOM = 0.25;
-const NOTE_MAX_SCALE = 2;
-const LABEL_MAX_SCALE = 1 / LABEL_MIN_ZOOM;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
@@ -190,7 +164,7 @@ const isInteractive = (target: EventTarget | null) => {
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
+  imports: [BUTTON_IMPORTS, CanvasFrameComponent, CommentPinComponent, ZoomChipComponent],
   host: {
     class:
       'group/canvas relative block h-full touch-none overflow-hidden overscroll-none text-text transition-[outline-color] duration-(--duration-state) ease-(--ease-standard) select-none [--_et-focus-ring-offset:-2px]',
@@ -241,28 +215,6 @@ export class DesignCanvasComponent {
 
   public outlines = input<FrameOutline[]>([]);
 
-  /** While on, a click on a frame that has a `place` reports the point instead of selecting the frame. */
-  public pointing = input(false);
-
-  /** Names the frame a click in pointing mode lands on, before the frame's label. */
-  public pointingLabel = input('Comment on');
-
-  /** Where the projected `[canvasDraft]` content sits: on a frame, at a world point, or `null` to hide it. */
-  public draft = input<FramePoint | { at: Point } | null>(null);
-
-  public notes = input<CanvasNote[]>([]);
-
-  /** What a note shows; without it, the note's text. A note holding a `[data-canvas-popover]` element rises above the comment pins. */
-  public noteTemplate = input<TemplateRef<{ $implicit: CanvasNote }> | null>(null);
-
-  /** What an open pin shows; without it, the pin's text. */
-  public pinPopover = input<TemplateRef<{ $implicit: CanvasPin }> | null>(null);
-
-  public pointPick = output<FramePoint>();
-
-  /** The world point of a click on empty space in pointing mode. */
-  public spacePick = output<Point>();
-
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
   public cameraChange = output<Camera | null>();
 
@@ -276,8 +228,6 @@ export class DesignCanvasComponent {
   public groupSwitch = output<string>();
 
   private frameViews = viewChildren(CanvasFrameComponent);
-  private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
-  private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
   private shellInsetProbe = viewChild.required<ElementRef<HTMLElement>>('shellInsetProbe');
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
@@ -287,7 +237,7 @@ export class DesignCanvasComponent {
     source: this.selectedId,
     computation: () => null,
   });
-  public activeId = linkedSignal<boolean, string | null>({ source: this.pointing, computation: () => null });
+  public activeId = signal<string | null>(null);
   protected spaceHeld = signal(false);
   protected panning = signal(false);
   private measured = linkedSignal<string | null, Record<string, FrameSize>>({
@@ -302,18 +252,8 @@ export class DesignCanvasComponent {
   private shellInset = signalElementDimensions(this.shellInsetProbe);
   private covered = computed(() => this.shellInset().offset?.width ?? 0);
 
-  private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
-
-  /** By frame id, the height of the note column below it at zoom 1. */
-  private noteColumnHeights = signal<Record<string, number>>({}, { equal: sameTops });
-
   /** By grid frame id, the box of each of its cells from the frame's top left corner. */
   private cellRects = signal<Record<string, Record<string, Rect>>>({});
-
-  /** The key of the pointed note whose marker or card the pointer is over; only its line shows. */
-  protected hoveredNote = signal<string | null>(null);
-
-  protected readonly NOTE_KEY_OF = noteKeyOf;
 
   protected worldTransform = computed(() => {
     const { x, y, zoom } = this.camera();
@@ -324,15 +264,6 @@ export class DesignCanvasComponent {
   protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
 
   protected rowHeadScale = computed(() => Math.min(this.labelScale(), ROW_HEAD_MAX_SCALE));
-
-  /** The scale of the note column below a frame; it stops growing at `NOTE_MAX_SCALE`, the room the layout keeps for it. */
-  private noteScale = computed(() => Math.min(this.labelScale(), NOTE_MAX_SCALE));
-
-  protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
-
-  private everyZoomNoteFrames = computed(
-    () => new Set(this.notes().flatMap((note) => (note.everyZoom && note.frameId !== undefined ? [note.frameId] : []))),
-  );
 
   private layout = computed(() => {
     const measured = this.measured();
@@ -364,7 +295,6 @@ export class DesignCanvasComponent {
       return {
         id: frame.id,
         row: frame.row ?? '',
-        ...(frame.rowLabel === undefined ? {} : { rowLabel: frame.rowLabel }),
         ...(frame.rowGroup === undefined ? {} : { rowGroup: frame.rowGroup }),
         column: frame.column ?? '',
         fitted: frame.width === undefined,
@@ -392,12 +322,6 @@ export class DesignCanvasComponent {
     const emptyWidths = Object.fromEntries(
       columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
     );
-    const below = Object.fromEntries(
-      Object.entries(this.noteColumnHeights()).map(([id, height]) => [
-        id,
-        NOTE_BELOW_GAP + height * (this.everyZoomNoteFrames().has(id) ? LABEL_MAX_SCALE : NOTE_MAX_SCALE),
-      ]),
-    );
     const sections = this.sections();
     const matrix =
       arrangement !== 'matrix'
@@ -414,7 +338,6 @@ export class DesignCanvasComponent {
               spacing,
               sectionGap: rowGap * SECTION_GAP_FACTOR,
               emptyWidths,
-              below,
             })
           : layoutMatrix({
               frames: sized,
@@ -422,13 +345,9 @@ export class DesignCanvasComponent {
               spacing,
               heads: this.rowHeads().map(headOf),
               emptyWidths,
-              below,
             });
     const sheet =
-      matrix ??
-      (arrangement === 'grid'
-        ? layoutGrid(sized, { ...GRID_SPACING, rowGap, below })
-        : layoutSheet(sized, { ...SPACING, below }));
+      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -473,10 +392,9 @@ export class DesignCanvasComponent {
   private bounds = computed(() => {
     const { frames, heads, rowHeads } = this.layout();
     const thin = rowHeads.map((head) => ({ x: 0, y: head.y, width: head.width, height: head.height }));
-    const notes = this.notes().flatMap((note) => (note.at ? [{ ...note.at, width: 1, height: 1 }] : []));
 
     return (
-      boundingRect([...frames, ...thin, ...notes]) ??
+      boundingRect([...frames, ...thin]) ??
       boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
     );
   });
@@ -584,53 +502,6 @@ export class DesignCanvasComponent {
     });
   });
 
-  private layoutFramesById = computed(() => new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])));
-
-  protected placedNotes = computed(() =>
-    placeNotes(this.notes(), {
-      frames: this.framesById(),
-      owners: this.layoutFramesById(),
-      bounds: boundingRect(this.layout().frames),
-    }),
-  );
-
-  protected noteMarkers = computed(() =>
-    placeNoteMarkers(this.notes(), { frames: this.framesById(), owners: this.layoutFramesById() }),
-  );
-
-  protected noteNumbers = computed(() => new Map(this.noteMarkers().map((marker) => [marker.key, marker.number])));
-
-  protected placedDraft = computed(() => {
-    const draft = this.draft();
-
-    if (draft && 'at' in draft) return draft.at;
-
-    const frame = draft && this.framesById().get(draft.frameId);
-    const crop = frame?.frame.crop;
-    const point = crop && draft?.point ? cropPointOf(crop, draft.point) : (draft?.point ?? null);
-
-    if (!frame || !draft) return null;
-
-    return { x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0) };
-  });
-
-  protected pointTargets = computed(() =>
-    this.pointing() ? this.targets().filter((placed) => placed.frame.place) : [],
-  );
-
-  protected noteConnectors = computed(() => {
-    if (this.notesCompact()) return [];
-
-    const tops = this.noteCardTops();
-    const scale = this.noteScale();
-
-    return this.noteMarkers().flatMap((marker) => {
-      const top = marker.key === this.hoveredNote() ? tops[marker.key] : undefined;
-
-      return top === undefined ? [] : [{ key: marker.key, path: noteConnectorPath(marker, { top, scale }) }];
-    });
-  });
-
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
   private panStart$ = new Subject<PointerEvent>();
@@ -643,32 +514,6 @@ export class DesignCanvasComponent {
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
   constructor() {
-    afterEveryRender({
-      read: () => {
-        const cards = this.noteCards();
-
-        if (!this.notesCompact()) {
-          this.noteColumnHeights.set(
-            Object.fromEntries(
-              this.noteColumns().flatMap(({ nativeElement }) => {
-                const frameId = nativeElement.dataset['noteFrame'];
-
-                return frameId === undefined ? [] : [[frameId, nativeElement.offsetHeight]];
-              }),
-            ),
-          );
-        }
-
-        if (cards.length === 0 && Object.keys(this.noteCardTops()).length === 0) return;
-
-        this.noteCardTops.set(
-          Object.fromEntries(
-            cards.map(({ nativeElement }) => [nativeElement.dataset['noteKey'] ?? '', nativeElement.offsetTop]),
-          ),
-        );
-      },
-    });
-
     effect(() => {
       const bounds = this.bounds();
       const viewport = this.viewport();
@@ -745,12 +590,6 @@ export class DesignCanvasComponent {
       .subscribe();
   }
 
-  protected noteGroupScale(group: PlacedNoteGroup) {
-    return group.anchor !== 'below' || (group.frameId !== undefined && this.everyZoomNoteFrames().has(group.frameId))
-      ? this.labelScale()
-      : this.noteScale();
-  }
-
   protected select(id: string, event: MouseEvent) {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
@@ -763,32 +602,6 @@ export class DesignCanvasComponent {
 
     this.selectedCellId.set(cell?.dataset['cellId'] ?? null);
     if (this.activeId() !== id) this.activeId.set(null);
-  }
-
-  protected pickPoint(frame: { id: string; width: number; crop?: FrameCrop }, event: Event) {
-    event.stopPropagation();
-    if (this.consumeSwallowedClick()) return;
-    if (!(event instanceof MouseEvent)) {
-      this.pointPick.emit({ frameId: frame.id, point: null });
-
-      return;
-    }
-
-    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const scale = box.width / frame.width;
-
-    const point = {
-      x: Math.max(0, (event.clientX - box.left) / scale),
-      y: Math.max(0, (event.clientY - box.top) / scale),
-    };
-
-    this.pointPick.emit({ frameId: frame.id, point: frame.crop ? pagePointOfCrop(frame.crop, point) : point });
-  }
-
-  protected pickCaption(frame: CanvasFrame, event: Event) {
-    event.stopPropagation();
-    if (this.consumeSwallowedClick()) return;
-    this.pointPick.emit({ frameId: frame.id, point: null });
   }
 
   protected toggleRow(key: string, event: MouseEvent) {
@@ -859,8 +672,6 @@ export class DesignCanvasComponent {
 
   /** Makes the frame `id` live and active, as a double click on it does; a grid cell's `id` makes its grid frame live. */
   public activate(id: string) {
-    if (this.pointing()) return;
-
     const frame = this.frames().find(
       (candidate) => candidate.id === id || candidate.grid?.cells.some((cell) => cell.id === id),
     );
@@ -878,7 +689,6 @@ export class DesignCanvasComponent {
   protected clearSelection(event: MouseEvent) {
     if (this.consumeSwallowedClick()) return;
     if (event.target !== this.host.nativeElement) return;
-    if (this.pointing()) this.spacePick.emit(screenToWorld(this.camera(), this.pointerPosition(event)));
     this.openPinId.set(null);
     this.selectedId.set(null);
     this.activeId.set(null);

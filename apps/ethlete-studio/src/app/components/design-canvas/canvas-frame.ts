@@ -29,7 +29,6 @@ export type CanvasFrame = {
   label: string;
   row?: string;
   /** Shown beside the row instead of its name. */
-  rowLabel?: string;
   /** Rows of one group sit closer to each other than to the rows of the next group. */
   rowGroup?: string;
   /** The `matrix` column the frame sits in. */
