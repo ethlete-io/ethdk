@@ -89,6 +89,7 @@ export const markPartGo = (options: {
   part: string;
   by: unknown;
   hash?: unknown;
+  note?: string;
   at?: string;
 }): PartGo | GoRefusal => {
   const { product, part, by } = options;
@@ -106,6 +107,7 @@ export const markPartGo = (options: {
     files: found.design.files,
     by: by.trim(),
     at: options.at ?? new Date().toISOString(),
+    ...(options.note ? { note: options.note } : {}),
   };
 
   writeGo({ dir: found.dir, part, go });

@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
@@ -136,8 +137,55 @@ describe('part go', () => {
 
     expect(await go('components/chip', '--product', 'app-a')).toBe(2);
     expect(await go('components/gone', '--product', 'app-a', '--by', 'tom')).toBe(1);
-    expect(await go('components/chip', '--product', 'app-a', '--by', 'tom')).toBe(0);
+    expect(await go('components/chip', '--product', 'app-a', '--by', 'claude-opus-5-5')).toBe(0);
     expect(lines.at(-1)).toBe('components/chip has a go in app-a');
     expect(Object.keys(readGo(dir))).toEqual(['components/chip']);
+  });
+
+  it('et design go --by tom needs a committed Impl Q decision that is not older than the design', async () => {
+    const { target, dir } = checkout();
+    const lines = output();
+    const go = (...argv: string[]) => designGo({ target, argv, invocation: 'et design' });
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: target, encoding: 'utf8' }).trim();
+    const chip = join(dir, 'components/chip/chip.ts');
+    const tom = ['components/chip', '--product', 'app-a', '--by', 'tom'];
+
+    git('init', '-q');
+    git('config', 'user.email', 'a@b.c');
+    git('config', 'user.name', 'a');
+    git('add', '.');
+    git('commit', '-qm', 'design');
+
+    expect(await go(...tom)).toBe(1);
+    expect(lines.at(-1)).toContain('needs --note');
+    expect(await go(...tom, '--note', 'Impl Q7')).toBe(1);
+    expect(lines.at(-1)).toContain('no plans entry');
+
+    mkdirSync(join(target, 'plans'));
+    writeFileSync(join(target, 'plans/p.md'), '- Impl Q7 chip (Tom): go.\n');
+    expect(await go(...tom, '--note', 'Impl Q7')).toBe(1);
+    expect(lines.at(-1)).toContain('not committed');
+
+    git('add', 'plans');
+    git('commit', '-qm', 'decision');
+    const decision = git('rev-parse', 'HEAD');
+
+    appendFileSync(chip, '// edit\n');
+    expect(await go(...tom, '--note', 'Impl Q7')).toBe(1);
+    expect(lines.at(-1)).toContain('uncommitted');
+
+    git('commit', '-qam', 'newer design');
+    const newer = git('rev-parse', 'HEAD');
+
+    expect(await go(...tom, '--note', 'Impl Q7')).toBe(1);
+    expect(lines.at(-1)).toContain(decision);
+    expect(lines.at(-1)).toContain(newer);
+    expect(readGo(dir)).toEqual({});
+
+    appendFileSync(join(target, 'plans/p.md'), '- Impl Q8 chip again (Tom): go.\n');
+    git('commit', '-qam', 'decision 2');
+
+    expect(await go(...tom, '--note', 'Impl Q8')).toBe(0);
+    expect(readGo(dir)['components/chip']?.note).toBe('Impl Q8');
   });
 });

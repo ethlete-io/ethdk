@@ -348,6 +348,12 @@ with an `implements` link and no current go has the open point `no go`, or `go i
 409 when the part changed since `hash`. The one-part open-point answer also holds `go`. `et design check` prints a
 `GO <product>: <parts>` line when a go holds.
 
+`--by tom` is the guarded path: `et design go <part> --product app-a --by tom --note "Impl Q113"` needs a note that names
+an `Impl Qnn` entry of the current `plans/**/*.md`. It refuses while the part's design files (the files of its design
+hash) have uncommitted changes, or when their newest commit is not an ancestor of the commit that recorded the entry; the
+refusal names the Impl Q, that decision commit and the newer design commit. The note is stored in the go entry. Any other
+`--by` and Studio's go button need no note.
+
 The part hash of ready, go and implemented is the design hash: the part folder, the shared and asset files it uses, and
 every file it reaches through imports - other `@system` parts, `@ethlete/<lib>/design` mocks and the fixtures. Each
 mark stores the hash of every one of those files next to it, so an edit of an imported part or an SDK mock makes the
