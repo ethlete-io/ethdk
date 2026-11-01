@@ -22,6 +22,18 @@ Kurz: Das Design ist fast komplett. Die Umsetzung im Code ist fast nirgends abge
 - Du kannst in Studio noch nicht alles freigeben. Merge geht per Klick. Go und Accept haben noch keinen Button.
 - Viele kleine Fehler kommen erst raus, wenn du klickst. Die Prüf-Tools sehen zu wenig von der echten App.
 
+## Warum immer wieder dieselben Fehler
+
+Studio erlaubt, dass eine Seite ein vorhandenes Teil neu zeichnet, statt es einzubetten. Dann entsteht eine zweite
+Code-Kopie, zum Beispiel ein zweiter Canvas oder ein zweiter Picker. Die Prüfungen sehen jedes Teil nur allein, darum
+fällt der Unterschied nie auf.
+
+Was Studio besser machen muss:
+
+- Ein Teil wird eingebettet, nicht kopiert. Studio lehnt eine Kopie ab.
+- Für jedes Verhalten gibt es genau eine Umsetzung. Eine Prüfung meldet jede zweite.
+- Die Prüfungen klicken dasselbe auf allen Seiten und vergleichen das Ergebnis.
+
 ## Nächste Schritte (in dieser Reihenfolge, langsam, eins nach dem anderen)
 
 1. Freigeben per Klick in Studio (Go und Accept). Danach gibst du nichts mehr über die Kommandozeile frei.
