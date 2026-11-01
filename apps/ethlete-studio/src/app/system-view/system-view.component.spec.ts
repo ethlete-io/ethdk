@@ -191,7 +191,7 @@ describe('SystemViewComponent on a reload', () => {
       ['rating', 'leaf'],
     ]);
     expect(rating?.getAttribute('aria-current')).toBe('true');
-    expect(rating?.querySelector('[title="1 open comments"]')).not.toBeNull();
+    expect(rating?.querySelector('[title="1 offener Kommentar"]')).not.toBeNull();
     expect(rating?.style.getPropertyValue('--depth')).toBe('1');
 
     rating?.focus();

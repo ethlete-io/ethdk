@@ -1,5 +1,6 @@
 import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export type TreeRowStatus = 'in-progress' | 'ready';
 
@@ -15,7 +16,10 @@ export type TreeRow = {
   comments?: number;
 };
 
-const STATUS_TITLE: Record<TreeRowStatus, string> = { 'in-progress': 'Sketch in progress', ready: 'Sketch ready' };
+const STATUS_TITLE: Record<TreeRowStatus, string> = {
+  'in-progress': STUDIO_LABELS.treeRow.sketchInProgress,
+  ready: STUDIO_LABELS.treeRow.sketchReady,
+};
 
 const STATUS_CLASS: Record<TreeRowStatus, string> = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
 
@@ -96,7 +100,7 @@ const SELECTED_CLASS =
     @if (row.comments) {
       <span
         [class]="'flex flex-none items-center gap-0.5 text-(length:--text-xs) ' + accentClass()"
-        [title]="row.comments + ' open comments'"
+        [title]="OPEN_COMMENTS_LABEL(row.comments)"
       >
         <svg
           width="12"
@@ -132,6 +136,7 @@ export class TreeRowItemComponent {
 
   protected readonly STATUS_TITLE = STATUS_TITLE;
   protected readonly STATUS_CLASS = STATUS_CLASS;
+  protected readonly OPEN_COMMENTS_LABEL = STUDIO_LABELS.treeRow.openComments;
 
   protected accentClass = computed(() => (this.item().selected ? 'text-et-theme-ink' : 'text-et-surface-muted'));
 
