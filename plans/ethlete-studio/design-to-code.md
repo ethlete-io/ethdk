@@ -686,10 +686,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 45. UX defect (Tom, 2026-11-01): only the "hide sidebar" button hides the sidebar; a click on the active nav item does
     nothing. Wanted: a click on the active nav item toggles the sidebar (hide, and show again). Lesson: a pixel compare
     cannot see behaviour, and the designs say nothing about what a click on each control does, so a dead control
-    passes every check.
+    passes every check. Cause (7f0625bb1, 8bf25ab04): the part emitted `sectionChange` for the active item, and the
+    live `pickSection()` only set the panel open, a no-op on an open panel. Both places were wrong; Impl Q79 covers
+    both.
 46. The flows preset `et-select` (and earlier the sketches round select) had no accessible name. The SDK form field
     logs ET2201 at runtime, but specs and compare still passed. Label fixed by the builder. Lesson: runtime `ET\d+`
     errors from the SDK reach nobody; a check must fail on them (open question Impl Q80).
+47. `design-canvas` `handleShortcut` called preventDefault on every Space keydown outside editable targets, so Space
+    activated no button anywhere in Studio. Fix queued: skip the shortcut on interactive targets. Lesson: no check
+    presses Space; the Impl Q79 action check presses Space as well as Enter and click.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
@@ -790,7 +795,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   Finding 43.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
-  (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter on each one, and
+  (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter and Space on each one, and
   fails when the state does not compare 0 px, the output does not fire, or an app element has no declared action.
   `design complete` refuses a design with an undeclared interactive element. The same clicks also run on the real
   pages of the Impl Q78 compare, where the page must reach the declared page state (for example sidebar hidden),
