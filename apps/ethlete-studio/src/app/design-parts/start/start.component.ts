@@ -19,7 +19,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
       <span class="text-et-surface font-ui-strong text-ui-md">{{ LABELS.title }}</span>
       @if (repo(); as name) {
         <span class="text-et-surface-muted text-ui-sm">{{ name }}</span>
-        <button (click)="otherRepo.emit()" et-button type="button" variant="transparent" color="surface" size="sm">
+        <button (click)="otherRepo.emit()" et-button type="button" variant="transparent" size="sm">
           {{ LABELS.otherRepo }}
         </button>
       }
@@ -41,7 +41,8 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
             {{ LABELS.copyPrompt }}
           </button>
           <p class="m-0 text-et-surface-muted">
-            {{ LABELS.orTerminal }} <code>{{ LABELS.command }}</code>
+            {{ LABELS.orTerminal }}
+            <code class="font-[ui-monospace,'SF_Mono',Menlo,Consolas,monospace]">{{ LABELS.command }}</code>
           </p>
         } @else {
           <span
@@ -57,7 +58,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
-  host: { class: 'flex h-full min-h-225 w-full flex-col bg-et-surface-bg' },
+  host: { class: 'flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-bg' },
 })
 export class StartComponent {
   public repo = input<string | undefined>();
