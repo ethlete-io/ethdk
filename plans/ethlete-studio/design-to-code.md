@@ -852,6 +852,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     but the cli tsconfig lib is below es2022 (TS2550); fixed in 394b7aff8. The agent ran vitest only, and vitest does
     not typecheck. Lesson: a known rule that lives only in memory does not reach a subagent; it is now in the
     subagent brief.
+71. Shell parts slice (builder, 2026-11-01, b63508432, cd2d907d4, 8aaf0a5f8): seven page designs import shell-main,
+    and their pictures changed, but `design check` did not flag them (Impl Q112 should; cause asked: likely the old
+    records still hold their old hash until the first REHASHED run). The full `design actions` run on
+    shell-project-switch was killed (exit 137, likely out of memory); tool fix (builder default): run the states in
+    batches. `design complete elements/shell-main` reports DEMO-BACKDROP on every state, because div.st-shell paints
+    the surface fill: Impl Q117 (Tom). Lesson: a new check must be dry-run over every existing part before it
+    gates, so its false positives and its memory limit show at once.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
