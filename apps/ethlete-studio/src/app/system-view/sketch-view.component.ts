@@ -3,7 +3,6 @@ import {
   DestroyRef,
   ViewEncapsulation,
   computed,
-  effect,
   inject,
   input,
   linkedSignal,
@@ -28,7 +27,6 @@ import { MergeComponent } from '../design-parts/merge/merge.component';
 import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchPin, SketchVariant } from '../design-parts/sketches/sketches-sample';
-import { injectViewContext } from '../chat/view-context';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { NumberedComment, isInSketch } from './comment-pins';
@@ -118,7 +116,6 @@ export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
   private commentStore = injectCommentStore();
-  private viewContext = injectViewContext();
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public sketch = input.required<ListedSketch>();
@@ -360,11 +357,6 @@ export class SketchViewComponent {
       ];
     }),
   );
-
-  constructor() {
-    effect(() => this.viewContext.put('sketch', { variant: null, picked: this.picked(), selection: null }));
-    this.destroyRef.onDestroy(() => this.viewContext.drop('sketch'));
-  }
 
   /** Shows the round of the comment's variant. */
   public jumpTo(comment: NumberedComment) {

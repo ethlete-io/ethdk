@@ -1,6 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ChatPanelComponent } from './chat/chat-panel.component';
 
 @Component({
   selector: 'ethlete-root',
@@ -8,10 +7,9 @@ import { ChatPanelComponent } from './chat/chat-panel.component';
     <div class="flex min-w-0 grow flex-col">
       <router-outlet />
     </div>
-    <ethlete-chat-panel />
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterOutlet, ChatPanelComponent],
+  imports: [RouterOutlet],
   host: { class: 'flex h-dvh overflow-hidden' },
 })
 export class AppComponent {}

@@ -10,7 +10,6 @@ import { THEMES } from '../../themes';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
-import { injectViewContext } from '../chat/view-context';
 import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
 
@@ -808,103 +807,5 @@ describe('SystemViewComponent on a flow', () => {
     expect(host.querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('true');
     expect(host.querySelector('[data-note="n1"]')).not.toBeNull();
     expect(rememberedView().notesShown).toEqual({ ' web': true });
-  });
-});
-
-describe('SystemViewComponent view context', () => {
-  const sketch: ListedSketch = {
-    target: 'elements/rating',
-    status: 'ready',
-    createdAt: '2026-10-27T10:00:00Z',
-    decision: { kind: 'pick', variant: 'b', decidedAt: '2026-10-28T10:00:00Z' },
-    product: 'web',
-    layer: 'elements',
-    name: 'rating',
-    dir: '.ethlete/design/web/sketches/elements-rating',
-    variants: ['a', 'b'],
-    problems: [],
-  };
-
-  beforeEach(() => {
-    localStorage.clear();
-    vi.stubGlobal('EventSource', SilentEventSource);
-    vi.stubGlobal('fetch', (url: string) => {
-      if (url.includes('/__design/sketches')) return json({ sketches: [sketch], unreadable: [] });
-      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
-      if (url.includes('/__design/system')) return json([PRODUCT]);
-      if (url.includes('/__design/calls')) return json([]);
-      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
-
-      return new Promise(() => undefined);
-    });
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
-    });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    localStorage.clear();
-  });
-
-  it('writes the product, the part and the clicked frame of a part, and clears them when the view goes', async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
-    const context = TestBed.runInInjectionContext(() => injectViewContext());
-    const canvas = fixture.componentInstance.partCanvas();
-
-    expect(context.context()).toEqual({
-      product: 'web',
-      part: 'elements/rating',
-      partFile: '.ethlete/design/web/elements/rating/rating.ts',
-      sketch: null,
-      sketchDir: null,
-      variant: null,
-      picked: null,
-      selection: null,
-      state: null,
-    });
-
-    const frame = canvas?.frames()[0];
-
-    canvas?.selectedId.set(frame?.id ?? null);
-    await settle(fixture);
-
-    expect(context.context().selection).toBe(frame?.label);
-    expect(context.context().state).toBeNull();
-
-    const grid = canvas?.frames().find((candidate) => candidate.grid);
-    const cell = grid?.grid?.cells.find((candidate) => candidate.place?.interaction === 'hover');
-
-    canvas?.selectedId.set(grid?.id ?? null);
-    canvas?.selectedCellId.set(cell?.id ?? null);
-    await settle(fixture);
-
-    expect(cell).toBeDefined();
-    expect(context.context().state).toBe(`${cell?.place?.state} · hover`);
-
-    fixture.destroy();
-
-    expect(context.shown()).toBeNull();
-  });
-
-  it("writes the sketch, its directory, its part's file and the picked variant", async () => {
-    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
-    const context = TestBed.runInInjectionContext(() => injectViewContext());
-
-    expect(context.context()).toEqual({
-      product: 'web',
-      part: 'elements/rating',
-      partFile: '.ethlete/design/web/elements/rating/rating.ts',
-      sketch: 'elements/rating',
-      sketchDir: '.ethlete/design/web/sketches/elements-rating',
-      variant: null,
-      picked: 'b',
-      selection: null,
-      state: null,
-    });
-
-    fixture.destroy();
-
-    expect(context.shown()).toBeNull();
   });
 });
