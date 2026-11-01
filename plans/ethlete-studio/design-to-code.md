@@ -1726,3 +1726,10 @@ Q16, from finding 126:
    thumb.ts), and replace the fixed 400 ms emit wait in action-press.ts with a condition. Both are general tool
    changes, test first.
 2. After the MVP: stop rebuilding the harness app on every command (harness-server.ts).
+
+### Post-MVP tool fixes (builder, 2026-11-02, in progress)
+
+In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
+(2) an embedded-part change marks the embedding parts "actions need a re-run" in `check` and `ready` (finding 130);
+(3) "reaches state X instead" on an actions miss (finding 131); (4) OCCLUDED check and compare waits for the overlay
+enter animations (finding 129); (5) harness build cache (Q16 item 2).
