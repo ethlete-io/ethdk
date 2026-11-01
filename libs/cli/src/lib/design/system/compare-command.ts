@@ -149,15 +149,23 @@ const PANE_TRANSITIONS = ['enter-from', 'enter-active', 'enter-to', 'leave-from'
 
 const SETTLED_FRAMES = 2;
 
+const PANE_COUNT_TIMEOUT_MS = 3000;
+
 const settledPanesOf = async (options: { page: Page; url: string; count: number; timeout: number }) => {
   const { page, url, count, timeout } = options;
+
+  await page
+    .waitForFunction(`document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)}).length >= ${count}`, undefined, {
+      timeout: Math.min(timeout, PANE_COUNT_TIMEOUT_MS),
+      polling: 'raf',
+    })
+    .catch(() => undefined);
 
   await page
     .waitForFunction(
       `(() => {
         const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})];
         const settled =
-          panes.length >= ${count} &&
           panes.every((pane) => !pane.matches(${JSON.stringify(PANE_TRANSITIONS)}) && !pane.querySelector(${JSON.stringify(PANE_TRANSITIONS)})) &&
           document.getAnimations().every((animation) => animation.playState !== 'running' || animation.effect?.getTiming().iterations === Infinity);
 
@@ -169,9 +177,7 @@ const settledPanesOf = async (options: { page: Page; url: string; count: number;
       { timeout, polling: 'raf' },
     )
     .catch(() => {
-      throw new HarnessError(
-        `the harness page ${url} did not open and settle ${count} overlay pane(s) within ${timeout} ms`,
-      );
+      throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
     });
 };
 

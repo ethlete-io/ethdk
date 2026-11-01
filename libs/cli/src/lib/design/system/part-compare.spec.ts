@@ -595,6 +595,16 @@ describe('harnessShotOf', () => {
     },
   );
 
+  it('shoots anyway when fewer overlay panes open than the design draws', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const target = harnessUrlOf({ url, part: 'components/picker', state: 'a', props: {} });
+    const withoutPanes = await harnessShotOf({ browser, url: target });
+    const png = await harnessShotOf({ browser, url: target, panes: 1 });
+
+    expect(decodePng(png)).toEqual(decodePng(withoutPanes));
+  });
+
   it('names the trigger the harness page lacks', async (context) => {
     if (!browser) return context.skip('no browser');
 
