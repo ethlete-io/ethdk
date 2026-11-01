@@ -99,6 +99,7 @@ const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const FIT_PADDING = 64;
+const START_PADDING = { x: 40, y: 48 };
 const ROW_HEAD_GUTTER = 160;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
@@ -970,6 +971,23 @@ export class DesignCanvasComponent {
     const point = uncoveredCentre({ viewport: this.viewport(), covered: this.covered() });
 
     this.moveCamera(zoomAtPoint({ camera: this.camera(), point, zoom }), true);
+  }
+
+  protected resetZoom() {
+    const bounds = this.bounds();
+
+    if (!bounds) return;
+
+    const { inset } = this.scene(bounds, this.viewport());
+
+    this.moveCamera(
+      {
+        zoom: 1,
+        x: this.covered() + (inset?.left ?? 0) + START_PADDING.x - bounds.x,
+        y: (inset?.top ?? 0) + START_PADDING.y - bounds.y,
+      },
+      true,
+    );
   }
 
   protected zoomBy(factor: number) {

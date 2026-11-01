@@ -275,6 +275,19 @@ describe('DesignCanvasComponent', () => {
     expect(reloaded.style.height).toBe('70px');
   });
 
+  it('zooms to 100 % at the opening place of the frames, wherever the camera was', async () => {
+    const fixture = await render([
+      { id: 'default 640', src: 'about:blank', label: 'button', row: 'default', width: 640 },
+    ]);
+    const canvas = fixture.componentInstance;
+
+    canvas.camera.set({ x: -500, y: -300, zoom: 0.5 });
+    await fixture.whenStable();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Auf 100 % zoomen"]')?.click();
+
+    expect(canvas.camera()).toEqual({ x: 40, y: 48, zoom: 1 });
+  });
+
   it('reports a camera the user moved, and a fit as no camera to keep', async () => {
     const fixture = await render([FITTED]);
     const canvas = fixture.componentInstance;
