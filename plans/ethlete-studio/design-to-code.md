@@ -969,6 +969,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q80 SDK runtime errors (Tom, 2026-11-01): the part harness, the Impl Q78 live-page compare and the Studio
 - Impl Q79 addition (2026-11-01): action sequences (for example pan, then pick a flow) compare their final frame, and
   a key whose default the app prevents on an interactive element fails the check. Findings 47, 48.
+  As built (2026-11-01), slice 1: `node dist/libs/cli/src/index.js design actions <layer>/<name> --product studio
+[--state <s>] [--url <dev server>]` mounts each state in the harness, clicks and presses Enter and Space on every
+  interactive element and compares the result. `data-et-action` is a state name (`collapsed`) or `emit:<output>`; for a
+  key press the check compares the declared state's `<state>-focus-visible` row when the part draws one. The harness
+  records outputs on `window.__etDesignEmits`. `design complete` fails with `ACTION-UNDECLARED` for an interactive
+  element without the attribute, for every product. Only the one-step opener is supported as a sequence. Results:
+  shell-collapse, disclosure, zoom-chip pass; tree-row fails 13 of 13 (design declares no `data-et-action`);
+  part-tree fails 14 of 42 (Space fires no output); shell-project-switch fails 15 of 33 and shell-main 19 of 249
+  (project switch does not reach the declared state; its keydown default is prevented).
 - Flow pick camera (2026-11-01): a flow pick resets the camera to the opening view of Impl Q74 (100 %, first frame at
   the panel edge). Impl Q74 already decides this; no new question.
   vitest setup fail on any console error with an `ET\d+` code. Other console errors stay allowed. Finding 46.
