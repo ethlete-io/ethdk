@@ -16,7 +16,7 @@ ausgeklammert.
 | components/disclosure           | ✅     |                                                                                                                         |                   |
 | components/tree-row             | ✅     |                                                                                                                         |                   |
 | components/zoom-chip            | ✅     |                                                                                                                         |                   |
-| elements/part-tree              | ✅     | Live-Shot mit 13 px geprüft; neues „Go geben“                                                                           | Tom               |
+| elements/part-tree              | ✅     |                                                                                                                         |                   |
 | elements/studio-menu            | ✅     | Menü-Werte gelten bald für alle Studio-Menüs (Q130), dann neues „Go geben“                                              | Builder, dann Tom |
 | components/shell-collapse       | ✅     |                                                                                                                         |                   |
 | components/shell-project-switch | ❌     | Menü bekommt den Look des Studio-Menüs (Q130), dann neues „Go geben“                                                    | Builder, dann Tom |
@@ -26,7 +26,7 @@ ausgeklammert.
 | pages/sketches                  | ❌     | Neuer Zustand page-100 aus dem Merge wird in der App gebaut; Frage zur Kamera an Tom                                    | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Leerer Kasten fliegt raus (Q134); dann „Änderung abnehmen“ und „Go geben“                                               | Builder, dann Tom |
+| pages/start                     | ❌     | Bereit: „Änderung abnehmen“, dann „Go geben“ (Kasten entfernt, Shot geprüft)                                            | Tom               |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 
