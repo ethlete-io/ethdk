@@ -449,27 +449,47 @@ const CASES = [
     },
   },
   {
-    name: 'hiding the panel keeps the camera',
+    name: 'hiding the panel keeps the frames',
     pages: ['System', 'Sketches', 'Flow'],
     run: async (page) => {
+      const firstFrame = () =>
+        page.evaluate(
+          ({ CANVAS, FRAME }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+
+            return rect ? { left: rect.left, top: rect.top } : null;
+          },
+          { CANVAS, FRAME },
+        );
       const head = page.getByText('Aktuell', { exact: true });
-      const headOffset = async (state) =>
-        (await head.count()) ? (await head.first().boundingBox()).x - state.frames[0].left : 0;
+      const headOffset = async (frame) =>
+        (await head.count()) ? (await head.first().boundingBox()).x - frame.left : 0;
       const before = await probe(page);
-      const headBefore = await headOffset(before);
+      const frameBefore = await firstFrame();
+      const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
 
       await page.getByRole('button', { name: 'Hide panel' }).first().click();
       await settle(page);
       const after = await probe(page);
-      const headAfter = await headOffset(after);
+      const frameAfter = await firstFrame();
+      const headAfter = frameAfter ? await headOffset(frameAfter) : 0;
       const kept =
         !!before?.camera &&
         !!after?.camera &&
-        moved(before, after, { x: 0, y: 0 }) &&
+        !!frameBefore &&
+        !!frameAfter &&
+        near(frameAfter.left, frameBefore.left) &&
+        near(frameAfter.top, frameBefore.top) &&
         near(after.camera.zoom * 1000, before.camera.zoom * 1000) &&
         near(headAfter, headBefore);
 
-      return { ok: kept, detail: `${describe(before, after)} head-frame ${headBefore} -> ${headAfter}` };
+      return {
+        ok: kept,
+        detail: `${describe(before, after)} frame ${frameBefore?.left},${frameBefore?.top} -> ${frameAfter?.left},${frameAfter?.top} head-frame ${headBefore} -> ${headAfter}`,
+      };
     },
   },
 ];

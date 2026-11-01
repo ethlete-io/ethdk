@@ -239,6 +239,24 @@ describe('DesignCanvasComponent', () => {
       expect(canvas.camera()).toEqual(opened);
     });
 
+    it('shifts the camera by the move of its left edge, so the frames keep their screen position', async () => {
+      const { fixture, canvas, resizeTo } = await setup({ opening: 'all' });
+      const opened = canvas.camera();
+      const left = { value: 0 };
+      const host = fixture.nativeElement as HTMLElement;
+
+      vi.spyOn(host, 'getBoundingClientRect').mockImplementation(() => new DOMRect(left.value, 0, 1200, 1000));
+      left.value = 320;
+      await resizeTo(880);
+
+      expect(canvas.camera()).toEqual({ ...opened, x: opened.x - 320 });
+
+      left.value = 0;
+      await resizeTo(1200);
+
+      expect(canvas.camera()).toEqual(opened);
+    });
+
     it('opens at 100 % on the frame a fit shows nearest the top centre', async () => {
       const { canvas, resizeTo } = await setup({ opening: 'visible' });
       const opened = canvas.camera();

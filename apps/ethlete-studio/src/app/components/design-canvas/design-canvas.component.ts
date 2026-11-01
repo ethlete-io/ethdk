@@ -610,6 +610,8 @@ export class DesignCanvasComponent {
 
   private followedBounds: Rect | null = null;
 
+  private hostLeft = 0;
+
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
   constructor() {
@@ -622,7 +624,14 @@ export class DesignCanvasComponent {
       if (!bounds || viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
+        const hostLeft = this.host.nativeElement.getBoundingClientRect().left;
+        const shift = this.hostLeft - hostLeft;
+
+        this.hostLeft = hostLeft;
+
         if (this.fittedFor === key) {
+          if (shift !== 0) this.camera.update((camera) => ({ ...camera, x: camera.x + shift }));
+
           if (covered !== this.coveredAtFit) {
             this.coveredAtFit = covered;
             this.following = null;
