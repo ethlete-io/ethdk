@@ -573,3 +573,6 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   i18n seam for Studio (finding 13); a later translation plugs in there without component changes.
 - Impl Q43 dead tree badges (Tom, 2026-11-01): `treeOf` still computes the dropped badges; delete that code after
   Tom's collected round, not now.
+- Impl Q44 project row states (Tom, 2026-11-01): shell-project-switch's `project` control is now a `select`, which
+  needs `project.option-hover`, `option-focus-visible` and `option-selected`. Draw the 3 states with the menu mock's
+  forced rows; go `--by tom`.
