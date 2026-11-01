@@ -4,6 +4,9 @@ export const STUDIO_LABELS = {
     sketchReady: 'Entwurf fertig',
     openComments: (count: number) => (count === 1 ? '1 offener Kommentar' : `${count} offene Kommentare`),
   },
+  flows: {
+    none: 'Noch keine Flows.',
+  },
   start: {
     title: 'Ethlete Studio',
     otherRepo: 'Anderes Repo',
