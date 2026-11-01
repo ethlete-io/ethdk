@@ -626,6 +626,10 @@ or an element in it must fade: a property with a computed `transition-duration` 
 fades with its source. A CSS `:hover` rule, a `title` or a state name alone does not count. The part must also match the
 hash `merged.json` records for it, so a frame drawn after the last merge or accept does not count.
 
+`sketch check` warns, without failing, when the "Aktuell" column of the Studio sketch view would draw only placeholders: every state
+left after the states each variant draws unchanged fold away is new in the sketch. The line reads
+`Aktuell shows only placeholders: open "<state>" to compare`.
+
 A page does not draw the interactions of its controls. A page control names the component or
 element that draws it in `part`, instead of `input`, and that part must be design complete
 itself. The page still draws the collapsed state and the body in its own placement:

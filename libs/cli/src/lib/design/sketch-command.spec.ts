@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
-import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
+import { aktuellPlaceholderWarnings, shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
@@ -11,6 +11,7 @@ import { renderIssuesOf } from './system/render-check';
 import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
 vi.mock('./ready-shots', () => ({
+  aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
@@ -1229,6 +1230,21 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.pop()).toBe(
       `elements/hero b: HARD-CODED-COLOUR ${DESIGN_DIR}/acme/sketches/elements-hero/b/elements/hero/hero.css: #fff outside foundations - use a foundations token`,
     );
+  }, 120_000);
+
+  it('warns without failing when the Aktuell column shows only placeholders', async () => {
+    const target = acme();
+    const warnings: string[] = [];
+
+    output();
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    vi.mocked(aktuellPlaceholderWarnings).mockResolvedValueOnce([
+      'elements/hero: Aktuell shows only placeholders: open "default" to compare',
+    ]);
+    write(target, 'new', 'elements/hero', '--variants', 'a', '--product', 'acme');
+
+    expect(await run(target, 'check', '--product', 'acme')).toBe(0);
+    expect(warnings).toContain('elements/hero: Aktuell shows only placeholders: open "default" to compare');
   }, 120_000);
 
   it('notes the problems that were there before as one count per variant', async () => {

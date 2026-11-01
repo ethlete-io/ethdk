@@ -3,6 +3,7 @@ import { createDesignServer } from './serve';
 import { createPartShooter } from './shot';
 import { DesignConfig } from './paths';
 import { ResolvedProduct } from './system/resolve-product';
+import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
 import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -73,6 +74,46 @@ export const shotsShowNoChange = async (options: {
     }
   } catch (error) {
     return `the shots failed: ${error instanceof Error ? error.message : String(error)}`;
+  } finally {
+    await server?.close();
+  }
+};
+
+/** Shoots the sketch on a render server of its own; one warning per target part whose "Aktuell" column shows only placeholders. */
+export const aktuellPlaceholderWarnings = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+}): Promise<string[]> => {
+  const { target, config, product, sketch } = options;
+  let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
+
+  try {
+    server = await createDesignServer({ target, config, listen: true, port: 0 });
+    await server.listen();
+
+    const { port } = server.httpServer?.address() as AddressInfo;
+    const live = server;
+    const shooter = createPartShooter({
+      target,
+      base: `http://localhost:${port}`,
+      system: createSystemModules({ target, config }),
+    });
+
+    try {
+      return await aktuellPlaceholderWarningsOf({
+        product,
+        sketch,
+        pictureOf: shooter.pictureOf,
+        load: ({ file, product: name, sketch: drawn }) =>
+          live.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: drawn })),
+      });
+    } finally {
+      await shooter.close();
+    }
+  } catch {
+    return [];
   } finally {
     await server?.close();
   }

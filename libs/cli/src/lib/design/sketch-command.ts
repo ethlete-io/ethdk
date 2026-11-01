@@ -14,7 +14,7 @@ import {
   variantWarningsOf,
 } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
-import { shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
+import { aktuellPlaceholderWarnings, shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { recordAutoMerge, recordMergeReason } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
@@ -903,6 +903,9 @@ const checked = async (context: Context) => {
   }
 
   if (failed) return 1;
+
+  for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
+    (await aktuellPlaceholderWarnings({ target, config, product, sketch })).forEach((warning) => console.warn(warning));
 
   const rendered = await renderedVariantsOf({
     target,
