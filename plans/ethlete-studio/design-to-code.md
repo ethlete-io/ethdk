@@ -910,6 +910,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     matrix logic (aktuell-placeholders.ts), because the app takes "unchanged" from a pixel compare and cannot import
     CLI code. Known drift: the CLI counts all non-rejected variants, the view only open rounds. Lesson: two copies of
     the view logic drift; a later fix should move the matrix into one module both import.
+79. Tom ran `design go --batch` through the Claude Code `!` prefix (the grill session told him to) and it refused:
+    "stdin is not a TTY: write the entries to a go list and let Tom run `yarn design go --batch <file>`" (Tom,
+    2026-11-01). The `!` shell has no TTY, so the Impl Q119 confirm cannot run there, and the message tells Tom to do
+    the very thing he just did. Lesson: an error must name the next step that works for the person who reads it;
+    a command for Tom needs a tested path, not only an agent-proof refusal. Tool change (builder work): the message
+    says "run it in your own terminal, not through an agent shell"; the go list hand-off gives the exact command for
+    a real terminal.
 78. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
