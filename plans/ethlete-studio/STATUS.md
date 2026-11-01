@@ -56,6 +56,8 @@ oben rechts in der Teil-Ansicht.
 
 ## Für später gesammelt
 
+- „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren (Befund 109), mit der Überarbeitung von Go.
+
 - Breite der Seitenleiste mit der Maus ziehen (Q133).
 
 - Teil-Baum verliert beim Neuladen die Scroll-Position (Befund 99).

@@ -1146,6 +1146,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      design declares some must retry or stop as a tool error, never report a missing app element. Same slice:
      aacb82c2c corrects the pointer-focus probe of finding 91 (a key after a click may raise the ring on a control or
      a declared action; a non-control still fails), 9f1d2ba78 lets Space pick a merge row.
+109. The part view shows "Go geben" and "Änderung abnehmen" side by side, both as primary buttons (Tom, 2026-11-01,
+     screenshot): two approvals next to each other read as the same thing, and it is not clear which one to click.
+     Tom knows that go and inventory get reworked after MVP; park it there. Cause and the tool lesson: open, asked
+     the builder (when does "Änderung abnehmen" show, and how does it differ from a go?).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
