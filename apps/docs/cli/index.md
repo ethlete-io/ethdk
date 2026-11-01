@@ -449,7 +449,7 @@ States run in batches of a few with a fresh browser each, so a part with many st
 It needs no go. `et design complete` fails an undeclared interactive element as `ACTION-UNDECLARED`.
 
 It also checks the pointer focus of every focusable element (`tabindex` other than -1, button, `a[href]`, field,
-select, `contenteditable`) in two fresh pages: a real mouse click at its centre must leave no focus ring (a visible
+select, `contenteditable`) in two fresh pages: a real mouse click at its centre, after Tab presses that leave focus elsewhere (a script focus rings only when the last input was a key), must leave no focus ring (a visible
 `outline`: style not none, width above 0, a colour that is not transparent), reported as
 `<element> pointer focus FAILED shows a focus ring after a pointer click`. Text entry is exempt, because browsers always
 show `:focus-visible` there. Keyboard focus (after a Shift press) must show a ring, an outline or a changed `box-shadow`;

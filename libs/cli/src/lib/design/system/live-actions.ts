@@ -10,7 +10,14 @@ import { ACTION_INPUTS, ActionElement, actionFailureOf, ActionInput, actionScanS
 import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { frameContentOf, LiveError, LivePage, liveSpecOf, LiveState, openLivePage } from './live-compare';
-import { PointerFocusProbes, pointerFocusVerdictOf, readRingProbe, RingProbe, RingStyle } from './pointer-focus';
+import {
+  PointerFocusProbes,
+  tabAwayFrom,
+  pointerFocusVerdictOf,
+  readRingProbe,
+  RingProbe,
+  RingStyle,
+} from './pointer-focus';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -474,7 +481,9 @@ export const checkLiveActions = async (options: {
           let keyboardRing: PointerFocusProbes['keyboard'] = null;
 
           if (options.input === 'click') {
+            await tabAwayFrom(page, control);
             await control.click({ timeout: DRAW_TIMEOUT_MS });
+            await settle(page, DRAW_TIMEOUT_MS);
             clickRing = await readRingProbe(control).catch(() => null);
             await page.mouse.move(-1, -1);
           } else {

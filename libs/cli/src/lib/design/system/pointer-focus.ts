@@ -51,30 +51,48 @@ export const pointerFocusVerdictOf = (options: {
 export const POINTER_FOCUS_SELECTOR =
   '[tabindex]:not([tabindex="-1"]), button, a[href], input:not([type="hidden"]), select, textarea, [contenteditable]';
 
-const probeFn = `(element) => {
-  if (!element.matches(${JSON.stringify(POINTER_FOCUS_SELECTOR)})) return null;
-  const style = getComputedStyle(element);
-  const type = element.tagName === 'INPUT' ? element.type : '';
-  const textEntry =
-    element.tagName === 'TEXTAREA' ||
-    element.isContentEditable ||
-    (element.tagName === 'INPUT' && !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'].includes(type));
-  return {
-    style: { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineColor: style.outlineColor, boxShadow: style.boxShadow },
-    focused: document.activeElement === element,
-    textEntry,
-  };
-}`;
+const TEXT_FREE_INPUTS = ['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'];
 
 /** Reads the ring probe of the element a locator names; `null` when it is not one the check visits. */
-export const readRingProbe = async (locator: Locator) => (await locator.evaluate(probeFn)) as RingProbe | null;
+export const readRingProbe = async (locator: Locator) =>
+  locator.evaluate(
+    (element, { selector, textFree }) => {
+      if (!element.matches(selector)) return null;
+
+      const style = getComputedStyle(element);
+      const type = element instanceof HTMLInputElement ? element.type : '';
+
+      return {
+        style: {
+          outlineStyle: style.outlineStyle,
+          outlineWidth: style.outlineWidth,
+          outlineColor: style.outlineColor,
+          boxShadow: style.boxShadow,
+        },
+        focused: element.ownerDocument.activeElement === element,
+        textEntry:
+          element instanceof HTMLTextAreaElement ||
+          (element instanceof HTMLElement && element.isContentEditable) ||
+          (element instanceof HTMLInputElement && !textFree.includes(type)),
+      };
+    },
+    { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS },
+  ) as Promise<RingProbe | null>;
+
+/** Presses Tab so the last input is a key and the element itself does not hold focus. */
+export const tabAwayFrom = async (page: Page, locator: Locator) => {
+  await page.keyboard.press('Tab');
+
+  if (await locator.evaluate((element) => element.ownerDocument.activeElement === element))
+    await page.keyboard.press('Tab');
+};
 
 /** The ring probes of one element: after a pointer click, and after keyboard focus. */
 export type PointerFocusProbes = { click: RingProbe | null; keyboard: { before: RingStyle; probe: RingProbe } | null };
 
 /**
  * Probes an element in two fresh pages: `open` returns the locator of the element on a freshly loaded page. The click
- * is a real mouse click at its centre; keyboard focus follows a Shift press so the browser treats it as keyboard
+ * is a real mouse click at its centre after Tab presses that leave focus elsewhere, because a script focus after a pointer press paints the ring only when the last input was a key; keyboard focus follows a Shift press so the browser treats it as keyboard
  * focus.
  */
 export const probePointerFocus = async (options: {
@@ -85,7 +103,9 @@ export const probePointerFocus = async (options: {
   let click: RingProbe | null;
 
   try {
+    await tabAwayFrom(clicked.page, clicked.locator);
     await clicked.locator.click();
+    await options.settle(clicked.page);
     click = await readRingProbe(clicked.locator).catch(() => null);
   } finally {
     await clicked.close();
