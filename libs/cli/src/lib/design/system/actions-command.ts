@@ -6,7 +6,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
-import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
   ACTION_INPUTS,
   ActionElement,
@@ -27,12 +27,13 @@ import {
   resolveActionOf,
   targetStateOf,
 } from './actions';
-import { EMIT_WAIT_MS, INIT_SCRIPT, OVERLAY_ROOTS, settle } from './action-press';
+import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './compare-command';
 import { checkLiveActions, liveLineOf, liveStateCompareOf } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
 import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
+import { inOrderAtOnce } from './in-order-at-once';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
   compareLineOf,
@@ -123,7 +124,7 @@ const shotOf = async (options: { page: Page; size: DesignPreset | null; room: bo
  * Loads the harness page of `start`, clicks its opener, then presses `input` on the element `pick` names and returns
  * the outputs it fired, whether its keydown default was prevented, and the host shot when `shoot` asks for one. The
  * outputs include those of the components under the `listen` selectors; `expanded` adds each element's
- * `aria-expanded` after the press.
+ * `aria-expanded` after the press. The wait for outputs ends as soon as `output` fired or the page settled.
  */
 export const runActionInput = async (options: {
   browser: Browser;
@@ -136,6 +137,7 @@ export const runActionInput = async (options: {
   timeout: number;
   listen?: string[];
   expanded?: boolean;
+  output?: string | null;
 }) => {
   const { browser, url, start, pick, input, size, shoot, timeout, listen = [], expanded = false } = options;
   const room = !!shoot && !size && shoot.room;
@@ -182,6 +184,8 @@ export const runActionInput = async (options: {
 
     const target = page.locator(probeOf(element.probe));
 
+    await watchMutations(page);
+
     if (input === 'click') {
       await target.click({ timeout });
       await page.mouse.move(-1, -1);
@@ -191,7 +195,7 @@ export const runActionInput = async (options: {
       await page.keyboard.press(input);
     }
 
-    await page.waitForTimeout(EMIT_WAIT_MS);
+    await awaitOutput(page, options.output ?? null);
     await settle(page, timeout);
 
     const emitted = (await page.evaluate('(window.__etDesignEmits ?? []).map((emit) => emit.output)')) as string[];
@@ -272,12 +276,12 @@ export const checkActions = async (options: {
       ).then((entries) => embeddersOf({ part, controls: Object.fromEntries(entries) })));
 
     let { queue, shooter } = await freshBrowser();
-    const designs = new Map<string, Picture>();
-    const draw = async (state: string, opened: Record<string, unknown> | null = null) => {
+    const designs = new Map<string, Promise<Picture>>();
+    const draw = (state: string, opened: Record<string, unknown> | null = null) => {
       const key = opened === null ? state : `${state}\n${JSON.stringify(opened)}`;
       const drawn =
         designs.get(key) ??
-        (await shooter.pictureOf({
+        shooter.pictureOf({
           product: product.name,
           part,
           state,
@@ -290,16 +294,19 @@ export const checkActions = async (options: {
           checker: true,
           ...(opened && { compose: { [part]: opened } }),
           params: new URLSearchParams(),
-        }));
+        });
 
       designs.set(key, drawn);
+      drawn.catch(() => designs.get(key) === drawn && designs.delete(key));
 
       return drawn;
     };
 
     for (const state of names) await draw(state);
 
-    const markups = new Map([...designs].map(([state, design]) => [state, design.markup ?? '']));
+    const markups = new Map(
+      await Promise.all([...designs].map(async ([state, design]) => [state, (await design).markup ?? ''] as const)),
+    );
     const opens = pointerOpensOf({
       states,
       controls: module.default?.controls,
@@ -464,163 +471,177 @@ export const checkActions = async (options: {
           failure: `the design declares ${element.action} but the app draws no such element`,
         });
 
-      for (const { app: element, design: drawn } of paired) {
-        const name = elementNameOf(element);
+      const checkedElements = await inOrderAtOnce({
+        items: paired,
+        limit: DRAWS_AT_ONCE,
+        run: async ({ app: element, design: drawn }) => {
+          const out: Line[] = [];
 
-        try {
-          const probes = await queue.run((browser) =>
-            probePointerFocus({
-              open: async () => {
-                const context = await browser.newContext({ viewport: viewportOf(frame.size) });
-                const page = await context.newPage();
-                const close = () => context.close();
-
-                try {
-                  await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
-                  await harnessMountedOf(page, DRAW_TIMEOUT_MS);
-                  await page.mouse.move(-1, -1);
-
-                  if (opener !== null) {
-                    const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find((found) => found.key === opener);
-
-                    if (trigger) await page.locator(probeOf(trigger.probe)).click();
-
-                    await settle(page, DRAW_TIMEOUT_MS);
-                    await page.mouse.move(-1, -1);
-                  }
-
-                  const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
-                    (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
-                  );
-
-                  if (!found) throw new Error('the element is gone after a fresh load');
-
-                  return { page, locator: page.locator(probeOf(found.probe)), close };
-                } catch (error) {
-                  await close();
-                  throw error;
-                }
-              },
-              settle: (page) => settle(page, DRAW_TIMEOUT_MS),
-            }),
-          );
-
-          if (probes) {
-            const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: !!drawn?.action });
-
-            lines.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
-          }
-        } catch (error) {
-          lines.push({
-            state,
-            element: `${name} pointer focus`,
-            input: null,
-            failure: messageOf(error).split('\n')[0] ?? '',
-          });
-        }
-        const owners = drawn ? await Promise.all(drawn.owners.map(embeddedOf)) : [];
-        const value = drawn?.action?.trim() ?? '';
-        const settled: string[] = [];
-
-        for (const candidate of owners)
-          if (
-            candidate.states.includes(value) &&
-            drawsStateAlreadyOf({
-              expected: await expectedOf(candidate.part, value),
-              current: await expectedOf(part, state),
-            })
-          )
-            settled.push(candidate.part);
-
-        const { action, owner } = drawn
-          ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names }, settled })
-          : { action: null, owner: part };
-        const embeddedState = owners.find((candidate) => candidate.part === owner);
-        const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
-
-        if (drawn === null || action === null || typeof action === 'string') {
-          if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) continue;
-          if (
-            drawn !== null &&
-            action === null &&
-            exemptFromDeclaringOf({ owners: drawn.owners, within: drawn.within, controls: module.default?.controls })
-          )
-            continue;
-
-          lines.push({
-            state,
-            element: name,
-            input: null,
-            failure:
-              typeof action === 'string'
-                ? action
-                : drawn === null
-                  ? 'the design draws no such element, so it declares no action'
-                  : 'the design declares no data-et-action',
-          });
-          continue;
-        }
-
-        for (const input of ACTION_INPUTS) {
-          const goal =
-            action.kind === 'state'
-              ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
-              : '';
-          const opened = goal === '' ? null : openedFromOf({ goal, start: state, states, open: opens[goal] });
-          const goalPicture = goal === '' || embeddedState ? null : await draw(opened ? state : goal, opened);
+          const name = elementNameOf(element);
 
           try {
-            const run = await queue.run((browser) =>
-              runActionInput({
-                browser,
-                url: startUrl,
-                start,
-                pick: element,
-                input,
-                size: frame.size,
-                shoot: goalPicture
-                  ? {
-                      room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+            const probes = await queue.run((browser) =>
+              probePointerFocus({
+                open: async () => {
+                  const context = await browser.newContext({ viewport: viewportOf(frame.size) });
+                  const page = await context.newPage();
+                  const close = () => context.close();
+
+                  try {
+                    await page.goto(startUrl, { timeout: DRAW_TIMEOUT_MS });
+                    await harnessMountedOf(page, DRAW_TIMEOUT_MS);
+                    await page.mouse.move(-1, -1);
+
+                    if (opener !== null) {
+                      const trigger = (await scanOf(page, [HARNESS_HOST_SELECTOR])).find(
+                        (found) => found.key === opener,
+                      );
+
+                      if (trigger) await page.locator(probeOf(trigger.probe)).click();
+
+                      await settle(page, DRAW_TIMEOUT_MS);
+                      await page.mouse.move(-1, -1);
                     }
-                  : null,
-                timeout: DRAW_TIMEOUT_MS,
-                listen: action.kind === 'emit' ? listen : [],
-                expanded: !!embeddedState && action.kind === 'state',
+
+                    const found = (await scanOf(page, [HARNESS_HOST_SELECTOR, OVERLAY_ROOTS])).find(
+                      (candidate) => candidate.key === element.key && candidate.occurrence === element.occurrence,
+                    );
+
+                    if (!found) throw new Error('the element is gone after a fresh load');
+
+                    return { page, locator: page.locator(probeOf(found.probe)), close };
+                  } catch (error) {
+                    await close();
+                    throw error;
+                  }
+                },
+                settle: (page) => settle(page, DRAW_TIMEOUT_MS),
               }),
             );
-            const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
-            const outcome: ActionOutcome = {
-              emitted: run.emitted,
-              prevented: run.prevented,
-              compare:
-                embeddedState && action.kind === 'state'
-                  ? liveStateCompareOf({
-                      state: `${owner} ${goal}`,
-                      expected: await expectedOf(owner, goal),
-                      after: run.after ?? [],
-                    })
-                  : result
-                    ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
-                    : null,
-            };
-            const failure = actionFailureOf({ action, target: goal, input, outcome });
 
-            if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
-              dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
+            if (probes) {
+              const { failure, warning } = pointerFocusVerdictOf({ ...probes, activatable: !!drawn?.action });
 
-              const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
-
-              writeFileSync(join(dir, `${stem}.design.png`), goalPicture.png);
-              writeFileSync(join(dir, `${stem}.app.png`), run.app);
-              writeFileSync(join(dir, `${stem}.diff.png`), result.diff);
+              out.push({ state, element: `${name} pointer focus`, input: null, failure, warning });
             }
-
-            lines.push({ state, element: name, input, failure });
           } catch (error) {
-            lines.push({ state, element: name, input, failure: messageOf(error).split('\n')[0] ?? '' });
+            out.push({
+              state,
+              element: `${name} pointer focus`,
+              input: null,
+              failure: messageOf(error).split('\n')[0] ?? '',
+            });
           }
-        }
-      }
+          const owners = drawn ? await Promise.all(drawn.owners.map(embeddedOf)) : [];
+          const value = drawn?.action?.trim() ?? '';
+          const settled: string[] = [];
+
+          for (const candidate of owners)
+            if (
+              candidate.states.includes(value) &&
+              drawsStateAlreadyOf({
+                expected: await expectedOf(candidate.part, value),
+                current: await expectedOf(part, state),
+              })
+            )
+              settled.push(candidate.part);
+
+          const { action, owner } = drawn
+            ? resolveActionOf({ value: drawn.action, owners, page: { part, states: names }, settled })
+            : { action: null, owner: part };
+          const embeddedState = owners.find((candidate) => candidate.part === owner);
+          const listen = owners.flatMap((candidate) => (candidate.selector === null ? [] : [candidate.selector]));
+
+          if (drawn === null || action === null || typeof action === 'string') {
+            if (typeof action !== 'string' && (await embeddersOfPart()).length > 0) return out;
+            if (
+              drawn !== null &&
+              action === null &&
+              exemptFromDeclaringOf({ owners: drawn.owners, within: drawn.within, controls: module.default?.controls })
+            )
+              return out;
+
+            out.push({
+              state,
+              element: name,
+              input: null,
+              failure:
+                typeof action === 'string'
+                  ? action
+                  : drawn === null
+                    ? 'the design draws no such element, so it declares no action'
+                    : 'the design declares no data-et-action',
+            });
+
+            return out;
+          }
+
+          for (const input of ACTION_INPUTS) {
+            const goal =
+              action.kind === 'state'
+                ? targetStateOf({ state: action.state, input, states: embeddedState?.states ?? names })
+                : '';
+            const opened = goal === '' ? null : openedFromOf({ goal, start: state, states, open: opens[goal] });
+            const goalPicture = goal === '' || embeddedState ? null : await draw(opened ? state : goal, opened);
+
+            try {
+              const run = await queue.run((browser) =>
+                runActionInput({
+                  browser,
+                  url: startUrl,
+                  start,
+                  pick: element,
+                  input,
+                  size: frame.size,
+                  shoot: goalPicture
+                    ? {
+                        room: (goalPicture.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
+                      }
+                    : null,
+                  timeout: DRAW_TIMEOUT_MS,
+                  listen: action.kind === 'emit' ? listen : [],
+                  output: action.kind === 'emit' ? action.output : null,
+                  expanded: !!embeddedState && action.kind === 'state',
+                }),
+              );
+              const result = goalPicture && run.app ? comparePngs({ design: goalPicture.png, app: run.app }) : null;
+              const outcome: ActionOutcome = {
+                emitted: run.emitted,
+                prevented: run.prevented,
+                compare:
+                  embeddedState && action.kind === 'state'
+                    ? liveStateCompareOf({
+                        state: `${owner} ${goal}`,
+                        expected: await expectedOf(owner, goal),
+                        after: run.after ?? [],
+                      })
+                    : result
+                      ? { ok: result.kind === 'ok', detail: compareLineOf(goal, result).slice(goal.length + 1) }
+                      : null,
+              };
+              const failure = actionFailureOf({ action, target: goal, input, outcome });
+
+              if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
+                dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
+
+                const stem = `${state}--${name}--${input}`.replace(/[^\w.-]/g, '-');
+
+                writeFileSync(join(dir, `${stem}.design.png`), goalPicture.png);
+                writeFileSync(join(dir, `${stem}.app.png`), run.app);
+                writeFileSync(join(dir, `${stem}.diff.png`), result.diff);
+              }
+
+              out.push({ state, element: name, input, failure });
+            } catch (error) {
+              out.push({ state, element: name, input, failure: messageOf(error).split('\n')[0] ?? '' });
+            }
+          }
+
+          return out;
+        },
+      });
+
+      lines.push(...checkedElements.flat());
     }
 
     return { lines, pictures: dir, embedders: embedders ? await embedders : [] };
