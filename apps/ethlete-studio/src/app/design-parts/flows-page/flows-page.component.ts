@@ -4,7 +4,6 @@ import {
   computed,
   ElementRef,
   input,
-  model,
   output,
   signal,
   TemplateRef,
@@ -17,8 +16,7 @@ import { signalElementDimensions } from '@ethlete/core';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
-import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
-import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { TreeRow, TreeRowItemComponent } from '../tree-row/tree-row-item.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 
@@ -53,22 +51,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
 @Component({
   selector: 'ethlete-flows-page',
   template: `
-    <ethlete-shell-main
-      [product]="product()"
-      [products]="products()"
-      [project]="project()"
-      [projects]="projects()"
-      [panel]="panel()"
-      (collapse)="collapse.emit()"
-      (sectionChange)="sectionChange.emit($event)"
-      (productChange)="productChange.emit($event)"
-      (allProducts)="allProducts.emit()"
-      (projectChange)="projectChange.emit($event)"
-      (openProject)="openProject.emit()"
-      fill
-      section="Flows"
-    >
-      <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+    <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Flows">
       <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
         @if (rows().length) {
           <div class="flex flex-col gap-px" role="tree">
@@ -209,7 +192,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
           </div>
         </div>
       }
-    </ethlete-shell-main>
+    </ethlete-shell-page>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
@@ -218,14 +201,14 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
     CanvasViewportComponent,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
-    ShellMainComponent,
-    StudioMenuComponent,
+    ShellPageComponent,
     TreeRowItemComponent,
     ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
 export class FlowsPageComponent {
+  public shell = input<ShellState>(SHELL_SAMPLE);
   public frameTemplate = input<TemplateRef<{ $implicit: FlowsPageFrame }> | null>(null);
   public flow = input<'open' | 'none'>('open');
   public flows = input(FLOWS_SAMPLE);
@@ -234,23 +217,12 @@ export class FlowsPageComponent {
   public lines = input(FLOWS_SAMPLE_LINES);
   public preset = input<string>(STUDIO_LABELS.flows.sample.preset);
   public presets = input<FlowsPagePreset[]>([]);
-  public product = input('studio');
-  public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
-  public panel = input<'open' | 'hidden'>('open');
+  public shellAction = output<ShellAction>();
 
-  public menuOpen = model(false);
   public pick = output<string>();
   public copyPrompt = output();
   public presetChange = output<string>();
-  public collapse = output();
-  public sectionChange = output<ShellSection>();
-  public productChange = output<string>();
-  public allProducts = output();
-  public projectChange = output<string>();
 
-  public openProject = output();
   private viewport = viewChild(CanvasViewportComponent, { read: ElementRef });
   private world = viewChild<ElementRef<HTMLElement>>('world');
 

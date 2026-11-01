@@ -5,7 +5,6 @@ import {
   computed,
   ElementRef,
   input,
-  model,
   output,
   signal,
   TemplateRef,
@@ -21,8 +20,7 @@ import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
-import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
-import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
 import {
   SKETCH_CURRENT,
@@ -56,8 +54,7 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
     CanvasViewportComponent,
     CommentPinComponent,
     PartTreeComponent,
-    ShellMainComponent,
-    StudioMenuComponent,
+    ShellPageComponent,
     ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },
@@ -65,6 +62,7 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
 export class SketchesComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private renderer = injectRenderer();
+  public shell = input<ShellState>(SHELL_SAMPLE);
   public camera = input<'fit' | Camera>('fit');
   public selected = input<string | undefined>(undefined);
   public part = input('pages/system');
@@ -74,26 +72,15 @@ export class SketchesComponent {
   public pins = input<SketchPin[]>(SKETCH_PINS);
   public shot = input<TemplateRef<{ $implicit: SketchVariant }> | null>(null);
   public tree = input(SKETCH_TREE);
-  public product = input('studio');
-  public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
+  public shellAction = output<ShellAction>();
 
-  public panel = input<'open' | 'hidden'>('open');
-  public menuOpen = model(false);
   public discard = output();
   public merge = output<string>();
   public roundChange = output<string>();
   public pinToggle = output<string>();
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
-  public collapse = output();
-  public sectionChange = output<ShellSection>();
-  public productChange = output<string>();
-  public allProducts = output();
 
-  public projectChange = output<string>();
-  public openProject = output();
   private page = viewChild.required<ElementRef<HTMLElement>>('page');
 
   private viewport = viewChild.required(CanvasViewportComponent, { read: ElementRef });

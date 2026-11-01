@@ -39,11 +39,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
     <ethlete-inventory-page
       [inventory]="reading().loading ? 'loading' : 'open'"
       [tree]="shell().tree"
-      [product]="shell().product"
-      [products]="shell().products"
-      [project]="shell().project"
-      [projects]="shell().projects"
-      [panel]="shell().panel"
+      [shell]="shell()"
       [part]="part()"
       [approval]="approval()"
       [approvable]="approvable()"
@@ -55,12 +51,7 @@ const LOADING: Reading = { inventory: null, error: null, loading: true };
       (inventoryToggle)="inventoryToggle.emit()"
       (expandedChange)="expandedChange.emit($event)"
       (pick)="shellAction.emit({ kind: 'pick', key: $event })"
-      (collapse)="shellAction.emit({ kind: 'collapse' })"
-      (sectionChange)="shellAction.emit({ kind: 'section', section: $event })"
-      (productChange)="shellAction.emit({ kind: 'product', name: $event })"
-      (allProducts)="shellAction.emit({ kind: 'allProducts' })"
-      (projectChange)="shellAction.emit({ kind: 'project', name: $event })"
-      (openProject)="shellAction.emit({ kind: 'openProject' })"
+      (shellAction)="shellAction.emit($event)"
       class="h-full!"
     />
 

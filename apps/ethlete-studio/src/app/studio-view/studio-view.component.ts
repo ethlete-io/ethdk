@@ -39,7 +39,7 @@ import { injectFrameRenderQueue } from '../components/design-canvas/frame-render
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
-import { ShellMainComponent } from '../design-parts/shell-main/shell-main.component';
+import { ShellAction, ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { CheckoutsComponent, folderNameOf } from './checkouts.component';
 import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { NO_LIST_REVISIONS, listRevisionsWith } from './list-revisions';
@@ -60,19 +60,20 @@ const STATUS_ITEM =
   selector: 'ethlete-studio-view',
   template: `
     @if (serverDown() || serverStarting()) {
-      <ethlete-shell-main
-        [products]="[]"
-        [project]="projectName()"
-        [projects]="checkouts.names()"
-        (projectChange)="checkouts.chooseByName($event)"
-        (openProject)="checkouts.toggle()"
-        product=""
-        fill
+      <ethlete-shell-page
+        [shell]="{
+          product: '',
+          products: [],
+          project: projectName(),
+          projects: checkouts.names(),
+          panel: serverPanel(),
+        }"
+        (action)="runShellAction($event, checkouts)"
       >
         <div class="size-full overflow-auto pl-(--st-shell-inset-left)">
           <ng-container [ngTemplateOutlet]="serverMessage" />
         </div>
-      </ethlete-shell-main>
+      </ethlete-shell-page>
     } @else {
       <ethlete-system-view
         [port]="server()?.listening ? (design()?.port ?? null) : null"
@@ -205,7 +206,7 @@ const STATUS_ITEM =
     CheckoutsComponent,
     NgTemplateOutlet,
     ProvideColorDirective,
-    ShellMainComponent,
+    ShellPageComponent,
     SystemViewComponent,
     UpdateButtonComponent,
     UpdateCheckButtonComponent,
@@ -224,6 +225,7 @@ export class StudioViewComponent {
 
   public checkout = signal('');
   protected projectName = computed(() => folderNameOf(this.checkout()));
+  protected serverPanel = signal<'open' | 'hidden'>('open');
   protected design = signal<Project | null>(null);
   protected server = signal<ServerState | null>(null);
   protected serverBusy = signal(false);
@@ -339,6 +341,13 @@ export class StudioViewComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  protected runShellAction(action: ShellAction, checkouts: CheckoutsComponent) {
+    if (action.kind === 'collapse') this.serverPanel.set('hidden');
+    if (action.kind === 'section') this.serverPanel.set('open');
+    if (action.kind === 'project') checkouts.chooseByName(action.name);
+    if (action.kind === 'openProject') checkouts.toggle();
   }
 
   protected setCheckout(path: string) {

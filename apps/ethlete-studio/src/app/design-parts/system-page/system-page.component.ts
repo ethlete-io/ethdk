@@ -18,8 +18,7 @@ import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
-import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
-import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
 import { OpenPointsPopoverComponent } from './open-points-popover.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
@@ -32,21 +31,7 @@ const FRAME_HEAD_CLASS =
 @Component({
   selector: 'ethlete-system-page',
   template: `
-    <ethlete-shell-main
-      [product]="product()"
-      [products]="products()"
-      [project]="project()"
-      [projects]="projects()"
-      (collapse)="collapse.emit()"
-      (sectionChange)="sectionChange.emit($event)"
-      (productChange)="productChange.emit($event)"
-      (allProducts)="allProducts.emit()"
-      (projectChange)="projectChange.emit($event)"
-      (openProject)="openProject.emit()"
-      fill
-      section="System"
-    >
-      <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+    <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="System">
       @if (empty()) {
         <p class="m-0 px-space-3 py-space-2 text-ui-sm text-et-surface-muted" shellMainSide>{{ LABELS.none }}</p>
       } @else {
@@ -58,7 +43,7 @@ const FRAME_HEAD_CLASS =
         />
       }
       @if (empty()) {
-        <ethlete-system-empty [product]="product()" (copyPrompt)="copyPrompt.emit()" />
+        <ethlete-system-empty [product]="shell().product" (copyPrompt)="copyPrompt.emit()" />
       } @else if (manyStates()) {
         <ethlete-canvas-frames
           (zoomOut)="zoomOut.emit()"
@@ -147,7 +132,7 @@ const FRAME_HEAD_CLASS =
           </button>
         </div>
       }
-    </ethlete-shell-main>
+    </ethlete-shell-page>
 
     <ng-template #frameShot let-frame>
       @if (shot(); as shot) {
@@ -162,16 +147,16 @@ const FRAME_HEAD_CLASS =
     NgTemplateOutlet,
     PartTreeComponent,
     ProvideColorDirective,
-    ShellMainComponent,
-    StudioMenuComponent,
+    ShellPageComponent,
     SystemEmptyComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
 export class SystemPageComponent {
   private overlay = injectOverlayManager();
-
   protected warningTheme = injectSemanticColorTheme('warning');
+  public shell = input<ShellState>(SHELL_SAMPLE);
+
   public empty = input(false);
   public manyStates = input(false);
   public nothingOpen = input(false);
@@ -182,12 +167,8 @@ export class SystemPageComponent {
   public shot = input<TemplateRef<{ $implicit: string }> | null>(null);
   public part = input('components/button');
   public openPoints = input(OPEN_POINTS_SAMPLE);
-  public product = input('studio');
-  public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
+  public shellAction = output<ShellAction>();
 
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
-  public menuOpen = model(false);
   public activate = output<string>();
   public expandedChange = output<readonly string[]>();
   public copyPrompt = output();
@@ -195,13 +176,7 @@ export class SystemPageComponent {
   public zoomReset = output();
   public zoomIn = output();
   public fit = output();
-  public collapse = output();
-  public sectionChange = output<ShellSection>();
-  public productChange = output<string>();
-  public allProducts = output();
-  public projectChange = output<string>();
 
-  public openProject = output();
   private chip = viewChild('chip', { read: ElementRef<HTMLElement> });
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly FRAME_CLASS = FRAME_CLASS;

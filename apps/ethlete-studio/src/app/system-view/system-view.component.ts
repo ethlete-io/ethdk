@@ -75,7 +75,8 @@ import {
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
-import { ShellMainComponent, ShellSection } from '../design-parts/shell-main/shell-main.component';
+import { ShellSection } from '../design-parts/shell-main/shell-main.component';
+import { ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
 import { inboxCommentOf, inboxPartOf } from './inbox-comments';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { NewProductFormComponent } from './new-product-form.component';
@@ -410,21 +411,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [activePart]="activePart()"
         [selectedId]="null"
         [showResolved]="commentStore.resolvedShown()"
-        [product]="product()?.name ?? ''"
-        [products]="productNames()"
-        [project]="project()"
-        [projects]="projects()"
-        [panel]="panel()"
+        [shell]="pageShell()"
         [load]="inboxLoad()"
         (showResolvedChange)="commentStore.showResolved($event)"
         (retry)="commentStore.retry()"
         (pick)="jumpToComment($event)"
-        (collapse)="panel.set('hidden')"
-        (sectionChange)="pickSection($event)"
-        (productChange)="pickProduct($event)"
-        (allProducts)="pickProduct(NEW_PRODUCT)"
-        (projectChange)="projectChange.emit($event)"
-        (openProject)="openProject.emit()"
+        (shellAction)="runShellAction($event)"
         class="h-full!"
       >
         <ng-container [ngTemplateOutlet]="shellCanvas" />
@@ -477,26 +469,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         />
       }
     } @else {
-      <ethlete-shell-main
-        [section]="section()"
-        [product]="product()?.name ?? ''"
-        [products]="productNames()"
-        [project]="project()"
-        [projects]="projects()"
-        [panel]="panel()"
-        (collapse)="panel.set('hidden')"
-        (sectionChange)="pickSection($event)"
-        (productChange)="pickProduct($event)"
-        (allProducts)="pickProduct(NEW_PRODUCT)"
-        (projectChange)="projectChange.emit($event)"
-        (openProject)="openProject.emit()"
-        fill
-      >
+      <ethlete-shell-page [section]="section()" [shell]="pageShell()" (action)="runShellAction($event)">
         <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto" shellMainSide>
           <ng-container [ngTemplateOutlet]="sideTree" />
         </div>
         <ng-container [ngTemplateOutlet]="shellCanvas" />
-      </ethlete-shell-main>
+      </ethlete-shell-page>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -512,7 +490,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     CommentDraftComponent,
     CommentThreadComponent,
     InboxComponent,
-    ShellMainComponent,
+    ShellPageComponent,
     SystemEmptyComponent,
     StartComponent,
     NoteBodyComponent,
@@ -572,7 +550,6 @@ export class SystemViewComponent {
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
 
-  protected readonly NEW_PRODUCT = NEW_PRODUCT;
 
   protected copied = signal(false);
 
@@ -652,7 +629,8 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  protected productNames = computed(() => this.products().map((listed) => listed.name));
+  public readonly NEW_PRODUCT = NEW_PRODUCT;
+  public productNames = computed(() => this.products().map((listed) => listed.name));
 
   private sketchRead = toSignal(
     toObservable(
@@ -1067,7 +1045,7 @@ export class SystemViewComponent {
     () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
   );
 
-  protected panel = signal<'open' | 'hidden'>('open');
+  public panel = signal<'open' | 'hidden'>('open');
 
   protected pageShell = computed<PageShell>(() => ({
     tree: this.partTreeLayers(),
@@ -1275,7 +1253,7 @@ export class SystemViewComponent {
     rememberView({ systemEntry: key });
   }
 
-  protected pickProduct(systemProduct: string) {
+  public pickProduct(systemProduct: string) {
     this.creating.set(systemProduct === NEW_PRODUCT);
 
     if (systemProduct === NEW_PRODUCT) return;

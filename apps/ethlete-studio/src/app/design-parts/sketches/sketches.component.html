@@ -1,19 +1,4 @@
-<ethlete-shell-main
-  [product]="product()"
-  [products]="products()"
-  [project]="project()"
-  [projects]="projects()"
-  [panel]="panel()"
-  (collapse)="collapse.emit()"
-  (sectionChange)="sectionChange.emit($event)"
-  (productChange)="productChange.emit($event)"
-  (allProducts)="allProducts.emit()"
-  (projectChange)="projectChange.emit($event)"
-  (openProject)="openProject.emit()"
-  fill
-  section="Sketches"
->
-  <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+<ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Sketches">
   <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
     <ethlete-part-tree
       [layers]="tree()"
@@ -119,4 +104,4 @@
       class="absolute right-space-3 bottom-space-3 z-3"
     />
   </div>
-</ethlete-shell-main>
+</ethlete-shell-page>

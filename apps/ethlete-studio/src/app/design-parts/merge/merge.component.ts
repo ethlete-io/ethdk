@@ -4,8 +4,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { DISCLOSURE_BODY_CLASS, DisclosureComponent } from '../disclosure/disclosure.component';
-import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
-import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { MergeRow, MERGE_SAMPLE_CHANGED, MERGE_SAMPLE_TARGET, MERGE_SAMPLE_UNCHANGED } from './merge-sample';
 
 const SCALE = 0.37;
@@ -15,22 +14,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
 @Component({
   selector: 'ethlete-merge',
   template: `
-    <ethlete-shell-main
-      [product]="product()"
-      [products]="products()"
-      [project]="project()"
-      [projects]="projects()"
-      [panel]="panel()"
-      (collapse)="collapse.emit()"
-      (sectionChange)="sectionChange.emit($event)"
-      (productChange)="productChange.emit($event)"
-      (allProducts)="allProducts.emit()"
-      (projectChange)="projectChange.emit($event)"
-      (openProject)="openProject.emit()"
-      fill
-      section="Sketches"
-    >
-      <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+    <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Sketches">
       <div class="box-border flex h-full flex-col gap-space-2 px-space-1 pt-space-1 pb-space-2" shellMainSide>
         <div class="-mt-space-1 ml-[calc(var(--space-3)*-1-var(--space-1)/2)] flex">
           <button (click)="back.emit()" et-button type="button" variant="transparent" size="sm">
@@ -165,7 +149,7 @@ const CROP = { width: 266, height: 64, scale: 2 };
           </div>
         </div>
       }
-    </ethlete-shell-main>
+    </ethlete-shell-page>
 
     <ng-template #shot let-row let-src="src">
       <div
@@ -185,18 +169,12 @@ const CROP = { width: 266, height: 64, scale: 2 };
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    BUTTON_IMPORTS,
-    ProvideColorDirective,
-    NgTemplateOutlet,
-    ShellMainComponent,
-    StudioMenuComponent,
-    DisclosureComponent,
-  ],
+  imports: [BUTTON_IMPORTS, ProvideColorDirective, NgTemplateOutlet, ShellPageComponent, DisclosureComponent],
   host: { class: 'block h-screen w-full' },
 })
 export class MergeComponent {
   protected errorTheme = injectSemanticColorTheme('error');
+  public shell = input<ShellState>(SHELL_SAMPLE);
   public unchanged = model(false);
   public target = input(MERGE_SAMPLE_TARGET);
   public changed = input(MERGE_SAMPLE_CHANGED);
@@ -204,24 +182,13 @@ export class MergeComponent {
   public unchangedStates = input(MERGE_SAMPLE_UNCHANGED);
   public shotTemplate = input<TemplateRef<{ $implicit: MergeRow; src: string }> | null>(null);
   public cropLabel = input<string>(STUDIO_LABELS.system.copyPrompt);
-  public product = input('studio');
-  public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
-  public panel = input<'open' | 'hidden'>('open');
-  public menuOpen = model(false);
-
   public error = input<string | null>(null);
+
+  public shellAction = output<ShellAction>();
   public pick = output<string>();
   public back = output();
   public merge = output();
-  public collapse = output();
-  public sectionChange = output<ShellSection>();
-  public productChange = output<string>();
-  public allProducts = output();
-  public projectChange = output<string>();
 
-  public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.merge;
   protected readonly DISCLOSURE_BODY_CLASS = DISCLOSURE_BODY_CLASS;
   protected readonly SCALE = SCALE;

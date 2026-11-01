@@ -1,11 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { PartTreeComponent, PartTreeLayer } from '../part-tree/part-tree.component';
-import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
-import { StudioMenuComponent } from '../studio-menu/studio-menu.component';
+import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 
 export type InventoryPageState = 'open' | 'approvable' | 'approved' | 'loading';
 
@@ -95,22 +94,7 @@ const FRAME_SCALE = 0.5;
 @Component({
   selector: 'ethlete-inventory-page',
   template: `
-    <ethlete-shell-main
-      [product]="product()"
-      [products]="products()"
-      [project]="project()"
-      [projects]="projects()"
-      [panel]="panel()"
-      (collapse)="collapse.emit()"
-      (sectionChange)="sectionChange.emit($event)"
-      (productChange)="productChange.emit($event)"
-      (allProducts)="allProducts.emit()"
-      (projectChange)="projectChange.emit($event)"
-      (openProject)="openProject.emit()"
-      fill
-      section="System"
-    >
-      <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+    <ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="System">
       <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
         <ethlete-part-tree
           [layers]="tree()"
@@ -211,37 +195,26 @@ const FRAME_SCALE = 0.5;
           }
         </div>
       </div>
-    </ethlete-shell-main>
+    </ethlete-shell-page>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    NgTemplateOutlet,
-    ShellMainComponent,
-    StudioMenuComponent,
-    PartTreeComponent,
-    BUTTON_IMPORTS,
-    ProvideColorDirective,
-  ],
+  imports: [NgTemplateOutlet, ShellPageComponent, PartTreeComponent, BUTTON_IMPORTS, ProvideColorDirective],
   host: { class: 'block h-screen w-full' },
 })
 export class InventoryPageComponent {
   private errorTheme = injectSemanticColorTheme('error');
   private warningTheme = injectSemanticColorTheme('warning');
+  public shell = input<ShellState>(SHELL_SAMPLE);
   public inventory = input<InventoryPageState>('open');
   public tree = input(INVENTORY_PAGE_TREE);
-  public product = input('studio');
-  public products = input(['studio', 'timetrack', 'docs']);
-  public project = input('ethlete-sdk');
-  public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
-  public panel = input<'open' | 'hidden'>('open');
-
   public entries = input(INVENTORY_PAGE_ENTRIES);
+
   public part = input('pages/flows');
   public approval = input<string | null>(null);
   public approvable = input<boolean | null>(null);
   public frames = input<InventoryPageFrame[] | null>(null);
   public shotTemplate = input<TemplateRef<{ $implicit: InventoryPageFrame }> | null>(null);
-  public menuOpen = model(false);
+  public shellAction = output<ShellAction>();
 
   public reload = output();
   public approve = output();
@@ -249,17 +222,7 @@ export class InventoryPageComponent {
 
   public pick = output<string>();
   public expandedChange = output<readonly string[]>();
-  public collapse = output();
 
-  public sectionChange = output<ShellSection>();
-
-  public productChange = output<string>();
-
-  public allProducts = output();
-
-  public projectChange = output<string>();
-
-  public openProject = output();
   protected readonly LABELS = STUDIO_LABELS.inventory;
   protected readonly SCALE = FRAME_SCALE;
   protected readonly PERCENT_OF = percentOf;

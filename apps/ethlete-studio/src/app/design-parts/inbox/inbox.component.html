@@ -1,43 +1,4 @@
-<ethlete-shell-main
-  [product]="product()"
-  [products]="products()"
-  [project]="project()"
-  [projects]="projects()"
-  [panel]="panel()"
-  (collapse)="collapse.emit()"
-  (sectionChange)="sectionChange.emit($event)"
-  (productChange)="productChange.emit($event)"
-  (allProducts)="allProducts.emit()"
-  (projectChange)="projectChange.emit($event)"
-  (openProject)="openProject.emit()"
-  fill
-  section="Inbox"
->
-  <div class="relative size-10" shellMainStudio>
-    <button
-      class="size-10 p-0 [--accent:var(--et-surface-background-solid)] [--on-accent:var(--et-surface-color-solid)] hover:[--accent:color-mix(in_srgb,var(--et-surface-interaction-hover-solid)_5%,var(--et-surface-background-solid))] active:[--accent:color-mix(in_oklch,var(--et-surface-interaction-active-solid)_10%,transparent)] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
-      etAutoSurface
-      et-button
-      type="button"
-      variant="transparent"
-      color="surface"
-      size="sm"
-      aria-label="Studio-Menü"
-      aria-haspopup="menu"
-      aria-expanded="false"
-    >
-      <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
-        <g color="var(--on-accent)">
-          <rect width="32" height="32" rx="8" fill="var(--accent)" />
-          <path
-            fill="currentColor"
-            fill-rule="evenodd"
-            d="M11.5 5.5H24.1C26 5.5 27 6.9 26.4 8.7L22.8 20.9C22.5 22 21.8 22.9 20.8 23.4L8 28L9 21.6L5.9 17.4C5.2 16.5 5.2 15.2 5.9 14.2L9.4 6.8C9.8 6 10.6 5.5 11.5 5.5ZM12.8 11.5C12 11.3 11.2 11.8 11 12.6L10.2 15.7C10 16.5 10.5 17.3 11.3 17.5C12.1 17.7 12.9 17.2 13.1 16.4L13.9 13.3C14.1 12.5 13.6 11.7 12.8 11.5ZM20.1 10.6C19.3 10.4 18.5 10.9 18.3 11.7L17.5 14.8C17.3 15.6 17.8 16.4 18.6 16.6C19.4 16.8 20.2 16.3 20.4 15.5L21.2 12.4C21.4 11.6 20.9 10.8 20.1 10.6Z"
-          />
-        </g>
-      </svg>
-    </button>
-  </div>
+<ethlete-shell-page [shell]="shell()" (action)="shellAction.emit($event)" section="Inbox">
   <div class="-m-space-2 flex h-[calc(100%+var(--space-2)*2)] flex-col" shellMainSide>
     <div
       class="flex h-9 flex-none items-center justify-between gap-space-2 border-b border-et-surface-border px-space-3 text-ui-sm"
@@ -197,7 +158,7 @@
     </div>
   </div>
   <ng-content />
-</ethlete-shell-main>
+</ethlete-shell-page>
 
 <ng-template #groupHead let-title let-count="count">
   <div
