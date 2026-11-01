@@ -341,7 +341,7 @@ const post = (body: string, middleware: (request: IncomingMessage, response: Ser
   });
 
 describe('forcing interactions in the CSS a frame receives', () => {
-  const forced = '.x:is(:hover, [data-et-force~="hover"]:not(:disabled, [disabled], [aria-disabled="true"])){}';
+  const forced = '.x:is(:hover, [data-et-force~="hover"]){}';
 
   it('rewrites the component styles of a render', async () => {
     const answered = await post(

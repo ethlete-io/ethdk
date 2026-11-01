@@ -26,13 +26,11 @@ const isForcedAlready = (pseudo: Pseudo) => {
   return forced;
 };
 
-const ENABLED = ':not(:disabled, [disabled], [aria-disabled="true"])';
-
 const forcedPseudoOf = (name: string) =>
   selectorParser().astSync(
     name === 'focus-within'
-      ? `:is(:focus-within, :has([${FORCE_ATTRIBUTE}~="focus-visible"]${ENABLED}), [${FORCE_ATTRIBUTE}~="focus-visible"]${ENABLED})`
-      : `:is(:${name}, [${FORCE_ATTRIBUTE}~="${name}"]${ENABLED})`,
+      ? `:is(:focus-within, :has([${FORCE_ATTRIBUTE}~="focus-visible"]), [${FORCE_ATTRIBUTE}~="focus-visible"])`
+      : `:is(:${name}, [${FORCE_ATTRIBUTE}~="${name}"])`,
   ).first.first;
 
 const forceSelector = selectorParser((selectors) => {
@@ -63,8 +61,8 @@ const forceRoot = (root: Root) => {
 
 /**
  * Rewrites every `:hover`, `:focus-visible` and `:active` in the selectors of a stylesheet to
- * `:is(<pseudo>, [data-et-force~="<name>"]:not(:disabled, [disabled], [aria-disabled="true"]))`, so a
- * frame can force the interaction with the attribute; a disabled element ignores the forcing, like a real browser. `:focus-within` also matches an element that is, or has a descendant that is,
+ * `:is(<pseudo>, [data-et-force~="<name>"])`, so a frame can force the interaction with the
+ * attribute. `:focus-within` also matches an element that is, or has a descendant that is,
  * forced to `focus-visible`. Safe to run again on its own output; CSS it cannot parse comes back unchanged.
  */
 export const forceInteractions = (css: string) => {
