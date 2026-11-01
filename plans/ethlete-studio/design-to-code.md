@@ -605,6 +605,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     from the part a decision names), tool gaps (verify path lists, corner antialias, harness placement) and app
     seams (i18n). Lesson: each group needs a check that runs before the design freeze, so the freeze means no more
     design questions.
+26. The auto-mode permission classifier denies the builder's `design go ... --by tom` (pages/start, link-only
+    re-record per Impl Q28), although Tom approved the rule (Impl Q15, Q45): an approval in the grill session does not
+    reach the builder session. Lesson: a `--by tom` rule needs a channel the builder's permission check accepts.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
