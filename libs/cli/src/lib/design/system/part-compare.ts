@@ -148,7 +148,8 @@ export const drawnSurfacesOf = (markup: string) =>
 
 /**
  * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same
- * `interaction` prop whose props differ from it in the fewest keys; a string where no single such state exists.
+ * `interaction` prop whose props differ from it in the fewest keys, the first declared of equally close states with
+ * the same props; a string where equally close states differ in their props or no such state exists.
  * A state whose `drawn` surface ids already include the opened surface is never a state to click it open from;
  * any other state that draws it is clicked open from the same state, with its own props but the opening ones of that state.
  */
@@ -174,15 +175,19 @@ export const pointerOpensOf = (options: {
             !drawn[name]?.includes(`${control}.${surface}`) &&
             JSON.stringify((isRecord(other) ? other : {})['interaction']) === JSON.stringify(props['interaction']),
         )
-        .map(([name, other]) => ({ name, distance: differingKeysOf(props, isRecord(other) ? other : {}) }))
+        .map(([name, other]) => ({
+          name,
+          props: JSON.stringify(other),
+          distance: differingKeysOf(props, isRecord(other) ? other : {}),
+        }))
         .sort((a, b) => a.distance - b.distance);
-      const [nearest, next] = ranked;
+      const [nearest] = ranked;
+      const tied = ranked.filter(({ distance }) => distance === nearest?.distance);
 
       opens[state] = !nearest
         ? `${state} opens a surface of control ${control}, but the part has no other state to click it open from`
-        : next && next.distance === nearest.distance
-          ? `${state} opens a surface of control ${control}, but states ${ranked
-              .filter(({ distance }) => distance === nearest.distance)
+        : tied.some(({ props: other }) => other !== nearest.props)
+          ? `${state} opens a surface of control ${control}, but states ${tied
               .map(({ name }) => name)
               .join(', ')} are equally close to click it open from`
           : { control, from: nearest.name };

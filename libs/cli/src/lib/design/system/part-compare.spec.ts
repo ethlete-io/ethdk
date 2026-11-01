@@ -218,12 +218,21 @@ describe('part compare', () => {
   it('names the states a surface state is equally close to', () => {
     expect(
       pointerOpensOf({
-        states: { picker: { picker: 'open' }, a: {}, b: {} },
+        states: { picker: { picker: 'open' }, a: { tone: 'dark' }, b: { size: 'small' } },
         controls: { project: { surfaces: { open: 'picker' } } },
       }),
     ).toEqual({
       picker: 'picker opens a surface of control project, but states a, b are equally close to click it open from',
     });
+  });
+
+  it('clicks a surface open from the first of equally close states that share the same props', () => {
+    expect(
+      pointerOpensOf({
+        states: { picker: { picker: 'open', side: '' }, open: { side: '' }, section: { side: '' } },
+        controls: { project: { surfaces: { open: 'picker' } } },
+      }),
+    ).toEqual({ picker: { control: 'project', from: 'open' } });
   });
 
   it('builds the harness url with the props as encoded JSON', () => {
