@@ -26,7 +26,7 @@ ausgeklammert.
 | pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün                                         | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                                                 | Builder           |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
-| pages/start                     | ❌     | Shot geprüft; Frage zum leeren Kasten an Tom, dann „Änderung abnehmen“ und „Go geben“                                   | Tom               |
+| pages/start                     | ❌     | Leerer Kasten fliegt raus (Q134); dann „Änderung abnehmen“ und „Go geben“                                               | Builder, dann Tom |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
 | components/error-toast          | ✅     |                                                                                                                         |                   |
 

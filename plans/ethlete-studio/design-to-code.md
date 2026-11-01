@@ -1469,6 +1469,9 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   SDK button loading state (spinner, no second click). The pages/merge design gets a `merging` state.
 - Impl Q133 resizable sidebar (Tom, 2026-11-01): the user can drag the sidebar width (handle on its edge, min and
   max width, a dragging state). After MVP: on the backlog, not built now.
+- Impl Q134 start empty state (Tom, 2026-11-01): the empty bordered box (`ghostFolder`) above "Kein Repo geöffnet" on
+  pages/start goes away in design and app; title, text and the "Repo öffnen" button stay. Then Tom accepts the
+  direct edit and gives the go on pages/start.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
