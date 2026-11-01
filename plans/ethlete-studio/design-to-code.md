@@ -929,7 +929,13 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     decides what he sees and does in Studio; the builder decides tool internals itself (builder default, recorded as a
     finding) and Tom only gets them in the feedback round. Every command handed to Tom must be run once by an agent
     up to its Tom-only step first.
-81. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
+81. Tom (2026-11-01, late): "wir sind schon wieder den ganzen tag dabei irgendwas zu fixen ich habe absolut keinen
+    überblick mehr und du fragst nach irgendwelchen go systemen wo ich schon längst ausgestiegen bin. ich will das
+    meine vision von studio funktioniert; was interessieren mich internals und command line args." Lesson: the go,
+    batch and CLI machinery leaked into Tom's work; Tom does not run CLI commands and does not follow the go system.
+    Direction: Tom approves only by a click in Studio (the Impl Q119 Studio path); no batch files or commands for
+    Tom. Tom's status is about Studio as he sees it: what works, what does not, what is next.
+82. Impl Q118 assumed a go gate on ready and accept; neither has one (builder, 2026-11-01). `markPartReady`
     (part-ready.ts:89) checks by, hash, open points and action failures, but not the go; `design accept` checks
     author, `--note` and the Tom TTY confirm. So a part changed since its go can be marked ready today. Lesson: a
     decision that names an existing gate must be checked against the code before it is recorded. Tool change: open
