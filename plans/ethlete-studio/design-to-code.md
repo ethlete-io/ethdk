@@ -317,3 +317,7 @@ only; the builder starts when Tom gives the start.
   the built shell (5 of 7 states 0 px). Finish the inbox with the copy, then build `elements/shell-main` at once. In
   that slice the inbox uses the shell-main component and the copy is deleted; compare shows if the swap breaks
   anything. Tom checks the inbox in the real Studio on :4402 after the swap.
+- Impl Q5 real route (Tom, 2026-11-01): the pilot gets a slice 3 after the shell swap. The real Studio inbox view
+  renders `InboxComponent` with live comment-store data in place of the old comment panel, and the real shell
+  renders `ShellMainComponent`. Route `/` no longer shows the old `StudioViewComponent` parts that these replace.
+  Tom checks the inbox on :4402 after slice 3, not after slice 2.
