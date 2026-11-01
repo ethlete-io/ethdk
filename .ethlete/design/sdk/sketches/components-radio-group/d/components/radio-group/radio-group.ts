@@ -5,10 +5,11 @@ import {
   type RadioMockForce,
   radioGroupStyles,
 } from '@ethlete/components/design/radio-group';
+import { control } from '@ethlete/components/design/control';
 import { definePart, drawing } from '@design-system';
 import frame from './radio-group.css?inline';
 
-type Props = { group: RadioGroupMockOptions };
+type Props = { group: RadioGroupMockOptions } & Partial<RadioGroupMockOptions>;
 
 const LABEL = 'Remind me one hour before';
 
@@ -45,6 +46,9 @@ const gridStates = Object.fromEntries(
     COLUMNS.map((column) => [stateOf(row, column), { group: cellOf(row, column) }]),
   ),
 ) as Record<string, Props>;
+
+const marked = (markup: string) =>
+  markup.replace(/<et-radio(?=[\s>])/gu, (tag) => control(`${tag}>`, 'radio').slice(0, -1));
 
 const REMINDERS = ['One hour before', 'Fifteen minutes before', 'At kick-off'];
 
@@ -132,10 +136,32 @@ export default definePart({
       ]),
     ),
   },
+  omits: [
+    { option: 'size', value: 'sm', reason: 'Not drawn in this round: sizes are a later round.' },
+    { option: 'size', value: 'md', reason: 'The default size, which every state draws without setting it.' },
+    { option: 'size', value: 'lg', reason: 'Not drawn in this round: sizes are a later round.' },
+    {
+      option: 'orientation',
+      value: 'vertical',
+      reason: 'The default orientation, drawn by the group-* states, outside the grid.',
+    },
+    { option: 'orientation', value: 'horizontal', reason: 'Drawn as the group-horizontal state, outside the grid.' },
+    { option: 'variant', value: 'plain', reason: 'The default variant, which the grid draws without setting it.' },
+    { option: 'variant', value: 'card', reason: 'Drawn as the card-* states, outside the grid.' },
+    {
+      option: 'controlPosition',
+      value: 'start',
+      reason: 'Not drawn in this round: the card with the control at start is a later round.',
+    },
+    { option: 'controlPosition', value: 'end', reason: 'Drawn as the card-* states, outside the grid.' },
+  ],
+  controls: {
+    radio: { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
+  },
   widths: [360, 640],
   render: (props: Props) =>
     drawing({
-      body: `<div class="t-frame">${radioGroup(props.group)}</div>`,
+      body: `<div class="t-frame">${marked(radioGroup(props.group))}</div>`,
       styles: [radioGroupStyles, frame].join('\n'),
     }),
 });
