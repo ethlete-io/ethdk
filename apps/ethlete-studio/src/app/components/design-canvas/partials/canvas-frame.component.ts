@@ -94,7 +94,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span
           [style.left.px]="copy.x"
           [style.top.px]="copy.y"
-          class="absolute -translate-y-full whitespace-nowrap pb-[0.4em] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] uppercase tracking-[0.04em] text-text-muted"
+          class="absolute -translate-y-full whitespace-nowrap pb-[0.4em] text-[calc(1.2rem*var(--et-design-canvas-label-scale))] uppercase tracking-[0.04em] text-text-muted"
           data-scheme-label
           >{{ labelOf(copy.scheme) }}</span
         >
@@ -107,7 +107,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         [style.max-width.px]="captionMaxWidth()"
         (click)="captionClick.emit($event)"
         (keydown.enter)="captionClick.emit($event)"
-        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
+        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))] cursor-crosshair"
         role="button"
         tabindex="0"
         data-comment-caption
@@ -118,13 +118,13 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
       <span
         [class]="labelPlacement()"
         [style.max-width.px]="captionMaxWidth()"
-        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
+        class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))]"
         ><ng-container [ngTemplateOutlet]="caption"
       /></span>
     }
     @if (frame().empty; as empty) {
       <div
-        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[length:calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
+        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-(--et-surface-border-solid) p-4 text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale),2))] leading-tight text-text-muted"
         data-empty-cell
       >
         {{ empty }}
@@ -132,7 +132,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     } @else if (frame().error) {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-[1.6rem] font-[family-name:var(--font-mono)] text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
+        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-4 font-mono text-[1.3rem] whitespace-pre-wrap text-(--et-theme-color-primary-solid)"
         role="alert"
       >
         {{ frame().error }}
@@ -190,7 +190,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             } @else if (frame().screenshot; as screenshot) {
               <img
                 [src]="live() ? screenshot : (admittedShot() ?? screenshot)"
-                class="absolute inset-0 size-full border-0 object-none object-left-top"
+                class="absolute inset-0 size-full border-0 object-none object-top-left"
                 alt=""
               />
             }
@@ -219,7 +219,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
             <img
               #copyShot="ethleteShot"
               [src]="copy.shot"
-              class="absolute inset-0 size-full border-0 object-none object-left-top"
+              class="absolute inset-0 size-full border-0 object-none object-top-left"
               ethleteShot
               alt=""
             />
@@ -233,7 +233,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
               [title]="frame().label + ' ' + labelOf(copy.scheme)"
               [class.pointer-events-none]="!active()"
               [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
-              class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
+              class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
             ></iframe>
           }
         </div>
@@ -248,7 +248,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
           [class.opacity-0]="painted()"
           (load)="readScreenshotSize($event)"
           (error)="failScreenshot($event)"
-          class="absolute inset-0 size-full border-0 object-none object-left-top"
+          class="absolute inset-0 size-full border-0 object-none object-top-left"
           alt=""
           ethleteShot
         />
@@ -269,7 +269,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
               [class.opacity-0]="source.src !== shown()"
               [style.min-height.px]="frame().height === undefined ? FOLLOWED_VIEWPORT_HEIGHT : null"
               (load)="loadContent(iframe)"
-              class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
+              class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
             ></iframe>
           }
         </div>
@@ -277,11 +277,11 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     </ng-template>
     @if (frame().pending; as pending) {
       <div
-        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-(--et-surface-background-solid)/70 p-[calc(2.4rem_*_var(--et-design-canvas-label-scale))]"
+        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-(--et-surface-background-solid)/70 p-[calc(2.4rem*var(--et-design-canvas-label-scale))]"
         data-frame-pending
       >
         <span
-          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
+          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[calc(1.4rem*var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
         >
           <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
           {{ pending }}
@@ -298,7 +298,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         [style.width.px]="box ? width() : null"
         [style.height.px]="box ? height() : null"
         [class.size-full]="!box"
-        class="pointer-events-none absolute outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-(--et-surface-border-solid) outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-(--et-theme-color-primary-solid)"
+        class="pointer-events-none absolute outline-[calc(0.1rem*var(--et-design-canvas-label-scale))] outline-(--et-surface-border-solid) outline-solid group-data-active/frame:outline-dashed group-data-selected/frame:outline-[calc(0.2rem*var(--et-design-canvas-label-scale))] group-data-selected/frame:outline-(--et-theme-color-primary-solid)"
         data-frame-border
       ></div>
     }
@@ -307,7 +307,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent, ShotStateDirective, ShotStateComponent],
   host: {
     class:
-      'group/frame absolute block bg-(--et-surface-background-solid) data-[empty]:bg-transparent data-[schemed]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0 data-[rejected]:opacity-40',
+      'group/frame absolute block bg-(--et-surface-background-solid) data-empty:bg-transparent data-schemed:bg-transparent data-unsized:pointer-events-none data-unsized:opacity-0 data-rejected:opacity-40',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',

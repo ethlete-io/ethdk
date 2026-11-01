@@ -75,7 +75,7 @@ export const LIVE_REVEAL_TIMEOUT_MS = 3000;
         [src]="url()"
         [title]="cell().label"
         [class.opacity-0]="!painted()"
-        class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
+        class="absolute inset-0 size-full border-0 scheme-normal group-data-dragging/canvas:pointer-events-none"
       ></iframe>
     }
   `,
@@ -231,27 +231,27 @@ export class CanvasFrameCellComponent {
         #table
         [class.invisible]="!revealed()"
         [style.grid-template-columns]="templateColumns()"
-        class="absolute left-0 top-0 grid w-max gap-px px-[2.4rem] pb-[2.4rem] pt-[1.6rem] text-[1.1rem]/[1.4rem] text-text-muted"
+        class="absolute left-0 top-0 grid w-max gap-px px-6 pb-6 pt-4 text-[1.1rem]/[1.4rem] text-text-muted"
         data-grid-sheet
       >
         @if (sheet.interactive.length > 0) {
           <span
-            class="col-span-full mb-[0.8rem] border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
+            class="col-span-full mb-2 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em]"
             data-grid-group
             >States by interaction</span
           >
-          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-[0.8rem]' }" />
+          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
           <span></span>
           @for (scheme of schemes(); track $index; let firstScheme = $first) {
             @if (!firstScheme) {
               <span></span>
             }
             @for (column of grid().columns; track column) {
-              <span class="self-end pb-[0.4rem] font-code" data-grid-column>{{ column }}</span>
+              <span class="self-end pb-1 font-code" data-grid-column>{{ column }}</span>
             }
           }
           @for (row of sheet.interactive; track row) {
-            <span class="self-center pr-[0.8rem] font-code" data-grid-row>{{ row }}</span>
+            <span class="self-center pr-2 font-code" data-grid-row>{{ row }}</span>
             @for (scheme of schemes(); track $index; let firstScheme = $first) {
               @if (!firstScheme) {
                 <span></span>
@@ -283,11 +283,11 @@ export class CanvasFrameCellComponent {
         }
         @if (sheet.packed.length > 0) {
           <span
-            class="col-span-full mb-[0.8rem] mt-[2.4rem] border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em] first:mt-0"
+            class="col-span-full mb-2 mt-6 border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em] first:mt-0"
             data-grid-group
             >Rest only</span
           >
-          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-[0.8rem]' }" />
+          <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'mb-2' }" />
           @for (line of sheet.packed; track $index; let firstLine = $first) {
             <span></span>
             @for (scheme of schemes(); track $index; let firstScheme = $first) {
@@ -295,7 +295,7 @@ export class CanvasFrameCellComponent {
                 <span></span>
               }
               @for (row of line; track row) {
-                <span [class.pt-3]="!firstLine" class="self-end pb-[0.4rem] font-code" data-grid-row>{{ row }}</span>
+                <span [class.pt-3]="!firstLine" class="self-end pb-1 font-code" data-grid-row>{{ row }}</span>
               }
               @for (blank of blanksOf(line); track $index) {
                 <span></span>
@@ -336,7 +336,7 @@ export class CanvasFrameCellComponent {
         #table
         [class.invisible]="!revealed()"
         [style.grid-template-columns]="templateColumns()"
-        class="absolute left-0 top-0 grid w-max items-center gap-x-[3.2rem] gap-y-[2.4rem] p-[2.4rem] text-[1.2rem] text-text-muted"
+        class="absolute left-0 top-0 grid w-max items-center gap-x-8 gap-y-6 p-6 text-[1.2rem] text-text-muted"
       >
         <ng-container *ngTemplateOutlet="schemeHeads; context: { $implicit: 'self-end' }" />
         <span></span>
@@ -349,7 +349,7 @@ export class CanvasFrameCellComponent {
           }
         }
         @for (row of grid().rows; track row) {
-          <span class="pr-[0.8rem]" data-grid-row>{{ row }}</span>
+          <span class="pr-2" data-grid-row>{{ row }}</span>
           @for (scheme of schemes(); track $index; let firstScheme = $first) {
             @if (!firstScheme) {
               <span></span>
@@ -385,7 +385,7 @@ export class CanvasFrameCellComponent {
           <span
             [class]="placement"
             [style.grid-column]="'span ' + grid().columns.length"
-            class="border-b border-(--et-surface-border-solid) pb-[0.4rem] text-[1rem] uppercase tracking-[0.04em]"
+            class="border-b border-(--et-surface-border-solid) pb-1 text-[1rem] uppercase tracking-[0.04em]"
             data-grid-scheme
             >{{ schemeLabelOf(scheme) }}</span
           >
@@ -394,7 +394,7 @@ export class CanvasFrameCellComponent {
     </ng-template>
     @if (!revealed()) {
       <span
-        class="absolute left-[2.4rem] top-[2.4rem] size-[1.2rem] animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
+        class="absolute left-6 top-6 size-3 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
         title="Rendering"
         data-grid-loading
       ></span>

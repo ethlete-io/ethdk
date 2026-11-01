@@ -45,7 +45,7 @@ export class ShotStateDirective {
     @if (state() === 'failed') {
       <div
         [etProvideColor]="errorTheme()"
-        class="absolute inset-0 flex items-center justify-center bg-(--et-surface-background-solid) p-[0.8em] text-center text-[length:calc(1.3rem*min(var(--et-design-canvas-label-scale,1),2))] text-(--et-theme-color-primary-solid)"
+        class="absolute inset-0 flex items-center justify-center bg-(--et-surface-background-solid) p-[0.8em] text-center text-[calc(1.3rem*min(var(--et-design-canvas-label-scale,1),2))] text-(--et-theme-color-primary-solid)"
         role="alert"
         data-shot-failed
       >
@@ -53,7 +53,7 @@ export class ShotStateDirective {
       </div>
     } @else if (state() === 'slow') {
       <span
-        class="absolute top-[0.8em] right-[0.8em] flex items-center gap-[0.4em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.6em] py-[0.2em] text-[length:calc(1.1rem*min(var(--et-design-canvas-label-scale,1),2))] text-text-muted"
+        class="absolute top-[0.8em] right-[0.8em] flex items-center gap-[0.4em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.6em] py-[0.2em] text-[calc(1.1rem*min(var(--et-design-canvas-label-scale,1),2))] text-text-muted"
         data-shot-slow
       >
         <i class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></i>

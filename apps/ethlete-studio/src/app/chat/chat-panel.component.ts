@@ -149,7 +149,7 @@ import { chipOf, injectViewContext } from './view-context';
                 </li>
               }
               @case ('action') {
-                <li class="font-mono text-mono break-words text-text-muted" data-chat-entry="action">
+                <li class="font-mono text-mono wrap-break-word text-text-muted" data-chat-entry="action">
                   {{ entry.action }} {{ entry.detail }}
                 </li>
               }

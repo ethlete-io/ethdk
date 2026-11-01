@@ -566,7 +566,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         <et-select
           [value]="shownRoundKey()"
           (valueChange)="pickRound($event)"
-          class="min-w-0 max-w-120"
+          class="min-w-0 max-w-3xl"
           size="sm"
           aria-label="Round"
         >
