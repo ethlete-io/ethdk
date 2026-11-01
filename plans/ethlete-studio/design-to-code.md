@@ -588,3 +588,7 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   names the decision. A new design Tom accepts himself. The Impl Q44 accept stays.
 - Impl Q46 shared label map in verify (Tom, 2026-11-01): `task --verify` allows `apps/ethlete-studio/src/app/i18n/**`
   in a part commit, because the central label map is shared by all parts. Finding 17.
+- Impl Q47 canvas-frames size (Tom, 2026-11-01): the size comes from a `class` prop, as Impl Q31; go `--by tom`.
+  Second case of finding 4: lesson candidate, a check flags a part that takes its size from slot content.
+- Impl Q48 canvas-frames sample grid (Tom, 2026-11-01): keep the sample button grid in `slot('frames')` (picture
+  byte-identical, same rule as Impl Q31/Q40).
