@@ -999,6 +999,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 87. A refused merge in Studio shows only "merge failed", no reason (builder, from code, 2026-11-01). Why missed: no
     spec ties a write route's refusals to a Studio message. Fix: a merge reason code (one file) when a flow-4 test hits
     it.
+88. The MVP count fell from 18 ready parts to 1 in one commit (5d3b36732, 2026-11-01 18:07): a new gate (`design
+actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "1 of 17" after billions of tokens
+    (Tom, 2026-11-01). Earlier the same day, the marks were re-recorded about ten times, because a mark hashes shared
+    SDK files and any change there drops it. Why missed: a gate change is not a part change, but the tool treats it
+    as one and leaves the re-check to an agent. Fix: when a gate gets stricter, the tool re-checks every marked part
+    at once and keeps the mark of each part that passes; a mark drops only for a part that fails, with the reason.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
