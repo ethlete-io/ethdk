@@ -18,8 +18,6 @@ const HOVER_PRESS = 'bg-transparent hover:bg-et-surface-interaction/9 active:bg-
 const HOVER_PRESS_RAISED =
   'hover:bg-linear-to-b hover:from-et-surface-interaction/9 hover:to-et-surface-interaction/9 active:bg-linear-to-b active:from-et-surface-interaction/15 active:to-et-surface-interaction/15';
 
-const ALL_PRODUCTS_CLASS = `mt-0.5 size-9 rounded-control-md text-et-surface-muted shadow-[inset_0_0_0_1px_var(--et-surface-border-solid)] ${HOVER_PRESS}`;
-
 @Component({
   selector: 'ethlete-shell-main',
   templateUrl: './shell-main.component.html',
@@ -41,7 +39,6 @@ export class ShellMainComponent {
 
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();
-  public allProducts = output();
   public collapse = output();
   public projectChange = output<string>();
   public openProject = output();
@@ -49,7 +46,6 @@ export class ShellMainComponent {
 
   protected readonly SECTIONS = SECTIONS;
   protected readonly LABELS = STUDIO_LABELS.designServer;
-  protected readonly ALL_PRODUCTS_CLASS = ALL_PRODUCTS_CLASS;
 
   protected sectionClass(active: boolean) {
     if (active && this.panel() !== 'hidden')

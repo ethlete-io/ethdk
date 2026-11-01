@@ -173,13 +173,11 @@ describe('the rail logo on every live page', () => {
 
     navButton(root, other ? 'Inbox' : 'Flows')?.click();
     navButton(root, 'timetrack')?.click();
-    navButton(root, 'All products')?.click();
     root.querySelector<HTMLButtonElement>('ethlete-shell-main aside header button')?.click();
 
     expect(actions).toEqual([
       { kind: 'section', section: other ? 'Inbox' : 'Flows' },
       { kind: 'product', name: 'timetrack' },
-      { kind: 'allProducts' },
       { kind: 'collapse' },
     ]);
   });

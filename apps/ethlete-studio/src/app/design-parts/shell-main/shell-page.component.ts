@@ -16,7 +16,6 @@ export type ShellAction =
   | { kind: 'collapse' }
   | { kind: 'section'; section: ShellSection }
   | { kind: 'product'; name: string }
-  | { kind: 'allProducts' }
   | { kind: 'project'; name: string }
   | { kind: 'openProject' }
   | { kind: 'server'; action: DesignServerAction };
@@ -44,7 +43,6 @@ export const SHELL_SAMPLE: ShellState = {
       (collapse)="action.emit({ kind: 'collapse' })"
       (sectionChange)="action.emit({ kind: 'section', section: $event })"
       (productChange)="action.emit({ kind: 'product', name: $event })"
-      (allProducts)="action.emit({ kind: 'allProducts' })"
       (projectChange)="action.emit({ kind: 'project', name: $event })"
       (openProject)="action.emit({ kind: 'openProject' })"
       (restartServer)="action.emit({ kind: 'server', action: 'restart' })"
