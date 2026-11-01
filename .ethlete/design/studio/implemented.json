@@ -1,18 +1,18 @@
 {
   "components/canvas-viewport": {
     "hash": "36e9588a6f860c36",
-    "at": "2026-11-01T12:56:17.386Z",
+    "at": "2026-11-01T22:45:47.144Z",
     "states": {
       "canvas": "817390d43b97154e",
       "canvas-focus-visible": "b86902211c3f293e"
     },
     "app": {
-      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "13ea5cabf4512c83",
+      "apps/ethlete-studio/src/app/design-parts/canvas-viewport/canvas-viewport.component.ts": "cc8c83cce6d327b1",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.ts": "9b2779fdd412f304",
       "libs/components/src/lib/focus-ring/focus-ring.directive.ts": "4d024884f07f2ba0",
-      "libs/core/src/lib/providers/renderer.ts": "8f73570c23c2ddaa",
-      "libs/core/src/lib/providers/style-manager.ts": "078bde863cc0af53",
+      "libs/core/src/lib/providers/renderer.ts": "64c840bab8f7d263",
+      "libs/core/src/lib/providers/style-manager.ts": "de64a5368aec14d4",
       "libs/core/src/lib/utils/angular/component-id.ts": "f8d11de09b1c89d1",
       "libs/core/src/lib/utils/angular/di.ts": "6b1df0313619e870",
       "libs/core/src/lib/utils/object.ts": "094625e147452a91"
