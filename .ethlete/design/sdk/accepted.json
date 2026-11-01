@@ -787,5 +787,19 @@
     "hash": "7ac4a67d54c0a797",
     "at": "2026-10-31T23:01:11.806Z",
     "auto": true
+  },
+  {
+    "part": "components/checkbox",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by decisions-overnight.md Q102/Q113, Tom 2026-11-01 in chat",
+    "hash": "c1eb1c126ffeb175",
+    "at": "2026-11-01T00:18:53.450Z"
+  },
+  {
+    "part": "components/radio-group",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by decisions-overnight.md Q102/Q113, Tom 2026-11-01 in chat",
+    "hash": "a3c052aa816f53a9",
+    "at": "2026-11-01T00:18:54.885Z"
   }
 ]
