@@ -1,5 +1,6 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import { FocusRingDirective } from '@ethlete/components';
+import { trackPointerFocus } from '../../components/design-canvas/pointer-focus';
 
 @Component({
   selector: 'ethlete-canvas-viewport',
@@ -13,4 +14,10 @@ import { FocusRingDirective } from '@ethlete/components';
     'aria-label': 'Design Canvas',
   },
 })
-export class CanvasViewportComponent {}
+export class CanvasViewportComponent {
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+    trackPointerFocus(host.nativeElement);
+  }
+}

@@ -27,4 +27,30 @@ describe('CanvasViewportComponent', () => {
 
     expect(document.activeElement).toBe(viewport);
   });
+
+  it('hides the focus ring after a pointer click and shows it again on the next key press or blur', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+    const fixture = TestBed.createComponent(HostComponent);
+
+    await fixture.whenStable();
+
+    const viewport = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('ethlete-canvas-viewport')!;
+
+    viewport.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
+    await fixture.whenStable();
+
+    expect('pointerFocus' in viewport.dataset).toBe(true);
+
+    viewport.dispatchEvent(new KeyboardEvent('keydown', { code: 'ShiftLeft', bubbles: true }));
+    await fixture.whenStable();
+
+    expect('pointerFocus' in viewport.dataset).toBe(false);
+
+    viewport.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
+    viewport.dispatchEvent(new FocusEvent('blur'));
+    await fixture.whenStable();
+
+    expect('pointerFocus' in viewport.dataset).toBe(false);
+  });
 });
