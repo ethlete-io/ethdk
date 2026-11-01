@@ -365,7 +365,8 @@ reaches: relative imports, `templateUrl` and `styleUrl` files, and for an `@ethl
 ready mark or go no longer holds, or whose app files changed, and names the changed files; such a part no longer
 counts as done. A mark stored before the file lists holds while the old folder-only hash does: the first
 `et design check` moves it to the design hash and prints `REHASHED <product>: <part> (go, ready, implemented)`, and one
-whose folder changed since stays stale, listed with `files unknown: recorded before file lists`.
+whose folder changed since, or that reaches a file outside its folder (an imported part, a mock) committed or edited
+after the record's `at`, stays stale and is not moved, listed with `files unknown: recorded before file lists`.
 
 An edit that changes no pixel keeps its review and its go. `et design go` and `et design accept` draw every state of
 the part as `design compare` draws the design side and store the hash of each picture in
@@ -389,6 +390,9 @@ when the part changed but no state's props did, the task lists all states. `--ve
 commit (default `HEAD`) or a range `a..b` against the allowed files and exits 1 with any file outside them. When the
 files pass, it runs compare over all states, on `--url` or a server it starts as compare does, and only when every
 state is ok it records the part hash, the time and a props hash per state in `implemented.json`.
+
+`et design compare pages/system --product app-a --live --sketch a --url <dev server>` compares the live states of a page
+against the design states of variant `a` of its open sketch instead of the merged design.
 
 `et design compare components/chip --product app-a --url http://localhost:4200` compares each state of a part, or the
 one `--state` names, with the app. It refuses a part as `task` does. For each state it draws the design frame and
@@ -535,6 +539,9 @@ own part stylesheets, also where the product stylesheet `@import`s the merged fi
 
 A problem the product already had does not fail a variant: `sketch check` and `sketch ready` print one count line per
 variant, `NOTE elements/hero a: 2 problems were there before (design check lists them)`.
+
+When the product has a live spec, `sketch check` and `sketch ready` also report a `LIVE` problem for each `"design"`
+state name the spec maps for a part of the sketch that neither the variant nor the merged design has.
 
 `et design sketch check` and `sketch ready` also verify that the merger can write the target's
 note and authors. A variant that delegates to a shared factory keeps a `definePart` object with
