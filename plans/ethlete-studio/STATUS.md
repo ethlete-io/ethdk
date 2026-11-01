@@ -28,9 +28,9 @@ ausgeklammert.
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                                     | Builder           |
 | pages/start                     | ❌     | Prüfung grün, Vergleich 0 px; Live-Shot fehlt, dann „Go geben“                                                          | Builder, dann Tom |
 | pages/merge                     | ❌     | Echter Ausschnitt statt Demo-Knopf (Befund 104), „Neu in a“ (Q131), Ladezustand (Q132) werden gebaut; danach „Go geben“ | Builder, dann Tom |
-| components/error-toast          | ❌     | Go gegeben (22:47); Builder macht „ready“                                                                               | Builder           |
+| components/error-toast          | ✅     |                                                                                                                         |                   |
 
-Stand: 7 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 8 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
