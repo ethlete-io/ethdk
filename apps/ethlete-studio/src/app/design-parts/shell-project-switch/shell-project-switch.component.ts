@@ -1,4 +1,4 @@
-import { Component, input, model, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 
@@ -7,9 +7,10 @@ import { AutoSurfaceDirective } from '@ethlete/core';
   templateUrl: './shell-project-switch.component.html',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective],
-  host: { class: 'box-border block w-62 p-space-2 font-ui text-ui-md text-et-surface' },
+  host: { '[class]': "bare() ? 'block' : 'box-border block w-62 p-space-2 font-ui text-ui-md text-et-surface'" },
 })
 export class ShellProjectSwitchComponent {
+  public bare = input(false, { transform: booleanAttribute });
   public project = input('ethlete-sdk');
   public projects = input(['ethlete-sdk', 'fut-frontend', 'design-playground']);
   public open = model(false);

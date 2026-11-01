@@ -1,8 +1,9 @@
 import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, MENU_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
+import { ShellProjectSwitchComponent } from '../shell-project-switch/shell-project-switch.component';
 
 export type ShellSection = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 
@@ -22,7 +23,7 @@ const HOVER_PRESS_RAISED =
   selector: 'ethlete-shell-main',
   templateUrl: './shell-main.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, MENU_IMPORTS, AutoSurfaceDirective, ShellCollapseComponent],
+  imports: [BUTTON_IMPORTS, AutoSurfaceDirective, ShellCollapseComponent, ShellProjectSwitchComponent],
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
 })
 export class ShellMainComponent {
@@ -61,10 +62,6 @@ export class ShellMainComponent {
   protected pickSection(section: ShellSection, active: boolean) {
     if (active && this.panel() !== 'hidden') this.collapse.emit();
     else this.sectionChange.emit(section);
-  }
-
-  protected selectProject(value: unknown) {
-    if (typeof value === 'string') this.projectChange.emit(value);
   }
 
   protected setProjectPicker(open: boolean) {
