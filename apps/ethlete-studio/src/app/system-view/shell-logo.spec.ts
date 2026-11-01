@@ -122,6 +122,7 @@ describe('the rail logo on every live page', () => {
     const root = fixture.nativeElement as HTMLElement;
 
     fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('project', 'ethlete-sdk');
     fixture.autoDetectChanges();
     await settle(fixture as ComponentFixture<unknown>);
 

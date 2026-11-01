@@ -6,6 +6,7 @@ import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../ho
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
+import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
 import { FlowViewComponent } from './flow-view.component';
@@ -98,6 +99,7 @@ const mount = async (remembered: object) => {
   const fixture = TestBed.createComponent(SystemViewComponent);
 
   fixture.componentRef.setInput('port', 4402);
+  fixture.componentRef.setInput('project', 'ethlete-sdk');
   fixture.autoDetectChanges();
   await settle(fixture);
 
@@ -359,6 +361,19 @@ describe('SystemViewComponent on a product without parts or without products', (
 
     expect(start?.textContent).toContain('Noch keine Produkte');
     expect(start?.textContent).toContain('Lege in my-repo das Produkt shop an');
+    expect(fixture.nativeElement.querySelector('ethlete-shell-main')).toBeNull();
+  });
+
+  it('draws the start page without a repo when no checkout is open, before any design server runs', async () => {
+    const fixture = TestBed.createComponent(SystemViewComponent);
+
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const start = fixture.nativeElement.querySelector('ethlete-start');
+
+    expect(start).not.toBeNull();
+    expect(start?.textContent).toContain(STUDIO_LABELS.start.noRepo);
     expect(fixture.nativeElement.querySelector('ethlete-shell-main')).toBeNull();
   });
 });

@@ -233,7 +233,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     @if (startPage(); as start) {
       <ethlete-start
         [repo]="start.repo"
-        (copyPrompt)="copyText(START_LABELS.prompt(start.repo))"
+        (copyPrompt)="copyText(START_LABELS.prompt(start.repo ?? ''))"
         (otherRepo)="openProject.emit()"
         (openRepo)="openProject.emit()"
       />
@@ -871,6 +871,8 @@ export class SystemViewComponent {
   });
 
   protected startPage = computed(() => {
+    if (!this.project()) return { repo: undefined };
+
     const read = this.reading();
 
     if (!this.port() || !read || read.error || read.products.length > 0) return null;
