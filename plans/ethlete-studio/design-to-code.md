@@ -1047,6 +1047,12 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
     actions ran only on parts without embedded parts. Fix (any project, builder builds it now): the check resolves an
     embedded part's actions against that part's own component. Rest: missing `data-et-action` in the merge design
     (builder adds it) and an inert preview in the app.
+96. Hovering a variant frame in Sketches draws a teal border (Tom, 2026-11-01, screenshot). Cause (builder): the
+    pages/sketches design has `.sk-shot:hover { box-shadow: 0 0 0 2px primary }` (sketch-data.css), and the app copied
+    it (53bc9aae3). Why missed: compare renders only static states and never hovers, so a hover rule that matches the
+    design gives 0 px; the e2e had no hover case. Fix: drop the hover rule in design and app, e2e case "hover alone
+    draws no frame border" on System and Sketches. Tool fix (any project): `design compare` renders a hover state for
+    each part with hover rules, so Tom sees hover before the go.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
