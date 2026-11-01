@@ -848,6 +848,18 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
   not in the gap itself; the sample frame content must be the same on both sides first. Panel-hidden needs the CLI to
   compose the shell-main hidden state (Impl Q85). Sketches, flows, inbox, inventory, merge, start have no live states
   yet.
+  Slice 3 (27f892400, 1afacf832): the spec's `frame` PNG (`design-live/frame.png`, 640x360) fills the page design's
+  own slots and answers the app's `/__design/shot` and `frame.html`; the sample button is one `default` state at width
+  640, so both sides draw the same frame. A state's `compose` merges props into a part the page design renders
+  (`elements/shell-main` `panel: hidden`); a page or state overrides `host`, `answers` and `invoke`. Results on one
+  app build (2026-11-01): system part 158525, edge 158022, zoom-100 349121, panel-hidden 148130 px (camera x 40);
+  flows empty 0 px; start no-products 46080 px (only the legacy footer bar), no-repo fails (the app shows the shell,
+  not the start page, without a checkout); inbox all-clear 365785; sketches fit 196541; inventory open 501882 px.
+  Bite proof: dropping `-ms-(--st-shell-inset-left)` in a scratch build turns the rail-panel gap (x 64-76) of the
+  system edge state from 0 to 4320 red px, all of it. Open: the live system page has no open-points chip (only the
+  harness `SystemPageComponent` draws it), so canned comments cannot reach it; system has no Fit design state;
+  sketches has no 100 % design state; flows `flow`, merge and the inbox states with comments need canned flows,
+  merge mode and comments.
 - Impl Q79 action check (Tom, 2026-11-01): in the MVP, after Impl Q78, shell parts first. Every interactive element
   in a part or page design declares its action: a target state (`data-et-action="collapsed"`) or an output
   (`data-et-action="emit:pick"`). `design actions <part>` mounts the part, clicks and presses Enter and Space on each one, and
