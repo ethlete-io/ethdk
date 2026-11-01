@@ -205,6 +205,20 @@
       "section-hover": "e602cc4eb53b1f08"
     }
   },
+  "elements/studio-menu": {
+    "hash": "36b27e6e093819a5",
+    "at": "2026-11-01T13:43:20.449Z",
+    "states": {
+      "closed": "5cbc2772c1f9aa12",
+      "closed-active": "f0330652bc0e1d79",
+      "closed-focus-visible": "078c36de460a3ace",
+      "closed-hover": "17c27d1812d9055b",
+      "open": "1707653503031fda",
+      "open-active": "aeef13d59bf609a7",
+      "open-focus-visible": "cc0720d9b509fd57",
+      "open-hover": "0a3667d972683d58"
+    }
+  },
   "pages/inbox": {
     "hash": "70d2d0c3f68b5b46",
     "at": "2026-11-01T12:17:16.789Z",
