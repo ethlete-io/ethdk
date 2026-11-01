@@ -471,6 +471,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           [part]="page.part"
           [shell]="pageShell()"
           (inventoryToggle)="toggleInventory()"
+          (expandedChange)="rememberOpen($event)"
           (shellAction)="runShellAction($event)"
         />
       }
