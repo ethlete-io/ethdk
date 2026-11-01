@@ -20,6 +20,9 @@ export const harnessUrlOf = (options: {
 /**
  * A script that measures the harness host in page pixels as a design frame fits its root: grown down and right to cover each absolutely or fixed positioned descendant as far as the overflow boxes that clip it.
  */
+/** The panes of the overlays an app opens outside the harness host. */
+export const OVERLAY_PANES = '.et-overlay-runtime-pane, .cdk-overlay-pane';
+
 export const HOST_BOX_SCRIPT = `(() => {
   const host = document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)});
   const box = host.getBoundingClientRect();
@@ -55,12 +58,19 @@ export const HOST_BOX_SCRIPT = `(() => {
     .map(({ element, style }) => (style.position === 'fixed' ? element.getBoundingClientRect() : clipped(element)))
     .filter((rect) => rect.width > 0 && rect.height > 0);
   const extentOf = (side, start) => Math.max(0, ...outOfFlow.map((rect) => Math.ceil(rect[side] - start)));
+  const panes = [...document.querySelectorAll(${JSON.stringify(OVERLAY_PANES)})]
+    .map((pane) => pane.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const left = Math.min(box.left, ...panes.map((rect) => rect.left));
+  const top = Math.min(box.top, ...panes.map((rect) => rect.top));
+  const right = Math.max(box.left + Math.max(box.width, extentOf('right', box.left)), ...panes.map((rect) => rect.right));
+  const bottom = Math.max(box.top + Math.max(box.height, extentOf('bottom', box.top)), ...panes.map((rect) => rect.bottom));
 
   return {
-    x: box.left + scrollX,
-    y: box.top + scrollY,
-    width: Math.max(box.width, extentOf('right', box.left)),
-    height: Math.max(box.height, extentOf('bottom', box.top)),
+    x: left + scrollX,
+    y: top + scrollY,
+    width: right - left,
+    height: bottom - top,
   };
 })()`;
 

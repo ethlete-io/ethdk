@@ -18,6 +18,7 @@ import {
   HARNESS_HOST_SELECTOR,
   harnessUrlOf,
   HOST_BOX_SCRIPT,
+  OVERLAY_PANES,
   pointerOpensOf,
 } from './part-compare';
 import { taskPartOf } from './part-task';
@@ -243,7 +244,7 @@ export const harnessShotOf = async (options: {
         throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
-    if (options.size)
+    if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0)
       return await host.screenshot({ type: 'png', omitBackground: true, animations: 'disabled', timeout });
 
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.

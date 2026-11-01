@@ -415,17 +415,19 @@ describe('harnessShotOf', () => {
             ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
             : request.url?.includes('components%2Fpicker')
               ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-              : request.url?.includes('components%2Fportal')
-                ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><p><button>Go</button></p><div class="et-overlay-runtime-root"><button> G o </button></div></body>'
-                : request.url?.includes('components%2Ftwice')
-                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
-                  : request.url?.includes('components%2Fhover')
-                    ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                    : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                      ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                      : request.url?.startsWith('/__design-harness')
-                        ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                        : '<body>no harness</body>',
+              : request.url?.includes('components%2Fpaned')
+                ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-pane{position:absolute;top:5px;left:0;width:7px;height:4px;background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\');document.body.insertAdjacentHTML(\'beforeend\', \'<div class=et-overlay-runtime-root><div class=et-overlay-runtime-pane></div></div>\')">Pick</button></div></body>'
+                : request.url?.includes('components%2Fportal')
+                  ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><p><button>Go</button></p><div class="et-overlay-runtime-root"><button> G o </button></div></body>'
+                  : request.url?.includes('components%2Ftwice')
+                    ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                    : request.url?.includes('components%2Fhover')
+                      ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                      : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                        ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                        : request.url?.startsWith('/__design-harness')
+                          ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                          : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -541,6 +543,22 @@ describe('harnessShotOf', () => {
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
   });
+
+  it.for([{ size: null }, { size: { width: 40, height: 30 } }])(
+    'shoots the overlay pane a click opened outside the host with the host (size $size)',
+    async ({ size }, context) => {
+      if (!browser) return context.skip('no browser');
+
+      const png = await harnessShotOf({
+        browser,
+        url: harnessUrlOf({ url, part: 'components/paned', state: 'a', props: {} }),
+        size,
+        opened: { control: 'pick', markup: '<button data-et-control="pick" aria-expanded="true"> Pick </button>' },
+      });
+
+      expect(decodePng(png)).toEqual(pixelsOf(7, 9, (_x, y) => (y < 5 ? BLUE : RED)));
+    },
+  );
 
   it('names the trigger the harness page lacks', async (context) => {
     if (!browser) return context.skip('no browser');
