@@ -627,6 +627,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     so an entry with several frames loses its frame rows; the comment-pin design has no mark for a question that waits
     for the user, and its "N messages" label does not match the Impl Q32 count. Lesson: a design that replaces a live
     view needs an inventory of what the old view shows, item by item, before the freeze.
+33. shell-project-switch draws `open-focus-visible` (focus ring on the trigger while the menu is open), a state the SDK
+    menu never reaches because it keeps focus inside the menu. studio-menu passed 8 of 8 at 0 px but misses
+    `option-hover`, `option-focus-visible` and `option-active`, so `ready` refuses. Lesson: the state list of a part
+    must come from the headless part's reachable states, checked before the freeze, not drawn by hand.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
