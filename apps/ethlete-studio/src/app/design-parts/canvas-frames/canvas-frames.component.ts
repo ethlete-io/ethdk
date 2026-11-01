@@ -79,7 +79,27 @@ export class CanvasFramesComponent {
 
 const FIT_PADDING = 64;
 
-const fitTransform = ({ canvas, strip, frame }: { canvas: HTMLElement; strip: HTMLElement; frame: HTMLElement }) => {
+const layoutOffsetOf = (element: HTMLElement) => {
+  let x = 0;
+  let y = 0;
+
+  for (let node: Element | null = element; node instanceof HTMLElement; node = node.offsetParent) {
+    x += node.offsetLeft;
+    y += node.offsetTop;
+  }
+
+  return [x, y] as const;
+};
+
+export const fitTransform = ({
+  canvas,
+  strip,
+  frame,
+}: {
+  canvas: HTMLElement;
+  strip: HTMLElement;
+  frame: HTMLElement;
+}) => {
   const covered = parseFloat(getComputedStyle(canvas).paddingLeft) || 0;
   const width = canvas.clientWidth - covered;
   const height = canvas.clientHeight;
@@ -93,8 +113,10 @@ const fitTransform = ({ canvas, strip, frame }: { canvas: HTMLElement; strip: HT
 
   const left = (width - frame.offsetWidth * zoom) / 2;
   const top = Math.min((height - frame.offsetHeight * zoom) / 2, FIT_PADDING);
-  const frameLeft = frame.offsetLeft - strip.offsetLeft;
-  const frameTop = frame.offsetTop - strip.offsetTop;
+  const [frameX, frameY] = layoutOffsetOf(frame);
+  const [stripX, stripY] = layoutOffsetOf(strip);
+  const frameLeft = frameX - stripX;
+  const frameTop = frameY - stripY;
 
   return `translate(${left - frameLeft * zoom}px, ${top - frameTop * zoom}px) scale(${zoom})`;
 };

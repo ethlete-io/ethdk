@@ -63,7 +63,7 @@ export const FRAME_HEAD_CLASS =
         >
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
-            <div>
+            <div [class.w-md]="fit()" [class.h-45]="fit()">
               <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
             </div>
           </figure>

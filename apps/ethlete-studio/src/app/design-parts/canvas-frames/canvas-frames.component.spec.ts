@@ -1,6 +1,6 @@
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CanvasFramesComponent } from './canvas-frames.component';
+import { CanvasFramesComponent, fitTransform } from './canvas-frames.component';
 
 @Component({
   template: `
@@ -56,5 +56,49 @@ describe('CanvasFramesComponent', () => {
     );
 
     expect(fixture.componentInstance.emitted).toEqual(['out', 'reset', 'in', 'fit']);
+  });
+});
+
+const box = (
+  layout: Partial<Record<'offsetLeft' | 'offsetTop' | 'offsetWidth' | 'offsetHeight', number>>,
+  offsetParent: HTMLElement | null,
+) => {
+  const element = document.createElement('div');
+
+  Object.defineProperties(element, {
+    offsetLeft: { value: layout.offsetLeft ?? 0 },
+    offsetTop: { value: layout.offsetTop ?? 0 },
+    offsetWidth: { value: layout.offsetWidth ?? 0 },
+    offsetHeight: { value: layout.offsetHeight ?? 0 },
+    offsetParent: { value: offsetParent },
+  });
+
+  return element;
+};
+
+describe('fitTransform', () => {
+  const canvasOf = () => {
+    const canvas = box({}, null);
+
+    Object.defineProperties(canvas, { clientWidth: { value: 1376 }, clientHeight: { value: 900 } });
+    canvas.style.paddingLeft = '260px';
+
+    return canvas;
+  };
+
+  it('centres the frame in the canvas area right of the panel inset', () => {
+    const canvas = canvasOf();
+    const strip = box({ offsetLeft: 260 }, canvas);
+    const frame = box({ offsetLeft: 300, offsetTop: 48, offsetWidth: 280, offsetHeight: 180 }, canvas);
+
+    expect(fitTransform({ canvas, strip, frame })).toBe('translate(378px, 16px) scale(1)');
+  });
+
+  it('keeps the frame centred once the strip transform makes the strip its offset parent', () => {
+    const canvas = canvasOf();
+    const strip = box({ offsetLeft: 260 }, canvas);
+    const frame = box({ offsetLeft: 40, offsetTop: 48, offsetWidth: 280, offsetHeight: 180 }, strip);
+
+    expect(fitTransform({ canvas, strip, frame })).toBe('translate(378px, 16px) scale(1)');
   });
 });
