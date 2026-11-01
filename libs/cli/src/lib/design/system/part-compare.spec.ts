@@ -119,15 +119,18 @@ const BLUE = 0x0000ffff;
 describe('part compare', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('reads the forced elements of a design picture with their aria-label', () => {
+  it('reads the forced elements of a design picture with their aria-label, role and text', () => {
     expect(
       forcedElementsOf(
-        '<div><button class="a" aria-label="Tom &amp; Co" data-et-force="hover active">x</button><span data-et-force="focus-visible"></span></div>',
+        '<div><button class="a" aria-label="Tom &amp; Co" data-et-force="hover active">x</button><span data-et-force="focus-visible"></span>' +
+          '<div role="treeitem" data-et-force="hover"><span>Com</span><div>ponents\n <!-- c --><i>3</i></div></div><input data-et-force="hover"></div>',
       ),
     ).toEqual([
-      { interaction: 'hover', label: 'Tom & Co' },
-      { interaction: 'active', label: 'Tom & Co' },
-      { interaction: 'focus-visible', label: null },
+      { interaction: 'hover', label: 'Tom & Co', role: 'button', text: 'x' },
+      { interaction: 'active', label: 'Tom & Co', role: 'button', text: 'x' },
+      { interaction: 'focus-visible', label: null, role: 'span', text: '' },
+      { interaction: 'hover', label: null, role: 'treeitem', text: 'Components 3' },
+      { interaction: 'hover', label: null, role: 'input', text: '' },
     ]);
   });
 
@@ -152,6 +155,21 @@ describe('part compare', () => {
       picker: { control: 'project', from: 'open' },
       'unchanged-open': { control: 'toggle', from: 'unchanged' },
     });
+  });
+
+  it('opens a surface state from the nearest state of the same interaction', () => {
+    expect(
+      pointerOpensOf({
+        states: {
+          rest: { open: false },
+          'rest-hover': { open: false, interaction: 'hover' },
+          open: { open: true },
+          'open-hover': { open: true, interaction: 'hover' },
+          'open-active': { open: true, interaction: 'active' },
+        },
+        controls: { toggle: { surfaces: { body: 'open' } } },
+      }),
+    ).toEqual({ open: { control: 'toggle', from: 'rest' } });
   });
 
   it('names the states a surface state is equally close to', () => {
@@ -369,13 +387,17 @@ describe('harnessShotOf', () => {
             ? '<body style="margin:0"><div data-design-harness-host style="position:relative;width:7px;height:5px;background:#0000ff"><span style="position:absolute;left:5px;top:-2px;width:4px;height:3px;background:#ff0000"></span></div></body>'
             : request.url?.includes('components%2Fpicker')
               ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent;background:#0000ff}button[aria-expanded=true]{background:#ff0000}button:hover{background:#00ff00}button:focus-visible{background:#00ffff}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-expanded="false" onclick="this.setAttribute(\'aria-expanded\', \'true\')">Pick</button></div></body>'
-              : request.url?.includes('components%2Fhover')
-                ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
-                : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
-                  ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
-                  : request.url?.startsWith('/__design-harness')
-                    ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
-                    : '<body>no harness</body>',
+              : request.url?.includes('components%2Fportal')
+                ? '<style>button{all:unset;display:block;width:7px;height:5px;color:transparent}.et-overlay-runtime-root{position:fixed;top:0;left:0}.et-overlay-runtime-root button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div><p><button>Go</button></p><div class="et-overlay-runtime-root"><button> G o </button></div></body>'
+                : request.url?.includes('components%2Ftwice')
+                  ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"><button>Go</button><button>Go</button></div></body>'
+                  : request.url?.includes('components%2Fhover')
+                    ? '<style>button{all:unset;display:block;width:7px;height:5px;background:#0000ff}button:hover{background:#ff0000}</style><body style="margin:0"><div data-design-harness-host style="width:7px;height:5px"><button aria-label="Go"></button></div></body>'
+                    : request.url?.startsWith('/__design-harness') && request.url.includes('layout=page')
+                      ? '<body style="margin:0"><div data-design-harness-host style="width:100vw;height:100vh;background:#0000ff"></div></body>'
+                      : request.url?.startsWith('/__design-harness')
+                        ? '<body style="margin:0"><div data-design-harness-host style="width:7px;height:5px;background:#0000ff"></div></body>'
+                        : '<body>no harness</body>',
       );
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -438,10 +460,46 @@ describe('harnessShotOf', () => {
     const png = await harnessShotOf({
       browser,
       url: harnessUrlOf({ url, part: 'components/hover', state: 'a', props: {} }),
-      forced: [{ interaction: 'hover', label: 'Go' }],
+      forced: [{ interaction: 'hover', label: 'Go', role: 'button', text: '' }],
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('keeps the pointer off a top-left element in a rest shot', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/hover', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
+  });
+
+  it('forces an element named by its role and text in an overlay root, not one elsewhere on the page', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/portal', state: 'a', props: {} }),
+      forced: [{ interaction: 'hover', label: null, role: 'button', text: 'Go' }],
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => RED));
+  });
+
+  it('refuses to force a name more than one element carries', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(
+      harnessShotOf({
+        browser,
+        url: harnessUrlOf({ url, part: 'components/twice', state: 'a', props: {} }),
+        forced: [{ interaction: 'hover', label: null, role: 'button', text: 'Go' }],
+        timeout: 500,
+      }),
+    ).rejects.toThrow('has 2 elements with the button "Go" to force hover on');
   });
 
   it('opens a surface by a pointer click on the trigger, then leaves it unhovered', async (context) => {

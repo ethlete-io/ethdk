@@ -134,11 +134,67 @@ const clickOpen = async (options: {
     });
 };
 
+const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
+
+const FORCED_POLL_MS = 50;
+
+const escapedForRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The one visible app element named as the design's `forced` element: by `aria-label`, else by role or tag and whole
+ * text. It looks in the harness host first and in the overlay roots only when the host has none.
+ */
+const forcedTargetOf = async (options: {
+  page: Page;
+  host: ReturnType<Page['locator']>;
+  forced: ForcedElement;
+  url: string;
+  timeout: number;
+}) => {
+  const { page, host, forced, url, timeout } = options;
+  const { interaction, label, role, text } = forced;
+
+  if (label === null && text === '')
+    throw new HarnessError(
+      `the design forces ${interaction} on a <${role}> without an aria-label or text - compare cannot find it in the app`,
+    );
+
+  const named = label === null ? `the ${role} "${text}"` : `the aria-label "${label}"`;
+  const matchesIn = (scope: ReturnType<Page['locator']>) =>
+    (label === null
+      ? scope
+          .locator(`[role=${JSON.stringify(role)}]${/^[a-z][\w-]*$/i.test(role) ? `, ${role}:not([role])` : ''}`)
+          .filter({
+            hasText: new RegExp(`^\\s*${[...text.replace(/\s+/g, '')].map(escapedForRegExp).join('\\s*')}\\s*$`),
+          })
+      : scope.locator(`[aria-label=${JSON.stringify(label)}]`)
+    ).filter({ visible: true });
+  const deadline = Date.now() + timeout;
+
+  for (;;) {
+    for (const scope of [host, page.locator(OVERLAY_ROOTS)]) {
+      const matches = matchesIn(scope);
+      const count = await matches.count();
+
+      if (count === 1) return matches;
+      if (count > 1)
+        throw new HarnessError(
+          `the harness page ${url} has ${count} elements with ${named} to force ${interaction} on`,
+        );
+    }
+
+    if (Date.now() > deadline)
+      throw new HarnessError(`the harness page ${url} has no element with ${named} to force ${interaction} on`);
+
+    await page.waitForTimeout(FORCED_POLL_MS);
+  }
+};
+
 /**
  * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
- * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels,
- * after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named `opened`, and with each
- * `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
+ * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with the
+ * pointer off the page, after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named
+ * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
  */
 export const harnessShotOf = async (options: {
   browser: Browser;
@@ -167,22 +223,13 @@ export const harnessShotOf = async (options: {
       );
     });
     await page.evaluate('document.fonts.ready');
+    await page.mouse.move(-1, -1);
 
     if (options.opened) await clickOpen({ page, host, url, timeout, ...options.opened });
 
-    for (const { interaction, label } of options.forced ?? []) {
-      if (label === null)
-        throw new HarnessError(
-          `the design forces ${interaction} on an element without an aria-label - compare cannot find it in the app`,
-        );
-
-      const element = host.locator(`[aria-label=${JSON.stringify(label)}]`).first();
-
-      await element.waitFor({ state: 'visible', timeout }).catch(() => {
-        throw new HarnessError(
-          `the harness page ${url} has no element with the aria-label "${label}" to force ${interaction} on`,
-        );
-      });
+    for (const forced of options.forced ?? []) {
+      const { interaction } = forced;
+      const element = await forcedTargetOf({ page, host, forced, url, timeout });
 
       if (interaction === 'hover') await element.hover({ timeout });
       else if (interaction === 'active') {
@@ -191,7 +238,8 @@ export const harnessShotOf = async (options: {
       } else if (interaction === 'focus-visible') {
         await page.keyboard.press('Shift');
         await element.focus({ timeout });
-      } else throw new HarnessError(`compare cannot force ${interaction} on "${label}" in the app`);
+      } else
+        throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
     if (options.size)

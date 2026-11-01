@@ -64,23 +64,57 @@ export const HOST_BOX_SCRIPT = `(() => {
   };
 })()`;
 
-/** An element the design picture forces into `interaction`, found in the app by its `aria-label`. */
-export type ForcedElement = { interaction: string; label: string | null };
+/**
+ * An element the design picture forces into `interaction`, found in the app by its accessible name: its `aria-label`,
+ * or else its `role` (or tag) and text.
+ */
+export type ForcedElement = { interaction: string; label: string | null; role: string; text: string };
 
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' };
 
 const unescaped = (value: string) =>
-  value.replace(/&(amp|lt|gt|quot|#39);/g, (_, name: string) => ENTITIES[name] ?? '');
+  value.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_, name: string) => ENTITIES[name] ?? '');
+
+const VOID_TAGS = new Set(['area', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'wbr']);
+
+const contentOf = ({ markup, tag, from }: { markup: string; tag: string; from: number }) => {
+  if (VOID_TAGS.has(tag) || markup[from - 2] === '/') return '';
+
+  const tags = /<(\/?)([a-zA-Z][\w-]*)[^>]*?(\/?)>/g;
+  let depth = 1;
+
+  tags.lastIndex = from;
+
+  for (let found = tags.exec(markup); found; found = tags.exec(markup)) {
+    const [, closing, name = '', selfClosing] = found;
+
+    if (name.toLowerCase() !== tag || selfClosing) continue;
+
+    depth += closing ? -1 : 1;
+
+    if (depth === 0) return markup.slice(from, found.index);
+  }
+
+  return markup.slice(from);
+};
+
+const textOf = (content: string) =>
+  unescaped(content.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]*>/g, ''))
+    .replace(/\s+/g, ' ')
+    .trim();
 
 /** The elements a design picture's markup forces with `data-et-force`, one entry per interaction. */
 export const forcedElementsOf = (markup: string): ForcedElement[] =>
-  [...markup.matchAll(/<[a-zA-Z][^>]*?\sdata-et-force="([^"]*)"[^>]*>/g)].flatMap(([tag, names = '']) => {
+  [...markup.matchAll(/<([a-zA-Z][\w-]*)[^>]*?\sdata-et-force="([^"]*)"[^>]*>/g)].flatMap((found) => {
+    const [tag, name = '', names = ''] = found;
     const label = /\saria-label="([^"]*)"/.exec(tag)?.[1];
+    const role = /\srole="([^"]*)"/.exec(tag)?.[1] ?? name.toLowerCase();
+    const text = textOf(contentOf({ markup, tag: name.toLowerCase(), from: found.index + tag.length }));
 
     return names
       .split(/\s+/)
       .filter(Boolean)
-      .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label) }));
+      .map((interaction) => ({ interaction, label: label === undefined ? null : unescaped(label), role, text }));
   });
 
 /** A state compare reaches in the app by a pointer click on `control`'s trigger, from the props of state `from`. */
@@ -94,8 +128,8 @@ const differingKeysOf = (a: Record<string, unknown>, b: Record<string, unknown>)
   Object.keys(a).filter((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
 
 /**
- * Each state a part's `controls` names as a surface it opens, with the control and the other state whose props differ
- * from it in the fewest keys; a string where no single such state exists.
+ * Each state a part's `controls` names as a surface it opens, with the control and the other state of the same
+ * `interaction` prop whose props differ from it in the fewest keys; a string where no single such state exists.
  */
 export const pointerOpensOf = (options: { states: Record<string, unknown>; controls: unknown }) => {
   const { states } = options;
@@ -109,7 +143,11 @@ export const pointerOpensOf = (options: { states: Record<string, unknown>; contr
 
       const props = isRecord(states[state]) ? states[state] : {};
       const ranked = Object.entries(states)
-        .filter(([name]) => name !== state)
+        .filter(
+          ([name, other]) =>
+            name !== state &&
+            JSON.stringify((isRecord(other) ? other : {})['interaction']) === JSON.stringify(props['interaction']),
+        )
         .map(([name, other]) => ({ name, distance: differingKeysOf(props, isRecord(other) ? other : {}) }))
         .sort((a, b) => a.distance - b.distance);
       const [nearest, next] = ranked;
