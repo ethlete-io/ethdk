@@ -11,7 +11,7 @@ export const sdkErrorLineOf = (text: string) => {
   return match ? `${match[1]}: ${match[2] ?? ''}`.trim() : null;
 };
 
-export const watchSdkErrors = (page: ErrorPage) => {
+export const watchSdkErrorLines = (page: ErrorPage) => {
   const found = new Set<string>();
   const collect = (text: string) => {
     const line = sdkErrorLineOf(text);
@@ -22,6 +22,24 @@ export const watchSdkErrors = (page: ErrorPage) => {
   page.on('console', (message) => message.type() === 'error' && collect(message.text()));
   page.on('pageerror', (error) => collect(error.message));
 
-  return (where: string) =>
-    found.size === 0 ? null : `${where} logged SDK errors:\n${[...found].map((line) => `  ${line}`).join('\n')}`;
+  return {
+    lines: () => [...found],
+    drain: () => {
+      const lines = [...found];
+
+      found.clear();
+
+      return lines;
+    },
+  };
+};
+
+export const watchSdkErrors = (page: ErrorPage) => {
+  const watcher = watchSdkErrorLines(page);
+
+  return (where: string) => {
+    const lines = watcher.lines();
+
+    return lines.length === 0 ? null : `${where} logged SDK errors:\n${lines.map((line) => `  ${line}`).join('\n')}`;
+  };
 };

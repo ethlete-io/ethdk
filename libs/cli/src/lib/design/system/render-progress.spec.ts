@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { renderIssuesOf } from './render-check';
 
-const checkout = () => {
+const checkout = (bodyOf: (name: string) => string = () => '<p style="margin: 0; color: #000">Text</p>') => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-progress-'));
   const design = join(target, DESIGN_DIR);
 
@@ -23,7 +23,7 @@ const checkout = () => {
 export default definePart({
   note: 'A fixture.',
   states: { default: {}, other: {} },
-  render: () => drawing({ body: html\`<p style="margin: 0; color: #000">Text</p>\`, styles: '' }),
+  render: () => drawing({ body: html\`${bodyOf(name)}\`, styles: '' }),
 });
 `,
     );
@@ -32,8 +32,8 @@ export default definePart({
   return target;
 };
 
-const render = (options: { partTimeoutMs?: number }) => {
-  const target = checkout();
+const render = (options: { partTimeoutMs?: number }, bodyOf?: (name: string) => string) => {
+  const target = checkout(bodyOf);
   const lines: string[] = [];
 
   return renderIssuesOf({
@@ -66,5 +66,23 @@ describe('render check progress', () => {
     expect(timeouts).toEqual(['components/one', 'components/two']);
     expect(rendered.issues[0]?.detail).toContain('did not finish within');
     expect(lines).toHaveLength(2);
+  }, 120_000);
+
+  it('reports an SDK error a part logs on that part and lets other errors pass', async (context) => {
+    const logging = (message: string) => `<img src="x" onerror="console.error(${message})">`;
+    const { rendered } = await render({}, (name) =>
+      name === 'one'
+        ? logging("'ET123: Something broke' + String.fromCharCode(10) + 'second line'")
+        : logging("'plain failure'"),
+    );
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    const logged = rendered.issues.filter((issue) => issue.detail.includes('SDK error'));
+
+    expect(logged.map((issue) => issue.part)).toEqual(['components/one']);
+    expect(logged[0]?.rule).toBe('RENDER');
+    expect(logged[0]?.detail).toContain('ET123: Something broke');
+    expect(logged[0]?.detail).not.toContain('second line');
   }, 120_000);
 });

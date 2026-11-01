@@ -23,6 +23,7 @@ import { createDesignServer } from '../serve';
 import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './list-system';
+import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { unchangedStatesOf } from './sketch/unchanged-states';
@@ -476,12 +477,14 @@ const inspect = async (options: {
 
   try {
     let page = await context.newPage();
+    let sdkErrors = watchSdkErrorLines(page);
     let done = 0;
 
     for (const group of groups.values()) {
       const started = Date.now();
       const found: RenderIssue[] = [];
       const current = page;
+      const sdkErrorsOf = sdkErrors.drain;
       const drawn = (async () => {
         for (const frame of group) {
           await current.emulateMedia({ colorScheme: frame.contrast.scheme });
@@ -516,6 +519,7 @@ const inspect = async (options: {
       if (result === 'timeout') {
         await current.close().catch(() => undefined);
         page = await context.newPage();
+        sdkErrors = watchSdkErrorLines(page);
 
         if (first)
           issues.push({
@@ -528,7 +532,22 @@ const inspect = async (options: {
             detail: `drawing the part did not finish within ${Math.round(timeoutMs / 1000)}s`,
             sketch: first.sketch,
           });
-      } else issues.push(...found);
+      } else {
+        issues.push(...found);
+
+        if (first)
+          for (const line of sdkErrorsOf())
+            issues.push({
+              rule: 'RENDER',
+              product: first.product,
+              part: first.part,
+              state: '-',
+              size: '-',
+              path: '-',
+              detail: `logged SDK error ${line.split('\n')[0]}`,
+              sketch: first.sketch,
+            });
+      }
 
       done++;
 
