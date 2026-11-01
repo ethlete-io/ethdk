@@ -786,7 +786,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     @ethlete/cli did not declare it (fixed in 9c6853e6e). The subagent ran eslint only on the files it touched, and
     `@nx/dependency-checks` lints package.json. Two script specs (move-into-place, skip-reporter) failed under load
     and pass alone (flaky). Lesson: file-scoped lint cannot see a dependency change; a commit that adds a package
-    import must also lint the project's package.json. Fix: subagent brief (builder default).
+    import must also lint the project's package.json. Fix: done in the subagent brief
+    (`npx eslint libs/<lib>/package.json` after `yarn install`).
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
