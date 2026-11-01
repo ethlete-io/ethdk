@@ -736,6 +736,16 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 54. `design check --product studio` timed out after 900 s with no DONE line (builder, 2026-11-01): the design harness
     logs "ResizeObserver loop completed" errors without end. Cause: open, asked the builder. Lesson so far: a check
     that never ends gives no measure at all; it must fail fast with the cause, not hang until a timeout.
+55. The live-page compare over all pages (Impl Q78 slice 3, 27f892400) found five app defects (builder, 2026-11-01):
+    the "N offen" chip and popover exist only in the harness SystemPageComponent, not in the live system view
+    (partial swap, finding 43 class); "Auf 100 % zoomen" keeps the viewport point, but Impl Q74 says 100 % = the
+    opening view; the live canvas draws a row label ("default") left of the frame, the design has none; with no
+    checkout the app shows the shell with "Starte den Design-Server…" instead of the start no-repo page (startPage
+    needs a port); the rail "Sketches" click shows the System canvas with a Sketches tree group and hides the side
+    panel, the design shows the sketch view and keeps the panel. Builder fixes all five as defaults (app follows the
+    design). Lesson: part passes prove nothing about the assembled page; only the live whole-page compare (Impl Q78)
+    shows a missing wire-up, a wrong route or a stray label. Open in the compare: start no-repo FAILED, inventory
+    501882 px not analysed, merge, flows `flow`, inbox with comments not yet compared.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
