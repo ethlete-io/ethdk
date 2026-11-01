@@ -298,3 +298,5 @@ only; the builder starts when Tom gives the start.
   findings (system lessons and parked items in `backlog-parallel/decisions-latest.md`).
 - Q255 done: every Studio part has an `implemented.json` entry, a green compare and is ready.
   `design check --product studio --complete` reports it as one number.
+- Q256 start (Tom, 2026-11-01): the implementation phase starts now with the Q251 pilot, `pages/inbox`, then
+  `elements/shell-main`. Studio serve runs again in tmux.
