@@ -3,9 +3,17 @@ import { TestBed } from '@angular/core/testing';
 import { FlowsPageComponent } from './flows-page.component';
 
 class SilentResizeObserver {
-  public observe() {}
-  public unobserve() {}
-  public disconnect() {}
+  public observe() {
+    return undefined;
+  }
+
+  public unobserve() {
+    return undefined;
+  }
+
+  public disconnect() {
+    return undefined;
+  }
 }
 
 const render = async () => {
