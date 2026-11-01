@@ -6,6 +6,21 @@ export const STUDIO_LABELS = {
   },
   flows: {
     none: 'Noch keine Flows.',
+    emptyTitle: 'Noch keine Flows',
+    emptyExplainer:
+      'Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn an. Bitte ihn zum Beispiel so:',
+    emptyPrompt: 'Zeichne den Flow „Sketch prüfen“: von der Inbox über den Sketch bis zum gemergten Teil.',
+    copyPrompt: 'Prompt kopieren',
+  },
+  inventory: {
+    toggle: 'Inventory',
+    title: 'Inventory',
+    reload: 'Reload',
+    approve: 'Approve inventory',
+    notApproved: 'Not approved yet',
+    approvedBy: 'Approved by designer on 31.10.2026, 14:20:00',
+    drawing: 'Drawing the inventory…',
+    frame: 'flow · desktop · dark',
   },
   start: {
     title: 'Ethlete Studio',
@@ -21,5 +36,17 @@ export const STUDIO_LABELS = {
     copyPrompt: 'Prompt kopieren',
     orTerminal: 'Oder im Terminal:',
     command: 'et design product new shop',
+  },
+  merge: {
+    back: 'Back to sketch',
+    picked: 'Picked',
+    changed: 'Changed',
+    merge: 'Merge',
+    usedIn: (name: string) => `Where ${name} is used`,
+    now: 'Now',
+    after: 'After merging',
+    instances: (count: number) => (count === 1 ? '1 instance' : `${count} instances`),
+    instance: (count: number) => `Instance 1 of ${count} · 200 %`,
+    unchanged: (count: number, part: string) => `${count} states of ${part} without visible change`,
   },
 } as const;
