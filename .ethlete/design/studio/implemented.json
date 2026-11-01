@@ -273,9 +273,10 @@
     }
   },
   "pages/merge": {
-    "hash": "b211d6b07c51585c",
-    "at": "2026-11-01T14:47:54.087Z",
+    "hash": "d69d86327f199fdd",
+    "at": "2026-11-01T15:22:17.152Z",
     "states": {
+      "merge-error": "530781a56258936b",
       "open": "08a49b45331225b1",
       "unchanged-open": "46c5c8e8f306f35c"
     }
