@@ -1,0 +1,34 @@
+{
+  "part": "pages/system",
+  "state": "part",
+  "size": "desktop",
+  "text": "wie kommt es zu dieser surface farbe?",
+  "point": {
+    "x": 1230,
+    "y": 194
+  },
+  "sketch": {
+    "target": "pages/system",
+    "variant": "b",
+    "createdAt": "2026-10-31T16:32:06.919Z"
+  },
+  "createdAt": "2026-10-31T17:22:27.781Z",
+  "addressed": {
+    "by": "user",
+    "reason": "merge",
+    "addressedAt": "2026-10-31T18:12:43.996Z"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Gemessen bei 1230,194 (Desktop): Der Punkt liegt im Popover 'Offene Punkte'. Damals (Variante b) malte das Panel bg-surface-overlay -> --color-surface-overlay (styles.css) -> --surface-overlay: oklch(0.29 0 0) = rgb(43,43,43) aus foundations/colors. Das war ein fester Studio-Token, kein SDK-Surface. Der helle Rand kam von border-et-surface-interaction ohne gesetzten Token (fiel auf die Textfarbe zurück). Jetzt (Q202 + Alias-Slice): Das Panel ist anchoredDialog() ohne surface-Option, also etAutoSurface eine Stufe über der Seite: dark -> dark-elevated, Hintergrund rgb(32,32,32), Rand rgb(56,56,56) aus surface-themes.ts. Also eine Stufe dunkler als vorher und nach Elevation statt fest.",
+      "createdAt": "2026-10-31T19:55:45.716Z"
+    }
+  ],
+  "resolved": {
+    "by": "user",
+    "resolvedAt": "2026-10-31T21:00:00.000Z",
+    "note": "Tom resolved it in the grill chat"
+  }
+}
