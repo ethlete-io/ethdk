@@ -1,0 +1,45 @@
+{
+  "sketches": [
+    {
+      "target": "pages/system",
+      "status": "in progress",
+      "createdAt": "2026-11-01T12:00:00.000Z",
+      "baseline": {},
+      "rounds": [{ "key": "r1", "title": "", "note": "Panel" }],
+      "variantInfo": {
+        "a": { "authors": ["claude-opus-5-5"], "round": "r1" },
+        "b": { "authors": ["gpt-6.1-terra"], "round": "r1" }
+      },
+      "product": "studio",
+      "layer": "pages",
+      "name": "system",
+      "variants": ["a", "b"],
+      "targetParts": ["pages/system"],
+      "dir": ".ethlete/design/studio/sketches/pages-system",
+      "problems": [
+        { "variant": "a", "problems": [] },
+        { "variant": "b", "problems": [] }
+      ],
+      "targets": [
+        {
+          "part": "pages/system",
+          "variant": "a",
+          "states": ["part"],
+          "interactions": [],
+          "unchanged": [],
+          "changes": { "added": [], "dropped": [], "note": null }
+        },
+        {
+          "part": "pages/system",
+          "variant": "b",
+          "states": ["part"],
+          "interactions": [],
+          "unchanged": [],
+          "changes": { "added": [], "dropped": [], "note": null }
+        }
+      ],
+      "report": null
+    }
+  ],
+  "unreadable": []
+}

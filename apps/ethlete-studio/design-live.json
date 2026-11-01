@@ -1,5 +1,6 @@
 {
   "host": "ethlete-shell-main",
+  "frame": "design-live/frame.png",
   "invoke": {
     "design_roots": {
       "search": "",
@@ -104,6 +105,92 @@
             }
           },
           "click": ["Auf 100 % zoomen"]
+        },
+        "panel-hidden": {
+          "design": "part",
+          "storage": {
+            "ethlete-studio.call-view": {
+              "movedCameras": {
+                "studio components/button": {
+                  "x": 40,
+                  "y": 48,
+                  "zoom": 1
+                }
+              }
+            }
+          },
+          "compose": {
+            "elements/shell-main": {
+              "panel": "hidden"
+            }
+          },
+          "click": ["Hide panel"]
+        }
+      }
+    },
+    "pages/sketches": {
+      "click": ["Sketches"],
+      "answers": {
+        "/__design/sketches": "design-live/sketches-page.json"
+      },
+      "states": {
+        "fit": {
+          "design": "page-sketch",
+          "click": ["Einpassen"]
+        }
+      },
+      "storage": {
+        "ethlete-studio.call-view": {
+          "systemEntry": "sketch:pages/system"
+        }
+      }
+    },
+    "pages/flows": {
+      "click": ["Flows"],
+      "states": {
+        "empty": {
+          "design": "empty"
+        }
+      }
+    },
+    "pages/inbox": {
+      "click": ["Inbox"],
+      "states": {
+        "all-clear": {
+          "design": "all-clear"
+        }
+      }
+    },
+    "pages/start": {
+      "host": "ethlete-start",
+      "states": {
+        "no-repo": {
+          "design": "no-repo",
+          "invoke": {
+            "design_roots": {
+              "search": "",
+              "roots": []
+            }
+          }
+        },
+        "no-products": {
+          "design": "no-products",
+          "answers": {
+            "/__design/system": "design-live/system-empty.json"
+          }
+        }
+      }
+    },
+    "pages/inventory": {
+      "storage": {
+        "ethlete-studio.call-view": {
+          "inventoryShown": true,
+          "systemEntry": "pages/system"
+        }
+      },
+      "states": {
+        "open": {
+          "design": "open"
         }
       }
     }
