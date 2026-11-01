@@ -2,24 +2,23 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
+import { ShellMainComponent } from '../shell-main/shell-main.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
-
-const SECTIONS = [
-  { label: 'System', icon: 'grid' },
-  { label: 'Sketches', icon: 'pencil' },
-  { label: 'Flows', icon: 'flow' },
-  { label: 'Inbox', icon: 'inbox' },
-] as const;
-
-const PRODUCTS = ['studio', 'timetrack', 'docs'];
 
 @Component({
   selector: 'ethlete-inbox',
   templateUrl: './inbox.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS, AutoSurfaceDirective, NgTemplateOutlet],
+  imports: [
+    BUTTON_IMPORTS,
+    SWITCH_IMPORTS,
+    TEXTAREA_IMPORTS,
+    AutoSurfaceDirective,
+    NgTemplateOutlet,
+    ShellMainComponent,
+  ],
   host: { class: 'block h-screen w-full' },
 })
 export class InboxComponent {
@@ -35,8 +34,6 @@ export class InboxComponent {
   public collapse = output();
   public send = output<string>();
 
-  protected readonly SECTIONS = SECTIONS;
-  protected readonly PRODUCTS = PRODUCTS;
   protected readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
 
   public inScope = computed(() => {
