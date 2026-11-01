@@ -1,0 +1,118 @@
+<ethlete-shell-main
+  [product]="product()"
+  [products]="products()"
+  [project]="project()"
+  [projects]="projects()"
+  [panel]="panel()"
+  (collapse)="collapse.emit()"
+  (sectionChange)="sectionChange.emit($event)"
+  (productChange)="productChange.emit($event)"
+  (allProducts)="allProducts.emit()"
+  (projectChange)="projectChange.emit($event)"
+  (openProject)="openProject.emit()"
+  fill
+  section="Sketches"
+>
+  <ethlete-studio-menu [(open)]="menuOpen" shellMainStudio bare />
+  <div class="-m-space-2 h-[calc(100%+var(--space-2)*2)] overflow-y-auto p-space-2" shellMainSide>
+    <ethlete-part-tree [layers]="tree()" (activate)="pick.emit($event)" />
+  </div>
+  <div
+    #page
+    class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--et-surface-background-solid)_60%,transparent)] after:content-['']"
+  >
+    <header
+      class="absolute top-space-5 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-3"
+    >
+      <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
+      <span class="flex-1"></span>
+      <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
+        {{ LABELS.discard }}
+      </button>
+    </header>
+    <div class="absolute top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 [&_.et-form-field]:w-auto">
+      <et-form-field size="sm">
+        <et-select [value]="round()" (valueChange)="selectRound($event)">
+          @for (option of rounds(); track option.value) {
+            <et-select-option [value]="option.value" [label]="option.label">{{ option.label }}</et-select-option>
+          }
+        </et-select>
+      </et-form-field>
+    </div>
+    <ethlete-canvas-viewport
+      class="absolute top-36.5 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+    >
+      <section
+        #world
+        class="absolute top-0 left-0 grid w-max origin-top-left grid-cols-[repeat(3,1456px)] gap-x-space-4 gap-y-space-3 select-none"
+      >
+        @for (variant of variants(); track variant.key) {
+          <figure #frame [class]="frameClass(variant.key)" data-sk-frame>
+            <div
+              [attr.data-page]="variant.key"
+              [title]="LABELS.fitHint"
+              class="relative h-225 w-360 cursor-[inherit] overflow-hidden rounded-control-md shadow-[0_0_0_1px_var(--et-surface-border-solid)] hover:shadow-[0_0_0_2px_var(--et-theme-color-primary-solid)]"
+            >
+              <div class="pointer-events-none h-225 w-360 origin-top-left scale-100">
+                @if (shot(); as shot) {
+                  <ng-container *ngTemplateOutlet="shot; context: { $implicit: variant }" />
+                }
+              </div>
+              @if (pinOf(variant.key); as pin) {
+                <span class="absolute top-space-1 right-space-1 z-1 flex">
+                  <ethlete-comment-pin
+                    [author]="pin.author"
+                    [initials]="pin.initials"
+                    [agent]="pin.agent"
+                    [count]="pin.count"
+                    (pinToggle)="pinToggle.emit(variant.key)"
+                    class="p-0!"
+                  />
+                </span>
+              }
+            </div>
+          </figure>
+        }
+      </section>
+    </ethlete-canvas-viewport>
+    @for (variant of variants(); track variant.key) {
+      @let place = heads()[$index];
+      <div
+        [hidden]="!place || place.hidden"
+        [style.left.px]="place?.left"
+        [style.top.px]="place?.top"
+        [style.width.px]="place?.width"
+        class="absolute z-2 flex -translate-y-full flex-col gap-space-1 overflow-hidden"
+      >
+        <div class="flex items-center gap-space-2 whitespace-nowrap [&_.et-button]:ms-space-2 [&>*]:flex-none">
+          @if (variant.key === CURRENT) {
+            <span class="font-ui text-ui-sm font-ui-medium text-et-surface">{{ variant.label }}</span>
+          } @else {
+            <span class="font-code text-ui-sm text-et-surface">{{ LABELS.variant(variant.label) }}</span>
+          }
+          @if (variant.author; as author) {
+            <span class="flex min-w-0 items-center gap-space-1 text-(length:--text-sm) text-et-surface-muted">
+              <svg [agent]="author.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ author.name }}
+            </span>
+          }
+          @if (variant.key !== CURRENT) {
+            <button (click)="merge.emit(variant.key)" et-button type="button" variant="outline" size="sm">
+              {{ LABELS.merge }}
+            </button>
+          }
+        </div>
+        <span class="overflow-hidden text-ui-xs text-ellipsis whitespace-nowrap text-et-surface-muted">{{
+          variant.note
+        }}</span>
+      </div>
+    }
+    <ethlete-zoom-chip
+      [percent]="percent()"
+      (zoomOut)="zoomOut()"
+      (zoomReset)="zoomReset()"
+      (zoomIn)="zoomIn()"
+      (fit)="fit()"
+      class="absolute right-space-3 bottom-space-3 z-3"
+    />
+  </div>
+</ethlete-shell-main>

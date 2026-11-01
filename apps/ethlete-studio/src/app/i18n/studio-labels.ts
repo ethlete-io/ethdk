@@ -1,4 +1,10 @@
 export const STUDIO_LABELS = {
+  sketches: {
+    discard: 'Verwerfen',
+    merge: 'Merge',
+    variant: (label: string) => `Variante ${label}`,
+    fitHint: 'Doppelklick zum Einpassen',
+  },
   treeRow: {
     sketchInProgress: 'Entwurf in Arbeit',
     sketchReady: 'Entwurf fertig',
