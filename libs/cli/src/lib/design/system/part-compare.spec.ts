@@ -471,12 +471,24 @@ describe('harnessShotOf', () => {
     expect(decodePng(png)).toEqual(pixelsOf(7, 5, () => BLUE));
   });
 
-  it('grows the shot up, right and down over a positioned descendant, as a design frame grows a fitted root', async (context) => {
+  it('grows the shot to the right and down over a positioned descendant, as a design frame grows its root', async (context) => {
     if (!browser) return context.skip('no browser');
 
     const png = await harnessShotOf({
       browser,
       url: harnessUrlOf({ url, part: 'components/badge', state: 'a', props: {} }),
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(9, 5, (x, y) => (y === 0 && x >= 5 ? RED : x < 7 ? BLUE : 0)));
+  });
+
+  it('grows the shot up too with room above, as a design frame drawn above its part root', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/badge', state: 'a', props: {} }),
+      roomAbove: true,
     });
 
     expect(decodePng(png)).toEqual(pixelsOf(9, 7, (x, y) => (y < 3 && x >= 5 ? RED : y >= 2 && x < 7 ? BLUE : 0)));
@@ -488,6 +500,7 @@ describe('harnessShotOf', () => {
     const png = await harnessShotOf({
       browser,
       url: harnessUrlOf({ url, part: 'components/upward', state: 'a', props: {} }),
+      roomAbove: true,
       opened: { control: 'pick', markup: '<button data-et-control="pick" aria-expanded="true"> Pick </button>' },
     });
 

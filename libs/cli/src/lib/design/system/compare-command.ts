@@ -196,10 +196,11 @@ const forcedTargetOf = async (options: {
 
 /**
  * A PNG of the harness host element at `url`, in the viewport of `size` at device scale 1, or without `size` fitted
- * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with room
- * above and before it so an overlay that opens above does not flip below or shift off the viewport edge, with the
+ * as a design frame fits its root, with its overflowing positioned descendants and rounded to whole pixels, with the
  * pointer off the page, after a pointer click on the app trigger of the design `markup`'s `[data-et-control]` named
  * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
+ * With `roomAbove`, for a design picture drawn above its part root, the fitted host gets room above and before it, so
+ * an overlay that opens above neither flips below nor shifts off the viewport edge, and the shot grows up as well.
  */
 export const harnessShotOf = async (options: {
   browser: Browser;
@@ -207,14 +208,15 @@ export const harnessShotOf = async (options: {
   size?: DesignPreset | null;
   forced?: ForcedElement[];
   opened?: { control: string; markup: string };
+  roomAbove?: boolean;
   timeout?: number;
 }) => {
   const { browser, url } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
-  const fitted = !options.size;
+  const room = !options.size && !!options.roomAbove;
   const viewport = viewportOf(options.size ?? null);
   const context = await browser.newContext({
-    viewport: fitted ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
+    viewport: room ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
     deviceScaleFactor: 1,
   });
 
@@ -234,7 +236,7 @@ export const harnessShotOf = async (options: {
     });
     await page.evaluate('document.fonts.ready');
 
-    if (fitted) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
+    if (room) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
 
     await page.mouse.move(-1, -1);
 
@@ -261,7 +263,7 @@ export const harnessShotOf = async (options: {
     // Waits for a stable host as an element screenshot does; without it an overlay a click opened is not drawn yet.
     await host.scrollIntoViewIfNeeded({ timeout });
 
-    const box = (await page.evaluate(hostBoxScriptOf({ fitted }))) as {
+    const box = (await page.evaluate(hostBoxScriptOf({ up: room }))) as {
       x: number;
       y: number;
       width: number;
@@ -366,6 +368,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           }),
           size: frame.size,
           forced: forcedElementsOf(design.markup ?? ''),
+          roomAbove: design.marks.length > 0 && Math.min(...design.marks.map((mark) => mark.y)) > 0,
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }),
       );
