@@ -10,25 +10,25 @@ ausgeklammert.
 
 ## Teile
 
-| Teil                            | Fertig | Was fehlt                                                                                                                                                             | Wer               |
-| ------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ✅     |                                                                                                                                                                       |                   |
-| components/disclosure           | ✅     |                                                                                                                                                                       |                   |
-| components/tree-row             | ✅     |                                                                                                                                                                       |                   |
-| components/zoom-chip            | ✅     |                                                                                                                                                                       |                   |
-| elements/part-tree              | ✅     |                                                                                                                                                                       |                   |
-| elements/studio-menu            | ✅     |                                                                                                                                                                       |                   |
-| components/shell-collapse       | ✅     |                                                                                                                                                                       |                   |
-| components/shell-project-switch | ✅     |                                                                                                                                                                       |                   |
-| elements/shell-main             | ✅     |                                                                                                                                                                       |                   |
-| pages/inbox                     | ✅     |                                                                                                                                                                       |                   |
-| pages/system                    | ❌     | Bilder stimmen. Noch 16 Aktions-Fehler (Canvas fokussierbar machen, Chip „offen“ mit der Tastatur); Builder behebt sie, dann Bild, „Änderung abnehmen“ und „Go geben“ | Builder, dann Tom |
-| pages/sketches                  | ✅     |                                                                                                                                                                       |                   |
-| components/canvas-viewport      | ✅     |                                                                                                                                                                       |                   |
-| elements/canvas-frames          | ✅     |                                                                                                                                                                       |                   |
-| pages/start                     | ✅     |                                                                                                                                                                       |                   |
-| pages/merge                     | ✅     |                                                                                                                                                                       |                   |
-| components/error-toast          | ✅     |                                                                                                                                                                       |                   |
+| Teil                            | Fertig | Was fehlt                                                                                                                          | Wer |
+| ------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- | --- |
+| components/comment-pin          | ✅     |                                                                                                                                    |     |
+| components/disclosure           | ✅     |                                                                                                                                    |     |
+| components/tree-row             | ✅     |                                                                                                                                    |     |
+| components/zoom-chip            | ✅     |                                                                                                                                    |     |
+| elements/part-tree              | ✅     |                                                                                                                                    |     |
+| elements/studio-menu            | ✅     |                                                                                                                                    |     |
+| components/shell-collapse       | ✅     |                                                                                                                                    |     |
+| components/shell-project-switch | ✅     |                                                                                                                                    |     |
+| elements/shell-main             | ✅     |                                                                                                                                    |     |
+| pages/inbox                     | ✅     |                                                                                                                                    |     |
+| pages/system                    | ❌     | Alle Prüfungen grün, Bilder geprüft (zwei neue Zustände: Chip „offen“ mit Fokus-Rahmen). Tom: „Änderung abnehmen“, dann „Go geben“ | Tom |
+| pages/sketches                  | ✅     |                                                                                                                                    |     |
+| components/canvas-viewport      | ✅     |                                                                                                                                    |     |
+| elements/canvas-frames          | ✅     |                                                                                                                                    |     |
+| pages/start                     | ✅     |                                                                                                                                    |     |
+| pages/merge                     | ✅     |                                                                                                                                    |     |
+| components/error-toast          | ✅     |                                                                                                                                    |     |
 
 Stand: 16 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.

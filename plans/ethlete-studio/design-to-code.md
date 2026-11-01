@@ -1292,6 +1292,18 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      elements, and a change in an embedded part does not re-run the action checks of the parts that embed it; the
      switch was the first declared switch action. Tool fix (after MVP): `design check` marks every embedding part as
      "actions need a re-run" when an embedded part changes, and `ready` names that reason.
+131. The open-points chip actions on pages/system missed their goal by 456-5036 px (builder, 2026-11-02). Enter and
+     Space missed because the keyboard ring was not drawn: new states `part-focus-visible` and
+     `points-closed-focus-visible` (9aaac3c0c; the overlay opens with autoFocus false, so focus stays on the chip). The
+     clicks from `fit` and `nothing-open` missed because the goal was wrong: from fit the app stays fitted, and from
+     nothing-open the label is "Nichts offen". The canvas became focusable in 165871a00. Why no check caught it: the
+     marks came the same day (Impl Q-B), only `design actions` presses them, and `design check` only verifies that a
+     goal state exists, not that it fits the start state's props. Tool fix (after MVP): on a miss, `design actions`
+     compares the reached picture against every state of the part and prints "reaches state X instead" or "reaches no
+     declared state (closest X, N px)".
+
+- Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
+  `points-closed` and their ring states; no extra states for fit or nothing-open.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
