@@ -1160,7 +1160,8 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      sketch (`shown.directEdit`, part-approval.component.ts:50); it writes accepted.json (Tom accepts the design
      change). "Go geben" writes go.json (Tom releases the part to be built). A direct edit needs both, so both show.
      Lesson for the rework: one approval step per change, or a clear order (accept first, then go) with only the next
-     step as the primary button.
+     step as the primary button. Also (Tom, elements/part-tree after Q127): the view shows "Go erteilt" next to "Änderung
+     abnehmen", so a go reads as valid while a direct edit still waits for acceptance.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
