@@ -1295,6 +1295,8 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
   pages/sketches, pages/system, components/canvas-viewport, elements/canvas-frames, pages/flows. Not verified: wheel,
   Escape, Shift+2/0, the desktop app; zoom-chip compare blocked by a harness limit. Flows still uses
   `mountCanvasViewport` (parked until after MVP).
+- Impl Q126 Sketches selection mark (Tom, 2026-11-01): a selected frame in Sketches shows the same selection outline
+  as System, from the one canvas component (no second outline implementation).
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 
