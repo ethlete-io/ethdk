@@ -828,6 +828,14 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     every compare passed on pictures of forced states, so a control that looks right but does nothing went
     unnoticed; a picture check never proves a control works. The Q103 commit acceb3f4c also broke studio lint
     (max-params) and blocked the push.
+68. Impl Q105 is blocked by an SDK bug (builder, 2026-11-01): the error-toast part renders the real
+    <et-notification>, and the lazy harness chunk throws `Cannot read properties of undefined (reading 'directive')`
+    in createHostDirectiveDef, because one hostDirectives entry of NotificationComponent is undefined at load
+    (suspect: a chunk cycle with AnimatedLifecycleDirective or ProvideColor/ProvideSurfaceDirective). A fresh agent
+    fixes it in the lib, with a test. Lesson: no check renders SDK components inside a lazy chunk, so a load-order
+    bug reaches the first consumer. Also: the Q105 agent's `design go --by tom` for the new, unseen error-toast
+    drawing passed the classifier (against finding 66); the builder removed the uncommitted go entry. Lesson: the
+    classifier is no reliable guard for a go; only the Impl Q113 decision ref is.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
