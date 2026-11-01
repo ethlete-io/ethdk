@@ -1,6 +1,7 @@
 import { openPointsText } from './open-points';
 import { drawnPartPointsOf, markPartReady, readyPartOf } from './part-ready';
 import { partKeyOf } from './resolve-product';
+import { staleDistWarningsOf } from './stale-dist';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
 
@@ -37,6 +38,8 @@ export const designReady = async (options: { target: string; argv: string[]; inv
 
     return 1;
   }
+
+  for (const line of staleDistWarningsOf({ target, config })) console.warn(line);
 
   const part = partKeyOf(parsed);
   const located = readyPartOf({ product, part });

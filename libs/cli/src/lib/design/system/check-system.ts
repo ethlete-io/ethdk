@@ -7,6 +7,7 @@ import { openPointsText } from './open-points';
 import { goPartsOf } from './part-go';
 import { readyPartsOf } from './part-ready';
 import { Problem } from './problem';
+import { staleDistWarningsOf } from './stale-dist';
 import { readOpenPoints, unlinkedPartsOf } from './read-open-points';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { canonicalClassesOf } from './rules/canonical-class';
@@ -431,6 +432,8 @@ const renderSystem = async (options: CheckOptions): Promise<{ code: number; rend
 export const checkSystemRendered = async (options: CheckOptions) => {
   const tally: Tally = new Map();
   const counted = { ...options, tally };
+
+  for (const line of staleDistWarningsOf(options)) console.warn(line);
 
   const { code, rendered } = await renderSystem(counted);
 
