@@ -18,7 +18,7 @@ const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabl
     variant: 'transparent',
     color: 'surface',
     size: 'sm',
-    class: 'st-studio-trigger p-0',
+    class: 'st-studio-trigger p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0]',
   }).replace(
     /^<button /,
     `<button data-et-control="studio-menu" data-et-action="${open ? 'closed' : 'open'}" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,

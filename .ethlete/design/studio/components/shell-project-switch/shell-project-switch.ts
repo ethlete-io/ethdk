@@ -32,6 +32,7 @@ const projectRows = (option?: Props['option'], keyboard = false): MenuMockRow[] 
           kind: 'radio',
           label: 'fut-frontend',
           active: !!forced,
+          ...(forced === 'focus-visible' ? { activeSource: 'keyboard' as const } : {}),
           attributes: `${MENU_ITEM} data-et-action="emit:projectChange"${forced ? ` data-et-force="${forced}"` : ''}`,
         },
         { kind: 'radio', label: 'design-playground', attributes: `${MENU_ITEM} data-et-action="emit:projectChange"` },

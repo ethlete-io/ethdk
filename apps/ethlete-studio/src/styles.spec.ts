@@ -56,4 +56,12 @@ describe('styles.css', () => {
       ),
     ).not.toThrow();
   });
+
+  it('gives every Studio menu the control-md item height and text-md item font once', () => {
+    const css = compileStyles();
+
+    expect(css).toMatch(
+      /@layer studio-sdk\s*{[\s\S]*\.et-menu\s*{\s*--et-menu-item-height: var\(--control-md\);\s*--et-menu-item-font-size: var\(--text-md\);/,
+    );
+  });
 });

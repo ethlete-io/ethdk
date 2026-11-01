@@ -8,7 +8,7 @@
   placement="right-start"
 >
   <button
-    class="group size-10 p-0 [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
+    class="group size-10 p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0] [&_path]:origin-center [&_path]:scale-[0.72] [&_path]:transform-view"
     etMenuTrigger
     et-button
     type="button"
@@ -36,10 +36,7 @@
     </svg>
   </button>
   <ng-template etMenuSurface>
-    <et-menu
-      class="box-border w-62 text-ui-md [--et-menu-item-font-size:var(--text-md)] [--et-menu-item-height:var(--control-md)]"
-      aria-label="Studio"
-    >
+    <et-menu class="box-border w-62 text-ui-md" aria-label="Studio">
       <et-menu-group-label>Studio</et-menu-group-label>
       @for (item of items(); track item.action) {
         <button (click)="serverAction.emit(item.action)" et-menu-item type="button">{{ item.label }}</button>

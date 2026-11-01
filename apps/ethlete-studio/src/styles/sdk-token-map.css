@@ -29,6 +29,11 @@ et-form-field {
   }
 }
 
+.et-menu {
+  --et-menu-item-height: var(--control-md);
+  --et-menu-item-font-size: var(--text-md);
+}
+
 .et-select-panel {
   --et-select-option-font-size: var(--text-md);
   --et-select-option-border-radius: var(--radius-control-sm);
