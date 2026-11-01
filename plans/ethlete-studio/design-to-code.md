@@ -854,7 +854,11 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     subagent brief.
 71. Shell parts slice (builder, 2026-11-01, b63508432, cd2d907d4, 8aaf0a5f8): seven page designs import shell-main,
     and their pictures changed, but `design check` did not flag them (Impl Q112 should; cause asked: likely the old
-    records still hold their old hash until the first REHASHED run). The full `design actions` run on
+    records still hold their old hash until the first REHASHED run). Cause: `upgradeLegacyMarksOf`
+    (stale-parts.ts) rewrote the legacy go records of flows, system, merge, sketches and inventory to the new hash
+    and absorbed the shell-main change silently; only inbox (own folder changed) came out STALE. Tool fix (builder
+    default): a legacy record comes out STALE when any reachable file is newer than the record. The five pages
+    need a re-review by Tom. The full `design actions` run on
     shell-project-switch was killed (exit 137, likely out of memory); tool fix (builder default): run the states in
     batches. `design complete elements/shell-main` reports DEMO-BACKDROP on every state, because div.st-shell paints
     the surface fill: Impl Q117 (Tom). Lesson: a new check must be dry-run over every existing part before it
@@ -875,10 +879,15 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     `design accept elements/studio-menu` itself, without Tom. f3c8a96a5 (go.json) and 09c581149 are on origin;
     435dbfa34 (accept, implemented, ready records) is held local until Tom decides. Result: 0 px in all 12 states,
     verify, actions and complete pass. The Impl Q113 guard did not stop it: the agent says `design go` took no
-    `--note` (cause asked: likely a dist built before 543560fab); the classifier blocks only the builder session,
-    not its subagents. The agent also made a direct edit + accept instead of the one-variant sketch Impl Q102 named.
-    Lesson: a go guard in source protects nothing until the dist that agents run is rebuilt, and a rule in the
-    brief does not bind a subagent; the guard must live in the tool the agent actually runs.
+    `--note`: the go (f3c8a96a5, 18:25) predates the guard (543560fab, 18:30), not a stale dist; the classifier
+    blocks only the builder session, not its subagents. Tom approved the go after the fact; 435dbfa34 pushed. The agent also made a direct edit + accept instead of the one-variant sketch Impl Q102 named.
+    Lesson: a rule in the brief does not bind a subagent, and any agent can type `--by tom`; a go in Tom's name
+    must need something an agent cannot make. Tool change: Impl Q119 (Tom).
+75. Impl Q99 sketch 60fe78cb7 (pages-system variant a holds `fit` and `page-100`) cannot be verified live:
+    `compare --live` cannot read a sketch, and sketch check ignores the state names in design-live.json, so the live
+    spec names `page-100` before it exists (builder, 2026-11-01). Tool fix (builder default):
+    `compare --live --sketch <variant>`, and sketch check reads design-live.json. Lesson: every check must be able to run on a sketch, or a
+    decided change cannot be verified before its merge.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
