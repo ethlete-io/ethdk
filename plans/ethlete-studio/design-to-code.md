@@ -1107,7 +1107,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      `--et-menu-item-height: var(--control-md)` and `--et-menu-item-font-size: var(--text-md)` on `.st-studio-menu`,
      components/shell-project-switch keeps the SDK menu defaults. Why missed: each part is checked alone against its
      own code; nothing compares two instances of the same SDK component across parts, so a local token override is
-     silent drift. Tool lesson: open, asked the builder. Decision on the one Studio menu look: grill round to Tom.
+     silent drift. Tool fix (any project, after MVP): first one product-level token file per SDK component (here the
+     Studio menu tokens) and a check that flags a part design that overrides those tokens locally; later `design check`
+     collects the computed token values of each SDK component across all parts and flags different values without a
+     named variant. Decision on the one Studio menu look: grill round to Tom.
 104. The merge view crop row shows a huge "Prompt kopieren" button on both sides for a state that only the variant
      adds (builder, 2026-11-01, /tmp/merge-view-live.png): the added state has no outline to crop, and the empty "Jetzt"
      panel has no label. Cause and the tool lesson: open, asked the builder; the label is a grill question to Tom.
@@ -1405,6 +1408,10 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
 - Impl Q128 sketch view button label (Tom, 2026-11-01): the button above each variant in the sketch view says
   "Wählen", not "Merge" - it only opens the merge view, which then shows "Gewählt a". The final button in the merge
   view stays "Merge".
+- Impl Q129 inbox row click (Tom, 2026-11-01, finding 102): a click on an inbox comment row (or Enter/Space on it)
+  selects the comment and opens its place on the inbox canvas: the frame of its part and state, with its pin. For a
+  comment on another part, the canvas switches to that part first. In the MVP: the pages/inbox design gets a row
+  action, so Tom gives a new go on pages/inbox.
 
 ### Exit the fix loop decisions (Tom, 2026-11-01)
 

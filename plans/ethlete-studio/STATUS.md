@@ -21,7 +21,7 @@ ausgeklammert.
 | components/shell-collapse       | ✅     |                                                                                         |                   |
 | components/shell-project-switch | ❌     | Go gegeben, Prüfung läuft                                                               | Builder           |
 | elements/shell-main             | ❌     | Go gegeben, Prüfung läuft                                                               | Builder           |
-| pages/inbox                     | ❌     | Kommentare nicht klickbar (Befund 102, Fragen an Tom); Prüfung wartet auf Fix           | Tom, dann Builder |
+| pages/inbox                     | ❌     | Klick auf Kommentar öffnet seinen Ort (Q129, wird gebaut); dann neues „Go geben“        | Builder, dann Tom |
 | pages/system                    | ❌     | Merge-Ansicht repariert (Shot geprüft); nach Neustart von :4402 mergen, dann „Go geben“ | Builder, dann Tom |
 | pages/sketches                  | ❌     | „Wählen“ und Hover fertig, Vergleich 0 px; Prüfung der Aktionen noch nicht grün         | Builder, dann Tom |
 | components/canvas-viewport      | ❌     | Code wird auf keiner Seite mehr benutzt, Marke entfernt                                 | Builder           |
