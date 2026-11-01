@@ -8,7 +8,7 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
     globalSetup: ['./vitest.global-setup.ts'],
     setupFiles: ['./vitest.setup.ts'],
-    reporters: ['default'],
+    reporters: ['default', './vitest.skip-reporter.mts'],
     coverage: {
       reportsDirectory: '../../coverage/libs/cli',
       provider: 'v8',

@@ -1272,7 +1272,7 @@ export default definePart({
 
     const code = await run(target, 'check', '--product', 'acme');
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip();
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines).toContain(
@@ -1292,7 +1292,7 @@ export default definePart({
 
     const refused = await write(target, 'ready', 'elements/hero', '--product', 'acme');
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip();
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
 
     expect(refused).toBe(1);
     expect(lines.join('\n')).toContain('WRAP');

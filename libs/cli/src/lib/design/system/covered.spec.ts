@@ -48,7 +48,7 @@ describe('covered controls in the frame discovery', () => {
   const coveredOf = (label: string) => found?.find((control) => control.label === label)?.covered;
 
   it('marks a control fully under another element, not a partly covered or free one', (context) => {
-    if (!found) context.skip();
+    if (!found) return context.skip('no browser');
 
     expect(coveredOf('Save')).toBe(true);
     expect(coveredOf('Partly')).toBe(false);
@@ -56,7 +56,7 @@ describe('covered controls in the frame discovery', () => {
   });
 
   it('keeps a disabled control, also one with pointer-events none, visible', (context) => {
-    if (!found) context.skip();
+    if (!found) return context.skip('no browser');
 
     expect(coveredOf('Off')).toBe(false);
     expect(coveredOf('None')).toBe(false);

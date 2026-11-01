@@ -13,6 +13,7 @@
     "vitest.config.mts",
     "vitest.setup.ts",
     "vitest.global-setup.ts",
+    "vitest.skip-reporter.mts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts",
     "scripts/**/*.mts",

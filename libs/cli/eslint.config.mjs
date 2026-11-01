@@ -19,6 +19,8 @@ export default [
             '{projectRoot}/src/**/*.spec.ts',
             '{projectRoot}/src/**/__fixtures__/**',
             '{projectRoot}/vitest.config.{js,ts,mts}',
+            '{projectRoot}/vitest.skip-reporter.mts',
+            '{projectRoot}/scripts/**/*.spec.mts',
           ],
         },
       ],
