@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 01.11.2026, abends
+Stand: 01.11.2026, spät abends
 
 ## Ziel
 
@@ -12,7 +12,7 @@ ausgeklammert.
 
 | Teil                            | Fertig | Was fehlt                                                                                                   | Wer               |
 | ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- | ----------------- |
-| components/comment-pin          | ❌     | Go gegeben (23:48); Builder macht „ready“                                                                   | Builder           |
+| components/comment-pin          | ✅     |                                                                                                             |                   |
 | components/disclosure           | ✅     |                                                                                                             |                   |
 | components/tree-row             | ✅     |                                                                                                             |                   |
 | components/zoom-chip            | ✅     |                                                                                                             |                   |
@@ -24,13 +24,13 @@ ausgeklammert.
 | pages/inbox                     | ❌     | Go gegeben (23:48); Builder macht „ready“                                                                   | Builder           |
 | pages/system                    | ❌     | Zustand „fit“ wird neben das Panel gelegt (Q13); dann Bild, Abnahme und Go                                  | Builder, dann Tom |
 | pages/sketches                  | ❌     | Go gegeben; „ready“ meldet 9 Fehler bei den Aktionen, Builder prüft, ob das Werkzeug irrt                   | Builder           |
-| components/canvas-viewport      | ❌     | Go gilt; Fokus-Rahmen nach Klick + Shift wird behoben (Befund 123), dann „ready“                            | Builder           |
+| components/canvas-viewport      | ✅     |                                                                                                             |                   |
 | elements/canvas-frames          | ❌     | App zeichnet ein Element, das der Entwurf nicht hat                                                         | Builder           |
 | pages/start                     | ✅     |                                                                                                             |                   |
 | pages/merge                     | ✅     |                                                                                                             |                   |
 | components/error-toast          | ✅     |                                                                                                             |                   |
 
-Stand: 10 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
+Stand: 12 von 17 Teilen fertig. Alle Teile außer dem Fehler-Toast sind gemergt und im Code. „Go geben“ ist der Knopf
 oben rechts in der Teil-Ansicht.
 
 ## Regeln, bis das Ziel steht
