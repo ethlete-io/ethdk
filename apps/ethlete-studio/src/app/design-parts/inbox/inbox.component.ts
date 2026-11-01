@@ -1,11 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
-import { AutoSurfaceDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { ShellMainComponent, ShellSection } from '../shell-main/shell-main.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 
 export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
+
+export type InboxLoad = 'loaded' | 'loading' | 'error';
 
 @Component({
   selector: 'ethlete-inbox',
@@ -16,12 +18,14 @@ export type InboxOpenOn = 'all' | 'active' | 'others' | 'none';
     SWITCH_IMPORTS,
     TEXTAREA_IMPORTS,
     AutoSurfaceDirective,
+    ProvideColorDirective,
     NgTemplateOutlet,
     ShellMainComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
 export class InboxComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   public comments = input<InboxComment[]>(INBOX_SAMPLE);
   public activePart = input('button');
   public selectedId = input<string | null>('c1');
@@ -35,6 +39,7 @@ export class InboxComponent {
   public draft = input(false);
   public entry = input(false);
 
+  public load = input<InboxLoad>('loaded');
   public collapse = output();
   public send = output<string>();
   public pick = output<string>();
@@ -43,6 +48,7 @@ export class InboxComponent {
   public allProducts = output();
   public projectChange = output<string>();
   public openProject = output();
+  public retry = output();
 
   protected readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
 
@@ -58,7 +64,6 @@ export class InboxComponent {
         (openOn === 'others' && c.part !== active),
     );
   });
-
   protected visible = computed(() => this.inScope().filter((c) => this.showResolved() || !c.resolved));
   protected openCount = computed(() => this.inScope().filter((c) => !c.resolved).length);
   protected onActivePart = computed(() => this.visible().filter((c) => c.part === this.activePart()));

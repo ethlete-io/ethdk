@@ -42,7 +42,7 @@
     <div
       class="flex h-9 flex-none items-center justify-between gap-space-2 border-b border-et-surface-border px-space-3 text-ui-sm"
     >
-      <span class="text-et-surface-muted">{{ openCount() }} offen</span>
+      <span class="text-et-surface-muted">{{ load() === 'loaded' ? openCount() + ' offen' : '' }}</span>
       <div class="flex items-center gap-space-2 text-et-surface">
         Erledigte zeigen
         <span
@@ -123,8 +123,39 @@
         }
       </div>
     </div>
-    <div class="flex min-h-0 flex-col gap-px overflow-hidden p-space-2">
-      @if (visible().length === 0) {
+    <div class="flex min-h-0 flex-col gap-px overflow-auto p-space-2">
+      @if (load() === 'loading') {
+        <p class="m-0 px-space-2 pt-space-1 text-(length:--text-sm) text-et-surface-muted">
+          Kommentare werden geladen…
+        </p>
+      } @else if (load() === 'error') {
+        <div class="flex flex-col items-center gap-space-1 px-space-4 py-space-7 text-center">
+          <span [etProvideColor]="errorTheme()" class="contents">
+            <svg
+              class="mb-space-2 size-5 text-et-theme"
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="8" cy="8" r="5.5" />
+              <path d="m6 6 4 4m0-4-4 4" />
+            </svg>
+          </span>
+          <p class="m-0 text-(length:--text-sm) text-et-surface">Kommentare nicht geladen</p>
+          <p class="m-0 text-(length:--text-xs) text-et-surface-muted">Die Liste kam nicht vom Design-Server an.</p>
+          <div class="mt-space-3">
+            <button (click)="retry.emit()" et-button type="button" variant="outline" color="surface" size="sm">
+              Erneut laden
+            </button>
+          </div>
+        </div>
+      } @else if (visible().length === 0) {
         <div class="flex flex-col items-center gap-space-1 px-space-4 py-space-7 text-center">
           <svg
             class="mb-space-2 size-5 text-et-theme-ink"
@@ -157,7 +188,7 @@
           </p>
         }
       }
-      @if (onOtherParts().length) {
+      @if (load() === 'loaded' && onOtherParts().length) {
         <ng-container *ngTemplateOutlet="groupHead; context: { $implicit: 'Andere', count: onOtherParts().length }" />
         @for (comment of onOtherParts(); track comment.id) {
           <ng-container *ngTemplateOutlet="row; context: { $implicit: comment }" />
