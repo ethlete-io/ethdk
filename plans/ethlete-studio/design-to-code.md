@@ -677,6 +677,12 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     kept it), and the system page compare empties the slot it sits in. Also, compare shoots on a transparent
     background. Lesson: a hand-written live component inside a page has no compare at all; every live page needs a
     compare that covers what is really inside it.
+44. Layout defect (Tom, 2026-11-01, screenshot): in the page designs the canvas runs full width behind the floating
+    sidebar panel (the dots show left of and behind the panel). The live app reserves space for the sidebar and
+    shrinks the canvas instead. Fix: the live canvas fills the whole page area and the sidebar floats above it. The
+    camera must then treat the area under the panel as covered (start view, fit, centring). Cause of the miss: open,
+    asked from the builder. Expected lesson: the page compare checks the page design alone, never the layout of the
+    real app; Impl Q78 must compare the real page so this class shows as a diff.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
