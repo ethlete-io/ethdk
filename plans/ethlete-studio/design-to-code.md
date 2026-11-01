@@ -813,7 +813,9 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     after the Impl Q86 backdrop edit (17:59) that Tom had not approved; the builder restored both previous go
     entries. Cause: `design go --by tom` does not check whether the design changed after the decision it names.
     Lesson: a go that names Tom must point at the decision and refuse a design newer than it. Tool change: Impl
-    Q113 (Tom).
+    Q113 (Tom). Done in 543560fab: the decision commit is the oldest commit that adds the plan entry. Gap: a
+    decision that orders a design change (Impl Q95, Q98, Q99) always predates its design commit, so the go refuses
+    it; Impl Q115 (Tom).
 65. The shared node_modules/.vitest-cache served a stale studio-labels.ts while tests ran in /tmp/q78s* copies
     (builder, 2026-11-01). Fix: each agent passes its own --fsModuleCachePath (builder default, done). Lesson: a
     shared test cache across checkouts gives a result for code that is not the code under test.
