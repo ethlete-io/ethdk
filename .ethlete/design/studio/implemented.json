@@ -1,10 +1,56 @@
 {
   "components/canvas-viewport": {
     "hash": "a1b78e29542a5eb7",
-    "at": "2026-11-01T12:47:21.938Z",
+    "at": "2026-11-01T12:56:17.386Z",
     "states": {
       "canvas": "817390d43b97154e",
       "canvas-focus-visible": "b86902211c3f293e"
+    }
+  },
+  "components/comment-pin": {
+    "hash": "1e54d6686d2c6c57",
+    "at": "2026-11-01T12:55:43.791Z",
+    "states": {
+      "count": "994867386ea7a105",
+      "count-12": "b730cf15233932ab",
+      "count-12-active": "a4f66f020b0a1f0f",
+      "count-12-focus-visible": "ef03f5696aaeca63",
+      "count-12-hover": "79f115f460f9d767",
+      "count-active": "76d98f2dfe45c328",
+      "count-focus-visible": "4f82357c981c1e28",
+      "count-hover": "1a069414921f756d",
+      "initials": "7b9fceb9ed51278d",
+      "initials-active": "9c25ce5e20dcd6b8",
+      "initials-focus-visible": "2d8c7691cc9e1f91",
+      "initials-hover": "0d8915045a395900",
+      "logo": "e4903ab34ad3b058",
+      "logo-active": "f01472f378484785",
+      "logo-count": "07563acea1719132",
+      "logo-count-active": "64891f74d8583a50",
+      "logo-count-focus-visible": "8c3e4df2bb1734e2",
+      "logo-count-hover": "8a9c286fdb69e08a",
+      "logo-focus-visible": "97d88028ec6a6e07",
+      "logo-hover": "909c252849184cfb",
+      "selected": "c7e55914d2e040d0",
+      "selected-active": "89ff3ff51156ba2e",
+      "selected-count": "376373cead4cdd68",
+      "selected-count-active": "8762e223f331f22e",
+      "selected-count-focus-visible": "6cf73d35be8b09b3",
+      "selected-count-hover": "84477576342b5ca5",
+      "selected-focus-visible": "a4a69006227b2043",
+      "selected-hover": "84a68df88b90b1a9",
+      "selected-logo": "2cba449b65fd1426",
+      "selected-logo-active": "b1701efad8058959",
+      "selected-logo-count": "ce39d76f0a684260",
+      "selected-logo-count-12": "3d7efec4920235ef",
+      "selected-logo-count-12-active": "eb4ad6705205f603",
+      "selected-logo-count-12-focus-visible": "9cb9b6832c77ede7",
+      "selected-logo-count-12-hover": "1c7fbd8b8305158b",
+      "selected-logo-count-active": "144498e71fa6975b",
+      "selected-logo-count-focus-visible": "b2bdc8474f8f0713",
+      "selected-logo-count-hover": "9b332bb8013ecfbd",
+      "selected-logo-focus-visible": "a2b8f381fe8dbbb9",
+      "selected-logo-hover": "adfa1a702c59dc1a"
     }
   },
   "components/shell-collapse": {
@@ -19,7 +65,7 @@
   },
   "components/zoom-chip": {
     "hash": "884e0e4485ab2ac4",
-    "at": "2026-11-01T12:47:09.928Z",
+    "at": "2026-11-01T12:56:04.456Z",
     "states": {
       "fit": "1173d57d18acfdee",
       "fit-active": "2d3aae70f8cb6aac",
