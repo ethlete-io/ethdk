@@ -1167,6 +1167,11 @@ actions`) reset every ready mark, and only studio-menu was re-checked. Tom saw "
      check caught it: no spec had a page that embeds a part with its own actions. Tool fix (general): actions resolve
      against the innermost embedded part that declares them; spec bites, 4 of 13 fail without the fix (db91bcbe1).
      Lesson: the CLI specs need a fixture for every composition shape a project can build (part in page, part in part).
+111. A full `design actions` run on pages/inbox timed out at 900 s and showed nothing (builder, 2026-11-01). The run time is
+     expected (state `open` has 84 checks in about 2 min, 10 states about 20 min). The defect: the command prints every
+     result only at the end (actions-command.ts:725, `checked.lines`), so a killed run loses all results. Tool fix
+     (general): print each check line as it finishes. Lesson: a long CLI command must stream its results. Parked for
+     after the MVP.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
