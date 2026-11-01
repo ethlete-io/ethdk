@@ -768,3 +768,10 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q76 verify of live swaps (Tom, 2026-11-01): `task --verify` also allows the app files that import the part (the
   tool finds them); every other file outside the part stays refused. CLI change. Until then pages/system keeps its
   earlier ready; flows gets a real part-only commit with the Impl Q74 camera work. Finding 40.
+- Impl Q77 checkerboard compare (Tom, 2026-11-01): part compare shoots design and part over the same visible
+  checkerboard instead of a transparent background, so any fill a part adds shows as a pixel diff. CLI change, build
+  now. Finding 43.
+- Impl Q78 live page compare (Tom, 2026-11-01): in the MVP, after Impl Q77. One compare per product page (system,
+  flows, sketches and the other live pages) shoots the real app page against the page design, with the slots filled
+  by a fixed sample, so hand-written live components inside a page (for example `design-canvas`) are covered.
+  Finding 43.
