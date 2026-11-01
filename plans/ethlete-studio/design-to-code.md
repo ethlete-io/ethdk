@@ -1179,6 +1179,8 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q117 shell-main surface (Tom, 2026-11-01): the shell-main drawing root (shell-main.ts:233) gets
   `data-et-surface`, because the app paints the same fill; the DEMO-BACKDROP exemption applies, no tool change. Do it
   before Tom's shell-main go. Finding 71.
+  Done in 222c244eb, 39ee9ab05: complete.ts accepts a bare `data-et-surface` on the part root as the part's own
+  surface; the shell-main root has the marker.
 - Impl Q118 compare without go (Tom, 2026-11-01): `design compare` runs on a part changed since its go and marks the
   result "unapproved"; the go gate stays on `task --verify`, ready and accept. Finding 72. Done in 5c461eab7
   (builder: ready and accept never used the taskPartOf gate; compare has no JSON output yet).
@@ -1191,5 +1193,4 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
 - Impl Q120 shell-main keyboard open (Tom, 2026-11-01): shell-main gets the `open-focus-visible` state, as Impl Q95.
   Done in 4f571660e under the name `project-picker-focus-visible`: `targetStateOf` maps a key press to
   `<target state>-focus-visible`, and the trigger's target in shell-main is `project-picker` (`open` there is the
-  closed-picker state). Q117 still runs: complete.ts needs every surface id as `<control>.<surface>`; the builder
-  lets a bare `data-et-surface` on the part root count as the part's own surface.
+  closed-picker state).
