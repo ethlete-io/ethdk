@@ -969,6 +969,20 @@ Worked through after the pilot (all Studio parts implemented), with Tom's collec
     Correction (builder, 2026-11-01, from code): the server has `part-go` and `part-ready`, but no Studio screen calls
     them; there is no accept path. Studio does have a merge click (sketch view, `mergeSketch$`). In progress: go and
     accept clicks in Studio with all preconditions checked first, and a live check of the merge click.
+85. Root cause behind findings 77, 83 and 84 (Tom, 2026-11-01: "dann notier mal wieso es dazu gekommen ist und was
+    an studio besser gemacht werden muss. exakt das habe ich nun schon 20 mal geschrieben"). Why it happened: Studio
+    lets a page or element design draw its own copy of a thing that already exists as a part (the picker inside
+    shell-main, the camera inside the sketches page, the "Aktuell" matrix again in the CLI). The builder then builds
+    each copy as its own code. Every check looks at one part alone, so two copies that drift apart never fail.
+    What Studio must do better:
+    (1) Reuse by reference: a design that shows an existing part must embed that part, and the code must use that
+    component. Studio refuses a design or a merge that redraws a part instead of embedding it.
+    (2) One implementation per behaviour: a check fails when two modules implement the same part or the same input
+    handling (canvas, picker, matrix).
+    (3) Check across pages: the live checks run the same interaction on every page that shows a part and fail when
+    the results differ.
+    (4) The grill session tells Tom the why and the Studio fix in the same message as the defect, without being
+    asked.
 
 - Impl Q40 canvas-viewport demo cards (Tom, 2026-11-01): keep the sample cards in the slot that compare empties;
   Studio shows them as the demo.
