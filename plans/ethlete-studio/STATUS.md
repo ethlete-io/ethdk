@@ -20,10 +20,11 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B29, C3, C5 und ein Test für C2, der den Fehler fängt. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Parallel: B29, C3 und C5. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
+- C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet; der Test fängt das alte Verhalten (28141b818, e76c503fb, 02.11.).
 - B26: `design check` nennt jetzt auch Teile, die ohne Browser nicht zeichnen und an denen `design ready` scheitert (85a028f16, 02.11.).
 - B11: Lint-Regel `ethlete/no-native-title`, vorerst opt-in (4c60be59e, 02.11.).
 - B25: `design dom <part>` gibt das HTML eines Zustands aus, aus dem Entwurf oder mit `--app` aus der App (2c74c7237, 02.11.).
@@ -115,7 +116,7 @@ Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-T
 ## C. CLI: Tempo und Ablauf
 
 1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
-2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Läuft.** Code in 28141b818; der Test fängt den Fehler noch nicht.
+2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Erledigt** (28141b818, e76c503fb). Offen: ein Test für `--live`.
 3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Läuft.**
 4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 5. Pre-push prüft geänderte Teile statisch (Befund 105). **Läuft.**
