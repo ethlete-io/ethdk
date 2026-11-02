@@ -120,7 +120,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **E2** Go: ein Schritt pro Änderung oder feste Reihenfolge? Und welcher Name statt „Go“?
 - **E3** Logo-Knopf: Radius bei Hover und Active (Befund 107).
 - **E4** Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
-- **E5** Titelleiste unter Windows und Linux: Knöpfe zeichnen.
 - **E6** Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
   Inventar-Einstieg, „Alle Produkte“.
 - **E7** Sketch-Ansicht: kommen Ablehnen, Notizen und Diff-Listen zurück, und wo?
