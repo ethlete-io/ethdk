@@ -2858,6 +2858,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      first render; the intended design does not change. pages/sketches then needs a new go from Tom (go hash changes).
      Tool fix (B118): `sketch check`/`design check` flag an SDK component rendered without its CSS (an sr-only element
      with a visible box).
+     Built (af28afe38): cause confirmed - `ng()` put the SDK CSS in front of the frame's first `ng()` render only;
+     now `ng()`/`ngStates()` return markup only and `withNgStyles()` puts CSS not yet handed out into
+     `drawing.styles`. Guard: error rule UNSTYLED-SDK in `design check` empties the slots like the picture and flags a
+     `.et-visually-hidden` element that still draws; proven red/green only on a Chromium spec fixture, the run on the
+     real old pictures is still owed. The title-bar render dropping `search.styles` has no effect (title-search has
+     no stylesheet) and stays as is. Merged pictures of other parts whose SDK component first rendered in an emptied
+     slot change too - the fix, not a design change.
 
 212. Closing the Studio sidebar makes the Sketches canvas jump (Tom, 2026-11-02, two screenshots of the
      elements/shell-main sketch at 44 %): the canvas grows to the left by the sidebar width (~254 px) and every frame
@@ -2879,3 +2886,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      a page never renders a frame without the title bar; an e2e case navigates System -> Sketches -> Inbox and requires
      the main content's top edge to stay constant in every frame after the navigation (red first on today's build);
      the harness gets a mode that delivers the chrome async, so the same bug shows in a part shot.
+
+214. The B116 pre-commit hook ran the cli specs with the `GIT_INDEX_FILE` of a path-limited commit
+     (`git commit -- <paths>`), so harness-map.spec's own git commits failed (builder, 2026-11-02; fixed in
+     af28afe38 by unsetting it). Lesson: the hook was proven with a plain commit only; the path-limited form, which
+     the doc agent uses for every plan commit, sets a temporary index that leaks into child git calls. Tool fix
+     (technical, B122): a spec runs the pre-commit hook under a path-limited commit and requires a spec that commits
+     in a temp repo to pass.
