@@ -1525,10 +1525,17 @@ check` fails a part with a varying design prop that has no app input and is not 
      state; (b) in the narrow side panel the variant note wraps into six short lines beside the "Gewählt c" chip, and
      the changed list breaks part keys and state names mid-token ("elements/part-" / "tree", "components-" / "open")
      while repeating the part key on every row; (c) after the merge the merged sketch stays in the tree under
-     "Sketches" for 10-15 s (cause pending, ask the builder). Why no check caught it: no e2e measures the time to the first changed
+     "Sketches" for 10-15 s. Cause (builder): the tree is SSE-driven, but after a revision bump system-view runs only the
+     full /__design/sketches read (a pixel comparison per sketch and variant, studio-api.ts sketchesAnswer); each file
+     event of the merge restarts it via switchMap, and merge() triggers no refresh itself. Fix (building): a quick read
+     before the full read on every bump, and the merged sketch leaves the tree at once on success (spec: gone within
+     1 s). Also (d): the merge list flags a state "changed" for a real pixel diff, a missing state and a draw error
+     alike (merge-compare.ts), so a false positive cannot be told apart; the title-bar merge listing part-tree states
+     stayed inconclusive. Why no check caught it: no e2e measures the time to the first changed
      row or asserts a loading state; the render check has no rule for identifiers broken across lines or for running
      text squeezed into a narrow column. Tool fix: B62 (the merge view shows a loading state at once and fills the list
-     as states are judged; an e2e budget for the first row; a render-check rule that flags a code identifier wrapped
+     as states are judged; each changed row says why: pixel, missing or error; an e2e budget for the tree to drop a
+     merged sketch; an e2e budget for the first row; a render-check rule that flags a code identifier wrapped
      mid-token and a text block wrapped into more than about four lines narrower than about 25 characters). The
      layout fix itself is visible, so it goes into a merge-view sketch. Lesson: a list that is slow and a list that is
      cramped both pass a check that only looks at the finished, wide render.
