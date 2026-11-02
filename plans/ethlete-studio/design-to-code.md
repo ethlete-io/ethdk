@@ -2219,3 +2219,10 @@ In progress, five parallel subagents, one per fix: (1) `task --verify` runs the 
 (2) an embedded-part change marks the embedding parts "actions need a re-run" in `check` and `ready` (finding 130);
 (3) "reaches state X instead" on an actions miss (finding 131); (4) OCCLUDED check and compare waits for the overlay
 enter animations (finding 129); (5) harness build cache (Q16 item 2).
+
+### Builder wave (2026-11-02, in progress)
+
+Merges committed: 9fe0b8a41 (title bar + title search + icons), f31a7febb (update dialog). In progress, parallel
+subagents, one per slice: causes of findings 166 and 167; B65 go auto-carry with slots drawn; B72 CONTROL-STATE;
+B66 harness host width; B75 identical-renders first changed state; `--et-kbd-color`; B77 background-only hook;
+zoom-chip `target` only in interaction rows.
