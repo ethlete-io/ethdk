@@ -1884,6 +1884,13 @@ Q16, from finding 126:
 - Agent memory is off-limits for this work (Tom: "memory hilft mir aber allen anderen usern absolut gar nicht"). A
   lesson an agent learns becomes a finding with a tool fix; the doc-agent and builder-agent skills say so.
 
+### Title bar and refused-action decisions (Tom, 2026-11-02)
+
+- components/title-bar: Tom picks variant C (32 px wide field "studio / Title Bar", filled brand Update). The merge
+  from Studio failed and nothing was picked; it is retried only after the builder knows the cause.
+- A refused decide action (pick, discard) shows an error next to the decide controls, with the CLI's reason. It
+  reuses the merge bar's `[error]` pattern and `refusalMessageOf`; no new design, no sketch needed.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
