@@ -2573,6 +2573,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   never below about 12 px on screen (at Fit they stay readable without zooming).
 - Text floor revised (Tom, finding 196): the 12 px floor applies only to the variant head (name, model, note,
   Übernehmen). State labels scale with the zoom and are hidden once they would render below about 9 px.
+- Long state label (Tom, finding 198): a label longer than its frame wraps onto two lines; the whole grid row
+  reserves the height of its tallest label, so the frames of one row stay aligned.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
@@ -2618,3 +2620,12 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      (layout decision "about 4 side by side") was drawn with short state names only. Product question to Tom (how a
      long label is shown). Tool fix (decided, technical): the same canvas.e2e pass asserts that the frames of one
      grid row share their top edge within 1 px; the sketch-view fixture gets the longest real state name.
+
+199. elements/shell-main (a page-sized part, ~15 states, one column per the wide-part rule) opens at Fit = 2 %: three
+     variant rows of 15 stacked full shells, every frame a ~35 px thumbnail; the view is unusable for it (Tom,
+     2026-11-02). Its notes are English too (finding 194, B114). Lesson: the layout decisions were drawn with
+     zoom-chip and title-bar only, never with the largest real part; a layout rule needs the extreme fixtures (smallest,
+     widest, tallest part, most states) before it is decided (findings 185, 192, 196). Product question to Tom (layout
+     for large parts). Tool fix (decided, technical): the sketch-view fixture set and canvas.e2e include the largest
+     real part with the most states, and canvas.e2e asserts that Fit renders every frame at least ~25 % zoom or reports
+     the part as "too large for Fit" (measured, not blocked).
