@@ -198,9 +198,12 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 159).
 - **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
   E2E lädt Rahmen, während sich Dateien ändern (Befund 160).
-- **B70** Ein Go lässt sich zurücknehmen (Studio und CLI); Form offen bei Tom (Befund 162).
+- **B70** (geparkt bis zum Umbau des Go-Systems) Ein Go lässt sich zurücknehmen (Befund 162).
 - **B71** Schnelles Sketch-Lesen lädt keine Part-Module; E2E-Budget erste Sketch-Zeile ≤ 2 s nach Reload
   (Befund 161, Builder baut).
+- **B72** CONTROL-STATE: eigenes Control-Markup in einem Nicht-Control-Part ist ein Fehler, auch wenn der Part
+  `controls` deklariert; Suchfeld der Titelleiste wird eigener Part (Befund 163).
+- **B73** Pre-Push-Gate scheitert bei ungeprüften Zuständen eines gewählten Parts.
 
 ## C. CLI: Tempo und Ablauf
 

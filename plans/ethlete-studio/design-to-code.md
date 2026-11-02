@@ -1623,6 +1623,16 @@ check` fails a part with a varying design prop that has no app input and is not 
      decisions defined granting, stale and auto-carry, never withdrawal, and no e2e walks a go back. Tool fix: B70
      (shape pending Tom's decision). Lesson: a release the person can give but not take back turns every wrong
      release into a file edit.
+163. The title bar search field is drawn inline in `components/title-bar` with its own hover, pressed and focus rows,
+     though it is plainly an element of its own inside the title bar (Tom, 2026-11-02: "wieso haben wir es nun als
+     teil der titlebar? wieso passiert sowas noch immer"). Cause: the Q181 rule CONTROL-STATE lets a part draw
+     interaction states when it declares its controls (Q164). The title bar declares `controls = { search, update,
+     minimize, maximize, close }` (components/title-bar/shared/chrome.ts:77) and forces states per control through a
+     `force` prop, so the check passed, although the search field is bespoke markup (an et-button with custom
+     classes, a product/part label and a kbd) that exists nowhere else. The control declaration became the loophole
+     the rule was meant to close. Tool fix: B72 (a declared control counts only when it is an embedded part or an
+     SDK component used through its props; bespoke control markup inside a non-control part is a CONTROL-STATE error
+     that names it for extraction). Lesson: an exemption a part grants itself is no rule.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2107,6 +2117,17 @@ Q16, from finding 126:
   same (finding 157).
 - Technical (grill): os/left/right/update become app inputs; the layout follows the design (grid h-8, 1fr | auto |
   1fr), not the app's flex h-9.
+
+### Title bar search and gate decisions (2026-11-02)
+
+- Search field text (Tom): placeholder, search icon and kbd take the full surface text colour on hover, pressed and
+  focus-visible; at rest they stay muted. No contrast exception.
+- The search field becomes its own control part (Tom's feedback, finding 163); the title bar embeds it and draws no
+  states of it. Its states and the contrast fix live in the new part.
+- Go withdrawal (B70) is parked: the go system will be reworked; the rework must include withdrawing a go. Until
+  then a wrong go leaves by a hand edit of go.json, done by Tom.
+- Technical (grill): the pre-push visible-change gate fails when a selected part has any unjudged state; listing
+  them is not enough (a gate that passed after judging nothing, builder 2026-11-02).
 
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
