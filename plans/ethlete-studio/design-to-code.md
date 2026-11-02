@@ -2470,3 +2470,12 @@ decision 2), #91 (go rework, A10).
      checking the UI has it. Tool fix (decided, technical): pixel-identical variants are an agent defect (sketches are
      agent-drawn, finding 180), so the agent removes or redraws them; `ready`'s refusal names that agent action and
      never a user step. A reject UI in Studio, if wanted, is a product question for later.
+
+185. Zoom-label round r3 (pages/sketches g/h/i/j) missed the question (Tom, 2026-11-02): the variants look almost
+     identical, because the states sat at moderate zoom (25 %, 200 % of the rows inside a fixed layout) where label
+     behaviours barely differ. Tom's reference: the real Sketches view at 197 % (frame far larger than the viewport,
+     head pinned top) and at 7 % (whole sketch a tiny cluster, no labels). Lesson: a behaviour question is drawn at
+     its extremes, where the options visibly diverge. Tool fix: cause and check pending from builder (candidate:
+     `ready` reports the pairwise pixel share between variants in the round's leading states and refuses below a
+     floor). Q2 decided by Tom: reject r2 b/c (--by tom) and add agent-only `sketch withdraw` for pixel-identical
+     own variants (finding 184).
