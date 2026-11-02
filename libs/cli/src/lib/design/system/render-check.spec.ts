@@ -219,6 +219,65 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('flags text that shows through an open overlay pane, and not under an opaque one', async (context) => {
+    const page = (pane: string) =>
+      `<div style="position: relative; width: 300px; height: 160px"><p style="margin: 0; padding: 40px 8px">Round one text below</p>${pane}</div>`;
+    const target = checkout({
+      'components/see-through': {
+        body: page(
+          '<div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px">Pane</div>',
+        ),
+      },
+      'components/half-opaque': {
+        body: page(
+          '<div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: rgb(255 255 255 / 0.5)">Pane</div>',
+        ),
+      },
+      'components/opaque': {
+        body: page(
+          '<div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div>',
+        ),
+      },
+      'components/opaque-wrapper': {
+        body: page(
+          '<span style="position: absolute; top: 20px; left: 0; background: white"><div class="et-overlay" role="dialog" style="width: 280px; height: 80px">Pane</div></span>',
+        ),
+      },
+      'components/opaque-panel': {
+        body: page(
+          '<div class="cdk-overlay-pane" style="position: absolute; top: 20px; left: 0"><div role="menu" style="width: 280px; height: 80px; background: white">Pane</div></div>',
+        ),
+      },
+      'components/inline-dialog': {
+        body: page('<div role="dialog" style="margin-top: -60px; height: 80px">Pane</div>'),
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'SEE-THROUGH')
+        .map((issue) => [issue.part, issue.detail.replace(/ at \d+ of \d+ points/u, '')])
+        .sort(),
+    ).toEqual([
+      [
+        'components/half-opaque',
+        'the open overlay pane lets "Round one text below" (p) under it show through - give the pane an opaque background',
+      ],
+      [
+        'components/see-through',
+        'the open overlay pane lets "Round one text below" (p) under it show through - give the pane an opaque background',
+      ],
+    ]);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};

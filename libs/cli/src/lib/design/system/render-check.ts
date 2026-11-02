@@ -28,6 +28,7 @@ import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 import { unchangedStatesOf } from './sketch/unchanged-states';
 import { optionValuesChecker } from './rules/option-values';
+import { SEE_THROUGH_STATEMENTS } from './see-through';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -388,6 +389,7 @@ const inspectFrame = (options: {
     }
   }
 ${CONTRAST_STATEMENTS}
+${SEE_THROUGH_STATEMENTS}
   const ownedOf = (element) => {
     const slotted = (element.getAttribute('data-et-slot') ?? '').split(' ').filter(Boolean);
     for (let at = element; at && at !== root; at = at.parentElement)
