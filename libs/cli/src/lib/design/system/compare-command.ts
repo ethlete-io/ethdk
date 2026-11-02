@@ -108,6 +108,15 @@ export const compareFrameOf = (options: {
     : `the product has no preset "${preset}" - its presets: ${Object.keys(presets).join(', ')}`;
 };
 
+/** The width a non-page part is compared at: the first of the `widths` its design declares, `null` to fit its content. */
+export const compareWidthOf = (options: { part: string; widths: unknown }): number | null => {
+  const first: unknown = Array.isArray(options.widths) ? options.widths[0] : undefined;
+
+  return !options.part.startsWith('pages/') && typeof first === 'number' && Number.isInteger(first) && first > 0
+    ? first
+    : null;
+};
+
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
 const clickOpen = async (options: {
@@ -237,11 +246,13 @@ const forcedTargetOf = async (options: {
  * `opened`, and with each `forced` element hovered, pressed or keyboard-focused as the design picture forces it.
  * With `roomAbove`, for a design picture drawn above its part root, the fitted host gets room above and before it, so
  * an overlay that opens above neither flips below nor shifts off the viewport edge, and the shot grows up as well.
+ * Without `size`, a `width` sets the viewport and the host to that width, as a design frame draws a part with `widths`.
  */
 export const harnessShotOf = async (options: {
   browser: Browser;
   url: string;
   size?: DesignPreset | null;
+  width?: number | null;
   forced?: ForcedElement[];
   opened?: { control: string; markup: string };
   roomAbove?: boolean;
@@ -254,7 +265,8 @@ export const harnessShotOf = async (options: {
   const { browser, url } = options;
   const timeout = options.timeout ?? DRAW_TIMEOUT_MS;
   const room = !options.size && !!options.roomAbove;
-  const viewport = viewportOf(options.size ?? null);
+  const width = options.size ? null : (options.width ?? null);
+  const viewport = { ...viewportOf(options.size ?? null), ...(width ? { width } : {}) };
   const context = await browser.newContext({
     viewport: room ? { width: viewport.width + ROOM_PX, height: viewport.height + ROOM_PX } : viewport,
     deviceScaleFactor: 1,
@@ -275,6 +287,12 @@ export const harnessShotOf = async (options: {
         `the harness page ${url} showed no ${HARNESS_HOST_SELECTOR} element within ${timeout} ms - does the app serve the design harness route?`,
       );
     });
+
+    if (width)
+      await page.evaluate(
+        `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)}).style.width = '${width}px'`,
+      );
+
     await awaitFonts(page);
 
     if (options.props) {
@@ -384,8 +402,9 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
 
     const file = product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? '';
     const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
-      default?: { states?: unknown; controls?: unknown };
+      default?: { states?: unknown; controls?: unknown; widths?: unknown };
     };
+    const width = compareWidthOf({ part, widths: module.default?.widths });
     const loaded = module.default?.states;
     const states =
       loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
@@ -402,7 +421,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
         part,
         state,
         preset: frame.preset,
-        width: null,
+        width,
         sketch: null,
         interaction: null,
         bare: true,
@@ -465,6 +484,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
             layout: frame.layout,
           }),
           size: frame.size,
+          width,
           forced,
           props: {
             sent,

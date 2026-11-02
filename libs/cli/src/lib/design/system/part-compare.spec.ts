@@ -7,7 +7,14 @@ import { chromium, type Browser } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { crc32, deflateSync } from 'zlib';
 import { DESIGN_DIR } from '../paths';
-import { compareFrameOf, comparePart, designCompare, harnessShotOf, ShootStates } from './compare-command';
+import {
+  compareFrameOf,
+  comparePart,
+  compareWidthOf,
+  designCompare,
+  harnessShotOf,
+  ShootStates,
+} from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import {
   comparePngs,
@@ -276,6 +283,13 @@ describe('part compare', () => {
     expect(compareFrameOf({ presets, part: 'components/chip', preset: 'phone' })).toBe(
       '--preset applies to a pages part only, components/chip is fitted to its content',
     );
+  });
+
+  it('compares a part with widths at its first width, a page or a part without them fitted', () => {
+    expect(compareWidthOf({ part: 'components/title-bar', widths: [1440, 900] })).toBe(1440);
+    expect(compareWidthOf({ part: 'components/chip', widths: undefined })).toBeNull();
+    expect(compareWidthOf({ part: 'components/chip', widths: [0] })).toBeNull();
+    expect(compareWidthOf({ part: 'pages/inbox', widths: [1440] })).toBeNull();
   });
 
   it('decodes every PNG row filter and round-trips its own PNGs', () => {
@@ -661,6 +675,18 @@ describe('harnessShotOf', () => {
     expect(decodePng(png)).toEqual(
       pixelsOf(9, 9, (x, y) => (y < 4 ? (x < 7 ? RED : checkerAt(x, y)) : x >= 2 ? BLUE : checkerAt(x, y))),
     );
+  });
+
+  it('sizes a fitted host to the width the design draws the part at', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const png = await harnessShotOf({
+      browser,
+      url: harnessUrlOf({ url, part: 'components/chip', state: 'a', props: {} }),
+      width: 12,
+    });
+
+    expect(decodePng(png)).toEqual(pixelsOf(12, 5, () => BLUE));
   });
 
   it('shoots a page host in the viewport of the preset size', async (context) => {
