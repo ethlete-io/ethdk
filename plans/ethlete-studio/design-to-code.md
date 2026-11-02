@@ -2423,3 +2423,10 @@ Rules from the B79 audit that no hook, check or refusal can test. Each stays pro
 Not judgment rules, so they get a tool (B100): #47 stage order, #48 one open call and word limit, #58 slice plan
 notes, #63 grill round format, #93 comment allowlist. Lifted or moved, so no tool: #84, #85, #86 (freezes lifted,
 decision 2), #91 (go rework, A10).
+
+181. pages/sketches variant e was reported "ready" (check green) while its content is clipped at the bottom (Tom,
+     2026-11-02): rail repo selector, note text and the last canvas frame end cut off at the viewport edge. Lesson:
+     `ready` checks pixels against siblings and structure, not overflow; a clipped page passes. Tool fix (cause
+     pending from builder): a sketch check that fails when content ends past the viewport bottom or a non-scrolling
+     container has scrollHeight > clientHeight, at every reference size. Also: the grill session relayed "ready" to
+     Tom without looking at the shot - relay only after a shot was opened.
