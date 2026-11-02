@@ -208,7 +208,8 @@ const relativeImportsOf = (file: string, source: string) =>
 
 /**
  * The app files that wire the part in: each non-spec file under the app's `src` folder that imports the part's component
- * folder, directly or through other such files, and the part's own spec.
+ * folder, directly or through other such files, the part's own spec, and the non-spec app files its direct importers
+ * import.
  */
 export const wiringFilesOf = (options: {
   files: string[];
@@ -240,6 +241,18 @@ export const wiringFilesOf = (options: {
         wiring.add(file);
         grown = true;
       }
+    }
+  }
+
+  const direct = candidates.filter(({ imports }) =>
+    imports.some((target) => target === dir || target.startsWith(`${dir}/`)),
+  );
+
+  for (const { imports } of direct) {
+    for (const target of imports) {
+      const file = resolved(target);
+
+      if (file !== null && candidates.some((candidate) => candidate.file === file)) wiring.add(file);
     }
   }
 

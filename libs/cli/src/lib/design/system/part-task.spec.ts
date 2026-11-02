@@ -427,6 +427,11 @@ describe('part task', () => {
       'apps/studio/src/app/components/design-canvas/canvas-math.ts': 'export type Camera = {};',
       'apps/studio/src/app/design-parts/inbox/inbox-sample.ts': 'export type InboxAgent = {};',
       'apps/studio/src/app/other/other.component.ts': "import { B } from '../b/b.component';",
+      'apps/studio/src/app/app.config.ts': [
+        "import { SystemViewComponent } from './system-view/system-view.component';",
+        "import { CONFIG_EXTRA } from './config-extra';",
+      ].join('\n'),
+      'apps/studio/src/app/config-extra.ts': 'export const CONFIG_EXTRA = {};',
     };
     const wiring = [
       'apps/studio/src/app/system-view/sketch-view.component.ts',
@@ -497,8 +502,12 @@ describe('part task', () => {
       expect(await verify(target, [], compare, [])).toBe(0);
       expect(lines.slice(lines.indexOf('wiring files:') + 1, lines.indexOf('target: compare green'))).toEqual([
         '  apps/studio/src/app/system-view/sketch-view.component.ts',
+        '  apps/studio/src/app/system-view/inbox-comments.ts',
+        '  apps/studio/src/app/system-view/system-tree.ts',
         '  apps/studio/src/app/design-parts/sketches/sketches.component.spec.ts',
         '  apps/studio/src/app/system-view/system-view.component.ts',
+        '  apps/studio/src/app/components/design-canvas/canvas-math.ts',
+        '  apps/studio/src/app/app.config.ts',
       ]);
 
       lines.length = 0;
@@ -518,13 +527,33 @@ describe('part task', () => {
       expect(lines).toContain('WIRING apps/studio/src/app/system-view/system-view.component.ts');
     });
 
-    it('never makes a file wiring because a spec imports it', async () => {
+    it('allows a non-spec file a direct importer imports, one level only', async () => {
       const target = sketches();
       const lines = output();
       const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
 
-      expect(await verify(target, [...design, 'apps/studio/src/app/system-view/inbox-comments.ts'], compare)).toBe(1);
-      expect(lines).toContain('  apps/studio/src/app/system-view/inbox-comments.ts');
+      expect(
+        await verify(
+          target,
+          [
+            ...design,
+            'apps/studio/src/app/system-view/inbox-comments.ts',
+            'apps/studio/src/app/system-view/system-tree.ts',
+          ],
+          compare,
+        ),
+      ).toBe(0);
+      expect(lines).toContain('WIRING apps/studio/src/app/system-view/inbox-comments.ts');
+      expect(await verify(target, [...design, 'apps/studio/src/app/system-view/comment-pins.ts'], compare)).toBe(1);
+    });
+
+    it('refuses a file only a further ancestor imports', async () => {
+      const target = sketches();
+      const lines = output();
+      const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
+
+      expect(await verify(target, [...design, 'apps/studio/src/app/config-extra.ts'], compare)).toBe(1);
+      expect(lines).toContain('  apps/studio/src/app/config-extra.ts');
       expect(compare).not.toHaveBeenCalled();
     });
   });
