@@ -2616,6 +2616,21 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   when panning down (not now).
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
 
+### Shell rail buttons decisions (Tom, 2026-11-02)
+
+- elements/shell-main rail buttons (section, product): own control parts `components/shell-section` and
+  `components/shell-product`, today's look unchanged. The sketch round r1 is withdrawn: Tom clicks "Verwerfen" on
+  the elements/shell-main sketch himself. The builder extracts both parts without a sketch round, draws only their
+  missing interaction states (rest, hover, pressed, focus-visible; active for section), links them, and Tom gives
+  each part its go. Reason: variant a (forced plain SDK buttons) looked as bad as expected, and variant b changes no
+  pixel, so there was no choice to make.
+- CONTROL-STATE sketches (replaces decision 11 "two variants: unchanged SDK button + own part"): the plain-SDK
+  variant is drawn only when the SDK button reaches today's look with its own variants and tokens. Otherwise the
+  agent extracts the own control part directly, with no sketch, and writes a one-line reason why the SDK button does
+  not fit; the doc agent reviews the reason. Tool fix (B119): the CONTROL-STATE hint text says this; extracting a
+  part without a visual change needs no sketch round (`sketch ready` already refuses a pixel-identical round), and the
+  extraction records the "SDK does not fit" reason where `design check` can see it is present.
+
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
      frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
@@ -2843,3 +2858,12 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      first render; the intended design does not change. pages/sketches then needs a new go from Tom (go hash changes).
      Tool fix (B118): `sketch check`/`design check` flag an SDK component rendered without its CSS (an sr-only element
      with a visible box).
+
+212. Closing the Studio sidebar makes the Sketches canvas jump (Tom, 2026-11-02, two screenshots of the
+     elements/shell-main sketch at 44 %): the canvas grows to the left by the sidebar width (~254 px) and every frame
+     moves left by the same amount, so the content under the pointer changes. Expected: the content stays where it is
+     on screen; only the newly free area shows more canvas. Lesson: canvas.e2e drives zoom and pan with a fixed
+     viewport origin; nothing changes the viewport's left edge while a camera is set. Tool fix (decided, technical,
+     B120): when the viewport's screen origin moves, the camera shifts by the same delta so world points keep their
+     screen position; a canvas.e2e case toggles the sidebar at a panned, zoomed camera and requires a frame's screen
+     rect to stay within 1 px (red on today's build first).
