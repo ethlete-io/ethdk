@@ -688,6 +688,14 @@ const noteProblemsBefore = ({ sketch, variant, before }: { sketch: Sketch; varia
     );
 };
 
+const variantGateProblemsOf = (options: {
+  target: string;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  variant: string;
+  problems: Problem[];
+}): Problem[] => [...options.problems, ...formatProblemsOf(options), ...unusedInVariantOf(options)];
+
 const readyRefusalOf = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
@@ -701,11 +709,9 @@ const readyRefusalOf = (
   const problems = found
     .filter(({ variant }) => !rejectionOf(sketch, variant))
     .flatMap(({ variant, problems }) =>
-      [
-        ...problems,
-        ...formatProblemsOf({ target: context.target, sketch, variant }),
-        ...unusedInVariantOf({ product, sketch, variant }),
-      ].map((problem) => lineOf(variant, problem)),
+      variantGateProblemsOf({ target: context.target, product, sketch, variant, problems }).map((problem) =>
+        lineOf(variant, problem),
+      ),
     );
 
   sketch.variants.forEach((variant) =>
@@ -888,8 +894,7 @@ const checked = async (context: Context) => {
     );
 
     const all = [
-      ...problems,
-      ...formatProblemsOf({ target, sketch, variant }),
+      ...variantGateProblemsOf({ target, product, sketch, variant, problems }),
       ...(typed.kind === 'failed' ? [{ rule: 'TYPE-ERROR', file: sketch.dir, message: `\n${typed.output}` }] : []),
       ...(typed.kind === 'unavailable' ? [{ rule: 'NO-TYPE-CHECKER', file: sketch.dir, message: typed.message }] : []),
     ];

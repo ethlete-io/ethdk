@@ -813,7 +813,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
   });
 
-  it('refuses ready while the closure of a variant keeps an unused import', () => {
+  it('refuses ready and fails check while the closure of a variant keeps an unused import', async () => {
     const target = acme();
     const lines = output();
     const button = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.ts');
@@ -824,6 +824,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       'components/button b: UNUSED .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: imports readFileSync but never uses it - remove the import\ncomponents/button has problems - fix them before ready',
+    );
+    lines.length = 0;
+    expect(await run(target, 'check', 'components/button', '--fix', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(
+      'components/button b: UNUSED .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: imports readFileSync but never uses it - remove the import',
     );
   });
 
@@ -1274,6 +1279,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    rmSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.css'));
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.ts'),
       `import { definePart, drawing, html } from '@design-system';
