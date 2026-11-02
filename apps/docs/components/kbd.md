@@ -102,6 +102,6 @@ Each key is a real `<kbd>` element, nested inside the host the way HTML nests ke
 
 ## Theming
 
-Public design tokens: `--et-kbd-gap` (default `3px`, between caps), `--et-kbd-key-min-inline-size` (`18px`), `--et-kbd-key-padding-inline` (`5px`), `--et-kbd-key-border-radius` (`4px`), `--et-kbd-font-size` (`11px`), `--et-kbd-font-weight` (`500`).
+Public design tokens: `--et-kbd-gap` (default `3px`, between caps), `--et-kbd-key-min-inline-size` (`18px`), `--et-kbd-key-padding-inline` (`5px`), `--et-kbd-key-border-radius` (`4px`), `--et-kbd-font-size` (`11px`), `--et-kbd-font-weight` (`500`), `--et-kbd-color` (the cap text colour; unset, it follows the muted surface colour). Set `--et-kbd-color: currentColor` to make the caps follow the surrounding text, for example inside a button.
 
-All of them inherit, so setting them once on a menu, a toolbar or a help panel configures every cap inside it. The cap's own colors are not tokens: the text is `--et-surface-color-muted-solid`, the border `--et-surface-border-solid`, and the fill a `color-mix()` tint of `--et-surface-interaction-solid`, so a cap reads correctly on every registered surface and elevation without configuration. See [theming](/core/theming) for the token set.
+All of them inherit, so setting them once on a menu, a toolbar or a help panel configures every cap inside it. Without `--et-kbd-color` the text is `--et-surface-color-muted-solid`, the border `--et-surface-border-solid`, and the fill a `color-mix()` tint of `--et-surface-interaction-solid`, so a cap reads correctly on every registered surface and elevation without configuration. See [theming](/core/theming) for the token set.

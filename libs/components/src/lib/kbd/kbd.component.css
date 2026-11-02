@@ -52,7 +52,7 @@
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     border-radius: var(--et-kbd-key-border-radius);
     background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 8%, transparent);
-    color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    color: var(--et-kbd-color, var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55)));
     font: inherit;
     font-size: var(--et-kbd-font-size);
     font-weight: var(--et-kbd-font-weight);
