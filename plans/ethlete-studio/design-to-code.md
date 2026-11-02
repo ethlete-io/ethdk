@@ -1452,6 +1452,16 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      derived from its input types: counts 0/1/N, sizes from the matrix, optional inputs empty; `sketch ready` refuses
      variants whose renders are identical to each other or to Aktuell). Lesson: a part checked only against the
      fixture it was designed for passes every input it was not.
+149. components/zoom-chip was never comparable, yet counted as done in the MVP (builder, 2026-11-02, found by the B48
+     gate as "unjudged" in all 16 states). `design compare` fails every state: the design sets a `target` prop on
+     every interaction row (zoom-chip.ts ~35), ZoomChipComponent has no `target` input, and designOnlyPropsOf
+     (part-compare.ts:409) only treats a prop as design-only when it is constant or the state forces an interaction.
+     Why no check caught it: the pre-push `design check` draws nothing and never looks at props; only compare and
+     `task --verify` do, and nothing makes them run per part before a part counts as done. Tool fix: B55 (`design
+check` fails a part with a varying design prop that has no app input and is not design-only, without drawing;
+     the zoom-chip design sets `target` only where it sets `interaction`; a sweep runs compare over every part to
+     find others that were never comparable). Lesson: "done" must mean a check has compared the part, not that no
+     check complained.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
