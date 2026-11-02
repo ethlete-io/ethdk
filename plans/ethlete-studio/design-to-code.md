@@ -3010,3 +3010,19 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      mount the part" and "files that feed its inputs" are two sets; decision 221 covered only the first. Tool fix
      (decided, technical, amends B128): wiring also includes the non-spec app files imported by the part's DIRECT
      importers (one level, not the imports of every ancestor, so app.config does not pull in the whole app).
+
+225. B130 landed (5577108ff rule, d2d484c55 marker, builder, 2026-11-02): ACTION-UNDECLARED is now a draw-time error
+     in inspectFrame, so check, sketch check and sketch ready flag native controls, interactive roles, `[tabindex]`,
+     `[aria-expanded]` and click listeners without `data-et-action`. The hold toggle carries
+     `data-et-action="${open ? 'paused' : 'paused-reason'}"` (a non-emit value names a state). Product-wide
+     `design check` went red on HEAD: studio 286 hits (comment-pin, title-bar, tree-row, update-dialog), sdk 2222.
+     Lesson: these parts had gos while their interactive elements carried no action, so the action check never ran
+     against those controls; and a new rule switched on as an error everywhere breaks every unrelated push.
+     Tool fix (decided, technical, B133): ratchet. ACTION-UNDECLARED is an error in sketch check / sketch ready and in
+     check for a part with no go or changed since its go; for an unchanged part with a go it is a WARNING, one summary
+     line per part (count + first selector), not one per element x state x scheme. Product-wide check and pre-push
+     are green again. Backlog: B134 studio declares the actions in comment-pin, title-bar, tree-row, update-dialog
+     (stales their gos: Tom re-gos them in one batch); B135 sdk: an explicit per-part declaration that the part is a
+     control whose action belongs to its consumer (never inferred), then the remaining hits. Open before Tom's go of
+     pages/sketches: why the check printed "PICTURES CHANGED ... drawing" after d2d484c55 (that state has no hold
+     button). Flake: actions-stream.spec failed once under load.
