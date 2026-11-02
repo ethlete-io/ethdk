@@ -120,6 +120,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   ohne technische Werte (dl 02.11.).
 - **B38** Kopf einer Variante zeigt den kurzen Modellnamen statt „Claude“, Tooltip mit vollem Namen und Zeit
   (Rückschritt; dl 02.11.).
+- **B39** Wechselt eine Ansicht auf einen Design-Teil, muss jeder gelöschte Test entweder in der Liste „was das Design
+  weglässt“ stehen oder im neuen Spec wieder auftauchen; die CLI prüft das (Befund 137).
 
 ## C. CLI: Tempo und Ablauf
 

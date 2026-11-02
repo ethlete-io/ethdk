@@ -1336,6 +1336,17 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      `sketch check` passes; `sketch check` and `shot` draw in their own fitted frames, and nothing renders Studio's
      own sketch view with a short or a new part. Tool fixes: B34-B36. Lesson: the tool has to check the view Tom
      actually looks at, not only the parts inside it.
+137. Two regressions in Studio's sketch view, both from d0f4a38cf (2026-11-01, Impl Q55/Q57/Q58, the live view swapped
+     to the pages/sketches design part): the "agent is building" state per variant is gone (B34), and the variant
+     author shows only the brand "Claude" instead of the model (B38). The data is intact (system-tree.ts pending and
+     `drawing` column; sketch.json `variantInfo[v].authors`). Cause: the design part had silently lost the drawing
+     state (63dd05458, 29.10., deleted as dead code), its sample author is just {name: 'Claude'}, and the swap renders
+     only what the part declares; d0f4a38cf rewrote the sketch-view spec (-1018 lines) and deleted the only view-level
+     spec of the drawing state. Why no check caught it: the drop list (finding 28) never named the drawing state;
+     `--live` compare matched the broken app to the equally poor part; compare empties slot('shot'), so an in-frame
+     placeholder is invisible to it; no Studio e2e. Tool fixes: view-level specs (B34/B38); a `drawing` state and a
+     model-named author in pages/sketches (a visible change, so a sketch for Tom first); B39. Lesson: a swap to a
+     design part may only render what the part declares, so the part must declare every state the old view had.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
