@@ -6,6 +6,11 @@
   "prefix": "ethlete",
   "tags": ["type:app", "scope:studio"],
   "targets": {
+    "lint": {
+      "options": {
+        "args": ["--max-warnings=0"]
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
