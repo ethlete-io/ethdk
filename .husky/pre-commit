@@ -25,5 +25,8 @@ studio=$(git diff --cached --name-only --diff-filter=ACM -- 'apps/ethlete-studio
 
 if [ -n "$studio" ]; then
   # shellcheck disable=SC2086
-  npx vitest related --run --passWithNoTests --config apps/ethlete-studio/vite.config.mts $studio
+  npx vitest related --run --passWithNoTests --reporter=default --config apps/ethlete-studio/vite.config.mts $studio || {
+    echo 'pre-commit: a Studio spec related to the staged files fails (FAIL lines above name it). It runs on the working tree, so the red may be uncommitted work of another session in this checkout.' >&2
+    exit 1
+  }
 fi
