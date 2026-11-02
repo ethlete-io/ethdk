@@ -1,6 +1,6 @@
 # Studio – Status
 
-Stand: 02.11.2026, nachts
+Stand: 02.11.2026, abends
 
 ## Ziel
 
@@ -20,23 +20,24 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder (02.11., neu gestartet): parallel B49 (Vite fs.allow im Checkout-e2e), Befund 146 (check/ready gleich), B51 (Ursache bestätigen), B48 (Sichtbar-Gate in @ethlete/cli), B53 (deckendes Overlay). Nichts davon ist sichtbare UI.
+Builder (02.11.): gepusht bis e3914fb4e (B48, B51, B52, B53, B49-Kern). Lokal, noch nicht gepusht: ce2a97ab6 (Rahmen
+mit Fehlerseite scheitert laut, B49-Rest). Jetzt: B56 (Merge-Probelauf), dann „Wählen im Merge“ (A13), dann B58, B57,
+B59, B60, B61; daneben B54 (Werkzeug-Teil) und B55 (Abweichungen beheben). Der Builder übergibt bald an eine frische
+Session (Kontext 70 %).
 
-Pausiert seit 02.11. abends (Tom: keine neuen Fixes). `origin/next` = 7724d5f14. Nächste Session startet mit Toms
-Wahl: Sketch `components/title-bar` ist `ready` (A/B/C, Agent empfiehlt B); `pages/sketches` ist gezeichnet, aber
-nicht `ready` (Befund 146). Danach der Sketch zu B46. Was man sieht, startet immer mit einem gewählten Sketch.
+Bei Tom:
 
-Übergaben und geparkte Arbeit (lokal, per gitignore ausgeschlossen, nur auf Toms Rechner):
+- Titelleiste: Tom hat C gewählt. Der Merge scheiterte an Inline-SVGs (Befund 150); die Icons liegen jetzt in
+  `assets/`, ein Merge im Klon geht. Tom mergt C neu.
+- `pages/sketches` ist `ready`, wird aber erst gewählt, wenn die Sketch-Ansicht alle Zustände zeigt (Befund 148).
+- Danach: Sketch der Sketch-Ansicht (B54 sichtbar, mit „Übernehmen“ nach A13), dann B46.
 
-- `.claude/handoffs/doc-agent-studio.md`: Grill/Docs-Session, `/handoff resume doc-agent-studio`.
-- `.claude/handoffs/builder-studio.md`: Builder-Session, `/handoff resume builder-studio`.
-- `.claude/handoffs/b36-parked.patch` und `b36-parked-e2e.mjs`: B36 samt Flacker-Fix (Befund 142); kommt nach der
-  Wahl von pages/sketches, auf B34 aufgesetzt.
-- `.claude/handoffs/b49-parked.patch`: B49 (Befund 144).
-- `.claude/handoffs/agent-results/b48.md`, `b49.md`, `pages-sketches-sketch.md`: Berichte der Unteragenten.
+Übergaben (lokal, per gitignore ausgeschlossen): `.claude/handoffs/doc-agent-studio.md`,
+`.claude/handoffs/builder-studio.md`; geparkt: `b36-parked.patch` und `b36-parked-e2e.mjs` (B36, nach der Wahl von
+pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-results/`.
 
-Reihenfolge danach: B34 neu (nach Wahl), B36, B38, B46, B48, B49, B51-B53, B43-B45, B39-B41; Liste A wie
-festgelegt: A1, A36, A8, dann A9 und A10, dann A5 bis A7 und A40, danach der Rest; A38 und A39 nach A37.
+Reihenfolge danach: B34 neu (nach Wahl), B36, B38, B46, B43-B45, B39-B41; Liste A: A1, A36, A8, dann A9 und A10,
+dann A5 bis A7 und A40, danach der Rest; A38 und A39 nach A37.
 
 ## Erledigt
 
@@ -57,7 +58,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** „Baubereit“ statt Go und Abnahme: ein Teil ist baubereit, wenn seine Prüfungen grün sind; direkte Änderung mit
   anderem Bild wird ein Sketch „alt/neu“ (Befund 109; dl 02.11.).
-- **A13** Sketch „gewählt, aber nicht gemergt“ sichtbar machen oder beides in einem Schritt.
+- **A13** Ein Knopf „Übernehmen“ statt „Wählen“: öffnet direkt die Merge-Ansicht, die ist die Bestätigung; Abbruch
+  lässt nichts gewählt; kein Rückgängig nach dem Merge (Tom, 02.11.; „Pick and merge decisions“).
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A15** Kopf eines Sketches mit mehreren Teilen: Titel und „n Teile“ zum Aufklappen (Q244).
 - **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
@@ -155,20 +157,11 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B47** Ansicht bleibt stabil: Spec prüft, dass eine wiederholte Größenmeldung keine neue iframe-Quelle und keine
   neue Größe setzt; E2E zählt iframe-Ladevorgänge 2 s nach dem Einschwingen, mehr als einer je Rahmen scheitert
   (Befund 142, Flackern).
-- **B48** Sperre in `@ethlete/cli` (Design-Prüfung jedes Produkts, lokal und CI): sichtbare Änderung an einem Teil
-  ohne ausgewählten Sketch scheitert; eine Reparatur, die messbar näher ans bestehende Design führt, kommt durch
-  (Tom, 02.11.; Befund 143).
-- **B49** E2E-Checkout baut node_modules als Ordner aus Symlinks (sonst Vite 403); jede Rahmen-E2E scheitert an einer
-  Fehlerseite im Rahmen (Befund 144).
-- **B51** Keine Studio-Aktion scheitert still: Ablehnung samt Grund sichtbar; „Wählen“ auf einem nicht fertigen
-  Sketch sagt warum; `sketch hold` lehnt „wartet auf Tom“ als Grund ab und verweist auf `sketch ready` (Befund 145;
-  sichtbar, also erst Sketch).
-- **B52** `sketch check` und `sketch ready` urteilen gleich: ready läuft alle Regeln von check, check meldet auch
-  ungenutzte Importe (Befund 146).
-- **B53** Render-Prüfung: ein Overlay muss deckend sein; Text darunter, der durchscheint, wird gemeldet (Befund 147).
+- **B49** Rest: compare, Live-Vergleich, actions und dom scheitern auch laut an einer Fehlerseite im Rahmen; eine
+  200-Seite mit Vites Fehler-Overlay zählt als Fehler (Befund 144).
 - **B54** Design-Checks variieren die Eingaben: jeder Part wird mit abgeleiteten Fixture-Varianten gerendert (Anzahl
   0/1/N, Größen aus der Matrix, optionale Eingaben leer). Dazu die Sketch-Ansicht: Rahmen in echter Part-Größe, eine
-  Zeile pro Variante, „Aktuell“ nur wenn der Part existiert, Refit bei Resize, Zustände der Varianten sichtbar
+  Zeile pro Variante, „Aktuell“ nur wenn der Part existiert, Refit bei Resize, Zustände der Varianten sichtbar,
   Notiz der Variante vollständig und lesbar groß; Check warnt bei Fließtext unter `text-ui-sm` oder auf eine Zeile
   gekürzt (Befund 148; sichtbar, also erst Sketch).
 - **B55** `design check` lehnt einen Part ab, dessen Design-Prop variiert, aber keinen App-Input hat (ohne zu
