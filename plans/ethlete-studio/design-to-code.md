@@ -2548,6 +2548,9 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      `design-parts/**` outside `components/design-canvas` (CANVAS-CAMERA-OWN); the builder's subagent brief ends
      every slice with the e2e of each view it touched, and a subagent stop without that run is reported to the
      grill as "unchecked" (measured, not blocked).
+     Run later (builder): canvas.e2e times out on Sketches waiting for `ethlete-design-canvas` /
+     `ethlete-canvas-viewport` + `[data-sk-frame]` - the rewrite left the canvas contract, so no camera case could run.
+     A lost contract is reported as a timeout; CANVAS-CAMERA-OWN catches the same cause at lint time.
 
 192. The Sketches view looks wrong on real data (Tom, 2026-11-02, components/zoom-chip with 16 states): every frame
      is full width (~1650 px) around a 200 px chip, and at 100 % the "Aktuell" row alone fills the window, so no
