@@ -422,6 +422,29 @@ describe('renderIssuesOf', () => {
     );
   }, 120_000);
 
+  it('flags an SDK component whose styles rode in a slot the picture empties', async (context) => {
+    const hidden =
+      '.et-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }';
+    const page = (shot: string) =>
+      `<div><div data-et-projected="shot">${shot}<p style="margin: 0">shot</p></div><p style="margin: 0">Search <span class="et-visually-hidden">Control K</span></p></div>`;
+    const target = checkout({
+      'pages/styles-in-shot': { body: page(`<style>${hidden}</style>`) },
+      'pages/styles-in-drawing': { body: page(''), css: hidden },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(rendered.issues.filter((issue) => issue.rule === 'UNSTYLED-SDK').map(renderIssueLineOf)).toEqual([
+      'UNSTYLED-SDK shop pages/styles-in-shot default at desktop: div[data-et-part=pages/styles-in-shot] > p > span.et-visually-hidden - the visually hidden "Control K" draws in the picture, so an SDK component here renders without its styles',
+    ]);
+  }, 120_000);
+
   it('measures text contrast in the dark scheme of a product that renders one', async (context) => {
     const target = checkout({
       'components/mode': {

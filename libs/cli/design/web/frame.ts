@@ -1,4 +1,4 @@
-import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays } from '../define-call';
+import { CallVariant, Drawing, fitOutOfFlow, mountDrawing, placeOverlays, withNgStyles } from '../define-call';
 import { drawState, Motion, Part } from '../define-part';
 import { applyEmbed, fitEmbed } from '../embed-page';
 import { paintFill } from './frame-fill';
@@ -115,7 +115,7 @@ const drawCall = async (): Promise<Drawing | null> => {
   if (!variant) return failMissing(`design-explore: call "${slug}" has no variant "${key}"`);
 
   return variant.load().then(
-    (module) => module.default,
+    (module) => withNgStyles(module.default),
     (error: unknown) => fail(`design-explore: variant "${key}" failed\n${messageOf(error)}`),
   );
 };

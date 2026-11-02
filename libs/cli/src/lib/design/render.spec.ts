@@ -3,8 +3,8 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
-import { describe, expect, it } from 'vitest';
-import { mountDrawing, unseenStyles } from '../../../design/define-call';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mountDrawing, ng, unseenStyles, withNgStyles } from '../../../design/define-call';
 import { forceMiddleware, isStale, renderMiddleware } from './render';
 import {
   entryOf,
@@ -262,8 +262,27 @@ describe('unseenStyles', () => {
   it('emits a style once per frame', () => {
     const seen = new Set<string>();
 
-    expect(unseenStyles(['.a{}', '.b{}', '.a{}'], seen)).toBe('<style>.a{}</style><style>.b{}</style>');
-    expect(unseenStyles(['.b{}', '.c{}'], seen)).toBe('<style>.c{}</style>');
+    expect(unseenStyles(['.a{}', '.b{}', '.a{}'], seen)).toBe('.a{}\n.b{}');
+    expect(unseenStyles(['.b{}', '.c{}'], seen)).toBe('.c{}');
+  });
+});
+
+describe('withNgStyles', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('keeps the component styles of a dropped first render in the drawing', async () => {
+    vi.stubGlobal('location', { search: '' });
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      json: async () => ({ markup: '<et-title-bar></et-title-bar>', styles: ['.et-title-bar{}'] }),
+    }));
+
+    const shot = await ng('<et-title-bar />');
+    const page = await ng('<et-title-bar />');
+
+    expect(shot).toBe('<et-title-bar></et-title-bar>');
+    expect(withNgStyles({ body: page, styles: '.page{}' }).styles).toBe('.page{}\n.et-title-bar{}');
+    expect(withNgStyles({ body: page }).styles).toBeUndefined();
   });
 });
 

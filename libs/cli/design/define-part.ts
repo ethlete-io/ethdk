@@ -1,4 +1,4 @@
-import { Drawing } from './define-call';
+import { Drawing, withNgStyles } from './define-call';
 import { forceBody } from './mark-part';
 
 export { contrastRatioOf } from './contrast';
@@ -192,7 +192,7 @@ const finished = (
 /** Draws `props` as one of the part's own states: the drawing of `render` inside the part's `frame`. */
 export const drawState = <TProps>(part: Part<TProps>, props: TProps): Promise<DrawnPart> =>
   Promise.resolve(part.render(props)).then((drawn) =>
-    part.frame ? { ...drawn, body: part.frame(drawn.body, props) } : drawn,
+    withNgStyles(part.frame ? { ...drawn, body: part.frame(drawn.body, props) } : drawn),
   );
 
 /**

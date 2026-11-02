@@ -29,15 +29,23 @@ export const html = (strings: TemplateStringsArray, ...values: unknown[]) => joi
 /** Marks a template literal as CSS, for the same reason `html` does it for markup. */
 export const css = (strings: TemplateStringsArray, ...values: unknown[]) => join(strings, values);
 
-const emitted = new Set<string>();
+const rendered = new Set<string>();
+const taken = new Set<string>();
 
-/** The `<style>` tags for the sheets not yet in `seen`, which it then records. */
-export const unseenStyles = (styles: string[], seen: Set<string>) => {
+/** The sheets in `styles` not yet in `seen`, which it then records, joined as one stylesheet. */
+export const unseenStyles = (styles: Iterable<string>, seen: Set<string>) => {
   const fresh = [...new Set(styles)].filter((style) => !seen.has(style));
 
   for (const style of fresh) seen.add(style);
 
-  return fresh.map((style) => `<style>${style}</style>`).join('');
+  return fresh.join('\n');
+};
+
+/** `drawn` with the component styles `ng()` rendered since the last drawing appended to its `styles`. */
+export const withNgStyles = <T extends Drawing>(drawn: T): T => {
+  const sdk = unseenStyles(rendered, taken);
+
+  return sdk ? { ...drawn, styles: [drawn.styles, sdk].filter(Boolean).join('\n') } : drawn;
 };
 
 /** A form field `ng()` builds: its value, the errors it shows (a kind, or a kind and a message), and whether it is touched. */
@@ -73,13 +81,15 @@ const render = async (template: string, options: NgOptions) => {
 
 /**
  * Renders an Angular template with the real components on the design server and resolves with its
- * markup, led by the component styles this frame has not received yet. Rejects with the render error. Outside a
- * browser it resolves with the template unrendered, each element marked `data-et-ng`.
+ * markup. The component styles go into the `styles` of the drawing the frame shows. Rejects with the render error.
+ * Outside a browser it resolves with the template unrendered, each element marked `data-et-ng`.
  */
 export const ng = async (template: string, options: NgOptions = {}) => {
   const { markup, styles } = await render(template, options);
 
-  return unseenStyles(styles, emitted) + markup;
+  for (const style of styles) rendered.add(style);
+
+  return markup;
 };
 
 /** A click on an element that matches `click` inside the drawing shows the state `go`. */
@@ -117,8 +127,8 @@ export const switchStates =
  */
 export const ngStates = async <TState extends string>(templates: Record<TState, string>, options: NgOptions = {}) => {
   const names = Object.keys(templates) as TState[];
-  const rendered = await Promise.all(names.map((name) => render(templates[name], options)));
-  const states = Object.fromEntries(names.map((name, index) => [name, rendered[index]?.markup ?? ''])) as Record<
+  const drawnStates = await Promise.all(names.map((name) => render(templates[name], options)));
+  const states = Object.fromEntries(names.map((name, index) => [name, drawnStates[index]?.markup ?? ''])) as Record<
     TState,
     string
   >;
@@ -126,12 +136,10 @@ export const ngStates = async <TState extends string>(templates: Record<TState, 
 
   if (first === undefined) throw new Error('design-explore: ngStates() needs at least one state');
 
+  for (const style of drawnStates.flatMap((entry) => entry.styles)) rendered.add(style);
+
   return {
-    body:
-      unseenStyles(
-        rendered.flatMap((entry) => entry.styles),
-        emitted,
-      ) + `<div data-de-states="${first}" style="display: contents">${states[first]}</div>`,
+    body: `<div data-de-states="${first}" style="display: contents">${states[first]}</div>`,
     on: (rules: StateRule<TState>[]) => switchStates(states, rules),
   };
 };

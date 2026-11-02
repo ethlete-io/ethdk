@@ -20,7 +20,7 @@ import {
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
-import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
+import { createPartShooter, emptySlotsScriptOf, PartAddress, partFrameOf, viewportOf } from '../shot';
 import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './list-system';
 import { watchSdkErrorLines } from './sdk-errors';
@@ -149,10 +149,11 @@ const inspectFrame = (options: {
   namespaces: string[];
   contrast: ContrastOptions;
   part: string | null;
+  sdkStylesOnly?: boolean;
 }) => `((options) => {
   const root = document.getElementById('root');
   const refused = root.innerText.trim();
-  if (refused.startsWith('design-explore:')) return [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n')[0] }];
+  if (refused.startsWith('design-explore:')) return options.sdkStylesOnly ? [] : [{ rule: 'RENDER', path: '#root', detail: refused.split('\\n')[0] }];
 
   const found = [];
   const seen = new Set();
@@ -190,6 +191,16 @@ const inspectFrame = (options: {
   };
   const sizeOf = (element) =>
     element.scrollWidth + 'x' + element.scrollHeight + ' in ' + element.clientWidth + 'x' + element.clientHeight;
+
+  if (options.sdkStylesOnly) {
+    for (const element of root.querySelectorAll('.et-visually-hidden')) {
+      if (element.getClientRects().length === 0) continue;
+      const style = getComputedStyle(element);
+      if (style.position !== 'absolute' || style.clipPath === 'none')
+        report('UNSTYLED-SDK', element, 'the visually hidden "' + element.textContent.trim().slice(0, 32) + '" draws in the picture, so an SDK component here renders without its styles');
+    }
+    return found;
+  }
 
   const partRoot = root.querySelector('[data-et-part]') ?? root.querySelector(':scope > :not(style)');
   if (!partRoot) return found;
@@ -497,19 +508,22 @@ const inspect = async (options: {
           await openFrame(current, `${base}/frame.html?${frame.search}`);
           await awaitSettled(current);
 
-          const inFrame = (await current.evaluate(
-            inspectFrame({
-              fixed: frame.fixed,
-              fit: frame.fit,
-              skips: frame.skips,
-              namespaces: frame.namespaces,
-              contrast: frame.contrast,
-              part: frame.controlInputs ? frame.address.part : null,
-            }),
-          )) as Found[];
+          const inspected = {
+            fixed: frame.fixed,
+            fit: frame.fit,
+            skips: frame.skips,
+            namespaces: frame.namespaces,
+            contrast: frame.contrast,
+            part: frame.controlInputs ? frame.address.part : null,
+          };
+          const inFrame = (await current.evaluate(inspectFrame(inspected))) as Found[];
+          await current.evaluate(emptySlotsScriptOf(frame.address.part));
+          const unstyled = (await current.evaluate(inspectFrame({ ...inspected, sdkStylesOnly: true }))) as Found[];
           const { product, part, state, sketch } = frame.address;
 
-          found.push(...inFrame.map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })));
+          found.push(
+            ...[...inFrame, ...unstyled].map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })),
+          );
         }
       })();
 

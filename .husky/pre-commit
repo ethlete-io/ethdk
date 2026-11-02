@@ -35,8 +35,9 @@ fi
 cli=$(git diff --cached --name-only --diff-filter=ACM -- 'libs/cli/*' | sed "s|^|$PWD/|")
 
 if [ -n "$cli" ]; then
+  # A path-limited commit sets GIT_INDEX_FILE to a temporary index; specs that run git in their own repos must not inherit it.
   # shellcheck disable=SC2086
-  (cd libs/cli && npx vitest related --run --passWithNoTests $cli) || {
+  (cd libs/cli && env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE npx vitest related --run --passWithNoTests $cli) || {
     echo 'pre-commit: a cli spec related to the staged files fails (FAIL lines above name it). It runs on the working tree, so the red may be uncommitted work of another session in this checkout.' >&2
     exit 1
   }
