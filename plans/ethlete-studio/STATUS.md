@@ -173,6 +173,18 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B55** `design check` lehnt einen Part ab, dessen Design-Prop variiert, aber keinen App-Input hat (ohne zu
   zeichnen); zoom-chip-Design korrigiert; ein Durchlauf von compare über alle Parts findet weitere, die nie
   vergleichbar waren (Befund 149).
+- **B56** Merge-Probelauf: check und ready prüfen jede Variante im gemergten Layout (auch shared/); die Ablehnung
+  eines Merges zeigt die Befunde statt „Merge fehlgeschlagen.“ (Befund 150).
+- **B57** Kompositions-Check: importiert ein Design einen umgesetzten Part, muss die Komponente dessen Komponente
+  nutzen; der Task darf die Ordner komponierter Parts und `design-parts/shared/` ändern (Befund 151).
+- **B58** Input-Check: Inputs, die keine App bindet (außer `designOnly`), `*_SAMPLE` als Input-Default und
+  umgesetzte Parts ohne App-Importeur werden gemeldet; Seiten-Zustände tragen Daten statt Knöpfe (Befund 151).
+- **B59** `implemented` wird streng: keine Einträge ohne `app`-Hashes, ein Spec mit Nicht-Fixture-Daten, Texte nur
+  aus der Label-Map (Befund 151).
+- **B60** Lint für App-Templates: kein Überschreiben von `et-button`-Innereien, keine handgemachten Fokusringe
+  (stattdessen `etFocusRing`) (Befund 151).
+- **B61** Skill für das Umsetzen eines Design-Parts: komponieren statt kopieren, keine Sample-Defaults, Label-Map,
+  SDK-Fokusring und Overlay, Spec mit fremden Daten (Befund 151).
 
 ## C. CLI: Tempo und Ablauf
 

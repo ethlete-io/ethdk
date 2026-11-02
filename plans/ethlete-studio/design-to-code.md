@@ -1404,7 +1404,9 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      the new canvas.e2e.mjs assertion fails as intended (both frames Vite "403 Restricted", 34/36). Dead end:
      per-entry node_modules symlinks do not help, Vite resolves them back outside fs.allow. Next: add the real
      node_modules to the checkout's Vite server.fs.allow, and find out why the B36 e2e passed with per-entry
-     symlinks. Work parked in .claude/handoffs/b49-parked.patch.
+     symlinks. Work parked in .claude/handoffs/b49-parked.patch. Done (builder, 2026-11-02, e3914fb4e): the design
+     server's fs.allow now includes the realpath of node_modules; e2e 36/36. Next: the design server fails loudly when
+     a frame serves a Vite error page.
 145. Tom pressed "Wählen" on the held components/title-bar sketch and nothing happened (2026-11-02). Probable cause (to
      confirm by the builder): the sketch is held, so it is back in progress and not ready; the CLI refuses the pick,
      and SketchViewComponent.run() in apps/ethlete-studio/src/app/system-view/sketch-view.component.ts swallows every
@@ -1446,7 +1448,7 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      "Aktuell" is always added (sketch-view.component.ts:317) though no title bar exists, and shows blank; (e) variant
      b is clipped at the right edge, likely because the canvas fits once and does not refit on a later resize
      (design-canvas.component.ts:642). On pages/sketches the same view shows all three variants identical to each
-     other and to Aktuell: the status element is in none of them (cause pending). Common root (builder): the sketch
+     other and to Aktuell: the variant markup renders, but the view shows each column's first non-empty state (sketch-view.component.ts:331-341), here 'page-sketch' without a status, so no variant draws its status element; other states are reachable only after a pick. Compare already knows unchanged states, ready does not use them. Common root (builder): the sketch
      view copies the pages/sketches design 1:1, which assumes page sketches (three variants, 1440x900, a current page
      that exists); sketchMatrixOf knows size and existence, the view drops both. Why no check caught it: every
      fixture, spec and e2e uses one shape (pages/system, three variants); the design checks render a part only with
@@ -1465,6 +1467,32 @@ check` fails a part with a varying design prop that has no app input and is not 
      the zoom-chip design sets `target` only where it sets `interaction`; a sweep runs compare over every part to
      find others that were never comparable). Lesson: "done" must mean a check has compared the part, not that no
      check complained.
+150. Tom's merge of components/title-bar C failed with only "Merge fehlgeschlagen." (2026-11-02). The pick had worked;
+     the merge was refused by INLINE-SVG on the sketch's shared/chrome.ts (window-control icons drawn inline), and the
+     merge rolled back. Why no check caught it: inlineSvgsOf scans only the part's own folder, and in the sketch
+     layout shared/ sits at the sketch root, so `sketch check` and `ready` never scan it; only the merged layout puts
+     it in scope. Studio's merge() maps every error to one label and the 422 body carries a generic sentence, so the
+     reason never reached Tom. The pages/sketches pick failed for a different reason: it ran before the sketch was
+     ready, and the old run() swallowed the refusal (finding 145). Tool fix: B56 (check and ready check every variant
+     in the merged layout, a merge dry-run; the 422 body carries the findings and Studio shows them through
+     refusalMessageOf). Design fix: the window-control icons move to assets/. Lesson: a gate that judges a file in a
+     different layout than the one it will land in judges a different file.
+151. Code review of the Angular design-parts (agent review, 2026-11-02, Tom's request): the workflow lets these through.
+     (1) Composition is flattened: a page design that imports an implemented part gets that part's markup pasted, not
+     its component (inbox pastes comment-pin with "TB" baked in; the studio logo is pasted twice beside
+     studio-mark.component.ts; inbox hand-builds an anchored-dialog arrow). (2) Task scope forces copies:
+     allowedFilesOf (part-task.ts:161-172) allows only the part's own folder, so inbox imports frame classes from
+     system-page and app types live in *-sample.ts files. (3) Sample data and design-only knobs became production
+     inputs: `input(SHELL_SAMPLE)`, `INBOX_SAMPLE`, inputs no app binds (inbox openOn/draft/entry, merge unchanged,
+     sketches camera), because page design states are knobs, not data (finding 149 is the reverse). (4) Implemented
+     but unused: error-toast renders only in the design harness. (5) 8 of 17 implemented parts have no `app` hashes,
+     and upgradeOf never upgrades them, so code drift is never stale. (6) et-button undone from outside
+     (`[&>.et-button-contents]`, `hover:bg-transparent`) and hand-made focus rings in 5 parts instead of etFocusRing.
+     (7) Text skips the label map in 6+ parts (zoom-chip English titles the design lacks). (8) 9 of 19 parts have no
+     spec; the render check uses only the sample defaults. (9) No skill covers implementing a design part. Why no check
+     caught it: `design check` and `design task` judge the component against its own design only, never against the
+     parts it composes, its app consumers, or inputs beyond the fixture. Tool fixes: B57 to B61. Lesson: a part
+     implemented in isolation passes every check and still duplicates, fakes and drifts.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
