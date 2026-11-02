@@ -1,9 +1,17 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DRAWS_AT_ONCE, ShotTimeoutError, createDrawQueue, createThumbnailer, finished, openFrame } from './thumb';
+import {
+  DRAWS_AT_ONCE,
+  FrameUnservedError,
+  ShotTimeoutError,
+  createDrawQueue,
+  createThumbnailer,
+  finished,
+  openFrame,
+} from './thumb';
 
 const sent: Record<string, unknown>[] = [];
-const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
+const goto = vi.fn<(url: string, options?: unknown) => Promise<{ status(): number } | void>>(async () => undefined);
 const evaluate = vi.fn(async (script: string): Promise<unknown> => (script.includes('frameWidth') ? 1740 : true));
 const send = vi.fn(async (method: string, params?: Record<string, unknown>) => {
   sent.push({ method, ...params });
@@ -288,6 +296,17 @@ describe('openFrame', () => {
 
     await expect(openFrame(page, '/frame.html?b')).rejects.toBeInstanceOf(ShotTimeoutError);
     expect(visits).toHaveLength(2);
+  });
+
+  it('fails a frame the design server answered with an error status, naming the URL and status', async () => {
+    const { page } = pageOf([true]);
+    (page as unknown as { goto: unknown }).goto = async () => ({ status: () => 403 });
+
+    const failure = await openFrame(page, 'http://localhost:4400/frame.html?c').catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(FrameUnservedError);
+    expect((failure as Error).message).toContain('http://localhost:4400/frame.html?c');
+    expect((failure as Error).message).toContain('403');
   });
 });
 

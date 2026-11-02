@@ -925,7 +925,7 @@ const freePortOf = () =>
   });
 
 /** The real directories a checkout's `node_modules` points into, which Vite refuses to serve unless allowed. */
-const installedRootsOf = (target: string) => {
+export const installedRootsOf = (target: string) => {
   const modules = join(target, 'node_modules');
   const roots = new Set<string>();
 

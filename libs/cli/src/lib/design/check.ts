@@ -15,6 +15,7 @@ import { listSketches, Sketch } from './system/sketch/sketch';
 import { checkVisibleChange } from './system/visible-change-command';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
+import { assertServed } from './thumb';
 
 type Flags = Record<string, string[]>;
 
@@ -145,7 +146,7 @@ const checkPage = async (options: {
   page.on('console', (message) => message.type() === 'error' && consoleErrors.push(message.text()));
   page.on('pageerror', (error) => consoleErrors.push(error.message));
 
-  await page.goto(`${base}/frame.html`, { waitUntil: 'domcontentloaded' });
+  assertServed(await page.goto(`${base}/frame.html`, { waitUntil: 'domcontentloaded' }), `${base}/frame.html`);
 
   const declared = (await page.evaluate(declaredOf(slug))) as Declared;
 
@@ -166,9 +167,9 @@ const checkPage = async (options: {
   }
 
   for (const key of checked) {
-    await page.goto(`${base}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(key)}`, {
-      waitUntil: 'domcontentloaded',
-    });
+    const variantUrl = `${base}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(key)}`;
+
+    assertServed(await page.goto(variantUrl, { waitUntil: 'domcontentloaded' }), variantUrl);
 
     const drew = await page
       .locator('#root > :not(style)')

@@ -35,6 +35,20 @@ export class ShotFailedError extends Error {
 
 export class ShotTimeoutError extends Error {}
 
+/** A design-server URL that answered an error status, such as the 403 Vite sends for a file outside `server.fs.allow`. */
+export class FrameUnservedError extends Error {}
+
+/** Throws a `FrameUnservedError` naming the URL and status when the navigation to a design-server page answered 400 or above. */
+export const assertServed = (response: { status(): number } | null, url: string) => {
+  const status = response?.status() ?? 0;
+
+  if (status >= 400) {
+    throw new FrameUnservedError(
+      `design-explore: ${url} was not served (HTTP ${status}) - the design server refused or failed the page, so nothing on it can be measured`,
+    );
+  }
+};
+
 /** Rejects a drawing that was still waiting when every ask that wanted it was aborted. */
 export class DrawDroppedError extends Error {}
 
@@ -54,7 +68,7 @@ export const openFrame = async (page: Page, url: string) => {
   const never = (what: string) =>
     new ShotTimeoutError(`design-explore: ${url} did not ${what} within ${DRAW_TIMEOUT_MS} ms`);
   const drawn = async () => {
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    assertServed(await page.goto(url, { waitUntil: 'domcontentloaded' }), url);
     // Headless Chromium's pointer starts at 0,0 on a new page and draws a real :hover on whatever fills the
     // frame's corner. A move before the first navigation does not stick.
     await page.mouse.move(-1, -1);
