@@ -2516,3 +2516,14 @@ decision 2), #91 (go rework, A10).
      was 00:51. `sketch ready` never compares the baseline hash with the current part - only `design inbox` ("needs
      rebase") and Studio's merge do. Tool fix (decided, technical): ready refuses on a stale base and names
      `sketch rebase <part> --by <id> --product <name>`. Goes into B111.
+
+189. The merged pages/sketches variant e cannot be implemented to a 0 px compare (builder, 2026-11-02): `fitFrame` in
+     `.ethlete/design/studio/pages/sketches/shared/sketch-rows.ts` bakes 4 rows x 6 inline title-bar renders into each
+     frame and has no `slot('shot')` (the old pageShot had one), and the b/c looks reach into design-internal classes
+     (`[&_.st-title-bar]:h-10`, `[&_.w-2xl]:w-55`) that the app's title-bar does not have. The app shows design-server
+     iframes per variant/state, so only faked title-bars could match. Lesson: a sketch round may silently drop the slot
+     that lets live content replace demo content, and nothing flags a part styling another part's internals. Tool fix
+     (decided, technical, after the Sketches view): `sketch check` refuses a variant that removes a `slot(` its base
+     has (SLOT-DROPPED); `design check` flags an arbitrary variant `[&_.<class>]` whose class is not defined by the
+     same part (CROSS-PART-REACH). Unblock now: a one-variant sketch that only adds `${slot('shot')}` to the
+     `[data-sk-fit-inner]` div; Tom merges it and gives a new go.

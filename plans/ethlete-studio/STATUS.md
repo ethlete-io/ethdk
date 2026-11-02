@@ -29,7 +29,7 @@ die Sketch-Ansicht.
 
 | ID             | Was                                                                                                                    | Stand | Was fehlt / wo es hakt                                                                                                                  | Wer     |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Sketch-Ansicht | Bau von pages/sketches, Variante e (Zeilen je Variante)                                                                | 🔨    | Go 02.11. 12:01; Bau B34/B36/B38/B84/A13, danach Zoom-Schild (7 %) und schmaler Sticky-Kopf (200 %) als eigener Slice                   | Builder |
+| Sketch-Ansicht | Bau von pages/sketches, Variante e (Zeilen je Variante)                                                                | ⛔    | e hat kein `slot('shot')` (Bef. 189); Builder zeichnet Ein-Varianten-Sketch mit Slot, dann Tom: Merge + neues Go, dann Bau              | Builder |
 | Push `next`    | Alles seit 062bca6f3                                                                                                   | ⛔    | Zuerst B87-Nachtrag (go.json-Regel enger), dann Pre-push und Push                                                                       | Builder |
 | title-bar      | Titelleiste mit Suchfeld, Go 02.11.                                                                                    | ✅    | Compare grün                                                                                                                            | -       |
 | title-search   | Suchfeld der Titelleiste, Go 02.11.                                                                                    | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen                                                                     | Builder |
@@ -161,6 +161,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
   disabled-Zuständen (dl, Systemlehren 01.11.).
 - **B34** Studio zeigt einen Sketch, der nicht `ready` ist, als „in Arbeit“, je Variante „Agent baut gerade“
+  (gebaut wird nach dem Design e: Kopf-Badge „In Arbeit“, je Variante „zeichnet“ und Platzhalter „<Modell> zeichnet diese
+  Variante“)
   (neue sichtbare Oberfläche: erst Sketch pages/sketches, dann Bau; Befund 136, 143).
 - **B35** `sketch check` und `sketch ready` scheitern an einer Variante, die noch das unveränderte Gerüst ist (Befund 136).
 - **B36** Sketch-Ansicht: Rahmen in der gefitteten Größe des Teils, Spalten = Varianten + 1, Platz für den Kopf, „neu“
@@ -248,7 +250,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (z. B. Go -> A10), gehört sie in diesen Punkt statt in eine Einzelentscheidung. Durchsetzung: B81 macht den Owner im Markup sichtbar
   (Befund 170).
 - **B82** `design compare` vergleicht bei jeder deklarierten Breite des Parts, nicht nur bei der ersten (Befund 156).
-- **B84** Sketch-Ansicht markiert und sortiert jede Variante nach ihrem ersten geänderten Zustand (dem, den der
+- **B84** Sketch-Ansicht markiert (Design e: nur markieren, nicht sortieren) und sortiert jede Variante nach ihrem ersten geänderten Zustand (dem, den der
   Identische-Varianten-Check vergleicht; folgt aus Entscheidung Variante e). system-tree.ts ordnet heute nach der
   Merge-Reihenfolge.
 - **B85** Identische-Varianten-Check: eine Variante, die nicht lädt, meldet „nicht verglichen“ statt still zu
