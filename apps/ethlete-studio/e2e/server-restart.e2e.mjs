@@ -12,6 +12,7 @@ const VIEW = { systemProduct: 'studio', systemEntry: 'pages/system' };
 const DOWN_MS = 3000;
 const PAINT_TIMEOUT_MS = 120000;
 const RECOVERY_MS = 60000;
+const SETTLE_MS = 4000;
 const ERROR_PAGE = 'chrome-error://';
 
 const frameState = (page) =>
@@ -24,6 +25,18 @@ const frameState = (page) =>
       failedBanners: document.querySelectorAll('[data-frame-failed]').length,
     };
   });
+
+const epochOf = (page) =>
+  page.evaluate(() =>
+    Math.max(
+      -1,
+      ...[...document.querySelectorAll('ethlete-canvas-frame iframe')].map((iframe) => {
+        const epoch = URL.canParse(iframe.src) ? new URL(iframe.src).searchParams.get('epoch') : null;
+
+        return epoch === null ? -1 : Number(epoch);
+      }),
+    ),
+  );
 
 const errorPages = (page) =>
   page
@@ -93,11 +106,26 @@ const result = await withStudio(
     }, RECOVERY_MS);
     const after = { errorPages: errorPages(page), ...(await frameState(page)) };
 
+    const epochBefore = await epochOf(page);
+
+    await page.click('ethlete-studio-menu button[aria-label="Studio-Menü"]');
+    await page.getByRole('menuitem', { name: 'Neu starten' }).click();
+    await restartDesign(DOWN_MS);
+    await waitFor(async () => {
+      const state = await frameState(page);
+
+      return state.shown > 0 && state.failedBanners === 0 ? state : null;
+    }, RECOVERY_MS);
+    await new Promise((done) => setTimeout(done, SETTLE_MS));
+
+    const bumps = (await epochOf(page)) - epochBefore;
+
     return {
-      ok: reloaded && !!recovered,
+      ok: reloaded && !!recovered && bumps === 1,
       detail:
         `before ${JSON.stringify(before)}, while down ${JSON.stringify(down)}, ` +
-        `after ${JSON.stringify(after)}${reloaded ? '' : ', no shown iframe to reload'}`,
+        `after ${JSON.stringify(after)}${reloaded ? '' : ', no shown iframe to reload'}; ` +
+        `Restart bumped the frame epoch ${bumps} times, expected 1`,
     };
   },
   { built },

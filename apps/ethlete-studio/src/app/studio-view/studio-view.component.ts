@@ -216,10 +216,7 @@ export class StudioViewComponent {
 
     designServerRestart$(checkout)
       .pipe(
-        tap((state) => {
-          this.showServer(state);
-          this.epoch.update((value) => value + 1);
-        }),
+        tap((state) => this.showServer(state)),
         // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         finalize(() => this.serverBusy.set(false)),

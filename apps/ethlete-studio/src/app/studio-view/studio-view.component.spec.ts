@@ -331,4 +331,17 @@ describe('StudioViewComponent', () => {
       vi.useRealTimers();
     }
   });
+
+  it('leaves the frame reload of a restart to the new server pid', async () => {
+    stubHost({ design_server_restart: () => RUNNING });
+
+    const fixture = await mount();
+    const before = system(fixture)?.epoch();
+
+    fixture.componentInstance.restartServer();
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
+    expect(system(fixture)?.epoch()).toEqual(before);
+  });
 });
