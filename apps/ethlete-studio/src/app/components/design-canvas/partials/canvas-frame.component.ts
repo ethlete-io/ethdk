@@ -96,7 +96,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         <span
           [style.left.px]="copy.x"
           [style.top.px]="copy.y"
-          class="absolute -translate-y-full whitespace-nowrap pb-[0.4em] text-[calc(1.2rem*var(--et-design-canvas-label-scale))] uppercase tracking-[0.04em] text-text-muted"
+          class="absolute -translate-y-full whitespace-nowrap pb-[0.4em] text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-normal uppercase tracking-[0.04em] text-text-muted"
           data-scheme-label
           >{{ labelOf(copy.scheme) }}</span
         >
@@ -105,7 +105,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     <span
       [class]="labelPlacement()"
       [style.max-width.px]="captionMaxWidth()"
-      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))]"
+      class="absolute left-0 flex gap-[0.6em] overflow-hidden whitespace-nowrap text-text text-[calc(1.2rem*var(--et-design-canvas-label-scale))] leading-normal"
       ><ng-container [ngTemplateOutlet]="caption"
     /></span>
     @if (frame().empty; as empty) {
@@ -267,7 +267,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
         data-frame-pending
       >
         <span
-          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[calc(1.4rem*var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
+          class="flex items-center gap-[0.6em] rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-[0.8em] py-[0.3em] text-[calc(1.4rem*var(--et-design-canvas-label-scale))] leading-normal font-semibold whitespace-nowrap text-text shadow-md"
         >
           <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
           {{ pending }}

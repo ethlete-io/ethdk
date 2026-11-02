@@ -280,6 +280,7 @@ describe('CanvasFrameComponent caption', () => {
     expect(label?.classList).toContain('min-w-0');
     expect(others.length).toBeGreaterThan(0);
     expect(others.every((child) => child.classList.contains('shrink-0'))).toBe(true);
+    expect(label?.parentElement?.classList).toContain('leading-normal');
   });
 
   it.each([false, true])(
