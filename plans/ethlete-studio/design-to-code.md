@@ -1513,7 +1513,8 @@ check` fails a part with a varying design prop that has no app input and is not 
      long time to appear; until then the panel shows only the heading and the canvas stays empty, with no loading
      state; (b) in the narrow side panel the variant note wraps into six short lines beside the "Gewählt c" chip, and
      the changed list breaks part keys and state names mid-token ("elements/part-" / "tree", "components-" / "open")
-     while repeating the part key on every row. Why no check caught it: no e2e measures the time to the first changed
+     while repeating the part key on every row; (c) after the merge the merged sketch stays in the tree under
+     "Sketches" for 10-15 s (cause pending, ask the builder). Why no check caught it: no e2e measures the time to the first changed
      row or asserts a loading state; the render check has no rule for identifiers broken across lines or for running
      text squeezed into a narrow column. Tool fix: B62 (the merge view shows a loading state at once and fills the list
      as states are judged; an e2e budget for the first row; a render-check rule that flags a code identifier wrapped
