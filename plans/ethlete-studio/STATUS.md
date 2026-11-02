@@ -184,6 +184,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Befunde eines abgelehnten Merges, die heute in einer Zeile stehen (Befund 152, 150).
 - **B63** Merge und `sketch ready` warnen bei einem Teil ohne `implements`-Link; der Go-Hash ignoriert den Link
   (Befund 153).
+- **B64** Sketch-Brief und `sketch new`: ein Teil neben OS-Chrome zeigt diese als Demo-Inhalt in einem Slot, den
+  compare leert (Befund 154).
 
 ## C. CLI: Tempo und Ablauf
 

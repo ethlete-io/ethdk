@@ -1539,6 +1539,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      the link changes nothing visible. Tool fix: B63 (`sketch ready` and the merge view warn "this part cannot be
      compared or implemented until it has an implements link"; the go hash ignores the `implements` link, as already
      planned for after the MVP). Lesson: a merged design that no tool can compare is not finished.
+154. The title-bar `macos` states leave the left side empty, so they do not read as macOS: the OS draws the traffic
+     lights, and the design draws nothing in their place (Tom, 2026-11-02, after the merge). Why no check caught it:
+     no check or brief asks a part that sits next to OS-drawn chrome to show that chrome; an empty zone is a valid
+     render. Tool fix: B64 (the sketch brief and `sketch new` for a part with an OS prop ask for the OS chrome as demo
+     content in a slot that compare empties, like the canvas demo cards). Lesson: a state must read as the situation
+     it stands for, also where the real pixels come from outside the app.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
