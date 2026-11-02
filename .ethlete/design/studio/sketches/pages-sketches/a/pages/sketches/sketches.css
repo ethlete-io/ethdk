@@ -1,0 +1,17 @@
+@layer components {
+  .sk-row[data-selected] {
+    box-shadow: 0 0 0 2px var(--et-theme-color-primary-solid);
+  }
+  .sk-fit {
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
+  }
+  .sk-same {
+    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
+  }
+  .sk-gutter {
+    transform: translateX(var(--sk-pan-x, 0px));
+  }
+  [data-sk-panned] .sk-gutter {
+    box-shadow: 1px 0 0 var(--et-surface-border-solid);
+  }
+}
