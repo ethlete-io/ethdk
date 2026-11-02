@@ -2571,6 +2571,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 - Nothing else differs from design e.
 - Text size (follow-up, Tom): variant head note 15 px and state labels 13 px at 100 %, scaling with the zoom, but
   never below about 12 px on screen (at Fit they stay readable without zooming).
+- Text floor revised (Tom, finding 196): the 12 px floor applies only to the variant head (name, model, note,
+  Übernehmen). State labels scale with the zoom and are hidden once they would render below about 9 px.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
