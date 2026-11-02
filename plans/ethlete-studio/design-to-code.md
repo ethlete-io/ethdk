@@ -2760,7 +2760,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      after 12 s (225 navigations); a quiet checkout 45/45. canvas.e2e missed it because its temp checkout is never
      written to. Fix (decided, technical, in the Sketches slice): cache the SafeResourceUrl per URL string, so only a
      real src change reloads a frame. Tool fix (same slice): a canvas.e2e case rewrites the copied sketch.json every
-     second and requires every frame to report a height within a bound and each iframe to navigate once per src.
+     second and requires every frame to report a height within a bound and each iframe to navigate once per src. Built
+     (builder, uncommitted in the slice): `safeUrlOf(src)` keeps one SafeResourceUrl per URL; canvas.e2e case "a
+     listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame": red on the old build (90
+     re-navigations), green now (0); canvas.e2e 99/99. The navigation count is the proof - the 150 px check alone stayed
+     green on the old build. Lesson: compare and check look at one settled render; nothing watched the view across live
+     listing refreshes. Open: one flake "no state is marked before the compare" (sketch view not shown) did not recur
+     in 2 runs.
 
 206. The Sketches view sends mixed signals on components/zoom-chip (Tom, 2026-11-02, screenshot): the head badge says
      "In Arbeit", both variants are fully drawn and offer Übernehmen, and every state says "unverändert". Cause
