@@ -2595,6 +2595,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 - zoom-chip round r1: variant a (plain SDK button). Tom picks it via Übernehmen himself.
 - Variant head below Fit (Tom, finding 205): the 12 px floor of the variant head holds only down to Fit. Zoomed out
   further, the head scales with the canvas, and its text hides below about 9 px on screen, like the state labels.
+- Unchanged variants (Tom, finding 207): variants that are pixel-identical to Aktuell in every state go into one
+  shared accordion below the changed variants, collapsed by default. Its bar names them ("Unverändert: Variante a,
+  Variante b"); opened, it shows each variant as before (head, note, frames, Übernehmen). In the transposed matrix the
+  accordion is one narrow column at the right. Inside a changed variant, unchanged states stay visible and dimmed.
+- Head badge (Tom, finding 206): follows the real state - "zeichnet" while at least one variant is being drawn,
+  "Wartet auf deine Wahl" when all are drawn, "Pausiert" / "Keine Aktivität" when the agent stalls. Never derived from
+  `sketch.status` alone. pages/sketches draws the "Wartet auf deine Wahl" state first.
+- No per-variant status (Tom: too much). The "zeichnet diese Variante" placeholder stays for a variant without a
+  picture.
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
@@ -2753,9 +2762,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      per-variant status beyond the "zeichnet diese Variante" placeholder. Lesson: a status badge was bound to the
      nearest data field instead of the state that defines it, and the missing design state hid the gap. Tool fix
      (technical): pages/sketches draws the missing "waiting for pick" state; a sketch-view spec asserts the badge
-     follows agent activity per variant, never `sketch.status` alone. What the badge and the variant heads show is a
-     question to Tom.
+     follows agent activity per variant, never `sketch.status` alone. Decided by Tom ("Sketches matrix and state name decisions").
 
 207. Fully unchanged variants take as much room as changed ones (Tom, 2026-11-02, zoom-chip: both variants are
      pixel-identical to Aktuell, 2 x 16 dimmed frames). Tom's idea: hide unchanged variants by default, in a narrow
-     collapsed accordion bar. Scope and content of the bar: question to Tom.
+     collapsed accordion bar. Decided by Tom ("Sketches matrix and state name decisions").
