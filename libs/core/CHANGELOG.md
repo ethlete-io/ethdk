@@ -1,5 +1,16 @@
 # @ethlete/core
 
+## 5.0.0-next.73
+
+### Minor Changes
+
+- The theme generators write a color theme's `type` as `--et-color-theme-type` and a surface's `colorThemeVariants` as `--et-surface-color-theme-variants`, so design frames can resolve semantic colors and surface swaps.
+
+### Patch Changes
+
+- `AnimatedLifecycleDirective` no longer throws `Cannot read properties of undefined (reading 'directive')` when a bundle evaluates `AnimatableDirective` first, for example in a lazy chunk that uses `NotificationComponent`.
+- Removes every circular import inside the package, so no module can be read before it has finished loading, and adds a test that fails on a new one.
+
 ## 5.0.0-next.72
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.80
+
+### Minor Changes
+
+- Add the `anchoredDialog()` design renderer, and draw the dialog, menu, select panel and tooltip panes of the design renderers with `data-et-auto-surface` when no `surface` is passed.
+
+### Patch Changes
+
+- The pressed filled button now darkens only slightly, so it keeps clear contrast with its label, and a loading or disabled button no longer lights up while pressed.
+- The `tooltip()` design renderer keeps `et-surface--inherited` on the inner `et-tooltip`, like the real component, and puts `data-et-auto-surface` on the pane only.
+- The pressed filled icon button, and so the split button trigger, darkens less and keeps its disabled colour when inactive.
+- The notification takes `--et-font-family` when it is set, like the menu and the tooltip, and the notification design mock draws its surface one elevation above its parent when no `surface` is given, as the component forces elevation 1.
+- Button, icon button, chip and calendar nav buttons no longer change their background on hover or press while disabled.
+- The `menu()` design mock takes `activeSource` on a row and draws it as `data-active-source`, so a forced focus-visible row with `activeSource: 'keyboard'` shows the keyboard highlight the real menu paints.
+- `et-select` and `et-menu` show the option focus ring only during keyboard use; a click open or a mouse move shows none.
+
 ## 1.0.0-next.79
 
 ### Minor Changes

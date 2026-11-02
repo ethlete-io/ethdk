@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.17
+
+### Minor Changes
+
+- Add the `store-key` tool, which exports the store key as a passphrase-protected file and imports it into another machine's keyring.
+
 ## 0.2.0-next.16
 
 ### Patch Changes

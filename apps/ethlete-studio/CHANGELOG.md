@@ -1,5 +1,155 @@
 # ethlete-studio
 
+## 0.2.0-next.15
+
+### Minor Changes
+
+- The design system listing flags a base part no part of the product imports with `unusedInProduct`, and Studio lists those parts in a folded "Not used in <product>" group.
+- A part in the system view gets a "Go geben" button and, after a direct edit of a merged part, an "Änderung abnehmen" button; a refusal shows in German in place.
+- Studio draws the new shell (rail, product switch, project picker) around every view, and its Inbox section lists the live comments of the product in place of the old comment panel.
+- The sketch view renders one round at a time; a select above the canvas switches between the rounds, and the newest opens first.
+
+### Patch Changes
+
+- The design server's comments list carries the checkout's `git config user.name`, and the Studio inbox shows it as the author of the user's comments instead of "Du".
+- The design control inventory marks a control another element fully covers as covered. Studio lists it but draws no outline or number badge for it.
+- `et design compare` shoots a fitted part without the frame padding, and draws a `pages` part at a product preset (`--preset`, default the first) against a harness host that fills that viewport (`layout=page`).
+- The live spec gets a fit state for the System page and a 100 % state for the Sketches page.
+- The design harness records each output the mounted part emits, for `et design actions`.
+- The inbox shows the canvas with the system page's frame and zoom chip.
+- The open-points popover on the System page uses the UI font.
+- Remove the chat panel, which no page design shows.
+- Remove the chrome no page design shows from the System part view: the changed badge, the authors, the theme switch, notes, comment mode with its pins and drafts, the motion strip and the new-product screen.
+- The System part view drops the "used in" frames, labels a part frame with its bare name, and orders the part tree Foundations, Elements, Components, Pages as the page design does.
+- A page's control inventory lists the controls an embedded part draws as `owned by <part>`. They no longer vanish, and they do not block the approval.
+- A page's inventory numbers two controls at the same place apart by their label, and the list shows each label.
+- The Aktuell cell of a state that is new in a sketch names the states the merged part has, in larger text.
+- A click on the active item of the navigation rail now hides the sidebar, and another click shows it again. Enter and Space on the item work the same way.
+- Write the Tailwind classes in the Studio app in their canonical form.
+- Keep the zoom chip at the canvas's bottom right on System and Inbox, and keep the canvas focus ring off after a pointer click until focus leaves.
+- The canvas draws comment pins with the comment pin component: the latest sender's initials or agent logo and the reply count.
+- Add the canvas frames component (`design-parts/canvas-frames`) for the `elements/canvas-frames` design part: the projected frames in a zoomed column of the canvas viewport, with the zoom chip in the corner.
+- The design harness can size the canvas-frames part through a width class.
+- The canvas keeps its camera when the panel hides or the window resizes. An opening fit fits again only when the frames change; a fit or focus you ask for still follows the canvas size.
+- Draw no row label left of the frames on the System canvas, as the page design does.
+- A canvas opens at 100 % with its frames at the panel edge, the same view as the 100 % button, and keeps the frames in place when the side panel hides.
+- The design canvas draws no focus ring after a pointer click, only on keyboard focus.
+- Space now activates a button inside the system page canvas instead of being swallowed by the pan shortcut.
+- The live design canvas is transparent again, so the dot pattern of the page background shows through it.
+- The design canvas draws its zoom controls with the zoom chip component.
+- The canvas viewport design part draws no focus ring after a pointer click, only on keyboard focus.
+- Add the presentational comment pin component (`design-parts/comment-pin`) for the `components/comment-pin` design part.
+- Remove dead code: the canvas pointing, notes and draft features, the unused row labels, and the agent run commands of the host.
+- Name the shell component in the design live spec, so `et design actions --live` can check the shell controls.
+- The Studio logo menu now holds the design server actions (start, restart, stop), the design server stopped screen is part of the shell, and the footer status bar with its server line, render queue, failures and Reload is gone.
+- Add the presentational disclosure component (`design-parts/disclosure`) for the `components/disclosure` design part.
+- Studio draws its surfaces and accents from the SDK surface and colour themes; the Tailwind colour aliases for surface and accent are gone.
+- Removed the unused flow arrangement of the design canvas, its line drawing, and the flow-note write paths of the note store and host.
+- The Studio stylesheet drops the unused `surface-hover`, `surface-pressed` and `accent-hover` colour utilities; the design parts use the SDK colour and surface theming instead.
+- Studio notifications draw the message at full opacity and the dismiss icon at 0.6 at rest, so both pass contrast.
+- The Studio error toast names its input `heading` and its output `dismiss`, so it needs no lint disables.
+- Studio shows an error toast when "Projekt öffnen…" picks a folder without design work. The toast is also a design part.
+- The flows page camera treats the area under the floating side panel as covered, so Fit, zoom and 100 % start right of it.
+- The flows canvas pans by wheel and drag and zooms with the zoom chip, like the sketches canvas. A flow starts at 100 % with its first frame at the left edge, so wide flows are no longer clipped.
+- Fill each Flows graph frame through a projected template instead of a fixed iframe.
+- Draw the canvas content of the Studio flows page part: header with the preset picker, the flow graph and the empty block.
+- The flows page part takes its sample flow names, line labels and size preset from the studio labels.
+- Add the Studio flows page component: the shell with the studio menu and the flat flow list around a projected canvas.
+- The Flows section now draws the flows page part: the product's flows in the side list, the picked flow as live frames along its lines, a size select from the product presets, and an empty state with a copyable prompt.
+- The flows page preset select now has an accessible name, so it no longer raises ET2201.
+- Picking another flow on the flows page resets the camera to the opening view instead of keeping the previous flow's pan and zoom.
+- Draw every text of the Studio system view in German from `studio-labels.ts`.
+- The inbox design part draws the comment editor arrow like the SDK overlay arrow, so its compare is green in every state.
+- Add the presentational inbox page component (`design-parts/inbox`) for the `pages/inbox` design part, mounted by the design harness for `et design compare`.
+- The Inbox says while its comments load, shows a failed load with "Erneut laden" to retry, and scrolls a list longer than the panel.
+- Show a resolved comment's pin, muted and with a check mark, after a click on its Inbox row
+- A click on an Inbox comment row, or Enter or Space on the focused row, selects the comment and opens its pin on the canvas, on its own part.
+- The inbox draws its rail and panel through the shell-main component.
+- The Studio inventory page part draws its own canvas: the Inventory toggle, the approval header with Reload and Approve, the frame with numbered boxes and the control list.
+- Pass the part tree `expandedChange` output through the inventory page part.
+- The inventory page part takes its German text from the studio labels.
+- The inventory page numbers its markers from 0, as the design does.
+- Add the Studio inventory page component: the shell with the studio menu and the part tree around a projected canvas.
+- The page Inventory draws with the inventory page part, in German.
+- Forward the inventory page `expandedChange` output from the inventory view.
+- The Studio stylesheet resets the default colours before the generated SDK themes, so `bg-et-surface-*` and the other generated theme utilities produce CSS again.
+- The live design canvas is a focusable region named Design Canvas with the focus ring of the canvas viewport part, the comment pin counts every message of its thread, and the accent dot for a waiting question is gone.
+- The live compare of the Sketches page starts without a stored sketch entry.
+- The studio menu part host no longer paints a surface fill behind the menu.
+- The Studio menu panel now sits one surface above the shell instead of two, and its group label uses the UI line height.
+- Add the presentational Studio menu component (`design-parts/studio-menu`) for the `elements/studio-menu` design part.
+- The Studio logo menu holds the design server actions the server state allows: start, or restart and stop.
+- The merge page crops the changed instance from each side instead of a sample button, shows "Neu in <variant>" in the empty "Jetzt" panel of a state the variant adds, and shows the Merge button loading while the merge runs.
+- The merge page crop row zooms out until the whole changed instance of both sides fits, and its label shows that zoom instead of a fixed 200 %.
+- Default the merge page part crop label to the system page copy prompt label.
+- The merge page shows why a merge failed under the Merge button: a stale sketch names the changed parts and asks for a rebase.
+- Add the Studio merge page component: the merge panel with the changed list and the unchanged states, and the before and after shots of the selected row.
+- Merge on a sketch now picks the variant and opens the merge page part, which lists changed states with live Now/After frames; Back returns to the sketches. The unused pixel-free, variant-diff and changed-area helpers are gone.
+- The merge page part shows German text and an optional error line under the Merge button.
+- The merge page marks its 200 % preview crops inert, so the copied buttons in them are not controls.
+- A changed row on the merge page is picked with Space as well as Enter.
+- The merge page draws its Now and After shots as a projected slot that the live app fills with frames.
+- The merge view compares a sketch that changes only its own pages, and shows a state the variant adds with only its after picture.
+- System and Sketches use the same canvas: left drag pans, a click on a frame selects it, arrow keys pan, a double-click focuses a frame, Space or middle drag pans, and Shift+1/2/0 work window-wide on both pages.
+- Every Studio menu draws its items at the control-md height and text-md size, and the logo menu button keeps one corner radius in every state.
+- The rail logo opens the studio menu on every page; one shell wrapper wires the rail and panel controls of all pages.
+- A sketch opens its first unchanged row by default when no visible row shows a frame of the current part, so the "Aktuell" column is never empty.
+- The System page shows the "N offen" chip and its popover for the shown part, read from the design server's open points.
+- The open points chip on the System page un-presses when its popup closes, so a second click closes both.
+- "Projekt öffnen…" opens the OS folder dialog, and an update installs on the next Studio start without a button.
+- Let the canvas of the System and Inbox page parts fill their slot, as the page designs.
+- The part tree takes own row keys, a closed part with states, a warning title per part, and reports the open rows.
+- Add the part tree component (`design-parts/part-tree`) for the `elements/part-tree` design part, drawn with the tree-row items on the headless tree.
+- Press Space on a part tree row to open or close it and activate it, like Enter.
+- The project picker closes when the current project is chosen again, and the System rail button leaves an open sketch and shows as current on every page.
+- A modifier key press after a pointer click on the design canvas no longer brings the focus ring back.
+- The pointer-focus ring rule of the design canvas lives in one shared function.
+- The project picker moves focus to its first project when it opens.
+- Close the project picker when a project is chosen, including the current one.
+- The system view remembers whether it shows a page's control inventory, so a reload keeps the Inventory toggle.
+- SDK components, including body-portaled menus, draw in the Studio UI font.
+- The design server actions in the Studio menu also work on the System, Sketches, Flows and Inbox pages.
+- Draw the claude, codex and gemini logos of the inbox and the comment pin from one shared icon file that the Studio design system also uses.
+- Add the shell-main component (rail, panel and project picker) and use it in the inbox.
+- The shell rail no longer shows the All products button.
+- The Studio shell draws its project switch with the shared project switch component instead of its own copy.
+- The Sketches page opens at 100 % on the variant a fit shows nearest the top centre when its design state asks for the 100 % camera.
+- The Sketches canvas keeps its frames in place on screen when the side panel hides or shows.
+- Write the sketches page child flex rule as a canonical class.
+- Pass the part tree `expandedChange` output through the sketches page part.
+- The sketches page part shows German text only; its page design needed no text change.
+- Add the presentational Sketches page part: the variant frames on one canvas, their heads, the round picker and the zoom chip.
+- The sketch view draws the sketches page part; reject/reopen, notes, diff lists and the state matrix are gone.
+- A Sketches rail click opens the sketch view with the first sketch instead of the System canvas.
+- A selected frame in Sketches now shows the same selection outline as System.
+- The Sketches view labels the button above each variant "Wählen"; the merge view keeps its "Merge" button.
+- Studio specs fail when a test logs an SDK error (`ET` code), and name each code and message.
+- The start page without an open repo no longer draws an empty bordered box above the title.
+- With no checkout open, Studio shows the start page without a repo instead of asking to start the design server.
+- Add the start page component for the no-repo and no-products states.
+- The start page matches its design: Studio font, default colour on the other-repo button, design monospace font for the CLI command.
+- On an `et-surface-interactive` element, the `et-surface-interaction` colour utilities follow the hover, focus and active state of the SDK interaction tint.
+- Going back to System after picking a flow now picks the first part, so the canvas is no longer empty.
+- The system page canvas now fills the whole page and runs under the floating side panel. Fit, focus, reset and zoom treat the area under the panel as covered, so frames still start right of it.
+- The System page draws a product without parts with the empty system card, and a checkout without products shows the start page with the repo and a copyable agent prompt.
+- The fitted System canvas frame stays centred right of the side panel after the fit is applied.
+- Write the system page tree frame width as a canonical class.
+- Pass the part tree `expandedChange` output through the system page part.
+- The System page design part draws its frame fitted to the canvas for the fit state.
+- Add the Studio system page part: the part tree, the frames on the canvas, the open-points chip with its popover, and the empty page.
+- Let the Studio system page take the content of its canvas frames through a `shot` template, so the live app can fill them with frame iframes.
+- The System view draws its side tree with the part tree component.
+- Place the zoom chip of the System part view where the page design draws it.
+- The Studio theme CSS names the type of the error and warning colour themes.
+- Give the Studio tree rows German labels from one label map.
+- The System view draws its part tree with the tree-row design and no longer shows the badges that design has no mark for.
+- Add the presentational tree row component (`design-parts/tree-row`) for the `components/tree-row` design part.
+- Give the Studio tree-row stack the tree and treeitem roles of the live tree.
+- The part tree rows use the menu item text size and grow with it.
+- The canvas zoom chip buttons have German labels for screen readers.
+- Add the presentational zoom chip component (`design-parts/zoom-chip`) for the `components/zoom-chip` design part.
+- "Auf 100 % zoomen" on the System canvas returns to the opening view: 100 %, the frames at the panel edge.
+
 ## 0.2.0-next.14
 
 ### Minor Changes
