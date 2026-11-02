@@ -5,8 +5,8 @@ Stand: 02.11.2026, nachts
 ## Ziel
 
 Das MVP ist erreicht (02.11.): alle 17 Studio-Teile sehen im Code so aus wie ihr gemergter Entwurf und sind „fertig“.
-Jetzt kommen die Themen für nach dem MVP. Sie stehen unten in fünf Listen (A bis E). Jeder Eintrag hat eine Nummer,
-damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-code.md`, „dl“ heißt
+Jetzt kommen die Themen für nach dem MVP. Sie stehen unten in fünf Listen (A bis E). Jeder Eintrag hat eine feste ID (zum Beispiel B21);
+erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (Befund oder Q) steht in `design-to-code.md`, „dl“ heißt
 `backlog-parallel/decisions-latest.md`.
 
 ## Regeln
@@ -20,141 +20,118 @@ damit wir ihn abhaken können. Die Quelle (Befund oder Q) steht in `design-to-co
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der fünf Fixes mit der neu gebauten CLI (Cache-Trefferquote, `task --verify`, ACTIONS RERUN, Fertig-Marken ergänzen, Live-Vergleich aller pages-Teile), dann Push. Alle parallelen Slices sind fertig. Liste A wartet auf Toms Reihenfolge.
+Builder: Ende-zu-Ende-Prüfung der Werkzeug-Fixes vom 02.11. und Live-Vergleich aller pages-Teile, dann Push. Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
-- C3 und C5: Pre-push führt die betroffenen Studio-Tests und die statischen Design-Regeln der berührten Teile aus (cdf13257d, 02.11.).
-- B29: Design-Regel NATIVE-TITLE, opt-in mit `nativeTitle: 'deny'` (ed8457932, 02.11.).
-- C2: `design actions` gibt jedes Ergebnis aus, sobald seine Prüfung endet; der Test fängt das alte Verhalten (28141b818, e76c503fb, 02.11.).
-- B26: `design check` nennt jetzt auch Teile, die ohne Browser nicht zeichnen und an denen `design ready` scheitert (85a028f16, 02.11.).
-- B11: Lint-Regel `ethlete/no-native-title`, vorerst opt-in (4c60be59e, 02.11.).
-- B25: `design dom <part>` gibt das HTML eines Zustands aus, aus dem Entwurf oder mit `--app` aus der App (2c74c7237, 02.11.).
-- `design ready` behält `by` und `at` einer Fertig-Marke, wenn sich das Teil nicht geändert hat (d7bdfb315, 02.11.).
-- C1: Die Design-Befehle verwenden den letzten Harness-Build wieder, wenn sich keine Eingabe geändert hat (9cf6343a3, 02.11.).
-- B21: `design check` meldet ACTIONS RERUN, wenn sich ein eingebettetes Teil seit dem letzten Aktionslauf geändert hat. Alte Fertig-Marken bekommen den Eintrag erst beim nächsten `design ready` (7581e0cce, 02.11.).
-- B14 und B15: `design compare --live` meldet Rahmen unter einem Panel als OCCLUDED und wartet auf Overlay-Animationen (cf2565685, 02.11.).
-- B22: Ein Fehlschlag in `design actions` nennt den erreichten Zustand oder den nächsten. Offen: Fehlschläge, die nur aria-expanded prüft (a01d37d64, 02.11.).
-- B20: `task --verify` führt die Aktions-Prüfung aus und bricht bei einem Fehlschlag ab (1855d1bc4, 02.11.).
-- MVP: alle 17 Teile fertig (02.11.).
-- Schnellere Design-CLI: Aktions-Prüfungen laufen parallel und warten auf eine Bedingung statt fester 400 ms;
-  shell-main jetzt 80 s statt 322 s (Q16, 02.11.).
-- Änderungen ohne sichtbaren Unterschied machen ein Go nicht mehr ungültig (Q15, 02.11.).
-- Ein Canvas für System, Sketches und Canvas-Rahmen; Fokus-Rahmen nur bei Tastatur (01.11. und 02.11.).
+MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie steht in `git log -- plans/ethlete-studio/STATUS.md`.
 
 ## A. Studio: was man sieht
 
-1. Eigene Titelleiste (Windows, Linux; macOS behält die Ampel-Knöpfe).
-2. Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
-3. Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
-4. Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
-5. Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
-   unten entfällt.
-6. Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
-7. Breite der Seitenleiste mit der Maus ziehen (Q133).
-8. Tooltips aus ethlete/components statt nativer `title`-Tooltips (Befund 116).
-9. Merge-Ansicht wieder mit Canvas und Zoom (Befund 117; Entwurf in E1).
-10. Go überarbeiten: „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren; neuer Name für „Go“ (Befund 109; E2).
-11. „Go geben“ nur, wenn alle Prüfungen grün sind, sonst steht da, was fehlt (Q14).
-12. Go bleibt gültig, wenn sich nur die Verknüpfung zum App-Code ändert (Q28).
-13. Sketch „gewählt, aber nicht gemergt“ sichtbar machen oder beides in einem Schritt.
-14. Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
-15. Kopf eines Sketches mit mehreren Teilen: Titel und „n Teile“ zum Aufklappen (Q244).
-16. Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
-17. Teil-Baum behält die Scroll-Position beim Neuladen (Befund 99).
-18. Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
-19. Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
-20. Eigener Baum für Sketches und Flows; Abschnitte im Teil-Baum (Q22, Q60).
-21. Sketch-Ansicht: Variante ablehnen und wieder öffnen, Notizen, Diff-Listen – kommen sie zurück? (Q55; E7)
-22. Flows: Pins, Notizen, Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
-23. „Verwerfen“ mit Rückfrage (Q70).
-24. Merge-Seite zeigt alle unveränderten Teile, nicht nur das erste (Q72).
-25. Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81).
-26. Studio-Menü: Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio (Q83).
-27. Server-Status: Neu laden, „veraltet“, Neustart, Stopp (Q88); „Scan“ für Checkouts (Q89).
-28. Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
-29. Inventar überarbeiten: als Canvas, Assets, offene Overlays, Einstieg, Knopf „Alle Produkte“ (Q100, Q101, Q233,
-    Q239).
-30. Zeilen im Popup „Offene Punkte“ anklickbar.
-31. Gleiche Darstellung aller Zellen im Raster mit Live-iframes; vorher Kosten messen.
-32. Sketch zeigt bei einer Änderung auch die Nachbarschaft (ganze Zeile, Zelle markiert).
-33. Zwei Designer in einem Projekt (E8).
-34. Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).
-35. Motion-Editor.
+- **A1** Eigene Titelleiste (Windows, Linux; macOS behält die Ampel-Knöpfe).
+- **A2** Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
+- **A3** Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
+- **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
+- **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
+  unten entfällt.
+- **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
+- **A7** Breite der Seitenleiste mit der Maus ziehen (Q133).
+- **A8** Tooltips aus ethlete/components statt nativer `title`-Tooltips (Befund 116).
+- **A9** Merge-Ansicht wieder mit Canvas und Zoom (Befund 117; Entwurf in E1).
+- **A10** Go überarbeiten: „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren; neuer Name für „Go“ (Befund 109; E2).
+- **A11** „Go geben“ nur, wenn alle Prüfungen grün sind, sonst steht da, was fehlt (Q14).
+- **A12** Go bleibt gültig, wenn sich nur die Verknüpfung zum App-Code ändert (Q28).
+- **A13** Sketch „gewählt, aber nicht gemergt“ sichtbar machen oder beides in einem Schritt.
+- **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
+- **A15** Kopf eines Sketches mit mehreren Teilen: Titel und „n Teile“ zum Aufklappen (Q244).
+- **A16** Offene Punkte: veraltete Sketch-Basis, Sketch mit Namen, Entscheidung offen bis gebaut (Befunde 92, 93, 94).
+- **A17** Teil-Baum behält die Scroll-Position beim Neuladen (Befund 99).
+- **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
+- **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
+- **A20** Eigener Baum für Sketches und Flows; Abschnitte im Teil-Baum (Q22, Q60).
+- **A21** Sketch-Ansicht: Variante ablehnen und wieder öffnen, Notizen, Diff-Listen – kommen sie zurück? (Q55; E7)
+- **A22** Flows: Pins, Notizen, Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
+- **A23** „Verwerfen“ mit Rückfrage (Q70).
+- **A24** Merge-Seite zeigt alle unveränderten Teile, nicht nur das erste (Q72).
+- **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81).
+- **A26** Studio-Menü: Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio (Q83).
+- **A27** Server-Status: Neu laden, „veraltet“, Neustart, Stopp (Q88); „Scan“ für Checkouts (Q89).
+- **A28** Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
+- **A29** Inventar überarbeiten: als Canvas, Assets, offene Overlays, Einstieg, Knopf „Alle Produkte“ (Q100, Q101, Q233,
+  Q239).
+- **A30** Zeilen im Popup „Offene Punkte“ anklickbar.
+- **A31** Gleiche Darstellung aller Zellen im Raster mit Live-iframes; vorher Kosten messen.
+- **A32** Sketch zeigt bei einer Änderung auch die Nachbarschaft (ganze Zeile, Zelle markiert).
+- **A33** Zwei Designer in einem Projekt (E8).
+- **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).
+- **A35** Motion-Editor.
 
 ## B. Design-CLI: neue Prüfungen
 
-1. Ein Teil wird eingebettet, nicht nachgezeichnet; ein App-Component je Teil; `--live` prüft ein Teil auf jeder
-   Seite (Befunde 84, 85).
-2. `--live` meldet fertige Teile, die keine Seite zeigt (Befunde 89, 91).
-3. Prüfung bei breiterem Fenster: feste Breite in einem wachsenden Bereich (Befund 90).
-4. Hover-Zustand im Vergleich (Befund 96).
-5. Scroll-Position nach Neuladen prüfen (Befund 99).
-6. Größenänderung pro Canvas prüfen (Befund 100).
-7. SDK-Teile erben Schrift und Fläche richtig; Warnung bei veraltetem dist (Befund 101).
-8. Wiederholte Gruppen brauchen ein Control (Befund 102).
-9. Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
-10. Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-11. Lint-Regel gegen native `title` (Befund 116). **Erledigt** (4c60be59e), aber nur opt-in. Als Fehler an, wenn A8 und D12 fertig sind; A8 umfasst auch die 7 Stellen in den Studio-Design-Dateien.
-12. Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
-13. Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
-14. OCCLUDED: Rahmen unter einem festen Panel (Befunde 120, 129). **Erledigt** (cf2565685).
-15. Vergleich wartet auf die Animation eines Overlays (Befund 129). **Erledigt** (cf2565685).
-16. Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
-17. Zustände auch mit echten, großen Daten prüfen (Befund 118).
-18. Jede Zeilen-Variante drücken, auch hinter einem Schalter (Befund 121).
-19. `emit:`-Aktion prüft auch, was der Host daraus macht (Befund 113).
-20. `task --verify` führt die Aktions-Prüfung aus (Befunde 123, 127). **Erledigt** (1855d1bc4).
-21. Ändert sich ein eingebettetes Teil, müssen die Aktionen der umgebenden Teile neu laufen (Befund 130). **Erledigt** (7581e0cce).
-22. „Erreicht Zustand X statt Y“ bei einem Fehlschlag; Ziel passt zum Start (Befund 131). **Erledigt** (a01d37d64).
-23. Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
-24. Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
-25. `design dom <part>` gibt das HTML eines Teils aus. **Erledigt** (2c74c7237). Offen: `--app` lehnt Hover-, Active- und Klick-Zustände ab, statt sie herzustellen.
-26. Einfaches `design check` zeigt jeden Blocker, nicht erst `design ready`. **Erledigt** (85a028f16).
-27. Kanonische Tailwind-Klassen im App-Code prüfen.
-28. Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
-29. Design-Regel NATIVE-TITLE: findet `title=` im Markup der Design-Dateien, opt-in pro Produkt; Studio schaltet sie mit A8 ein (7 Stellen in .ethlete/design/studio). **Erledigt** (ed8457932).
+- **B1** Ein Teil wird eingebettet, nicht nachgezeichnet; ein App-Component je Teil; `--live` prüft ein Teil auf jeder
+  Seite (Befunde 84, 85).
+- **B2** `--live` meldet fertige Teile, die keine Seite zeigt (Befunde 89, 91).
+- **B3** Prüfung bei breiterem Fenster: feste Breite in einem wachsenden Bereich (Befund 90).
+- **B4** Hover-Zustand im Vergleich (Befund 96).
+- **B5** Scroll-Position nach Neuladen prüfen (Befund 99).
+- **B6** Größenänderung pro Canvas prüfen (Befund 100).
+- **B7** SDK-Teile erben Schrift und Fläche richtig; Warnung bei veraltetem dist (Befund 101).
+- **B8** Wiederholte Gruppen brauchen ein Control (Befund 102).
+- **B9** Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
+- **B10** Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
+- **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn A8 und D12 fertig sind (Befund 116).
+- **B12** Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
+- **B13** Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
+- **B16** Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
+- **B17** Zustände auch mit echten, großen Daten prüfen (Befund 118).
+- **B18** Jede Zeilen-Variante drücken, auch hinter einem Schalter (Befund 121).
+- **B19** `emit:`-Aktion prüft auch, was der Host daraus macht (Befund 113).
+- **B22** „Erreicht Zustand X“ auch bei Fehlschlägen, die nur aria-expanded prüft (Befund 131).
+- **B23** Eine Vergleichsregel für die Ecken der SDK-Panels (Q51).
+- **B24** Harness erzeugt die Tailwind-Klassen der Entwürfe selbst (Q50).
+- **B25** `design dom --app` stellt Hover-, Active- und Klick-Zustände her, statt sie abzulehnen.
+- **B27** Kanonische Tailwind-Klassen im App-Code prüfen.
+- **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
 
 ## C. CLI: Tempo und Ablauf
 
-1. Harness-App nicht bei jedem Befehl neu bauen, spart etwa 11 s pro Lauf (Q16). **Erledigt** (9cf6343a3). Offen: Trefferquote messen; trifft der Cache selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json).
-2. `design actions` gibt jedes Ergebnis sofort aus, nicht erst am Ende (Befund 111). **Erledigt** (28141b818, e76c503fb). Offen: ein Test für `--live`.
-3. Pre-push führt die Studio-Tests der geänderten Dateien aus (Befund 124). **Erledigt** (cdf13257d).
-4. `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
-5. Pre-push prüft geänderte Teile statisch (Befund 105). **Erledigt** (cdf13257d). Offen: Design-Dateien aus libs/components lösen die Prüfung nicht aus; kein Produkt-tsc im Hook.
-6. Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
-7. Studio-App ohne Lint-Warnungen; danach ist jede neue Warnung ein Fehler.
+- **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
+- **C2** Test für die sofortige Ausgabe von `design actions --live` (Befund 111).
+- **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
+- **C5** Pre-push: Design-Dateien aus libs/components lösen die Design-Prüfung aus; tsc für berührte Produkte (Befund 105).
+- **C6** Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
+- **C7** Studio-App ohne Lint-Warnungen; danach ist jede neue Warnung ein Fehler.
 
 ## D. SDK und Libs
 
-1. libs/components: 71 Import-Zyklen auflösen (Q116).
-2. Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket.
-3. Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
-4. SDK-Teil `checkbox` (Studio nutzt noch die native Checkbox).
-5. Eigener Sketch für ein randloses, gedämpftes Select (Q231).
-6. Rahmen von `components/floating-action` (E10).
-7. Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
-8. Aktive Farbe in icon-button und split-button (Q245), vielleicht schon erledigt.
-9. Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
-10. Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
-11. 48 SDK-Teile haben noch offene Punkte.
-12. 10 native `title` in libs/components durch etTooltip ersetzen: cascader, password input, rich-text palette, grid-debug, scheduler (3), standings story, table (B11).
+- **D1** libs/components: 71 Import-Zyklen auflösen (Q116).
+- **D2** Controls der fünf SDK-Teile carousel, scrollable, match, table, bracket.
+- **D3** Fokus-Rahmen als API: `focusRingStyles`, öffentliche Tokens (E11).
+- **D4** SDK-Teil `checkbox` (Studio nutzt noch die native Checkbox).
+- **D5** Eigener Sketch für ein randloses, gedämpftes Select (Q231).
+- **D6** Rahmen von `components/floating-action` (E10).
+- **D7** Button-Farben gibt es zweimal (Design-Teil und libs/components); Checkbox und Radio-Group nachziehen.
+- **D8** Aktive Farbe in icon-button und split-button (Q245), vielleicht schon erledigt.
+- **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
+- **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
+- **D11** 48 SDK-Teile haben noch offene Punkte.
+- **D12** 10 native `title` in libs/components durch etTooltip ersetzen: cascader, password input, rich-text palette, grid-debug, scheduler (3), standings story, table (B11).
 
 ## E. Fragen und Entwürfe für Tom
 
-1. Merge-Ansicht: Canvas wie System oder statisch?
-2. Go: ein Schritt pro Änderung oder feste Reihenfolge? Und welcher Name statt „Go“?
-3. Logo-Knopf: Radius bei Hover und Active (Befund 107).
-4. Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
-5. Titelleiste unter Windows und Linux: Knöpfe zeichnen.
-6. Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
-   Inventar-Einstieg, „Alle Produkte“.
-7. Sketch-Ansicht: kommen Ablehnen, Notizen und Diff-Listen zurück, und wo?
-8. Zwei Designer: was muss ein Designer sehen? Tom denkt an Echtzeit wie in Figma.
-9. Live-iframes im Raster und Nachbarschaft im Sketch: erst messen, dann entscheiden.
-10. `floating-action`: Normalisierung erweitern oder `fa-page` behalten?
-11. Öffentliche Fokus-Rahmen-Tokens: SDK-API-Entscheidung.
-12. canvas-frames umbenennen und mit shell-main verknüpfen (Q248).
-13. Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
-    deutsche Tooltips am Zoom-Chip (Q41).
-14. Was zählt als „sehr wahrscheinlich automatisch gemergt“?
+- **E1** Merge-Ansicht: Canvas wie System oder statisch?
+- **E2** Go: ein Schritt pro Änderung oder feste Reihenfolge? Und welcher Name statt „Go“?
+- **E3** Logo-Knopf: Radius bei Hover und Active (Befund 107).
+- **E4** Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
+- **E5** Titelleiste unter Windows und Linux: Knöpfe zeichnen.
+- **E6** Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
+  Inventar-Einstieg, „Alle Produkte“.
+- **E7** Sketch-Ansicht: kommen Ablehnen, Notizen und Diff-Listen zurück, und wo?
+- **E8** Zwei Designer: was muss ein Designer sehen? Tom denkt an Echtzeit wie in Figma.
+- **E9** Live-iframes im Raster und Nachbarschaft im Sketch: erst messen, dann entscheiden.
+- **E10** `floating-action`: Normalisierung erweitern oder `fa-page` behalten?
+- **E11** Öffentliche Fokus-Rahmen-Tokens: SDK-API-Entscheidung.
+- **E12** canvas-frames umbenennen und mit shell-main verknüpfen (Q248).
+- **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
+  deutsche Tooltips am Zoom-Chip (Q41).
+- **E14** Was zählt als „sehr wahrscheinlich automatisch gemergt“?
