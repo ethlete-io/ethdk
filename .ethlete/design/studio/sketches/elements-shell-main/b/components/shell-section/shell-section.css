@@ -1,0 +1,16 @@
+@layer components {
+  .st-shell-section {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    outline: none;
+    transition: var(--transition-state);
+  }
+
+  .st-shell-section:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+}
