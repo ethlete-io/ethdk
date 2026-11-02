@@ -24,7 +24,8 @@ Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseit
 603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
 3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
 startet. Reihenfolge (Grill, 02.11., Tom: „in der Reihenfolge, die Sinn ergibt“): sofort parallel der Sketch der
-Sketch-Ansicht (Befund 148, mit „Übernehmen“ nach A13), weil er Toms Wählen blockiert; danach Code-Review B61, B58,
+Sketch-Ansicht als Runde 2 von pages/sketches (Befund 148, B36, B34/B41, B38, „Übernehmen“ nach A13, Platz für
+B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B61, B58,
 B57, B59, B60 vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
 lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. Läuft: A1 mit
 macOS-Ampel als Demo-Inhalt, compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
@@ -33,13 +34,13 @@ Bei Tom:
 
 - Titelleiste: C ist gemergt (02.11.). Jetzt gleicht der Builder den Code an (A1).
 - `pages/sketches` ist `ready`, wird aber erst gewählt, wenn die Sketch-Ansicht alle Zustände zeigt (Befund 148).
-- Danach: Sketch der Sketch-Ansicht (B54 sichtbar, mit „Übernehmen“ nach A13), dann B46.
+- Danach: pages/sketches Runde 2 (die Sketch-Ansicht mit allen offenen Punkten) wählen, dann B46.
 
 Übergaben (lokal, per gitignore ausgeschlossen): `.claude/handoffs/doc-agent-studio.md`,
 `.claude/handoffs/builder-studio.md`; geparkt: `b36-parked.patch` und `b36-parked-e2e.mjs` (B36, nach der Wahl von
 pages/sketches, auf B34 aufgesetzt); Berichte unter `.claude/handoffs/agent-results/`.
 
-Reihenfolge danach: B34 neu (nach Wahl), B36, B38, B46, B43-B45, B39-B41; Liste A: A1, A36, A8, dann A9 und A10,
+Reihenfolge danach: Bau von pages/sketches r2 (B34, B36, B38, A13), B46, B43-B45, B39-B41; Liste A: A1, A36, A8, dann A9 und A10,
 dann A5 bis A7 und A40, danach der Rest; A38 und A39 nach A37.
 
 ## Erledigt
