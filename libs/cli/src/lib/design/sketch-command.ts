@@ -619,12 +619,9 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
 };
 
 const loadedAndReady = async (context: Context, { product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
-  const unloaded = await variantsThatDoNotLoad({ target: context.target, config: context.config, product, sketch });
+  const unloaded = await unloadedLinesOf({ target: context.target, config: context.config, product, sketch });
 
-  if (unloaded.length > 0)
-    return fail(
-      `${unloaded.map((line) => `${sketch.target} ${line}`).join('\n')}\n${sketch.target} does not load - fix it before ready`,
-    );
+  if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
 
   const ready =
     sketch.status === 'ready'
@@ -696,6 +693,43 @@ const variantGateProblemsOf = (options: {
   problems: Problem[];
 }): Problem[] => [...options.problems, ...formatProblemsOf(options), ...unusedInVariantOf(options)];
 
+const openPointLinesOf = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
+  const pointLinesOf = (variant: string, list: PartOpenPoints[]) =>
+    openPointsText(product.name, list)
+      .slice(1)
+      .map((line) => `${sketch.target} ${variant}: ${line.trim()}`);
+  const points = sketch.variants
+    .filter((variant) => !rejectionOf(sketch, variant))
+    .map((variant) => ({
+      variant,
+      ...sketchOpenPointsOf({
+        merged: product,
+        variant: overlaySketch({ product, sketch, variant }),
+        targets: sketch.targets,
+      }),
+    }));
+
+  return {
+    added: points.flatMap(({ variant, added }) => pointLinesOf(variant, added)),
+    inherited: points.flatMap(({ variant, inherited }) => pointLinesOf(variant, inherited)),
+  };
+};
+
+const roundNoteRefusalOf = (sketch: Sketch): string | null => {
+  const running = runningRoundOf(sketch);
+
+  return running.note.trim() === ''
+    ? `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`
+    : null;
+};
+
+const unloadedLinesOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+}) => (await variantsThatDoNotLoad(options)).map((line) => `${options.sketch.target} ${line}`);
+
 const readyRefusalOf = (
   context: Context,
   { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
@@ -722,35 +756,15 @@ const readyRefusalOf = (
 
   if (problems.length > 0) return fail(`${problems.join('\n')}\n${sketch.target} has problems - fix them before ready`);
 
-  const pointLinesOf = (variant: string, list: PartOpenPoints[]) =>
-    openPointsText(product.name, list)
-      .slice(1)
-      .map((line) => `${sketch.target} ${variant}: ${line.trim()}`);
+  const { added, inherited } = openPointLinesOf({ product, sketch });
 
-  const open = sketch.variants
-    .filter((variant) => !rejectionOf(sketch, variant))
-    .flatMap((variant) => {
-      const { added, inherited } = sketchOpenPointsOf({
-        merged: product,
-        variant: overlaySketch({ product, sketch, variant }),
-        targets: sketch.targets,
-      });
+  inherited.forEach((line) => console.log(`NOTE ${line} (inherited from the merged part)`));
 
-      pointLinesOf(variant, inherited).forEach((line) => console.log(`NOTE ${line} (inherited from the merged part)`));
+  if (added.length > 0) return fail(`${added.join('\n')}\n${sketch.target} adds open points - close them before ready`);
 
-      return pointLinesOf(variant, added);
-    });
+  const noNote = roundNoteRefusalOf(sketch);
 
-  if (open.length > 0) return fail(`${open.join('\n')}\n${sketch.target} adds open points - close them before ready`);
-
-  const running = runningRoundOf(sketch);
-
-  if (running.note.trim() === '')
-    return fail(
-      `${sketch.target} round ${running.key} has no note - set it with: sketch round ${sketch.target} ${running.key} --note "<what the round shows>" --by <model id>`,
-    );
-
-  return null;
+  return noNote === null ? null : fail(noNote);
 };
 
 const rebased = (context: Context) =>
@@ -906,6 +920,17 @@ const checked = async (context: Context) => {
     }
 
     failed ||= all.length > 0;
+  }
+
+  for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
+    const refusals = [
+      ...(await unloadedLinesOf({ target, config, product, sketch })),
+      ...openPointLinesOf({ product, sketch }).added,
+      ...[roundNoteRefusalOf(sketch) ?? []].flat(),
+    ];
+
+    refusals.forEach((line) => console.error(`ready will refuse: ${line}`));
+    failed ||= refusals.length > 0;
   }
 
   if (failed) return 1;

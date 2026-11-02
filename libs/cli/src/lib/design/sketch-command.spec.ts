@@ -146,6 +146,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.at(-1)).toBe(
       'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)\ncomponents/button adds open points - close them before ready',
     );
+    lines.length = 0;
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(
+      'ready will refuse: components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)',
+    );
     expect(
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -300,6 +305,14 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.join('\n')).toContain('does not load: exports is not defined');
     expect(lines.join('\n')).not.toContain('components/button is ready');
+    vi.mocked(variantsThatDoNotLoad).mockResolvedValueOnce([
+      'variant a components/button does not load: exports is not defined',
+    ]);
+    lines.length = 0;
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(
+      'ready will refuse: components/button variant a components/button does not load: exports is not defined',
+    );
     expect(
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -718,6 +731,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toMatch(/^ready will refuse: components\/button round r1 has no note - set it with:/u);
     expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
   });
@@ -838,7 +853,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const css = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.css');
 
     rmSync(join(target, '.prettierignore'));
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     writeFileSync(css, `${readFileSync(css, 'utf8')}\n.acme-button   {   }\n`);
 
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
@@ -857,7 +872,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     rmSync(join(target, '.prettierignore'));
     writeFileSync(join(target, '.prettierrc'), '{ "printWidth": 40 }\n');
-    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
@@ -936,7 +951,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--product', 'acme');
+    write(target, 'new', 'components/button', '--override', '--variants', 'a', '--note', 'n', '--product', 'acme');
 
     expect(write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
     expect(lines.pop()).toContain('acme/sketches/components-button/b/');
@@ -1227,7 +1242,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.css'),
       '.acme-hero { color: #fff; }',
@@ -1248,7 +1263,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(aktuellPlaceholderWarnings).mockResolvedValueOnce([
       'elements/hero: Aktuell shows only placeholders: open "default" to compare',
     ]);
-    write(target, 'new', 'elements/hero', '--variants', 'a', '--product', 'acme');
+    write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
 
     expect(await run(target, 'check', '--product', 'acme')).toBe(0);
     expect(warnings).toContain('elements/hero: Aktuell shows only placeholders: open "default" to compare');
@@ -1264,7 +1279,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'),
       '.acme-hero { color: #fff; }\n.acme-hero-title { color: #000; }',
     );
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
 
     await run(target, 'check', '--product', 'acme');
 
@@ -1278,7 +1293,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const target = acme();
     const lines = output();
 
-    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
     rmSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.css'));
     writeFileSync(
       join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.ts'),

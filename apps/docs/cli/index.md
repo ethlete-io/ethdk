@@ -518,6 +518,11 @@ an import nothing uses, a parameter a named function never reads, a parameter of
 class no drawing uses (`et-` classes of the SDK are not checked): code of another candidate must not reach a merge. Keep
 rendering for one candidate in that variant's files and only common code in `shared/`.
 
+`sketch check` fails on the same `UNUSED` problems, and on every other reason `sketch ready` would refuse that does not
+depend on the sketch's status: a variant that does not load, an open point a live variant adds, and a running round
+without a note. It prints those as `ready will refuse: <reason>` lines. A hold and an already `ready` sketch are
+refused only by `sketch ready`.
+
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
 go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.
