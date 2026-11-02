@@ -142,9 +142,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B48** Sperre in `@ethlete/cli` (Design-Prüfung jedes Produkts, lokal und CI): sichtbare Änderung an einem Teil
   ohne ausgewählten Sketch scheitert; eine Reparatur, die messbar näher ans bestehende Design führt, kommt durch
   (Tom, 02.11.; Befund 143).
-- **B50** Regeln in die ausgelieferten Skills (libs/agent-rules): „sichtbare Oberfläche nur mit ausgewähltem Sketch“
-  in den Design-Skill, „technische Fragen selbst entscheiden“ in den Grill-Skill; doc-agent- und builder-agent-Skill:
-  kein Agent-Memory, Lehren werden Befunde (Tom, 02.11.).
 - **B49** E2E-Checkout baut node_modules als Ordner aus Symlinks (sonst Vite 403); jede Rahmen-E2E scheitert an einer
   Fehlerseite im Rahmen (Befund 144).
 
