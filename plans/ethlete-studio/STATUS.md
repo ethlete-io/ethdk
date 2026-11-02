@@ -23,7 +23,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): alles lokal, ungepusht. Committet: Titelleisten-Merge 9fe0b8a41 + App db86c73d9, Update-Dialog-Merge
 f31a7febb, B77-Hook a7a1a1c23 (settings.json-Eintrag braucht Toms Ok vor dem Push), Zoom-Chip ad0b035e2,
 `--et-kbd-color` 2a13b5eba + title-search 6e3c4f00b (Zustands-Shots und compare stehen aus, dann neues Go), B66
-67b065c93, B69 e2d977408, B94 a733db40b, B86 a61f82bc5. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, Befund 161. Offen: Ursache Befund 158; Toms update-dialog-Go fehlt in go.json.
+67b065c93, B69 e2d977408, B94 a733db40b, B86 a61f82bc5. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, Befund 161. Offen: Ursache Befund 158; Compares der vier Gos (title-search, title-bar, shell-main, update-dialog).
 Danach: B80, B81 (nach B72), B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60,
 A13 (CLI), B62.
 
