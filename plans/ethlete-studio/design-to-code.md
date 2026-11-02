@@ -1646,6 +1646,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      check caught it: the render checks ignore console output. Tool fix: B74 (technical, grill decision: the `ng()`
      render registers the product's colour themes like the app does; the render check reports any SDK console
      warning or error in a frame as a problem). Lesson: a warning nobody reads is a bug the checks agreed to hide.
+165. `sketch ready` refuses pages/sketches because r1 variant c draws its first state pixel-identical to b, and
+     tells the author to "make a state the variant changes its first state"; reordering c's states does not clear it
+     (builder, 2026-11-02). Cause: identical-renders.ts:78-118 picks the first compared frame in the merged part's
+     state order (then new states), never the variant's own order, so the advice cannot work. Why no check caught
+     it: the B54 spec tests that identical variants are refused, not that following the refusal text clears it.
+     Tool fix: B75 (technical, grill decision: compare each variant at its first changed state, the one the sketch
+     view shows first, and name the compared state in the message; a spec follows the message's own advice and
+     expects ready to pass). Lesson: an error message is a promise, and a spec should keep it.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

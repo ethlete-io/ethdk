@@ -206,6 +206,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B73** Pre-Push-Gate scheitert bei ungeprüften Zuständen eines gewählten Parts.
 - **B74** `ng()`-Render registriert die Farb-Themes des Produkts; Render-Check meldet SDK-Konsolenwarnungen
   (Befund 164).
+- **B75** Identische-Varianten-Check vergleicht den ersten geänderten Zustand jeder Variante und nennt ihn
+  (Befund 165); blockiert `ready` von pages/sketches.
 
 ## C. CLI: Tempo und Ablauf
 
