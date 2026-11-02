@@ -2821,3 +2821,25 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      as a real failure. Tool fix (decided, technical, B116): part-accept gets its own testTimeout (~30 s); the
      pre-commit related run extends to libs/cli. The rerun's CONTROL-STATE x2 on elements/shell-main variant a goes
      with the shell-main follow-up.
+
+210. The compare of pages/sketches against the app stayed at 81k-104k px per state (builder, 2026-11-02). Three causes,
+     none reported by a tool: (a) the Studio title bar renders only under Tauri, so the app shot in the harness was
+     32 px high - this broke every shell-page compare since fea9ac862/028ef7006, and nobody saw it because compare
+     reports a pixel count, not a vertical offset; (b) the design's `gridFit` runs 6 passes, the app one, so the
+     narrow part fits 0.6 % lower (22147 px); (c) pulse dots add +70 px from animation rounding. Fixed in the app
+     (uncommitted, Sketches slice): a WINDOW_CHROME token gives the harness Linux window chrome; harness sample
+     adapter for part:'narrow'; canvas.e2e builds synthetic sketches (it crashed on the deleted components-zoom-chip).
+     (b) in progress: the app copies the 6-pass loop. Lesson: compare says how much differs, never how - a whole-shot
+     offset and a scale gap look like any other diff. Tool fix (technical, B117): compare reports a vertical offset and
+     the fit scale per picture; both pictures freeze `animate-*`; `design task` lists merged-design `data-sk-*` markers
+     missing from the app DOM; per-part fixtures, and a warning when a design prop value does not match its shape.
+
+211. In the design pictures of pages/sketches the shell title bar renders unstyled: the sr-only "Control K" is
+     visible, no keycaps, no window buttons (builder, 2026-11-02; 3260 px on each wide state). Suspected cause: `ng()`
+     emits the SDK CSS once per render process and attaches it to the first render; `prepareShots` renders the title
+     bar in `slot('shot')` frames that are blanked, and the CSS goes with them; the title-bar render also drops
+     `search.styles`. Nothing caught it: check and the go accepted a picture with a visible sr-only text. Decision
+     (technical, doc agent): fix it in the design tool - `ng()` puts its styles into `drawing.styles`, not into the
+     first render; the intended design does not change. pages/sketches then needs a new go from Tom (go hash changes).
+     Tool fix (B118): `sketch check`/`design check` flag an SDK component rendered without its CSS (an sr-only element
+     with a visible box).
