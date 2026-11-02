@@ -166,6 +166,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B52** `sketch check` und `sketch ready` urteilen gleich: ready läuft alle Regeln von check, check meldet auch
   ungenutzte Importe (Befund 146).
 - **B53** Render-Prüfung: ein Overlay muss deckend sein; Text darunter, der durchscheint, wird gemeldet (Befund 147).
+- **B54** Design-Checks variieren die Eingaben: jeder Part wird mit abgeleiteten Fixture-Varianten gerendert (Anzahl
+  0/1/N, Größen aus der Matrix, optionale Eingaben leer). Dazu die Sketch-Ansicht: Rahmen in echter Part-Größe, eine
+  Zeile pro Variante, „Aktuell“ nur wenn der Part existiert, Refit bei Resize, Zustände der Varianten sichtbar
+  (Befund 148; sichtbar, also erst Sketch).
 
 ## C. CLI: Tempo und Ablauf
 

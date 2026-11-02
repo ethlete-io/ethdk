@@ -1436,6 +1436,22 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      boxes, not at whether an overlay pane is opaque over the content below. Tool fix: B53 (an overlay pane must be
      opaque; text under an open overlay that stays visible is reported). Lesson: an overlay is checked by what it
      covers, not only by where it sits.
+148. The Studio sketch view is unusable for the components/title-bar sketch (Tom's screenshot, 2026-11-02): (a) only
+     the default state of each variant renders, so the Update button Tom picked on is never shown; (b) the 32 px bar
+     sits tiny in a hardcoded 1440x900 frame (sketches.component.html:49-57; shots drop width/height); (c) four
+     columns in a three-column grid wrap to a second row, and the raised variant heads land on row-one frames; (d)
+     "Aktuell" is always added (sketch-view.component.ts:317) though no title bar exists, and shows blank; (e) variant
+     b is clipped at the right edge, likely because the canvas fits once and does not refit on a later resize
+     (design-canvas.component.ts:642). On pages/sketches the same view shows all three variants identical to each
+     other and to Aktuell: the status element is in none of them (cause pending). Common root (builder): the sketch
+     view copies the pages/sketches design 1:1, which assumes page sketches (three variants, 1440x900, a current page
+     that exists); sketchMatrixOf knows size and existence, the view drops both. Why no check caught it: every
+     fixture, spec and e2e uses one shape (pages/system, three variants); the design checks render a part only with
+     the fixture it was drawn for; no check varies variant count, part size or a missing part; no check flags
+     variants that render identically. Tool fix: B54 (a check renders each part's states with fixture variations
+     derived from its input types: counts 0/1/N, sizes from the matrix, optional inputs empty; `sketch ready` refuses
+     variants whose renders are identical to each other or to Aktuell). Lesson: a part checked only against the
+     fixture it was designed for passes every input it was not.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
