@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: die Fensterknöpfe aus A1 (entschieden in dl, 02.11.); C6, C7 und D12 lokal fertig, Push nach dem Storybook-Blick auf die Tooltips. Der Rest von Liste A wartet auf Toms Reihenfolge.
+Builder: die Fensterknöpfe aus A1 (entschieden in dl, 02.11.); offen: ein übrig gebliebenes `<span title>` auf der Scheduler-Story (Quelle unklar). Der Rest von Liste A wartet auf Toms Reihenfolge (Q8-Q10 bei Tom).
 
 ## Erledigt
 
