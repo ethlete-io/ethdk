@@ -27,15 +27,24 @@ const chipButton = (id: ZoomControl, label: string, { target, interaction }: Pro
   >`;
 };
 
-export const { states, grid } = interactionRows<Props, 'out' | 'reset' | 'in' | 'fit', ZoomInteraction>(
+const rows = interactionRows<Props, ZoomControl, ZoomInteraction>(
   {
-    out: { percent: 25, target: 'out' },
-    reset: { percent: 100, target: 'reset' },
-    in: { percent: 250, target: 'in' },
-    fit: { percent: 100, target: 'fit' },
+    out: { percent: 25 },
+    reset: { percent: 100 },
+    in: { percent: 250 },
+    fit: { percent: 100 },
   },
   { interactions: ['hover', 'active', 'focus-visible'], force: (props, interaction) => ({ ...props, interaction }) },
 );
+
+export const grid = rows.grid;
+
+export const states = Object.fromEntries(
+  Object.entries(rows.states).map(([name, props]) => {
+    const target = (Object.keys(OUTPUT) as ZoomControl[]).find((id) => name.startsWith(`${id}-`));
+    return [name, target ? { ...(props as Props), target } : props];
+  }),
+) as typeof rows.states;
 
 const BUTTON = { kind: 'button' as const, input: ['pointer' as const, 'keyboard' as const] };
 
