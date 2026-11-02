@@ -2463,3 +2463,10 @@ decision 2), #91 (go rework, A10).
   the live compare measures named regions on both sides (canvas viewport rect and clip rect, header, zoom chip) and
   reports geometry deltas apart from pixels; `sketch ready` on a page sketch with `implements` runs that region
   check against the live app for every region the variant does not claim to change.
+
+184. The grill session asked Tom to reject pages/sketches r2 variants b and c in Studio; Studio has no UI to reject a
+     variant (Tom, 2026-11-02). `sketch ready` refuses because b and c draw the same pixels as a, and the builder's
+     message said they "need Tom's reject" - a step that does not exist. Lesson: never ask Tom for a UI action without
+     checking the UI has it. Tool fix (decided, technical): pixel-identical variants are an agent defect (sketches are
+     agent-drawn, finding 180), so the agent removes or redraws them; `ready`'s refusal names that agent action and
+     never a user step. A reject UI in Studio, if wanted, is a product question for later.
