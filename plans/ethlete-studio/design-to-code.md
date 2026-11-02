@@ -2690,6 +2690,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      fixed: Fit differed between loads (67/74/87 %) because the fit passes ended before the compare marks re-wrapped
      the labels (fit key now includes the marks); +/- stepped from 100 % while in Fit (+ at 24 % jumped to 150 %).
      canvas.e2e: Fit equal after reload (+-1 %), + from Fit = Fit x 1.5.
+     Cause of the Large ctrl-wheel drift and the zoom-chip Fit break (builder, one cause): each frame starts at a
+     placeholder size (1440 x 150) and gets its real size only when its iframe reports it, sometimes seconds after
+     load. The Fit key in sketches.component.ts held no row widths or shot heights, so the late real sizes did not
+     re-fit: the placeholder height cap stayed and the 3 fit passes were spent. Chip Fit depended on load timing
+     (84/58/60 %, 24 % after reload); Large frames moved under the pointer mid-case (91.7 px). Fix (uncommitted, in
+     the Sketches slice): the Fit key includes row.width and every shot.height; a measured size resets the cap and
+     re-fits. Chip Fit 84 % on every load, Large drift 0.2-0.3 px. The e2e missed it because it measured after a fixed
+     2.5 s wait: Large passed alone and failed only in the full suite, where earlier pages slow the iframes. Tool fix
+     (decided, technical, built in the slice): canvas.e2e never measures after a fixed wait, only after `settled()`
+     (no compare mark pending and frame boxes unchanged for 3 polls, 20 s max); the Fit-stable case asserts Fit stays
+     equal once sizes are measured.
 
 203. `design compare pages/sketches` reports all 8 states DIFF (92k-116k px) after decisions 196-199: the design still
      shows design e (side-by-side head, one state list), the app now the transposed matrix, the scaled head column and
