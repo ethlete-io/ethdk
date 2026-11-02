@@ -2922,3 +2922,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      pictures differ from HEAD; the builder commits Studio-written state as its own commit per slice, after checking
      no go entry was written by an agent. Also `design check <part>` ignores the positional part and checks the whole
      product: honour it or reject it with a hint to `--part`.
+
+217. Attribution of the floating Studio state (finding 216; builder, 2026-11-02). Tom's clicks: go title-bar 09:41,
+     title-search 09:40, update-dialog 09:50, shell-main 09:58, zoom-chip and pages/sketches 15:51; accepts title-bar,
+     update-dialog, zoom-chip; studio-lab picks components-card b and elements-rating c; merged zoom-chip and
+     pages/sketches. Tool carries (`auto: true`, Impl Q109): check runs by builder slices at 08:46 and 09:06 carried
+     13 gos after shared files changed (button.ts/button.component.css, new title-bar icons) with every state
+     pixel-identical; writer `autoAcceptOf` (libs/cli/src/lib/design/system/accepted-pictures.ts:265) from
+     check-system.ts:517. These carries are the "changed outside a sketch" warnings. Decision (doc agent): commit all
+     of it as one chore commit naming both sources. Open for Tom: the builder proposes (B124) that a carry no longer
+     copies the previous `by` ("tom" on entries Tom never touched; only `auto: true` tells them apart) but records
+     the tool as `by` plus `carriedFrom: {by, at}`, and Studio shows "carried from Tom's go of <date>". That reverses
+     Impl Q114, so it is Tom's call; nothing is built until he answers.
