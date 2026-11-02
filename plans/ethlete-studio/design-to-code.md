@@ -2785,5 +2785,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      zoom-chip refusal names pages/sketches too - wrong target pending from builder. Lesson: the pick depends on a step
      no tool reminds the author of, and the UI offers an action the CLI refuses (same class as finding 184). Tool fix
      (decided, technical): Studio shows Übernehmen only on a ready sketch (the badge "Wartet auf deine Wahl" = ready,
-     finding 206); a drawn round left in progress is reported. Cause and the alike-variant outcome pending from
-     builder.
+     finding 206); a drawn round left in progress is reported. Update (builder): `design sketch ready pages/sketches` ran, exit 0,
+     pages/sketches is ready (auto-merge skipped: a and b change all 9 states). `sketch ready components/zoom-chip`
+     exits 1: a draws the same pixels as Aktuell in all 16 states, b the same as a - "draws variants alike". The
+     zoom-chip refusal cannot name pages/sketches (target from the shown sketch, sketch-view.component.ts:203-207);
+     most likely the pasted message. Cause: the subagent that drew the pages/sketches round had a brief ending at
+     `sketch check` + shots and skipped ready on purpose; nothing (sketch report --done, sketch check) flags a drawn
+     round left in progress; Studio's merge() (sketch-view.component.ts:523ff) is not gated by status. Tool fix
+     queued after the slice: Übernehmen only on a ready sketch; `sketch check` warns "drawn round left in progress".
