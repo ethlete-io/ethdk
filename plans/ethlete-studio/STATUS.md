@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: die Fensterknöpfe aus A1 (entschieden in dl, 02.11.). Der Rest von Liste A wartet auf Toms Reihenfolge (Q8-Q10 bei Tom).
+Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Der Rest von Liste A wartet auf Toms Reihenfolge (Q8-Q10 bei Tom).
 
 ## Erledigt
 
