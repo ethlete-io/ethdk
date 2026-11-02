@@ -2610,6 +2610,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   a design choice. The `sketch ready` refusal stays as is (no "same pixels" waiver). components/zoom-chip is
   withdrawn; Tom's choice for it (variant a: reset is a plain SDK transparent sm button, no own part) is applied as a
   code change. Such questions come to Tom as plain questions, or are decided technically.
+- pages/sketches round 2 details (Tom, 2026-11-02, all as drawn): the matrix state-name column is always on and cells
+  no longer repeat the state name; the collapsed "Unverändert" accordion column in the matrix is 144 px wide with
+  wrapping text (not rotated); below 9 px all variant head text hides, the variant name too; column heads do not stick
+  when panning down (not now).
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
