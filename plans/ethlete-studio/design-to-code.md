@@ -1361,6 +1361,20 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      it: B30 was tested only in the working tree, never through the pre-push clone. Tool fix: B42 (the live gate also
      reads open sketches from the working tree's .ethlete/design; a test runs it through the clone path). Lesson: a
      gate that runs in a clone must be tested in that clone, and state that is uncommitted by design must reach it.
+140. During the title-bar redraw, `etProvideColor="brand"` logged a console warning in the ng() harness, and the button
+     still looked brand (builder, 2026-11-02). Cause: the ng() app of the studio and sdk products registers no colour
+     themes (in .ethlete/design/config.json only the legacy `projects.components` sets `providers`), so
+     libs/core/src/lib/theming/provide-surface.directive.ts warns and the button falls back to `et-color--inherited`;
+     it only looked brand because it inherited the frame's theme. Why no check caught it: the render check keeps only
+     console errors with an ET code (libs/cli/src/lib/design/system/sdk-errors.ts, render-check.ts; legacy check.ts
+     errors only), so every SDK console.warn is dropped by `sketch check` and `design check`. Tool fixes: B43 (each
+     product's ng() harness registers the app's colour themes from per-product config providers) and B44 (checks report
+     SDK console.warn lines as warnings). Lesson: a harness that differs from the app hides misconfiguration, and a
+     check that drops warnings drops the only signal.
+141. The title-bar redraw agent had to put `data-et-skip="CLIPPED"` on `<et-kbd>` (builder, 2026-11-02): the SDK's
+     sr-only 1x1 text is flagged as clipped. A deliberate visually-hidden element is not a clipping defect. Tool fix:
+     B45 (the clipped check skips visually-hidden sr-only elements by itself; drop the skip from the sketch). Lesson:
+     a skip attribute in a draft is a sign of a false positive in the tool, and each one needs a finding.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

@@ -127,6 +127,12 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   gehören in den pages/sketches-Sketch).
 - **B42** Pre-Push-Live-Prüfung liest offene Sketches aus dem Arbeitsbaum (`.ethlete/design`), nicht nur aus dem
   Klon; Test über den Klon-Pfad (Befund 139; blockiert den Push seit d8a90e8cb).
+- **B43** Der ng()-Harness jedes Produkts registriert die Farb-Themes der App (Provider je Produkt in der Config)
+  (Befund 140).
+- **B44** `sketch check` und `design check` melden SDK-Warnungen aus der Konsole als Warnung, nicht nur ET-Fehler
+  (Befund 140).
+- **B45** Die Clipping-Prüfung überspringt bewusst unsichtbare sr-only-Elemente selbst, ohne `data-et-skip` (Befund
+  141).
 
 ## C. CLI: Tempo und Ablauf
 
