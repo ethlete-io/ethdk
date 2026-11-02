@@ -1725,6 +1725,15 @@ check` fails a part with a varying design prop that has no app input and is not 
      names the part that owns the behavior; a question about behavior owned by a part other than the one under
      design is not asked (it becomes a finding for that part if anything). Lesson: a design question about behavior
      the design does not own is noise; ownership must be visible in the sketch markup, not inferred.
+171. After `--et-kbd-color` (2a13b5eba, 6e3c4f00b) the title-search key glyphs stayed muted on hover, active and
+     focus-visible (builder before/after shot, 2026-11-02). Cause: not the code - the design harness loads
+     @ethlete/components from dist, and dist was not rebuilt after the change, so the new property did nothing while
+     the removed `text-current` was gone. `nx build components` fixed it; the re-shot of all 8 states is
+     byte-identical to 9fe0b8a41. Why no tool caught it: shot/check/compare draw from a stale dist and only print
+     "WARNING STALE BUILD"; and nothing compares the forced interaction states of a part without a go against its
+     last committed design - only a manual before/after found it. Tool fix: B94 (never draw from stale dist: rebuild
+     or refuse), B78 extended (state compare against the last committed design). Lesson: a warning in a long log is
+     not a gate; a picture from stale code is worse than no picture.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

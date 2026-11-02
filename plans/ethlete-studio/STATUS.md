@@ -185,8 +185,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 153).
 - **B64** Sketch-Brief und `sketch new`: ein Teil neben OS-Chrome zeigt diese als Demo-Inhalt in einem Slot, den
   compare leert (Befund 154).
-- **B65** (hoch) Go-Übernahme vergleicht das volle Bild mit Slots; eine Slot-Änderung macht das Go immer veraltet
-  (Befund 155).
 - **B67** E2E „Hover allein zeichnet keinen Rahmen“ prüft jede Outline und jeden Schatten über dem Rahmen im ganzen
   Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
   apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
@@ -202,16 +200,13 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   `controls` deklariert; Suchfeld der Titelleiste wird eigener Part (Befund 163).
 - **B74** `ng()`-Render registriert die Farb-Themes des Produkts; Render-Check meldet SDK-Konsolenwarnungen
   (Befund 164).
-- **B75** Identische-Varianten-Check vergleicht den ersten geänderten Zustand jeder Variante und nennt ihn
-  (Befund 165); blockiert `ready` von pages/sketches.
 - **B76** Kompositions-Check: jeder Part, den die App rendert, steckt im Design-Part seines Hosts; Titelleiste
   gehört in die Shell (Befund 168).
 - **B78** compare: einen DIFF vor dem Melden neu laufen lassen (FLAKY, wenn die Läufe abweichen); scheitern, wenn
   App und Design verschieden viele Overlay-Panes haben; Paritäts-Spec für die frozenAt-Mocks (Ursache der Flakes:
   Pane-Zählung ignorierte `<et-menu>`, caf6efa80).
-- **B79** (hoch) Durchgang durch alle Text-Regeln (Skills, Übergaben, Plan-Entscheidungen): je Regel, ob ein Werkzeug
-  sie prüft und welcher Hook oder Check es könnte; Produktfragen an Tom, der Rest wird zu B-Punkten (Tom,
-  02.11., Grundprinzip in design-to-code.md). Inventar macht die Grill-Session per Subagent.
+  Dazu: die erzwungenen Interaktions-Zustände eines Parts ohne Go werden gegen sein letztes committetes Design
+  verglichen (Befund 171).
 - **B80** Render-Check CLIPPED: Ellipsis zählt nur auf Inline-Text (Flex/Grid mit Ellipsis bleibt CLIPPED, Hinweis
   „min-w-0 truncate am inneren Span“); beide Kanten messen (Kind-Rect gegen Clip-Box, fängt justify-center ohne
   -safe). Specs: Flex+Ellipsis CLIPPED, justify-center-safe sauber, Inline-truncate sauber (Befund 166).
@@ -224,6 +219,32 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   im Design, keine Frage (höchstens ein Befund für den Owner). Durchsetzung: B81 macht den Owner im Markup sichtbar
   (Befund 170).
 - **B82** `design compare` vergleicht bei jeder deklarierten Breite des Parts, nicht nur bei der ersten (Befund 156).
+- **B84** Sketch-Ansicht markiert und sortiert jede Variante nach ihrem ersten geänderten Zustand (dem, den der
+  Identische-Varianten-Check vergleicht; folgt aus Entscheidung Variante e). system-tree.ts ordnet heute nach der
+  Merge-Reihenfolge.
+- **B85** Identische-Varianten-Check: eine Variante, die nicht lädt, meldet „nicht verglichen“ statt still zu
+  bestehen.
+- **B86** (hoch) go/accept verweigern jedes `--by` außer `tom` (go-step.ts `markPartGo` schreibt heute jedes); der
+  einzige Nicht-Tom-Weg ist der Auto-Carry bei identischem Bild mit Slots (B65) (Audit #30, #42, C5).
+- **B87** (hoch) Bash-PreToolUse-Hook Git: verweigert `git add -A`/`.`, `stash`, `--amend`, `git commit` ohne
+  `--`-Pfade, Commits mit go.json, und Commits unter `.ethlete/design/` ohne Studio-Merge (Audit #23, #32, #33, #49).
+- **B88** Hooks für Agentenrollen: Builder-Rolle verweigert `AskUserQuestion`; Schreiben in den Agent-Memory-Pfad
+  wird verweigert; `subagent-model-policy` liest die Kontext-Stufe und verweigert neue Subagents ab 70 %
+  (Audit #56, #54, #68).
+- **B89** Design-Check für Implementierungen: Inputs müssen von einem Consumer gebunden sein (keine Sample-Defaults,
+  keine Design-Knöpfe, Befund 151); Lint: Texte in Studio-Templates nur aus `STUDIO_LABELS`; `deniedClasses` um
+  Fokusring- und et-button-Interna erweitern (Audit #6-#8, #10, #11, #13).
+- **B90** CLI-Grenzen für Skizzen: `et design new` entfernen oder verweigern; discard/reject prüfen den Autor; Hook
+  verweigert direkte Edits und `git rm` in gemergten Parts, solange keine Skizze offen ist (Audit #34, #36, #40, #41).
+- **B91** `task --verify` und `ready` verweigern ohne Komponenten-Spec mit Nicht-Fixture-Daten (Audit #15).
+- **B92** Plan-Lint beim Push: jeder Befund in design-to-code.md hat eine `Tool fix:`-Zeile (Audit #53).
+- **B93** Skill-Aufräumen: Regeln aus builder-studio.md in den builder-agent-Skill; `sketch ready`-Text an B75
+  anpassen; ein Ergebniskanal-Satz (SendMessage für Berichte an die Grill-Session, Datei für selbstberichtende
+  Subagents); answered vs resolved bei Kommentaren; AGENTS.md: keine Trailer, schlägt die Harness-Attribution
+  (Audit C1, C7-C10); B83 dazu.
+- **B94** (hoch) `design shot/check/compare` zeichnen nie aus veraltetem SDK-dist: veraltete Lib vor dem Zeichnen
+  automatisch bauen, sonst mit dem Build-Befehl verweigern (heute nur „WARNING STALE BUILD“); Spec: Shot scheitert
+  bei veraltetem dist (Befund 171).
 
 ## C. CLI: Tempo und Ablauf
 
