@@ -23,7 +23,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): alles lokal, ungepusht. Committet: Titelleisten-Merge 9fe0b8a41 + App db86c73d9, Update-Dialog-Merge
 f31a7febb, B77-Hook a7a1a1c23 (settings.json-Eintrag braucht Toms Ok vor dem Push), Zoom-Chip ad0b035e2,
 `--et-kbd-color` 2a13b5eba + title-search 6e3c4f00b (Zustands-Shots und compare stehen aus, dann neues Go), B66
-67b065c93. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, B69, Befund 161.
+67b065c93, B69 e2d977408, B94 a733db40b. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, Befund 161. Offen: Ergebnis B86, Gos von 02.11. angekommen?, Ursache Befund 158.
 Danach: B80, B81 (nach B72), B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60,
 A13 (CLI), B62.
 
@@ -194,8 +194,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
   apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
   synthetischen Ein-Varianten-Skizze (Befund 158).
-- **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
-  E2E lädt Rahmen, während sich Dateien ändern (Befund 160).
 - **B70** (geparkt bis zum Umbau des Go-Systems) Ein Go lässt sich zurücknehmen (Befund 162).
 - **B71** Rest: erster Reload nach Kaltstart dauert 2,6 s statt ≤ 2 s; Ursache prüfen (volles Lesen blockiert den
   Node-Thread?), dann yield oder Cache in targetsOf/openSketchProblemsOf; sketches-tree.e2e.mjs in package.json und
@@ -247,11 +245,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   anpassen; ein Ergebniskanal-Satz (SendMessage für Berichte an die Grill-Session, Datei für selbstberichtende
   Subagents); answered vs resolved bei Kommentaren; AGENTS.md: keine Trailer, schlägt die Harness-Attribution
   (Audit C1, C7-C10); B83 dazu.
-- **B94** (hoch) `design shot/check/compare` zeichnen nie aus veraltetem SDK-dist: veraltete Lib vor dem Zeichnen
-  automatisch bauen, sonst mit dem Build-Befehl verweigern (heute nur „WARNING STALE BUILD“); Spec: Shot scheitert
-  bei veraltetem dist (Befund 171).
 - **B95** (hoch) Check eines geänderten Parts rendert auch jeden Part und jede offene Skizze, die ihn einbetten; das
-  Commit-Gate genauso; eine Regel verweigert Zeichnen beim Modul-Laden (Befund 172).
+  Commit-Gate genauso; eine Regel verweigert Zeichnen beim Modul-Laden; dazu `define-call.ts:47` (SDK-Render-Helfer
+  liest `location` und lädt relativ, scheitert in Node für Seiten mit Titelleiste) (Befund 172).
 - **B96** sdk components/stream: Consent- und Player-Error-Karte bei 320 px 3 px zu kurz (NESTED-SCROLL-Treffer);
   Fix im Stream-CSS in libs/components.
 - **B97** Sketches-Ansicht ohne Auswahl: Klick und Pan wählen nichts aus, kein Rahmen; Shift+2 zoomt auf den Frame
