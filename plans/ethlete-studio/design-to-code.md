@@ -1384,6 +1384,16 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      checks the size after load, not that nothing reloads. Tool fix: B47 (spec: a repeated report sets no new src and
      no new size; sketch-view e2e counts iframe load events for ~2 s after settling and fails above one per frame).
      Lesson: a rendered view must be proven stable over time, not only correct once.
+143. The "In Arbeit" badge and the per-variant "Agent zeichnet noch" state were built straight into Studio with no
+     design (B34, da5b055c4, unpushed); Tom: "das ist alles nicht im design" (2026-11-02). Cause: STATUS and the
+     builder handoff framed B34/B38 as "Rückschritt" (restoring behaviour lost in d0f4a38cf), so the work read as a
+     restore, not as new visible UI, and no item said "sketch first". Why no check caught it: the live check
+     (live-uncovered.ts) only reports visible regions outside every part's host; anything inside a host counts as
+     covered whether or not the part's design has it, so a new badge inside the existing sketch-view part passes. The
+     B30 rule (an open sketch covers its target part) widens the same gap to parts without a design. Immediate: B36
+     work parked in .claude/handoffs/b36-parked.patch, da5b055c4 reverted locally, both rebuilt after Tom picks the
+     pages/sketches sketch. Tool fix: B48 (a gate, not a prompt rule; scope is Tom's decision, pending). Lesson: "sketch
+     first" written in a prompt is not a control; a restore of lost UI is new UI as long as the design lacks it.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
