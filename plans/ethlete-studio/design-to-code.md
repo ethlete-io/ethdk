@@ -1633,6 +1633,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      the rule was meant to close. Tool fix: B72 (a declared control counts only when it is an embedded part or an
      SDK component used through its props; bespoke control markup inside a non-control part is a CONTROL-STATE error
      that names it for extraction). Lesson: an exemption a part grants itself is no rule.
+164. Every design render of a part with an `color="brand"` SDK button through `ng()` logs `etProvideColor="brand" has
+     no effect because no color themes are registered` (builder, 2026-11-02, update-dialog sketch). The brand fill
+     still shows, so the render and the app may resolve colours by different paths, and check and ready pass. Why no
+     check caught it: the render checks ignore console output. Tool fix: B74 (technical, grill decision: the `ng()`
+     render registers the product's colour themes like the app does; the render check reports any SDK console
+     warning or error in a frame as a problem). Lesson: a warning nobody reads is a bug the checks agreed to hide.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

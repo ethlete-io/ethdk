@@ -204,6 +204,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B72** CONTROL-STATE: eigenes Control-Markup in einem Nicht-Control-Part ist ein Fehler, auch wenn der Part
   `controls` deklariert; Suchfeld der Titelleiste wird eigener Part (Befund 163).
 - **B73** Pre-Push-Gate scheitert bei ungeprüften Zuständen eines gewählten Parts.
+- **B74** `ng()`-Render registriert die Farb-Themes des Produkts; Render-Check meldet SDK-Konsolenwarnungen
+  (Befund 164).
 
 ## C. CLI: Tempo und Ablauf
 
