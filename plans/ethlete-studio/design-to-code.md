@@ -2189,6 +2189,9 @@ Q16, from finding 126:
 - Title search long label (Tom): the product name always stays whole; the part name truncates at the end with an
   ellipsis, and the label then aligns left instead of centring. Visible change to title-search before Tom's go; the
   builder may commit it as a follow-up to the merge commit (same paths, never go.json).
+- The title bar belongs to the shell (finding 168): elements/shell-main embeds components/title-bar at the top over
+  the full window width, above the rail too; the Studio mark stays at the top of the rail. The app moves the title
+  bar from app.component.ts into the shell component. Visible change to shell-main: it needs Tom's go.
 
 ### Sketch view states decision (Tom, 2026-11-02)
 
