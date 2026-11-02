@@ -312,7 +312,13 @@ per hook in the config:
 
 ```json
 {
-  "hooks": ["context-warning", "subagent-model-policy", "background-design-commands", "git-safety"]
+  "hooks": [
+    "context-warning",
+    "subagent-model-policy",
+    "background-design-commands",
+    "git-safety",
+    "builder-chat-words"
+  ]
 }
 ```
 

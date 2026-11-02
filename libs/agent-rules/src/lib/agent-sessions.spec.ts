@@ -184,6 +184,22 @@ describe('agent-sessions', () => {
     10000,
   );
 
+  it('builds a builder run with the role env and a quoted system prompt for claude', () => {
+    const result = run(['run', 'claude', 'claude', '--role', 'builder', '--dry-run']);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe(
+      "ETHLETE_AGENT_ROLE=builder 'claude' '--append-system-prompt' 'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.'\n",
+    );
+  });
+
+  it('adds no system prompt for another program and rejects an unknown role', () => {
+    expect(run(['run', 'codex', 'codex', '--role', 'builder', '--dry-run']).stdout).toBe(
+      "ETHLETE_AGENT_ROLE=builder 'codex'\n",
+    );
+    expect(run(['run', 'claude', 'claude', '--role', 'x', '--dry-run']).status).toBe(1);
+  });
+
   it.skipIf(!hasTmux)('starts and stops the tmux sessions for up and down', () => {
     const suffix = process.pid;
     const dispatchSession = `mailbox-dispatch-${suffix}`;

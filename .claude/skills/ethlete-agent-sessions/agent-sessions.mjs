@@ -61,6 +61,7 @@ const remove = takeFlag(args, '--remove', false);
 const afterSeconds = takeFlag(args, '--after', true);
 const now = takeFlag(args, '--now', false);
 const dryRun = takeFlag(args, '--dry-run', false);
+const role = takeFlag(args, '--role', true);
 const [command, sender, ...words] = args;
 
 const help = `Shared agent mailbox: ${mailbox}
@@ -74,7 +75,9 @@ Claim:   node ${script} claim <name> <path...> [--ttl <hours>] [--force]
 Release: node ${script} release <name> [path...]      (no path: release every claim of <name>)
 Claims:  node ${script} claims
 Up:      node ${script} up <name>[=<command>]...      (start a tmux session per agent, plus one that runs dispatch)
-Run:     node ${script} run <name> <command...>       (start or attach the agent in its tmux session; starts dispatch)
+Run:     node ${script} run <name> <command...> [--role builder] [--dry-run]
+                                                      (start or attach the agent in its tmux session; starts dispatch;
+                                                       the builder role sets ETHLETE_AGENT_ROLE and gives claude a terse system prompt)
 Install: node ${script} shell-install [<agent>...] [--file <path>] [--remove] [--dry-run]
                                                       (write the shell functions into ~/.zshrc or ~/.bashrc)
 Shell:   node ${script} shell-init [<agent>...]       (print shell functions that wrap each agent with run; default: claude codex)
@@ -94,6 +97,10 @@ Keep credentials and personal data out of the mailbox. No agent is started autom
 
 const tmux = (...tmuxArgs) => spawnSync('tmux', tmuxArgs, { encoding: 'utf8' });
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
+const BUILDER_PROMPT =
+  'The user does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the grill session via SendMessage.';
+const withRole = (words) =>
+  role === 'builder' && basename(words[0]) === 'claude' ? [...words, '--append-system-prompt', BUILDER_PROMPT] : words;
 const sessionExists = (name) => tmux('has-session', '-t', `=${name}`).status === 0;
 const ONE_SHOT_FLAGS = new Set(['-p', '--print', '-v', '--version', '-h', '--help']);
 const runsInSession = (agentArgs) =>
@@ -271,15 +278,24 @@ if (command === 'send' && sender) {
     const [name, ...rest] = spec.split('=');
     startSession(sessionFor(name), rest.join('=') || undefined);
   });
+} else if (command === 'run' && sender && words.length && role !== undefined && role !== 'builder') {
+  process.stderr.write(`Unknown role ${role}. Only builder exists.\n`);
+  process.exitCode = 1;
+} else if (command === 'run' && sender && words.length && dryRun) {
+  process.stdout.write(`${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}\n`);
 } else if (command === 'run' && sender && words.length && !runsInSession(words.slice(1))) {
-  const [program, ...programArgs] = words;
-  process.exitCode = spawnSync(program, programArgs, { stdio: 'inherit' }).status ?? 1;
+  const [program, ...programArgs] = withRole(words);
+  process.exitCode =
+    spawnSync(program, programArgs, {
+      stdio: 'inherit',
+      env: role ? { ...process.env, ETHLETE_AGENT_ROLE: role } : process.env,
+    }).status ?? 1;
 } else if (command === 'run' && sender && words.length) {
   const withEnv = process.env.AGENT_MAILBOX ? `AGENT_MAILBOX=${quote(process.env.AGENT_MAILBOX)} ` : '';
   if (!sessionExists(DISPATCH_SESSION))
     startSession(DISPATCH_SESSION, `${withEnv}node ${quote(script)} dispatch`, true);
   const session = freeSessionFor(sender);
-  const shellCommand = words.map(quote).join(' ');
+  const shellCommand = `${role ? `ETHLETE_AGENT_ROLE=${role} ` : ''}${withRole(words).map(quote).join(' ')}`;
   if (process.env.TMUX) {
     if (!sessionExists(session)) tmux('new-session', '-d', '-s', session, '-c', process.cwd(), shellCommand);
     process.exitCode = spawnSync('tmux', ['switch-client', '-t', `=${session}`], { stdio: 'inherit' }).status ?? 1;

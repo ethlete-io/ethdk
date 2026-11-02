@@ -18,7 +18,7 @@ the `ethlete-agents` package is a dependency, `npx ethlete-agents sessions <comm
 script, so you do not need `<skill-dir>`. The older name `npx ethlete-agents mailbox` works too.
 
 ```bash
-node <skill-dir>/agent-sessions.mjs run <name> <command...>
+node <skill-dir>/agent-sessions.mjs run <name> <command...> [--role builder] [--dry-run]
 node <skill-dir>/agent-sessions.mjs up <name>[=<command>]...
 node <skill-dir>/agent-sessions.mjs restart <name> [--after <seconds>] <prompt...>
 node <skill-dir>/agent-sessions.mjs down [<name>...]
@@ -45,7 +45,7 @@ Nothing runs until you start it, so a person who does not use this does nothing.
 
 ## Sessions
 
-`run <name> <command...>` starts the command in the `tmux` session `<name>@<repo>`, or attaches if it runs already. It also starts the dispatcher when none runs. Session names carry the repo name, so `codex` in two repos never collides. If that session has a terminal attached already, `run` starts `<name>-2`, then `<name>-3`, and so on. A detached session is attached again. So a second `claude` terminal gets its own agent.
+`run <name> <command...>` starts the command in the `tmux` session `<name>@<repo>`, or attaches if it runs already. It also starts the dispatcher when none runs. Session names carry the repo name, so `codex` in two repos never collides. If that session has a terminal attached already, `run` starts `<name>-2`, then `<name>-3`, and so on. A detached session is attached again. `--role builder` sets `ETHLETE_AGENT_ROLE=builder` and, for `claude`, appends a system prompt that keeps the chat silent and sends reports to the grill session. `--dry-run` prints the command instead of starting it. So a second `claude` terminal gets its own agent.
 
 `up codex=codex gemini=gemini` starts a detached `tmux` session per agent, named like its sender name, and runs the command in it. It also starts a session named `mailbox-dispatch` that runs `dispatch`. A running session is left alone. Attach to a session with `tmux attach -t <name>`. Detach with `Ctrl-b`, then `d`. The session and its agent keep running. Use `down` to stop the dispatcher and the named sessions.
 
