@@ -1788,6 +1788,14 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      per-rule tally, so a partial log looks like a clean one. Tool fix: B104 (check ends with one summary line per
      rule, e.g. "CONTROL-STATE: 3", and a final "complete" line; a log without it is unfinished). Lesson: a clean
      result must say it is complete.
+178. title-search compare SIZE 25 vs 26 px in all 8 states (builder, 2026-11-02): a harness artefact, not the part.
+     The app button is 25.25 px, but the harness host (`design-harness.component.ts:55`, `flow-root w-fit`) puts the
+     inline-flex et-button in a line box (strut/baseline +0.875 px), so the host is 26.125 px and rounds to 26; the
+     clip is asymmetric (app = host box, design = element). Why no tool caught it: no spec checks that the harness
+     adds no size of its own, and nothing compares app against design before Tom is asked for a go. Tool fix: B105
+     (harness host without a line box, both sides clipped at the component root, a spec that a fixed-size element
+     keeps its size in the harness); the "compare before go" part goes into A10 (build-ready requires a green compare
+     for an implemented part). Lesson: the measuring frame must not change what it measures.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2353,6 +2361,10 @@ only). Technical gaps became B84-B98 in STATUS.md.
    does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the
    grill session via SendMessage." Plus a non-blocking Stop hook that only logs the chat words per turn of a builder
    session, so the grill session can report whether the rule works; Tom approved its settings.json entry.
+10. Interaction rows for embedded parts (Tom): the "States by interaction" grid draws a state row for a marked element
+    only when the part styles it itself (own classes or overrides on it). A marked but unchanged embedded part (the
+    two et-buttons in update-dialog) keeps its action, gets no state row, and its states live in its own part. The
+    tool decides from the markup; no author rule (B106).
 
 #### Judgment rules (decision 3)
 

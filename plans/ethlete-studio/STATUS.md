@@ -60,6 +60,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   anderem Bild wird ein Sketch „alt/neu“ (Befund 109; dl 02.11.).
   Verschachtelte Parts sind eigenständig baubereit (eigene Zustände und Prüfungen); ein Host ist erst baubereit,
   wenn seine verschachtelten Parts es sind (Tom, 02.11.).
+  Ein implementierter Part ist erst baubereit, wenn `design compare` App gegen Design grün ist (Befund 178).
 - **A13** Ein Knopf „Übernehmen“ statt „Wählen“: öffnet direkt die Merge-Ansicht, die ist die Bestätigung; Abbruch
   lässt nichts gewählt; kein Rückgängig nach dem Merge (Tom, 02.11.; „Pick and merge decisions“).
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
@@ -269,6 +270,12 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Grund als Toast (Befund 176).
 - **B104** `design check` endet mit einer Zusammenfassung je Regel („CONTROL-STATE: 3“) und einer Abschlusszeile; ein
   Log ohne sie gilt als unfertig (Befund 177).
+- **B105** Harness misst ohne eigene Größe: Host ohne Zeilenbox, App und Design an der Komponenten-Wurzel
+  beschnitten; Spec, dass ein Element fester Größe im Harness seine Größe behält; danach alle vier Compares neu
+  (Befund 178).
+- **B106** „States by interaction“: Zustandszeile für ein markiertes Element nur, wenn der Part es selbst stylt;
+  ein unveränderter eingebetteter Part behält seine Aktion ohne Zeile (Entscheidung 10, z. B. Buttons im
+  update-dialog).
 
 ## C. CLI: Tempo und Ablauf
 
