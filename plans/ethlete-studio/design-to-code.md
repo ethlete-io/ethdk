@@ -1411,6 +1411,16 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      (every Studio action shows a refusal and its reason; "Wählen" on a sketch that is not ready says why it cannot
      pick; `sketch hold` refuses a reason that names the user and points to `sketch ready`). Lesson: an action that can
      be refused must say so, and "waiting for the user" is a state the tool already has.
+146. `sketch check --fix` reports ok on the pages/sketches sketch while `sketch ready` fails on the same unused imports
+     (variants a/b/c and shared/sketch-status.ts) (builder, 2026-11-02). Why no check caught it: check and ready run
+     different rule sets, and no spec asserts that a sketch check passes implies ready's checks pass. Tool fix: B52
+     (ready runs exactly check's rules plus its own gates; check reports UNUSED too). Lesson: two commands that judge
+     the same file must not disagree.
+147. The render checks missed a see-through overlay pane in pages/sketches variant A: the popover let the round picker
+     text show through (builder, 2026-11-02). Why no check caught it: the clipped and overlap checks look at layout
+     boxes, not at whether an overlay pane is opaque over the content below. Tool fix: B53 (an overlay pane must be
+     opaque; text under an open overlay that stays visible is reported). Lesson: an overlay is checked by what it
+     covers, not only by where it sits.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

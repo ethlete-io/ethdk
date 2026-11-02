@@ -147,6 +147,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B51** Keine Studio-Aktion scheitert still: Ablehnung samt Grund sichtbar; „Wählen“ auf einem nicht fertigen
   Sketch sagt warum; `sketch hold` lehnt „wartet auf Tom“ als Grund ab und verweist auf `sketch ready` (Befund 145;
   sichtbar, also erst Sketch).
+- **B52** `sketch check` und `sketch ready` urteilen gleich: ready läuft alle Regeln von check, check meldet auch
+  ungenutzte Importe (Befund 146).
+- **B53** Render-Prüfung: ein Overlay muss deckend sein; Text darunter, der durchscheint, wird gemeldet (Befund 147).
 
 ## C. CLI: Tempo und Ablauf
 
