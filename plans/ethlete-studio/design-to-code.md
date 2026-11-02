@@ -2492,3 +2492,11 @@ decision 2), #91 (go rework, A10).
      `--by tom`. Tool fix (decided, technical): verdict commands accept only `designer` or a known model id for
      `--by` and refuse anything else with the valid values; the usage/refusal text names `--by designer` for the
      user. Tom re-runs b and c with `--by designer`.
+
+### Sketches zoom label decisions (2026-11-02)
+
+- Zoomed far out (7 %): a small constant-size tag (variant + model, e.g. "a · Opus 5.5") above each frame (r4 m).
+- Zoomed far in (200 %): a compact sticky head at the canvas top - variant, model, "Wählen", no note - on a
+  backdrop, kept short so it hides as little of the frame as possible (r4 k, made compact).
+- Next round folds both into the e base with e's status states (drawing, paused, paused-reason, idle, new-part),
+  which r4 k/l/m do not carry.
