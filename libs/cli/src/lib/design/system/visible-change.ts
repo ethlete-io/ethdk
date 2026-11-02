@@ -108,3 +108,24 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
 
   return verdict(false, 'visible');
 };
+
+/** The gate's last line; it names every unjudged state, so a pass that judged nothing never reads as a clean pass. */
+export const visibleChangeSummaryOf = (options: {
+  verdicts: VisibleChangeVerdict[];
+  problems: number;
+  range: string;
+  seconds: number;
+}) => {
+  const { verdicts, range, seconds } = options;
+  const failed = options.problems + verdicts.filter((verdict) => !verdict.pass).length;
+  const unjudged = verdicts.filter((verdict) => verdict.unjudged.length > 0);
+  const count = unjudged.reduce((sum, verdict) => sum + verdict.unjudged.length, 0);
+  const list =
+    count === 0
+      ? ''
+      : ` - ${count} state(s) unjudged: ${unjudged.map((verdict) => `${verdict.part} (${verdict.unjudged.join(', ')})`).join('; ')}`;
+
+  return failed === 0
+    ? `No part looks different in ${range} without a sketch (${seconds} s)${list}.`
+    : `${failed} part(s) fail the visible-change gate in ${range}. Pick and merge a sketch of each, or move it closer to its design${list}.`;
+};

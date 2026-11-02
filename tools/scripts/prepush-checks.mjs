@@ -7,7 +7,8 @@ import { createJiti } from 'jiti';
 
 const STUDIO = 'apps/ethlete-studio/';
 const LIVE_INPUTS = [STUDIO, '.ethlete/design/', 'libs/cli/src/lib/design/'];
-const usage = 'usage: prepush-checks.mjs <specs|design|live> <base> <head> [vitest cache dir]';
+const VISIBLE_INPUTS = [STUDIO, 'libs/components/', 'libs/core/', '.ethlete/design/studio/'];
+const usage = 'usage: prepush-checks.mjs <specs|design|live|visible> <base> <head> [vitest cache dir]';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const [kind, base, head, cache] = process.argv.slice(2);
@@ -56,8 +57,18 @@ if (kind === 'design') {
   process.exit(code);
 }
 
+const touches = (inputs) => changes.some(({ file }) => inputs.some((prefix) => file.startsWith(prefix)));
+const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' }).status ?? 1;
+const designCheck = (projects, ...args) => {
+  const built = run('yarn', ['nx', 'run-many', '-t', 'build', '-p', ...projects]);
+
+  return built === 0
+    ? run('node', ['dist/libs/cli/src/index.js', 'design', 'check', '--product', 'studio', ...args])
+    : built;
+};
+
 if (kind === 'live') {
-  if (!changes.some(({ file }) => LIVE_INPUTS.some((prefix) => file.startsWith(prefix)))) process.exit(0);
+  if (!touches(LIVE_INPUTS)) process.exit(0);
 
   const worktree = process.env.ETHLETE_PREPUSH_WORKTREE;
 
@@ -66,14 +77,13 @@ if (kind === 'live') {
     copyOpenSketches({ from: worktree, to: root });
   }
 
-  const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' }).status ?? 1;
-  const built = run('yarn', ['nx', 'build', 'cli']);
+  process.exit(designCheck(['cli'], '--live'));
+}
 
-  process.exit(
-    built === 0
-      ? run('node', ['dist/libs/cli/src/index.js', 'design', 'check', '--product', 'studio', '--live'])
-      : built,
-  );
+if (kind === 'visible') {
+  if (!touches(VISIBLE_INPUTS)) process.exit(0);
+
+  process.exit(designCheck(['cli', 'components'], '--visible-change', '--base', base));
 }
 
 console.error(usage);

@@ -26,6 +26,7 @@ import {
   StateDiff,
   stateDiffOf,
   VisibleChangeVerdict,
+  visibleChangeSummaryOf,
   visibleChangeVerdictOf,
 } from './visible-change';
 
@@ -241,7 +242,8 @@ export const checkVisibleChange = async (options: {
   const started = Date.now();
   const checkout = baseCheckoutOf({ root, commit });
   const servers: HarnessServer[] = [];
-  let failed = 0;
+  const verdicts: VisibleChangeVerdict[] = [];
+  let problems = 0;
 
   process.env['NX_DAEMON'] ??= 'false';
 
@@ -251,7 +253,7 @@ export const checkVisibleChange = async (options: {
 
       if (!entry) {
         console.log(`NO PRODUCT "${name}" in config.json.`);
-        failed++;
+        problems++;
         continue;
       }
 
@@ -267,7 +269,7 @@ export const checkVisibleChange = async (options: {
 
       if (typeof harness === 'string' || problem !== null) {
         console.log(`${name}: ${problem}`);
-        failed++;
+        problems++;
         continue;
       }
 
@@ -275,7 +277,7 @@ export const checkVisibleChange = async (options: {
 
       if (typeof entries === 'string') {
         console.log(`${name}: ${entries}`);
-        failed++;
+        problems++;
         continue;
       }
 
@@ -290,7 +292,7 @@ export const checkVisibleChange = async (options: {
 
       if (typeof head === 'string') {
         console.log(`${name}: the HEAD harness app did not start: ${head}`);
-        failed++;
+        problems++;
         continue;
       }
 
@@ -330,7 +332,7 @@ export const checkVisibleChange = async (options: {
           writeFileSync(join(pictures, `${fileNameOf(part)}.${fileNameOf(state.state)}.diff.png`), state.diff);
         }
 
-        if (!verdict.pass) failed++;
+        verdicts.push(verdict);
       }
 
       if (pictures !== null) console.log(`${name}: base/HEAD diff pictures: ${pictures}`);
@@ -341,10 +343,8 @@ export const checkVisibleChange = async (options: {
   }
 
   console.log(
-    failed === 0
-      ? `No part looks different in ${range} without a sketch (${Math.round((Date.now() - started) / 1000)} s).`
-      : `${failed} part(s) fail the visible-change gate in ${range}. Pick and merge a sketch of each, or move it closer to its design.`,
+    visibleChangeSummaryOf({ verdicts, problems, range, seconds: Math.round((Date.now() - started) / 1000) }),
   );
 
-  return failed === 0 ? 0 : 1;
+  return problems === 0 && verdicts.every((verdict) => verdict.pass) ? 0 : 1;
 };

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { encodePng, Pixels } from './part-compare';
-import { deviationOf, PartDiff, sketchedPartsOf, stateDiffOf, visibleChangeVerdictOf } from './visible-change';
+import {
+  deviationOf,
+  PartDiff,
+  sketchedPartsOf,
+  stateDiffOf,
+  visibleChangeSummaryOf,
+  visibleChangeVerdictOf,
+} from './visible-change';
 
 const RED = 0xff0000ff;
 const BLUE = 0x0000ffff;
@@ -154,5 +161,52 @@ describe('visibleChangeVerdictOf', () => {
         sketched: new Set(),
       }),
     ).toMatchObject({ pass: true, why: 'invisible', unjudged: ['idle'] });
+  });
+});
+
+describe('visibleChangeSummaryOf', () => {
+  const verdictOf = (part: string, pass: boolean, unjudged: string[] = []) => ({
+    part,
+    pass,
+    why: pass ? ('invisible' as const) : ('visible' as const),
+    changed: [],
+    unjudged,
+  });
+
+  it('lists every unjudged state of a pass', () => {
+    expect(
+      visibleChangeSummaryOf({
+        verdicts: [verdictOf('components/zoom-chip', true, ['default', 'hover']), verdictOf('components/pin', true)],
+        problems: 0,
+        range: 'abc..HEAD',
+        seconds: 12,
+      }),
+    ).toBe(
+      'No part looks different in abc..HEAD without a sketch (12 s) - 2 state(s) unjudged: components/zoom-chip (default, hover).',
+    );
+  });
+
+  it('counts failed parts and product problems, and still lists the unjudged states', () => {
+    expect(
+      visibleChangeSummaryOf({
+        verdicts: [verdictOf('components/pin', false), verdictOf('elements/tree', true, ['empty'])],
+        problems: 1,
+        range: 'abc..HEAD',
+        seconds: 3,
+      }),
+    ).toBe(
+      '2 part(s) fail the visible-change gate in abc..HEAD. Pick and merge a sketch of each, or move it closer to its design - 1 state(s) unjudged: elements/tree (empty).',
+    );
+  });
+
+  it('says nothing about unjudged states when every state was judged', () => {
+    expect(
+      visibleChangeSummaryOf({
+        verdicts: [verdictOf('components/pin', true)],
+        problems: 0,
+        range: 'abc..HEAD',
+        seconds: 1,
+      }),
+    ).toBe('No part looks different in abc..HEAD without a sketch (1 s).');
   });
 });
