@@ -2135,6 +2135,17 @@ Q16, from finding 126:
 - Technical (grill): the pre-push visible-change gate fails when a selected part has any unjudged state; listing
   them is not enough (a gate that passed after judging nothing, builder 2026-11-02).
 
+### Update dialog and merge commit decisions (Tom, 2026-11-02)
+
+- The update confirm is variant b of the update-dialog sketch: an SDK anchored dialog under the Update button with an
+  arrow, no scrim; the question bold, "Studio startet dafür neu." muted below, xs buttons right ("Später" outline,
+  "Neu starten" filled). Tom merged it.
+- The dialog shows the version without build metadata: everything from `+` on is dropped
+  (`v0.42.0-next.137+build...` shows as `v0.42.0-next.137`).
+- The builder commits Tom's title-bar merge once, exactly its paths (components/title-bar/, the four icons close,
+  maximize, minimize, search, and the merged.json/pictures.json lines), as "chore(repo): Merge ... sketch"; never
+  go.json.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
