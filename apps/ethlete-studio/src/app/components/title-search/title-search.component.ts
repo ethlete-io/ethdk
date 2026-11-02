@@ -36,7 +36,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
         <span class="shrink-0" aria-hidden="true">/</span>
         <span class="font-ui-strong min-w-0 truncate text-et-surface">{{ part() }}</span>
       </span>
-      <et-kbd [platform]="platform()" class="[&_.et-kbd-key]:text-current" keys="mod+k" />
+      <et-kbd [platform]="platform()" class="[--et-kbd-color:currentColor]" keys="mod+k" />
     </button>
   `,
   encapsulation: ViewEncapsulation.None,

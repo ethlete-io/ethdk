@@ -18,7 +18,7 @@ export const titleSearch = ({ product, part, os, interaction }: Props) => {
     `<button et-button type="button" variant="tonal" color="surface" size="xs" stretchContents class="w-2xl justify-start px-space-2 text-et-surface-muted hover:text-et-surface active:text-et-surface focus-visible:text-et-surface [--et-button-gap:var(--space-2)]" aria-haspopup="dialog" aria-label="Suchen in ${product}, ${part}">${icon(
       'search',
       { size: 14 },
-    )}<span class="flex min-w-0 flex-1 justify-center-safe gap-1 font-ui"><span class="shrink-0">${product}</span><span class="shrink-0" aria-hidden="true">/</span><span class="min-w-0 truncate text-et-surface font-ui-strong">${part}</span></span><et-kbd class="[&_.et-kbd-key]:text-current" data-et-skip="CLIPPED" keys="mod+k" platform="${kbdPlatform(os)}" /></button>`,
+    )}<span class="flex min-w-0 flex-1 justify-center-safe gap-1 font-ui"><span class="shrink-0">${product}</span><span class="shrink-0" aria-hidden="true">/</span><span class="min-w-0 truncate text-et-surface font-ui-strong">${part}</span></span><et-kbd class="[--et-kbd-color:currentColor]" data-et-skip="CLIPPED" keys="mod+k" platform="${kbdPlatform(os)}" /></button>`,
     'search',
   );
 
