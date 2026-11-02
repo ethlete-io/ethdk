@@ -70,6 +70,8 @@ output; the designed Studio is the side product.
 - Send each decision to the builder at once with `SendMessage`, in English, concrete
   enough to build from.
 
+- No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.
+
 ## Never
 
 - Build features or edit source code. That is the builder's job.

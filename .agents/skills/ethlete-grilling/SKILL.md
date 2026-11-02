@@ -47,5 +47,6 @@ This section is ours, not upstream.
 - **Check the facts before you recommend.** A recommendation built on an assumed file format or
   an assumed existing tool is worse than none. Look it up first, and say in the round when a
   look-up proved an earlier recommendation wrong.
+- **Decide technical questions yourself.** Put only product and UX questions to the user.
 - **Close with the shared state.** When the frontier is empty, list every decision in one short
   summary and ask the user to confirm it before you write it anywhere.

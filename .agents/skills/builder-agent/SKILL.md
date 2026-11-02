@@ -62,3 +62,4 @@ component fix.
 
 - When your context runs high, write a handoff. Big new work goes to a fresh builder
   session.
+- No agent memory. Every lesson becomes a finding with a tool fix, recorded in the plan.

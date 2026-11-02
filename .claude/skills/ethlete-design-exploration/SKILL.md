@@ -34,6 +34,11 @@ or loses only against the other variants of its question.
    for literal copies. Derive the composition from the product's own visual language; a new palette
    or spacing on the reference's layout is not a different concept.
 
+7. **Visible UI is built only from a sketch the user picked.** A new or changed element, label,
+   badge or layout needs a picked sketch, and the build brief names its id. "Decision" and
+   "regression" items are no exception. Without a picked sketch, build data and specs only and
+   stop at the UI.
+
 Confirm the step size once, at the start. Do not ask again at every stop. A task is not
 finished while the user is still talking about it.
 
