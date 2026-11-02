@@ -1435,7 +1435,10 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      text show through (builder, 2026-11-02). Why no check caught it: the clipped and overlap checks look at layout
      boxes, not at whether an overlay pane is opaque over the content below. Tool fix: B53 (an overlay pane must be
      opaque; text under an open overlay that stays visible is reported). Lesson: an overlay is checked by what it
-     covers, not only by where it sits.
+     covers, not only by where it sits. Update (builder, 2026-11-02): render-check rule SEE-THROUGH in 0d8e8af80
+     (text crossing an open pane is sampled; cover below 0.95 is reported); no false positives on sdk and studio.
+     Pending: reproduce the original variant A bug with real SDK CSS. Known gap: backdrop-filter and gradients count
+     as opaque.
 148. The Studio sketch view is unusable for the components/title-bar sketch (Tom's screenshot, 2026-11-02): (a) only
      the default state of each variant renders, so the Update button Tom picked on is never shown; (b) the 32 px bar
      sits tiny in a hardcoded 1440x900 frame (sketches.component.html:49-57; shots drop width/height); (c) four
