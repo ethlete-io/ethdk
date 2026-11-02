@@ -19,3 +19,11 @@ if [ -n "$styles" ]; then
   # shellcheck disable=SC2086
   node ./tools/scripts/lint-css-properties.js $styles
 fi
+
+# vitest resolves relative paths against the Studio root, not the repo root, so pass absolute ones.
+studio=$(git diff --cached --name-only --diff-filter=ACM -- 'apps/ethlete-studio/*' | sed "s|^|$PWD/|")
+
+if [ -n "$studio" ]; then
+  # shellcheck disable=SC2086
+  npx vitest related --run --passWithNoTests --config apps/ethlete-studio/vite.config.mts $studio
+fi
