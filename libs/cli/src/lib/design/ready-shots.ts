@@ -9,6 +9,9 @@ import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-v
 import { Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
+const couldNotRender = (sketch: Sketch, error: unknown) =>
+  `could not render ${sketch.target}: ${error instanceof Error ? error.message : String(error)}`;
+
 /** Loads each target of each live variant of the sketch on a render server of its own; why each one fails to load. */
 export const variantsThatDoNotLoad = async (options: {
   target: string;
@@ -113,8 +116,8 @@ export const aktuellPlaceholderWarnings = async (options: {
     } finally {
       await shooter.close();
     }
-  } catch {
-    return [];
+  } catch (error) {
+    return [`ready will refuse: ${couldNotRender(sketch, error)}`];
   } finally {
     await server?.close();
   }
@@ -153,8 +156,8 @@ export const identicalRenderLines = async (options: {
     } finally {
       await shooter.close();
     }
-  } catch {
-    return [];
+  } catch (error) {
+    return [couldNotRender(sketch, error)];
   } finally {
     await server?.close();
   }

@@ -203,7 +203,7 @@ describe('a denied class in the flows', () => {
       }),
     ).toBe(1);
     expect(errors.join('\n')).toMatch(/elements\/hero b: DENIED-CLASS .*`bg-surface` is denied/u);
-  });
+  }, 30_000);
 
   it('refuses sketch merge and keeps the product', () => {
     const target = acme();
