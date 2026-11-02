@@ -110,14 +110,14 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
   disabled-Zuständen (dl, Systemlehren 01.11.).
 - **B34** Studio zeigt einen Sketch, der nicht `ready` ist, als „in Arbeit“, je Variante „Agent baut gerade“
-  (Rückschritt; Befund 136).
+  (neue sichtbare Oberfläche: erst Sketch pages/sketches, dann Bau; Befund 136, 143).
 - **B35** `sketch check` und `sketch ready` scheitern an einer Variante, die noch das unveränderte Gerüst ist (Befund 136).
 - **B36** Sketch-Ansicht: Rahmen in der gefitteten Größe des Teils, Spalten = Varianten + 1, Platz für den Kopf, „neu“
   statt leerem „Aktuell“; E2E mit kurzem und neuem Teil (Befund 136).
 - **B37** `sketch check`/`sketch ready`: Notizen an Varianten und Teilen sind deutsch, kurz genug ohne Abschneiden und
   ohne technische Werte (dl 02.11.).
 - **B38** Kopf einer Variante zeigt den kurzen Modellnamen statt „Claude“, Tooltip mit vollem Namen und Zeit
-  (Rückschritt; dl 02.11.).
+  (neue sichtbare Oberfläche: erst Sketch, dann Bau; dl 02.11., Befund 143).
 - **B39** Wechselt eine Ansicht auf einen Design-Teil, muss jeder gelöschte Test entweder in der Liste „was das Design
   weglässt“ stehen oder im neuen Spec wieder auftauchen; die CLI prüft das (Befund 137).
 - **B40** Jeder `partless`-Eintrag (bewusst ohne Teil) erscheint in Studio als offener Punkt, damit Tom ihn sieht; ein
