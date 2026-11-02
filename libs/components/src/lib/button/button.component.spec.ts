@@ -52,6 +52,27 @@ describe('ButtonComponent', () => {
     });
   });
 
+  describe('stretch contents', () => {
+    it('has no data-stretch-contents by default', () => {
+      fixture.detectChanges();
+      expect(host.hasAttribute('data-stretch-contents')).toBe(false);
+    });
+
+    it('sets data-stretch-contents for an empty attribute value', () => {
+      fixture.componentRef.setInput('stretchContents', '');
+      fixture.detectChanges();
+      expect(host.getAttribute('data-stretch-contents')).toBe('true');
+    });
+
+    it('removes data-stretch-contents again when turned off', () => {
+      fixture.componentRef.setInput('stretchContents', true);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('stretchContents', false);
+      fixture.detectChanges();
+      expect(host.hasAttribute('data-stretch-contents')).toBe(false);
+    });
+  });
+
   describe('loading state', () => {
     it('does not render the spinner by default', () => {
       fixture.detectChanges();

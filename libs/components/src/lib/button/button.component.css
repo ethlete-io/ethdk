@@ -201,6 +201,10 @@
       transition: opacity 120ms ease;
     }
 
+    &:where([data-stretch-contents]) .et-button-contents {
+      flex: 1;
+    }
+
     &[data-loading='true'] {
       .et-button-icon,
       .et-button-contents {

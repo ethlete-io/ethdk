@@ -10,6 +10,8 @@ export type ButtonMockOptions = {
   /** The icon, as HTML. Leave it out for a button without one. */
   icon?: string;
   iconAlignment?: 'start' | 'end';
+  /** Lets the label fill the space beside the icon, like `stretchContents` on `et-button`. */
+  stretchContents?: boolean;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'filled' | 'outline' | 'tonal' | 'transparent';
   /** A color theme name the app registers. Left out, the button takes the color theme around it. */
@@ -50,6 +52,7 @@ export const button = (options: ButtonMockOptions) => {
     `data-icon-alignment="${iconAlignment}"`,
     `data-variant="${variant}"`,
     `data-size="${size}"`,
+    options.stretchContents && 'data-stretch-contents="true"',
     'data-can-animate="true"',
     options.pressed && `data-pressed-variant="${PRESSED_VARIANT[variant]}"`,
     options.style && `style="${options.style}"`,

@@ -41,6 +41,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 - `color` applies one of your app's [registered color themes](/core/theming), or `'surface'` - see below. Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
 - `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons - the single-icon flavors don't have it).
 - `pressedColor` (surface / icon buttons) swaps the color theme while the button is `pressed` - see below.
+- `stretchContents` (surface buttons, default `false`) lets the label box fill the button beside the icon - see below.
 
 Icon buttons are round by default. Their `filled` variant has an inset edge and uses the active theme color on hover.
 
@@ -73,6 +74,23 @@ keeps a row of formatting buttons from reading as noise.
 `inherit` means the color theme surrounding the button. Pass a theme name instead when the active
 state has its own meaning (`pressedColor="danger"` on a destructive toggle). Left unset, a pressed
 button keeps its resting theme and only its variant swaps.
+
+### Stretched contents
+
+A surface button centers its label box and sizes it to the content. Set `stretchContents` when the button is wider
+than its content and the label should own that width, e.g. a search field that ends in a shortcut hint:
+
+```html
+<button et-button stretchContents type="button" variant="tonal">
+  <span class="search-label">Search projects</span>
+  <et-kbd keys="mod+k" />
+</button>
+```
+
+The label box is a flex row with the button's `--et-button-gap`, so a child with `flex: 1` pushes the rest to the
+far edge. Don't style `.et-button-contents` from outside; set `--et-button-gap` on the button to change the spacing.
+
+@example button/button-stretch 120px
 
 ## States
 

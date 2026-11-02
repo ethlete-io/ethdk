@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
@@ -78,6 +78,7 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
     '[attr.data-icon-alignment]': 'iconAlignment()',
     '[attr.data-variant]': 'variant()',
     '[attr.data-size]': 'size()',
+    '[attr.data-stretch-contents]': 'stretchContents() || null',
     '[attr.data-pressed-variant]': 'pressedVariant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
@@ -88,6 +89,9 @@ export class ButtonComponent {
   public variant = input<ButtonVariant>(BUTTON_VARIANTS.FILLED);
   public size = input<ButtonSize>(BUTTON_SIZES.MD);
   public iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+
+  /** Lets the projected contents fill the space beside the icon, e.g. to push a trailing element to the far edge. */
+  public stretchContents = input(false, { transform: booleanAttribute });
 
   public canAnimate = createCanAnimateSignal();
 
