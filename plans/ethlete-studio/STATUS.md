@@ -23,23 +23,23 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Stand der aktuellen Welle. ✅ fertig (lokal, ungepusht), 🔨 läuft, ⏳ geplant, ⛔ hakt. Die Grill-Session hält die
 Tabelle nach jedem Bericht des Builders aktuell; fertige Zeilen fallen beim Push weg.
 
-| ID            | Was                                                                  | Stand | Was fehlt / wo es hakt                                                        | Wer     |
-| ------------- | -------------------------------------------------------------------- | ----- | ----------------------------------------------------------------------------- | ------- |
-| Push `next`   | Alles seit 062bca6f3                                                 | ⛔    | Zuerst B87-Nachtrag (go.json-Regel enger), dann Pre-push und Push             | Builder |
-| title-bar     | Titelleiste mit Suchfeld, Go 02.11.                                  | ✅    | Compare grün                                                                  | -       |
-| title-search  | Suchfeld der Titelleiste, Go 02.11.                                  | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen           | Builder |
-| shell-main    | Shell mit Titelleiste (B76), Go 02.11.                               | ⛔    | „seit dem Go geändert“: welche Dateien, dann vielleicht neues Go              | Builder |
-| update-dialog | Update-Dialog, Go 02.11.                                             | ⛔    | Harness rendert ihn nicht (kein Overlay, keine Farbthemen) - B105             | Builder |
-| B97           | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158) | 🔨    | Danach prüft Tom den Ring in der echten App                                   | Builder |
-| B101          | Beweis auf dem echten Pfad für B69/B94 (Bef. 174)                    | 🔨    | Rebuild echt bewiesen, e2e rot/grün; fehlt: echter Shot mit `--states` danach | Builder |
-| B102          | Builder schweigt (Bef. 175)                                          | ⛔    | Stop-Hook-Eintrag in settings.json bestätigen; Neustart mit `--role builder`  | Tom     |
-| B105          | Harness misst ohne eigene Größe (Bef. 178)                           | 🔨    | -                                                                             | Builder |
-| B106          | Keine Interaktionszeilen für unveränderte eingebettete Parts         | 🔨    | -                                                                             | Builder |
-| B107          | Skizzen für zoom-chip `reset`, shell-main `section` und `product`    | 🔨    | Danach wählt und mergt Tom                                                    | Builder |
-| Befund 179    | Logo in pages/sketches d/e/f teal statt neutral                      | ⛔    | Fix in Toms Skizzen-Dateien braucht Toms OK; Tool-Fix B108                    | Tom     |
-| B108          | Regel UNUSED-PART-STYLES, kein Teal-Fallback, toter studio-mark weg  | ⏳    | -                                                                             | Builder |
-| Befund 161    | Sketches-Ansicht braucht nach Reload ~10 s                           | 🔨    | -                                                                             | Builder |
-| B100          | Restliche prüfbare Regeln aus dem Audit                              | ⏳    | -                                                                             | Builder |
+| ID            | Was                                                                              | Stand | Was fehlt / wo es hakt                                                          | Wer     |
+| ------------- | -------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------- | ------- |
+| Push `next`   | Alles seit 062bca6f3                                                             | ⛔    | Zuerst B87-Nachtrag (go.json-Regel enger), dann Pre-push und Push               | Builder |
+| title-bar     | Titelleiste mit Suchfeld, Go 02.11.                                              | ✅    | Compare grün                                                                    | -       |
+| title-search  | Suchfeld der Titelleiste, Go 02.11.                                              | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen             | Builder |
+| shell-main    | Shell mit Titelleiste (B76)                                                      | ⛔    | Nach dem Go geändert (fea9ac862): neues Go nötig                                | Tom     |
+| update-dialog | Update-Dialog, Go 02.11.                                                         | ⛔    | Harness rendert jetzt (89d94b1bc); Design 400 px hoch, App 96 px: Ursache offen | Builder |
+| B97           | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158)             | 🔨    | Danach prüft Tom den Ring in der echten App                                     | Builder |
+| B101          | Beweis auf dem echten Pfad für B69/B94 (Bef. 174)                                | 🔨    | Rebuild echt bewiesen, e2e rot/grün; fehlt: echter Shot mit `--states` danach   | Builder |
+| B102          | Builder schweigt (Bef. 175)                                                      | ⛔    | Stop-Hook-Eintrag in settings.json bestätigen; Neustart mit `--role builder`    | Tom     |
+| B105          | Harness misst ohne eigene Größe (Bef. 178)                                       | ⛔    | 7a9071c3f bricht title-bar; zurück, App an der Wurzel beschneiden, Pixel-Spec   | Builder |
+| B106          | Keine Interaktionszeilen für unveränderte eingebettete Parts                     | 🔨    | -                                                                               | Builder |
+| B107          | Skizzen für zoom-chip `reset`, shell-main `section` und `product`                | 🔨    | Danach wählt und mergt Tom                                                      | Builder |
+| B108          | UNUSED-PART-STYLES, kein Teal-Fallback, toter studio-mark weg; Logo-Fix in d/e/f | ⏳    | -                                                                               | Builder |
+| B109          | Sketch zeigt, welcher Agent eine Variante gezeichnet hat (Bef. 180)              | ⏳    | -                                                                               | Builder |
+| Befund 161    | Sketches-Ansicht braucht nach Reload ~10 s                                       | 🔨    | -                                                                               | Builder |
+| B100          | Restliche prüfbare Regeln aus dem Audit                                          | ⏳    | -                                                                               | Builder |
 
 Danach: B80, B81, B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60, A13 (CLI),
 B62.
@@ -47,7 +47,7 @@ B62.
 Bei Tom:
 
 - Stop-Hook-Eintrag (B102) in der Builder-Session bestätigen.
-- OK für `menu.styles` in pages/sketches d/e/f (Befund 179).
+- Neues Go für shell-main (nach fea9ac862 geändert).
 - Skizzen aus B107 wählen und mergen, sobald sie da sind.
 
 Übergaben (lokal, per gitignore ausgeschlossen): `.claude/handoffs/doc-agent-studio.md`,
@@ -79,6 +79,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Verschachtelte Parts sind eigenständig baubereit (eigene Zustände und Prüfungen); ein Host ist erst baubereit,
   wenn seine verschachtelten Parts es sind (Tom, 02.11.).
   Ein implementierter Part ist erst baubereit, wenn `design compare` App gegen Design grün ist (Befund 178).
+  Ein Part ist erst baubereit, wenn er im Harness ohne SDK-Fehler rendert (update-dialog ET1205, 02.11.).
 - **A13** Ein Knopf „Übernehmen“ statt „Wählen“: öffnet direkt die Merge-Ansicht, die ist die Bestätigung; Abbruch
   lässt nichts gewählt; kein Rückgängig nach dem Merge (Tom, 02.11.; „Pick and merge decisions“).
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
@@ -292,7 +293,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); Tom wählt und mergt
   (Entscheidung 11).
 - **B108** Regel UNUSED-PART-STYLES: eine Seite oder Skizze rendert einen Part und gibt nie seine `.styles` zurück;
-  studio-mark.svg ohne sichtbaren Farb-Fallback; tote `studio-mark.component.ts` in der App löschen (Befund 179).
+  studio-mark.svg ohne sichtbaren Farb-Fallback; tote `studio-mark.component.ts` in der App lösch; `menu.styles` in pages/sketches d/e/f ergänzen (Befund 179).
+- **B109** Der Sketch-Datensatz nennt je Variante den zeichnenden Agenten oder die Session; Studio und `et design
+sketch` zeigen ihn (Befund 180).
 
 ## C. CLI: Tempo und Ablauf
 

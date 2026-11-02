@@ -1757,7 +1757,7 @@ no effect because no color themes are registered` (builder, 2026-11-02, update-d
      (builder, 2026-11-02). It started within this wave (kbd-color, B76 shell-main with the embedded title bar, or the
      rebuilt components dist) and blocks the live check of B75. Cause (builder, corrected): commit 9fe0b8a41 added
      the title search to the title bar, and pages/sketches drew its shells at module load, where the search cannot
-     render; fixed in 142e0a96a (drawing moved into render()). Tom's uncommitted variants pages-sketches a/b/c use the
+     render; fixed in 142e0a96a (drawing moved into render()). the uncommitted agent variants pages-sketches a/b/c use the
      same pattern ("Invalid URL"). Why no tool caught it: `design check --part` renders only that part, never the
      parts and sketches that embed it. Tool fix: B95 (a check of a changed part also renders every part and open
      sketch that embeds it; the commit gate does the same) plus a rule that refuses drawing at module load. Lesson:
@@ -1804,6 +1804,10 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      (harness host without a line box, both sides clipped at the component root, a spec that a fixed-size element
      keeps its size in the harness); the "compare before go" part goes into A10 (build-ready requires a green compare
      for an implemented part). Lesson: the measuring frame must not change what it measures.
+     Update (builder, 2026-11-02): B105 7a9071c3f (host `flex w-fit`) removed the title-search SIZE diff but broke
+     title-bar (green -> 35-41k px diff in all 24 states); its spec asserted classes, not pixels, so the regression
+     passed. Decision: revert the host change, clip the app at the component root like the design side, and the spec
+     measures a real pixel size in the harness. Lesson: a harness spec measures pixels, never class names.
 179. The pages/sketches sketch (variant d) draws the Studio logo as a teal tile with a white mark; the app draws it
      as a dark neutral tile (Tom, 2026-11-02, screenshots). Cause (builder): variants d, e and f call studioMenu() and
      menu.setup but never add `menu.styles` to the page styles (d: sketches/pages-sketches/d/pages/sketches/sketches.ts
@@ -1815,6 +1819,12 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      (rule UNUSED-PART-STYLES: a page or sketch renders a part and never returns its `.styles`; no visible colour
      fallback in studio-mark.svg, so an unstyled embed looks plainly broken; delete the dead studio-mark component).
      Lesson: a fallback that looks right hides a missing link; fall back to something obviously wrong or to nothing.
+     The variants are agent-drawn (finding 180), so the builder adds `menu.styles` to d/e/f directly.
+180. The grill session called the uncommitted pages/sketches variants "Tom's" and asked Tom for an OK to fix "his"
+     files (2026-11-02); decision 7 had the same wrong label. Tom never draws a sketch; agents do. Why no tool caught
+     it: nothing shows who drew a variant, so "uncommitted" was read as "the user's". Tool fix: B109 (the sketch
+     record names the drawing agent or session per variant; Studio and `et design sketch` show it). Lesson: name an
+     owner only from a record, never from where a file sits.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2368,8 +2378,9 @@ only). Technical gaps became B84-B98 in STATUS.md.
 5. Sketches view has no selection: click and pan select nothing and draw no outline; Shift+2 fits the frame nearest
    the view centre (B97). The outline Tom saw came from a window refocus (finding 158).
 6. pages/inbox sidebar declares its scroll instead of shortening demo data (B98).
-7. Tom's uncommitted sketch variants may be edited by the builder for mechanical fixes that change no pixels,
-   proven by before/after shots; the builder does not commit them.
+7. Uncommitted sketch variants may be edited by the builder for mechanical fixes that change no pixels, proven by
+   before/after shots; the builder does not commit them. Correction (Tom, 2026-11-02): these variants were drawn by
+   agents, not by Tom - Tom never builds a sketch himself (finding 180).
 8. Nested parts (A36): a part that belongs to a host lives under it in its path (`components/title-bar/title-search`)
    and in the explorer; the check refuses it outside its host; shared parts (button, kbd) stay on their layer. In
    the go rework (A10, "build-ready" replaces go) a nested part is build-ready on its own, and a host is build-ready
