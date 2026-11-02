@@ -2593,6 +2593,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 - Pending compare: the variant marks stay neutral, and the variant head shows a small "vergleicht ..." until the
   compare answers.
 - zoom-chip round r1: variant a (plain SDK button). Tom picks it via Übernehmen himself.
+- Variant head below Fit (Tom, finding 205): the 12 px floor of the variant head holds only down to Fit. Zoomed out
+  further, the head scales with the canvas, and its text hides below about 9 px on screen, like the state labels.
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
@@ -2740,4 +2742,4 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      zoom with real data. Tool fix (decided, technical): canvas.e2e zooms each PAGES entry to the minimum zoom and
      asserts (1) the variant head height stays within a bound of the frame grid height, (2) every frame has its
      fitted height and a painted body; `sketch check` runs NOTE-LANGUAGE over all existing sketches, not only new
-     ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: open question to Tom.
+     ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: decided by Tom (see "Sketches matrix and state name decisions").
