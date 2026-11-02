@@ -141,6 +141,7 @@ describe('CanvasFrameComponent failed page load', () => {
     expect(iframes()).toHaveLength(2);
     failing.dispatchEvent(new Event('load'));
     await flush(1000);
+    await flush();
 
     expect(visible()).toEqual([iframes()[0]]);
     expect(host().querySelector('[data-frame-failed]')?.textContent).toContain(

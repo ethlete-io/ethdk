@@ -653,7 +653,7 @@ export class CanvasFrameComponent {
     const content = iframe.contentDocument;
     const view = content?.defaultView;
 
-    if (!content || !view || content.URL === 'about:blank') return EMPTY;
+    if (!content?.body || !view || content.URL === 'about:blank') return EMPTY;
 
     const root = content.documentElement;
     const height$ = new Observable<MeasuredSide>((subscriber) => {
