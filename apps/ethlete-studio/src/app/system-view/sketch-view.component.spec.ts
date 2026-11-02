@@ -131,13 +131,13 @@ describe('SketchViewComponent', () => {
   it('draws the current page and the variants of the newest round, each as a live frame', async () => {
     const { root } = await render(ROUNDED, noComments);
 
-    expect([...root.querySelectorAll('[data-page]')].map((page) => page.getAttribute('data-page'))).toEqual([
+    expect([...root.querySelectorAll('[data-sk-row]')].map((row) => row.getAttribute('data-sk-row'))).toEqual([
       'current',
       'b',
     ]);
-    expect([...root.querySelectorAll('iframe')].map((frame) => new URL(frame.src).searchParams.get('variant'))).toEqual(
-      [null, 'b'],
-    );
+    expect([
+      ...new Set([...root.querySelectorAll('iframe')].map((frame) => new URL(frame.src).searchParams.get('variant'))),
+    ]).toEqual([null, 'b']);
     expect(root.textContent).toContain('Calmer');
   });
 
@@ -153,8 +153,8 @@ describe('SketchViewComponent', () => {
     component.pickRound('r1');
     await settle(fixture);
 
-    expect(root.querySelector('[data-page="a"]')).not.toBeNull();
-    expect(root.querySelector('[data-page="b"]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="a"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="b"]')).toBeNull();
     expect(JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').sketchViews).toEqual({
       'web sketch:components/card': { rounds: { r1: true, r2: false }, roundsFor: SKETCH.createdAt },
     });
@@ -167,8 +167,8 @@ describe('SketchViewComponent', () => {
     });
     await settle(fixture);
 
-    expect(root.querySelector('[data-page="c"]')).not.toBeNull();
-    expect(root.querySelector('[data-page="a"]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="c"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="a"]')).toBeNull();
   });
 
   it('ignores the round flags remembered for an earlier sketch of the same part', async () => {
@@ -181,10 +181,10 @@ describe('SketchViewComponent', () => {
 
     const { root } = await render(ROUNDED, noComments);
 
-    expect(root.querySelector('[data-page="b"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-row="b"]')).not.toBeNull();
   });
 
-  it('picks a variant from its Wählen button and opens the merge page with the changed rows, now and after', async () => {
+  it('opens the merge page from Übernehmen without picking the variant with the changed rows, now and after', async () => {
     const bodies: Record<string, unknown> = {};
     const home: ListedPart = { ...CARD, layer: 'pages', name: 'home' };
     const changed = { part: 'pages/home', state: 'default', outlines: { now: [], merged: [] } };
@@ -216,7 +216,7 @@ describe('SketchViewComponent', () => {
     picks[0]?.click();
     await settle(fixture);
 
-    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
+    expect(bodies).toEqual({});
     expect(root.querySelector('ethlete-sketches')).toBeNull();
     expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
 
@@ -233,7 +233,7 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('ethlete-merge')).toBeNull();
     expect(root.querySelector('ethlete-sketches')).not.toBeNull();
 
-    fixture.componentInstance['pickForMerge']('a');
+    fixture.componentInstance['openMerge']('a');
     await settle(fixture);
     buttonNamed(root, 'Merge')?.click();
     await settle(fixture);
@@ -256,7 +256,7 @@ describe('SketchViewComponent', () => {
 
     fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
     await settle(fixture);
-    fixture.componentInstance['pickForMerge']('a');
+    fixture.componentInstance['openMerge']('a');
     await settle(fixture);
 
     expect(root.querySelector('ethlete-merge li')?.textContent).toContain('pages/home');
@@ -292,7 +292,7 @@ describe('SketchViewComponent', () => {
 
     fixture.componentRef.setInput('product', { ...PRODUCT, parts: [home] });
     await settle(fixture);
-    fixture.componentInstance['pickForMerge']('a');
+    fixture.componentInstance['openMerge']('a');
     await settle(fixture);
 
     expect(root.textContent).not.toContain(STUDIO_LABELS.system.copyPrompt);
@@ -319,13 +319,13 @@ describe('SketchViewComponent', () => {
       if (url.includes('/__design/sketch-decision')) {
         requests.push('decision');
 
-        return requests.length === 1 ? json({}) : new Promise<Response>(() => undefined);
+        return new Promise<Response>(() => undefined);
       }
 
       return noComments(url);
     });
 
-    fixture.componentInstance['pickForMerge']('a');
+    fixture.componentInstance['openMerge']('a');
     await settle(fixture);
     buttonNamed(root, 'Merge')?.click();
     await settle(fixture);
@@ -337,7 +337,7 @@ describe('SketchViewComponent', () => {
     merge?.click();
     await settle(fixture);
 
-    expect(requests).toEqual(['decision', 'decision']);
+    expect(requests).toEqual(['decision']);
   });
 
   it('shows a merge refusal and a merge failure under the Merge button', async () => {
@@ -356,7 +356,7 @@ describe('SketchViewComponent', () => {
     const completed: string[] = [];
 
     fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
-    fixture.componentInstance['pickForMerge']('a');
+    fixture.componentInstance['openMerge']('a');
     await settle(fixture);
 
     expect(errorText()).toBeUndefined();
@@ -403,7 +403,7 @@ describe('SketchViewComponent', () => {
     expect(asked.some((url) => url.includes('/__design/sketch-discard'))).toBe(true);
   });
 
-  it('shows the reason of a refused pick or discard next to the decide controls and clears it on the next action', async () => {
+  it('shows the reason of a refused discard next to the decide controls and clears it on the next action', async () => {
     const reason = 'components/card is in progress - a variant is picked once it is ready';
     let refuse = true;
     const { fixture, root } = await render(SKETCH, (url) => {
@@ -416,7 +416,7 @@ describe('SketchViewComponent', () => {
     });
     const errorText = () => root.querySelector('ethlete-sketches [role="alert"]')?.textContent?.trim();
 
-    fixture.componentInstance['pickForMerge']('a');
+    buttonNamed(root, 'Verwerfen')?.click();
     await settle(fixture);
 
     expect(errorText()).toContain('is in progress - a variant is picked once it is ready');
@@ -452,9 +452,9 @@ describe('SketchViewComponent', () => {
     const { root } = await render(SKETCH, (url) =>
       url.includes('/__design/comments') ? json({ comments: [comment], unreadable: [] }) : noComments(url),
     );
-    const pin = root.querySelector('[data-page="b"] ethlete-comment-pin');
+    const pin = root.querySelector('[data-sk-row="b"] ethlete-comment-pin');
 
     expect(pin?.textContent).toContain('2');
-    expect(root.querySelector('[data-page="a"] ethlete-comment-pin')).toBeNull();
+    expect(root.querySelector('[data-sk-row="a"] ethlete-comment-pin')).toBeNull();
   });
 });

@@ -1,0 +1,208 @@
+import { provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { THEMES } from '../../../themes';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { SketchesComponent } from './sketches.component';
+import { SketchRow } from './sketches-sample';
+
+const LABELS = STUDIO_LABELS.sketches;
+
+const ROWS: SketchRow[] = [
+  {
+    key: 'current',
+    note: 'Wie heute',
+    width: 400,
+    shots: [
+      { state: 'rest', changed: false, height: 100 },
+      { state: 'open', changed: false, height: 200 },
+    ],
+  },
+  {
+    key: 'x',
+    note: 'Eine sehr lange Notiz zur Variante x, die über mehrere Zeilen umbricht und nichts abschneidet.',
+    model: { short: 'Sonnet 5.5', id: 'claude-sonnet-5-5', agent: 'claude', when: '01.11. 09:00' },
+    width: 400,
+    shots: [
+      { state: 'rest', changed: false, height: 100 },
+      { state: 'open', changed: true, height: 240 },
+    ],
+  },
+];
+
+const render = async (inputs: Record<string, unknown>) => {
+  const fixture = TestBed.createComponent(SketchesComponent);
+
+  Object.entries({ rows: ROWS, pins: [], ...inputs }).forEach(([name, value]) =>
+    fixture.componentRef.setInput(name, value),
+  );
+  await fixture.whenStable();
+
+  return fixture;
+};
+
+const textOf = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+describe('SketchesComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+  });
+
+  it('draws one row per variant with every state, dims the unchanged ones and marks the first change', async () => {
+    const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
+    const variant = root.querySelector('[data-sk-row="x"]');
+    const states = [...(variant?.querySelectorAll('[data-sk-state]') ?? [])];
+
+    expect([...root.querySelectorAll('[data-sk-row]')].map((row) => row.getAttribute('data-sk-row'))).toEqual([
+      'current',
+      'x',
+    ]);
+    expect(textOf(states[0])).toBe(`rest${LABELS.unchanged}`);
+    expect(states[0]?.classList.contains('opacity-50')).toBe(true);
+    expect(states[1]?.classList.contains('opacity-50')).toBe(false);
+    expect(textOf(variant?.querySelector('[data-sk-first-change]'))).toBe(LABELS.firstChange);
+    expect(root.querySelector('[data-sk-row="current"] [data-sk-first-change]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="current"] .opacity-50')).toBeNull();
+  });
+
+  it('shows the short model name with the full id and time as its title', async () => {
+    const root: HTMLElement = (await render({})).nativeElement;
+    const model = root.querySelector<HTMLElement>('[data-sk-row="x"] [title]');
+
+    expect(textOf(model)).toBe('Sonnet 5.5');
+    expect(model?.title).toBe('claude-sonnet-5-5 · 01.11. 09:00');
+  });
+
+  it('emits merge with the variant from Übernehmen', async () => {
+    const fixture = await render({});
+    const merged: string[] = [];
+
+    fixture.componentInstance.merge.subscribe((variant) => merged.push(variant));
+
+    const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')];
+
+    buttons.find((button) => textOf(button) === LABELS.merge)?.click();
+
+    expect(merged).toEqual(['x']);
+  });
+
+  it('drops the current row and shows neu for a new part', async () => {
+    const root: HTMLElement = (await render({ fresh: true })).nativeElement;
+
+    expect(root.querySelector('[data-sk-row="current"]')).toBeNull();
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.fresh);
+  });
+
+  it('shows In Arbeit and the drawing placeholder for the drawn variant', async () => {
+    const root: HTMLElement = (await render({ status: 'drawing', drawn: 'x' })).nativeElement;
+
+    expect(textOf(root.querySelector('header'))).toContain(LABELS.status.drawing);
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-placeholder-row]'))).toContain(
+      `Sonnet 5.5 ${LABELS.drawingVariant}`,
+    );
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-stage]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-row="x"]'))).toContain(LABELS.drawingMark);
+  });
+
+  it('toggles the hold reason of a paused sketch', async () => {
+    const fixture = await render({ status: 'paused' });
+    const root: HTMLElement = fixture.nativeElement;
+    const reason = () => root.querySelector<HTMLElement>('[data-sk-hold-reason]');
+
+    expect(reason()?.hidden).toBe(true);
+
+    root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();
+    await fixture.whenStable();
+
+    expect(reason()?.hidden).toBe(false);
+    expect(textOf(reason())).toContain(LABELS.holdUntil('B34/B36/B38'));
+  });
+
+  it('sizes each frame from the part size at a fixed zoom', async () => {
+    const root: HTMLElement = (await render({ camera: { zoom: 0.5, x: 0, y: 0 } })).nativeElement;
+    const frame = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-state="open"] .overflow-hidden');
+
+    expect(frame?.style.width).toBe('200px');
+    expect(frame?.style.height).toBe('120px');
+  });
+
+  it('sizes each frame to the part width times the zoom and wraps narrow parts into columns', async () => {
+    const root: HTMLElement = (await render({ camera: '100' })).nativeElement;
+    const frame = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-frame="x open"]');
+    const stage = root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-stage]');
+
+    expect(frame?.style.width).toBe('400px');
+    expect(frame?.style.height).toBe('240px');
+    expect(stage?.style.gridTemplateColumns).toBe('repeat(2, 400px)');
+  });
+
+  it('keeps a part as wide as the window in one column', async () => {
+    const wide = ROWS.map((row) => ({ ...row, width: 1440 }));
+    const root: HTMLElement = (await render({ camera: '100', rows: wide })).nativeElement;
+
+    expect(root.querySelector<HTMLElement>('[data-sk-stage]')?.style.gridTemplateColumns).toBe('repeat(1, 1440px)');
+  });
+
+  it('shows a state neither dimmed nor first changed while its compare is pending', async () => {
+    const pending = ROWS.map((row) => ({ ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) }));
+    const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;
+    const states = [...root.querySelectorAll('[data-sk-row="x"] [data-sk-state]')];
+
+    expect(states.map(textOf)).toEqual(['rest', 'open']);
+    expect(root.querySelector('[data-sk-row="x"] .opacity-50')).toBeNull();
+    expect(root.querySelector('[data-sk-first-change]')).toBeNull();
+  });
+
+  it('keeps the note at 12 px or more and hides state labels below 9 px', async () => {
+    const fixture = await render({ camera: { zoom: 2, x: 0, y: 0 } });
+    const root: HTMLElement = fixture.nativeElement;
+    const sizes = () => [
+      root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-note]')?.style.fontSize,
+      root.querySelector<HTMLElement>('[data-sk-row="x"] [data-sk-state] .font-code')?.style.fontSize,
+    ];
+
+    expect(sizes()).toEqual(['30px', '26px']);
+    expect(root.querySelector<HTMLElement>('[data-sk-row="x"]')?.style.gridTemplateColumns).toBe(
+      '576px minmax(0, 1fr)',
+    );
+
+    fixture.componentRef.setInput('camera', { zoom: 0.25, x: 0, y: 0 });
+    await fixture.whenStable();
+
+    expect(sizes()[0]).toBe('12px');
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-state] .font-code')?.parentElement?.classList).toContain(
+      'hidden',
+    );
+
+    fixture.componentRef.setInput('camera', { zoom: 0.7, x: 0, y: 0 });
+    await fixture.whenStable();
+
+    expect(sizes()[1]).toBe(`${13 * 0.7}px`);
+  });
+
+  it('opens at a restored camera and selects a clicked frame', async () => {
+    const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 } });
+    const root: HTMLElement = fixture.nativeElement;
+    const frame = root.querySelector<HTMLElement>('[data-sk-frame="x rest"]');
+
+    expect(root.querySelector<HTMLElement>('[data-sk-rows] > div')?.style.transform).toBe(
+      'translate(-40px, -60px) scale(1)',
+    );
+    expect(frame?.style.width).toBe('200px');
+
+    let captured = false;
+
+    Object.assign(root.querySelector('[data-sk-rows]') ?? {}, {
+      setPointerCapture: () => (captured = true),
+      hasPointerCapture: () => captured,
+      releasePointerCapture: () => (captured = false),
+    });
+    frame?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1 }));
+    frame?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 1 }));
+    await fixture.whenStable();
+
+    expect(frame?.hasAttribute('data-selected')).toBe(true);
+  });
+});

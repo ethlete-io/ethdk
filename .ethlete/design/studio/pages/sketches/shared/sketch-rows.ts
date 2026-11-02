@@ -1,10 +1,10 @@
 import { html, slot } from '@design-system';
 import button from '@system/components/button';
 import titleBar from '@system/components/title-bar';
+import zoomChip from '@system/components/zoom-chip';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
 export type RowKey = 'current' | 'a' | 'b' | 'c';
-export type ShownState = 'linux-close' | 'linux-close-update' | 'windows' | 'windows-update' | 'macos' | 'macos-update';
 
 type Model = { short: string; id: string; agent: Agent; when: string };
 
@@ -12,73 +12,157 @@ export type Row = {
   key: RowKey;
   note: string;
   model?: Model;
-  changed: ShownState[];
+  changed: string[];
   look: string;
 };
 
-export const ROW_PART = { key: 'components/title-bar', width: 1440 };
+type Render = { body: string; styles: string };
 
-export const SHOWN_STATES: ShownState[] = [
-  'linux-close',
-  'linux-close-update',
-  'windows',
-  'windows-update',
-  'macos',
-  'macos-update',
-];
+export type SketchPart = {
+  key: string;
+  width: number;
+  states: string[];
+  rows: Row[];
+  render: (state: string) => Promise<Render>;
+};
+
+export type PartKind = 'wide' | 'narrow';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
 
-export const ROWS: Row[] = [
-  { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
-  {
-    key: 'a',
-    note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
-    model: { ...OPUS, when: '02.11. 10:14' },
-    changed: ['linux-close-update', 'windows-update', 'macos-update'],
-    look: '[&_.w-2xl]:w-55',
-  },
-  {
-    key: 'b',
-    note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
-    model: { ...SOL, when: '02.11. 10:21' },
-    changed: [...SHOWN_STATES],
-    look: '[&_.st-title-bar]:h-10',
-  },
-  {
-    key: 'c',
-    note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
-    model: { ...OPUS, when: '02.11. 10:30' },
-    changed: ['macos', 'macos-update'],
-    look: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
-  },
-];
+const WIDE_STATES = ['linux-close', 'linux-close-update', 'windows', 'windows-update', 'macos', 'macos-update'];
 
-export const NEW_ROWS = ROWS.filter((row) => row.key !== 'current');
+type TitleBarProps = Parameters<typeof titleBar.render>[0];
+type ZoomChipProps = Parameters<typeof zoomChip.render>[0];
 
-const shot: Partial<Record<ShownState, string>> = {};
-let shotStyles = '';
+const titleBarStates = titleBar.states as Record<string, TitleBarProps>;
+const zoomChipStates = zoomChip.states as Record<string, ZoomChipProps>;
 
-export const prepareShots = async () => {
-  const renders = await Promise.all(SHOWN_STATES.map((state) => titleBar.render(titleBar.states[state])));
-  SHOWN_STATES.forEach((state, index) => {
-    shot[state] = renders[index]?.body ?? '';
-  });
-  shotStyles = renders[0]?.styles ?? '';
-  return shotStyles;
+const NARROW_STATES = Object.keys(zoomChipStates).filter((name) => name.startsWith('reset') || name.startsWith('fit'));
+
+export const PARTS: Record<PartKind, SketchPart> = {
+  wide: {
+    key: 'components/title-bar',
+    width: 1440,
+    states: WIDE_STATES,
+    render: async (state) => (await titleBar.render(titleBarStates[state] as TitleBarProps)) as Render,
+    rows: [
+      { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+      {
+        key: 'a',
+        note: 'Update als schmaler Button direkt neben der Suche, die Suche wird dafür schmaler; ohne Update bleibt die Leiste wie heute.',
+        model: { ...OPUS, when: '02.11. 10:14' },
+        changed: ['linux-close-update', 'windows-update', 'macos-update'],
+        look: '[&_.w-2xl]:w-55',
+      },
+      {
+        key: 'b',
+        note: 'Leiste 40 px hoch, damit Suche und Fensterknöpfe mehr Luft haben; kostet 8 px Höhe in jeder Ansicht.',
+        model: { ...SOL, when: '02.11. 10:21' },
+        changed: [...WIDE_STATES],
+        look: '[&_.st-title-bar]:h-10',
+      },
+      {
+        key: 'c',
+        note: 'Unter macOS rückt die Suche nach links an die Ampel, Linux und Windows bleiben gleich.',
+        model: { ...OPUS, when: '02.11. 10:30' },
+        changed: ['macos', 'macos-update'],
+        look: '[&_.st-title-bar]:grid-cols-[auto_1fr_auto]',
+      },
+    ],
+  },
+  narrow: {
+    key: 'components/zoom-chip',
+    width: 176,
+    states: NARROW_STATES,
+    render: async (state) => (await zoomChip.render(zoomChipStates[state] as ZoomChipProps)) as Render,
+    rows: [
+      { key: 'current', note: 'Gemergter Stand', changed: [], look: '' },
+      {
+        key: 'a',
+        note: 'Chip als Pille, die Knöpfe rücken enger zusammen.',
+        model: { ...OPUS, when: '02.11. 11:02' },
+        changed: NARROW_STATES.filter((name) => name.startsWith('fit')),
+        look: '**:data-canvas-zoom:rounded-full',
+      },
+      {
+        key: 'b',
+        note: 'Prozentzahl in Halbfett, damit der Zoom auf einen Blick lesbar ist.',
+        model: { ...SOL, when: '02.11. 11:09' },
+        changed: NARROW_STATES.filter((name) => name.startsWith('reset')),
+        look: '[&_[data-camera-reset]_button]:font-ui-strong',
+      },
+    ],
+  },
 };
 
-export const firstChanged = (row: Row): ShownState => row.changed[0] ?? SHOWN_STATES[0] ?? 'linux-close';
+export const rowsOf = (part: SketchPart, fresh: boolean) =>
+  fresh ? part.rows.filter((row) => row.key !== 'current') : part.rows;
 
-export const fitFrame = (row: Row, state: ShownState) => {
+export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
+
+const shot: Record<string, string> = {};
+
+export const prepareShots = async (part: SketchPart) => {
+  const renders = await Promise.all(part.states.map((state) => part.render(state)));
+  part.states.forEach((state, index) => {
+    shot[`${part.key}:${state}`] = renders[index]?.body ?? '';
+  });
+  return renders[0]?.styles ?? '';
+};
+
+const firstChanged = (row: Row) => (row.key === 'current' ? undefined : row.changed[0]);
+
+const unchanged = (row: Row, state: string) => row.key !== 'current' && !row.changed.includes(state);
+
+const frame = (part: SketchPart, row: Row, state: string) => {
   const look = row.changed.includes(state) ? row.look : '';
-  return html`<div class="sk-fit relative w-full overflow-hidden" data-w="${ROW_PART.width}" data-et-skip="CLIPPED">
-    <div class="w-(--w) origin-top-left ${look}" data-sk-fit-inner style="--w: ${ROW_PART.width}px" ${slot('shot')}>
-      ${shot[state] ?? ''}
+  return html`<div
+    class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]"
+    data-sk-frame
+    data-et-skip="CLIPPED"
+  >
+    <div
+      class="w-(--w) origin-top-left scale-(--sk-scale) ${look}"
+      data-sk-fit-inner
+      style="--w: ${part.width}px"
+      ${slot('shot')}
+    >
+      ${shot[`${part.key}:${state}`] ?? ''}
     </div>
   </div>`;
 };
+
+export const cell = (part: SketchPart, row: Row, state: string, place = '') => {
+  const same = unchanged(row, state);
+  const first = state === firstChanged(row);
+  return html`<div
+    class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1 ${same ? 'opacity-50' : ''}"
+    data-sk-state="${state}"
+    style="${place}"
+  >
+    <span
+      class="row-start-1 flex min-w-0 flex-wrap items-center gap-x-space-2 in-data-sk-labels-hidden:hidden"
+      data-sk-label
+      ><span
+        class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere ${
+          same ? 'text-et-surface-muted' : 'text-et-surface'
+        }"
+        >${state}${same ? ' · unverändert' : ''}</span
+      >${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}</span
+    >
+    ${frame(part, row, state)}
+  </div>`;
+};
+
+export const wrapStage = (part: SketchPart, row: Row) =>
+  html`<div class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),var(--sk-frame))] gap-x-6 gap-y-space-3" data-sk-stage>
+    ${part.states.map((state) => cell(part, row, state)).join('')}
+  </div>`;
+
+export const wrapColumns = (part: SketchPart) =>
+  Math.max(1, Math.min(4, part.states.length, Math.floor(1440 / part.width)));
 
 const take = await button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
 export const takeStyles = take.styles;
@@ -101,7 +185,9 @@ export const rowHead = (row: Row, action?: string) =>
           : ''
       }
     </div>
-    <p class="m-0 text-ui-sm text-et-surface-muted">${row.note}</p>
+    <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-note>
+      ${row.note}
+    </p>
     ${
       row.key === 'current'
         ? ''
@@ -112,42 +198,97 @@ export const rowHead = (row: Row, action?: string) =>
 
 export type Zoom = 'fit' | number;
 
-export const mountFit = (root: HTMLElement, zoom: Zoom) => {
+const GAP = 24;
+const MIN_TEXT = 12;
+const NOTE_TEXT = 15;
+const HEAD_WIDTH = 288;
+const LABEL_TEXT = 13;
+const MIN_LABEL = 9;
+const FIT_PADDING = 16;
+
+export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) => {
   const list = root.querySelector<HTMLElement>('[data-sk-rows]');
-  const chip = root.querySelector('[data-canvas-zoom]');
+  const world = list?.querySelector<HTMLElement>('[data-sk-rows-world]');
+  if (!list || !world) return () => undefined;
+  const chip = [...root.querySelectorAll('[data-canvas-zoom]')].find((element) => !list.contains(element));
   const label = chip?.querySelector('[data-camera-reset] button') ?? null;
-  if (!list) return () => undefined;
+  const width = Number(world.dataset['w']);
+  const columns = Number(world.dataset['cols']);
   let mode = zoom;
 
-  const fit = () => {
-    let shown: number | undefined;
-    list.querySelectorAll<HTMLElement>('.sk-fit').forEach((frame) => {
-      const inner = frame.querySelector<HTMLElement>('[data-sk-fit-inner]');
-      const width = Number(frame.dataset['w']);
-      if (!inner || !width || frame.offsetParent === null) return;
-      frame.style.width = mode === 'fit' ? '' : `${width * mode}px`;
-      const scale = mode === 'fit' ? Math.min(1, frame.clientWidth / width) : mode;
-      shown ??= scale;
-      inner.style.transform = `scale(${scale})`;
-      frame.style.height = `${inner.offsetHeight * scale}px`;
+  const apply = (scale: number) => {
+    const note = Math.max(MIN_TEXT, NOTE_TEXT * scale);
+    const text = LABEL_TEXT * scale;
+    world.style.setProperty('--sk-scale', `${scale}`);
+    world.style.setProperty('--sk-frame', `${width * scale}px`);
+    world.style.setProperty('--sk-cols', `${columns}`);
+    world.style.setProperty('--sk-note', `${note}px`);
+    world.style.setProperty('--sk-head', `${(HEAD_WIDTH * note) / NOTE_TEXT}px`);
+    world.style.setProperty('--sk-label', `${text}px`);
+    world.toggleAttribute('data-sk-labels-hidden', text < MIN_LABEL);
+    world.querySelectorAll<HTMLElement>('[data-sk-frame]').forEach((element) => {
+      const inner = element.querySelector<HTMLElement>('[data-sk-fit-inner]');
+      if (inner) element.style.height = `${inner.offsetHeight * scale}px`;
     });
-    if (label) label.textContent = `${Math.round((shown ?? 1) * 100)} %`;
+  };
+
+  const matrixFit = (matrix: HTMLElement, scale: number) => {
+    const fixed = matrix.offsetWidth - columns * width * scale;
+    return Math.min(1, (list.clientWidth - fixed) / (columns * width));
+  };
+
+  const gridFit = (scale: number) => {
+    const stage = world.querySelector<HTMLElement>('[data-sk-stage]');
+    const widthFit = stage ? (stage.clientWidth - (columns - 1) * GAP) / (columns * width) : 1;
+    const sections = [...world.querySelectorAll<HTMLElement>('[data-sk-row]')].slice(0, 2);
+    const first = sections[0];
+    const last = sections.at(-1);
+    if (!first || !last) return Math.min(1, widthFit);
+    const lines = new Map<number, number>();
+    sections.forEach((section) =>
+      section.querySelectorAll<HTMLElement>('[data-sk-frame]').forEach((element) => {
+        const box = element.getBoundingClientRect();
+        const top = Math.round(box.top);
+        lines.set(top, Math.max(lines.get(top) ?? 0, box.height));
+      }),
+    );
+    const frames = [...lines.values()].reduce((sum, height) => sum + height, 0);
+    const total = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top;
+    const room = list.clientHeight - FIT_PADDING - (total - frames);
+    const heightFit = frames > 0 && room > 0 ? (room * scale) / frames : Infinity;
+    return Math.min(1, widthFit, heightFit);
+  };
+
+  const fitScale = () => {
+    const matrix = world.querySelector<HTMLElement>('[data-sk-matrix]');
+    let scale = 1;
+    for (let pass = 0; pass < 6; pass++) {
+      apply(scale);
+      const next = matrix ? matrixFit(matrix, scale) : gridFit(scale);
+      if (Math.abs(next - scale) <= 0.002) break;
+      scale = next;
+    }
+    return scale;
+  };
+
+  const fit = () => {
+    const scale = mode === 'fit' ? fitScale() : mode;
+    apply(scale);
+    if (label) label.textContent = `${Math.round(scale * 100)} %`;
   };
 
   const set = (next: Zoom) => () => {
     mode = next;
     fit();
   };
-  const current = () => (mode === 'fit' ? 1 : mode);
+  const current = () => Number(world.style.getPropertyValue('--sk-scale')) || 1;
   chip?.querySelector('[data-camera-fit]')?.addEventListener('click', set('fit'));
   chip?.querySelector('[data-camera-reset]')?.addEventListener('click', set(1));
   chip?.querySelector('[data-camera-in]')?.addEventListener('click', () => set(current() * 1.5)());
   chip?.querySelector('[data-camera-out]')?.addEventListener('click', () => set(current() / 1.5)());
 
-  const world = list.querySelector<HTMLElement>('[data-sk-rows-world]');
   const offset = { x: 0, y: 0 };
   const pan = (x: number, y: number) => {
-    if (!world) return;
     const roomX = Math.max(0, world.scrollWidth - list.clientWidth);
     const roomY = Math.max(0, world.offsetHeight - list.clientHeight);
     offset.x = Math.min(roomX, Math.max(0, offset.x + x));
@@ -175,5 +316,6 @@ export const mountFit = (root: HTMLElement, zoom: Zoom) => {
 
   new ResizeObserver(fit).observe(list);
   fit();
+  pan(-start.x, -start.y);
   return fit;
 };

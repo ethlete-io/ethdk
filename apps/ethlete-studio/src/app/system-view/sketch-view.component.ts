@@ -1,17 +1,40 @@
 import {
   Component,
   DestroyRef,
+  ElementRef,
   ViewEncapsulation,
   computed,
+  viewChildren,
   inject,
   input,
   linkedSignal,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { DomSanitizer } from '@angular/platform-browser';
-import { Observable, catchError, concatMap, finalize, of, switchMap, tap } from 'rxjs';
+import { DOCUMENT } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import {
+  Observable,
+  catchError,
+  concatMap,
+  distinctUntilChanged,
+  filter,
+  finalize,
+  fromEvent,
+  groupBy,
+  map,
+  merge,
+  mergeMap,
+  of,
+  scan,
+  share,
+  switchMap,
+  tap,
+} from 'rxjs';
+import { FrameMessage, followedSizes, frameMessageOf } from '../components/design-canvas/canvas-frame';
+import { Camera } from '../components/design-canvas/canvas-math';
 import {
   ListedComment,
   ListedPart,
@@ -27,12 +50,12 @@ import {
 import { MergeComponent } from '../design-parts/merge/merge.component';
 import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
-import { SketchPin, SketchVariant } from '../design-parts/sketches/sketches-sample';
+import { SketchPin, SketchRow, SketchStatus } from '../design-parts/sketches/sketches-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
-import { senderOf } from './inbox-comments';
+import { modelNameOf, senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
 import { refusalMessageOf } from './inventory';
 import { PageShell, PageShellAction } from './page-shell';
@@ -43,10 +66,17 @@ import {
   pickedVariantOf,
   sketchMatrixOf,
   sketchRoundsOf,
+  sketchRowsOf,
   sketchUsingPagesOf,
 } from './system-tree';
 
-type Busy = 'pick' | 'merge' | 'discard';
+type Busy = 'merge' | 'discard';
+
+type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
+
+type FrameSize = { width?: number; height?: number };
+
+const MEASURING_HEIGHT = 150;
 
 type Mode = 'sketches' | 'merge';
 
@@ -74,7 +104,10 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
     } @else {
       <ethlete-sketches
         [part]="sketch().target"
-        [variants]="variants()"
+        [rows]="rows()"
+        [fresh]="!part()"
+        [status]="sketchStatus()"
+        [drawn]="drawnVariant()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
         [pins]="variantPins()"
@@ -83,8 +116,10 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [shot]="shot"
         [tree]="shell().tree"
         [shell]="shell()"
+        [restoredCamera]="openedCamera()"
+        (cameraChange)="cameraChange.emit($event)"
         (discard)="discard()"
-        (merge)="pickForMerge($event)"
+        (merge)="openMerge($event)"
         (roundChange)="pickRound($event)"
         (pinToggle)="shellAction.emit({ kind: 'section', section: 'Inbox' })"
         (expandedChange)="expandedChange.emit($event)"
@@ -106,9 +141,16 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
       }
     </ng-template>
 
-    <ng-template #shot let-variant>
-      @if (shots()[variant.key]; as src) {
-        <iframe [src]="src" [title]="variant.label" class="block size-full border-0 scheme-normal"></iframe>
+    <ng-template #shot let-row let-state="state">
+      @if (rowShots().get(row.key + ' ' + state); as src) {
+        <iframe
+          #shotFrame
+          [src]="src"
+          [title]="row.key + ' ' + state"
+          [attr.data-variant]="row.key"
+          [attr.data-state]="state"
+          class="block size-full border-0 scheme-normal"
+        ></iframe>
       }
     </ng-template>
   `,
@@ -119,6 +161,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
 export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
+  private document = inject(DOCUMENT);
   private commentStore = injectCommentStore();
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
@@ -130,9 +173,10 @@ export class SketchViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
+  public restoredCamera = input<Camera | null>(null);
   public shell = input.required<PageShell>();
-
   public shellAction = output<PageShellAction>();
+  public cameraChange = output<Camera | null>();
 
   public expandedChange = output<readonly string[]>();
 
@@ -144,9 +188,19 @@ export class SketchViewComponent {
   /** The sketch's target once its merge succeeded. */
   public mergeComplete = output<string>();
 
+  private shotFrames = viewChildren<ElementRef<HTMLIFrameElement>>('shotFrame');
+
+  private safeUrls = new Map<string, SafeResourceUrl>();
+
   protected busy = signal<Busy | null>(null);
 
   protected picked = computed(() => pickedVariantOf(this.sketch()));
+
+  protected openedCamera = computed(() => {
+    this.cameraKey();
+
+    return untracked(this.restoredCamera);
+  });
 
   private address = computed<SketchAddress>(() => ({
     port: this.port(),
@@ -284,9 +338,7 @@ export class SketchViewComponent {
     () =>
       new Map(
         this.changed().flatMap((row) =>
-          [row.now, row.after]
-            .filter(Boolean)
-            .map((src) => [src, this.sanitizer.bypassSecurityTrustResourceUrl(src)] as const),
+          [row.now, row.after].filter(Boolean).map((src) => [src, this.safeUrlOf(src)] as const),
         ),
       ),
   );
@@ -309,36 +361,98 @@ export class SketchViewComponent {
     }),
   );
 
-  protected variants = computed<SketchVariant[]>(() => {
+  private sketchRows = computed(() =>
+    sketchRowsOf({
+      port: this.port(),
+      product: this.product(),
+      part: this.part(),
+      sketch: this.sketch(),
+      variants: this.shownRounds().flatMap((round) => (round.open ? round.variants : [])),
+      epoch: this.epoch(),
+      revision: this.revision(),
+      view: this.view(),
+      surface: this.surface(),
+      color: this.color(),
+    }),
+  );
+
+  private measured = toSignal(
+    fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
+      map((event) => ({ shot: this.shotShowing(event.source), message: frameMessageOf(event.data) })),
+      filter(
+        (report): report is { shot: string; message: HeightMessage } =>
+          report.shot !== null && report.message?.type === 'height',
+      ),
+      groupBy(({ shot }) => shot),
+      mergeMap((reports$) => {
+        const shared$ = reports$.pipe(share());
+
+        return merge(
+          shared$.pipe(
+            map(({ message }) => ({ size: message.height, viewport: message.viewport?.height })),
+            followedSizes,
+            map((height): FrameSize => ({ height })),
+          ),
+          shared$.pipe(
+            filter(({ message }) => message.width !== undefined),
+            map(({ message }) => ({ size: message.width ?? 0, viewport: message.viewport?.width })),
+            followedSizes,
+            map((width): FrameSize => ({ width })),
+          ),
+        ).pipe(map((size) => ({ shot: reports$.key, size })));
+      }),
+      scan((sizes: Record<string, FrameSize>, { shot, size }) => {
+        const known = sizes[shot];
+
+        return Object.entries(size).every(([side, value]) => known?.[side as keyof FrameSize] === value)
+          ? sizes
+          : { ...sizes, [shot]: { ...known, ...size } };
+      }, {}),
+      distinctUntilChanged(),
+    ),
+    { initialValue: {} as Record<string, FrameSize> },
+  );
+
+  protected rows = computed<SketchRow[]>(() => {
     const sketch = this.sketch();
-    const shown = this.shownRounds().flatMap((round) => (round.open ? round.variants : []));
+    const measured = this.measured();
 
-    return [
-      { key: CURRENT, label: STUDIO_LABELS.sketches.current, note: '' },
-      ...shown.map((variant) => {
-        const sender = senderOf('agent', sketch.variantInfo?.[variant]?.authors?.[0]);
+    return this.sketchRows().map((row) => {
+      const author = row.key === CURRENT ? undefined : sketch.variantInfo?.[row.key]?.authors?.[0];
+      const agent = author ? senderOf('agent', author).agent : undefined;
+      const sizeOf = (state: string) => measured[`${row.key} ${state}`];
+      const when = sketch.report?.variant === row.key ? whenOf(sketch.report.updatedAt) : undefined;
 
-        return {
-          key: variant,
-          label: variant,
-          note: sketch.variantInfo?.[variant]?.note ?? '',
-          ...(sender.agent ? { author: { name: sender.author, agent: sender.agent } } : {}),
-        };
-      }),
-    ];
+      return {
+        key: row.key,
+        note: row.key === CURRENT ? '' : (sketch.variantInfo?.[row.key]?.note ?? ''),
+        ...(author && agent
+          ? { model: { short: modelNameOf(author), id: author, agent, ...(when ? { when } : {}) } }
+          : {}),
+        width: row.width ?? widestOf(row.shots.map((shot) => sizeOf(shot.state)?.width)) ?? FALLBACK_SIZE.width,
+        shots: row.shots.map(({ state, changed }) => ({
+          state,
+          changed,
+          height: sizeOf(state)?.height ?? MEASURING_HEIGHT,
+        })),
+      };
+    });
   });
 
-  protected shots = computed(() => {
-    const frames = this.matrix().frames;
+  protected rowShots = computed(
+    () =>
+      new Map<string, SafeResourceUrl>(
+        this.sketchRows().flatMap((row) =>
+          row.shots.map((shot) => [`${row.key} ${shot.state}`, this.safeUrlOf(shot.src)] as const),
+        ),
+      ),
+  );
 
-    return Object.fromEntries(
-      this.variants().flatMap(({ key }) => {
-        const frame = frames.find((candidate) => candidate.column === key && !candidate.empty);
+  protected sketchStatus = computed<SketchStatus | undefined>(() =>
+    this.sketch().status === 'in progress' ? 'drawing' : undefined,
+  );
 
-        return frame ? [[key, this.sanitizer.bypassSecurityTrustResourceUrl(frame.src)]] : [];
-      }),
-    );
-  });
+  protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
 
   private contextPages = computed(
     () =>
@@ -352,7 +466,7 @@ export class SketchViewComponent {
   );
 
   protected variantPins = computed<SketchPin[]>(() =>
-    this.variants().flatMap(({ key }) => {
+    this.rows().flatMap(({ key }) => {
       const comments = this.sketchComments().filter((comment) => comment.sketch?.variant === key);
       const first = comments[0];
 
@@ -388,19 +502,13 @@ export class SketchViewComponent {
     this.remember({ rounds, roundsFor: this.sketch().createdAt });
   }
 
-  protected pickForMerge(variant: string) {
-    this.run(
-      'pick',
-      decideSketch$(this.address(), { kind: 'pick', variant }).pipe(
-        tap(() => {
-          this.mergeVariant.set(variant);
-          this.showMode('merge');
-        }),
-      ),
-    );
+  protected openMerge(variant: string) {
+    this.mergeVariant.set(variant);
+    this.showMode('merge');
   }
 
   protected showSketches() {
+    this.mergeVariant.set(this.picked());
     this.showMode('sketches');
   }
 
@@ -440,6 +548,23 @@ export class SketchViewComponent {
     this.run('discard', discardSketch$(this.address()));
   }
 
+  private safeUrlOf(src: string) {
+    let safe = this.safeUrls.get(src);
+    if (!safe) {
+      safe = this.sanitizer.bypassSecurityTrustResourceUrl(src);
+      this.safeUrls.set(src, safe);
+    }
+    return safe;
+  }
+
+  private shotShowing(source: MessageEventSource | null) {
+    const frame = this.shotFrames()
+      .map(({ nativeElement }) => nativeElement)
+      .find((candidate) => source !== null && candidate.contentWindow === source);
+
+    return frame ? `${frame.dataset['variant']} ${frame.dataset['state']}` : null;
+  }
+
   private showMode(mode: Mode) {
     this.mode.set(mode);
     this.remember({ merge: mode === 'merge' });
@@ -473,3 +598,19 @@ export class SketchViewComponent {
       .subscribe();
   }
 }
+
+const widestOf = (widths: (number | undefined)[]) => {
+  const known = widths.filter((width) => width !== undefined);
+
+  return known.length > 0 ? Math.max(...known) : undefined;
+};
+
+const whenOf = (iso: string) => {
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) return undefined;
+
+  const two = (value: number) => String(value).padStart(2, '0');
+
+  return `${two(date.getDate())}.${two(date.getMonth() + 1)}. ${two(date.getHours())}:${two(date.getMinutes())}`;
+};

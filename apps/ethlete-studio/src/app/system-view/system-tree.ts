@@ -1317,3 +1317,61 @@ export const callFramesOf = ({
     };
   });
 };
+
+export type SketchRowShot = { state: string; changed: boolean | null; src: string };
+
+export type SketchRowOf = { key: string; width: number | null; shots: SketchRowShot[] };
+
+/**
+ * One row for the part as it is now (when it exists) and one per shown variant, each with every state in the
+ * part's order. A variant's state is changed unless its target lists it as `unchanged`, and `null` while no compare
+ * answered yet; the current row changes nothing.
+ */
+export const sketchRowsOf = ({
+  port,
+  product,
+  part,
+  sketch,
+  variants,
+  epoch,
+  revision,
+  view,
+  surface,
+  color,
+}: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'now'> & {
+  variants: string[];
+}): SketchRowOf[] => {
+  const size = sketchSizesOf({ product, sketch, part })[0] ?? null;
+  const cell = cellSizeOf(product, size);
+  const rowOf = (key: string): SketchRowOf => {
+    const target =
+      key === CURRENT
+        ? undefined
+        : sketch.targets?.find((entry) => entry.variant === key && (entry.part ?? sketch.target) === sketch.target);
+    const states = (key === CURRENT ? part?.states : (target?.states ?? part?.states)) ?? [];
+
+    return {
+      key,
+      width: cell.width ?? null,
+      shots: states.map((state) => ({
+        state,
+        changed: key === CURRENT ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
+        src: partFrameUrl({
+          port,
+          product: product.name,
+          part: sketch.target,
+          state,
+          epoch,
+          revision,
+          view,
+          surface,
+          color,
+          ...(key === CURRENT ? {} : { sketch: sketch.target, variant: key }),
+          ...(size === null ? { fit: true } : {}),
+        }),
+      })),
+    };
+  };
+
+  return [...(part ? [CURRENT] : []), ...variants].map(rowOf);
+};

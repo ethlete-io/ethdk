@@ -78,3 +78,28 @@ export const inboxCommentOf = (
     resolved: !!comment.resolved,
   };
 };
+
+const WORDS: Record<string, string> = { gpt: 'GPT' };
+
+/** The short name of a model id: `claude-opus-5-5` is `Opus 5.5`, `gpt-6.1-sol` is `GPT-6.1 Sol`. */
+export const modelNameOf = (id: string) => {
+  const claude = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(id);
+
+  if (claude) {
+    const [, family = '', major = '', minor] = claude;
+
+    return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${[major, minor].filter(Boolean).join('.')}`;
+  }
+
+  const gpt = /^(gpt)-([\d.]+)(?:-([a-z]+))?$/.exec(id);
+
+  if (gpt) {
+    const [, word = '', version = '', name] = gpt;
+
+    return [`${WORDS[word]}-${version}`, name && `${name.charAt(0).toUpperCase()}${name.slice(1)}`]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  return id;
+};

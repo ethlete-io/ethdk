@@ -943,7 +943,7 @@ describe('SystemViewComponent on a merge', () => {
     const clickButton = (label: string) =>
       [...root.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent?.trim() === label);
 
-    clickButton('Wählen')[1]?.click();
+    clickButton('Übernehmen')[1]?.click();
     await settle(fixture);
 
     const clickMerge = () => clickButton('Merge')[0]?.click();

@@ -292,11 +292,13 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [surface]="surface()"
         [color]="color()"
         [cameraKey]="cameraKey()"
+        [restoredCamera]="restoredCamera()"
         [shell]="pageShell()"
         (decide)="reloadSketches()"
         (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
         (mergeComplete)="selectMerged($event)"
         (expandedChange)="rememberOpen($event)"
+        (cameraChange)="rememberCamera($event)"
         (shellAction)="runShellAction($event)"
       />
     } @else if (inventoryPage(); as page) {

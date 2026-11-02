@@ -35,14 +35,6 @@ export const drawingPlaceholder = (model: Model) =>
     <span class="text-ui-sm">Der Rahmen füllt sich, sobald die erste Ansicht steht.</span>
   </div>`;
 
-export const holdReason = () =>
-  html`<span class="flex flex-col gap-space-1">
-    <span class="text-ui-sm font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
-    <span class="flex items-center gap-space-1 text-ui-xs text-et-surface-muted"
-      >Pausiert von ${modelName(HOLD.by)} · ${HOLD.since}</span
-    >
-  </span>`;
-
 export const holdTrigger = (inner: string, cls: string, open: boolean) =>
   control(
     html`<button class="${cls}" type="button" data-sk-hold aria-expanded="${String(open)}">${inner}</button>`,
