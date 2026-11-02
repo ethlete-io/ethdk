@@ -2076,6 +2076,12 @@ Q16, from finding 126:
 - The macOS states draw the traffic-light window controls as demo content on the left, in a slot that compare
   empties (the OS draws the real ones). Today the left side of `macos` and `macos-update` is empty, so the state
   does not read as macOS. Visible design change: it needs a new go from Tom.
+- The macOS traffic lights are three neutral grey dots (like an inactive macOS window): no new token, no asset.
+- The Update button restarts and installs via a host command, after a confirm dialog: "Update auf v<version>
+  installieren? Studio startet dafür neu." with "Neu starten" and "Später"; "Später" only closes the dialog, the
+  button stays. The dialog is new visible surface and gets its own small sketch.
+- Open with Tom: how the title bar ends at the bottom (rec: a 1 px border in the theme's border colour, same
+  background; finding 157).
 - Technical (grill): os/left/right/update become app inputs; the layout follows the design (grid h-8, 1fr | auto |
   1fr), not the app's flex h-9.
 
