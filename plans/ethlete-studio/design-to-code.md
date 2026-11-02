@@ -1313,6 +1313,19 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      the part list, so app chrome without a part is invisible to the tool. Tool fix (B30): `design check --live` reports
      every visible app region that no part covers. Lesson: the tool must find what was never designed, not only what
      differs from a design.
+134. `design actions` said nothing useful when a press only missed on `aria-expanded` (builder, 2026-11-02, B22). Cause:
+     a01d37d64 computed "reaches state X instead" only from a pixel compare; embedded-owner states have no goal picture
+     by design, and live-actions has no pixels, so these misses never got a reason. Tool fix (f34aab8cb): the reached
+     state also comes from the aria-expanded controls ("reaches state A or B instead", or "no declared state, closest
+     X, N controls differ"). Open: no end-to-end spec of the two command wirings. Lesson: a diagnosis that depends on
+     one signal (pixels) needs a fallback for every mode where that signal does not exist.
+135. The harness build cache almost never hit (builder, 2026-11-02, C1). Cause: the key hashed every file, including
+     plans/, .changeset/ and every .ethlete/design JSON, so any plan or sketch edit missed (1 of 3 hits measured). Fix
+     (3a6fc94b0) drops non-build inputs (3 of 3 hits), but first skipped all .ethlete/design/**/*.json, while the
+     libs/components build stages config.json and the sdk product records, so a stale build could hit. Narrowed with a
+     spec before push. Why no check caught it: no spec measured hit rate or checked the key against the real build
+     inputs. Lesson: a cache key is derived from what the build reads, and a spec proves both a hit on an unrelated edit
+     and a miss on a real input.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
