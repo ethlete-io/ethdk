@@ -32,6 +32,7 @@ export default [
       ],
       '@angular-eslint/prefer-on-push-component-change-detection': 'error',
       '@angular-eslint/no-output-on-prefix': 'error',
+      'ethlete/no-silent-catch-error': 'warn',
     },
   },
   {

@@ -61,6 +61,7 @@ const noNativeTitle = require('./rules/no-native-title');
 const noCdkImport = require('./rules/no-cdk-import');
 const noLegacyQueryImport = require('./rules/no-legacy-query-import');
 const noAsyncAwait = require('./rules/no-async-await');
+const noSilentCatchError = require('./rules/no-silent-catch-error');
 const noEnum = require('./rules/no-enum');
 const consistentTypeDefinitions = require('./rules/consistent-type-definitions');
 const takeUntilDestroyedLast = require('./rules/take-until-destroyed-last');
@@ -135,6 +136,7 @@ const plugin = {
     'no-cdk-import': noCdkImport,
     'no-legacy-query-import': noLegacyQueryImport,
     'no-async-await': noAsyncAwait,
+    'no-silent-catch-error': noSilentCatchError,
     'no-enum': noEnum,
     'consistent-type-definitions': consistentTypeDefinitions,
   },
