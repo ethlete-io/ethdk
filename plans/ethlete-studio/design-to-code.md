@@ -2437,3 +2437,13 @@ decision 2), #91 (go rework, A10).
      content runs past its bottom edge with no visible scroll affordance fails at every reference size and cannot be
      skipped; a CLIPPED skip covers only horizontal or decorative cuts. The page fix (scroll area / fade cue / fit
      height) is Tom's pick.
+
+182. Tom had to repeat that the sketch must keep the real app's layout (2026-11-02): in the real app the canvas runs
+     to the window's bottom edge, rows are panned on a free canvas and the zoom chip floats bottom right; variant e
+     wraps the rows in a bordered box that ends early (`bottom-space-5`), so content looks cut. The grill session then
+     offered A/B/C fixes (scroll area, fade, fit height) that all change the real behaviour, instead of comparing with
+     the real app first. Lessons: (a) a sketch of a page that exists is measured against the real-app shot of that
+     page (live compare, line ~1926) for shell geometry before `ready`; builder to say why that compare did not run or
+     did not flag the bottom gap. (b) Before a grill question on an existing page, the grill session opens the
+     real-app shot and asks only about differences from it. HIDDEN-CONTENT (181) stays: it would have flagged the
+     early box edge too.
