@@ -127,3 +127,23 @@ export const harnessStaleOf = (options: { target: string; product: ResolvedProdu
 
   return `the harness map ${relative(options.target, map.file)} is stale - run et design harness --product ${options.product.name}`;
 };
+
+/**
+ * Rewrites the product's harness map when it is stale. Answers `true` when it rewrote it, `false` when it was current or the
+ * product has no harness, or why it could not, ending in the command that regenerates it.
+ */
+export const refreshHarnessMap = (options: { target: string; product: ResolvedProduct }): boolean | string => {
+  try {
+    const map = harnessMapOf(options);
+
+    if (map === null) return false;
+    if (typeof map === 'string') return `${map} - fix it, then run et design harness --product ${options.product.name}`;
+    if (map.current) return false;
+
+    writeHarnessMap(map);
+
+    return true;
+  } catch (error) {
+    return `cannot write the harness map: ${error instanceof Error ? error.message : String(error)} - run et design harness --product ${options.product.name}`;
+  }
+};

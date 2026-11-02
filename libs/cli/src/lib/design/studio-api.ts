@@ -29,6 +29,7 @@ import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
 import { PART_HARNESS_ONLY, partActionFailuresOf } from './system/actions-command';
 import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
+import { refreshHarnessMap } from './system/harness-map';
 import { goMarkOf, markPartGo } from './system/part-go';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
@@ -465,6 +466,8 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
   const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
+
+  if (Array.isArray(merged)) refreshHarnessMap({ target: asked.target, product });
 
   if (Array.isArray(merged) && note?.trim())
     for (const part of sketch.targets) recordMergeReason({ product, part, by: 'user', reason: note.trim() });
@@ -907,8 +910,8 @@ const shownHashRefusalOf = (options: { product: ResolvedProduct; part: string; s
 };
 
 /**
- * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, then its go
- * pictures (`unstored` says why not). A refusal answers `reason`: `hash-missing` (400), `unknown-part` (404) or
+ * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, regenerates a
+ * stale harness map (`harness` says why it could not; the go stands), then its go pictures (`unstored` says why not). A refusal answers `reason`: `hash-missing` (400), `unknown-part` (404) or
  * `changed` (409). A go needs no empty open-point list.
  */
 export const partGoAnswer = withProduct('POST', async (found) => {
@@ -939,6 +942,9 @@ export const partGoAnswer = withProduct('POST', async (found) => {
       message: marked.error,
     });
 
+  const refreshed = refreshHarnessMap({ target: found.asked.target, product: found.product });
+  const harness = typeof refreshed === 'string' ? refreshed : undefined;
+
   const unstored = await storePictures({
     target: found.asked.target,
     config: found.config,
@@ -949,7 +955,7 @@ export const partGoAnswer = withProduct('POST', async (found) => {
     draw: found.asked.drawStates,
   });
 
-  return { status: 200, body: { part, hash: marked.hash, go: marked, unstored } };
+  return { status: 200, body: { part, hash: marked.hash, go: marked, unstored, ...(harness ? { harness } : {}) } };
 });
 
 /**

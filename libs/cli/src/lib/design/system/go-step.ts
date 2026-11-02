@@ -1,5 +1,6 @@
 import { DrawStates, storePictures } from './accepted-pictures';
 import { tomGoCheckOf } from './go-guard';
+import { refreshHarnessMap } from './harness-map';
 import { goPartOf, markPartGo } from './part-go';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf } from './resolve-product';
@@ -45,6 +46,16 @@ export const goStepOf = (options: {
   return {
     line: [`go ${product.name} ${part}`, note, ...notes].filter(Boolean).join(' - '),
     run: async () => {
+      const refreshed = refreshHarnessMap({ target, product });
+
+      if (typeof refreshed === 'string') {
+        console.error(`the harness map is stale and could not be regenerated: ${refreshed}`);
+
+        return 1;
+      }
+
+      if (refreshed) console.log('regenerated the stale harness map');
+
       const marked = markPartGo({ product, part, by, note });
 
       if ('status' in marked) {

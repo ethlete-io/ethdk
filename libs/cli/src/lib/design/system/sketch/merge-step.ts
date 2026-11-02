@@ -1,5 +1,6 @@
 import { DesignConfig } from '../../paths';
 import { DesignStep } from '../tom-confirm';
+import { refreshHarnessMap } from '../harness-map';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { configOf, oneProductOf } from './cli-args';
 import { mergeSketch } from './merge';
@@ -36,6 +37,10 @@ export const mergeAndRecord = (options: {
   const result = mergeSketch({ target, config, product, sketch: decided, note, replaceNote, author: by });
 
   if (!Array.isArray(result)) return result.reason;
+
+  const refreshed = refreshHarnessMap({ target, product });
+
+  if (typeof refreshed === 'string') console.error(`merged, but the harness map is still stale: ${refreshed}`);
 
   const reason = note?.trim() || undefined;
 

@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
@@ -6,7 +7,8 @@ import { DesignHarness, DESIGN_DIR } from '../paths';
 import { designCompare } from './compare-command';
 import { harnessProblemOf } from './harness-config';
 import { designHarness } from './harness-command';
-import { markPartGo } from './part-go';
+import { goStepOf } from './go-step';
+import { goMarkOf, markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
 
@@ -227,5 +229,57 @@ describe('task --verify and the app stylesheet', () => {
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12 w-128');\n")).toBe(0);
     expect(await verify("-@source inline('w-12');\n+@source inline('w-12');\n+body { margin: 0; }\n")).toBe(1);
     expect(lines).toContain(`  ${stylesheet}`);
+  });
+});
+
+describe('design go with a stale harness map', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const goOf = (target: string, write: (path: string, source: string) => void) => {
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: target, stdio: 'ignore' });
+
+    write('plans/decisions.md', '- Impl Q9 the chip may go\n');
+    git('init', '-q');
+    git('add', 'plans');
+    git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'decision');
+
+    const step = goStepOf({
+      target,
+      product: 'app-a',
+      part: 'components/chip',
+      by: 'tom',
+      note: 'Impl Q9',
+      draw: async () => new Map([['components/chip', 'no pictures in spec']]),
+    });
+
+    if (typeof step === 'string') throw new Error(step);
+
+    return step.run();
+  };
+
+  it('regenerates the stale map and records the go', async () => {
+    const lines = output();
+    const { target, map, write } = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } });
+
+    expect(existsSync(map)).toBe(false);
+    expect(await goOf(target, write)).toBe(0);
+    expect(readFileSync(map, 'utf8')).toContain("'components/chip'");
+    expect(goMarkOf({ product, part: 'components/chip' })).not.toBeNull();
+    expect(lines).toContain('regenerated the stale harness map');
+    expect(harness(target, '--check')).toBe(0);
+  });
+
+  it('refuses with the regenerate command when the map cannot be written, and records no go', async () => {
+    const lines = output();
+    const { target, map, write } = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } });
+
+    write('apps/app-a/src/harness/parts.ts/blocker', '');
+
+    expect(existsSync(map)).toBe(true);
+    expect(await goOf(target, write)).toBe(1);
+    expect(lines.join('\n')).toContain('run et design harness --product app-a');
+    expect(goMarkOf({ product, part: 'components/chip' })).toBeNull();
   });
 });
