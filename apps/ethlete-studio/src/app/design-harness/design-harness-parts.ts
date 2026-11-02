@@ -20,6 +20,8 @@ export const DESIGN_HARNESS_PARTS: Record<string, () => Promise<Type<unknown>>> 
   'components/title-search': () =>
     import('../components/title-search/title-search.component').then((m) => m.TitleSearchComponent),
   'components/tree-row': () => import('../design-parts/tree-row/tree-row.component').then((m) => m.TreeRowComponent),
+  'components/update-dialog': () =>
+    import('../components/update-dialog/update-dialog.component').then((m) => m.UpdateDialogComponent),
   'components/zoom-chip': () =>
     import('../design-parts/zoom-chip/zoom-chip.component').then((m) => m.ZoomChipComponent),
   'elements/canvas-frames': () =>
