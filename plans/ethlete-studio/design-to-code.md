@@ -2992,3 +2992,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      go runs the action check too. Also: frame-bootstrap.spec.ts and one UNSTYLED-SDK spec fail on clean HEAD
      (withNgStyles export missing in the vm-loaded define-call); a builder subagent fixes it and reports why
      pre-commit missed it (lesson pending).
+
+223. Two CLI specs red on clean HEAD since af28afe38, fixed in 1f9431a0c (builder, 2026-11-02): the fixture
+     `__fixtures__/frame-bootstrap.mjs` hand-stubs `../define-call` without `withNgStyles`, and UNSTYLED-SDK was
+     missing from `CHECK_RULES`. Pre-commit runs `vitest related` on staged files; frame-bootstrap.spec loads
+     frame.ts by path (spawnSync + vm) and check-rules.spec reads render-check.ts as text, so no import edge exists and
+     `related` never picked them. Lesson: a spec that loads source by path is invisible to the module graph, and a
+     hand-written stub drifts from the module it stands in for. Tool fix (decided, technical, B132): a related-map
+     file (spec -> source globs, not a comment header) that the pre-commit hook merges into `related`; a lint/check
+     fails when a spec under libs/cli reads or spawns a source path (`readFileSync`, `spawnSync`, `vm`) and has no
+     map entry; the builder confirms that pre-push or CI runs the full CLI spec suite, and adds it if not.
