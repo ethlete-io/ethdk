@@ -36,6 +36,7 @@ import { tokenSelectorsOf } from './rules/token-selectors';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
 import { staleReplacesOf } from './rules/stale-replace';
+import { CHECK_RULES } from './check-rules';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
@@ -166,6 +167,17 @@ export const summaryText = (options: {
     `PARTS ${options.product}: ${clean} of ${options.parts.length} clean`,
     ...(options.done === undefined ? [] : [`DONE ${options.product}: ${options.done} of ${options.parts.length}`]),
   ];
+};
+
+/** One line per rule with how many problems this run found, zeros included, rules outside `CHECK_RULES` after them. */
+export const ruleSummaryText = (tally: Tally): string[] => {
+  const counts = new Map<string, number>(CHECK_RULES.map((rule) => [rule, 0]));
+
+  for (const parts of tally.values())
+    for (const { problems } of parts.values())
+      for (const rule of problems) counts.set(rule, (counts.get(rule) ?? 0) + 1);
+
+  return [...counts].map(([rule, n]) => `${rule} ${n}`);
 };
 
 const typecheckOpenSketches = (options: { target: string; product: ResolvedProduct }): Problem[] =>
@@ -512,6 +524,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   await printOpenPoints({ ...counted, rendered, notDrawn });
 
   let failed = 0;
+  let partsTotal = 0;
 
   for (const name of options.products) {
     const entry = options.config.products?.[name];
@@ -540,6 +553,8 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     const resolved = resolveProduct({ target: options.target, name, config: entry });
     const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
 
+    partsTotal += parts.length;
+
     summaryText({
       product: name,
       parts,
@@ -552,6 +567,14 @@ export const checkSystemRendered = async (options: CheckOptions) => {
   const exit = code !== 0 || failed > 0 ? 1 : 0;
 
   if (exit === 0) console.log('ok');
+
+  ruleSummaryText(tally).forEach((line) => console.log(line));
+
+  const findings = [...tally.values()]
+    .flatMap((found) => [...found.values()])
+    .reduce((n, e) => n + e.problems.length, 0);
+
+  console.log(`check complete: ${countText(partsTotal, 'part')}, ${countText(findings, 'finding')}`);
 
   return exit;
 };

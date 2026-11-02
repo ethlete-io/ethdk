@@ -36,7 +36,9 @@ const withoutOpenPoints = (lines: string[]) =>
       !line.startsWith('  ') &&
       !line.startsWith('PART ') &&
       !line.startsWith('PARTS ') &&
-      !line.startsWith('DONE '),
+      !line.startsWith('DONE ') &&
+      !/^[A-Z][A-Z-]+ \d+$/.test(line) &&
+      !line.startsWith('check complete:'),
   );
 
 const renderWarningsOf = (lines: string[]) =>
@@ -228,7 +230,7 @@ describe('checkDesign', () => {
       expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
       ...renderWarningsOf(lines),
     ]);
-    expect(lines.at(-1)).toBe('ok');
+    expect(lines).toContain('ok');
   }, 60_000);
 
   it("warns of an export in a part's shared/ that nothing imports, and passes", async () => {
@@ -247,7 +249,7 @@ describe('checkDesign', () => {
       ),
       ...renderWarningsOf(lines),
     ]);
-    expect(lines.at(-1)).toBe('ok');
+    expect(lines).toContain('ok');
   }, 60_000);
 
   it('fails on a type error in a variant of an open sketch', async () => {
@@ -326,7 +328,7 @@ describe('checkDesign', () => {
       '  elements/hero: no controls declared; no go',
       'UNLINKED acme: components/button, pages/home',
     ]);
-    expect(lines.at(-1)).toBe('ok');
+    expect(lines).toContain('ok');
   }, 60_000);
 
   it('lists the contrasts the render found and the missing states', async (context) => {
@@ -439,6 +441,20 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
+  it('ends with a count per rule, zeros included, then the complete line', async () => {
+    const target = acme();
+    const lines = output();
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines).toContain('HARD-CODED-COLOUR 1');
+    expect(lines).toContain('CONTROL-STATE 0');
+    expect(lines).toContain('NESTED-SCROLL 0');
+    expect(lines.at(-1)).toBe('check complete: 4 parts, 1 finding');
+    expect(lines.indexOf('NESTED-SCROLL 0')).toBeGreaterThan(lines.findIndex((line) => line.startsWith('PARTS ')));
+  }, 60_000);
+
   it('keeps only the findings of one part with --part', async () => {
     const target = acme();
     const lines = output();
@@ -449,7 +465,7 @@ describe('checkDesign', () => {
     expect(
       await checkDesign({ target, argv: ['--product', 'acme', '--part', 'elements/hero'], invocation: 'et design' }),
     ).toBe(1);
-    expect(lines.filter((line) => /^(HARD-CODED|PART|OPEN POINTS| {2})/.test(line))).toEqual([
+    expect(lines.filter((line) => /^(HARD-CODED-COLOUR \.|PART|OPEN POINTS| {2})/.test(line))).toEqual([
       expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
       'OPEN POINTS acme: 1 in 1 part',
       '  elements/hero: no controls declared',
