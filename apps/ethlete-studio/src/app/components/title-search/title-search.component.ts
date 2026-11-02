@@ -31,10 +31,10 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
         <circle cx="7" cy="7" r="4.25" />
         <path d="M10.25 10.25 13.5 13.5" />
       </svg>
-      <span class="flex flex-1 justify-center gap-1 truncate font-ui">
-        <span>{{ product() }}</span>
-        <span aria-hidden="true">/</span>
-        <span class="font-ui-strong text-et-surface">{{ part() }}</span>
+      <span class="flex min-w-0 flex-1 justify-center-safe gap-1 font-ui">
+        <span class="shrink-0">{{ product() }}</span>
+        <span class="shrink-0" aria-hidden="true">/</span>
+        <span class="font-ui-strong min-w-0 truncate text-et-surface">{{ part() }}</span>
       </span>
       <et-kbd [platform]="platform()" class="[&_.et-kbd-key]:text-current" keys="mod+k" />
     </button>
