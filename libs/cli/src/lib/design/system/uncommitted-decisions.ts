@@ -1,0 +1,36 @@
+import { execFileSync } from 'child_process';
+import { ResolvedProduct } from './resolve-product';
+
+const DECISION_FILES = ['go.json', 'accepted.json', 'merged.json', 'pictures.json', ':(glob)sketches/*/sketch.json'];
+
+const gitLines = (cwd: string, args: string[]) =>
+  execFileSync('git', [...args, '--', ...DECISION_FILES], {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+    .split('\n')
+    .filter(Boolean);
+
+/** The decision files of a product, relative to its folder, that differ from HEAD or are untracked; none outside git. */
+export const uncommittedDecisionsOf = (product: ResolvedProduct): string[] => {
+  try {
+    return [
+      ...new Set([
+        ...gitLines(product.dir, ['diff', '--name-only', '--relative', 'HEAD']),
+        ...gitLines(product.dir, ['ls-files', '--others', '--exclude-standard']),
+      ]),
+    ].sort();
+  } catch {
+    return [];
+  }
+};
+
+export const uncommittedDecisionsWarningOf = (product: ResolvedProduct): string | null => {
+  const files = uncommittedDecisionsOf(product);
+
+  return files.length === 0
+    ? null
+    : `WARNING UNCOMMITTED-DECISIONS ${product.name}: ${files.join(', ')} differ from HEAD - Studio or Tom commits ` +
+        'them; an agent never commits go.json';
+};

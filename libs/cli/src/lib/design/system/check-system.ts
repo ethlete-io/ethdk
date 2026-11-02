@@ -45,6 +45,7 @@ import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
+import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 
 const RULES = [
   importProblemsOf,
@@ -270,6 +271,10 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     }
 
     if (options.warn && !options.part) warnChangedOutsideSketch(product);
+
+    const uncommitted = options.warn ? uncommittedDecisionsWarningOf(product) : null;
+
+    if (uncommitted) console.warn(uncommitted);
 
     if (!options.part) goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
     const isWanted = (problem: Problem) => !options.part || partOfFile(product, problem.file) === options.part;

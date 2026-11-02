@@ -430,9 +430,23 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
       argument !== '--visible-change' &&
       (baseAt === -1 || (index !== baseAt && index !== baseAt + 1)),
   );
+  const firstFlag = argv.findIndex((argument) => argument.startsWith('--'));
+  const positionals = firstFlag === -1 ? argv : argv.slice(0, firstFlag);
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
   const products = flags['--product'];
-  const parts = flags['--part'];
+  const isPart = (argument: string) => argument.includes('/');
+  const strayPart =
+    positionals.length > 0 && (positionals.length > 1 || flags['--part'] || !positionals.every(isPart))
+      ? positionals[0]
+      : products?.find(isPart);
+
+  if (strayPart) {
+    console.error(`check takes one part as <layer>/<name> before the flags - use --part ${strayPart}`);
+
+    return 2;
+  }
+
+  const parts = positionals.length === 1 ? positionals : flags['--part'];
 
   if (visibleChange && products && products.length > 0)
     return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base, parts });

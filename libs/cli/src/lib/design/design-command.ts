@@ -46,7 +46,7 @@ const helpOf = (invocation: string) =>
     '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
     '  of an open sketch. --receipt writes the call, the variant, ok, the time and the output to a JSON file.',
     '',
-    `${invocation} check [--product <name>] [--part <layer>/<name>]`,
+    `${invocation} check [<layer>/<name> | --part <layer>/<name>] [--product <name>]`,
     "  Check a product's design system: layer dependencies, hard-coded colours, var() tokens nothing defines,",
     '  copied components, scripted motion, then tsc. Without any flag, check checks every product in config.json.',
     '  Then it prints the open points of each part: open comments, unmerged sketches, no controls',

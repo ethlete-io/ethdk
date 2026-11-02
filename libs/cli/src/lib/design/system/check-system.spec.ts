@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -231,6 +232,74 @@ describe('checkDesign', () => {
       ...renderWarningsOf(lines),
     ]);
     expect(lines).toContain('ok');
+  }, 60_000);
+
+  it('warns once per product of decision files that differ from HEAD or are untracked, and passes', async () => {
+    const target = acme();
+    output();
+    const warnings: string[] = [];
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+        cwd: target,
+        stdio: 'ignore',
+      });
+    const dir = join(target, DESIGN_DIR, 'acme');
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    writeFileSync(join(dir, 'go.json'), '{}\n');
+    git('init', '-q');
+    git('add', '.');
+    git('commit', '-q', '--no-verify', '-m', 'base');
+    writeFileSync(join(dir, 'go.json'), '{ }\n');
+    mkdirSync(join(dir, 'sketches/hero'), { recursive: true });
+    writeFileSync(join(dir, 'sketches/hero/sketch.json'), '{}\n');
+    writeFileSync(join(dir, 'sketches/hero/notes.md'), 'x\n');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(warnings.filter((line) => line.includes('UNCOMMITTED-DECISIONS'))).toEqual([
+      'WARNING UNCOMMITTED-DECISIONS acme: go.json, sketches/hero/sketch.json differ from HEAD - Studio or Tom ' +
+        'commits them; an agent never commits go.json',
+    ]);
+  }, 60_000);
+
+  it('checks only the part named as a positional, as --part does', async () => {
+    const target = acme();
+    const lines = output();
+    const run = async (argv: string[]) => {
+      lines.length = 0;
+      const code = await checkDesign({ target, argv, invocation: 'et design' });
+
+      return { code, lines: lines.filter((line) => !/^\[\d+\/\d+\] .* \d+s$/.test(line)) };
+    };
+
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+
+    const flagged = await run(['--part', 'components/button', '--product', 'acme']);
+
+    expect(flagged.lines).toContain('HARD-CODED-COLOUR 0');
+    expect(await run(['components/button', '--product', 'acme'])).toEqual(flagged);
+    expect(await run(['components/button'])).toEqual(await run(['--part', 'components/button']));
+  }, 60_000);
+
+  it('rejects a positional part it cannot honour with a hint to --part', async () => {
+    const target = acme();
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void errors.push(String(line)));
+
+    expect(
+      await checkDesign({ target, argv: ['elements/hero', '--part', 'pages/home'], invocation: 'et design' }),
+    ).toBe(2);
+    expect(await checkDesign({ target, argv: ['hero'], invocation: 'et design' })).toBe(2);
+    expect(await checkDesign({ target, argv: ['--product', 'acme', 'elements/hero'], invocation: 'et design' })).toBe(
+      2,
+    );
+    expect(errors).toEqual([
+      expect.stringContaining('--part elements/hero'),
+      expect.stringContaining('--part hero'),
+      expect.stringContaining('--part elements/hero'),
+    ]);
   }, 60_000);
 
   it("warns of an export in a part's shared/ that nothing imports, and passes", async () => {
