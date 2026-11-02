@@ -20,10 +20,11 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder (02.11.): gepusht bis e3914fb4e (B48, B51, B52, B53, B49-Kern). Lokal, noch nicht gepusht: ce2a97ab6 (Rahmen
-mit Fehlerseite scheitert laut, B49-Rest). Jetzt: B56 (Merge-Probelauf), dann „Wählen im Merge“ (A13), dann B58, B57,
-B59, B60, B61; daneben B54 (Werkzeug-Teil) und B55 (Abweichungen beheben). Der Builder übergibt bald an eine frische
-Session (Kontext 70 %).
+Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
+603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
+3 Abweichungen behoben sind (B55, als Nächstes). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
+startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen), danach B62-Werkzeugteil; offen: B56, A13 (CLI),
+B58, B57, B59, B60, B61. Ursache von Befund 152 (c) beim Builder angefragt.
 
 Bei Tom:
 
