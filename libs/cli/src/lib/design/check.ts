@@ -12,6 +12,7 @@ import { appCanonicalClassesOf } from './system/rules/canonical-class';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
+import { checkVisibleChange } from './system/visible-change-command';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, processFailureOf, trim, typecheck } from './typecheck';
 
@@ -417,8 +418,16 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const { target, invocation } = options;
   const appClasses = options.argv.includes('--app-classes');
   const live = options.argv.includes('--live');
+  const visibleChange = options.argv.includes('--visible-change');
+  const baseAt = options.argv.indexOf('--base');
+  const base = baseAt === -1 ? undefined : options.argv[baseAt + 1];
   const argv = options.argv.filter(
-    (argument) => argument !== '--complete' && argument !== '--app-classes' && argument !== '--live',
+    (argument, index) =>
+      argument !== '--complete' &&
+      argument !== '--app-classes' &&
+      argument !== '--live' &&
+      argument !== '--visible-change' &&
+      (baseAt === -1 || (index !== baseAt && index !== baseAt + 1)),
   );
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
   const products = flags['--product'];
@@ -441,6 +450,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
+    if (visibleChange) return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part });
   }
