@@ -2867,3 +2867,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      B120): when the viewport's screen origin moves, the camera shifts by the same delta so world points keep their
      screen position; a canvas.e2e case toggles the sidebar at a panned, zoomed camera and requires a frame's screen
      rect to stay within 1 px (red on today's build first).
+
+213. Navigating between Studio pages (e.g. System -> Sketches) makes the whole app jump: the title bar appears a
+     moment after the page, and everything below moves down (Tom, 2026-11-02). Cause (checked in code, builder's
+     uncommitted slice): every page wraps its own `ShellPageComponent`, which is created again on each navigation;
+     shell-page.component.ts reads the window chrome with `toSignal(inject(WINDOW_CHROME)()..., { initialValue: null })`,
+     so each new page renders without a title bar until the async chrome lookup resolves. Lesson: the harness and
+     compare get the chrome synchronously (`of(LINUX_CHROME)`), and no e2e navigates between routes and watches the
+     layout, so a first-frame state that never settles in a still shot is invisible. Tool fix (decided, technical,
+     B121): resolve the window chrome once at app start (root provider / app initializer) and read it synchronously, so
+     a page never renders a frame without the title bar; an e2e case navigates System -> Sketches -> Inbox and requires
+     the main content's top edge to stay constant in every frame after the navigation (red first on today's build);
+     the harness gets a mode that delivers the chrome async, so the same bug shows in a part shot.
