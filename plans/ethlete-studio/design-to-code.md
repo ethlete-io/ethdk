@@ -2575,6 +2575,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   Übernehmen). State labels scale with the zoom and are hidden once they would render below about 9 px.
 - Long state label (Tom, finding 198): a label longer than its frame wraps onto two lines; the whole grid row
   reserves the height of its tallest label, so the frames of one row stay aligned.
+- Large parts transposed (Tom, finding 199): a part whose fitted width is more than a quarter of the view width (at
+  100 %) is laid out transposed: one column per variant (Aktuell | a | b ...), one row per state, so the same state of
+  every variant sits side by side. Fit fits the width of all variant columns; the user scrolls through the states.
+  This replaces the "wide part keeps one column" rule (title-bar is transposed too). Narrow parts keep the variant
+  rows with about 4 state columns. Dimming and the "erste Änderung" mark stay per cell.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
