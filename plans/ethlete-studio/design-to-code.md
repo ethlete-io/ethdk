@@ -1608,11 +1608,15 @@ check` fails a part with a varying design prop that has no app input and is not 
      frame load and shows its own state with the reason and a reload, retrying once on its own; an e2e loads frames
      while files change). Lesson: a failure the tools catch is still a raw browser page for the person looking.
 161. After a reload, Studio takes about 10 s before the Sketches view shows the open sketches (Tom, 2026-11-02).
-     Cause pending (builder): which request or startup step the sketch list waits on. Why no check caught it: no
-     test or budget measures time from app start to the first sketch list; the CLI speed decision (2026-11-02)
-     covers CLI commands only. Tool fix pending the cause (likely: a startup-time budget in the studio e2e, the
-     sketch list served before slow work like render checks or hashing). Lesson: a wait nobody measures grows
-     unseen.
+     Cause (builder): the view waits on its first request, GET /__design/sketches?unchanged=no (host/design.ts:538).
+     This "quick" read skips only the pixel compare; it still loads every variant's part module through the Vite
+     SSR loader (readPartModule + overlaySketch per sketch, target and variant, studio-api.ts ~548) plus the sketch
+     problems and report, uncached. Measured: /__design/system 0.4 s; quick read 6.8 s cold, 3-4 s warm; full read
+     21 s (2 sketches, 9 targets). Why no check caught it: the quick-then-full fix of finding 152 assumed the quick
+     read was cheap and never timed it; no e2e measures reload to first sketch row. Tool fix: B71 (the quick read
+     returns list data only - target, variants, status, decision, target parts - with no module load, spec: it
+     never calls the loader; the full read fills the targets; e2e budget: first sketch row within 2 s after
+     reload, with the B62 budgets). Lesson: a path named "quick" is only quick once a test times it.
 162. A go cannot be taken back (Tom, 2026-11-02): Studio has no action to withdraw a go, and `et design go`
      (libs/cli/src/lib/design/system/go-command.ts) only grants one. The auto-carried go on `components/title-bar`
      (go.json, `auto: true`, finding 155) can only leave by a hand edit of go.json. Why no check caught it: the go
