@@ -2590,3 +2590,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      Update (builder, 5df2ad7da): both variant notes are German. The round r1 note stays English: the CLI cannot edit
      a round note after `sketch variant --round-note`. B114 adds `sketch note --round <key>`; then the round note is
      rewritten.
+
+195. Zooming out with ctrl-wheel at the centre of the Sketches view (104 % -> 23 %) moves the content down/right
+     instead of keeping the point under the pointer (Tom, 2026-11-02). Cause pending from builder. Lesson: the canvas
+     e2e checks that zoom happens, not where. Tool fix (decided, technical): canvas.e2e asserts on all PAGES that the
+     world point under the pointer stays within ~2 px across a ctrl-wheel in and out.
+
+196. The 12 px text floor (Sketches view text size decision) breaks the layout at low zoom (Tom, 2026-11-02, 23 %):
+     state labels wrap ("out-/hover") and overlap the next column, because the gaps scale and the text does not.
+     Lesson: a size rule for text inside a scaled canvas has to be drawn at the zoom extremes before it is decided -
+     the decision was made from a 100 % and a Fit shot only (compare finding 185). Product question to Tom.
+     Seen with it: at 104 % all states of zoom-chip variants a and b are dimmed "unverändert", in an earlier Fit shot
+     variant a showed "erste Änderung" (dimming depends on load order; cause pending).
