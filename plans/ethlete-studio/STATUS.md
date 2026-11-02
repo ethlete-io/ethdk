@@ -50,10 +50,12 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
 - **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A21** Sketch-Ansicht: Variante ablehnen und wieder öffnen, Notizen, Diff-Listen – kommen sie zurück? (Q55; E7)
-- **A22** Flows: Pins, Notizen, Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
+- **A22** Flows: Pins, Notizen (verschieben per Ziehen, Liste verwaister Notizen), Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
 - **A23** „Verwerfen“ mit Rückfrage (Q70).
 - **A24** Merge-Seite zeigt alle unveränderten Teile, nicht nur das erste (Q72).
-- **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81).
+- **A25** Chat, Notizen und Knöpfe oben rechts kommen zurück, je mit Entwurf (Q81). Chat zeigt den Zustand des Agenten
+  (arbeitet, wartet, unterbrochen, fehlgeschlagen) mit Stopp und Fortsetzen, Anmeldung in Studio, Verweis auf Teil,
+  Sketch oder Kommentar (designer-workflow.md, Abschnitt 1).
 - **A26** Studio-Menü: Einstellungen, Erscheinungsbild, Tastenkürzel, Hilfe, Über Studio (Q83).
 - **A27** Server-Status: Neu laden, „veraltet“, Neustart, Stopp (Q88); „Scan“ für Checkouts (Q89).
 - **A28** Popup „Ausnahmen N“ und alte Ansicht für Calls neu gestalten (Q91, Q92).
@@ -67,9 +69,15 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A35** Motion-Editor.
 - **A37** Design-Editor nach A35: der Designer passt im Sketch selbst an (echte Editor-Controls). Dazu Komfort wie in
   Figma: einzelne Komponenten anklicken und ihren Zustand sehen, in verschachtelte Komponenten hineinklicken. Großes
-  Thema, eigene Grill-Runde vor dem Start (Tom, 02.11.).
+  Thema, eigene Grill-Runde vor dem Start (Tom, 29.10. und 02.11.; designer-workflow.md, Abschnitt 2: Herkunft eines
+  Werts aus Token, geerbtem Teil oder eigenem Wert, Rückgängig, Zusammenspiel mit Agenten).
 - **A36** Explorer: der Baum zeigt nur Teile, keine Zustände; Gruppen merken auf/zu; der Stift in der Leiste entfällt,
   „Sketches“ (nur offene) ganz oben, „Legacy“ zugeklappt ganz unten mit Projekten darunter. Zuerst Sketch (dl 02.11.).
+- **A38** Git in Studio: Repo holen, Branch anlegen und wechseln, Commit, Push, eingehende Änderungen und Konflikte, ohne
+  eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
+- **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
+  (existing-code-import.md; offene Entscheidungen dort).
+- **A40** Neues Produkt in Studio anlegen: Formular mit Name und optionaler Basis (design-system/decisions-sketches.md).
 
 ## B. Design-CLI: neue Prüfungen
 
@@ -99,6 +107,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
 - **B30** `design check --live` meldet sichtbare App-Bereiche, die kein Teil abdeckt; für Studio im Pre-Push als Fehler
   (Befund 133).
+- **B31** Live-Aktionsprüfung: ein Navigations-Eintrag hat nach dem Klick `aria-current="page"` (Befund 84).
+- **B32** Harness-Render mit leeren Inputs meldet Demo-Text, der trotzdem sichtbar bleibt (Befund 104).
+- **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
+  disabled-Zuständen (dl, Systemlehren 01.11.).
 
 ## C. CLI: Tempo und Ablauf
 
@@ -135,3 +147,4 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **E13** Toms gesammelte Runde nach dem MVP (Q25, Q38): Status und Kommentar-Zahlen im Baum, Problemtext als Warnung,
   deutsche Tooltips am Zoom-Chip (Q41).
 - **E14** Was zählt als „sehr wahrscheinlich automatisch gemergt“?
+- **E15** Codex-Agenten: über die tmux-Mailbox oder über einen Wrapper? (backlog-parallel/decisions-studio-ui.md)
