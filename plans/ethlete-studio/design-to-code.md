@@ -2527,3 +2527,12 @@ decision 2), #91 (go rework, A10).
      has (SLOT-DROPPED); `design check` flags an arbitrary variant `[&_.<class>]` whose class is not defined by the
      same part (CROSS-PART-REACH). Unblock now: a one-variant sketch that only adds `${slot('shot')}` to the
      `[data-sk-fit-inner]` div; Tom merges it and gives a new go.
+
+190. The slot sketch for finding 189 was "merged automatically: no visible change" (a0ac449e2), yet `design task
+pages/sketches` then said "changed since its go", so Tom has to give a go for a pixel-identical change
+     (builder, 2026-11-02). Lesson: the decision "invisible changes keep the go" (Go last, point 2, an MVP tool
+     change) was recorded as a decision but never got a backlog item, so nobody built it. Tool fix (technical): B113
+     - a change that `ready` merged as invisible refreshes the go hash instead of staling it. Process fix: every
+       decided tool change gets a STATUS B item in the same commit as the decision. Side note: `ready` warned about 4
+       unused exports left in `pages/sketches/shared/` by the merge (measureFrames, aim, projectColumn, holdReason);
+       cleanup rides with B113.
