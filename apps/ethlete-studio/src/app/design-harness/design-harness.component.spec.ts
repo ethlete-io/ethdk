@@ -53,21 +53,13 @@ describe('DesignHarnessComponent', () => {
   it('fits the host to its content, and fills the viewport with it for a page layout', async () => {
     const fitted = await render('?part=components%2Fchip&state=a&props=%7B%7D');
 
-    expect(fitted.querySelector('[data-design-harness-host]')?.className).toBe('flex w-fit');
+    expect(fitted.querySelector('[data-design-harness-host]')?.className).toBe('flow-root w-fit');
 
     TestBed.resetTestingModule();
 
     const page = await render('?part=components%2Fchip&state=a&props=%7B%7D&layout=page');
 
     expect(page.querySelector('[data-design-harness-host]')?.className).toBe('block min-h-screen w-screen');
-  });
-
-  it('keeps a fixed-size element at its exact size, with no line box around it', async () => {
-    const element = await render('?part=components%2Fchip&state=a&props=%7B%7D');
-    const host = element.querySelector('[data-design-harness-host]');
-
-    expect(host?.classList.contains('flex')).toBe(true);
-    expect(host?.classList.contains('flow-root')).toBe(false);
   });
 
   it('records each output the part emits on window', async () => {

@@ -55,7 +55,7 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
     @if (current && 'error' in current) {
       <p>{{ current.error }}</p>
     } @else {
-      <div [class]="page ? 'block min-h-screen w-screen' : 'flex w-fit'" data-design-harness-host>
+      <div [class]="page ? 'block min-h-screen w-screen' : 'flow-root w-fit'" data-design-harness-host>
         <ng-container #outlet />
       </div>
     }
