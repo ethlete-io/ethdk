@@ -207,7 +207,7 @@ const shotsOf = async (options: {
 };
 
 /**
- * `et design check --product <name>… --visible-change [--base <rev>]` draws each harness part's states in the app at
+ * `et design check --product <name>… --visible-change [--base <rev>] [--part <part>…]` draws each harness part's states in the app at
  * the base commit and at HEAD, against HEAD's design, and fails a part that looks different unless a picked or merged
  * sketch of it is in base..HEAD or every changed state moved closer to the design.
  */
@@ -216,6 +216,7 @@ export const checkVisibleChange = async (options: {
   config: DesignConfig;
   products: string[];
   base: string | undefined;
+  parts?: string[];
   shoot?: ShootStates;
   start?: StartHarnessServer;
 }): Promise<number> => {
@@ -303,7 +304,7 @@ export const checkVisibleChange = async (options: {
       const sketched = sketchedPartsOf(sketchEvidenceOf({ root, base: commit, productDir: product.dir }));
       let pictures: string | null = null;
 
-      for (const { part } of entries) {
+      for (const { part } of entries.filter((candidate) => !options.parts || options.parts.includes(candidate.part))) {
         const shooting = { shoot, target, config, product, part };
         const headShots = await shotsOf({ ...shooting, url: head.url });
         const baseShots = baseUrl === null ? null : await shotsOf({ ...shooting, url: baseUrl });

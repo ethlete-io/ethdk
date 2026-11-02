@@ -434,6 +434,9 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const products = flags['--product'];
   const parts = flags['--part'];
 
+  if (visibleChange && products && products.length > 0)
+    return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base, parts });
+
   if (parts && parts.length !== 1) {
     console.error(`usage: ${invocation} check [--product <name>…] --part <layer>/<name>`);
 
@@ -451,7 +454,6 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
-    if (visibleChange) return checkVisibleChange({ target, config: readConfig(target) ?? {}, products, base });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part });
   }

@@ -8,6 +8,7 @@ import { createJiti } from 'jiti';
 const STUDIO = 'apps/ethlete-studio/';
 const LIVE_INPUTS = [STUDIO, '.ethlete/design/', 'libs/cli/src/lib/design/'];
 const VISIBLE_INPUTS = [STUDIO, 'libs/components/', 'libs/core/', '.ethlete/design/studio/'];
+const EVERY_PART_INPUTS = ['libs/components/', 'libs/core/', `${STUDIO}src/styles`, `${STUDIO}src/styles.css`];
 const usage = 'usage: prepush-checks.mjs <specs|design|live|visible> <base> <head> [vitest cache dir]';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -83,7 +84,30 @@ if (kind === 'live') {
 if (kind === 'visible') {
   if (!touches(VISIBLE_INPUTS)) process.exit(0);
 
-  process.exit(designCheck(['cli', 'components'], '--visible-change', '--base', base));
+  const { readConfig } = await jiti.import(resolve(design, 'paths.ts'));
+  const { visibleChangePartsOf } = await jiti.import(resolve(design, 'system/visible-change-parts.ts'));
+  const parts = visibleChangePartsOf({
+    target: root,
+    config: readConfig(root) ?? {},
+    name: 'studio',
+    changes,
+    everyPartInputs: EVERY_PART_INPUTS,
+  });
+
+  if (parts !== 'all' && parts.size === 0) {
+    console.log('visible-change: no design part changed');
+    process.exit(0);
+  }
+
+  process.exit(
+    designCheck(
+      ['cli', 'components'],
+      '--visible-change',
+      '--base',
+      base,
+      ...(parts === 'all' ? [] : ['--part', ...parts]),
+    ),
+  );
 }
 
 console.error(usage);
