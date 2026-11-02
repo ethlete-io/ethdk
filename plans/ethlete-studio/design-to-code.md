@@ -1584,6 +1584,22 @@ check` fails a part with a varying design prop that has no app input and is not 
      content before the pick. Tool fix: added to B46 (the in-context view is part of judging any part that sits at an
      app edge, before the pick, not only for sketches of pages). Lesson: an edge part judged alone cannot show where
      it ends.
+158. Hovering a variant frame in the Sketches view draws the teal border again (Tom, 2026-11-02, screenshot on
+     pages/sketches r2), the same look as finding 96. Facts (builder): no `:hover` rule exists any more in the design
+     CSS; the teal comes from the app canvas, which draws part outlines as siblings of the frame
+     (design-canvas.component.html:163, `data-part-outline`, outline-2 primary) and crop outlines
+     (canvas-frame.component.ts:153); exact element and commit pending. Why no check caught it: the e2e "hover alone
+     draws no frame border" (canvas.e2e.mjs:358) compares only the frame and its descendants, so a sibling overlay is
+     invisible to it; `yarn studio:e2e` runs in no CI workflow and not in pre-push. Tool fix: B67 (the e2e compares
+     every outline and shadow over the frame's box across the whole canvas; studio:e2e runs in CI). Lesson: a guard
+     test that runs nowhere guards nothing, and a test scoped to one element misses the same look drawn beside it.
+159. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
+     scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
+     hides content from the shot and from Tom. Why no check caught it: the render checks look for clipped and
+     overflowing boxes, not for a scroll container whose content is taller than its box. Tool fix: B68 (render check
+     rule NESTED-SCROLL: an element with overflow auto or scroll whose scroll size exceeds its box inside a design
+     frame is reported; a part that must scroll declares it). Lesson: content behind a scrollbar is content no
+     picture shows.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

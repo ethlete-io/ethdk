@@ -192,6 +192,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B65** (hoch) Go-Übernahme vergleicht das volle Bild mit Slots; eine Slot-Änderung macht das Go immer veraltet
   (Befund 155).
 - **B66** Harness-Host nimmt die Breiten des Parts aus der Design-Matrix statt `w-fit` (Befund 156).
+- **B67** E2E „Hover allein zeichnet keinen Rahmen“ prüft jede Outline und jeden Schatten über dem Rahmen im ganzen
+  Canvas; `studio:e2e` läuft in CI (Befund 158).
+- **B68** Render-Regel NESTED-SCROLL: ein Scroll-Bereich mit überlaufendem Inhalt im Design-Rahmen wird gemeldet
+  (Befund 159).
 
 ## C. CLI: Tempo und Ablauf
 
