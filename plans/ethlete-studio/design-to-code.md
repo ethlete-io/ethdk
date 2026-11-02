@@ -1301,6 +1301,12 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      goal state exists, not that it fits the start state's props. Tool fix (after MVP): on a miss, `design actions`
      compares the reached picture against every state of the part and prints "reaches state X instead" or "reaches no
      declared state (closest X, N px)".
+132. `design live-compare` could wait forever (builder, 2026-11-02, found during C6). It passed
+     max(deadline - now, 0) to Playwright as the timeout, and Playwright reads 0 as "no limit", so a spent budget
+     waited without end. Why no check caught it: no spec ran a wait past its budget. Tool fix (8c0ede06e, C6): the
+     timeout is clamped to at least 1 ms; every CLI wait goes through `withinLimit` in libs/cli/src/lib/design/wait.ts
+     and names what it waits for; specs with fake timers and a really hanging child. Lesson: every limit gets a spec
+     that runs past it, and 0 is never a valid "remaining" value for a library timeout.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

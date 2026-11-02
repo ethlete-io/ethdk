@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: C6 (Warte-Limits der CLI) und die Fensterknöpfe aus A1 (entschieden in dl, 02.11.). Der Rest von Liste A wartet auf Toms Reihenfolge.
+Builder: die Fensterknöpfe aus A1 (entschieden in dl, 02.11.); C6, C7 und D12 lokal fertig, Push nach dem Storybook-Blick auf die Tooltips. Der Rest von Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
@@ -98,7 +98,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 - **C5** Pre-push: Design-Dateien aus libs/components lösen die Design-Prüfung aus; tsc für berührte Produkte (Befund 105).
-- **C6** Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
 
 ## D. SDK und Libs
 
