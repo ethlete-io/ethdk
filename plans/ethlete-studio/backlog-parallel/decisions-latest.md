@@ -1,5 +1,21 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Title bar window controls decisions (Tom, 2026-11-02)
+
+Studio keeps its own title bar on every OS (search, update button). The window controls in it:
+
+1. **macOS:** keep the native traffic lights; the title bar is laid out around them (overlay title bar style).
+   Reserve their space on the left; no window controls on the right. Studio never draws traffic lights itself.
+2. **Linux, `button-layout`:** read `org.gnome.desktop.wm.preferences button-layout` the way VS Code does and take
+   both which buttons and which side. Follow a change while Studio runs. Unset: minimize, maximize, close on the right.
+3. **Linux, look:** round GNOME (Adwaita) style buttons. Windows keeps its square tiles with the red hover on close.
+4. **Linux, `prefer-no-csd`** (for example niri): keep the title bar; drop minimize and maximize, keep close (as VS
+   Code and Chrome do). Close sits on the side `button-layout` gives, right when unset.
+5. **Linux, `appmenu`:** ignore the entry; no button for it. The app menu stays behind the logo in the sidebar.
+
+Fact on Tom's machine: `button-layout` is `'appmenu:close'`, niri sets `prefer-no-csd`, so Studio shows only close,
+on the right.
+
 ### Surfaces follow the elevation system, not picked names (Tom, 2026-10-31, Q203-Q206)
 
 The Q197 migration swapped token names but hand-picked the elevation: parts carry fixed `et-surface--<name>` classes

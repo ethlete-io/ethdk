@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: Push der Werkzeug-Fixes vom 02.11.; parallel C6 (Warte-Limits der CLI), C7 (Studio ohne Lint-Warnungen) und D12 (native `title` in libs/components). Liste A wartet auf Toms Reihenfolge; die Fensterknöpfe aus A1 liegen bei Tom.
+Builder: Push der Werkzeug-Fixes vom 02.11.; parallel C6 (Warte-Limits der CLI), C7 (Studio ohne Lint-Warnungen) und D12 (native `title` in libs/components). Liste A wartet auf Toms Reihenfolge; die Fensterknöpfe aus A1 sind entschieden (dl, 02.11.) und gehen an den Builder.
 
 ## Erledigt
 
