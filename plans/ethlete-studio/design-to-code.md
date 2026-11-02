@@ -1598,6 +1598,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      invisible to it; `yarn studio:e2e` runs in no CI workflow and not in pre-push. Tool fix: B67 (the e2e compares
      every outline and shadow over the frame's box across the whole canvas; studio:e2e runs in CI). Lesson: a guard
      test that runs nowhere guards nothing, and a test scoped to one element misses the same look drawn beside it.
+     Update (builder, 2026-11-02): not reproduced. At HEAD no hover rule exists in design-canvas/, design-parts/sketches/
+     or sketch-view; the `data-part-outline` lead is dead (`outlines` is bound nowhere); variant iframes sit under a
+     pointer-events-none wrapper. A plain click (design-canvas.component.ts clickCanvas), or the press that starts a
+     pan, selects the frame and CanvasFrameBorderComponent draws the intended primary selection outline - it looks the
+     same as the reported border. Open: did Tom click or only hover. The repro also failed because headless Studio
+     renderers died ~5 s after load ("Render process gone") under load ~16; load vs real crash unconfirmed. Second
+     gap: the e2e "Sketches" page is a synthetic one-variant sketch, not pages/sketches r2, so this case could never go
+     red - B67 also adds the real r2 sketch as an e2e target.
 159. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
      scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
      hides content from the shot and from Tom. Why no check caught it: the render checks look for clipped and

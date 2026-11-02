@@ -189,7 +189,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 155).
 - **B66** Harness-Host nimmt die Breiten des Parts aus der Design-Matrix statt `w-fit` (Befund 156).
 - **B67** E2E „Hover allein zeichnet keinen Rahmen“ prüft jede Outline und jeden Schatten über dem Rahmen im ganzen
-  Canvas; `studio:e2e` läuft in CI (Befund 158).
+  Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
+  apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
+  synthetischen Ein-Varianten-Skizze (Befund 158).
 - **B68** Render-Regel NESTED-SCROLL: ein Scroll-Bereich mit überlaufendem Inhalt im Design-Rahmen wird gemeldet
   (Befund 159).
 - **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
