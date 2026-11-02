@@ -1747,12 +1747,13 @@ check` fails a part with a varying design prop that has no app input and is not 
      not a gate; a picture from stale code is worse than no picture.
 172. pages/sketches no longer renders: "location is not defined", raised from the title-search part's render
      (builder, 2026-11-02). It started within this wave (kbd-color, B76 shell-main with the embedded title bar, or the
-     rebuilt components dist) and blocks the live check of B75. Cause (builder): no commit - the B76 agent's
-     uncommitted shell-main edit (elements/shell-main/shared/shell-main.ts:251, title bar embedded) in the shared
-     working tree; every other agent's render of a part that embeds shell-main broke with it. Why no tool made it
-     clear: a check renders whatever is on disk and does not say that a file it depends on is a half-done edit of
-     another agent. Tool fix: B95 (checks name uncommitted files the render depends on). Lesson: in a shared tree, a
-     red check must say whether the red comes from committed code or from someone's open edit.
+     rebuilt components dist) and blocks the live check of B75. Cause (builder, corrected): commit 9fe0b8a41 added
+     the title search to the title bar, and pages/sketches drew its shells at module load, where the search cannot
+     render; fixed in 142e0a96a (drawing moved into render()). Tom's uncommitted variants pages-sketches a/b/c use the
+     same pattern ("Invalid URL"). Why no tool caught it: `design check --part` renders only that part, never the
+     parts and sketches that embed it. Tool fix: B95 (a check of a changed part also renders every part and open
+     sketch that embeds it; the commit gate does the same) plus a rule that refuses drawing at module load. Lesson:
+     a part's check must cover its consumers, or a change is green where it is made and red where it is used.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

@@ -244,9 +244,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B94** (hoch) `design shot/check/compare` zeichnen nie aus veraltetem SDK-dist: veraltete Lib vor dem Zeichnen
   automatisch bauen, sonst mit dem Build-Befehl verweigern (heute nur „WARNING STALE BUILD“); Spec: Shot scheitert
   bei veraltetem dist (Befund 171).
-- **B95** Render- und Design-Checks melden, wenn der gezeichnete Part von Dateien mit uncommitteten Änderungen
-  abhängt („rendert mit uncommitteter Datei X“), damit ein halber Edit eines parallelen Agents nicht als Fehler des
-  eigenen Parts erscheint (Befund 172).
+- **B95** (hoch) Check eines geänderten Parts rendert auch jeden Part und jede offene Skizze, die ihn einbetten; das
+  Commit-Gate genauso; eine Regel verweigert Zeichnen beim Modul-Laden (Befund 172).
 - **B96** sdk components/stream: Consent- und Player-Error-Karte bei 320 px 3 px zu kurz (NESTED-SCROLL-Treffer);
   Fix im Stream-CSS in libs/components.
 
