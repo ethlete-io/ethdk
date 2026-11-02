@@ -2512,3 +2512,7 @@ decision 2), #91 (go rework, A10).
      seit dem Sketch geändert" (Tom, 2026-11-02). Lesson: ready must not pass a sketch whose base is stale - the user
      hits the refusal only at merge. Tool fix (candidate, cause pending from builder): `ready` checks the base hash
      the same way merge does, refuses on a stale base and names the rebase command.
+     Cause (builder): 142e0a96a (10:38) moved the systemPage() calls into drawPages() inside render; the sketch base
+     was 00:51. `sketch ready` never compares the baseline hash with the current part - only `design inbox` ("needs
+     rebase") and Studio's merge do. Tool fix (decided, technical): ready refuses on a stale base and names
+     `sketch rebase <part> --by <id> --product <name>`. Goes into B111.
