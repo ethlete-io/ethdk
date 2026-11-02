@@ -414,8 +414,9 @@ export type ListedSketch = {
   variants: string[];
   /** Every part the sketch targets, `target` first. Missing from an `@ethlete/cli` older than sketches with several targets. */
   targetParts?: string[];
-  problems: { variant: string; problems: SystemProblem[] }[];
-  /** Each target part as each variant draws it, the first target's entries first. Missing from an `@ethlete/cli` older than the sketch matrix. */
+  /** Missing from the quick list (`quick: true`) and from an `@ethlete/cli` older than it. */
+  problems?: { variant: string; problems: SystemProblem[] }[];
+  /** Each target part as each variant draws it, the first target's entries first. Missing from the quick list and from an `@ethlete/cli` older than the sketch matrix. */
   targets?: SketchTarget[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;

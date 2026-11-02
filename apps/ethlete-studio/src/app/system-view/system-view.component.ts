@@ -599,7 +599,7 @@ export class SystemViewComponent {
       errored:
         failsToLoad(part?.problems ?? []) ||
         (sketch.targets ?? []).some((target) => !!target.error) ||
-        sketch.problems.some((entry) => failsToLoad(entry.problems)),
+        sketch.problems?.some((entry) => failsToLoad(entry.problems)),
     });
   });
 

@@ -783,6 +783,42 @@ describe('SystemViewComponent on a merge', () => {
     expect(view['selectedKey']()).toBe('elements/rating');
   });
 
+  it('lists the sketches in the tree from the quick answer without problems and targets', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+    };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        return url.includes('unchanged=no')
+          ? json({ sketches: [sketch], unreadable: [] })
+          : new Promise(() => undefined);
+      }
+
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const sketches = fixture.componentInstance['tree']().find((group) => group.key === 'sketches');
+
+    expect(sketches?.entries.map(({ key, badges }) => ({ key, badges }))).toEqual([
+      { key: 'sketch:elements/rating', badges: ['ready'] },
+    ]);
+    expect(fixture.componentInstance['sketchShown']()?.sketch.target).toBe('elements/rating');
+  });
+
   it('shows the picked sketch before the slow listing with its unchanged states answers', async () => {
     const sketch: ListedSketch = {
       target: 'elements/rating',

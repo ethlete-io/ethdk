@@ -7,7 +7,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const cliEntry = resolve(root, 'dist/libs/cli/src/index.js');
+const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',

@@ -123,7 +123,7 @@ const sketchEntryOf = (
   badges: [
     merging ? 'merging' : sketch.status,
     ...commentBadgesOf(sketch.target, marks),
-    ...(sketch.problems.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
+    ...(sketch.problems?.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
   ],
 });
 
@@ -808,7 +808,7 @@ export const sketchMatrixOf = ({
   const pending = new Set(sketch.status === 'in progress' ? (rounds.at(-1)?.variants ?? []) : []);
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
-    const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
+    const problems = sketch.problems?.find((entry) => entry.variant === variant)?.problems ?? [];
 
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
     const rejected = rejectedLabelOf(sketch, variant);
@@ -893,7 +893,7 @@ export const sketchMatrixOf = ({
         };
 
       const target = targetOf(column.key, key);
-      const problems = sketch.problems.find((entry) => entry.variant === column.key)?.problems ?? [];
+      const problems = sketch.problems?.find((entry) => entry.variant === column.key)?.problems ?? [];
 
       return {
         ...column,
@@ -1242,10 +1242,11 @@ export const mergePreviewOf = ({
   };
 };
 
-/** Whether the user may pick a variant: the sketch is ready, and the variant is not rejected and breaks no rule. */
+/** Whether the user may pick a variant: the sketch is ready, and the variant is not rejected and is checked to break no rule. */
 export const canPick = (sketch: ListedSketch, variant: string) =>
   sketch.status === 'ready' &&
   !rejectionOf(sketch, variant) &&
+  !!sketch.problems &&
   (sketch.problems.find((entry) => entry.variant === variant)?.problems.length ?? 0) === 0;
 
 /** The variant the user picked, or `null` before a pick, after a discard decision, or once it is rejected. */
