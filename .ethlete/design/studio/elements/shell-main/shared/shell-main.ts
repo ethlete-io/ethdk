@@ -6,9 +6,14 @@ import type { MenuMockRow } from '@ethlete/components/design/menu';
 import menu from '@system/components/menu';
 import { shellCollapse, shellCollapseStyles } from '@system/components/shell-collapse';
 import { shellProjectSwitch, shellProjectSwitchStyles } from '@system/components/shell-project-switch';
+import titleBar from '@system/components/title-bar';
 import { icon, type IconName } from '@system/foundations/icons';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
+
+type Chrome = Pick<Parameters<typeof titleBar.render>[0], 'os' | 'left' | 'right'>;
+
+const LINUX_CHROME: Chrome = { os: 'linux', left: [], right: ['minimize', 'maximize', 'close'] };
 
 type Props = {
   section: Section;
@@ -23,6 +28,8 @@ type Props = {
   force?: RailForce;
   server?: 'stopped' | 'starting';
   log?: string[];
+  chrome?: Chrome;
+  update?: boolean;
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -91,7 +98,7 @@ const railItem = (
 const sep = '<div class="st-shell-sep my-space-2 bg-et-surface-border"></div>';
 
 const rail = (section: Section, product: string, panelHidden: boolean, studio: string, force?: RailForce) =>
-  html`<nav class="st-shell-rail flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
+  html`<nav class="st-shell-rail row-start-2 flex flex-col items-center gap-space-1 py-space-3 bg-et-surface-bg">
     <div class="st-shell-slot relative flex justify-center w-full min-h-10" data-kind="logo">${studio}</div>
     ${sep}
     ${SECTIONS.map((s) => railItem(icon(ICONS[s], { size: 20 }), s, s === section, 'section', panelHidden, force)).join('')}
@@ -183,7 +190,14 @@ ${log.join('\n')}</pre>`
     }
   </div>`;
 
-const BASE: Props = { section: 'System', product: 'studio', side: '', content: '' };
+const BASE: Props = {
+  section: 'System',
+  product: 'studio',
+  side: '',
+  content: '',
+  chrome: LINUX_CHROME,
+  update: false,
+};
 
 const railRowsOf = <const TRow extends string>(row: TRow, label: string) =>
   interactionRows<Props, TRow, RailInteraction>({ [row]: BASE } as Record<TRow, Props>, {
@@ -232,8 +246,11 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
     force,
     server,
     log = [],
+    chrome = LINUX_CHROME,
+    update = false,
   }: Props) => {
     const projectMenu = await menu.render({ rows: projectRows(pickerKeyboard) });
+    const bar = await titleBar.render({ ...chrome, update, product, part: '' });
 
     return drawing({
       body: html`<div
@@ -241,8 +258,9 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
         data-et-surface
         data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}
       >
+        <div class="col-span-full">${bar.body}</div>
         ${rail(section, product, panel === 'hidden', studio, force)}
-        <div class="st-shell-stage relative min-w-0">
+        <div class="st-shell-stage relative row-start-2 min-w-0">
           <main
             class="st-shell-content absolute inset-0 min-w-0 overflow-hidden bg-et-surface-bg"
             ${server ? '' : slot('canvas')}
@@ -254,7 +272,13 @@ export const shellMain = (placement: 'above' | 'beside', styles: string) => ({
         </div>
       </div>`,
       styles:
-        styles + pickerStyles + buttonStyles + shellCollapseStyles + shellProjectSwitchStyles + projectMenu.styles,
+        styles +
+        pickerStyles +
+        buttonStyles +
+        shellCollapseStyles +
+        shellProjectSwitchStyles +
+        projectMenu.styles +
+        bar.styles,
     });
   },
 });

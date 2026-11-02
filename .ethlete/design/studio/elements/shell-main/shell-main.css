@@ -1,6 +1,7 @@
 @layer components {
   .st-shell {
     grid-template-columns: 64px 248px 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 1440px;
     height: 900px;
   }
