@@ -100,12 +100,12 @@
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "reset is a plain SDK transparent sm button with no custom class; costs: the chip width shifts by a few px between 25 %, 100 % and 250 % since digits are proportional"
+      "note": "Zurücksetzen ist ein schlichter SDK-Button (transparent, sm) ohne eigene Klasse; Kosten: die Chipbreite springt zwischen 25 %, 100 % und 250 % um ein paar px, weil die Ziffern proportional sind"
     },
     "b": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "reset is its own part components/zoom-reset that draws its hover, pressed and focus states; keeps tabular digits; costs: one more part and app component to implement"
+      "note": "Zurücksetzen ist ein eigener Part components/zoom-reset, der Hover, Pressed und Fokus selbst zeichnet; behält tabellarische Ziffern; Kosten: ein Part und eine App-Komponente mehr"
     }
   }
 }
