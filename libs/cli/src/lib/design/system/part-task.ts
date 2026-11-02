@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { posix, resolve } from 'path';
 import { appFilesOf } from './app-files';
 import { changedFilesOf, FileHashes, isOptionalFileHashes } from './design-hash';
+import { DESIGN_DIR } from '../paths';
 import { matchesPattern } from './harness-config';
 import { goPartOf, goStateOf, readGo } from './part-go';
 import { readyMarkOf } from './part-ready';
@@ -196,6 +197,62 @@ export const importersOf = (options: { files: string[]; component: string; read:
     (file) => importers.includes(file) || importers.includes(file.replace(/\.spec\.ts$/u, '.ts')),
   );
 };
+
+/** The files of a diff under the design folder, which never count as implementation. */
+export const designFilesOf = (files: string[]) => files.filter((file) => file.startsWith(`${DESIGN_DIR}/`));
+
+const relativeImportsOf = (file: string, source: string) =>
+  Array.from(source.matchAll(/(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]*)['"]/gu), ([, specifier]) =>
+    posix.join(posix.dirname(file), specifier ?? ''),
+  );
+
+/**
+ * The app files that wire the part in: each file of the app that imports the part's component folder, the files it
+ * imports relatively inside the app, and the spec next to each.
+ */
+export const wiringFilesOf = (options: {
+  files: string[];
+  component: string;
+  read: (file: string) => string | null;
+}) => {
+  const dir = posix.dirname(options.component);
+  const app = `${options.component.split('/').slice(0, 2).join('/')}/`;
+  const appFiles = options.files.filter((file) => file.startsWith(app) && !file.startsWith(`${dir}/`));
+  const existing = new Set(options.files);
+  const resolved = (target: string) =>
+    [`${target}.ts`, target, `${target}/index.ts`].find((candidate) => existing.has(candidate)) ?? null;
+  const importsOf = (file: string) => {
+    const source = /\.ts$/u.test(file) ? options.read(file) : null;
+
+    return source === null ? [] : relativeImportsOf(file, source);
+  };
+  const importers = appFiles.filter((file) =>
+    importsOf(file).some((target) => target === dir || target.startsWith(`${dir}/`)),
+  );
+  const wiring = new Set(
+    importers.flatMap((file) => [
+      file,
+      ...importsOf(file)
+        .map(resolved)
+        .filter((target): target is string => target !== null && appFiles.includes(target)),
+    ]),
+  );
+
+  return appFiles.filter(
+    (file) => wiring.has(file) || (file.endsWith('.spec.ts') && wiring.has(file.replace(/\.spec\.ts$/u, '.ts'))),
+  );
+};
+
+/** The files git tracks under a folder at a revision. */
+export const gitTreeFilesOf = (options: { root: string; rev: string; dir: string }) =>
+  execFileSync('git', ['ls-tree', '-r', '--name-only', options.rev, '--', options.dir], {
+    cwd: options.root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+    maxBuffer: 64 * 1024 * 1024,
+  })
+    .split('\n')
+    .filter((line) => line !== '');
 
 /** The content of a file at the end of a git range, or null when it is gone. */
 export const gitFileAtOf = (options: { root: string; range: string; file: string }) => {

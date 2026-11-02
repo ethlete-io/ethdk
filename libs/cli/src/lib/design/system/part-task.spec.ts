@@ -264,6 +264,7 @@ describe('part task', () => {
       'allowed files:',
       '  libs/chip/**',
       '  .changeset/*.md',
+      'wiring files: none yet',
       'target: compare green',
       THEMING_TEXT,
     ]);
@@ -394,6 +395,121 @@ describe('part task', () => {
     expect(lines).toContain('  libs/other/x.ts');
     expect(lines).not.toContain('  libs/chip/chip.component.ts');
     expect(verifyRangeOf('abc')).toBe('abc^..abc');
+  });
+
+  describe('verify of 5a29b1b94', () => {
+    const component = 'apps/studio/src/app/design-parts/sketches/sketches.component.ts';
+    const sources: Record<string, string> = {
+      [component]: "import { STUDIO_LABELS } from '../../i18n/studio-labels';",
+      'apps/studio/src/app/design-parts/sketches/sketches-sample.ts': 'export const ROWS = [];',
+      'apps/studio/src/app/i18n/studio-labels.ts': 'export const STUDIO_LABELS = {};',
+      'apps/studio/src/app/system-view/sketch-view.component.ts': [
+        "import { SketchesComponent } from '../design-parts/sketches/sketches.component';",
+        "import { modelNameOf } from './inbox-comments';",
+        "import { CompareRow } from './system-tree';",
+        "import { Camera } from '../components/design-canvas/canvas-math';",
+        "import { ListedComment } from '../../host/design';",
+      ].join('\n'),
+      'apps/studio/src/app/system-view/inbox-comments.ts':
+        "import { InboxAgent } from '../design-parts/inbox/inbox-sample';",
+      'apps/studio/src/app/system-view/system-tree.ts': "import { isAnswered } from './comment-pins';",
+      'apps/studio/src/app/system-view/comment-pins.ts': 'export const isAnswered = true;',
+      'apps/studio/src/app/system-view/shell-logo.spec.ts': [
+        "import { SketchesComponent } from '../design-parts/sketches/sketches.component';",
+        "import { SystemViewComponent } from './system-view.component';",
+      ].join('\n'),
+      'apps/studio/src/app/system-view/system-view.component.ts':
+        "import { SketchViewComponent } from './sketch-view.component';",
+      'apps/studio/src/app/system-view/system-view.component.spec.ts':
+        "import { SystemViewComponent } from './system-view.component';",
+      'apps/studio/src/app/components/design-canvas/canvas-math.ts': 'export type Camera = {};',
+      'apps/studio/src/app/design-parts/inbox/inbox-sample.ts': 'export type InboxAgent = {};',
+      'apps/studio/src/app/other/other.component.ts': "import { B } from '../b/b.component';",
+    };
+    const wiring = [
+      'apps/studio/src/app/system-view/inbox-comments.ts',
+      'apps/studio/src/app/system-view/system-tree.ts',
+      'apps/studio/src/app/system-view/system-view.component.ts',
+      'apps/studio/src/app/system-view/system-view.component.spec.ts',
+    ];
+    const design = [
+      '.ethlete/design/studio/pages/sketches/sketches.ts',
+      '.ethlete/design/studio/pages/sketches/sketches.css',
+      '.ethlete/design/studio/sketches/pages-sketches/sketch.json',
+      '.ethlete/design/studio/sketches/elements-shell-main/shared/shell-main.ts',
+    ];
+    const sketches = () => {
+      const { target } = checkout();
+      const dir = join(target, DESIGN_DIR, 'app-a', 'pages/sketches');
+
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(
+        join(dir, 'sketches.ts'),
+        `export default definePart({ implements: { route: '/', component: '${component}' }, states: { default: {} } });\n`,
+      );
+      go(target, 'pages/sketches');
+
+      return target;
+    };
+    const verify = (target: string, files: string[], compare: ComparePart, argv = ['--verify', '5a29b1b94']) =>
+      designTask({
+        target,
+        argv: ['pages/sketches', '--product', 'app-a', ...argv, '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        load: async () => ({ default: {} }),
+        diff: vi.fn(() => files),
+        read: ({ file }) => sources[file] ?? null,
+        tree: vi.fn(() => Object.keys(sources)),
+        compare,
+        start: vi.fn(async () => 'no server must start'),
+        actions: vi.fn(async () => []),
+      });
+
+    it('exits 1 on a refusal and never runs compare', async () => {
+      const target = sketches();
+      const lines = output();
+      const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
+
+      expect(
+        await verify(target, [...design, ...wiring, 'apps/studio/src/app/other/other.component.ts'], compare),
+      ).toBe(1);
+      expect(lines).toContain('1 file of 5a29b1b94^..5a29b1b94 outside the allowed files:');
+      expect(lines).toContain('  apps/studio/src/app/other/other.component.ts');
+      expect(compare).not.toHaveBeenCalled();
+    });
+
+    it('skips the design files with one summary line', async () => {
+      const target = sketches();
+      const lines = output();
+      const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
+
+      expect(await verify(target, [...design, component], compare)).toBe(0);
+      expect(lines).toContain('skipped 4 design files under .ethlete/design');
+      expect(lines).toContain('1 file of 5a29b1b94^..5a29b1b94 inside the allowed files');
+      expect(lines.join('\n')).not.toContain('  .ethlete/design');
+    });
+
+    it('lists the wiring files up front and allows them in the verify, one WIRING line each', async () => {
+      const target = sketches();
+      const lines = output();
+      const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
+
+      expect(await verify(target, [], compare, [])).toBe(0);
+      expect(lines.slice(lines.indexOf('wiring files:') + 1, lines.indexOf('target: compare green'))).toEqual([
+        '  apps/studio/src/app/system-view/sketch-view.component.ts',
+        '  apps/studio/src/app/system-view/inbox-comments.ts',
+        '  apps/studio/src/app/system-view/system-tree.ts',
+        '  apps/studio/src/app/system-view/shell-logo.spec.ts',
+        '  apps/studio/src/app/system-view/system-view.component.ts',
+        '  apps/studio/src/app/system-view/system-view.component.spec.ts',
+        '  apps/studio/src/app/components/design-canvas/canvas-math.ts',
+      ]);
+
+      lines.length = 0;
+      expect(await verify(target, [...design, ...wiring], compare)).toBe(0);
+      expect(lines.filter((line) => line.startsWith('WIRING '))).toEqual(wiring.map((file) => `WIRING ${file}`));
+      expect(lines).toContain('4 files of 5a29b1b94^..5a29b1b94 inside the allowed files');
+    });
   });
 });
 

@@ -9,9 +9,11 @@ import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
   allowedFilesOf,
   changesOnlySourceLines,
+  designFilesOf,
   filesOutsideOf,
   gitDiffFilesOf,
   gitFileAtOf,
+  gitTreeFilesOf,
   importersOf,
   gitDiffPatchOf,
   markImplemented,
@@ -20,6 +22,7 @@ import {
   taskPartOf,
   taskStatesOf,
   verifyRangeOf,
+  wiringFilesOf,
 } from './part-task';
 import { repoRootOf } from './reachable-files';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -39,6 +42,8 @@ type DiffFiles = (options: { root: string; range: string }) => string[];
 type ReadFile = (options: { root: string; range: string; file: string }) => string | null;
 
 type DiffPatch = (options: { root: string; range: string; file: string }) => string;
+
+type TreeFiles = (options: { root: string; rev: string; dir: string }) => string[];
 
 const loadStates: LoadStates = async ({ target, product, file }) => {
   const config = configOf(target);
@@ -85,6 +90,7 @@ export const designTask = async (options: {
   diff?: DiffFiles;
   patch?: DiffPatch;
   read?: ReadFile;
+  tree?: TreeFiles;
   compare?: ComparePart;
   start?: StartHarnessServer;
   actions?: PartActionFailures;
@@ -134,6 +140,23 @@ export const designTask = async (options: {
   });
   const harnessApp = product.config.harness?.app;
   const stylesheet = harnessApp ? appStylesheetOf({ target, app: harnessApp }) : null;
+  const root = resolve(product.configFile, '../../..');
+  const wiringAt = (range: string) => {
+    const read = (file: string) => (options.read ?? gitFileAtOf)({ root, range, file });
+    const rev = range.includes('..') ? (range.split('..').pop() ?? range) : range;
+
+    try {
+      const files = (options.tree ?? gitTreeFilesOf)({
+        root,
+        rev,
+        dir: task.component.split('/').slice(0, 2).join('/'),
+      });
+
+      return wiringFilesOf({ files, component: task.component, read });
+    } catch {
+      return [];
+    }
+  };
 
   if (rev !== null) {
     const stale = harnessStaleOf({ target, product });
@@ -145,12 +168,18 @@ export const designTask = async (options: {
     }
 
     const range = verifyRangeOf(rev);
-    const root = resolve(product.configFile, '../../..');
     let files: string[];
     let outside: string[];
+    let wired: string[];
 
     try {
-      files = (options.diff ?? gitDiffFilesOf)({ root, range });
+      const diffed = (options.diff ?? gitDiffFilesOf)({ root, range });
+      const design = designFilesOf(diffed);
+
+      files = diffed.filter((file) => !design.includes(file));
+      if (design.length > 0) {
+        console.log(`skipped ${design.length} design file${design.length === 1 ? '' : 's'} under .ethlete/design`);
+      }
       const unlisted = filesOutsideOf({ files, allowed }).filter(
         (file) =>
           file !== stylesheet || !changesOnlySourceLines((options.patch ?? gitDiffPatchOf)({ root, range, file })),
@@ -161,18 +190,23 @@ export const designTask = async (options: {
         read: (file) => (options.read ?? gitFileAtOf)({ root, range, file }),
       });
 
-      outside = unlisted.filter((file) => !importers.includes(file));
+      const wiring = wiringAt(range);
+
+      wired = unlisted.filter((file) => wiring.includes(file));
+      outside = unlisted.filter((file) => !importers.includes(file) && !wiring.includes(file));
     } catch (error) {
       console.error(`git diff ${range} failed: ${error instanceof Error ? error.message : String(error)}`);
 
       return 1;
     }
 
+    wired.forEach((file) => console.log(`WIRING ${file}`));
+
     if (outside.length > 0) {
       console.error(`${outside.length} file${outside.length === 1 ? '' : 's'} of ${range} outside the allowed files:`);
       outside.forEach((file) => console.error(`  ${file}`));
       console.error(
-        `allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : []), 'files importing the part'].join(', ')}`,
+        `allowed: ${[...allowed, ...(stylesheet ? [`${stylesheet} (@source lines)`] : []), 'wiring files'].join(', ')}`,
       );
 
       return 1;
@@ -257,6 +291,10 @@ export const designTask = async (options: {
   console.log('allowed files:');
   allowed.forEach((pattern) => console.log(`  ${pattern}`));
   if (stylesheet) console.log(`  ${stylesheet} (@source lines)`);
+  const wiring = wiringAt('HEAD');
+
+  console.log(wiring.length > 0 ? 'wiring files:' : 'wiring files: none yet');
+  wiring.forEach((file) => console.log(`  ${file}`));
   const directives = themingDirectivesOf(drawn?.source ?? '');
 
   if (directives.length > 0) {
