@@ -64,9 +64,19 @@ const firstChangeOf = (drawn: Drawn, current: Drawn | null) =>
 
 const likeOf = (drawn: Drawn) => (drawn.name === AKTUELL ? AKTUELL : `variant ${drawn.name}`);
 
-const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: string }): string[] => {
-  const { variants, current, of } = options;
-  const refusals: string[] = [];
+export type IdenticalRender = { variant: string; sibling: string | null; line: string };
+
+const withdrawAdviceOf = (target: string, variant: string) =>
+  `withdraw it with \`sketch withdraw ${target} --variant ${variant} --by <model id>\` or redraw it`;
+
+const refusalsOf = (options: {
+  variants: Drawn[];
+  current: Drawn | null;
+  of: string;
+  target: string;
+}): IdenticalRender[] => {
+  const { variants, current, of, target } = options;
+  const refusals: IdenticalRender[] = [];
 
   variants.forEach((drawn, index) => {
     const earlier = variants.slice(0, index);
@@ -85,16 +95,20 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
         .find(({ first }) => first !== null && first.hash === shown?.hash);
 
       if (shown && like?.first)
-        refusals.push(
-          `variant ${drawn.name}${of} first changes ${shown.state}, which draws the same pixels as ${likeOf(like.other)} draws at its first change ${like.first.state}, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant ${drawn.name}`,
-        );
+        refusals.push({
+          variant: drawn.name,
+          sibling: like.other.name === AKTUELL ? null : like.other.name,
+          line: `variant ${drawn.name}${of} first changes ${shown.state}, which draws the same pixels as ${likeOf(like.other)} draws at its first change ${like.first.state}, so the Studio sketch view shows identical frames - ${withdrawAdviceOf(target, drawn.name)}`,
+        });
 
       return;
     }
 
-    refusals.push(
-      `variant ${drawn.name}${of} draws the same pixels as ${likeOf(twin)} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: change it or reject it`,
-    );
+    refusals.push({
+      variant: drawn.name,
+      sibling: twin.name === AKTUELL ? null : twin.name,
+      line: `variant ${drawn.name}${of} draws the same pixels as ${likeOf(twin)} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: ${twin.name === AKTUELL ? 'redraw it' : withdrawAdviceOf(target, drawn.name)}`,
+    });
   });
 
   return refusals;
@@ -108,15 +122,22 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
  * different. Any other variant is named when its first changed state, in its own state order, draws like the first
  * changed state of an earlier variant.
  */
-export const identicalRenderLinesOf = async (options: {
+export const identicalRenderLinesOf = async (options: Parameters<typeof identicalRendersOf>[0]): Promise<string[]> =>
+  (await identicalRendersOf(options)).map((render) => render.line);
+
+/**
+ * The variants `identicalRenderLinesOf` names, each with the sibling variant it draws like in its first changed state
+ * (`null` when it draws like the product's part) and its line, which starts with the sketch's target.
+ */
+export const identicalRendersOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   load: SketchPartLoader;
   pictureOf: PictureOf;
-}): Promise<string[]> => {
+}): Promise<IdenticalRender[]> => {
   const { product, sketch, load, pictureOf } = options;
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
-  const lines: string[] = [];
+  const found: IdenticalRender[] = [];
 
   for (const part of sketch.targets) {
     const variants: Drawn[] = [];
@@ -134,10 +155,10 @@ export const identicalRenderLinesOf = async (options: {
     const now = file ? await drawingOf({ product, part, file, sketch: null, load, pictureOf }) : null;
     const of = sketch.targets.length > 1 ? ` ${part}` : '';
 
-    refusalsOf({ variants, current: now ? { name: AKTUELL, states: now } : null, of }).forEach((line) =>
-      lines.push(`${sketch.target} ${line}`),
+    refusalsOf({ variants, current: now ? { name: AKTUELL, states: now } : null, of, target: sketch.target }).forEach(
+      (render) => found.push({ ...render, line: `${sketch.target} ${render.line}` }),
     );
   }
 
-  return lines;
+  return found;
 };

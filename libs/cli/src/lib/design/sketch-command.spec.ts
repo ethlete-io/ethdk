@@ -6,6 +6,7 @@ import { DESIGN_DIR } from './paths';
 import {
   aktuellPlaceholderWarnings,
   identicalRenderLines,
+  identicalRenders,
   shotsShowNoChange,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -18,6 +19,7 @@ import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
   identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
+  identicalRenders: vi.fn(async (): Promise<{ variant: string; sibling: string | null; line: string }[]> => []),
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
@@ -674,6 +676,116 @@ describe('designSketch', { timeout: 120_000 }, () => {
         reopened: { by: 'designer', decidedAt: expect.any(String), reason: 'worth a look' },
       },
     ]);
+  });
+
+  describe('withdraw', () => {
+    afterEach(() => {
+      vi.mocked(identicalRenders).mockReset().mockResolvedValue([]);
+      vi.mocked(identicalRenderLines).mockReset().mockResolvedValue([]);
+    });
+
+    const opened = () => {
+      const target = acme();
+      const lines = output();
+
+      write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+
+      return { target, lines };
+    };
+    const withdraw = (target: string, ...rest: string[]) =>
+      run(target, 'withdraw', 'components/button', '--variant', 'b', '--product', 'acme', ...rest);
+    const twinOfA = { variant: 'b', sibling: 'a', line: 'components/button variant b draws like variant a' };
+    const sketchOf = (target: string) =>
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }) as Sketch;
+
+    it('refuses --by designer', async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
+
+      expect(await withdraw(target, '--by', 'designer')).toBe(1);
+      expect(lines.at(-1)).toContain('not designer');
+      expect(sketchOf(target).rejections).toBeUndefined();
+    });
+
+    it("refuses another agent's variant", async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
+
+      expect(await withdraw(target, '--by', 'gpt-5.6-sol')).toBe(1);
+      expect(lines.at(-1)).toContain('was not drawn by gpt-5.6-sol');
+      expect(sketchOf(target).rejections).toBeUndefined();
+    });
+
+    it('refuses a variant that does not draw like a sibling', async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([]);
+
+      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(1);
+      expect(lines.at(-1)).toContain('does not draw the same pixels as a sibling');
+      expect(sketchOf(target).rejections).toBeUndefined();
+    });
+
+    it('refuses a variant that draws like the product only', async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([{ ...twinOfA, sibling: null }]);
+
+      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(1);
+      expect(lines.at(-1)).toContain('does not draw the same pixels as a sibling');
+    });
+
+    it('withdraws the variant, so ready stops refusing on it', async () => {
+      const { target, lines } = opened();
+
+      vi.mocked(identicalRenders).mockResolvedValue([twinOfA]);
+      vi.mocked(identicalRenderLines).mockImplementation(async ({ sketch }) =>
+        sketch.variants.some((variant) => !sketch.rejections?.[variant]) && !sketch.rejections ? [twinOfA.line] : [],
+      );
+
+      expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+      expect(lines.at(-1)).toContain('draws variants alike');
+      expect(await withdraw(target, '--by', 'claude-opus-5-5')).toBe(0);
+      expect(lines.at(-1)).toBe('withdrew components/button variant b (identisch mit a)');
+      expect(sketchOf(target).rejections?.['b']).toEqual([
+        {
+          by: 'agent',
+          decidedAt: expect.any(String),
+          reason: 'identisch mit a',
+          reasonBy: 'agent',
+          status: 'withdrawn',
+          withdrawnBy: 'claude-opus-5-5',
+        },
+      ]);
+      expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+      expect(lines.some((line) => line.includes('draws variants alike'))).toBe(true);
+      expect(lines.at(-1)).not.toContain('draws variants alike');
+      expect(run(target, 'list')).toBe(0);
+      expect(lines.join('\n')).toContain('withdrawn b');
+    });
+  });
+
+  it('refuses a reject with a --by that is neither designer nor a model id', () => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme');
+
+    expect(run(target, 'reject', 'components/button', '--variant', 'a', '--by', 'tom', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toContain('use designer or a model id');
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      })?.['rejections' as never],
+    ).toBeUndefined();
   });
 
   it('refuses to merge a rejected variant', () => {

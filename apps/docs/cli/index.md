@@ -525,6 +525,13 @@ without a visible difference, which `sketch ready` merges by itself. The Studio 
 state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
 the current part's or an earlier variant's: make a state the variant changes its first state.
 
+The agent that drew such a variant takes it out of the open set with `et design sketch withdraw <part> --variant <key>
+--by <model id>`. It refuses unless `--by` is a model id (not `designer`) that drew the variant, and the variant draws
+the same pixels as a sibling variant in its first changed state. `sketch.json` keeps it as a rejection with the status
+`withdrawn`, who withdrew it and the reason `identisch mit <sibling>`; `sketch list` shows it as withdrawn, and Studio
+treats it like a rejected variant. `sketch reject`, `reopen` and `withdraw` refuse a `--by` that is neither `designer`
+nor a model id (`claude-…`, `gpt-…`, `gemini-…`, `codex-…`).
+
 `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
 not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible

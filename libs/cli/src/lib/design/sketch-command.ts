@@ -13,10 +13,20 @@ import {
   variantProblemsOf,
   variantWarningsOf,
 } from './system/sketch/check-sketches';
-import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+import {
+  Args,
+  argsOf,
+  authorOf,
+  configOf,
+  NEEDS_AUTHOR,
+  oneProductOf,
+  productNamesOf,
+  verdictByProblemOf,
+} from './system/sketch/cli-args';
 import {
   aktuellPlaceholderWarnings,
   identicalRenderLines,
+  identicalRenders,
   shotsShowNoChange,
   variantsThatDoNotLoad,
 } from './ready-shots';
@@ -45,6 +55,7 @@ import {
   markSketchReady,
   parseTarget,
   rebaseSketch,
+  authorsOf,
   rejectionOf,
   releaseSketch,
   reportSketch,
@@ -55,6 +66,7 @@ import {
   SketchVariantVerdict,
   SketchVerdictBy,
   sourceFilesIn,
+  withdrawVariant,
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
@@ -75,6 +87,7 @@ export const SKETCH_USAGE = [
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
   'sketch reject <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
   'sketch reopen <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]',
+  'sketch withdraw <layer>/<name> --variant <key> --by <model id> [--product <name>]',
 ];
 
 const FLAG_HELP: Record<string, string> = {
@@ -130,7 +143,7 @@ export const sketchFlagHelpOf = (usage: string) => {
   );
 };
 
-const VERDICTS = new Set(['reject', 'reopen']);
+const VERDICTS = new Set(['reject', 'reopen', 'withdraw']);
 
 const WRITES = new Set([
   'new',
@@ -460,12 +473,15 @@ const listed = (context: Context) => {
           ? `, picked ${sketch.decision.variant}`
           : ', discard asked'
         : '';
-      const rejected = sketch.variants.filter((variant) => rejectionOf(sketch, variant));
+      const rejected = sketch.variants.filter(
+        (variant) => rejectionOf(sketch, variant)?.status !== 'withdrawn' && rejectionOf(sketch, variant),
+      );
+      const withdrawnKeys = sketch.variants.filter((variant) => rejectionOf(sketch, variant)?.status === 'withdrawn');
 
       const extra = sketch.targets.slice(1);
 
       console.log(
-        `${sketch.product}  ${sketch.target}${extra.length > 0 ? ` (+ ${extra.join(', ')})` : ''}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}${sketch.hold ? `, held until: ${sketch.hold.until}` : ''}`,
+        `${sketch.product}  ${sketch.target}${extra.length > 0 ? ` (+ ${extra.join(', ')})` : ''}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}${rejected.length > 0 ? `, rejected ${rejected.join(', ')}` : ''}${withdrawnKeys.length > 0 ? `, withdrawn ${withdrawnKeys.join(', ')}` : ''}${sketch.hold ? `, held until: ${sketch.hold.until}` : ''}`,
       );
 
       for (const round of sketch.rounds) {
@@ -1043,7 +1059,7 @@ const verdictOriginOf = (by: SketchVerdictBy, of: SketchVerdictBy | undefined) =
 export const verdictLinesOf = (sketch: Sketch, variant: string) => {
   const history = sketch.rejections?.[variant] ?? [];
   const lines = history.flatMap((rejection) => [
-    `  rejected by the ${rejection.by} at ${rejection.decidedAt}${verdictOriginOf(rejection.by, rejection.reasonBy)}${rejection.reason ? `: ${rejection.reason}` : ''}`,
+    `  ${rejection.status === 'withdrawn' ? `withdrawn by ${rejection.withdrawnBy ?? 'the agent'}` : `rejected by the ${rejection.by}`} at ${rejection.decidedAt}${verdictOriginOf(rejection.by, rejection.reasonBy)}${rejection.reason ? `: ${rejection.reason}` : ''}`,
     ...(rejection.reopened
       ? [
           `  reopened by the ${rejection.reopened.by} at ${rejection.reopened.decidedAt}${rejection.reopened.reason ? `: ${rejection.reopened.reason}` : ''}`,
@@ -1051,7 +1067,10 @@ export const verdictLinesOf = (sketch: Sketch, variant: string) => {
       : []),
   ]);
 
-  return [`${sketch.target} variant ${variant}: ${rejectionOf(sketch, variant) ? 'rejected' : 'live'}`, ...lines];
+  return [
+    `${sketch.target} variant ${variant}: ${rejectionOf(sketch, variant) ? (rejectionOf(sketch, variant)?.status === 'withdrawn' ? 'withdrawn' : 'rejected') : 'live'}`,
+    ...lines,
+  ];
 };
 
 const judged = (kind: 'reject' | 'reopen') => (context: Context) =>
@@ -1059,12 +1078,17 @@ const judged = (kind: 'reject' | 'reopen') => (context: Context) =>
     const { positional, values } = context.args;
     const variant = values['--variant'];
     const reason = values['--reason']?.trim() || undefined;
-    const by: SketchVerdictBy = authorOf(context.args) === 'designer' ? 'designer' : 'agent';
+    const author = authorOf(context.args) ?? '';
+    const by: SketchVerdictBy = author === 'designer' ? 'designer' : 'agent';
 
     if (positional.length !== 1 || !variant)
       return fail(
         `usage: sketch ${kind} <layer>/<name> --variant <key> [--reason <text>] --by <model id | designer> [--product <name>]`,
       );
+
+    const invalid = verdictByProblemOf(author);
+
+    if (invalid) return fail(invalid);
 
     const decision: SketchVariantVerdict =
       kind === 'reject' && reason && rejectionOf(sketch, variant)
@@ -1078,6 +1102,54 @@ const judged = (kind: 'reject' | 'reopen') => (context: Context) =>
 
     return 0;
   });
+
+const withdrawn = (context: Context) => {
+  const found = productAndSketchOf(context);
+
+  if (typeof found === 'string') return fail(found);
+
+  return withdrawnVariant(context, found);
+};
+
+const withdrawnVariant = async (
+  context: Context,
+  { product, sketch }: { product: ResolvedProduct; sketch: Sketch },
+) => {
+  const { positional, values } = context.args;
+  const variant = values['--variant'];
+  const by = authorOf(context.args) ?? '';
+
+  if (positional.length !== 1 || !variant)
+    return fail('usage: sketch withdraw <layer>/<name> --variant <key> --by <model id> [--product <name>]');
+  if (by === 'designer')
+    return fail('sketch withdraw is for the agent that drew the variant: --by must be a model id, not designer');
+
+  const invalid = verdictByProblemOf(by);
+
+  if (invalid) return fail(invalid);
+  if (!sketch.variants.includes(variant))
+    return fail(`${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`);
+  if (!authorsOf(sketch, variant).includes(by))
+    return fail(
+      `${sketch.target} variant ${variant} was not drawn by ${by} - only the agent that drew it withdraws it`,
+    );
+
+  const identical = await identicalRenders({ target: context.target, config: context.config, product, sketch });
+  const twin = identical.find((render) => render.variant === variant && render.sibling !== null);
+
+  if (!twin)
+    return fail(
+      `${sketch.target} variant ${variant} does not draw the same pixels as a sibling variant in its first changed state - redraw it or ask for a reject`,
+    );
+
+  const result = withdrawVariant({ sketch, variant, by, reason: `identisch mit ${twin.sibling}` });
+
+  if (typeof result === 'string') return fail(result);
+
+  console.log(`withdrew ${sketch.target} variant ${variant} (identisch mit ${twin.sibling})`);
+
+  return 0;
+};
 
 const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
@@ -1097,11 +1169,12 @@ const COMMANDS: Record<string, (context: Context) => number | Promise<number>> =
   target: targetAdded,
   reject: judged('reject'),
   reopen: judged('reopen'),
+  withdraw: withdrawn,
 };
 
 /**
  * `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and
- * discards sketches, and rejects and reopens their variants.
+ * discards sketches, and rejects, reopens and withdraws their variants.
  */
 export const designSketch = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;

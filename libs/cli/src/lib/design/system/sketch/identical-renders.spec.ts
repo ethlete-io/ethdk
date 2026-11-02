@@ -41,7 +41,7 @@ describe('identicalRenderLinesOf', () => {
     });
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: change it or reject it',
+      'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
 
@@ -61,9 +61,9 @@ describe('identicalRenderLinesOf', () => {
     const pictureOf = drawing({});
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant a draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: change it or reject it',
-      'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: change it or reject it',
-      'elements/hero variant c draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: change it or reject it',
+      'elements/hero variant a draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: redraw it',
+      'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
+      'elements/hero variant c draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant c --by <model id>` or redraw it',
     ]);
   });
 
@@ -72,7 +72,7 @@ describe('identicalRenderLinesOf', () => {
     const pictureOf = drawing({ a: { default: 1 } });
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant b draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: change it or reject it',
+      'elements/hero variant b draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: redraw it',
     ]);
   });
 
@@ -81,7 +81,7 @@ describe('identicalRenderLinesOf', () => {
     const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { default: 1, hover: 3 } });
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant b first changes default, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant b',
+      'elements/hero variant b first changes default, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
 
@@ -104,7 +104,7 @@ describe('identicalRenderLinesOf', () => {
     const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { hover: 1 } });
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant b first changes hover, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant b',
+      'elements/hero variant b first changes hover, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
 

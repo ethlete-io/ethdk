@@ -4,7 +4,7 @@ import { createPartShooter } from './shot';
 import { DesignConfig } from './paths';
 import { ResolvedProduct } from './system/resolve-product';
 import { aktuellPlaceholderWarningsOf } from './system/sketch/aktuell-placeholders';
-import { identicalRenderLinesOf } from './system/sketch/identical-renders';
+import { IdenticalRender, identicalRendersOf } from './system/sketch/identical-renders';
 import { sketchShowsNoChange, variantLoadProblemsOf } from './system/sketch/no-visible-change';
 import { Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
@@ -124,12 +124,16 @@ export const aktuellPlaceholderWarnings = async (options: {
 };
 
 /** Shoots the sketch on a render server of its own; one line per live variant that adds nothing visible, see `identicalRenderLinesOf`. */
-export const identicalRenderLines = async (options: {
+export const identicalRenderLines = async (options: Parameters<typeof identicalRenders>[0]): Promise<string[]> =>
+  (await identicalRenders(options)).map((render) => render.line);
+
+/** Shoots the sketch like `identicalRenderLines`, and says which sibling each named variant draws like. */
+export const identicalRenders = async (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-}): Promise<string[]> => {
+}): Promise<IdenticalRender[]> => {
   const { target, config, product, sketch } = options;
   let server: Awaited<ReturnType<typeof createDesignServer>> | undefined;
 
@@ -146,7 +150,7 @@ export const identicalRenderLines = async (options: {
     });
 
     try {
-      return await identicalRenderLinesOf({
+      return await identicalRendersOf({
         product,
         sketch,
         pictureOf: shooter.pictureOf,
@@ -157,7 +161,7 @@ export const identicalRenderLines = async (options: {
       await shooter.close();
     }
   } catch (error) {
-    return [couldNotRender(sketch, error)];
+    return [{ variant: '', sibling: null, line: couldNotRender(sketch, error) }];
   } finally {
     await server?.close();
   }

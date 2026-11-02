@@ -53,6 +53,9 @@ export type SketchRejection = {
   reason?: string;
   reasonBy?: SketchVerdictBy;
   reopened?: SketchReopening;
+  /** `withdrawn`: the agent that drew the variant took it out of the open set, `withdrawnBy` is its model id. Absent on a rejection. */
+  status?: 'withdrawn';
+  withdrawnBy?: string;
 };
 
 /** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
@@ -242,6 +245,8 @@ const isRejection = (value: unknown): value is SketchRejection => {
     typeof rejection.decidedAt === 'string' &&
     isOptionalText(rejection.reason) &&
     (rejection.reasonBy === undefined || isVerdictBy(rejection.reasonBy)) &&
+    (rejection.status === undefined || rejection.status === 'withdrawn') &&
+    (rejection.withdrawnBy === undefined || typeof rejection.withdrawnBy === 'string') &&
     (rejection.reopened === undefined || isReopening(rejection.reopened))
   );
 };
@@ -348,7 +353,7 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
   if (parsed.variantInfo !== undefined && !isVariantInfo(parsed.variantInfo))
     return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string, note?: string } }`;
   if (parsed.rejections !== undefined && !isRejections(parsed.rejections))
-    return `${file}: rejections must be { <variant>: [{ by: designer | agent, decidedAt, reason?, reasonBy?, reopened?: { by, decidedAt, reason? } }] }, each but the last reopened`;
+    return `${file}: rejections must be { <variant>: [{ by: designer | agent, decidedAt, reason?, reasonBy?, status?: withdrawn, withdrawnBy?, reopened?: { by, decidedAt, reason? } }] }, each but the last reopened`;
   if (parsed.rounds !== undefined && !isRounds(parsed.rounds))
     return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
   if (parsed.merge !== undefined && !SKETCH_MERGES.includes(parsed.merge))
@@ -901,6 +906,49 @@ const withVerdict = (sketch: Sketch, verdict: SketchVariantVerdict): Sketch | st
     ...(decision && !unpicked ? { decision } : {}),
     rejections: { ...sketch.rejections, [variant]: next },
   };
+};
+
+/**
+ * Takes a variant out of the open set as `withdrawn` by the agent `by`, with `reason`; refused when `by` did not draw
+ * the variant or it is rejected already. Writes sketch.json.
+ */
+export const withdrawVariant = (options: {
+  sketch: Sketch;
+  variant: string;
+  by: string;
+  reason: string;
+}): Sketch | string => {
+  const { sketch, variant, by, reason } = options;
+
+  if (!sketch.variants.includes(variant))
+    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+  if (rejectionOf(sketch, variant)) return `${sketch.target} variant ${variant} is rejected or withdrawn already`;
+  if (!authorsOf(sketch, variant).includes(by))
+    return `${sketch.target} variant ${variant} was not drawn by ${by}${drawerNote(sketch, variant)} - only its author withdraws it`;
+
+  const withdrawn = withVerdict(sketch, { kind: 'reject', variant, reason, by: 'agent' });
+
+  if (typeof withdrawn === 'string') return withdrawn;
+
+  const history = withdrawn.rejections?.[variant] ?? [];
+  const last = history[history.length - 1] as SketchRejection;
+  const marked: Sketch = {
+    ...withdrawn,
+    rejections: {
+      ...withdrawn.rejections,
+      [variant]: [...history.slice(0, -1), { ...last, status: 'withdrawn', withdrawnBy: by }],
+    },
+  };
+
+  writeSketchFile(marked);
+
+  return marked;
+};
+
+const drawerNote = (sketch: Pick<Sketch, 'variantInfo'>, variant: string) => {
+  const authors = authorsOf(sketch, variant);
+
+  return authors.length > 0 ? ` (drawn by ${authors.join(', ')})` : '';
 };
 
 /**
