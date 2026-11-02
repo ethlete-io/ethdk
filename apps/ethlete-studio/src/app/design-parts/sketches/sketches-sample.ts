@@ -5,7 +5,6 @@ export type SketchVariant = {
   key: string;
   label: string;
   note: string;
-  pending?: string;
   author?: { name: string; agent: AgentLogoName };
 };
 

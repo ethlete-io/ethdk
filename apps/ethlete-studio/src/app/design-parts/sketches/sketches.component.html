@@ -14,15 +14,6 @@
       class="absolute top-space-5 right-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] z-2 flex items-center gap-space-3"
     >
       <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
-      @if (inProgress()) {
-        <span
-          class="flex items-center gap-space-1 rounded-full border border-et-surface-border px-space-2 py-px text-ui-xs font-ui-medium text-et-surface-muted"
-          data-sketch-status
-        >
-          <span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>
-          {{ LABELS.inProgress }}
-        </span>
-      }
       <span class="flex-1"></span>
       <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
         {{ LABELS.discard }}
@@ -65,21 +56,6 @@
                     <ng-container *ngTemplateOutlet="shot; context: { $implicit: variant }" />
                   }
                 </div>
-                @if (variant.pending; as pending) {
-                  <div
-                    class="pointer-events-none absolute inset-0 flex items-start justify-center bg-(--et-surface-background-solid)/70 p-space-4"
-                    data-frame-pending
-                  >
-                    <span
-                      class="flex items-center gap-space-2 rounded-full border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) px-space-3 py-space-1 text-ui-sm font-ui-strong whitespace-nowrap text-et-surface shadow-md"
-                    >
-                      <span
-                        class="size-2 shrink-0 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"
-                      ></span>
-                      {{ pending }}
-                    </span>
-                  </div>
-                }
                 @if (pinOf(variant.key); as pin) {
                   <span class="absolute top-space-1 right-space-1 z-1 flex">
                     <ethlete-comment-pin

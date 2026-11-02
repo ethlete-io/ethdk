@@ -409,21 +409,4 @@ describe('SketchViewComponent', () => {
     expect(pin?.textContent).toContain('2');
     expect(root.querySelector('[data-page="a"] ethlete-comment-pin')).toBeNull();
   });
-
-  it('shows a sketch that is not ready as in progress, with the agent still drawing each variant of its newest round', async () => {
-    const { root } = await render({ ...ROUNDED, status: 'in progress', decision: undefined }, noComments);
-
-    expect(root.querySelector('[data-sketch-status]')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.inProgress);
-    expect(root.querySelector('[data-page="current"] [data-frame-pending]')).toBeNull();
-    expect(root.querySelector('[data-page="b"] [data-frame-pending]')?.textContent?.trim()).toBe(
-      STUDIO_LABELS.systemTree.pending,
-    );
-  });
-
-  it('shows a ready sketch without the in-progress state', async () => {
-    const { root } = await render(ROUNDED, noComments);
-
-    expect(root.querySelector('[data-sketch-status]')).toBeNull();
-    expect(root.querySelector('[data-frame-pending]')).toBeNull();
-  });
 });

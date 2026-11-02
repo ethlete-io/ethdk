@@ -26,7 +26,6 @@ export const STUDIO_LABELS = {
     variant: (label: string) => `Variante ${label}`,
     fitHint: 'Doppelklick zum Einpassen',
     current: 'Aktuell',
-    inProgress: 'In Arbeit',
     roundSelect: 'Runde',
     round: (number: number, title: string) => [`Runde ${number}`, title].filter(Boolean).join(' · '),
   },

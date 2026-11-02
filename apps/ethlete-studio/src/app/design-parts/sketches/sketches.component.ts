@@ -66,7 +66,6 @@ export class SketchesComponent {
   public camera = input<'fit' | '100' | Camera>('fit');
   public selected = input<string | undefined>(undefined);
   public part = input('pages/system');
-  public inProgress = input(false);
   public variants = input<SketchVariant[]>(SKETCH_VARIANTS);
   public rounds = input(SKETCH_ROUNDS);
   public round = input(SKETCH_ROUNDS[0]?.value ?? '');

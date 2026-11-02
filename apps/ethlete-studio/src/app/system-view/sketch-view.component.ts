@@ -37,7 +37,6 @@ import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge
 import { PageShell, PageShellAction } from './page-shell';
 import {
   CURRENT,
-  PENDING_LABEL,
   mergePreviewOf,
   partKeyOf,
   pickedVariantOf,
@@ -74,7 +73,6 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
     } @else {
       <ethlete-sketches
         [part]="sketch().target"
-        [inProgress]="sketch().status === 'in progress'"
         [variants]="variants()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
@@ -310,7 +308,6 @@ export class SketchViewComponent {
   protected variants = computed<SketchVariant[]>(() => {
     const sketch = this.sketch();
     const shown = this.shownRounds().flatMap((round) => (round.open ? round.variants : []));
-    const pending = new Set(sketch.status === 'in progress' ? (this.shownRounds().at(-1)?.variants ?? []) : []);
 
     return [
       { key: CURRENT, label: STUDIO_LABELS.sketches.current, note: '' },
@@ -321,7 +318,6 @@ export class SketchViewComponent {
           key: variant,
           label: variant,
           note: sketch.variantInfo?.[variant]?.note ?? '',
-          ...(pending.has(variant) ? { pending: PENDING_LABEL } : {}),
           ...(sender.agent ? { author: { name: sender.author, agent: sender.agent } } : {}),
         };
       }),
