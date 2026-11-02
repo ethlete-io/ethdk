@@ -1375,6 +1375,14 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      sr-only 1x1 text is flagged as clipped. A deliberate visually-hidden element is not a clipping defect. Tool fix:
      B45 (the clipped check skips visually-hidden sr-only elements by itself; drop the skip from the sketch). Lesson:
      a skip attribute in a draft is a sign of a false positive in the tool, and each one needs a finding.
+142. All three components/title-bar variants flickered permanently in Studio's sketch view, as if without a fixed size
+     (Tom, 2026-11-02). Probable cause (builder, to confirm): uncommitted B36 frame-sizing edits in
+     apps/ethlete-studio/src/app/system-view/sketch-view.component.ts size each frame from the iframe's reported
+     width/height, and Tom's live-reloading tauri:dev picked them up; frame resizes, page re-measures, frame resizes
+     again. Why no check caught it: no spec feeds a second size report at the new size, and no e2e watches that a
+     rendered size stays stable over time. Tool fix: B47 (a spec that feeds the measured size back; a stability check
+     that renders the view, waits, and fails when a frame size still changes). Lesson: any size taken from a
+     measurement must be proven stable, not only correct once.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
