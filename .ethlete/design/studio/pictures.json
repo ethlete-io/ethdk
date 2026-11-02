@@ -348,6 +348,16 @@
       }
     }
   },
+  "components/update-dialog": {
+    "review": {
+      "hash": "3f721990a4a5726b",
+      "states": {
+        "open": "5bb8dc1e72f095f6",
+        "long-version": "c3e847c8dcf7bcff",
+        "restart-focus-visible": "3b84eed8f6eb0795"
+      }
+    }
+  },
   "components/zoom-chip": {
     "go": {
       "hash": "19b060128f62ca4f",
