@@ -3002,3 +3002,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      file (spec -> source globs, not a comment header) that the pre-commit hook merges into `related`; a lint/check
      fails when a spec under libs/cli reads or spawns a source path (`readFileSync`, `spawnSync`, `vm`) and has no
      map entry; the builder confirms that pre-push or CI runs the full CLI spec suite, and adds it if not.
+
+224. B128 landed (7957d3194, builder, 2026-11-02): wiring for pages/sketches is now every ancestor (app.config.ts,
+     app.routes.ts, main.ts, the harness files, studio-view, sketch-view, system-view) plus the part's spec. Gap:
+     5a29b1b94 also changed system-view/inbox-comments.ts and system-tree.ts, which do not import the part; sketch-view
+     (the direct importer) imports them to build the part's inputs. Ancestors-only refuses them. Lesson: "files that
+     mount the part" and "files that feed its inputs" are two sets; decision 221 covered only the first. Tool fix
+     (decided, technical, amends B128): wiring also includes the non-spec app files imported by the part's DIRECT
+     importers (one level, not the imports of every ancestor, so app.config does not pull in the whole app).
