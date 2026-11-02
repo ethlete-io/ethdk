@@ -1462,6 +1462,11 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      sets a minimum size for running text; xs is meant for short metadata. Tool fix, added to B54: a design check
      warns on a sentence-length text node (over about 40 characters) set below `text-ui-sm` or truncated to one line;
      the sketch-view sketch shows the full note at readable size.
+     Update (builder, 2026-11-02, d678615cc and 8157f707a, not pushed): ready refuses a variant identical in every
+     state to another variant or to Aktuell, and a first shown frame identical to an earlier one; check warns. On
+     pages/sketches, b and c render identically in page-sketch, page-100 and zoomed-page and differ only in the
+     status states; a differs subtly. New silent pass found: the identical-render check reported nothing when its
+     render server failed to start (same as aktuellPlaceholderWarnings); both now to fail loudly.
 149. components/zoom-chip was never comparable, yet counted as done in the MVP (builder, 2026-11-02, found by the B48
      gate as "unjudged" in all 16 states). `design compare` fails every state: the design sets a `target` prop on
      every interaction row (zoom-chip.ts ~35), ZoomChipComponent has no `target` input, and designOnlyPropsOf
