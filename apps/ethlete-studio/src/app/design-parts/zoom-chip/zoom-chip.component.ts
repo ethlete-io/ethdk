@@ -18,7 +18,6 @@ import { AutoSurfaceDirective } from '@ethlete/core';
     </button>
     <button
       (click)="zoomReset.emit()"
-      class="tabular-nums"
       et-button
       type="button"
       variant="transparent"

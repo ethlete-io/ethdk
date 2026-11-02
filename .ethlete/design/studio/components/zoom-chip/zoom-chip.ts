@@ -16,8 +16,8 @@ const ARIA_LABEL: Record<ZoomControl, string> = {
 
 const OUTPUT: Record<ZoomControl, string> = { out: 'zoomOut', reset: 'zoomReset', in: 'zoomIn', fit: 'fit' };
 
-const chipButton = (id: ZoomControl, label: string, { target, interaction }: Props, extra?: string) => {
-  const markup = button({ label, variant: 'transparent', color: 'surface', size: 'sm', class: extra }).replace(
+const chipButton = (id: ZoomControl, label: string, { target, interaction }: Props) => {
+  const markup = button({ label, variant: 'transparent', color: 'surface', size: 'sm' }).replace(
     /^<button /,
     `<button data-et-control="${id}" data-et-action="emit:${OUTPUT[id]}" aria-label="${ARIA_LABEL[id]}" data-can-animate `,
   );
@@ -64,7 +64,7 @@ export default definePart({
         data-et-auto-surface
         data-canvas-zoom
       >
-        ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props, 'tabular-nums')}${chipButton(
+        ${chipButton('out', '−', props)}${chipButton('reset', `${props.percent} %`, props)}${chipButton(
           'in',
           '+',
           props,
