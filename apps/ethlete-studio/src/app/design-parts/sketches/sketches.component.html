@@ -15,6 +15,9 @@
     >
       <span class="text-ui-lg font-ui-strong">{{ part() }}</span>
       <span class="flex-1"></span>
+      @if (error(); as error) {
+        <p [etProvideColor]="errorTheme()" class="m-0 text-ui-xs text-et-theme-ink" role="alert">{{ error }}</p>
+      }
       <button [color]="errorTheme()" (click)="discard.emit()" et-button type="button" variant="transparent" size="sm">
         {{ LABELS.discard }}
       </button>

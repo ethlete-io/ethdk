@@ -34,6 +34,7 @@ import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { senderOf } from './inbox-comments';
 import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge-preview';
+import { refusalMessageOf } from './inventory';
 import { PageShell, PageShellAction } from './page-shell';
 import {
   CURRENT,
@@ -78,6 +79,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [round]="shownRoundKey()"
         [pins]="variantPins()"
         [selected]="picked() ?? undefined"
+        [error]="mergeError()"
         [shot]="shot"
         [tree]="shell().tree"
         [shell]="shell()"
@@ -453,11 +455,15 @@ export class SketchViewComponent {
     if (this.busy()) return;
 
     this.busy.set(busy);
+    this.mergeError.set(null);
 
     work$
       .pipe(
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.mergeError.set(refusalMessageOf(error));
+
+          return of(null);
+        }),
         finalize(() => {
           this.busy.set(null);
           this.decide.emit();

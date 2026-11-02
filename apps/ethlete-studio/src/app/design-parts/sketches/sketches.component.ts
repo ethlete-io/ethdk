@@ -12,7 +12,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
-import { injectSemanticColorTheme, signalElementDimensions } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme, signalElementDimensions } from '@ethlete/core';
 import { Camera, Rect } from '../../components/design-canvas/canvas-math';
 import { CanvasFrameDirective } from '../../components/design-canvas/canvas-frame.directive';
 import { DesignCanvasComponent } from '../../components/design-canvas/design-canvas.component';
@@ -47,6 +47,7 @@ const FRAME = 'relative m-0 box-border flex rounded-control-md bg-et-surface-bg 
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    ProvideColorDirective,
     FORM_FIELD_IMPORTS,
     SELECT_IMPORTS,
     NgTemplateOutlet,
@@ -72,8 +73,9 @@ export class SketchesComponent {
   public pins = input<SketchPin[]>(SKETCH_PINS);
   public shot = input<TemplateRef<{ $implicit: SketchVariant }> | null>(null);
   public tree = input(SKETCH_TREE);
-  public shellAction = output<ShellAction>();
+  public error = input<string | null>(null);
 
+  public shellAction = output<ShellAction>();
   public discard = output();
   public merge = output<string>();
   public roundChange = output<string>();

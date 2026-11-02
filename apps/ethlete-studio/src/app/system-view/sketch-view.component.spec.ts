@@ -388,6 +388,39 @@ describe('SketchViewComponent', () => {
     expect(asked.some((url) => url.includes('/__design/sketch-discard'))).toBe(true);
   });
 
+  it('shows the reason of a refused pick or discard next to the decide controls and clears it on the next action', async () => {
+    const reason = 'components/card is in progress - a variant is picked once it is ready';
+    let refuse = true;
+    const { fixture, root } = await render(SKETCH, (url) => {
+      if (url.includes('/__design/sketch-decision') || url.includes('/__design/sketch-discard'))
+        return Promise.resolve(
+          refuse ? new Response(JSON.stringify({ error: reason }), { status: 422 }) : new Response('{}'),
+        );
+
+      return noComments(url);
+    });
+    const errorText = () => root.querySelector('ethlete-sketches [role="alert"]')?.textContent?.trim();
+
+    fixture.componentInstance['pickForMerge']('a');
+    await settle(fixture);
+
+    expect(errorText()).toContain('is in progress - a variant is picked once it is ready');
+    expect(fixture.componentInstance['busy']()).toBeNull();
+
+    refuse = false;
+    buttonNamed(root, 'Verwerfen')?.click();
+    await settle(fixture);
+
+    expect(errorText()).toBeUndefined();
+
+    refuse = true;
+    buttonNamed(root, 'Verwerfen')?.click();
+    await settle(fixture);
+
+    expect(errorText()).toContain('is in progress');
+    expect(fixture.componentInstance['busy']()).toBeNull();
+  });
+
   it('pins the comments of a variant on its frame with the count of every message', async () => {
     const comment = {
       id: 'c1',
