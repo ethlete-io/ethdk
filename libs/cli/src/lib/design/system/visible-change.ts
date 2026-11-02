@@ -17,9 +17,10 @@ export type SketchEvidence = { text: string; merged: boolean };
 export type VisibleChangeVerdict = {
   part: string;
   pass: boolean;
-  why: 'invisible' | 'sketched' | 'closer' | 'visible' | 'broken';
+  why: 'invisible' | 'sketched' | 'closer' | 'visible' | 'broken' | 'unjudged';
   changed: string[];
   unjudged: string[];
+  reasons: string[];
 };
 
 const DIFF_RED = 0xff0000ff;
@@ -87,22 +88,26 @@ export const sketchedPartsOf = (evidence: SketchEvidence[]) => {
 
 /**
  * A part passes when its app draws alike at base and HEAD, when a picked or merged sketch of it is in the range, or
- * when every changed state is strictly closer to HEAD's design. A state HEAD can no longer draw always fails.
+ * when every changed state is strictly closer to HEAD's design. A state HEAD can no longer draw always fails, and so does any state the gate could not judge.
  */
 export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<string> }): VisibleChangeVerdict => {
   const { part, states } = options.diff;
   const changed = states.filter((state) => state.kind === 'differs' || state.kind === 'new' || state.kind === 'broken');
-  const unjudged = states.filter((state) => state.kind === 'unjudged').map((state) => state.state);
+  const unjudgedStates = states.filter((state) => state.kind === 'unjudged');
+  const unjudged = unjudgedStates.map((state) => state.state);
+  const reasons = [...new Set(unjudgedStates.map((state) => (state.kind === 'unjudged' ? state.problem : '')))];
   const verdict = (pass: boolean, why: VisibleChangeVerdict['why']): VisibleChangeVerdict => ({
     part,
     pass,
     why,
     changed: changed.map((state) => state.state),
     unjudged,
+    reasons,
   });
 
-  if (changed.length === 0) return verdict(true, 'invisible');
   if (changed.some((state) => state.kind === 'broken')) return verdict(false, 'broken');
+  if (unjudged.length > 0) return verdict(false, 'unjudged');
+  if (changed.length === 0) return verdict(true, 'invisible');
   if (options.sketched.has(part)) return verdict(true, 'sketched');
   if (changed.every((state) => state.kind === 'differs' && state.head < state.base)) return verdict(true, 'closer');
 

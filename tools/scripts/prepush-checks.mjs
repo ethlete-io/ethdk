@@ -78,7 +78,7 @@ if (kind === 'live') {
     copyOpenSketches({ from: worktree, to: root });
   }
 
-  process.exit(designCheck(['cli'], '--live'));
+  process.exit(designCheck(['cli', 'components'], '--live'));
 }
 
 if (kind === 'visible') {

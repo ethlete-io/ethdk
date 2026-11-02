@@ -148,7 +148,7 @@ describe('visibleChangeVerdictOf', () => {
     ).toMatchObject({ pass: true, why: 'sketched' });
   });
 
-  it('fails a state HEAD can no longer draw even with a sketch, and lets a state neither side draws pass', () => {
+  it('fails a state HEAD can no longer draw even with a sketch, and fails a state neither side draws', () => {
     expect(
       visibleChangeVerdictOf({
         diff: diffOf([{ state: 'idle', kind: 'broken', problem: 'boom' }]),
@@ -160,7 +160,7 @@ describe('visibleChangeVerdictOf', () => {
         diff: diffOf([{ state: 'idle', kind: 'unjudged', problem: 'slots' }]),
         sketched: new Set(),
       }),
-    ).toMatchObject({ pass: true, why: 'invisible', unjudged: ['idle'] });
+    ).toMatchObject({ pass: false, why: 'unjudged', unjudged: ['idle'], reasons: ['slots'] });
   });
 });
 
@@ -171,6 +171,7 @@ describe('visibleChangeSummaryOf', () => {
     why: pass ? ('invisible' as const) : ('visible' as const),
     changed: [],
     unjudged,
+    reasons: [],
   });
 
   it('lists every unjudged state of a pass', () => {

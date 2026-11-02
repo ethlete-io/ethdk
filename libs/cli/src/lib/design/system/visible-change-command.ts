@@ -181,13 +181,15 @@ const verdictLineOf = (verdict: VisibleChangeVerdict, range: string) => {
 
   switch (verdict.why) {
     case 'invisible':
-      return `PASS ${verdict.part}: no visible change${verdict.unjudged.length > 0 ? ` (unjudged: ${verdict.unjudged.join(', ')})` : ''}`;
+      return `PASS ${verdict.part}: no visible change`;
     case 'sketched':
       return `PASS ${verdict.part}: ${states} changed with a picked or merged sketch in ${range}`;
     case 'closer':
       return `PASS ${verdict.part}: ${states} changed closer to the design`;
     case 'broken':
       return `FAIL ${verdict.part}: the app no longer draws ${states}`;
+    case 'unjudged':
+      return `FAIL ${verdict.part}: ${verdict.unjudged.length} state(s) unjudged (${verdict.unjudged.join(', ')})${verdict.reasons.length > 0 ? `: ${verdict.reasons.join('; ')}` : ''}`;
     case 'visible':
       return `FAIL ${verdict.part}: ${states} look different, with no picked or merged sketch of the part in ${range} and not closer to the design`;
   }
