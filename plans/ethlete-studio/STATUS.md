@@ -23,8 +23,10 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
 603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
 3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
-startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen; hing am fehlenden `implements`-Link, Befund 153), danach B62-Werkzeugteil; offen: A13 (CLI),
-B58, B57, B59, B60, B61. B56 gebaut (bbde5081e, ca7546773, lokal). Befund 152 (c) geklärt, Korrektur in Arbeit (schnelles Lesen vor dem vollen Lesen). Läuft: A1 mit
+startet. Reihenfolge (Grill, 02.11., Tom: „in der Reihenfolge, die Sinn ergibt“): sofort parallel der Sketch der
+Sketch-Ansicht (Befund 148, mit „Übernehmen“ nach A13), weil er Toms Wählen blockiert; danach Code-Review B61, B58,
+B57, B59, B60 vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
+lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. Läuft: A1 mit
 macOS-Ampel als Demo-Inhalt, compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
 
 Bei Tom:
