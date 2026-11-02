@@ -20,7 +20,21 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Reihenfolge von Liste A (Tom, 02.11.): A1, A36, A8, dann A9 und A10, dann A5 bis A7 und A40, danach der Rest der Reihe nach; A38 und A39 nach A37. Was man sieht, startet immer mit einem Sketch.
+Pausiert seit 02.11. abends (Tom: keine neuen Fixes). `origin/next` = 7724d5f14. Nächste Session startet mit Toms
+Wahl: Sketch `components/title-bar` ist `ready` (A/B/C, Agent empfiehlt B); `pages/sketches` ist gezeichnet, aber
+nicht `ready` (Befund 146). Danach der Sketch zu B46. Was man sieht, startet immer mit einem gewählten Sketch.
+
+Übergaben und geparkte Arbeit (lokal, per gitignore ausgeschlossen, nur auf Toms Rechner):
+
+- `.claude/handoffs/doc-agent-studio.md`: Grill/Docs-Session, `/handoff resume doc-agent-studio`.
+- `.claude/handoffs/builder-studio.md`: Builder-Session, `/handoff resume builder-studio`.
+- `.claude/handoffs/b36-parked.patch` und `b36-parked-e2e.mjs`: B36 samt Flacker-Fix (Befund 142); kommt nach der
+  Wahl von pages/sketches, auf B34 aufgesetzt.
+- `.claude/handoffs/b49-parked.patch`: B49 (Befund 144).
+- `.claude/handoffs/agent-results/b48.md`, `b49.md`, `pages-sketches-sketch.md`: Berichte der Unteragenten.
+
+Reihenfolge danach: B34 neu (nach Wahl), B36, B38, B46, B48, B49, B51-B53, B43-B45, B39-B41; Liste A wie
+festgelegt: A1, A36, A8, dann A9 und A10, dann A5 bis A7 und A40, danach der Rest; A38 und A39 nach A37.
 
 ## Erledigt
 
