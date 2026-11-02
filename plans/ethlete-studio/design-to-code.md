@@ -2579,3 +2579,6 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      round template name the product's UI language (studio: German) for notes; `sketch check` warns NOTE-LANGUAGE
      when a note's language differs from the product's (measured, not blocked); the open zoom-chip notes are
      rewritten in German by their author.
+     Update (builder, 5df2ad7da): both variant notes are German. The round r1 note stays English: the CLI cannot edit
+     a round note after `sketch variant --round-note`. B114 adds `sketch note --round <key>`; then the round note is
+     rewritten.
