@@ -48,9 +48,13 @@ const discard = await button.render({ label: 'Verwerfen', variant: 'transparent'
 const merge = await button.render({ label: 'Wählen', variant: 'outline', size: 'sm' });
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = act(commentPinMark(pinProps(PAGE_PIN)), 'pinToggle');
-const open = await systemPage();
-const hidden = await systemPage('hidden');
-const pages: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
+const drawPages = async () => {
+  const open = await systemPage();
+  const hidden = await systemPage('hidden');
+  const bodies: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
+
+  return { bodies, styles: open.styles };
+};
 
 const picker = await select.render({
   label: '',
@@ -75,12 +79,12 @@ const variantHead = (variant: PageVariant) =>
     >
   </div>`;
 
-const frame = (variant: PageVariant, selected: boolean) =>
+const frame = (variant: PageVariant, selected: boolean, page: string) =>
   html`<figure
     class="sk-frame relative m-0 box-border flex rounded-control-md bg-et-surface-bg p-space-2"
     ${selected ? ' data-selected' : ''}
   >
-    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
+    ${pageShot(variant.key, page, variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
   </figure>`;
 
 const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, frames: Rect[]) => {
@@ -162,6 +166,7 @@ export default definePart<Props>({
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
   },
   render: async ({ camera, selected }) => {
+    const pages = await drawPages();
     const content = html`<div
       class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--et-surface-background-solid)_60%,transparent)] after:content-['']"
       data-sketches-page
@@ -184,7 +189,7 @@ export default definePart<Props>({
           class="absolute top-0 left-0 w-max origin-top-left select-none grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]"
           data-sk-world
         >
-          ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
+          ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected, pages.bodies[variant.key])).join('')}
         </section>`,
       })}
       ${PAGE_VARIANTS.map(variantHead).join('')} ${chip.body}
@@ -206,7 +211,7 @@ export default definePart<Props>({
       styles:
         shell.styles +
         side.styles +
-        open.styles +
+        pages.styles +
         discard.styles +
         merge.styles +
         picker.styles +
