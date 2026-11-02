@@ -1616,6 +1616,9 @@ check` fails a part with a varying design prop that has no app input and is not 
      rule NESTED-SCROLL: an element with overflow auto or scroll whose scroll size exceeds its box inside a design
      frame is reported; a part that must scroll declares it). Lesson: content behind a scrollbar is content no
      picture shows.
+     Update (builder, 2026-11-02): B68 done 3405ec61c (NESTED-SCROLL rule, SDK scrollers exempt). The thumb contrast
+     miss: contrast-check.ts skipped everything inside [inert] and the sketch thumbnails are inert; inert is now
+     measured, disabled still skipped. Lesson: a skip for "not interactive" is not a skip for "not visible".
 160. A frame in the Sketches view sometimes shows the browser's own failed-load page (grey page with the sad document
      icon) instead of the design (Tom, 2026-11-02, pages/sketches `page-sketch · desktop`). Cause (builder, proven
      in a clone): the design server restarts itself when dist/libs/cli changes (serve.ts:1133-1151, build-watch.ts
@@ -1736,8 +1739,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      not a gate; a picture from stale code is worse than no picture.
 172. pages/sketches no longer renders: "location is not defined", raised from the title-search part's render
      (builder, 2026-11-02). It started within this wave (kbd-color, B76 shell-main with the embedded title bar, or the
-     rebuilt components dist) and blocks the live check of B75. Cause pending (builder). Also pending: why a commit
-     that breaks a dependent sketch's render passed - which check runs the sketches that embed a changed part.
+     rebuilt components dist) and blocks the live check of B75. Cause (builder): no commit - the B76 agent's
+     uncommitted shell-main edit (elements/shell-main/shared/shell-main.ts:251, title bar embedded) in the shared
+     working tree; every other agent's render of a part that embeds shell-main broke with it. Why no tool made it
+     clear: a check renders whatever is on disk and does not say that a file it depends on is a half-done edit of
+     another agent. Tool fix: B95 (checks name uncommitted files the render depends on). Lesson: in a shared tree, a
+     red check must say whether the red comes from committed code or from someone's open edit.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

@@ -189,8 +189,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
   apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
   synthetischen Ein-Varianten-Skizze (Befund 158).
-- **B68** Render-Regel NESTED-SCROLL: ein Scroll-Bereich mit überlaufendem Inhalt im Design-Rahmen wird gemeldet
-  (Befund 159).
 - **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
   E2E lädt Rahmen, während sich Dateien ändern (Befund 160).
 - **B70** (geparkt bis zum Umbau des Go-Systems) Ein Go lässt sich zurücknehmen (Befund 162).
@@ -245,6 +243,11 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B94** (hoch) `design shot/check/compare` zeichnen nie aus veraltetem SDK-dist: veraltete Lib vor dem Zeichnen
   automatisch bauen, sonst mit dem Build-Befehl verweigern (heute nur „WARNING STALE BUILD“); Spec: Shot scheitert
   bei veraltetem dist (Befund 171).
+- **B95** Render- und Design-Checks melden, wenn der gezeichnete Part von Dateien mit uncommitteten Änderungen
+  abhängt („rendert mit uncommitteter Datei X“), damit ein halber Edit eines parallelen Agents nicht als Fehler des
+  eigenen Parts erscheint (Befund 172).
+- **B96** sdk components/stream: Consent- und Player-Error-Karte bei 320 px 3 px zu kurz (NESTED-SCROLL-Treffer);
+  Fix im Stream-CSS in libs/components.
 
 ## C. CLI: Tempo und Ablauf
 
