@@ -1573,6 +1573,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      technical): product/part become design props with states; the SDK button gets an option to stretch its contents
      and both design and app drop the classes; the control interaction states get drawn. All are design changes
      under Tom's next go. Lesson: a fixed-width design compared in a shrink-to-fit host compares a different layout.
+157. The built title bar runs into the content below in the live app (Tom's screenshot, 2026-11-02): the design gives
+     it `bg-et-surface-bg`, the same as the page, and no edge, so the canvas dot grid seems to pass under it. Why no
+     check caught it: the sketch and the merge view show a part alone on a neutral frame; nobody saw it above the real
+     content before the pick. Tool fix: added to B46 (the in-context view is part of judging any part that sits at an
+     app edge, before the pick, not only for sketches of pages). Lesson: an edge part judged alone cannot show where
+     it ends.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
