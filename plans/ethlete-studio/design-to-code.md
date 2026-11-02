@@ -2944,3 +2944,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      `.ethlete/design/**` never counts as implementation (one summary line); `task` lists wiring files up front (files
      that import the part plus their direct imports) and verify allows them with one WIRING line each; no per-file
      `--allow` flag. Then verify 5a29b1b94 again and mark ready.
+
+219. Studio-written state committed in dd1d0377b except go.json (builder, 2026-11-02): a PreToolUse hook denies any
+     agent commit of go.json ("a go is granted in Studio"), and Tom edits no files, so Tom's Studio gos of today
+     (title-bar, title-search, update-dialog, shell-main, zoom-chip, pages/sketches) plus the check carries float in
+     the tree with no owner. Lesson: the hook guards who may write a go, but nothing commits the go Tom grants, so a
+     granted go is never part of history. Open for Tom: Studio commits go.json itself when he clicks "Go geben" (one
+     commit per go, authored as Tom). Also: the Bash hook that sends long design commands to the background matches
+     those words inside a commit message body and blocked two plan commits. Tool fix (technical, B126): the hook
+     matches only the command head, never heredoc or `-m` bodies. sdk/ and studio-lab/pictures.json get committed
+     like studio/pictures.json.
