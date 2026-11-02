@@ -23,7 +23,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
   selector: 'ethlete-title-bar',
   template: `
     <div
-      class="grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 bg-et-surface-bg px-1.5 font-ui text-ui-sm text-et-surface"
+      class="grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg px-1.5 font-ui text-ui-sm text-et-surface"
       data-et-surface
       data-tauri-drag-region="deep"
     >
@@ -36,8 +36,9 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
       <button
         [attr.aria-label]="LABELS.search(product(), part())"
-        class="w-2xl justify-start gap-space-2 px-space-2 text-et-surface-muted [&>.et-button-contents]:flex [&>.et-button-contents]:flex-1 [&>.et-button-contents]:items-center [&>.et-button-contents]:gap-space-2"
+        class="w-2xl justify-start px-space-2 text-et-surface-muted [--et-button-gap:var(--space-2)]"
         et-button
+        stretchContents
         type="button"
         variant="tonal"
         color="surface"
