@@ -1,7 +1,15 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { EMPTY, of } from 'rxjs';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
+
+vi.mock('../../../host/window', () => ({
+  closeWindow$: () => EMPTY,
+  minimizeWindow$: () => EMPTY,
+  toggleMaximizeWindow$: () => EMPTY,
+  isWindowMaximized$: () => of(false),
+}));
 import { ShellMainComponent, ShellSection } from './shell-main.component';
 
 const setup = async (panel: 'open' | 'hidden') => {
@@ -60,5 +68,36 @@ describe('ShellMainComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.projectPicker()).toBe('closed');
+  });
+
+  it('draws the title bar across the full width with the shell product and the update button', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(ShellMainComponent);
+
+    fixture.componentRef.setInput('product', 'timetrack');
+    fixture.componentRef.setInput('chrome', { os: 'windows', left: [], right: ['close'] });
+    fixture.componentRef.setInput('update', true);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const bar = element.querySelector<HTMLElement>('ethlete-title-bar');
+
+    expect(bar?.classList).toContain('col-span-full');
+    expect(bar?.textContent).toContain('timetrack');
+    expect(bar?.textContent).toContain('Update');
+    expect(element.querySelectorAll('[data-window-button]').length).toBe(1);
+  });
+
+  it('leaves the title bar out without window chrome', async () => {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+
+    const fixture = TestBed.createComponent(ShellMainComponent);
+
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('ethlete-title-bar')).toBeNull();
   });
 });

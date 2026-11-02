@@ -1,6 +1,8 @@
 import { booleanAttribute, Component, input, model, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective } from '@ethlete/core';
+import { WindowChrome } from '../../../host/window';
+import { TitleBarComponent } from '../../components/title-bar/title-bar.component';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { ShellCollapseComponent } from '../shell-collapse/shell-collapse.component';
 import { ShellProjectSwitchComponent } from '../shell-project-switch/shell-project-switch.component';
@@ -23,7 +25,13 @@ const HOVER_PRESS_RAISED =
   selector: 'ethlete-shell-main',
   templateUrl: './shell-main.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, AutoSurfaceDirective, ShellCollapseComponent, ShellProjectSwitchComponent],
+  imports: [
+    BUTTON_IMPORTS,
+    AutoSurfaceDirective,
+    ShellCollapseComponent,
+    ShellProjectSwitchComponent,
+    TitleBarComponent,
+  ],
   host: { '[class]': "fill() ? 'block size-full' : 'block h-225 w-360'" },
 })
 export class ShellMainComponent {
@@ -37,6 +45,8 @@ export class ShellMainComponent {
   public projectPicker = model<'open' | 'closed'>('closed');
   public server = input<'stopped' | 'starting' | null>(null);
   public log = input<readonly string[]>([]);
+  public chrome = input<Pick<WindowChrome, 'os' | 'left' | 'right'> | null>(null);
+  public update = input(false);
 
   public sectionChange = output<ShellSection>();
   public productChange = output<string>();

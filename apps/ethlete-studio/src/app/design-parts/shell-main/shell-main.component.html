@@ -1,7 +1,19 @@
 <div
-  class="relative grid size-full grid-cols-[64px_1fr] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface"
+  class="relative grid size-full grid-cols-[64px_1fr] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-et-surface-bg font-ui text-ui-md text-et-surface"
 >
-  <nav class="flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-bg py-space-3">
+  @if (chrome(); as chrome) {
+    <ethlete-title-bar
+      [os]="chrome.os"
+      [left]="chrome.left"
+      [right]="chrome.right"
+      [update]="update()"
+      [product]="product()"
+      class="col-span-full"
+    />
+  }
+  <nav
+    class="row-start-2 flex flex-col items-center gap-space-1 border-r border-et-surface-border bg-et-surface-bg py-space-3"
+  >
     <div class="relative flex min-h-10 w-full justify-center">
       <ng-content select="[shellMainStudio]">
         <span
@@ -108,7 +120,7 @@
     }
   </nav>
 
-  <div class="relative min-w-0">
+  <div class="relative row-start-2 min-w-0">
     <main
       [class]="
         panel() === 'hidden' ? '[--st-shell-inset-left:0px]' : '[--st-shell-inset-left:calc(248px+var(--space-3))]'
