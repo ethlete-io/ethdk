@@ -2743,3 +2743,19 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      asserts (1) the variant head height stays within a bound of the frame grid height, (2) every frame has its
      fitted height and a painted body; `sketch check` runs NOTE-LANGUAGE over all existing sketches, not only new
      ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: decided by Tom (see "Sketches matrix and state name decisions").
+
+206. The Sketches view sends mixed signals on components/zoom-chip (Tom, 2026-11-02, screenshot): the head badge says
+     "In Arbeit", both variants are fully drawn and offer Übernehmen, and every state says "unverändert". Cause
+     (checked in code): sketch-view.component.ts maps `sketch.status === 'in progress'` to the badge status
+     'drawing' (label "In Arbeit"), but 'in progress' only means "round open, not accepted" - it says nothing about
+     an agent at work. The design pages/sketches has states drawing, paused, idle, but none for "every variant drawn,
+     waiting for your pick", so the implementer had no state to map an open, finished round to. There is no
+     per-variant status beyond the "zeichnet diese Variante" placeholder. Lesson: a status badge was bound to the
+     nearest data field instead of the state that defines it, and the missing design state hid the gap. Tool fix
+     (technical): pages/sketches draws the missing "waiting for pick" state; a sketch-view spec asserts the badge
+     follows agent activity per variant, never `sketch.status` alone. What the badge and the variant heads show is a
+     question to Tom.
+
+207. Fully unchanged variants take as much room as changed ones (Tom, 2026-11-02, zoom-chip: both variants are
+     pixel-identical to Aktuell, 2 x 16 dimmed frames). Tom's idea: hide unchanged variants by default, in a narrow
+     collapsed accordion bar. Scope and content of the bar: question to Tom.
