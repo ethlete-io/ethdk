@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: Push der Werkzeug-Fixes vom 02.11.; parallel C6 (Warte-Limits der CLI), C7 (Studio ohne Lint-Warnungen) und D12 (native `title` in libs/components). Liste A wartet auf Toms Reihenfolge; die Fensterknöpfe aus A1 sind entschieden (dl, 02.11.) und gehen an den Builder.
+Builder: C6 (Warte-Limits der CLI) und die Fensterknöpfe aus A1 (entschieden in dl, 02.11.). Der Rest von Liste A wartet auf Toms Reihenfolge.
 
 ## Erledigt
 
@@ -79,7 +79,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B8** Wiederholte Gruppen brauchen ein Control (Befund 102).
 - **B9** Eine Token-Datei je SDK-Komponente; lokale Überschreibung wird gemeldet (Befund 103).
 - **B10** Beispiel-Inhalt markieren (`data-et-demo`) und in App-Code finden (Befund 104).
-- **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn A8 und D12 fertig sind (Befund 116).
+- **B11** Lint-Regel `ethlete/no-native-title` und Design-Regel NATIVE-TITLE als Fehler einschalten, wenn A8 fertig ist (Befund 116).
 - **B12** Asynchrone Aktionen: Zustand „pending“, zweiter Klick tut nichts (Befund 106).
 - **B13** Radius eines Controls passt zum Kind, das es füllt (Befunde 107, 119).
 - **B16** Eine getestete Offset-Hilfe für Fit und Kamera (Befund 129).
@@ -99,7 +99,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 - **C5** Pre-push: Design-Dateien aus libs/components lösen die Design-Prüfung aus; tsc für berührte Produkte (Befund 105).
 - **C6** Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
-- **C7** Studio-App ohne Lint-Warnungen; danach ist jede neue Warnung ein Fehler.
 
 ## D. SDK und Libs
 
@@ -114,7 +113,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **D9** Studio: 8 Teile ohne App-Code; canvas-frames und studio-view sauber zuordnen (Q247, Q248).
 - **D10** Die Matrix „Aktuell“ nur einmal, für App und CLI (Q124).
 - **D11** 48 SDK-Teile haben noch offene Punkte.
-- **D12** 10 native `title` in libs/components durch etTooltip ersetzen: cascader, password input, rich-text palette, grid-debug, scheduler (3), standings story, table (B11).
 
 ## E. Fragen und Entwürfe für Tom
 
