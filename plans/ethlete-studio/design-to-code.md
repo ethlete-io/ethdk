@@ -2661,3 +2661,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      Cause pending from builder. Lesson: the Sketches cases ran on one sample sketch that is transposed at 1440 px, so
      the 4-column grid never ran in the e2e. Tool fix (decided, built): every Sketches case runs on a narrow and a
      large real sketch too.
+     Cause (builder): the three FAILs were wrong cases, not view defects: the zoom-chip wheel case had panned the
+     frame onto the shell header; "hiding the panel keeps the frames" ran in live Fit, which correctly re-fits (now
+     pins 100 % first). The sample fixture passed only by luck. The probe reads world scale(), always 1 in the
+     Sketches view, so "double-click focuses" never saw zoom there either. Two real defects found on the way and
+     fixed: Fit differed between loads (67/74/87 %) because the fit passes ended before the compare marks re-wrapped
+     the labels (fit key now includes the marks); +/- stepped from 100 % while in Fit (+ at 24 % jumped to 150 %).
+     canvas.e2e: Fit equal after reload (+-1 %), + from Fit = Fit x 1.5.
+
+203. `design compare pages/sketches` reports all 8 states DIFF (92k-116k px) after decisions 196-199: the design still
+     shows design e (side-by-side head, one state list), the app now the transposed matrix, the scaled head column and
+     two-line labels (builder, 2026-11-02). Lesson: layout decisions taken on the running app were built without being
+     drawn in the sketch first. The compare is the check that catches it and it did. Fix: a new pages/sketches round
+     draws decisions 196-199; the open question on state names in the transposed layout is drawn there as variants;
+     then Tom's go, then compare.
