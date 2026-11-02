@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: Ende-zu-Ende-Prüfung der Werkzeug-Fixes vom 02.11. und Live-Vergleich aller pages-Teile, dann Push. Liste A wartet auf Toms Reihenfolge.
+Builder: Push der Werkzeug-Fixes vom 02.11.; parallel C6 (Warte-Limits der CLI), C7 (Studio ohne Lint-Warnungen) und D12 (native `title` in libs/components). Liste A wartet auf Toms Reihenfolge; die Fensterknöpfe aus A1 liegen bei Tom.
 
 ## Erledigt
 
@@ -96,7 +96,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 ## C. CLI: Tempo und Ablauf
 
 - **C1** Trefferquote des Harness-Build-Cache messen; trifft er selten, ignoriert der Schlüssel Dateien, die der Build nicht liest (plans, sketch.json) (Q16).
-- **C2** Test für die sofortige Ausgabe von `design actions --live` (Befund 111).
 - **C4** `design check` schneller machen, heute etwa 6:30 für Studio (Q23).
 - **C5** Pre-push: Design-Dateien aus libs/components lösen die Design-Prüfung aus; tsc für berührte Produkte (Befund 105).
 - **C6** Jedes Warten der CLI hat ein Limit und sagt, worauf es wartet (Befund 114).
