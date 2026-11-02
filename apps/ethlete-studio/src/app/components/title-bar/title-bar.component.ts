@@ -6,7 +6,6 @@ import {
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
-  KBD_IMPORTS,
 } from '@ethlete/components';
 import { catchError, EMPTY, fromEvent, Observable, startWith, switchMap } from 'rxjs';
 import {
@@ -18,6 +17,7 @@ import {
   WindowChrome,
 } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { TitleSearchComponent } from '../title-search/title-search.component';
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -34,38 +34,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
         <ng-container *ngTemplateOutlet="controls; context: { $implicit: left() }" />
       </div>
 
-      <button
-        [attr.aria-label]="LABELS.search(product(), part())"
-        class="w-2xl justify-start px-space-2 text-et-surface-muted [--et-button-gap:var(--space-2)]"
-        et-button
-        stretchContents
-        type="button"
-        variant="tonal"
-        color="surface"
-        size="xs"
-        aria-haspopup="dialog"
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="7" cy="7" r="4.25" />
-          <path d="M10.25 10.25 13.5 13.5" />
-        </svg>
-        <span class="flex flex-1 justify-center gap-1 truncate font-ui">
-          <span>{{ product() }}</span>
-          <span aria-hidden="true">/</span>
-          <span class="font-ui-strong text-et-surface">{{ part() }}</span>
-        </span>
-        <et-kbd [platform]="os() === 'macos' ? 'apple' : 'other'" keys="mod+k" />
-      </button>
+      <ethlete-title-search [product]="product()" [part]="part()" [os]="os()" />
 
       <div class="flex items-center justify-end gap-2">
         @if (update()) {
@@ -165,7 +134,7 @@ import { STUDIO_LABELS } from '../../i18n/studio-labels';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, KBD_IMPORTS, NgTemplateOutlet],
+  imports: [BUTTON_IMPORTS, NgTemplateOutlet, TitleSearchComponent],
   host: { class: 'block shrink-0' },
 })
 export class TitleBarComponent {
