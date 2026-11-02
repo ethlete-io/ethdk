@@ -2581,6 +2581,20 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   This replaces the "wide part keeps one column" rule (title-bar is transposed too). Narrow parts keep the variant
   rows with about 4 state columns. Dimming and the "erste Änderung" mark stay per cell.
 
+### Sketches matrix and state name decisions (Tom, 2026-11-02)
+
+- State names in the transposed matrix (pages/sketches round "Matrix und Zustandsnamen"): variant a - the name once
+  per row in a left gutter at 12 px. Tom picks a via Übernehmen and gives the go in Studio himself; then the builder
+  runs the compare and commits the Sketches slice.
+- Sticky names: when zoomed and panned, the state names stick to the left view edge while their row is visible.
+- Fit in the transposed matrix fits the Aktuell column plus the first variant column (readable); further columns are
+  reached by panning right. Same rule as "Fit shows Aktuell + first variant row" for variant rows. This replaces "Fit
+  fits the width of all variant columns" in finding 199.
+- Pending compare: the variant marks stay neutral, and the variant head shows a small "vergleicht ..." until the
+  compare answers.
+- zoom-chip round r1: variant a (plain SDK button). Tom picks it via Übernehmen himself.
+- Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
+
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
      frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
