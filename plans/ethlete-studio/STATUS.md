@@ -105,8 +105,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B25** `design dom --app` stellt Hover-, Active- und Klick-Zustände her, statt sie abzulehnen.
 - **B27** Kanonische Tailwind-Klassen im App-Code prüfen.
 - **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
-- **B30** `design check --live` meldet sichtbare App-Bereiche, die kein Teil abdeckt; für Studio im Pre-Push als Fehler
-  (Befund 133).
 - **B31** Live-Aktionsprüfung: ein Navigations-Eintrag hat nach dem Klick `aria-current="page"` (Befund 84).
 - **B32** Harness-Render mit leeren Inputs meldet Demo-Text, der trotzdem sichtbar bleibt (Befund 104).
 - **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
@@ -122,6 +120,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Rückschritt; dl 02.11.).
 - **B39** Wechselt eine Ansicht auf einen Design-Teil, muss jeder gelöschte Test entweder in der Liste „was das Design
   weglässt“ stehen oder im neuen Spec wieder auftauchen; die CLI prüft das (Befund 137).
+- **B40** Jeder `partless`-Eintrag (bewusst ohne Teil) erscheint in Studio als offener Punkt, damit Tom ihn sieht; ein
+  ungenutzter Eintrag ist ein Fehler (B30-Nachlauf).
 
 ## C. CLI: Tempo und Ablauf
 
