@@ -51,6 +51,12 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
     timeout: 10,
     agents: ['claude'],
   },
+  'git-safety': {
+    events: [{ event: 'PreToolUse', matcher: 'Bash' }],
+    file: 'git-safety.py',
+    timeout: 10,
+    agents: ['claude'],
+  },
 };
 
 /** Drops the hooks whose event the agent does not have, so neither script nor entry is emitted. */

@@ -93,6 +93,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/git-safety.py\" --agent claude",
+            "timeout": 10
+          }
+        ]
       }
     ]
   },
