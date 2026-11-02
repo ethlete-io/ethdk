@@ -1387,13 +1387,20 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
 143. The "In Arbeit" badge and the per-variant "Agent zeichnet noch" state were built straight into Studio with no
      design (B34, da5b055c4, unpushed); Tom: "das ist alles nicht im design" (2026-11-02). Cause: STATUS and the
      builder handoff framed B34/B38 as "Rückschritt" (restoring behaviour lost in d0f4a38cf), so the work read as a
-     restore, not as new visible UI, and no item said "sketch first". Why no check caught it: the live check
+     restore, not as new visible UI, and no item said "sketch first". None of the three subagent briefs (B34, B36,
+     B38) named a picked sketch; the rule lived only in the builder's handoff notes, not in the brief template
+     (.claude/handoffs/builder-subagent-brief.md now requires a picked sketch id for visible UI, or a stop). Why no check caught it: the live check
      (live-uncovered.ts) only reports visible regions outside every part's host; anything inside a host counts as
      covered whether or not the part's design has it, so a new badge inside the existing sketch-view part passes. The
      B30 rule (an open sketch covers its target part) widens the same gap to parts without a design. Immediate: B36
      work parked in .claude/handoffs/b36-parked.patch, da5b055c4 reverted locally, both rebuilt after Tom picks the
      pages/sketches sketch. Tool fix: B48 (a gate, not a prompt rule; scope is Tom's decision, pending). Lesson: "sketch
      first" written in a prompt is not a control; a restore of lost UI is new UI as long as the design lacks it.
+144. The B36 e2e saw only Vite 403 pages in every frame (builder, 2026-11-02): in a throwaway checkout with a
+     symlinked node_modules, Vite's fs.allow refuses the resolved paths. It needed a real node_modules folder of
+     symlinks. canvas.e2e.mjs likely has the same blind spot, since it never inspects frame content. Tool fix: B49 (the
+     e2e checkout helper builds node_modules as a folder of symlinks; every frame e2e fails on an error page inside a
+     frame). Lesson: a frame e2e that never looks inside the frame passes on an error page.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

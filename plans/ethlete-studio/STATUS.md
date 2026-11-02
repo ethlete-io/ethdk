@@ -139,6 +139,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B47** Ansicht bleibt stabil: Spec prüft, dass eine wiederholte Größenmeldung keine neue iframe-Quelle und keine
   neue Größe setzt; E2E zählt iframe-Ladevorgänge 2 s nach dem Einschwingen, mehr als einer je Rahmen scheitert
   (Befund 142, Flackern).
+- **B48** Pre-Push-Sperre: sichtbare Änderung an einem Teil ohne ausgewählten Sketch scheitert (Pixelvergleich alt
+  gegen neu; Umfang offen, Q4 an Tom) (Befund 143).
+- **B49** E2E-Checkout baut node_modules als Ordner aus Symlinks (sonst Vite 403); jede Rahmen-E2E scheitert an einer
+  Fehlerseite im Rahmen (Befund 144).
 
 ## C. CLI: Tempo und Ablauf
 
