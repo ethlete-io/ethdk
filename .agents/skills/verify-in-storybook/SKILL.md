@@ -65,6 +65,9 @@ Gotchas that will waste your time if you forget them:
 - **Assert on the real signal.** Portal/`ng-content` text lands as text nodes, so
   `childElementCount` is 0 even when content is present - check `el.textContent`.
   Read computed styles with `getComputedStyle(el)` inside `page.$eval`.
+- **Scope DOM queries and counts to `#storybook-root`** (plus overlay containers on `body` when you
+  check a portal). Storybook's docs chrome (`.sb-*`, e.g. the args table's `<span title="Required">`)
+  renders into the same iframe.
 - After a click that triggers a CSS transition, `waitForTimeout(transitionMs + buffer)`
   before reading final-state styles.
 
