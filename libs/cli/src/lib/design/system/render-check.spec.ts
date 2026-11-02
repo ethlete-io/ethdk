@@ -288,6 +288,81 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('measures the contrast of text in an inert preview, which stays visible', async (context) => {
+    const tile = (inner: string) =>
+      `<div style="background: rgb(220 220 220); padding: 8px; width: 200px">${inner}</div>`;
+    const target = checkout({
+      'components/inert-tile': {
+        body: tile('<div inert><p style="margin: 0; color: rgb(240 240 240)">Linux close</p></div>'),
+      },
+      'components/plain-tile': {
+        body: tile('<div><p style="margin: 0; color: rgb(240 240 240)">Linux close</p></div>'),
+      },
+    });
+    const config = readConfig(target) ?? {};
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CONTRAST')
+        .map((issue) => issue.part)
+        .sort(),
+    ).toEqual(['components/inert-tile', 'components/plain-tile']);
+  }, 120_000);
+
+  it('flags a nested scroll box whose content outgrows it, unless the part declares that it scrolls', async (context) => {
+    const rows = '<p style="margin: 0; height: 40px">Row one</p><p style="margin: 0; height: 40px">Row two</p>';
+    const target = checkout({
+      'components/scrolls': {
+        body: `<div style="width: 200px"><div style="height: 50px; overflow-y: auto">${rows}</div></div>`,
+      },
+      'components/scrolls-x': {
+        body: '<div style="width: 100px; overflow-x: scroll"><div style="width: 300px">Wide</div></div>',
+      },
+      'components/fits': {
+        body: `<div style="width: 200px"><div style="height: 100px; overflow: auto">${rows}</div></div>`,
+      },
+      'components/sdk-scroller': {
+        body: `<div style="width: 200px"><et-scrollable style="display: block"><div style="height: 50px; overflow-y: auto">${rows}</div></et-scrollable></div>`,
+      },
+      'components/declared': {
+        body: `<div style="width: 200px"><div style="height: 50px; overflow-y: auto">${rows}</div></div>`,
+        extra: "checks: { skip: ['NESTED-SCROLL'] },",
+      },
+      'components/declared-element': {
+        body: `<div style="width: 200px"><div data-et-skip="NESTED-SCROLL" style="height: 50px; overflow-y: auto">${rows}</div></div>`,
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'NESTED-SCROLL')
+        .map((issue) => [issue.part, issue.path, issue.detail.split(';')[0]])
+        .sort(),
+    ).toEqual([
+      [
+        'components/scrolls',
+        'div[data-et-part=components/scrolls] > div',
+        'scrolls its content 200x80 in a 200x50 box, so no shot shows all of it - size the box to its content',
+      ],
+      [
+        'components/scrolls-x',
+        'div[data-et-part=components/scrolls-x]',
+        'scrolls its content 300x18 in a 100x18 box, so no shot shows all of it - size the box to its content',
+      ],
+    ]);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};

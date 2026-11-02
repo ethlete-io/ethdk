@@ -29,6 +29,7 @@ import { createSystemModules, productModuleIdOf, SketchVariant } from './system-
 import { unchangedStatesOf } from './sketch/unchanged-states';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
+import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -123,7 +124,7 @@ const SINGLE_LINE =
  * Reads the rule breaks in a drawn frame. A string, not a function: the build would add helpers to a
  * function that the page does not have.
  */
-const ESCAPABLE = ['CLIPPED', 'WRAP'];
+const ESCAPABLE = ['CLIPPED', 'WRAP', NESTED_SCROLL_RULE];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
@@ -268,6 +269,7 @@ const inspectFrame = (options: {
     const cutsOnPurpose = style.textOverflow === 'ellipsis' || style.webkitLineClamp !== 'none';
     if ((cutX || cutY) && !cutsOnPurpose) report('CLIPPED', element, 'content ' + drawn.width + 'x' + drawn.height + ' in ' + element.clientWidth + 'x' + element.clientHeight);
   }
+${NESTED_SCROLL_STATEMENTS}
 
   const px = (value) => parseFloat(value) || 0;
   const invisible = (colour) => colour === 'transparent' || /^rgba\\(.*,\\s*0\\)$/.test(colour);

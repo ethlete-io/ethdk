@@ -190,7 +190,7 @@ export const CONTRAST_STATEMENTS = `
     for (let node = texts.nextNode(); node; node = texts.nextNode()) {
       const element = node.parentElement;
       if (!element || !node.textContent.trim() || element.closest('svg, style, script, template')) continue;
-      if (element.closest(':disabled, [aria-disabled="true"], [inert]') || inOffLabel(element) || exempt(element)) continue;
+      if (element.closest(':disabled, [aria-disabled="true"]') || inOffLabel(element) || exempt(element)) continue;
       const style = getComputedStyle(element);
       if (style.visibility !== 'visible') continue;
       const range = document.createRange();
@@ -219,7 +219,7 @@ export const CONTRAST_STATEMENTS = `
       const controls = [...element.querySelectorAll('input, select, textarea, button')];
       return controls.length > 0 && controls.every(offControl);
     };
-    const skipped = (element) => element.closest(':disabled, [aria-disabled="true"], [inert]') !== null || inOffLabel(element) || offWrapper(element) || exempt(element) ||
+    const skipped = (element) => element.closest(':disabled, [aria-disabled="true"]') !== null || inOffLabel(element) || offWrapper(element) || exempt(element) ||
       getComputedStyle(element).visibility !== 'visible' || chainOf(element).some((at) => parseFloat(getComputedStyle(at).opacity) === 0);
     const nonText = (kind, element, ratio) => {
       const path = pathOf(element);
