@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { designCommand } from './design-command';
-import { mcpAnswerOf, ToolRunner } from './mcp-command';
+import { cliRunnerOf, mcpAnswerOf, ToolRunner } from './mcp-command';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-mcp-'));
@@ -315,5 +315,22 @@ describe('et design mcp', () => {
 
     expect(variant.result.isError).toBe(false);
     expect(list.result.content[0]?.text).toContain('"c"');
+  });
+});
+
+describe('cliRunnerOf', () => {
+  it('stops a tool run past its limit and says which command it waited for', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-design-mcp-hang-'));
+    const script = join(dir, 'hang.js');
+
+    writeFileSync(script, 'setInterval(() => undefined, 1000);\n');
+
+    const run = cliRunnerOf(dir, { timeout: 300, script });
+
+    await expect(run(['ready', 'app/one'])).resolves.toEqual({
+      code: 1,
+      stdout: '',
+      stderr: 'timed out after 300 ms waiting for et design ready app/one',
+    });
   });
 });

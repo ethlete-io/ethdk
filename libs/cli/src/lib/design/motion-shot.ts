@@ -1,4 +1,4 @@
-import { Browser, DRAW_TIMEOUT_MS, finished, openFrame, settled, ShotUnprocessableError } from './thumb';
+import { awaitSettled, Browser, DRAW_TIMEOUT_MS, finished, openFrame, ShotUnprocessableError } from './thumb';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
@@ -61,7 +61,7 @@ export const motionPicturesOf = async (options: {
 
   const start = async () => {
     await openFrame(page, url);
-    await page.evaluate(settled);
+    await awaitSettled(page);
     await page.evaluate(finished);
     await failureOf(page);
     await page.evaluate('window.etMotion.start()');

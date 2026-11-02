@@ -50,4 +50,24 @@ describe('createRenderer', () => {
     expect(workers[0]?.terminate).toHaveBeenCalledOnce();
     await expect(open).resolves.toEqual({ error: 'design-explore: the renderer closed' });
   });
+
+  it('answers a render the worker never answers with what it waited for, and drops that worker', async () => {
+    vi.useFakeTimers();
+    workers.length = 0;
+
+    const render = createRenderer({ target: '/tmp/x', config: {} });
+    const stuck = render({ call: 'app/one', template: '<p></p>', imports: [] });
+
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    await expect(stuck).resolves.toEqual({
+      error: 'timed out after 2 min waiting for the render worker to draw app/one',
+    });
+    expect(workers[0]?.terminate).toHaveBeenCalledOnce();
+
+    void render({ call: 'app/one', template: '<p></p>', imports: [] });
+
+    expect(workers).toHaveLength(2);
+    vi.useRealTimers();
+  });
 });

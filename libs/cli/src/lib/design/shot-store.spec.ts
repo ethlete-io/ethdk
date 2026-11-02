@@ -41,6 +41,7 @@ vi.mock('./browser', async (original) => ({
           newPage: async () => ({
             goto: async () => undefined,
             mouse: { move: async () => undefined },
+            url: () => 'http://localhost/frame.html',
             screenshot,
             evaluate: async (script: string) =>
               script.includes('data-et-part')

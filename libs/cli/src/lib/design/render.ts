@@ -5,6 +5,7 @@ import { Worker } from 'worker_threads';
 import { forceInteractions } from './force-interactions';
 import { DesignConfig, packageFileOf } from './paths';
 import { FieldSpec } from './render-fields';
+import { withinLimit } from './wait';
 import {
   DEFAULT_RENDER_MODULES,
   RenderRequest,
@@ -42,8 +43,10 @@ export type RenderAsk = {
  * Renders Angular templates in a worker that loads the target checkout's own packages. The worker
  * is replaced on the first request after a package it loaded was rebuilt.
  */
-export const createRenderer = (options: { target: string; config: DesignConfig }) => {
-  const { target, config } = options;
+export const RENDER_TIMEOUT_MS = 120_000;
+
+export const createRenderer = (options: { target: string; config: DesignConfig; timeout?: number }) => {
+  const { target, config, timeout = RENDER_TIMEOUT_MS } = options;
   const workerDataOf = (): RenderWorkerData => ({
     target,
     packages: renderPackagesOf({ target, config }),
@@ -51,6 +54,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   });
   let startedWith = '';
   const pending = new Map<number, (result: RenderResult) => void>();
+  const sentTo = new Map<number, Worker>();
   let worker: Worker | null = null;
   let watched: Record<string, number> = {};
   let nextId = 0;
@@ -58,6 +62,12 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   const settleAll = (error: string) => {
     for (const settle of pending.values()) settle({ error });
     pending.clear();
+    sentTo.clear();
+  };
+  const answer = (id: number, result: RenderResult) => {
+    pending.get(id)?.(result);
+    pending.delete(id);
+    sentTo.delete(id);
   };
 
   const start = () => {
@@ -71,14 +81,16 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
       const { id, watched: loaded, ...result } = response;
 
       if (started === worker) watched = { ...loaded };
-      pending.get(id)?.(result);
-      pending.delete(id);
+      answer(id, result);
     });
     started.on('error', (error) =>
       settleAll(`design-explore: the render worker failed: ${error instanceof Error ? error.message : String(error)}`),
     );
     started.on('exit', () => {
       if (started === worker) worker = null;
+
+      for (const [id, to] of sentTo)
+        if (to === started) answer(id, { error: 'design-explore: the render worker exited before it answered' });
     });
 
     watched = {};
@@ -105,10 +117,27 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
       providers: providers ? resolve(target, providers) : null,
     };
     const result = new Promise<RenderResult>((settle) => pending.set(request.id, settle));
+    const sent = worker;
 
-    worker.postMessage(request);
+    sentTo.set(request.id, sent);
+    sent.postMessage(request);
 
-    return result;
+    return withinLimit(result, {
+      ms: timeout,
+      what: `the render worker to draw ${ask.call}`,
+      announceAfterMs: 10_000,
+    }).catch((error: unknown): RenderResult => {
+      const message = error instanceof Error ? error.message : String(error);
+
+      answer(request.id, { error: message });
+
+      if (sent === worker) {
+        worker = null;
+        void sent.terminate();
+      }
+
+      return { error: message };
+    });
   };
 
   const close = async () => {

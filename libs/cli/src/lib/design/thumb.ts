@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { posix } from 'path';
 import { Chromium, chromiumOf } from './browser';
 import { DrawLedger } from './draw-ledger';
+import { withinLimit } from './wait';
 
 export const THUMB_PATH = '/__design/thumb';
 
@@ -79,6 +80,17 @@ export const openFrame = async (page: Page, url: string) => {
 
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
+
+/** Waits for `settled` on `page`, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
+export const awaitSettled = (page: Pick<Page, 'evaluate' | 'url'>) =>
+  withinLimit(page.evaluate(settled), {
+    ms: DRAW_TIMEOUT_MS,
+    what: `the fonts and the first frames of ${page.url()}`,
+  });
+
+/** Waits for the fonts of `page`, and throws a `WaitTimeoutError` naming the page after `DRAW_TIMEOUT_MS`. */
+export const awaitFonts = (page: Pick<Page, 'evaluate' | 'url'>) =>
+  withinLimit(page.evaluate('document.fonts.ready'), { ms: DRAW_TIMEOUT_MS, what: `the fonts of ${page.url()}` });
 
 /** Finishes the page's finite time-based animations; scroll-driven ones keep the progress their scroll position gives. */
 export const finished = `document.getAnimations()
@@ -326,7 +338,7 @@ export const createThumbnailer = (options: {
         deviceScaleFactor: THUMB_PIXEL_WIDTH / width,
         mobile: false,
       });
-      await page.evaluate(settled);
+      await awaitSettled(page);
 
       const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' });
 

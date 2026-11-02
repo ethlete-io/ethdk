@@ -6,7 +6,7 @@ import { INTERACTIONS } from '../force-interactions';
 import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { partFrameOf, viewportOf } from '../shot';
-import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
+import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
 import { INTERACTIVE_SELECTOR } from './actions';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { changedSharesOf } from '../contact-sheet';
@@ -1413,7 +1413,7 @@ const seeFrames = async (options: {
       await page.setViewportSize(viewportOf(frame.size));
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.addStyleTag({ content: NO_MOTION });
-      await page.evaluate(settled);
+      await awaitSettled(page);
 
       const found = (await page.evaluate(
         seeFrame({ discover: frame.interaction === null, part, ownCss, controlParts, clip: frame.clip }),
@@ -1449,7 +1449,7 @@ const seeFrames = async (options: {
           const drawnColours = (await page.evaluate(colourSnapshot(element.at))) as ColourSnapshot;
 
           await page.evaluate(forceOn({ at: element.at, interaction, on: false }));
-          await page.evaluate(settled);
+          await awaitSettled(page);
 
           const rest = await shot();
           const restColours = (await page.evaluate(colourSnapshot(element.at))) as ColourSnapshot;

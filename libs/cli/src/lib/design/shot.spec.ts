@@ -41,6 +41,7 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
     goto,
     mouse: { move: async () => undefined },
+    url: () => 'http://localhost/frame.html',
     screenshot,
     evaluate,
     locator: (selector: string) => ({

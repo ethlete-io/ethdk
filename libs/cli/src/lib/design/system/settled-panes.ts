@@ -1,4 +1,5 @@
 import { Browser } from '../thumb';
+import { playwrightTimeoutOf } from '../wait';
 import { UNSETTLED_ANIMATION } from './action-press';
 import { OVERLAY_PANES } from './part-compare';
 
@@ -17,7 +18,8 @@ const PANE_COUNT_TIMEOUT_MS = 3000;
  * runs for a few frames. Resolves `false` when that does not happen within `timeout`.
  */
 export const settledPanesOf = async (options: { page: Page; count: number; timeout: number }) => {
-  const { page, count, timeout } = options;
+  const { page, count } = options;
+  const timeout = playwrightTimeoutOf(options.timeout);
 
   if (count > 0)
     await page

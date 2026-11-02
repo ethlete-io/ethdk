@@ -6,7 +6,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../shot';
-import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { harnessStaleOf } from './harness-map';
 import { shootLiveStates } from './live-compare';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -265,7 +265,7 @@ export const harnessShotOf = async (options: {
         `the harness page ${url} showed no ${HARNESS_HOST_SELECTOR} element within ${timeout} ms - does the app serve the design harness route?`,
       );
     });
-    await page.evaluate('document.fonts.ready');
+    await awaitFonts(page);
 
     if (options.props) {
       const inputs = (await page.evaluate(MOUNTED_INPUTS_SCRIPT)) as string[] | null;

@@ -10,6 +10,7 @@ import { claimHarnessBuild, harnessBuildKeyOf, harnessCacheDirOf, storeHarnessBu
 import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
+import { durationOf } from '../wait';
 
 export const RESERVED_PORTS: readonly number[] = [4221, 4400, 4402, 4403, 4492];
 
@@ -247,6 +248,10 @@ export const startHarnessServer = async (options: {
     return serveBuild({ task, output: cached.dir, stop, serving: (started) => (server = started) });
   }
 
+  const buildTimeout = options.timeout ?? BUILD_TIMEOUT_MS;
+
+  console.log(`building ${task} for the harness app (up to ${durationOf(buildTimeout)})`);
+
   const spawned = spawn(build.command, build.args, {
     cwd: target,
     detached: true,
@@ -271,9 +276,7 @@ export const startHarnessServer = async (options: {
       spawned.once('error', done);
       spawned.once('close', (code) => done(code === 0 ? 'built' : 'failed'));
     }),
-    delay(options.timeout ?? BUILD_TIMEOUT_MS, 'timeout' as const, { signal: timer.signal }).catch(
-      () => 'timeout' as const,
-    ),
+    delay(buildTimeout, 'timeout' as const, { signal: timer.signal }).catch(() => 'timeout' as const),
   ]);
 
   timer.abort();
@@ -285,7 +288,7 @@ export const startHarnessServer = async (options: {
     if (ended === 'busy')
       return `${task} waits for another nx process running the same task - wait for it to finish, or pass --url <app dev server url>:\n${tail.trim()}`;
 
-    return `${task} ${ended === 'failed' ? 'failed' : `did not finish in ${Math.round((options.timeout ?? BUILD_TIMEOUT_MS) / 1000)} s`}:\n${tail.trim()}`;
+    return `${task} ${ended === 'failed' ? 'failed' : `did not finish in ${durationOf(buildTimeout)}`}:\n${tail.trim()}`;
   }
 
   const stored = key !== null && keyOf() === key ? storeHarnessBuild({ dir: cacheDir, key, outputPath }) : null;

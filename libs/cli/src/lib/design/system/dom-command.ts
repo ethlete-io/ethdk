@@ -3,7 +3,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { createPartShooter, viewportOf } from '../shot';
-import { createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { awaitFonts, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { compareFrameOf } from './compare-command';
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -137,7 +137,7 @@ export const readDom: ReadDom = async ({ target, config, product, part, state: a
 
         await page.goto(pageUrl, { timeout: DRAW_TIMEOUT_MS });
         await page.locator(HARNESS_HOST_SELECTOR).first().waitFor({ state: 'visible', timeout: DRAW_TIMEOUT_MS });
-        await page.evaluate('document.fonts.ready');
+        await awaitFonts(page);
 
         return (await page.evaluate(
           `document.querySelector(${JSON.stringify(HARNESS_HOST_SELECTOR)})?.outerHTML ?? null`,

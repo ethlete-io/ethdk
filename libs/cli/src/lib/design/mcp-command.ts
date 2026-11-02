@@ -4,6 +4,7 @@ import { isAbsolute, resolve } from 'path';
 import { createInterface } from 'readline';
 import { callsRootOf, DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf } from './stamp';
+import { withinLimit } from './wait';
 
 export const MCP_USAGE = 'mcp';
 
@@ -435,15 +436,17 @@ export const mcpAnswerOf = async (options: { target: string; request: Request; r
   };
 };
 
+export const TOOL_TIMEOUT_MS = 60 * 60_000;
+
 /** Runs `et design <argv>` of this same CLI in the workspace, in its own process so its output stays off the protocol. */
 export const cliRunnerOf =
-  (target: string): ToolRunner =>
-  (argv) =>
-    new Promise((done) => {
-      const child = spawn(process.execPath, [process.argv[1] ?? '', 'design', ...argv], {
-        cwd: target,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+  (target: string, options: { timeout?: number; script?: string } = {}): ToolRunner =>
+  (argv) => {
+    const child = spawn(process.execPath, [options.script ?? process.argv[1] ?? '', 'design', ...argv], {
+      cwd: target,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const ran = new Promise<ToolRun>((done) => {
       const stdout: Buffer[] = [];
       const stderr: Buffer[] = [];
 
@@ -454,6 +457,16 @@ export const cliRunnerOf =
         done({ code: code ?? 1, stdout: Buffer.concat(stdout).toString(), stderr: Buffer.concat(stderr).toString() }),
       );
     });
+
+    return withinLimit(ran, {
+      ms: options.timeout ?? TOOL_TIMEOUT_MS,
+      what: `et design ${argv.join(' ')}`,
+    }).catch((error: unknown) => {
+      child.kill('SIGKILL');
+
+      return { code: 1, stdout: '', stderr: error instanceof Error ? error.message : String(error) };
+    });
+  };
 
 /**
  * `et design mcp` serves the design tools to an MCP client over stdio. The workspace is the working directory;

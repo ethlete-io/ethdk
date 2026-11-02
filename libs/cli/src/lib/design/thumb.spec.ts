@@ -16,6 +16,7 @@ const newContext = vi.fn(async () => ({
   newPage: async () => ({
     goto,
     mouse: { move: async () => undefined },
+    url: () => 'http://localhost/frame.html',
     evaluate,
     locator: () => ({ first: () => ({ waitFor: async () => undefined }) }),
   }),
@@ -144,6 +145,7 @@ describe('createThumbnailer', () => {
           newPage: async () => ({
             goto,
             mouse: { move: async () => undefined },
+            url: () => 'http://localhost/frame.html',
             evaluate,
             locator: (selector: string) => ({
               count: async () => 0,
@@ -259,6 +261,7 @@ describe('openFrame', () => {
     const page = {
       goto: async (url: string) => void visits.push(url),
       mouse: { move: async () => undefined },
+      url: () => 'http://localhost/frame.html',
       locator: (selector: string) => ({
         count: async () => 0,
         first: () => ({

@@ -19,7 +19,7 @@ import {
   noteFailure,
   sendShot,
   finished,
-  settled,
+  awaitSettled,
   ShotFailedError,
   ShotTimeoutError,
   ShotUnprocessableError,
@@ -428,7 +428,7 @@ export const createPartShooter = (options: {
       },
       async (page) => {
         await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
-        await page.evaluate(settled);
+        await awaitSettled(page);
         await page.evaluate(finished);
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));

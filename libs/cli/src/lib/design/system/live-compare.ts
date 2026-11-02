@@ -4,7 +4,7 @@ import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { createDesignServer } from '../serve';
 import { createPartShooter, Pan } from '../shot';
-import { Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { ShootStates, StateShot } from './compare-command';
 import { harnessOf } from './harness-map';
 import { occludedFramesOf } from './occluded';
@@ -365,7 +365,7 @@ export const liveShotOf = async (options: {
     const { page, host, address, sdkErrors } = await openLivePage({ ...options, context, timeout });
 
     await page.mouse.move(-1, -1);
-    await page.evaluate('document.fonts.ready');
+    await awaitFonts(page);
     await page.waitForLoadState('networkidle', { timeout }).catch(() => undefined);
 
     const deadline = Date.now() + timeout;

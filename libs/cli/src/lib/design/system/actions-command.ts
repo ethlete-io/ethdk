@@ -6,7 +6,7 @@ import { chromiumOf } from '../browser';
 import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, Picture, pixelBoxOf, viewportOf } from '../shot';
-import { Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
+import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS, DRAWS_AT_ONCE } from '../thumb';
 import {
   actionInputsOf,
   ActionElement,
@@ -155,7 +155,7 @@ export const runActionInput = async (options: {
 
     await page.goto(url, { timeout });
     await harnessMountedOf(page, timeout);
-    await page.evaluate('document.fonts.ready');
+    await awaitFonts(page);
 
     if (room) await page.evaluate(`document.documentElement.style.padding = '${ROOM_PX}px 0 0 ${ROOM_PX}px'`);
 

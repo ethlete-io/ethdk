@@ -1,4 +1,5 @@
 import { Browser } from '../thumb';
+import { playwrightTimeoutOf } from '../wait';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
@@ -29,7 +30,7 @@ export const settle = async (page: Page, timeout: number) => {
         return window.__etActionFrames >= ${SETTLED_FRAMES};
       })()`,
       undefined,
-      { timeout, polling: 'raf' },
+      { timeout: playwrightTimeoutOf(timeout), polling: 'raf' },
     )
     .catch(() => undefined);
 };

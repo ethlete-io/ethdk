@@ -21,7 +21,7 @@ import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
 import { createPartShooter, PartAddress, partFrameOf, viewportOf } from '../shot';
-import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
+import { awaitSettled, Browser, createDrawQueue, openFrame, ThumbUnavailableError } from '../thumb';
 import { gridReportOf } from './list-system';
 import { watchSdkErrorLines } from './sdk-errors';
 import { partKeyOf } from './resolve-product';
@@ -491,7 +491,7 @@ const inspect = async (options: {
           await current.emulateMedia({ colorScheme: frame.contrast.scheme });
           await current.setViewportSize(frame.viewport);
           await openFrame(current, `${base}/frame.html?${frame.search}`);
-          await current.evaluate(settled);
+          await awaitSettled(current);
 
           const inFrame = (await current.evaluate(
             inspectFrame({
