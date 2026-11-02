@@ -1500,7 +1500,10 @@ check` fails a part with a varying design prop that has no app input and is not 
      ready, and the old run() swallowed the refusal (finding 145). Tool fix: B56 (check and ready check every variant
      in the merged layout, a merge dry-run; the 422 body carries the findings and Studio shows them through
      refusalMessageOf). Design fix: the window-control icons move to assets/. Lesson: a gate that judges a file in a
-     different layout than the one it will land in judges a different file.
+     different layout than the one it will land in judges a different file. Built (builder, 2026-11-02, bbde5081e,
+     ca7546773, unpushed): check and ready run every rule on shared/ as the merge carries it; a refused merge returns
+     422 `check-failed` with the findings and Studio shows them. Open: the alert shows the findings on one line;
+     that layout goes into the merge-view sketch (B62).
 151. Code review of the Angular design-parts (agent review, 2026-11-02, Tom's request): the workflow lets these through.
      (1) Composition is flattened: a page design that imports an implemented part gets that part's markup pasted, not
      its component (inbox pastes comment-pin with "TB" baked in; the studio logo is pasted twice beside

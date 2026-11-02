@@ -23,8 +23,8 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
 603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
 3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
-startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen; hing am fehlenden `implements`-Link, Befund 153), danach B62-Werkzeugteil; offen: B56, A13 (CLI),
-B58, B57, B59, B60, B61. Ursache von Befund 152 (c) beim Builder angefragt.
+startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen; hing am fehlenden `implements`-Link, Befund 153), danach B62-Werkzeugteil; offen: A13 (CLI),
+B58, B57, B59, B60, B61. B56 gebaut (bbde5081e, ca7546773, lokal). Ursache von Befund 152 (c) beim Builder angefragt.
 
 Bei Tom:
 
@@ -169,8 +169,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   vergleichbar waren; ein CI-Schritt vergleicht jeden fertigen Part erneut; die drei Abweichungen (shell-main,
   merge, system) sind Werkzeugfehler: compare wartet, bis Overlays stehen und alle Overlays des Zustands da sind,
   und friert laufende Animationen beim Bruchteil des Designs ein (Befund 149).
-- **B56** Merge-Probelauf: check und ready prüfen jede Variante im gemergten Layout (auch shared/); die Ablehnung
-  eines Merges zeigt die Befunde statt „Merge fehlgeschlagen.“ (Befund 150).
 - **B57** Kompositions-Check: importiert ein Design einen umgesetzten Part, muss die Komponente dessen Komponente
   nutzen; der Task darf die Ordner komponierter Parts und `design-parts/shared/` ändern (Befund 151).
 - **B58** Input-Check: Inputs, die keine App bindet (außer `designOnly`), `*_SAMPLE` als Input-Default und
@@ -182,7 +180,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B61** Skill für das Umsetzen eines Design-Parts: komponieren statt kopieren, keine Sample-Defaults, Label-Map,
   SDK-Fokusring und Overlay, Spec mit fremden Daten (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, E2E-Budget bis zur ersten Zeile; Render-Regel
-  für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch (Befund 152).
+  für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch, auch für die
+  Befunde eines abgelehnten Merges, die heute in einer Zeile stehen (Befund 152, 150).
 - **B63** Merge und `sketch ready` warnen bei einem Teil ohne `implements`-Link; der Go-Hash ignoriert den Link
   (Befund 153).
 
