@@ -2169,7 +2169,8 @@ Q16, from finding 126:
 - The search field becomes its own control part (Tom's feedback, finding 163); the title bar embeds it and draws no
   states of it. Its states and the contrast fix live in the new part.
 - Go withdrawal (B70) is parked: the go system will be reworked; the rework must include withdrawing a go. Until
-  then a wrong go leaves by a hand edit of go.json, done by Tom.
+  then a wrong go is not removed: a redraw makes it stale, and Tom's next go replaces it. Tom edits no files
+  (finding 82); asking him to edit go.json was wrong.
 - Technical (grill): the pre-push visible-change gate fails when a selected part has any unjudged state; listing
   them is not enough (a gate that passed after judging nothing, builder 2026-11-02).
 

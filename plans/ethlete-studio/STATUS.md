@@ -29,8 +29,8 @@ Sketch-Ansicht Variante e, dann Code-Review B58, B57, B59, B60, dann A13 (CLI) u
 
 Bei Tom:
 
-- Go-Eintrag `components/title-bar` (auto) per Hand aus `go.json` löschen (Befund 162; Zurücknehmen geparkt).
-- Danach neues Go für Titelleiste und Suchfeld in Studio, sobald der Builder beide meldet.
+- Neues Go für Titelleiste, Suchfeld und danach die Shell in Studio, sobald der Builder sie meldet. Das alte
+  Auto-Go der Titelleiste ist durch die Neuzeichnung veraltet; Toms neues Go ersetzt es. Tom editiert keine Dateien.
 
 Übergaben (lokal, per gitignore ausgeschlossen): `.claude/handoffs/doc-agent-studio.md`,
 `.claude/handoffs/builder-studio.md`; geparkt: `b36-parked.patch` und `b36-parked-e2e.mjs` (B36, nach der Wahl von
