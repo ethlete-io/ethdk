@@ -2606,8 +2606,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      world point under the pointer stays within ~2 px across a ctrl-wheel in and out.
      Cause (builder): the Sketches view zooms by resizing frames (world stays scale(1)); heads, gaps and labels do not
      scale linearly, so zoomAtPoint drifts. Fix: ctrl-wheel anchors on the frame under (or nearest) the pointer and
-     corrects the pan after render; new e2e case on all 4 PAGES, drift <= 0.3 px. Still owed: show the case red on
-     the old code.
+     corrects the pan after render; new e2e case on all 4 PAGES, drift <= 0.3 px. Proven red with the anchor
+     disabled: drift 21-71 px.
 
 196. The 12 px text floor (Sketches view text size decision) breaks the layout at low zoom (Tom, 2026-11-02, 23 %):
      state labels wrap ("out-/hover") and overlap the next column, because the gaps scale and the text does not.
@@ -2654,3 +2654,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      changes nothing visible offers no decision. Lesson: nothing checks that a variant differs from Aktuell. Tool fix
      (decided, technical): `sketch check` warns VARIANT-UNCHANGED when every state of a variant is pixel-identical to
      Aktuell (measured, not blocked); the Sketches view shows such a variant fully dimmed.
+
+202. canvas.e2e on real sketches (components-zoom-chip, elements-shell-main, added for findings 198/199) found three
+     defects the sample fixture never showed (builder, 2026-11-02): ctrl-wheel zoom-in does not change the frame
+     width on zoom-chip (153 -> 153 px); hiding the panel moves the frames 12-16 px on zoom-chip and shell-main.
+     Cause pending from builder. Lesson: the Sketches cases ran on one sample sketch that is transposed at 1440 px, so
+     the 4-column grid never ran in the e2e. Tool fix (decided, built): every Sketches case runs on a narrow and a
+     large real sketch too.
