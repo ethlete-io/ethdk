@@ -1659,6 +1659,13 @@ check` fails a part with a varying design prop that has no app input and is not 
      2026-11-02); the design check passed with 0 problems. Cause pending (builder): why the render check's clipped
      text rule missed text cut by centring inside a flex row. Tool fix pending the cause. Design fix with Tom (part
      name truncates at the end, product stays whole).
+167. In pages/sketches r2 variant e the variant rows run past the bottom of the Studio window and are cut only by
+     the window border (Tom, 2026-11-02, screenshot: the `windows` state row of a title-bar sample cut at the window
+     edge); the sketch check passed. Tom: the implementation checks would likely report it as an error. Cause
+     pending (builder): whether the rows area is declared as a pan region and why no render rule reports content
+     clipped by the page frame. Tool fix pending the cause (likely: content cut by the page or window edge is a
+     render problem unless the region is declared pannable, and a pannable region shows that it continues).
+     Comments in Studio are not back in the UI yet, so Tom reports such feedback in chat.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2165,6 +2172,12 @@ Q16, from finding 126:
 - The builder commits Tom's title-bar merge once, exactly its paths (components/title-bar/, the four icons close,
   maximize, minimize, search, and the merged.json/pictures.json lines), as "chore(repo): Merge ... sketch"; never
   go.json.
+
+### Sketch view states decision (Tom, 2026-11-02)
+
+- pages/sketches round 2: variant e. Each variant row stacks all its states; unchanged states dimmed, the first
+  changed state marked "erste Änderung". Rows pan with the canvas, no inner scrollbar. Open: the cut at the window
+  edge (finding 167).
 
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
