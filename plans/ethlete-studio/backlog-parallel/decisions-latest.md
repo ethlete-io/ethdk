@@ -1,5 +1,16 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Variant notes, model name and order of the recovered wishes (Tom, 2026-11-02)
+
+1. **Variant and part notes:** written in Studio's language (German), short enough to show without truncation, and
+   about what the designer sees or gets, never technical values ("search in the middle, no divider", not "36 px bar").
+   The CLI checks language and length in `sketch check` / `sketch ready`. With i18n (A34) the language follows the
+   setting.
+2. **Model on a variant:** the head shows the provider logo plus the short model name ("Opus 5.5", "Sol 6.1") instead
+   of "Claude"; a tooltip shows the full name and when the variant was made. This was visible before (regression).
+3. **Order:** A40 (new product form) right after the sidebar block (A5-A7); A38 (Git in Studio) and A39 (import
+   existing code) after A37 (design editor).
+
 ### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
 
 1. **Order of list A:** A1 title bar, A36 explorer, A8 SDK tooltips, then A9 merge canvas and A10 build-ready, then

@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Reihenfolge von Liste A (Tom, 02.11.): A1, A36, A8, dann A9 und A10, dann A5 bis A7, danach der Rest der Reihe nach. Was man sieht, startet immer mit einem Sketch.
+Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Reihenfolge von Liste A (Tom, 02.11.): A1, A36, A8, dann A9 und A10, dann A5 bis A7 und A40, danach der Rest der Reihe nach; A38 und A39 nach A37. Was man sieht, startet immer mit einem Sketch.
 
 ## Erledigt
 
@@ -116,6 +116,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B35** `sketch check` und `sketch ready` scheitern an einer Variante, die noch das unveränderte Gerüst ist (Befund 136).
 - **B36** Sketch-Ansicht: Rahmen in der gefitteten Größe des Teils, Spalten = Varianten + 1, Platz für den Kopf, „neu“
   statt leerem „Aktuell“; E2E mit kurzem und neuem Teil (Befund 136).
+- **B37** `sketch check`/`sketch ready`: Notizen an Varianten und Teilen sind deutsch, kurz genug ohne Abschneiden und
+  ohne technische Werte (dl 02.11.).
+- **B38** Kopf einer Variante zeigt den kurzen Modellnamen statt „Claude“, Tooltip mit vollem Namen und Zeit
+  (Rückschritt; dl 02.11.).
 
 ## C. CLI: Tempo und Ablauf
 
