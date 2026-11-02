@@ -1601,12 +1601,19 @@ check` fails a part with a varying design prop that has no app input and is not 
      frame is reported; a part that must scroll declares it). Lesson: content behind a scrollbar is content no
      picture shows.
 160. A frame in the Sketches view sometimes shows the browser's own failed-load page (grey page with the sad document
-     icon) instead of the design (Tom, 2026-11-02, pages/sketches `page-sketch · desktop`). Cause pending (builder):
-     which frame request fails or is refused, and why only sometimes. Why no check caught it: B49 makes the CLI
-     tools fail loudly on an error page in a frame, but the live view has no state for a frame that failed, and no
-     e2e loads frames under churn (a sketch agent rewriting files). Tool fix: B69 (the live canvas detects a failed
-     frame load and shows its own state with the reason and a reload, retrying once on its own; an e2e loads frames
-     while files change). Lesson: a failure the tools catch is still a raw browser page for the person looking.
+     icon) instead of the design (Tom, 2026-11-02, pages/sketches `page-sketch · desktop`). Cause (builder, proven
+     in a clone): the design server restarts itself when dist/libs/cli changes (serve.ts:1133-1151, build-watch.ts
+     112-142); for ~1.5 s the port refuses, and a frame whose src changes in that window gets
+     ERR_CONNECTION_REFUSED. Many agents running `nx build cli` make it frequent. It stays broken because
+     frame-paint.ts:50-53 counts any iframe load + 1000 ms as painted (the error page fires load too), and
+     studio-view.component.ts:309 reloads only when the supervisor stops listening, which it does not. Sketch churn
+     alone failed no frame in 125 loads. Why no check caught it: B49 makes the CLI tools fail loudly on an error
+     page, but the live view inferred "painted" from a load event, never from the frame's own message, and no e2e
+     loads frames during a server restart. Tool fix: B69 (a load without the frame's message is a failed load: keep
+     the old frame, show an own state with the reason and a reload, retry once when /__design/stamp answers; reload
+     frames when the server identity on STAMP_PATH changes; e2e loads frames during a cli rebuild restart; a socket
+     handoff to close the refused window is not built). Lesson: a success inferred from an event the failure also
+     fires is no success.
 161. After a reload, Studio takes about 10 s before the Sketches view shows the open sketches (Tom, 2026-11-02).
      Cause (builder): the view waits on its first request, GET /__design/sketches?unchanged=no (host/design.ts:538).
      This "quick" read skips only the pixel compare; it still loads every variant's part module through the Vite
