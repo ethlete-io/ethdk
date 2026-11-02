@@ -6,11 +6,13 @@ import {
   ViewEncapsulation,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -468,20 +470,9 @@ export class SystemViewComponent {
         statusChanges: this.statusChanges(),
       })),
     ).pipe(
-      scan(
-        (known: { port: number | null; product: string | undefined; first: boolean }, request) => ({
-          port: request.port,
-          product: request.product,
-          first: known.port !== request.port || known.product !== request.product,
-        }),
-        { port: null, product: undefined, first: true },
-      ),
-      switchMap(({ port, product, first }) =>
+      switchMap(({ port, product }) =>
         port && product
-          ? (first
-              ? concat(listedSketches$({ port, product, quick: true }), listedSketches$({ port, product }))
-              : listedSketches$({ port, product })
-            ).pipe(
+          ? concat(listedSketches$({ port, product, quick: true }), listedSketches$({ port, product })).pipe(
               map(({ sketches }) => sketches),
               // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed sketches render as the existing empty list
               catchError(() => of<ListedSketch[]>([])),
@@ -495,7 +486,14 @@ export class SystemViewComponent {
 
   private sketchList = computed(() => itemsOf(this.sketchRead(), this.product()?.name));
 
-  public sketches = computed(() => this.sketchList() ?? []);
+  private mergedSketches = signal<string[]>([]);
+
+  public sketches = computed(() => {
+    const merged = this.mergedSketches();
+    const listed = this.sketchList() ?? [];
+
+    return merged.length ? listed.filter((sketch) => !merged.includes(sketch.target)) : listed;
+  });
 
   private flowChanges = toSignal(
     toObservable(this.port).pipe(
@@ -966,6 +964,17 @@ export class SystemViewComponent {
     });
 
     this.commentStore.connect(source);
+
+    effect(() => {
+      const listed = this.sketchList();
+      const merged = untracked(this.mergedSketches);
+
+      if (!listed || !merged.length) return;
+
+      const remaining = merged.filter((target) => listed.some((sketch) => sketch.target === target));
+
+      if (remaining.length !== merged.length) this.mergedSketches.set(remaining);
+    });
   }
 
   /** Shows the part or sketch a comment sits on, moves the camera to its pin and opens it. */
@@ -1094,6 +1103,7 @@ export class SystemViewComponent {
   }
 
   protected selectMerged(target: string) {
+    this.mergedSketches.update((merged) => [...merged, target]);
     this.picked.set(target);
     rememberView({ systemEntry: target });
   }

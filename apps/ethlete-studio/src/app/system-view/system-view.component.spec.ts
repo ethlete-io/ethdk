@@ -570,7 +570,7 @@ describe('SystemViewComponent on a named list change', () => {
     fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, calls: 1, sketches: 1 });
     await settle(fixture);
 
-    expect(counts()).toEqual({ ...before, calls: before.calls + 1, sketches: before.sketches + 1 });
+    expect(counts()).toEqual({ ...before, calls: before.calls + 1, sketches: before.sketches + 2 });
 
     fixture.componentRef.setInput('lists', { all: 1, products: 1, calls: 2, sketches: 2, flows: 1 });
     await settle(fixture);
@@ -622,7 +622,7 @@ describe('SystemViewComponent on a sketch report change', () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     await settle(fixture);
 
-    expect(sketchListings).toBe(before + 1);
+    expect(sketchListings).toBe(before + 2);
   });
 });
 
@@ -813,6 +813,56 @@ describe('SystemViewComponent on a merge', () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
 
     expect(fixture.componentInstance['sketchShown']()?.sketch.target).toBe('elements/rating');
+  });
+
+  it('drops a merged sketch from the tree at once while the full listing is still slow', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+    let merged = false;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        const answer = json({ sketches: merged ? [] : [sketch], unreadable: [] });
+
+        return url.includes('unchanged=no')
+          ? answer
+          : new Promise((resolve) => setTimeout(() => resolve(answer), 10000));
+      }
+
+      if (url.includes('/__design/flows')) return json({ flows: [], unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
+    const view = fixture.componentInstance;
+
+    expect(view.sketches().length).toBe(1);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    merged = true;
+    merged = true;
+    fixture.debugElement
+      .query(By.directive(SketchViewComponent))
+      .componentInstance.mergeComplete.emit('elements/rating');
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, sketches: 1 });
+    await vi.advanceTimersByTimeAsync(1000);
+    await fixture.whenStable();
+
+    expect(view.sketches()).toEqual([]);
+
+    vi.useRealTimers();
   });
 
   it('marks the sketch "merging" while the merge runs, then selects the target part', async () => {
