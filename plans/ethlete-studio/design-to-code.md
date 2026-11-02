@@ -3046,3 +3046,5 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   copied `by` are migrated the same way.
 - B134: the builder declares the missing actions in comment-pin, title-bar, tree-row and update-dialog in one slice;
   Tom re-grants the four gos in one batch.
+- After the rebase (31e191378, base hash only, 21 states ok) Tom's earlier pick of variant a (2026-11-02 18:08) stands;
+  no re-pick. The pick stays uncommitted until Studio commits it with the go (B139).
