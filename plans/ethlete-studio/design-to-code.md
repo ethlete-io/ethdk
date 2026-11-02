@@ -1607,6 +1607,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      e2e loads frames under churn (a sketch agent rewriting files). Tool fix: B69 (the live canvas detects a failed
      frame load and shows its own state with the reason and a reload, retrying once on its own; an e2e loads frames
      while files change). Lesson: a failure the tools catch is still a raw browser page for the person looking.
+161. After a reload, Studio takes about 10 s before the Sketches view shows the open sketches (Tom, 2026-11-02).
+     Cause pending (builder): which request or startup step the sketch list waits on. Why no check caught it: no
+     test or budget measures time from app start to the first sketch list; the CLI speed decision (2026-11-02)
+     covers CLI commands only. Tool fix pending the cause (likely: a startup-time budget in the studio e2e, the
+     sketch list served before slow work like render checks or hashing). Lesson: a wait nobody measures grows
+     unseen.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
