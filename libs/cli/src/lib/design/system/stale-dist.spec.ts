@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { describe, expect, it } from 'vitest';
-import { staleDistWarningsOf } from './stale-dist';
+import { describe, expect, it, vi } from 'vitest';
+import { rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
 
 const file = (path: string, content: string, at: number) => {
   mkdirSync(dirname(path), { recursive: true });
@@ -50,5 +50,53 @@ describe('staleDistWarningsOf', () => {
     expect(
       staleDistWarningsOf({ target, config: { render: { packages: { '@ethlete/*': 'node_modules/@ethlete/*' } } } }),
     ).toEqual([]);
+  });
+});
+
+describe('rebuildStaleDist', () => {
+  const quiet = () => vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+  it('rebuilds each stale lib, dependencies first, and lets the drawing run once they are fresh', () => {
+    const errors = quiet();
+    const target = checkout({ coreSource: 2_000, coreBuild: 1_000 });
+    const build = vi.fn(({ dir }: { name: string; dir: string }) => {
+      utimesSync(join(dir, 'package.json'), 5_000, 5_000);
+
+      return true;
+    });
+
+    expect(rebuildStaleDist({ target, config, build })).toBe(true);
+    expect(build.mock.calls.map(([call]) => call.name)).toEqual(['types', 'core']);
+    errors.mockRestore();
+  });
+
+  it('refuses with the build command when a rebuild fails', () => {
+    const errors = quiet();
+    const target = checkout({ coreSource: 1_000, coreBuild: 2_000 });
+
+    expect(rebuildStaleDist({ target, config, build: () => false })).toBe(false);
+    expect(errors.mock.calls.flat().join('\n')).toContain(
+      'REFUSED STALE BUILD @ethlete/types - the build failed; fix it and run NX_NO_CLOUD=true npx nx build types',
+    );
+    errors.mockRestore();
+  });
+
+  it('refuses with the build command when a lib is still stale after its rebuild', () => {
+    const errors = quiet();
+    const target = checkout({ coreSource: 1_000, coreBuild: 2_000 });
+
+    expect(rebuildStaleDist({ target, config, build: () => true })).toBe(false);
+    expect(errors.mock.calls.flat().join('\n')).toContain('run NX_NO_CLOUD=true npx nx build types');
+    errors.mockRestore();
+  });
+
+  it('builds nothing when every build is fresh', () => {
+    const target = checkout({ coreSource: 1_000, coreBuild: 2_000 });
+    const build = vi.fn(() => true);
+
+    utimesSync(join(target, 'dist/libs/types/package.json'), 4_000, 4_000);
+
+    expect(rebuildStaleDist({ target, config, build })).toBe(true);
+    expect(build).not.toHaveBeenCalled();
   });
 });

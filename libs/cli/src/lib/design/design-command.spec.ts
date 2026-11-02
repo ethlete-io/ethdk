@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { designCommand } from './design-command';
+import { designCommand, drawsWithSdkLibs } from './design-command';
 import * as stamp from './stamp';
 
 describe('designCommand', () => {
@@ -86,5 +86,21 @@ describe('designCommand', () => {
     log.mockRestore();
     rmSync(root, { recursive: true, force: true });
     expect(text).not.toContain('no config at');
+  });
+});
+
+describe('drawsWithSdkLibs', () => {
+  it('names the commands that draw, so they rebuild a stale dist first', () => {
+    expect(drawsWithSdkLibs(['shot', 'x/y'])).toBe(true);
+    expect(drawsWithSdkLibs(['check', '--product', 'p', '--visible-change'])).toBe(true);
+    expect(drawsWithSdkLibs(['compare', 'x/y'])).toBe(true);
+    expect(drawsWithSdkLibs(['ready', 'x/y'])).toBe(true);
+    expect(drawsWithSdkLibs(['harness', '--product', 'p'])).toBe(true);
+    expect(drawsWithSdkLibs(['sketch', 'check'])).toBe(true);
+    expect(drawsWithSdkLibs(['sketch', 'ready', 'x/y'])).toBe(true);
+    expect(drawsWithSdkLibs(['task', 'x/y', '--verify'])).toBe(true);
+    expect(drawsWithSdkLibs(['sketch', 'list'])).toBe(false);
+    expect(drawsWithSdkLibs(['task', 'x/y'])).toBe(false);
+    expect(drawsWithSdkLibs(['inbox'])).toBe(false);
   });
 });

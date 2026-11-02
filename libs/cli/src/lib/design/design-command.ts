@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { ACCEPT_USAGE, designAccept } from './system/accept-command';
 import { checkDesign } from './check';
 import { COMPLETE_USAGE, designComplete } from './system/complete-command';
-import { findCheckoutRoot } from './paths';
+import { findCheckoutRoot, readConfig } from './paths';
 import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
@@ -25,6 +25,7 @@ import { designTask, TASK_USAGE } from './system/task-command';
 import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
+import { rebuildStaleDist } from './system/stale-dist';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
@@ -242,6 +243,30 @@ const helpOf = (invocation: string) =>
 
 const HELP_FLAGS = new Set(['--help', '-h']);
 
+const DRAWING_COMMANDS = new Set([
+  'check',
+  'shot',
+  'compare',
+  'ready',
+  'harness',
+  'motion',
+  'dom',
+  'actions',
+  'complete',
+]);
+const DRAWING_SKETCH_COMMANDS = new Set(['check', 'ready', 'preview']);
+
+/** Whether `et design <argv>` draws with the SDK libs, so it must not run on a stale build of them. */
+export const drawsWithSdkLibs = (argv: string[]) => {
+  const [command = '', subcommand = ''] = argv;
+
+  if (command === 'sketch') return DRAWING_SKETCH_COMMANDS.has(subcommand);
+
+  if (command === 'task') return argv.includes('--verify');
+
+  return DRAWING_COMMANDS.has(command);
+};
+
 const alternativesOf = (block: string[], invocation: string) =>
   (block[0] ?? '').split(' | ').map((usage) => usage.replace(`${invocation} `, ''));
 
@@ -298,6 +323,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     console.log(JSON.stringify(buildStampOf()));
 
     return 0;
+  }
+
+  if (drawsWithSdkLibs(argv)) {
+    const { target } = splitCheckout(argv.slice(1), root);
+
+    if (!rebuildStaleDist({ target, config: readConfig(target) })) return 1;
   }
 
   if (argv[0] === 'check') {
