@@ -2604,3 +2604,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the decision was made from a 100 % and a Fit shot only (compare finding 185). Product question to Tom.
      Seen with it: at 104 % all states of zoom-chip variants a and b are dimmed "unverändert", in an earlier Fit shot
      variant a showed "erste Änderung" (dimming depends on load order; cause pending).
+
+197. At high zoom (252 %, components/zoom-chip) the variant head note wraps one word per line and runs out of its
+     column into the state labels and frames ("Zurücksetzen", "(transparent," overlap "out · unverändert") (Tom,
+     2026-11-02). The note scales with the zoom but its column apparently does not. Cause pending from builder.
+     Lesson: the layout was checked at Fit and 100 % only (same gap as findings 185 and 196). Tool fix (decided,
+     technical): canvas.e2e renders every PAGES entry at the min zoom, Fit, 100 % and the max zoom and asserts that
+     no text box overflows its container (no rect of a text node outside its column, no overlap between head and
+     frame column).
+
+198. A state label that wraps to two lines ("out-focus-visible · unverändert") pushes its frame down, so the frames
+     in one visual row no longer line up (Tom, 2026-11-02, zoom-chip, 4-column wrap). Lesson: the column wrap
+     (layout decision "about 4 side by side") was drawn with short state names only. Product question to Tom (how a
+     long label is shown). Tool fix (decided, technical): the same canvas.e2e pass asserts that the frames of one
+     grid row share their top edge within 1 px; the sketch-view fixture gets the longest real state name.
