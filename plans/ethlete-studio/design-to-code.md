@@ -1482,7 +1482,15 @@ check` fails a part with a varying design prop that has no app input and is not 
      `nothing-open` (33571 px); whether they drifted or were never green is being traced. Why no check: no pre-push or
      CI step runs compare per part, and "done" is never re-verified; the B48 gate sees change against the base, not a
      standing deviation. Added to B55: a CI step compares every done part; the three deviations are fixed toward the
-     design (moving closer to the design needs no sketch).
+     design (moving closer to the design needs no sketch). Causes (builder, 2026-11-02): shell-main `project-picker`
+     is a flake, shot mid overlay enter (5/5 reruns pass); system `nothing-open` is a flake, the open-points popover
+     opens async and the shot comes before the overlay exists (6/6 pass, one rerun flaked `fit` instead); merge
+     `merging` never matched since its design state was drawn: the design mock freezes the spinner at 0.3 of its
+     duration, while compare's disabled animations reset the real et-spinner to t=0 (not in implemented.json, so no
+     app regression). None needs an app fix. Why no check: a flake looks like a real diff (no settle confirmation, no
+     rerun), and a design state that was never compared stays unnoticed because "done" covers only recorded states.
+     Added to B55: compare waits until overlay panes settle and until every overlay the design state has exists
+     before shooting; compare freezes running animations at the mock's frozen fraction (general, no skip marker).
 150. Tom's merge of components/title-bar C failed with only "Merge fehlgeschlagen." (2026-11-02). The pick had worked;
      the merge was refused by INLINE-SVG on the sketch's shared/chrome.ts (window-control icons drawn inline), and the
      merge rolled back. Why no check caught it: inlineSvgsOf scans only the part's own folder, and in the sketch

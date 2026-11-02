@@ -22,7 +22,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
 603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
-3 Abweichungen behoben sind (B55, als Nächstes). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
+3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
 startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen; hing am fehlenden `implements`-Link, Befund 153), danach B62-Werkzeugteil; offen: B56, A13 (CLI),
 B58, B57, B59, B60, B61. Ursache von Befund 152 (c) beim Builder angefragt.
 
@@ -167,7 +167,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B55** `design check` lehnt einen Part ab, dessen Design-Prop variiert, aber keinen App-Input hat (ohne zu
   zeichnen); zoom-chip-Design korrigiert; ein Durchlauf von compare über alle Parts findet weitere, die nie
   vergleichbar waren; ein CI-Schritt vergleicht jeden fertigen Part erneut; die drei Abweichungen (shell-main,
-  merge, system) werden Richtung Design behoben (Befund 149).
+  merge, system) sind Werkzeugfehler: compare wartet, bis Overlays stehen und alle Overlays des Zustands da sind,
+  und friert laufende Animationen beim Bruchteil des Designs ein (Befund 149).
 - **B56** Merge-Probelauf: check und ready prüfen jede Variante im gemergten Layout (auch shared/); die Ablehnung
   eines Merges zeigt die Befunde statt „Merge fehlgeschlagen.“ (Befund 150).
 - **B57** Kompositions-Check: importiert ein Design einen umgesetzten Part, muss die Komponente dessen Komponente
