@@ -1354,6 +1354,13 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      like active drawing. Tool fix: B41 (Studio shows hold as "Pausiert" with the reason on click) and a stale rule (in
      progress, no report or file change for N minutes: Studio says "keine Aktivität"). Lesson: a state the CLI writes
      must be visible in Studio, and silence must never look like work.
+139. The push of B22/C1/B30 (up to 11b570079) failed in the pre-push studio-live gate (builder, 2026-11-02):
+     `UNCOVERED <ethlete-title-bar> 0,0 1440x36` in all 18 states. The B30 rule counts regions of parts an open sketch
+     targets as covered, but the gate runs on committed state in a throwaway clone, and sketches stay uncommitted by
+     design until Tom merges them, so the clone never sees the open components/title-bar sketch. Why no check caught
+     it: B30 was tested only in the working tree, never through the pre-push clone. Tool fix: B42 (the live gate also
+     reads open sketches from the working tree's .ethlete/design; a test runs it through the clone path). Lesson: a
+     gate that runs in a clone must be tested in that clone, and state that is uncommitted by design must reach it.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

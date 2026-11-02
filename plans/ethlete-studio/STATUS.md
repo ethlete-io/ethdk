@@ -125,6 +125,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B41** Studio zeigt `sketch hold` als Badge „Pausiert“, ein Klick zeigt den Grund (`--until`); ein Sketch in Arbeit
   ohne Bericht und ohne Dateiänderung seit N Minuten zeigt „keine Aktivität“ (Tom, 02.11.; Befund 138; Zustände
   gehören in den pages/sketches-Sketch).
+- **B42** Pre-Push-Live-Prüfung liest offene Sketches aus dem Arbeitsbaum (`.ethlete/design`), nicht nur aus dem
+  Klon; Test über den Klon-Pfad (Befund 139; blockiert den Push seit d8a90e8cb).
 
 ## C. CLI: Tempo und Ablauf
 
