@@ -2397,6 +2397,9 @@ only). Technical gaps became B84-B98 in STATUS.md.
     tool decides from the markup; no author rule (B106).
 11. Own controls found by CONTROL-STATE (Tom): zoom-chip `reset`, shell-main `section` and shell-main `product` each
     get a sketch with two variants, the unchanged SDK button and a new own control part; Tom picks and merges.
+12. Priority (Tom, 2026-11-02 11:00): the Sketches view (pages/sketches r2, variant e: B34, B36, B38, B84, A13) goes
+    first. Two hours went into side fixes. In-flight slices only end in a committable state; new tool fixes and
+    findings get recorded but not built unless they block the Sketches view.
 
 #### Judgment rules (decision 3)
 

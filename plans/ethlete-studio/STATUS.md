@@ -23,23 +23,28 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Stand der aktuellen Welle. ✅ fertig (lokal, ungepusht), 🔨 läuft, ⏳ geplant, ⛔ hakt. Die Grill-Session hält die
 Tabelle nach jedem Bericht des Builders aktuell; fertige Zeilen fallen beim Push weg.
 
-| ID            | Was                                                                              | Stand | Was fehlt / wo es hakt                                                                                    | Wer     |
-| ------------- | -------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------- | ------- |
-| Push `next`   | Alles seit 062bca6f3                                                             | ⛔    | Zuerst B87-Nachtrag (go.json-Regel enger), dann Pre-push und Push                                         | Builder |
-| title-bar     | Titelleiste mit Suchfeld, Go 02.11.                                              | ✅    | Compare grün                                                                                              | -       |
-| title-search  | Suchfeld der Titelleiste, Go 02.11.                                              | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen                                       | Builder |
-| shell-main    | Shell mit Titelleiste (B76)                                                      | 🔨    | Neues Go 10:58; Compare steht aus                                                                         | Builder |
-| update-dialog | Update-Dialog, Go 02.11.                                                         | ⛔    | Harness rendert jetzt (89d94b1bc); Design 400 px hoch, App 96 px: Ursache offen                           | Builder |
-| B97           | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158)             | ✅    | 849f2792c; Tom prüft den Ring in der echten App (Headless kann es nicht)                                  | Tom     |
-| B101          | Beweis auf dem echten Pfad für B69/B94 (Bef. 174)                                | 🔨    | Rebuild echt bewiesen, e2e rot/grün; fehlt: echter Shot mit `--states` danach                             | Builder |
-| B102          | Builder schweigt (Bef. 175)                                                      | ⏳    | Hook eingetragen (3326a7670); `--role builder` erst beim nächsten Prozessstart (Tom: jetzt kein Neustart) | Tom     |
-| B105          | Harness misst ohne eigene Größe (Bef. 178)                                       | ⛔    | 7a9071c3f bricht title-bar; zurück, App an der Wurzel beschneiden, Pixel-Spec                             | Builder |
-| B106          | Keine Interaktionszeilen für unveränderte eingebettete Parts                     | 🔨    | -                                                                                                         | Builder |
-| B107          | Skizzen für zoom-chip `reset`, shell-main `section` und `product`                | 🔨    | Danach wählt und mergt Tom                                                                                | Builder |
-| B108          | UNUSED-PART-STYLES, kein Teal-Fallback, toter studio-mark weg; Logo-Fix in d/e/f | ⏳    | -                                                                                                         | Builder |
-| B109          | Sketch zeigt, welcher Agent eine Variante gezeichnet hat (Bef. 180)              | ⏳    | -                                                                                                         | Builder |
-| Befund 161    | Sketches-Ansicht braucht nach Reload ~10 s                                       | 🔨    | -                                                                                                         | Builder |
-| B100          | Restliche prüfbare Regeln aus dem Audit                                          | ⏳    | -                                                                                                         | Builder |
+**Priorität (Tom, 02.11. 11:00): zuerst die Sketch-Ansicht** (pages/sketches r2, Variante e: B34, B36, B38, B84,
+A13). Laufende Slices enden nur committbar; neue Tool-Fixes werden notiert, aber nicht gebaut, außer sie blockieren
+die Sketch-Ansicht.
+
+| ID             | Was                                                                              | Stand | Was fehlt / wo es hakt                                                                                    | Wer     |
+| -------------- | -------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------- | ------- |
+| Sketch-Ansicht | Bau von pages/sketches r2 Variante e                                             | 🔨    | Erster Schritt vom Builder                                                                                | Builder |
+| Push `next`    | Alles seit 062bca6f3                                                             | ⛔    | Zuerst B87-Nachtrag (go.json-Regel enger), dann Pre-push und Push                                         | Builder |
+| title-bar      | Titelleiste mit Suchfeld, Go 02.11.                                              | ✅    | Compare grün                                                                                              | -       |
+| title-search   | Suchfeld der Titelleiste, Go 02.11.                                              | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen                                       | Builder |
+| shell-main     | Shell mit Titelleiste (B76)                                                      | 🔨    | Neues Go 10:58; Compare steht aus                                                                         | Builder |
+| update-dialog  | Update-Dialog, Go 02.11.                                                         | ⛔    | Harness rendert jetzt (89d94b1bc); Design 400 px hoch, App 96 px: Ursache offen                           | Builder |
+| B97            | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158)             | ✅    | 849f2792c; Tom prüft den Ring in der echten App (Headless kann es nicht)                                  | Tom     |
+| B101           | Beweis auf dem echten Pfad für B69/B94 (Bef. 174)                                | 🔨    | Rebuild echt bewiesen, e2e rot/grün; fehlt: echter Shot mit `--states` danach                             | Builder |
+| B102           | Builder schweigt (Bef. 175)                                                      | ⏳    | Hook eingetragen (3326a7670); `--role builder` erst beim nächsten Prozessstart (Tom: jetzt kein Neustart) | Tom     |
+| B105           | Harness misst ohne eigene Größe (Bef. 178)                                       | ⛔    | 7a9071c3f bricht title-bar; zurück, App an der Wurzel beschneiden, Pixel-Spec                             | Builder |
+| B106           | Keine Interaktionszeilen für unveränderte eingebettete Parts                     | 🔨    | -                                                                                                         | Builder |
+| B107           | Skizzen für zoom-chip `reset`, shell-main `section` und `product`                | 🔨    | Danach wählt und mergt Tom                                                                                | Builder |
+| B108           | UNUSED-PART-STYLES, kein Teal-Fallback, toter studio-mark weg; Logo-Fix in d/e/f | ⏳    | -                                                                                                         | Builder |
+| B109           | Sketch zeigt, welcher Agent eine Variante gezeichnet hat (Bef. 180)              | ⏳    | -                                                                                                         | Builder |
+| Befund 161     | Sketches-Ansicht braucht nach Reload ~10 s                                       | 🔨    | -                                                                                                         | Builder |
+| B100           | Restliche prüfbare Regeln aus dem Audit                                          | ⏳    | -                                                                                                         | Builder |
 
 Danach: B80, B81, B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60, A13 (CLI),
 B62.
