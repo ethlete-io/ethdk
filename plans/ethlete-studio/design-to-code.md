@@ -2795,3 +2795,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      queued after the slice: Übernehmen only on a ready sketch; `sketch check` warns "drawn round left in progress". Built (builder, f7e66dbb6): `design sketch check` warns ROUND-NOT-READY
      when a sketch is neither ready nor held and ready would not refuse it (warning only); a sketch ready would refuse
      already gets "ready will refuse: ..." from check. Studio half goes with the badge (finding 206).
+
+209. `nx test cli` went red once (part-accept.spec "refuses a part with theming findings", 8.9 s) while a subagent ran
+     a build and Playwright in parallel; alone it passes in 1.6 s (builder, 2026-11-02). Cause: no testTimeout in the
+     cli vitest config, so the 5 s default applies to a spec that spawns tailwind. A vite "server closed" at the end of
+     a real-repo `sketch check --product studio` did not come back on a solo rerun (likely the same load or a port
+     clash, not proven). Nothing ran the cli suite on f7e66dbb6: the pre-commit `vitest related` covers only
+     apps/ethlete-studio. Lesson: the commit-time spec check stops at one project, and a load-sensitive timeout reads
+     as a real failure. Tool fix (decided, technical, B116): part-accept gets its own testTimeout (~30 s); the
+     pre-commit related run extends to libs/cli. The rerun's CONTROL-STATE x2 on elements/shell-main variant a goes
+     with the shell-main follow-up.
