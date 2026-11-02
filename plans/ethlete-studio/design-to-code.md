@@ -2430,3 +2430,10 @@ decision 2), #91 (go rework, A10).
      pending from builder): a sketch check that fails when content ends past the viewport bottom or a non-scrolling
      container has scrollHeight > clientHeight, at every reference size. Also: the grill session relayed "ready" to
      Tom without looking at the shot - relay only after a shot was opened.
+     Cause (builder): the rows column `[data-sk-rows]` is an overflow-hidden box panned only by wheel/drag, with no
+     scroll cue; camera "fit" fits width only, so lower rows always fall below the edge. The check passed because the
+     sketch itself sets `data-et-skip="CLIPPED"` on the column, the content root and every fit frame, and CLIPPED is
+     escapable (render-check.ts:127). Tool fix (decided, technical): new rule HIDDEN-CONTENT - a container whose
+     content runs past its bottom edge with no visible scroll affordance fails at every reference size and cannot be
+     skipped; a CLIPPED skip covers only horizontal or decorative cuts. The page fix (scroll area / fade cue / fit
+     height) is Tom's pick.
