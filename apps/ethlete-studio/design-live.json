@@ -33,7 +33,10 @@
       "exited": false,
       "log": []
     },
-    "agent_list": []
+    "agent_list": [],
+    "window_chrome_watch": {
+      "$messages": [{ "os": "linux", "left": [], "right": ["minimize", "maximize", "close"], "preferNoCsd": false }]
+    }
   },
   "storage": {
     "ethlete-studio.call-view": {

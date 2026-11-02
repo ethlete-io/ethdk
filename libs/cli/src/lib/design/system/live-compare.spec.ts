@@ -3,6 +3,7 @@ import { AddressInfo } from 'net';
 import { chromium, type Browser } from 'playwright';
 import { answerFileOf, liveShotOf, liveSpecProblemOf, LiveState, mergedStorageOf, substitutedOf } from './live-compare';
 import { decodePng } from './part-compare';
+import { Partless } from './uncovered-regions';
 
 const SPEC = {
   host: 'app-shell',
@@ -48,6 +49,10 @@ describe('liveSpecProblemOf', () => {
     expect(liveSpecProblemOf({ ...SPEC, now: 'Mittwoch' })).toBe('now must be an ISO time');
   });
 
+  it('accepts partless app regions with a reason', () => {
+    expect(liveSpecProblemOf({ ...SPEC, partless: [{ selector: 'app-title-bar', reason: 'OS chrome' }] })).toBeNull();
+  });
+
   it.each([
     [{ pages: {} }, 'a live spec must be'],
     [{ ...SPEC, answers: { '/x': 1 } }, 'answers must map'],
@@ -68,6 +73,7 @@ describe('liveSpecProblemOf', () => {
       { host: 'a', pages: { 'pages/home': { states: { edge: { design: 'part', occluded: 'yes' } } } } },
       'occluded must be true or false',
     ],
+    [{ ...SPEC, partless: [{ selector: 'app-title-bar' }] }, 'partless must be a list'],
   ])('refuses %j', (spec, message) => {
     expect(liveSpecProblemOf(spec)).toContain(message);
   });
@@ -122,6 +128,7 @@ const canvasPageOf = (cover: string, world = '') =>
   </main></body>`;
 
 const PAGES: Record<string, string> = {
+  '/titled': `<body style="margin:0"><main style="display:block;width:7px;height:5px;background:#0000ff"></main><header style="position:fixed;left:0;top:0;width:7px;height:4px;background:#ff0000"></header></body>`,
   '/entering': `<body style="margin:0"><main style="display:block;position:relative;width:7px;height:5px;background:#0000ff">
     <div class="et-overlay-runtime-pane et-animation-enter-active" style="position:absolute;inset:0;background:#ff0000;opacity:0"></div>
   </main><script>setTimeout(() => {
@@ -158,12 +165,16 @@ describe('liveShotOf', () => {
     await new Promise((resolve) => server.close(resolve));
   });
 
-  const shotOf = (path: string, options: { size?: { width: number; height: number }; state?: LiveState } = {}) =>
+  const shotOf = (
+    path: string,
+    options: { size?: { width: number; height: number }; state?: LiveState; partless?: Partless[] } = {},
+  ) =>
     liveShotOf({
       browser: browser as Browser,
+      parts: ['main'],
       url,
       size: options.size ?? { width: 7, height: 5 },
-      spec: { host: 'main', pages: {} },
+      spec: { host: 'main', pages: {}, partless: options.partless },
       dir: '.',
       page: { path, states: {} },
       state: options.state ?? { design: 'a' },
@@ -209,5 +220,14 @@ describe('liveShotOf', () => {
       0,
     );
     expect((await shotOf('/labelled', { size: WIDE })).length).toBeGreaterThan(0);
+  });
+
+  it('fails a page with a visible region outside every part, unless the spec lists it as partless', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    await expect(shotOf('/titled')).rejects.toThrow(/UNCOVERED: <header> at 0,0 7x4 on .*\/titled - no part covers/);
+    expect(
+      (await shotOf('/titled', { partless: [{ selector: 'header', reason: 'window chrome' }] })).length,
+    ).toBeGreaterThan(0);
   });
 }, 30_000);

@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-# Runs the CI "Checks" job, plus the Studio specs and the static design check of the parts the pushed changes reach,
+# Runs the CI "Checks" job, plus the Studio specs, the static design check of the parts the pushed changes reach and,
+# when the push changes Studio or the design system, the live check for Studio app regions no part covers,
 # over the committed state of HEAD in a throwaway clone, so a push never lands code that job rejects and other
 # sessions' uncommitted edits never block it. Skip once with `git push --no-verify`.
 set -e
@@ -61,4 +62,10 @@ for entry in $pids; do
     failed=1
   fi
 done
+
+if ! node tools/scripts/prepush-checks.mjs live "$base" "$head" >"$tmp/studio-live.log" 2>&1; then
+  echo "pre-push: studio-live failed:"
+  cat "$tmp/studio-live.log"
+  failed=1
+fi
 exit "$failed"

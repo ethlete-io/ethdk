@@ -7,6 +7,7 @@ import { DEFAULT_PORT, DesignConfig, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
 import { checkSystemRendered } from './system/check-system';
+import { liveUncoveredOf, uncoveredFindingLineOf } from './system/live-uncovered';
 import { appCanonicalClassesOf } from './system/rules/canonical-class';
 import { partKeyOf, resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
@@ -377,10 +378,48 @@ const checkAppClasses = (options: { target: string; config: DesignConfig; produc
   return lines.length === 0 ? 0 : 1;
 };
 
+const checkLive = async (options: { target: string; config: DesignConfig; products: string[] }) => {
+  const { target, config } = options;
+  let failed = 0;
+
+  for (const name of options.products) {
+    const entry = config.products?.[name];
+
+    if (!entry) {
+      console.log(`NO PRODUCT "${name}" in config.json.`);
+      failed++;
+      continue;
+    }
+
+    const checked = await liveUncoveredOf({ target, config, product: resolveProduct({ target, name, config: entry }) });
+
+    if (typeof checked === 'string') {
+      console.log(`${name}: ${checked}`);
+      failed++;
+      continue;
+    }
+
+    checked.problems.forEach((line) => console.log(`${name}: ${line}`));
+    checked.findings.forEach((finding) => console.log(`${name}: ${uncoveredFindingLineOf(finding)}`));
+    failed += checked.problems.length + checked.findings.length;
+  }
+
+  console.log(
+    failed === 0
+      ? 'Every visible app region on the live pages belongs to a part.'
+      : `${failed} finding(s). An UNCOVERED region needs a part that implements its component, or a "partless" entry with a reason in the live spec.`,
+  );
+
+  return failed === 0 ? 0 : 1;
+};
+
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, invocation } = options;
   const appClasses = options.argv.includes('--app-classes');
-  const argv = options.argv.filter((argument) => argument !== '--complete' && argument !== '--app-classes');
+  const live = options.argv.includes('--live');
+  const argv = options.argv.filter(
+    (argument) => argument !== '--complete' && argument !== '--app-classes' && argument !== '--live',
+  );
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);
   const products = flags['--product'];
   const parts = flags['--part'];
@@ -401,6 +440,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
     }
 
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
+    if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
     return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part });
   }

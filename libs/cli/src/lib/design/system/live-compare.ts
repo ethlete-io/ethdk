@@ -14,6 +14,7 @@ import { settledPanesOf } from './settled-panes';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
+import { Partless, partSelectorsOf, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
 
 type Storage = Record<string, unknown>;
 
@@ -44,12 +45,13 @@ export type LivePage = LiveSample & {
 /**
  * The fixed sample the app's real pages run on: `host` is the selector of the element the shot clips to, `invoke`
  * the answers of the desktop host commands (`$port` and `$checkout` stand for the design server port and the
- * checkout), `storage` the localStorage entries, and `answers` the design server paths answered with a JSON file
+ * checkout; an answer `{ "$messages": [...] }` sends those messages to each channel the command is passed), `storage` the localStorage entries, and `answers` the design server paths answered with a JSON file
  * (relative to the spec) instead of the live design system. `frame` is a PNG (relative to the spec) both sides draw as
  * frame content: the design in each slot the page draws itself, the app as every part shot and frame. `now` is the
  * ISO time the app's clock reads, in UTC, so relative times such as "vor 3 Min" draw the same on every run. `shell`
  * is the selector of the app component whose template, with the components it draws, holds the shell controls that
- * `design actions --live` presses on every page.
+ * `design actions --live` presses on every page. `partless` lists the app regions, by selector and reason, that no part
+ * is meant to cover; compare fails every other visible region outside the part components as UNCOVERED.
  */
 export type LiveSpec = {
   host: string;
@@ -59,6 +61,7 @@ export type LiveSpec = {
   invoke?: Record<string, unknown>;
   storage?: Storage;
   answers?: Record<string, string>;
+  partless?: Partless[];
   pages: Record<string, LivePage>;
 };
 
@@ -86,6 +89,17 @@ const isPan = (value: unknown) =>
     typeof value['x'] === 'number' &&
     typeof value['y'] === 'number');
 
+const isPartless = (value: unknown) =>
+  Array.isArray(value) &&
+  value.every(
+    (entry) =>
+      isRecord(entry) &&
+      typeof entry['selector'] === 'string' &&
+      entry['selector'].trim() !== '' &&
+      typeof entry['reason'] === 'string' &&
+      entry['reason'].trim() !== '',
+  );
+
 /** Why a live spec is unusable, or `null`. */
 export const liveSpecProblemOf = (spec: unknown): string | null => {
   if (!isRecord(spec) || typeof spec['host'] !== 'string' || !isRecord(spec['pages']))
@@ -96,6 +110,8 @@ export const liveSpecProblemOf = (spec: unknown): string | null => {
   if (spec['shell'] !== undefined && typeof spec['shell'] !== 'string') return 'shell must be a selector';
   if (spec['now'] !== undefined && (typeof spec['now'] !== 'string' || Number.isNaN(Date.parse(spec['now']))))
     return 'now must be an ISO time';
+  if (spec['partless'] !== undefined && !isPartless(spec['partless']))
+    return 'partless must be a list of { "selector", "reason" }';
 
   const specProblem = sampleProblemOf(spec);
 
@@ -257,13 +273,33 @@ export const openLivePage = async (options: {
   await page.addInitScript(
     (data: { invoke: Record<string, unknown>; storage: Record<string, string> }) => {
       let callbacks = 0;
+      const registered = new Map<number, (message: unknown) => void>();
       const target = globalThis as unknown as Record<string, unknown>;
+      const send = (args: unknown, messages: unknown[]) =>
+        Object.values(typeof args === 'object' && args !== null ? args : {}).forEach((value: { id?: unknown }) => {
+          const channel = typeof value?.id === 'number' ? registered.get(value.id) : undefined;
+
+          messages.forEach((message, index) => channel?.({ index, message }));
+        });
 
       target['__TAURI_INTERNALS__'] = {
-        invoke: (command: string) =>
-          command in data.invoke ? Promise.resolve(data.invoke[command]) : new Promise(() => undefined),
-        transformCallback: () => ++callbacks,
-        unregisterCallback: () => undefined,
+        invoke: (command: string, args: unknown) => {
+          if (!(command in data.invoke)) return new Promise(() => undefined);
+
+          const answer = data.invoke[command] as { $messages?: unknown };
+
+          if (!Array.isArray(answer?.$messages)) return Promise.resolve(answer);
+
+          send(args, answer.$messages);
+
+          return Promise.resolve(null);
+        },
+        transformCallback: (callback: (message: unknown) => void) => {
+          registered.set(++callbacks, callback);
+
+          return callbacks;
+        },
+        unregisterCallback: (id: number) => registered.delete(id),
         convertFileSrc: (path: string) => path,
         metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
       };
@@ -339,10 +375,12 @@ export const openLivePage = async (options: {
 
 /**
  * A PNG of the app's `spec.host` element on the real page `url`, sized to `size`, opened as `openLivePage` does and
- * taken once the picture stops changing.
+ * taken once the picture stops changing. `parts` are the selectors of the part components, which together with the
+ * spec's `partless` selectors must cover every visible region of the page.
  */
 export const liveShotOf = async (options: {
   browser: Browser;
+  parts: string[];
   url: string;
   size: { width: number; height: number };
   spec: LiveSpec;
@@ -396,16 +434,16 @@ export const liveShotOf = async (options: {
         const occluded = options.state.occluded
           ? []
           : await occludedFramesOf({ page, host, port: Number(new URL(options.server).port) });
+        const uncovered = await uncoveredRegionsOnPage({ page, parts: options.parts, partless: spec.partless ?? [] });
+        const findings = [
+          ...occluded.map(
+            (line) =>
+              `OCCLUDED: ${line} on ${address} - the user cannot see what compare checks there; set "occluded": true on the live state if the cover is intended`,
+          ),
+          ...uncovered.map((region) => uncoveredLineOf(region, address)),
+        ];
 
-        if (occluded.length > 0)
-          throw new LiveError(
-            occluded
-              .map(
-                (line) =>
-                  `OCCLUDED: ${line} on ${address} - the user cannot see what compare checks there; set "occluded": true on the live state if the cover is intended`,
-              )
-              .join('\n'),
-          );
+        if (findings.length > 0) throw new LiveError(findings.join('\n'));
 
         return shot;
       }
@@ -488,6 +526,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
     };
     const loaded = module.default?.states;
     const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? loaded : {};
+    const parts = partSelectorsOf({ target, product });
     const slotFill = live.spec.frame ? frameContentOf(readFileSync(resolve(live.dir, live.spec.frame))) : null;
     const shots: StateShot[] = [];
 
@@ -520,6 +559,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
         .run((browser) =>
           liveShotOf({
             browser,
+            parts,
             url,
             size,
             spec: live.spec,

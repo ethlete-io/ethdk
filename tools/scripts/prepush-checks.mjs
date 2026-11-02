@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { createJiti } from 'jiti';
 
 const STUDIO = 'apps/ethlete-studio/';
-const usage = 'usage: prepush-checks.mjs <specs|design> <base> <head> [vitest cache dir]';
+const LIVE_INPUTS = [STUDIO, '.ethlete/design/', 'libs/cli/src/lib/design/'];
+const usage = 'usage: prepush-checks.mjs <specs|design|live> <base> <head> [vitest cache dir]';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const [kind, base, head, cache] = process.argv.slice(2);
@@ -53,6 +54,19 @@ if (kind === 'design') {
 
   lines.forEach((line) => console.log(line));
   process.exit(code);
+}
+
+if (kind === 'live') {
+  if (!changes.some(({ file }) => LIVE_INPUTS.some((prefix) => file.startsWith(prefix)))) process.exit(0);
+
+  const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' }).status ?? 1;
+  const built = run('yarn', ['nx', 'build', 'cli']);
+
+  process.exit(
+    built === 0
+      ? run('node', ['dist/libs/cli/src/index.js', 'design', 'check', '--product', 'studio', '--live'])
+      : built,
+  );
 }
 
 console.error(usage);
