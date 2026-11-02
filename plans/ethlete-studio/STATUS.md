@@ -20,21 +20,17 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
-603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
-3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
-startet. Reihenfolge (Grill, 02.11., Tom: „in der Reihenfolge, die Sinn ergibt“): sofort parallel der Sketch der
-Sketch-Ansicht als Runde 2 von pages/sketches (Befund 148, B36, B34/B41, B38, „Übernehmen“ nach A13, Platz für
-B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B58, B57, B59,
-B60 (B61-Skill gebaut, d7d7599b5, lokal) vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
-lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. A1 gebaut (b2306bcb6, lokal), 152 (c) behoben (4dd8cb9a5, lokal).
-Tom: Ampel grau, Update-Klick startet neu nach Rückfrage (Inhalt offen); Titelleiste unten mit 1-px-Linie; danach neues Go für die Titelleiste. Läuft: compare-Fixes (Overlays abwarten, Animationen einfrieren). B53 gebaut (adc8da14f, lokal): Ursache war Stapelung, nicht Transparenz.
+Builder (02.11., nach Neustart): alles lokal, ungepusht. Pushes blockiert, bis der Titelleisten-Merge committet ist
+(ein Commit: title-bar + neuer Part title-search + 4 Icons, ohne go.json; Tom hat zugestimmt). Danach committet er
+Toms Update-Dialog-Merge (Variante b) und baut Dialog + Neustart. Läuft/als Nächstes: Suchfeld kürzt den Part-Namen
+am Ende (Tom), `--et-kbd-color`, B69 (Rahmen, der nicht lädt), B71 (schnelle Sketch-Liste), B72, B74, B75 (blockiert
+`ready` von pages/sketches), B65, B66, Befund 158; Ursachen für Befund 166 und 167 stehen aus. Danach Bau der
+Sketch-Ansicht Variante e, dann Code-Review B58, B57, B59, B60, dann A13 (CLI) und B62.
 
 Bei Tom:
 
-- Titelleiste: C ist gemergt (02.11.). Jetzt gleicht der Builder den Code an (A1).
-- `pages/sketches` ist `ready`, wird aber erst gewählt, wenn die Sketch-Ansicht alle Zustände zeigt (Befund 148).
-- Danach: pages/sketches Runde 2 (die Sketch-Ansicht mit allen offenen Punkten) wählen, dann B46.
+- Go-Eintrag `components/title-bar` (auto) per Hand aus `go.json` löschen (Befund 162; Zurücknehmen geparkt).
+- Danach neues Go für Titelleiste und Suchfeld in Studio, sobald der Builder beide meldet.
 
 Übergaben (lokal, per gitignore ausgeschlossen): `.claude/handoffs/doc-agent-studio.md`,
 `.claude/handoffs/builder-studio.md`; geparkt: `b36-parked.patch` und `b36-parked-e2e.mjs` (B36, nach der Wahl von
