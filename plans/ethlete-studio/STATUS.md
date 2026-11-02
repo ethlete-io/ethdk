@@ -27,8 +27,8 @@ startet. Reihenfolge (Grill, 02.11., Tom: „in der Reihenfolge, die Sinn ergibt
 Sketch-Ansicht als Runde 2 von pages/sketches (Befund 148, B36, B34/B41, B38, „Übernehmen“ nach A13, Platz für
 B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B58, B57, B59,
 B60 (B61-Skill gebaut, d7d7599b5, lokal) vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
-lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. Läuft: A1 mit
-macOS-Ampel als Demo-Inhalt, compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
+lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. A1 gebaut (b2306bcb6, lokal), 152 (c) behoben (4dd8cb9a5, lokal).
+Bei Tom: Ampel-Farbe, Klick auf Update; danach neues Go für die Titelleiste. Läuft: compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
 
 Bei Tom:
 
@@ -189,6 +189,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 153).
 - **B64** Sketch-Brief und `sketch new`: ein Teil neben OS-Chrome zeigt diese als Demo-Inhalt in einem Slot, den
   compare leert (Befund 154).
+- **B65** (hoch) Go-Übernahme vergleicht das volle Bild mit Slots; eine Slot-Änderung macht das Go immer veraltet
+  (Befund 155).
+- **B66** Harness-Host nimmt die Breiten des Parts aus der Design-Matrix statt `w-fit` (Befund 156).
 
 ## C. CLI: Tempo und Ablauf
 

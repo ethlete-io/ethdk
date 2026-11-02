@@ -1556,6 +1556,23 @@ check` fails a part with a varying design prop that has no app input and is not 
      render. Tool fix: B64 (the sketch brief and `sketch new` for a part with an OS prop ask for the OS chrome as demo
      content in a slot that compare empties, like the canvas demo cards). Lesson: a state must read as the situation
      it stands for, also where the real pixels come from outside the app.
+155. `design check --part components/title-bar` auto-carried Tom's go after a visible edit (builder, 2026-11-02): the
+     macOS traffic lights were drawn into slot('traffic-lights'), and the check printed "AUTO ACCEPTED ... every state
+     draws as at the last acceptance" and wrote go.json `auto: true` with the new hash. Probable cause: the auto-carry
+     compares pictures with slots emptied, so a change only inside a slot counts as unchanged. Tom held a go he never
+     gave; the entry is removed. Why no check caught it: no spec changes only slot content and expects the go to go
+     stale. Tool fix: B65 (high priority; the auto-carry compares the full picture with slots drawn; any change in slot
+     content leaves the go stale; spec for exactly this case). Lesson: a picture with parts hidden cannot prove that
+     nothing visible changed.
+156. `design compare components/title-bar` fails SIZE in every state (builder, 2026-11-02): the design pins the bar to
+     1440 px, the harness host is `w-fit`, so the grid's 1fr columns collapse and the app bar measures 496-781 px.
+     Why no check caught it: the harness sizes the host to its content, which only fits parts with an intrinsic width.
+     Tool fix: B66 (the harness host takes the part's widths from the design matrix). Same review: the design passed
+     no product/part to the search text, the search button copies `[&>.et-button-contents]` classes (B61 forbids
+     reaching into et-button), and hover/active/focus of the five controls were not drawn. Decisions (grill,
+     technical): product/part become design props with states; the SDK button gets an option to stretch its contents
+     and both design and app drop the classes; the control interaction states get drawn. All are design changes
+     under Tom's next go. Lesson: a fixed-width design compared in a shrink-to-fit host compares a different layout.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
