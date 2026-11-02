@@ -37,7 +37,15 @@ export const drawingPlaceholder = (model: Model) =>
 
 export const holdTrigger = (inner: string, cls: string, open: boolean) =>
   control(
-    html`<button class="${cls}" type="button" data-sk-hold aria-expanded="${String(open)}">${inner}</button>`,
+    html`<button
+      class="${cls}"
+      type="button"
+      data-sk-hold
+      data-et-action="${open ? 'paused' : 'paused-reason'}"
+      aria-expanded="${String(open)}"
+    >
+      ${inner}
+    </button>`,
     'hold',
   );
 
