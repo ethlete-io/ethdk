@@ -139,6 +139,7 @@ export class StudioViewComponent {
           if (port === null) return EMPTY;
 
           const changes$ = designChanges$(port).pipe(
+            // eslint-disable-next-line ethlete/no-silent-catch-error -- the change feed is a best effort refresh trigger
             catchError(() => EMPTY),
             share(),
           );
@@ -153,6 +154,7 @@ export class StudioViewComponent {
           return checkout
             ? designProject$(checkout).pipe(
                 filter(() => checkout === this.checkout()),
+                // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed project read keeps the last shown project
                 catchError(() => EMPTY),
               )
             : EMPTY;
@@ -188,6 +190,7 @@ export class StudioViewComponent {
     designServerStart$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         finalize(() => this.serverBusy.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -208,6 +211,7 @@ export class StudioViewComponent {
           this.showServer(state);
           this.epoch.update((value) => value + 1);
         }),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         finalize(() => this.serverBusy.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -223,6 +227,7 @@ export class StudioViewComponent {
     designServerStop$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -264,6 +269,7 @@ export class StudioViewComponent {
         tap((project) => {
           if (checkout === this.checkout()) this.design.set(project);
         }),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed project read keeps the last shown project
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -288,6 +294,7 @@ export class StudioViewComponent {
 
           if (!state.listening) this.startServer();
         }),
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- the server state is re-read on the next trigger; the foreign watch polls
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -310,6 +317,7 @@ export class StudioViewComponent {
 
     this.foreignWatch = interval(FOREIGN_SERVER_POLL_MS)
       .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- the foreign server watch polls and retries
         switchMap(() => designServerState$(checkout, this.server()).pipe(catchError(() => EMPTY))),
         first((state) => !state.listening || !state.foreign),
         tap((state) => {

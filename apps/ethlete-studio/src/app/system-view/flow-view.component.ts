@@ -174,6 +174,7 @@ export class FlowViewComponent {
   protected copyPrompt() {
     from(navigator.clipboard.writeText(STUDIO_LABELS.flows.emptyPrompt))
       .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )

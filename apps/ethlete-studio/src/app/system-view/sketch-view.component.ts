@@ -187,6 +187,7 @@ export class SketchViewComponent {
       computed(() => ({ address: this.address(), variant: this.mergeVariant(), revision: this.revision() })),
     ).pipe(
       switchMap(({ address, variant }) =>
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing preview reading renders as the existing empty preview
         variant ? sketchPreview$({ ...address, variant }).pipe(catchError(() => of(null))) : of(null),
       ),
     ),
@@ -212,7 +213,8 @@ export class SketchViewComponent {
     ).pipe(
       switchMap(({ address, variant, on, surface, color }) =>
         variant && on
-          ? sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null)))
+          ? // eslint-disable-next-line ethlete/no-silent-catch-error -- a missing comparison renders as the existing empty comparison
+            sketchCompare$({ ...address, variant, surface, color }).pipe(catchError(() => of(null)))
           : of(null),
       ),
     ),
@@ -454,6 +456,7 @@ export class SketchViewComponent {
 
     work$
       .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         finalize(() => {
           this.busy.set(null);

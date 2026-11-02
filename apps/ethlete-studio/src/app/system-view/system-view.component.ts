@@ -416,6 +416,7 @@ export class SystemViewComponent {
         revision: this.callsRevision(),
         reloads: this.callReloads(),
       })),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed calls render as the existing empty list
     ).pipe(switchMap(({ port }) => (port ? listedCalls$(port).pipe(catchError(() => of<ListedCall[]>([]))) : of([])))),
     { initialValue: null },
   );
@@ -430,6 +431,7 @@ export class SystemViewComponent {
     designStatusChanges$().pipe(
       debounceTime(200),
       scan((count) => count + 1, 0),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- status changes are a best effort refresh trigger
       catchError(() => EMPTY),
     ),
     { initialValue: 0 },
@@ -481,6 +483,7 @@ export class SystemViewComponent {
               : listedSketches$({ port, product })
             ).pipe(
               map(({ sketches }) => sketches),
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed sketches render as the existing empty list
               catchError(() => of<ListedSketch[]>([])),
               map((items) => ({ product, items })),
             )
@@ -500,6 +503,7 @@ export class SystemViewComponent {
         port
           ? flowChanges$(port).pipe(
               scan((count) => count + 1, 0),
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- flow changes are a best effort refresh trigger
               catchError(() => EMPTY),
             )
           : EMPTY,
@@ -522,6 +526,7 @@ export class SystemViewComponent {
         port && product
           ? listedFlows$({ port, product }).pipe(
               map(({ flows }) => flows),
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- no listed flows render as the existing empty list
               catchError(() => of<ListedFlow[]>([])),
               map((items) => ({ product, items })),
             )
@@ -709,6 +714,7 @@ export class SystemViewComponent {
         asked
           ? partOpenPoints$(asked.address, asked.part).pipe(
               map(openPointGroupsOf),
+              // eslint-disable-next-line ethlete/no-silent-catch-error -- no open points render as the existing empty list
               catchError(() => of([])),
             )
           : of([]),
@@ -1080,6 +1086,7 @@ export class SystemViewComponent {
   protected copyText(text: string) {
     from(navigator.clipboard.writeText(text))
       .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
         takeUntilDestroyed(this.destroyRef),
       )

@@ -50,11 +50,13 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
   const keepTheHostCheckout = () =>
     workspaceRoot$().pipe(
       switchMap((root) => (root ? designRootsAdd$(root) : of(NONE))),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- adding the host checkout is best effort; the checkout list stays empty
       catchError(() => of(NONE)),
     );
 
   designRoots$()
     .pipe(
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- an unreadable roots list falls back to the host checkout path
       catchError(() => of(NONE)),
       switchMap((roots) => (roots.roots.length ? of(roots) : keepTheHostCheckout())),
       tap((roots) => settle(roots)),
@@ -75,6 +77,7 @@ export const createCheckouts = ({ remembered, pick }: CheckoutsOptions) => {
       pickFolder$()
         .pipe(
           switchMap((folder) => (folder ? keep(folder) : EMPTY)),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- the user is already notified with the refusal message; the cause adds nothing
           catchError(() => {
             notifications.open({
               status: 'error',

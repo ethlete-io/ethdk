@@ -15,6 +15,7 @@ const UPDATE_CHECK_DEF = /* @__PURE__ */ defineRootProvider(() => {
       exhaustMap(() =>
         updateReady$().pipe(
           tap((found) => version.set(found)),
+          // eslint-disable-next-line ethlete/no-silent-catch-error -- the update check polls and retries until a version is found
           catchError(() => EMPTY),
         ),
       ),

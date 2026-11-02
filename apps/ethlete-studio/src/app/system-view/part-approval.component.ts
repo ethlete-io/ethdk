@@ -110,6 +110,7 @@ export class PartApprovalComponent {
       })),
     ).pipe(
       switchMap(({ address, part }) =>
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- no approval data is shown as the existing empty state
         partApproval$(address, part).pipe(catchError(() => of<PartApproval | null>(null))),
       ),
     ),

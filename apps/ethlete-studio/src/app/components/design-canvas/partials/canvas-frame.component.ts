@@ -566,6 +566,7 @@ export class CanvasFrameComponent {
 
     return defer(() => image.decode()).pipe(
       map(() => image),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- an image that fails to decode renders as the existing empty frame
       catchError(() => of(null)),
     );
   }

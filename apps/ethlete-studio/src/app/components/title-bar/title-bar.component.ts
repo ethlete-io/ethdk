@@ -134,6 +134,7 @@ export class TitleBarComponent {
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 
+  // eslint-disable-next-line ethlete/no-silent-catch-error -- window chrome is optional; without it the title bar renders its default
   protected chrome = toSignal(windowChrome$().pipe(catchError(() => of(null))), { initialValue: null });
 
   protected round = computed(() => this.chrome()?.os === 'linux');
@@ -145,6 +146,7 @@ export class TitleBarComponent {
   protected isMaximized = toSignal(
     fromEvent(globalThis, 'resize').pipe(
       startWith(null),
+      // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed maximize probe leaves the previous maximized state in place
       switchMap(() => isWindowMaximized$().pipe(catchError(() => EMPTY))),
     ),
     { initialValue: false },
@@ -157,6 +159,7 @@ export class TitleBarComponent {
   protected run(action$: Observable<void>) {
     action$
       .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed window control click has nothing to recover or show
         catchError(() => EMPTY),
         takeUntilDestroyed(this.destroyRef),
       )
