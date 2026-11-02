@@ -1689,8 +1689,9 @@ check` fails a part with a varying design prop that has no app input and is not 
      skip was the only escape hatch. Tool fix: B81 (declared `data-et-pan` region whose cut passes only with a
      continuation affordance; a skip covers only the marked element's own cut; a rule for content cut by the
      window or frame edge by more than a row height outside a pan region). Lesson: an escape hatch without a
-     narrower legal option gets used wide - give the legitimate case its own name. Design question to Tom open:
-     do e's rows end inside the window, or is the pan cut fine.
+     narrower legal option gets used wide - give the legitimate case its own name. Design: no change (Tom,
+     2026-11-02) - the rows area is the canvas, content is cut by the window border because the canvas pans; that is
+     canvas behavior, not part of the sketch. See finding 170.
      Comments in Studio are not back in the UI yet, so Tom reports such feedback in chat.
 168. The title bar is not part of the shell design: elements/shell-main (Tom's screenshot, `hidden · width 1440`) shows
      rail and content with no title bar, while the app puts `<ethlete-title-bar>` in app.component.ts above the
@@ -1711,6 +1712,19 @@ check` fails a part with a varying design prop that has no app input and is not 
      `harness`, `studio:e2e`, the visible-change gate - unless `run_in_background` is set, with a message naming
      the background form; a spec per command). Lesson: a rule an agent must remember is a rule the next agent
      forgets; the harness has to enforce it.
+170. The grill session asked Tom whether variant e's rows should end inside the window (padding or fade) instead of
+     being cut by the window border (Tom, 2026-11-02: "should not have been a question"). The rows area is the Studio
+     canvas; its cut at the window border is how the canvas pans, a behavior owned by the canvas, not by the sketch
+     being designed. A fade or padding there would change canvas behavior from inside a sketch. Tom's original report
+     (finding 167) was about the checks, and the grill session turned it into a design question. Why nothing caught
+     it: the sketch does not say which regions belong to another part, so neither the check nor an agent can tell an
+     owned behavior from a sketch defect; the grill skill has no step that asks which part owns the behavior in
+     question. Tool fix: B81 changed - the pan region is declared as `data-et-pan="<owning part>"` (here the canvas
+     part); a cut inside it passes with no extra affordance, and the check output names the owner, so the region is
+     never reported or asked about as the sketch's own defect. B83: before a grill question goes out, the doc agent
+     names the part that owns the behavior; a question about behavior owned by a part other than the one under
+     design is not asked (it becomes a finding for that part if anything). Lesson: a design question about behavior
+     the design does not own is noise; ownership must be visible in the sketch markup, not inferred.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

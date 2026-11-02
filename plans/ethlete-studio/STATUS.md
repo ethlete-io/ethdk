@@ -215,10 +215,14 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B80** Render-Check CLIPPED: Ellipsis zählt nur auf Inline-Text (Flex/Grid mit Ellipsis bleibt CLIPPED, Hinweis
   „min-w-0 truncate am inneren Span“); beide Kanten messen (Kind-Rect gegen Clip-Box, fängt justify-center ohne
   -safe). Specs: Flex+Ellipsis CLIPPED, justify-center-safe sauber, Inline-truncate sauber (Befund 166).
-- **B81** Render-Check Pan-Regionen: `data-et-pan` erklärt eine Pan-Region, ein Schnitt dort nur mit Fortsetzungs-
-  Hinweis (Scroll, Pan, Fade); ein Skip deckt nur den eigenen Schnitt des Elements, nicht den seiner Kinder; neue
+- **B81** Render-Check Pan-Regionen: `data-et-pan="<Owner-Part>"` erklärt eine Pan-Region und nennt den Part, dem das
+  Verhalten gehört (z. B. der Canvas); ein Schnitt dort ist ohne weiteren Hinweis ok, die Check-Ausgabe nennt den
+  Owner (Befund 170); ein Skip deckt nur den eigenen Schnitt des Elements, nicht den seiner Kinder; neue
   Regel für Inhalt, der außerhalb einer Pan-Region mehr als eine Zeilenhöhe am Fenster- oder Frame-Rand abgeschnitten
   ist. Spec: overflow-hidden + Skip + hohes Kind meldet, mit data-et-pan sauber (Befund 167).
+- **B83** Doc-Agent-Skill: vor jeder Grill-Frage den Part nennen, dem das Verhalten gehört; gehört es nicht dem Part
+  im Design, keine Frage (höchstens ein Befund für den Owner). Durchsetzung: B81 macht den Owner im Markup sichtbar
+  (Befund 170).
 - **B82** `design compare` vergleicht bei jeder deklarierten Breite des Parts, nicht nur bei der ersten (Befund 156).
 
 ## C. CLI: Tempo und Ablauf
