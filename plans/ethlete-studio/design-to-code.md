@@ -2559,6 +2559,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      convenient case (compare finding 187). Tool fix (decided, technical): `sketch check` on a page part warns when
      the fixture renders only one part layer or one part width; the round must show a narrow part and a part with
      many states. Product questions (frame width, start zoom) go to Tom.
+     Cause of the full-width frames (builder): the measured width was right (198 px), but the Fit frame box had
+     `w-full` with a null width, so it stretched to the stage column.
 
 ### Sketches view real-data layout decisions (Tom, 2026-11-02)
 
@@ -2574,6 +2576,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
      frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
      frame center, not only an empty point, for every PAGES entry.
+     Cause (builder): canvas-frame gives the iframe `pointer-events: none` unless the frame is active; the rewritten
+     Sketches view did not. The old wheel cases hit only empty points (`framePoint` in the probe skips iframe hits).
+     New case "wheel and ctrl-wheel over a frame centre" runs on all 4 PAGES and at once found a real defect in Flow
+     (ctrl-wheel over a frame does not zoom) - proof the case was missing.
 
 194. Variant notes are English again (Tom, 2026-11-02, components/zoom-chip variant a: "reset is a plain SDK
      transparent sm button ..."). Finding 136 already named the cause ("no template sets the note language") but the
