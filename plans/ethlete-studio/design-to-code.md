@@ -1839,6 +1839,20 @@ Q16, from finding 126:
   internal).
 - Visible UI: the builder sketches the sketch view with the toggle first, Tom picks, then it is built.
 
+### Visible change gate and no-memory decisions (Tom, 2026-11-02)
+
+- B48 is a gate in `@ethlete/cli` (part of the design check every product runs, locally and in CI), not a hook of
+  this repo; our pre-push only calls it. It renders each part's states at the merge base and at HEAD and compares
+  them. A part that looks different fails unless a picked or merged sketch of that part is in the pushed range.
+  Exception: a change that measurably moves the app closer to the part's existing design (the live compare against
+  the design part shows less deviation than before) passes without a sketch. Invisible changes always pass.
+- Rules for agents live in the shipped skills from libs/agent-rules, never in agent memory or gitignored handoff
+  files: "visible UI only with a picked sketch" goes into the design skill; "decide technical questions yourself,
+  put only product and UX questions to the user" goes into the grilling skill. Then the doc agent deletes its two
+  memory notes on these rules.
+- Agent memory is off-limits for this work (Tom: "memory hilft mir aber allen anderen usern absolut gar nicht"). A
+  lesson an agent learns becomes a finding with a tool fix; the doc-agent and builder-agent skills say so.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
