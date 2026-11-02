@@ -2604,6 +2604,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      instead of keeping the point under the pointer (Tom, 2026-11-02). Cause pending from builder. Lesson: the canvas
      e2e checks that zoom happens, not where. Tool fix (decided, technical): canvas.e2e asserts on all PAGES that the
      world point under the pointer stays within ~2 px across a ctrl-wheel in and out.
+     Cause (builder): the Sketches view zooms by resizing frames (world stays scale(1)); heads, gaps and labels do not
+     scale linearly, so zoomAtPoint drifts. Fix: ctrl-wheel anchors on the frame under (or nearest) the pointer and
+     corrects the pan after render; new e2e case on all 4 PAGES, drift <= 0.3 px. Still owed: show the case red on
+     the old code.
 
 196. The 12 px text floor (Sketches view text size decision) breaks the layout at low zoom (Tom, 2026-11-02, 23 %):
      state labels wrap ("out-/hover") and overlap the next column, because the gaps scale and the text does not.
@@ -2611,6 +2615,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the decision was made from a 100 % and a Fit shot only (compare finding 185). Product question to Tom.
      Seen with it: at 104 % all states of zoom-chip variants a and b are dimmed "unverändert", in an earlier Fit shot
      variant a showed "erste Änderung" (dimming depends on load order; cause pending).
+     Cause of the dimming (builder): system-view first loads the quick sketch list (`?unchanged=no`, no compare), so
+     every state counted as changed and got "erste Änderung", then the full list. Fix: `changed = null` until a
+     compare answered (neutral). Tool fix (decided, technical): canvas.e2e asserts no state is marked before the full
+     list answered and that the marks match the API's `unchanged`.
 
 197. At high zoom (252 %, components/zoom-chip) the variant head note wraps one word per line and runs out of its
      column into the state labels and frames ("Zurücksetzen", "(transparent," overlap "out · unverändert") (Tom,
@@ -2619,6 +2627,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      technical): canvas.e2e renders every PAGES entry at the min zoom, Fit, 100 % and the max zoom and asserts that
      no text box overflows its container (no rect of a text node outside its column, no overlap between head and
      frame column).
+     Cause (builder): the head column was a fixed 18rem while the note scaled. Now the column scales with the note,
+     and note + labels use `overflow-wrap: anywhere`.
 
 198. A state label that wraps to two lines ("out-focus-visible · unverändert") pushes its frame down, so the frames
      in one visual row no longer line up (Tom, 2026-11-02, zoom-chip, 4-column wrap). Lesson: the column wrap
@@ -2634,3 +2644,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      for large parts). Tool fix (decided, technical): the sketch-view fixture set and canvas.e2e include the largest
      real part with the most states, and canvas.e2e asserts that Fit renders every frame at least ~25 % zoom or reports
      the part as "too large for Fit" (measured, not blocked).
+
+200. The new canvas.e2e case "no text leaves its box" (finding 197) fails on System and Inbox: at Fit the canvas frame
+     heads "part · desktop" and "1440" leave their box (builder, 2026-11-02). An older defect the earlier e2e could
+     not see - proof the case was missing. Fix in its own slice right after the Sketches view commits, before the push.
+
+201. zoom-chip variant a only removes the `tabular-nums` class, and the server compare reports every state
+     pixel-identical to Aktuell, while its note claims the chip width jumps (builder, 2026-11-02). A variant that
+     changes nothing visible offers no decision. Lesson: nothing checks that a variant differs from Aktuell. Tool fix
+     (decided, technical): `sketch check` warns VARIANT-UNCHANGED when every state of a variant is pixel-identical to
+     Aktuell (measured, not blocked); the Sketches view shows such a variant fully dimmed.
