@@ -2500,3 +2500,10 @@ decision 2), #91 (go rework, A10).
   backdrop, kept short so it hides as little of the frame as possible (r4 k, made compact).
 - Next round folds both into the e base with e's status states (drawing, paused, paused-reason, idle, new-part),
   which r4 k/l/m do not carry.
+
+187. Round r4 swapped the demo content from the title-bar rows (e) to a simple pages/system case without being asked
+     (Tom, 2026-11-02), so the zoom options were judged on other content than the page they belong to. Lesson: a new
+     round keeps its base variant's fixture unless the round says otherwise. Tool fix (decided, technical, after the
+     Sketches view): `sketch check` warns when a variant's fixture (the parts and states it renders) differs from its
+     `from` variant's and the round note does not mention it. Tom: not blocking now; get the fold round merged so the
+     Sketches view can be built.
