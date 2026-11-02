@@ -20,12 +20,12 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder (02.11., nach Neustart): alles lokal, ungepusht. Pushes blockiert, bis der Titelleisten-Merge committet ist
-(ein Commit: title-bar + neuer Part title-search + 4 Icons, ohne go.json; Tom hat zugestimmt). Danach committet er
-Toms Update-Dialog-Merge (Variante b) und baut Dialog + Neustart. Läuft/als Nächstes: Suchfeld kürzt den Part-Namen
-am Ende (Tom), `--et-kbd-color`, B69 (Rahmen, der nicht lädt), B71 (schnelle Sketch-Liste), B72, B74, B75 (blockiert
-`ready` von pages/sketches), B65, B66, Befund 158; Ursachen für Befund 166 und 167 stehen aus. Danach Bau der
-Sketch-Ansicht Variante e, dann Code-Review B58, B57, B59, B60, dann A13 (CLI) und B62.
+Builder (02.11.): alles lokal, ungepusht. Titelleisten-Merge committet (9fe0b8a41, mit title-search samt Kürzung und
+den Icons in foundations/icons, ohne go.json), App-Seite db86c73d9; DROPPED-PROP-Check f56864abf; compare-Settle
+caf6efa80. Als Nächstes: Commit von Toms Update-Dialog-Merge, dann Dialog + Neustart, B77 (Hook), Ursache Befund 166,
+B76 + Titelleiste in shell-main; dann B69, B71, B72, B74, B75 (blockiert `ready` von pages/sketches), B78, B65,
+B66, Befund 158, Ursache Befund 167; danach Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60, A13
+(CLI), B62.
 
 Bei Tom:
 
@@ -206,6 +206,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B76** Kompositions-Check: jeder Part, den die App rendert, steckt im Design-Part seines Hosts; Titelleiste
   gehört in die Shell (Befund 168).
 - **B77** (hoch) Hook: lange Design-Befehle laufen nur im Hintergrund, sonst verweigert (Befund 169).
+- **B78** compare: einen DIFF vor dem Melden neu laufen lassen (FLAKY, wenn die Läufe abweichen); scheitern, wenn
+  App und Design verschieden viele Overlay-Panes haben; Paritäts-Spec für die frozenAt-Mocks (Ursache der Flakes:
+  Pane-Zählung ignorierte `<et-menu>`, caf6efa80).
 
 ## C. CLI: Tempo und Ablauf
 
