@@ -1,198 +1,199 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
+import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
 import partTree from '@system/elements/part-tree';
-import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
 import zoomChip from '@system/components/zoom-chip';
-import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
-import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinProps } from './sketch-data';
+import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
-import { mountCanvasViewport, type Camera, type Rect } from 'ethlete-studio/canvas';
+import {
+  HOLD,
+  IDLE,
+  STATUS_LABEL,
+  type SketchStatus,
+  drawingPlaceholder,
+  modelName,
+  holdTrigger,
+  toggleHold,
+} from './shared/sketch-status';
+import {
+  NEW_ROWS,
+  ROWS,
+  ROW_PART,
+  SHOWN_STATES,
+  type Row,
+  type RowKey,
+  type ShownState,
+  type Zoom,
+  firstChanged,
+  fitFrame,
+  mountFit,
+  rowHead,
+  prepareShots,
+  takeStyles,
+} from './shared/sketch-rows';
+import { type Camera } from 'ethlete-studio/canvas';
 
-type Props = { camera: 'fit' | '100' | Camera; selected?: PageVariant['key'] };
-
-const HEAD_INSET = 3;
-const HEAD_MIN_WIDTH = 180;
-const HEAD_GAP = 18;
-const ZOOM_STEP = 1.5;
-
-const systemPage = async (panel?: 'hidden') => {
-  const tree = await partTree.render(partTree.states['components-open']);
-  const frames = await canvasFrames.render(canvasFrames.states.default);
-  const menu = await studioMenu({ open: false });
-  const shell = await shellMain.render({
-    studio: menu.body,
-    section: 'System',
-    product: 'studio',
-    side: tree.body,
-    content: frames.body,
-    ...(panel ? { panel } : {}),
-  });
-  return { body: shell.body, styles: frames.styles + menu.styles };
+type Props = {
+  camera: 'fit' | '100' | Camera;
+  selected?: RowKey;
+  status?: SketchStatus;
+  reason?: boolean;
+  fresh?: boolean;
 };
+
+const DRAWN: RowKey = 'b';
 
 const side = await partTree.render({
   layers: [
-    { title: 'Elements', open: true, parts: [{ name: 'part-tree', leaf: true }] },
-    { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true, selected: true }] },
+    { title: 'Components', open: true, parts: [{ name: 'title-bar', leaf: true, selected: true }] },
+    { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
   ],
 });
 const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="emit:${action}"`);
 
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
-const merge = await button.render({ label: 'Wählen', variant: 'outline', size: 'sm' });
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = act(commentPinMark(pinProps(PAGE_PIN)), 'pinToggle');
-const drawPages = async () => {
-  const open = await systemPage();
-  const hidden = await systemPage('hidden');
-  const bodies: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
-
-  return { bodies, styles: open.styles };
-};
 
 const picker = await select.render({
   label: '',
   size: 'sm',
   value: 'round-1',
-  options: [{ value: 'round-1', label: 'Runde 1 · Mehr Platz für die Leinwand' }],
+  options: [{ value: 'round-1', label: 'Runde 1 · Suche und Update' }],
 });
-const roundPicker = picker.body;
 
-const variantHead = (variant: PageVariant) =>
-  html`<div class="absolute z-2 flex -translate-y-full flex-col gap-space-1 overflow-hidden" data-sk-col-head hidden>
-    <div class="flex items-center gap-space-2 whitespace-nowrap [&>*]:flex-none [&_.et-button]:ms-space-2">
-      ${
-        variant.key === 'current'
-          ? html`<span class="font-ui font-ui-medium text-ui-sm text-et-surface">${variant.label}</span>`
-          : html`<span class="font-code text-ui-sm text-et-surface">Variante ${variant.label}</span>`
-      }
-      ${pageAuthor(variant)} ${variant.key === 'current' ? '' : act(merge.body, 'merge')}
-    </div>
-    <span class="text-et-surface-muted text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis"
-      >${variant.note}</span
-    >
+const tag = async (label: string) =>
+  (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
+const tags = {
+  drawing: await tag(STATUS_LABEL.drawing),
+  paused: await tag(STATUS_LABEL.paused),
+  idle: await tag(STATUS_LABEL.idle),
+  fresh: await tag('neu'),
+};
+
+const statusMarkup = (status: SketchStatus | undefined, reason: boolean) => {
+  if (!status) return '';
+  if (status === 'paused') {
+    return html`<span class="flex min-w-0 items-center gap-space-2">
+      ${holdTrigger(`${tags.paused.body}`, `flex cursor-pointer border-0 bg-transparent p-0`, reason)}
+      <span
+        class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
+        data-sk-hold-reason
+        ${reason ? '' : 'hidden'}
+      >
+        <span class="font-ui-medium text-et-surface">Wartet auf ${HOLD.until}</span>
+        <span>·</span>${modelName(HOLD.by)}<span>· ${HOLD.since}</span>
+      </span>
+    </span>`;
+  }
+  const after =
+    status === 'idle'
+      ? html`<span class="text-ui-sm text-et-surface-muted whitespace-nowrap">${IDLE.last} · ${IDLE.since}</span>`
+      : '';
+  return html`<span class="flex items-center gap-space-2">${tags[status].body} ${after}</span>`;
+};
+
+const drawingMark = html`<span class="flex items-center gap-space-1 text-ui-sm text-et-surface-muted"
+  ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span>zeichnet</span
+>`;
+
+const drawingStage = (row: Row) =>
+  html`<div class="sk-shot flex min-h-24 items-center justify-center rounded-control-md" data-sk-placeholder-row>
+    ${row.model ? drawingPlaceholder({ name: row.model.short, agent: row.model.agent }) : ''}
   </div>`;
 
-const frame = (variant: PageVariant, selected: boolean, page: string) =>
-  html`<figure
-    class="sk-frame relative m-0 box-border flex rounded-control-md bg-et-surface-bg p-space-2"
+const pinFor = (row: Row) =>
+  row.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '';
+
+const stateLabel = (row: Row, state: ShownState) =>
+  html`<span
+    class="font-code text-ui-xs ${row.changed.includes(state) || row.key === 'current' ? 'text-et-surface' : 'text-et-surface-muted'}"
+    >${state}${row.key !== 'current' && !row.changed.includes(state) ? ' · unverändert' : ''}</span
+  >`;
+
+const stage = (row: Row) =>
+  html`<div class="flex min-w-0 flex-col gap-space-3">
+    ${SHOWN_STATES.map((state) => {
+      const same = row.key !== 'current' && !row.changed.includes(state);
+      const first = row.key !== 'current' && state === firstChanged(row);
+      return html`<div class="flex flex-col gap-space-1 ${same ? 'opacity-50' : ''}">
+        <span class="flex items-center gap-space-2"
+          >${stateLabel(row, state)}${
+            first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''
+          }</span
+        >
+        ${fitFrame(row, state)}
+      </div>`;
+    }).join('')}
+  </div>`;
+
+const rowMarkup = (row: Row, selected: boolean, status?: SketchStatus) => {
+  const drawn = status === 'drawing' && row.key === DRAWN;
+  return html`<section
+    class="sk-row grid grid-cols-[18rem_minmax(0,1fr)] gap-space-5 rounded-control-md p-space-3"
+    data-sk-row="${row.key}"
     ${selected ? ' data-selected' : ''}
   >
-    ${pageShot(variant.key, page, variant.key === 'a' ? html`<span class="absolute top-space-1 right-space-1 z-1 flex">${pagePin}</span>` : '')}
-  </figure>`;
-
-const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, frames: Rect[]) => {
-  const heads = [...page.querySelectorAll<HTMLElement>('[data-sk-col-head]')];
-  const bound = viewport.offsetLeft + HEAD_INSET;
-
-  heads.forEach((head, index) => {
-    const column = frames[index];
-    if (!column) return;
-    const start = viewport.offsetLeft + camera.x + column.x * camera.zoom;
-    const left = Math.max(bound, start);
-    const right = Math.min(page.clientWidth, start + column.width * camera.zoom);
-    const top = viewport.offsetTop + camera.y + column.y * camera.zoom - HEAD_GAP;
-
-    head.hidden = right - left < HEAD_MIN_WIDTH;
-    head.style.left = `${left}px`;
-    head.style.top = `${top}px`;
-    head.style.width = `${Math.max(0, right - left)}px`;
-  });
+    ${rowHead(row, drawn ? drawingMark : undefined)}
+    <div class="relative min-w-0">${drawn ? drawingStage(row) : stage(row)} ${drawn ? '' : pinFor(row)}</div>
+  </section>`;
 };
 
-const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
-  const page = root.querySelector<HTMLElement>('[data-sketches-page]');
-  const viewport = root.querySelector<HTMLElement>('[data-sk-viewport]');
-  const world = root.querySelector<HTMLElement>('[data-sk-world]');
-  const chip = root.querySelector('[data-sketches-page] > [data-canvas-zoom]');
-  const label = chip?.querySelector('[data-camera-reset] button') ?? null;
-  const showZoom = (zoom: number) => {
-    if (label) label.textContent = `${Math.round(zoom * 100)} %`;
-  };
-
-  if (!page || !viewport || !world) return;
-
-  if (camera !== 'fit' && camera !== '100') {
-    const frames = [...world.querySelectorAll<HTMLElement>('.sk-frame')].map((element) => ({
-      x: element.offsetLeft,
-      y: element.offsetTop,
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-    }));
-
-    world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
-    showZoom(camera.zoom);
-    placeHeads(page, viewport, camera, frames);
-    return;
-  }
-
-  const canvas = mountCanvasViewport({
-    viewport,
-    world,
-    frameSelector: '.sk-frame',
-    padding: HEAD_INSET,
-    outline: 1,
-    chip: {
-      fit: chip?.querySelector('[data-camera-fit]') ?? null,
-      reset: chip?.querySelector('[data-camera-reset]') ?? null,
-      label: null,
-    },
-    onPaint: (next, frames) => {
-      showZoom(next.zoom);
-      placeHeads(page, viewport, next, frames);
-    },
-  });
-  const zoomBy = (factor: number) => () => canvas.show({ kind: 'visible', zoom: canvas.camera().zoom * factor });
-  chip?.querySelector('[data-camera-out]')?.addEventListener('click', zoomBy(1 / ZOOM_STEP));
-  chip?.querySelector('[data-camera-in]')?.addEventListener('click', zoomBy(ZOOM_STEP));
-
-  if (camera === '100') canvas.show({ kind: 'visible', zoom: 1 });
-};
+const zoomOf = (camera: Props['camera']): Zoom => (camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom);
 
 export default definePart<Props>({
-  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. The zoom chip (components/zoom-chip, − | 100 % | + | Fit) zooms out, resets to 100 %, zooms in and fits.',
+  note: 'Eine Zeile je Variante, ganz oben Aktuell, bei einem neuen Teil ohne Aktuell und mit dem Badge neu. Links steht der Kopf: Variante, kurzer Modellname (Tooltip mit voller Kennung und Zeit), die volle Notiz in text-ui-sm und Übernehmen, das direkt die Merge-Ansicht öffnet. Rechts stehen alle Zustände untereinander, jeder mit Namen, aus der Teilgröße gefittet und bei jeder Größenänderung neu; unveränderte sind gedimmt, der erste geänderte ist markiert. Der Zoom-Chip schaltet zwischen Einpassen und festen Stufen.',
   madeBy: ['claude-opus-5-5', 'gpt-6', 'claude-sonnet-5-5'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
-  controls: { canvas: { kind: 'field', part: 'components/canvas-viewport' } },
+  controls: {
+    canvas: { kind: 'field', part: 'components/canvas-viewport' },
+    hold: { kind: 'button', input: ['pointer', 'keyboard'] },
+  },
   states: {
     'page-sketch': { camera: 'fit' },
     'page-100': { camera: '100' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
+    drawing: { camera: 'fit', status: 'drawing' },
+    paused: { camera: 'fit', status: 'paused' },
+    'paused-reason': { camera: 'fit', status: 'paused', reason: true },
+    idle: { camera: 'fit', status: 'idle' },
+    'new-part': { camera: 'fit', fresh: true },
   },
-  render: async ({ camera, selected }) => {
-    const pages = await drawPages();
+  render: async ({ camera, selected, status, reason = false, fresh = false }) => {
+    const rowStyles = await prepareShots();
+    const rows = fresh ? NEW_ROWS : ROWS;
     const content = html`<div
-      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))] after:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:z-1 after:w-(--st-shell-inset-left) after:bg-[color-mix(in_srgb,var(--et-surface-background-solid)_60%,transparent)] after:content-['']"
+      class="relative isolate box-border flex h-full flex-col gap-space-4 overflow-hidden p-space-5 pl-[calc(var(--st-shell-inset-left,0px)+var(--space-5))]"
       data-sketches-page
-      ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
+      data-et-skip="CLIPPED"
     >
       <header
-        class="absolute z-2 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
+        class="absolute z-3 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
       >
-        <span class="text-ui-lg font-ui-strong">${PAGE_SKETCH.part}</span>
+        <span class="text-ui-lg font-ui-strong">${ROW_PART.key}</span>
+        ${fresh ? tags.fresh.body : ''} ${statusMarkup(status, reason)}
         <span class="flex-1"></span>
+        <span class="w-56 flex-none" data-sk-view-toggle-room></span>
         ${act(discard.body, 'discard')}
       </header>
-      <div class="zr-picker absolute z-2 top-11 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
-        ${roundPicker}
+      <div class="zr-picker absolute z-2 top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
+        ${picker.body}
       </div>
-      ${canvasViewport({
-        class: 'absolute top-36.5 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]',
-        attrs: 'data-sk-viewport',
-        body: html`<section
-          class="absolute top-0 left-0 w-max origin-top-left select-none grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]"
-          data-sk-world
-        >
-          ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected, pages.bodies[variant.key])).join('')}
-        </section>`,
-      })}
-      ${PAGE_VARIANTS.map(variantHead).join('')} ${chip.body}
+      <div
+        class="absolute top-27 right-space-5 bottom-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))]"
+        data-sk-rows
+      >
+        <div class="flex flex-col gap-space-2 pb-16" data-sk-rows-world>
+          ${rows.map((row) => rowMarkup(row, row.key === selected, status)).join('')}
+        </div>
+      </div>
+      ${chip.body}
     </div>`;
 
     const menu = await studioMenu({ open: false });
@@ -207,15 +208,24 @@ export default definePart<Props>({
 
     return drawing({
       body: shell.body,
-      setup: [menu.setup, setupFor(camera)],
+      setup: [
+        menu.setup,
+        (root: HTMLElement) => {
+          mountFit(root, zoomOf(camera));
+        },
+        toggleHold,
+      ],
       styles:
         shell.styles +
+        menu.styles +
         side.styles +
-        pages.styles +
         discard.styles +
-        merge.styles +
         picker.styles +
-        canvasViewportStyles +
+        takeStyles +
+        rowStyles +
+        Object.values(tags)
+          .map((entry) => entry.styles)
+          .join('') +
         kit +
         styles +
         below,

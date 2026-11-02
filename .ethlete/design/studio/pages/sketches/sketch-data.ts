@@ -1,6 +1,7 @@
 import { html, slot } from '@design-system';
 import { type Props as CommentPinProps } from '@system/components/comment-pin';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import { OPUS, SOL } from './shared/sketch-status';
 
 export type VariantKey = 'current' | 'g' | 'h' | 'i';
 
@@ -37,8 +38,8 @@ export const PAGE_SKETCH = { part: 'pages/system', status: 'In Arbeit', state: '
 
 export const PAGE_VARIANTS: PageVariant[] = [
   { key: 'current', label: 'Aktuell', note: 'Panel 248 px, offen' },
-  { key: 'a', label: 'a', note: 'Panel ausgeblendet', author: { name: 'Claude', agent: 'claude' } },
-  { key: 'b', label: 'b', note: 'Panel 200 px', author: { name: 'Codex', agent: 'codex' } },
+  { key: 'a', label: 'a', note: 'Panel ausgeblendet', author: OPUS },
+  { key: 'b', label: 'b', note: 'Panel 200 px', author: SOL },
 ];
 
 export const PAGE_PIN: Pin = {
