@@ -1769,6 +1769,12 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      path the finding failed on. Tool fix: B101 (an e2e for the failed-load state and a single epoch bump per
      Restart; a spec that makes dist stale for real and expects shot to rebuild or refuse). Lesson: a fix is proven
      where the defect happened, not in the nearest cheap test.
+175. The builder still writes long chat text nobody reads (Tom, 2026-11-02), although the builder-agent skill says
+     "the user does not read your chat; end each turn with at most one line". Why no tool caught it: the rule is
+     skill prose only, read once and outweighed by the default habit of reporting at turn end. A blocking Stop hook
+     was rejected (Tom): it makes the builder write the text and then rewrite it, so it burns more tokens. Tool fix:
+     B102. Lesson: put a role's output rule in its system prompt, where it costs nothing and weighs most; measure,
+     do not block.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2329,6 +2335,11 @@ only). Technical gaps became B84-B98 in STATUS.md.
    the go rework (A10, "build-ready" replaces go) a nested part is build-ready on its own, and a host is build-ready
    only when its nested parts are. Tom noted the go question belongs to the go rework, not to a separate decision
    (B83 extended: a question touching a system under planned rework goes into that item).
+9. Builder chat length (finding 175): no blocking hook (it burns tokens on rewrites). The agent-sessions `run`
+   command gets a role flag (`run claude --role builder`) that starts Claude with `--append-system-prompt`: "The user
+   does not read this chat. Write no text between tool calls; end each turn with at most one line. Reports go to the
+   grill session via SendMessage." Plus a non-blocking Stop hook that only logs the chat words per turn of a builder
+   session, so the grill session can report whether the rule works; Tom approved its settings.json entry.
 
 #### Judgment rules (decision 3)
 

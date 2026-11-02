@@ -266,6 +266,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B101** Beweis auf dem echten Pfad für B69 und B94: E2E lädt einen Rahmen, der scheitert, und prüft den
   eigenen Zustand; Restart erhöht die Epoch genau einmal; Spec macht das SDK-dist wirklich veraltet und erwartet,
   dass shot neu baut oder verweigert (Befund 174).
+- **B102** Builder schweigt: agent-sessions `run --role builder` startet Claude mit `--append-system-prompt` (kein
+  Chattext zwischen Tool-Aufrufen, höchstens eine Zeile am Ende, Berichte an die Grill-Session); nicht blockierender
+  Stop-Hook protokolliert die Chatwörter je Builder-Turn (settings.json-Eintrag von Tom freigegeben) (Befund 175,
+  Entscheidung 9).
 
 ## C. CLI: Tempo und Ablauf
 
