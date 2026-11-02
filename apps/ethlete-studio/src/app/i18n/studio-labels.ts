@@ -197,6 +197,5 @@ export const STUDIO_LABELS = {
       parts.length === 0
         ? 'Der Sketch hat keine Baseline. Lass deinen Agent den Sketch rebasen.'
         : `${parts.join(', ')} hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.`,
-    failed: 'Merge fehlgeschlagen.',
   },
 } as const;

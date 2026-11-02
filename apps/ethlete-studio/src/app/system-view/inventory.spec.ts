@@ -1,3 +1,4 @@
+import { DesignRefusalError } from '../../host/design';
 import { Inventory, InventoryRefusal } from '../../host/design-inventory';
 import { approvalLabelOf, refusalMessageOf } from './inventory';
 
@@ -23,5 +24,17 @@ describe('inventory labels', () => {
   it('tells a 409 from a 422', () => {
     expect(refusalMessageOf(new InventoryRefusal(409, 'x'))).toContain('Die Seite hat sich geändert');
     expect(refusalMessageOf(new InventoryRefusal(422, 'x'))).toContain('rote und gelbe');
+  });
+
+  it('shows the findings a refusal names under its message', () => {
+    const refused = new DesignRefusalError({
+      message: 'the check failed after the merge',
+      reason: 'check-failed',
+      findings: ['INLINE-SVG shared/chrome.ts: draws an <svg> inline'],
+    });
+
+    expect(refusalMessageOf(refused)).toBe(
+      'the check failed after the merge\nINLINE-SVG shared/chrome.ts: draws an <svg> inline',
+    );
   });
 });

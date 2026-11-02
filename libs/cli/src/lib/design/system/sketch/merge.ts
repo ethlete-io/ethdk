@@ -114,8 +114,11 @@ const baseKeysOf = (options: { product: ResolvedProduct; sketch: Sketch; keys: s
   });
 };
 
-/** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
-export type MergeRefusal = { reason: string; changed?: string[] };
+/**
+ * Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline;
+ * `findings` holds the check's lines when the check failed after the merge.
+ */
+export type MergeRefusal = { reason: string; changed?: string[]; findings?: string[] };
 
 const formatFiles = (target: string, files: string[]) => {
   const bin = prettierBinOf(target);
@@ -129,6 +132,22 @@ const formatFiles = (target: string, files: string[]) => {
 
   if (formatted.error || formatted.status !== 0)
     console.warn(`Could not format the merged files: ${(formatted.stderr || formatted.error?.message || '').trim()}`);
+};
+
+const withPrintedErrors = (run: () => number) => {
+  const failures: string[] = [];
+  const printError = console.error;
+
+  console.error = (...args: unknown[]) => {
+    failures.push(args.map(String).join(' '));
+    printError(...args);
+  };
+
+  try {
+    return { code: run(), failures };
+  } finally {
+    console.error = printError;
+  }
 };
 
 const mergeOrReason = (options: {
@@ -236,10 +255,15 @@ const mergeOrReason = (options: {
 
   const checked = [product.name, ...(baseProduct ? [baseProduct.name] : [])];
 
-  if (checkSystem({ target, config, products: checked, known }) !== 0) {
+  const { code, failures } = withPrintedErrors(() => checkSystem({ target, config, products: checked, known }));
+
+  if (code !== 0) {
     swapped.restore();
 
-    return `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`;
+    return {
+      reason: `the check failed after the merge of ${sketch.target} variant "${variant}" - the product's old files are back, the sketch stays`,
+      findings: failures,
+    };
   }
 
   const written = [

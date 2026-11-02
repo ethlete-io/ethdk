@@ -366,11 +366,26 @@ describe('SketchViewComponent', () => {
 
     expect(errorText()).toBe(STUDIO_LABELS.merge.needsRebase(['components/card']));
 
+    refusal = {
+      status: 422,
+      body: {
+        error: 'the check failed after the merge',
+        reason: 'check-failed',
+        findings: ['INLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline'],
+      },
+    };
+    buttonNamed(root, 'Merge')?.click();
+    await settle(fixture);
+
+    expect(errorText()).toBe(
+      'the check failed after the merge\nINLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline',
+    );
+
     refusal = { status: 500, body: { error: 'boom' } };
     buttonNamed(root, 'Merge')?.click();
     await settle(fixture);
 
-    expect(errorText()).toBe(STUDIO_LABELS.merge.failed);
+    expect(errorText()).toBe('boom');
     expect(completed).toEqual([]);
   });
 

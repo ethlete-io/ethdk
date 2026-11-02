@@ -1,8 +1,11 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
+import { sketchMergeAnswer } from '../../studio-api';
 import {
   addressComment,
   commentsOnSketch,
@@ -269,11 +272,42 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     mkdirSync(join(found.sketch.dir, 'b/components/badge'), { recursive: true });
     writeFileSync(join(found.sketch.dir, 'b/components/badge/badge.ts'), 'export default 1;');
 
-    expect(merge(target, found)).toContain('the check failed');
+    const refused = mergeResult(target, found);
+
+    expect(Array.isArray(refused) ? refused : refused.reason).toContain('the check failed');
+    expect(Array.isArray(refused) ? [] : refused.findings).toContain(
+      'HARD-CODED-COLOUR .ethlete/design/acme/elements/hero/hero.css: #fff outside foundations - use a foundations token',
+    );
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toBe(before);
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).not.toContain('#fff');
     expect(existsSync(join(target, DESIGN_DIR, 'acme/components/badge'))).toBe(false);
     expect(existsSync(found.sketch.dir)).toBe(true);
+  }, 120_000);
+
+  it('answers the check findings of a refused merge to Studio', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+
+    picked(ready.sketch);
+    writeFileSync(join(ready.sketch.dir, 'b/elements/hero/hero.css'), '.acme-hero { color: #fff; }');
+
+    const answer = await sketchMergeAnswer({
+      target,
+      url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+    });
+
+    expect(answer.status).toBe(422);
+    expect(answer.body).toEqual({
+      error: expect.stringContaining('the check failed'),
+      reason: 'check-failed',
+      findings: [
+        'HARD-CODED-COLOUR .ethlete/design/acme/elements/hero/hero.css: #fff outside foundations - use a foundations token',
+      ],
+    });
   }, 120_000);
 
   it('refuses before any write', () => {

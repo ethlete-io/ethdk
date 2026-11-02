@@ -426,7 +426,7 @@ export class SketchViewComponent {
           this.mergeError.set(
             error instanceof MergeNeedsRebaseError
               ? STUDIO_LABELS.merge.needsRebase(error.changed)
-              : STUDIO_LABELS.merge.failed,
+              : refusalMessageOf(error),
           );
 
           return of(null);

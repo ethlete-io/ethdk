@@ -1,3 +1,4 @@
+import { DesignRefusalError } from '../../host/design';
 import { Inventory, InventoryControl, InventoryRefusal } from '../../host/design-inventory';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 
@@ -56,6 +57,7 @@ export const refusalMessageOf = (error: unknown) => {
 
   if (error instanceof InventoryRefusal && error.status === 409) return LABELS.pageChanged(message);
   if (error instanceof InventoryRefusal && error.status === 422) return LABELS.openControls(message);
+  if (error instanceof DesignRefusalError) return [message, ...error.findings].join('\n');
 
   return message;
 };

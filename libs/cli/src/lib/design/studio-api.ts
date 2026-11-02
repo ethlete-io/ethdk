@@ -460,7 +460,8 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
 
 /**
  * POST `?product=&sketch=`, body `{ note? }`: merges the picked variant into the product, as `et design sketch merge` does.
- * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command.
+ * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command;
+ * one the check fails after answers 422 with reason `check-failed` and the check's `findings` lines.
  */
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
   const body = await bodyOf(asked.request);
@@ -471,6 +472,13 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
     for (const part of sketch.targets) recordMergeReason({ product, part, by: 'user', reason: note.trim() });
 
   if (Array.isArray(merged)) return { status: 200, body: { merged } };
+  if (merged.findings)
+    return refusal({
+      status: 422,
+      reason: 'check-failed',
+      message: merged.reason,
+      extra: { findings: merged.findings },
+    });
   if (!merged.changed) return failure(422, merged.reason);
 
   return {
