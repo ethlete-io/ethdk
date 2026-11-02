@@ -24,6 +24,13 @@ export const STUDIO_LABELS = {
       close: 'Schließen',
     },
   },
+  updateDialog: {
+    label: 'Update installieren',
+    question: (version: string) => `Update auf v${version} installieren?`,
+    note: 'Studio startet dafür neu.',
+    later: 'Später',
+    restart: 'Neu starten',
+  },
   sketches: {
     discard: 'Verwerfen',
     merge: 'Wählen',

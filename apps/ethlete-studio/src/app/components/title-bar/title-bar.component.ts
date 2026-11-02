@@ -1,8 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, inputBinding, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
+  anchoredDialogOverlayStrategy,
   BUTTON_IMPORTS,
+  injectOverlayManager,
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
@@ -17,7 +19,9 @@ import {
   WindowChrome,
 } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { injectUpdateCheck } from '../../update-check';
 import { TitleSearchComponent } from '../title-search/title-search.component';
+import { UpdateDialogComponent } from '../update-dialog/update-dialog.component';
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -38,7 +42,9 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
 
       <div class="flex items-center justify-end gap-2">
         @if (update()) {
-          <button et-button type="button" variant="filled" color="brand" size="xs">{{ LABELS.update }}</button>
+          <button (click)="openUpdateDialog($event)" et-button type="button" variant="filled" color="brand" size="xs">
+            {{ LABELS.update }}
+          </button>
         }
         <ng-container *ngTemplateOutlet="controls; context: { $implicit: right() }" />
       </div>
@@ -139,6 +145,8 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
 })
 export class TitleBarComponent {
   private destroyRef = inject(DestroyRef);
+  private overlay = injectOverlayManager();
+  private updateCheck = injectUpdateCheck();
 
   public os = input.required<WindowChrome['os']>();
   public left = input<WindowButton[]>([]);
@@ -169,6 +177,20 @@ export class TitleBarComponent {
   protected minimize$ = minimizeWindow$;
   protected toggleMaximize$ = toggleMaximizeWindow$;
   protected close$ = closeWindow$;
+
+  protected openUpdateDialog(event: MouseEvent) {
+    const version = this.updateCheck.version();
+
+    if (!version) return;
+
+    this.overlay.open(UpdateDialogComponent, {
+      origin: event,
+      role: 'dialog',
+      ariaLabel: STUDIO_LABELS.updateDialog.label,
+      strategies: anchoredDialogOverlayStrategy(),
+      bindings: [inputBinding('version', () => version)],
+    });
+  }
 
   protected run(action$: Observable<void>) {
     action$

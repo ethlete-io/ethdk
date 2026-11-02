@@ -200,6 +200,7 @@ pub fn run() {
             design_server::design_server_stop,
             design_server::design_server_restart,
             update::update_ready,
+            update::update_restart,
             window_chrome::window_chrome_watch,
             workspace_check,
             workspace_diff,

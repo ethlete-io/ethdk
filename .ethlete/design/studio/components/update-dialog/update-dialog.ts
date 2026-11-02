@@ -4,6 +4,7 @@ import { controls, mark, QUESTION, RESTART_NOTE, states, studioWindow, type Prop
 import styles from './update-dialog.css?inline';
 
 export default definePart({
+  implements: 'apps/ethlete-studio/src/app/components/update-dialog/update-dialog.component.ts',
   note: 'Confirm before the Update button restarts Studio: an anchored dialog under the Update button, arrow pointing at it, no scrim. "Später" only closes it; the Update button stays.',
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
