@@ -2648,6 +2648,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 200. The new canvas.e2e case "no text leaves its box" (finding 197) fails on System and Inbox: at Fit the canvas frame
      heads "part · desktop" and "1440" leave their box (builder, 2026-11-02). An older defect the earlier e2e could
      not see - proof the case was missing. Fix in its own slice right after the Sketches view commits, before the push.
+     Fixed (builder, 7f2fafe5e): the frame caption's font scales with the zoom (up to 48 px at Fit on System) but its
+     line height stayed a fixed 18 px inherited from outside the canvas; `leading-normal` on caption, scheme label and
+     Rendering pill. Likely since fc02e4a8c (canvas moved to Tailwind). Missed because the committed e2e checked only
+     focus, pan, zoom, chip and selection, and the defect needs a label scale above ~1.4 (Fit on a large frame).
 
 201. zoom-chip variant a only removes the `tabular-nums` class, and the server compare reports every state
      pixel-identical to Aktuell, while its note claims the chip width jumps (builder, 2026-11-02). A variant that
@@ -2679,3 +2683,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      drawn in the sketch first. The compare is the check that catches it and it did. Fix: a new pages/sketches round
      draws decisions 196-199; the open question on state names in the transposed layout is drawn there as variants;
      then Tom's go, then compare.
+
+204. The unit test "CanvasFrameComponent failed page load > keeps the painted page" fails on HEAD (null
+     content.body) and nobody noticed (builder, 2026-11-02, seen while fixing finding 200). Cause and first failing
+     commit pending from builder. Lesson to confirm: the pre-push hook runs typecheck and lint, not unit tests, so a red
+     Studio spec reaches the branch. Tool fix to decide once the cause is known.
