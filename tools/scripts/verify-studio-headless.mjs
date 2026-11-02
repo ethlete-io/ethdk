@@ -52,8 +52,10 @@ const startDesignServer = (checkout) =>
  * calls `run({ page, studioUrl, designPort, restartDesign })` in headless Chromium with a stubbed desktop shell. Stops only
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
+ * `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
+ * without it the stubbed shell has no window chrome and Studio draws no title bar.
  */
-export const withStudio = async (run, { checkout = root, build = true, built } = {}) => {
+export const withStudio = async (run, { checkout = root, build = true, built, chrome } = {}) => {
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
   const servers = [];
   let design;
@@ -116,16 +118,33 @@ export const withStudio = async (run, { checkout = root, build = true, built } =
 
       throw new Error(`verify-studio-headless: host command ${command} is not stubbed`);
     });
-    await page.addInitScript(() => {
-      let callbacks = 0;
+    await page.addInitScript((chrome) => {
+      const callbacks = new Map();
+      let lastCallback = 0;
       window.__TAURI_INTERNALS__ = {
-        invoke: (command, args) => window.__studioHost(command, args),
-        transformCallback: () => ++callbacks,
-        unregisterCallback: () => undefined,
+        invoke: (command, args) => {
+          if (command === 'window_chrome_watch' && chrome) {
+            setTimeout(
+              () => callbacks.get(args.changes.id)?.({ index: 0, message: chrome.value }),
+              chrome.delayMs ?? 0,
+            );
+
+            return Promise.resolve(null);
+          }
+
+          return window.__studioHost(command, args);
+        },
+        transformCallback: (callback) => {
+          lastCallback += 1;
+          callbacks.set(lastCallback, callback);
+
+          return lastCallback;
+        },
+        unregisterCallback: (id) => callbacks.delete(id),
         convertFileSrc: (path) => path,
         metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
       };
-    });
+    }, chrome ?? null);
 
     const restartDesign = async (downMs) => {
       const stopped = design.child;

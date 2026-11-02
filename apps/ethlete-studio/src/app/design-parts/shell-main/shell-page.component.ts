@@ -1,7 +1,5 @@
-import { Component, computed, input, output, signal, ViewEncapsulation } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
-import { windowChrome$ } from '../../../host/window';
+import { Component, computed, inject, input, output, signal, ViewEncapsulation } from '@angular/core';
+import { WINDOW_CHROME } from '../../../host/window';
 import { injectUpdateCheck } from '../../update-check';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { ShellMainComponent, ShellSection } from './shell-main.component';
@@ -71,14 +69,13 @@ export const SHELL_SAMPLE: ShellState = {
 })
 export class ShellPageComponent {
   protected updateCheck = injectUpdateCheck();
+  protected chrome = inject(WINDOW_CHROME);
+
   public section = input<ShellSection>('System');
 
   public shell = input<ShellState>(SHELL_SAMPLE);
 
   public action = output<ShellAction>();
-
-  // eslint-disable-next-line ethlete/no-silent-catch-error -- window chrome is optional; without it the title bar is left out
-  protected chrome = toSignal(windowChrome$().pipe(catchError(() => of(null))), { initialValue: null });
 
   protected menuOpen = signal(false);
   protected screen = computed(() => {

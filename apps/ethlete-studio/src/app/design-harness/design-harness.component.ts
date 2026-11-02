@@ -17,10 +17,19 @@ import { outputToObservable, toSignal } from '@angular/core/rxjs-interop';
 import { OVERLAY_REF, OverlayRef } from '@ethlete/components';
 import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of, tap } from 'rxjs';
+import { WINDOW_CHROME, WindowChrome } from '../../host/window';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
+import { DESIGN_HARNESS_SAMPLES } from './design-harness-samples';
 
 /** Each output a mounted part emits, in order, for `et design actions` to read. */
 export type HarnessEmits = { output: string; value: unknown }[];
+
+const LINUX_CHROME: WindowChrome = {
+  os: 'linux',
+  left: [],
+  right: ['minimize', 'maximize', 'close'],
+  preferNoCsd: false,
+};
 
 type HarnessState = { component: Type<unknown>; props: Record<string, unknown> } | { error: string };
 
@@ -42,7 +51,10 @@ const stateOf$ = (search: string): Observable<HarnessState> => {
   if (typeof props !== 'object' || Array.isArray(props)) return of({ error: `The props of "${part}" are no object.` });
 
   return from(load()).pipe(
-    map((component) => ({ component, props: props as Record<string, unknown> })),
+    map((component) => ({
+      component,
+      props: (DESIGN_HARNESS_SAMPLES[part] ?? ((own) => own))(props as Record<string, unknown>),
+    })),
     catchError((error: unknown) => of({ error: `"${part}" did not load: ${String(error)}` })),
   );
 };
@@ -89,6 +101,7 @@ export class DesignHarnessComponent {
                 provide: OVERLAY_REF,
                 useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
               },
+              { provide: WINDOW_CHROME, useValue: signal(LINUX_CHROME).asReadonly() },
             ],
           }),
         });

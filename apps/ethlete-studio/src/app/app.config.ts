@@ -3,6 +3,7 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { provideNotificationManager } from '@ethlete/components';
 import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
 import { providePreferredScheme } from '../host/color-scheme';
+import { provideWindowChrome } from '../host/window';
 import { SURFACE_THEMES } from '../surface-themes';
 import { THEMES } from '../themes';
 import { APP_ROUTES } from './app.routes';
@@ -16,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     ...provideColorThemesWithTailwind4(THEMES),
     ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
     providePreferredScheme(),
+    provideWindowChrome(),
     ...provideNotificationManager(),
   ],
 };
