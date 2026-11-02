@@ -2752,6 +2752,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      asserts (1) the variant head height stays within a bound of the frame grid height, (2) every frame has its
      fitted height and a painted body; `sketch check` runs NOTE-LANGUAGE over all existing sketches, not only new
      ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: decided by Tom (see "Sketches matrix and state name decisions").
+     Cause of (b) (builder): not zoom. sketch-view.component.ts `rowShots` builds a new
+     `bypassSecurityTrustResourceUrl` per shot on every recompute, and `sketchRows` recomputes on every listing
+     refresh; `[src]` compares by identity, so all 45 iframes navigate again with the same URL. An in-progress sketch
+     keeps changing files, so refreshes keep coming, and a frame that has not posted its first height before the next
+     refresh stays at the 150 px placeholder. Reproduced: sketch.json rewritten every 1.5 s gave 0/45 frames measured
+     after 12 s (225 navigations); a quiet checkout 45/45. canvas.e2e missed it because its temp checkout is never
+     written to. Fix (decided, technical, in the Sketches slice): cache the SafeResourceUrl per URL string, so only a
+     real src change reloads a frame. Tool fix (same slice): a canvas.e2e case rewrites the copied sketch.json every
+     second and requires every frame to report a height within a bound and each iframe to navigate once per src.
 
 206. The Sketches view sends mixed signals on components/zoom-chip (Tom, 2026-11-02, screenshot): the head badge says
      "In Arbeit", both variants are fully drawn and offer Übernehmen, and every state says "unverändert". Cause
