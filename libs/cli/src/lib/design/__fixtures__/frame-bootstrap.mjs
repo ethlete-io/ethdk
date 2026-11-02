@@ -52,6 +52,7 @@ const modules = {
     },
     placeOverlays: () => undefined,
     fitOutOfFlow: () => undefined,
+    withNgStyles: (drawn) => drawn,
   },
   '../define-part': {
     drawState: (part, props) =>
