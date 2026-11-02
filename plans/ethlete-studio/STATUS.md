@@ -30,7 +30,7 @@ Tabelle nach jedem Bericht des Builders aktuell; fertige Zeilen fallen beim Push
 | title-search  | Suchfeld der Titelleiste, Go 02.11.                                              | ⛔    | Compare 1 px zu hoch, Ursache im Harness; nach B105 neu vergleichen                                 | Builder       |
 | shell-main    | Shell mit Titelleiste (B76)                                                      | ⛔    | Nach dem Go geändert (fea9ac862): neues Go nötig                                                    | Tom           |
 | update-dialog | Update-Dialog, Go 02.11.                                                         | ⛔    | Harness rendert jetzt (89d94b1bc); Design 400 px hoch, App 96 px: Ursache offen                     | Builder       |
-| B97           | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158)             | 🔨    | Danach prüft Tom den Ring in der echten App                                                         | Builder       |
+| B97           | Sketches ohne Auswahl, kein Fokusring nach Fensterwechsel (Bef. 158)             | ✅    | 849f2792c; Tom prüft den Ring in der echten App (Headless kann es nicht)                            | Tom           |
 | B101          | Beweis auf dem echten Pfad für B69/B94 (Bef. 174)                                | 🔨    | Rebuild echt bewiesen, e2e rot/grün; fehlt: echter Shot mit `--states` danach                       | Builder       |
 | B102          | Builder schweigt (Bef. 175)                                                      | 🔨    | Hook eingetragen (3326a7670); Neustart mit `--role builder`; bleibt der Eintrag nach `agents:sync`? | Tom / Builder |
 | B105          | Harness misst ohne eigene Größe (Bef. 178)                                       | ⛔    | 7a9071c3f bricht title-bar; zurück, App an der Wurzel beschneiden, Pixel-Spec                       | Builder       |
@@ -47,6 +47,7 @@ B62.
 Bei Tom:
 
 - Builder mit `node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs run builder claude --role builder` neu starten (B102).
+- B97 in der echten App prüfen: in Sketches in den Canvas klicken, Fenster wechseln und zurück - kein Ring.
 - Neues Go für shell-main (nach fea9ac862 geändert).
 - Skizzen aus B107 wählen und mergen, sobald sie da sind.
 

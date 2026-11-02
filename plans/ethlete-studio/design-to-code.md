@@ -1618,8 +1618,8 @@ check` fails a part with a varying design prop that has no app input and is not 
      Window blur fires `blur` on the canvas, which clears the pointer-focus mark (design-canvas :213,
      pointer-focus.ts:22); refocus restores focus without a pointerdown, so Chromium/CEF matches :focus-visible and
      the ring shows. Fix in B97: pointer-focus.ts keeps the mark on a blur caused by the window losing focus
-     (`!document.hasFocus()`), design-canvas uses only trackPointerFocus; applies to every et-focus-ring element
-     (changeset, focus-ring guide). Headless Chromium never loses window focus, so the e2e asserts only "pointer mark
+     (`!ownerDocument.hasFocus()`), and the design-canvas blur uses the same check; pointer-focus.ts is app code
+     (apps/ethlete-studio), so no SDK change. Landed 849f2792c (spec and canvas.e2e red on old code, green on fix). Headless Chromium never loses window focus, so the e2e asserts only "pointer mark
      survives a synthetic window blur"; Tom confirms the real ring in the app.
 159. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
      scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
