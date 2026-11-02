@@ -4,6 +4,7 @@ import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
+import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
@@ -510,7 +511,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
 
   await printOpenPoints({ ...counted, rendered, notDrawn });
 
-  let dropped = 0;
+  let failed = 0;
 
   for (const name of options.products) {
     const entry = options.config.products?.[name];
@@ -518,14 +519,17 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     if (!entry) continue;
 
     const resolved = resolveProduct({ target: options.target, name, config: entry });
-    const problems = await droppedPropProblemsOf({ ...options, product: resolved });
+    const problems = [
+      ...(await droppedPropProblemsOf({ ...options, product: resolved })),
+      ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+    ];
 
     for (const problem of problems) {
       console.error(lineOf(options.target, problem));
       tallyOf(tally, { product: name, part: partOfFile(resolved, problem.file) })?.problems.push(problem.rule);
     }
 
-    dropped += problems.length;
+    failed += problems.length;
   }
 
   for (const name of options.products) {
@@ -545,7 +549,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     }).forEach((line) => console.log(line));
   }
 
-  const exit = code !== 0 || dropped > 0 ? 1 : 0;
+  const exit = code !== 0 || failed > 0 ? 1 : 0;
 
   if (exit === 0) console.log('ok');
 
