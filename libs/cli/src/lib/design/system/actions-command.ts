@@ -31,7 +31,7 @@ import { awaitOutput, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from 
 import { compareFrameOf } from './compare-command';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
-import { reachedStateOf } from './reached-state';
+import { reachedExpandedStateOf, reachedStateOf } from './reached-state';
 import { liveSpecOf } from './live-compare';
 import { harnessStaleOf } from './harness-map';
 import { inOrderAtOnce } from './in-order-at-once';
@@ -644,6 +644,14 @@ export const checkActions = async (options: {
 
                     return comparePngs({ design: picture.png, app });
                   },
+                });
+
+              if (embeddedState && action.kind === 'state' && outcome.compare && !outcome.compare.ok)
+                outcome.reached = await reachedExpandedStateOf({
+                  goal,
+                  states: embeddedState.states,
+                  expectedOf: (candidate) => expectedOf(owner, candidate),
+                  after: run.after ?? [],
                 });
 
               const failure = actionFailureOf({ action, target: goal, input, outcome });

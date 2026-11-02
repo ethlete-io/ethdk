@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PixelCompare } from './part-compare';
-import { reachedStateOf } from './reached-state';
+import { reachedExpandedStateOf, reachedStateOf } from './reached-state';
 
 const diff = (pixels: number): PixelCompare => ({ kind: 'diff', pixels, diff: Buffer.alloc(0) });
 const size: PixelCompare = {
@@ -43,5 +43,43 @@ describe('reachedStateOf', () => {
         compare: async (state) => (state === 'closed' ? Promise.reject(new Error('no draw')) : size),
       }),
     ).toBe('reaches no declared state');
+  });
+});
+
+describe('reachedExpandedStateOf', () => {
+  const expected: Record<string, Record<string, string>> = {
+    closed: { chip: 'false', menu: 'false' },
+    'closed-focus-visible': { chip: 'false', menu: 'false' },
+    open: { chip: 'true', menu: 'false' },
+    plain: {},
+  };
+  const expectedOf = async (state: string) => expected[state] ?? {};
+
+  it('names every other declared state whose aria-expanded controls the page shows', async () => {
+    expect(
+      await reachedExpandedStateOf({
+        goal: 'open',
+        states: ['closed', 'closed-focus-visible', 'open', 'plain'],
+        expectedOf,
+        after: [
+          { key: 'chip', expanded: 'false' },
+          { key: 'menu', expanded: 'false' },
+        ],
+      }),
+    ).toBe('reaches state closed or closed-focus-visible instead');
+  });
+
+  it('names the closest declared state by differing controls when none matches, skipping one it cannot read', async () => {
+    expect(
+      await reachedExpandedStateOf({
+        goal: 'open',
+        states: ['broken', 'closed', 'open', 'plain'],
+        expectedOf: async (state) => (state === 'broken' ? Promise.reject(new Error('no draw')) : expectedOf(state)),
+        after: [
+          { key: 'chip', expanded: 'true' },
+          { key: 'menu', expanded: 'true' },
+        ],
+      }),
+    ).toBe('reaches no declared state (closest open, 1 control differs)');
   });
 });

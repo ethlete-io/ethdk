@@ -27,6 +27,7 @@ import {
   RingProbe,
   RingStyle,
 } from './pointer-focus';
+import { reachedExpandedStateOf } from './reached-state';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
@@ -705,15 +706,28 @@ export const checkLiveActions = async (options: {
 
                 if (action === null || typeof action === 'string') return;
 
+                const expectedOf = async (state: string) =>
+                  Object.fromEntries(
+                    owner === null
+                      ? []
+                      : (await targetControlsOf(owner, state)).flatMap((control) =>
+                          control.expanded === null ? [] : [[control.key, control.expanded]],
+                        ),
+                  );
                 const compare =
                   action.kind === 'state' && owner !== null
                     ? liveStateCompareOf({
                         state: action.state,
-                        expected: Object.fromEntries(
-                          (await targetControlsOf(owner, action.state)).flatMap((control) =>
-                            control.expanded === null ? [] : [[control.key, control.expanded]],
-                          ),
-                        ),
+                        expected: await expectedOf(action.state),
+                        after: result.after,
+                      })
+                    : null;
+                const reached =
+                  action.kind === 'state' && owner !== null && compare && !compare.ok
+                    ? await reachedExpandedStateOf({
+                        goal: action.state,
+                        states: await statesOf(owner),
+                        expectedOf,
                         after: result.after,
                       })
                     : null;
@@ -727,7 +741,7 @@ export const checkLiveActions = async (options: {
                     action,
                     target: action.kind === 'state' ? action.state : '',
                     input,
-                    outcome: { emitted: result.emitted, prevented: result.prevented, compare },
+                    outcome: { emitted: result.emitted, prevented: result.prevented, compare, reached },
                   }),
                 });
               } catch (error) {
