@@ -23,6 +23,7 @@ import {
   SplitButtonTriggerDirective,
   TextButtonComponent,
   WINDOW_CONTROL_BUTTON_KINDS,
+  WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
   WindowControlButtonComponent,
 } from '../index';
@@ -102,7 +103,15 @@ class SaveFormComponent {
     <button [pressed]="bold()" class="silent" emitAriaPressed="false" et-icon-button aria-label="Silent">S</button>
     <button [size]="size" class="more" type="button" et-text-button>More</button>
     <button [expanded]="expanded()" class="compose" type="button" et-fab>Compose</button>
-    <button [kind]="kind" [size]="windowSize" class="close" type="button" et-window-control-button aria-label="Close">
+    <button
+      [kind]="kind"
+      [shape]="windowShape"
+      [size]="windowSize"
+      class="close"
+      type="button"
+      et-window-control-button
+      aria-label="Close"
+    >
       x
     </button>
     <button [pressed]="bold()" class="pinned" type="button" et-button>Pin</button>
@@ -116,6 +125,7 @@ class ToolbarComponent {
   size = BUTTON_SIZES.SM;
   kind = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
   windowSize = WINDOW_CONTROL_BUTTON_SIZES.LG;
+  windowShape = WINDOW_CONTROL_BUTTON_SHAPES.ROUND;
 }
 
 @Component({
@@ -330,6 +340,7 @@ describe('button scenarios', () => {
     expect(query(host, '.more').dataset['size']).toBe('sm');
     expect(query(host, '.close').dataset['kind']).toBe('close');
     expect(query(host, '.close').dataset['size']).toBe('lg');
+    expect(query(host, '.close').dataset['shape']).toBe('round');
 
     const compose = query(host, '.compose');
 
