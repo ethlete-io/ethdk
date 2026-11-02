@@ -122,8 +122,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   weglässt“ stehen oder im neuen Spec wieder auftauchen; die CLI prüft das (Befund 137).
 - **B40** Jeder `partless`-Eintrag (bewusst ohne Teil) erscheint in Studio als offener Punkt, damit Tom ihn sieht; ein
   ungenutzter Eintrag ist ein Fehler (B30-Nachlauf).
-- **B41** Sketch „pausiert“ mit Grund: die CLI hält Pause und Grund im Sketch fest, Studio zeigt das Badge „Pausiert“,
-  ein Klick darauf zeigt den Grund (Tom, 02.11.; Zustand gehört in den pages/sketches-Sketch).
+- **B41** Studio zeigt `sketch hold` als Badge „Pausiert“, ein Klick zeigt den Grund (`--until`); ein Sketch in Arbeit
+  ohne Bericht und ohne Dateiänderung seit N Minuten zeigt „keine Aktivität“ (Tom, 02.11.; Befund 138; Zustände
+  gehören in den pages/sketches-Sketch).
 
 ## C. CLI: Tempo und Ablauf
 

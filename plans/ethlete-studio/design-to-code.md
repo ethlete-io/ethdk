@@ -1347,6 +1347,13 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      placeholder is invisible to it; no Studio e2e. Tool fixes: view-level specs (B34/B38); a `drawing` state and a
      model-named author in pages/sketches (a visible change, so a sketch for Tom first); B39. Lesson: a swap to a
      design part may only render what the part declares, so the part must declare every state the old view had.
+138. The paused components/title-bar sketch showed "In Arbeit" in Studio (Tom, 2026-11-02). The CLI already has the
+     notion: `sketch hold <layer>/<name> --until <what> --by <model>` writes `sketch.hold` and blocks ready. But Studio
+     never reads `hold`, and the builder paused the drawing agent without telling it to run `sketch hold`; the skill
+     says "otherwise sketch hold", but nothing enforces it. A sketch in progress with no report and no file change looks
+     like active drawing. Tool fix: B41 (Studio shows hold as "Pausiert" with the reason on click) and a stale rule (in
+     progress, no report or file change for N minutes: Studio says "keine Aktivität"). Lesson: a state the CLI writes
+     must be visible in Studio, and silence must never look like work.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
