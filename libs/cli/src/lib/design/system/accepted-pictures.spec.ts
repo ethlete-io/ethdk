@@ -58,6 +58,7 @@ describe('autoAcceptOf', () => {
     expect(readPictures(dir)[CHIP]?.go).toEqual({
       hash: 'hash' in go ? go.hash : '',
       states: { default: 'a1', hover: 'b2' },
+      slots: true,
     });
     expect(await autoAccept(target, draw)).toEqual([]);
     expect(calls).toHaveLength(1);
@@ -132,6 +133,23 @@ describe('autoAcceptOf', () => {
     expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
   });
 
+  it('never carries a go from pictures drawn with the slots emptied', async () => {
+    const { target, dir, chip } = checkout();
+    const { draw, calls } = drawing({ default: 'a1', hover: 'b2' });
+    const go = markPartGo({ product: productOf(target), part: CHIP, by: 'tom' });
+
+    writeFileSync(
+      join(dir, 'pictures.json'),
+      JSON.stringify({ [CHIP]: { go: { hash: 'hash' in go ? go.hash : '', states: { default: 'a1', hover: 'b2' } } } }),
+    );
+    appendFileSync(chip, '// edit inside a slot\n');
+
+    expect(await autoAccept(target, draw)).toEqual([]);
+    expect(calls).toEqual([]);
+    expect(goStateOf({ product: productOf(target), part: CHIP })).toBe('stale');
+    expect(readGo(dir)[CHIP]?.auto).toBeUndefined();
+  });
+
   it('accepts a direct edit by itself when every state draws as at the last review', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });
@@ -180,6 +198,7 @@ describe('autoAcceptOf', () => {
     expect(readPictures(dir)[CHIP]?.go).toEqual({
       hash: readGo(dir)[CHIP]?.hash,
       states: { default: 'a1', hover: 'b2' },
+      slots: true,
     });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
@@ -196,6 +215,7 @@ describe('autoAcceptOf', () => {
     expect(readPictures(dir)[CHIP]?.review).toEqual({
       hash: readMerged(dir)[CHIP],
       states: { default: 'a1', hover: 'b2' },
+      slots: true,
     });
   });
 });

@@ -20,8 +20,11 @@ export const PICTURES_FILE = 'pictures.json';
 /** The sha16 of each state's picture, under the state name. */
 export type StatePictures = Record<string, string>;
 
-/** The pictures of a part's states at the hash its review (`merged.json`) or its go held at. */
-export type AcceptedPictures = { hash: string; states: StatePictures };
+/**
+ * The pictures of a part's states at the hash its review (`merged.json`) or its go held at. Pictures without `slots`
+ * were drawn with slots emptied and cannot prove that slot content is unchanged, so they are read as missing.
+ */
+export type AcceptedPictures = { hash: string; states: StatePictures; slots: true };
 
 export type PictureKind = 'review' | 'go';
 
@@ -49,10 +52,11 @@ const picturesFileOf = (dir: string) => resolve(dir, PICTURES_FILE);
 const isAccepted = (value: unknown): value is AcceptedPictures => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, states } = value as Record<string, unknown>;
+  const { hash, states, slots } = value as Record<string, unknown>;
 
   return (
     typeof hash === 'string' &&
+    slots === true &&
     !!states &&
     typeof states === 'object' &&
     !Array.isArray(states) &&
@@ -87,12 +91,12 @@ export const writePictures = (options: {
   dir: string;
   part: string;
   kind: PictureKind;
-  pictures: AcceptedPictures;
+  pictures: Omit<AcceptedPictures, 'slots'>;
 }) => {
   const { dir, part, kind, pictures } = options;
   const all = readPictures(dir);
-  const entries = Object.entries({ ...all, [part]: { ...all[part], [kind]: pictures } }).sort(([a], [b]) =>
-    a.localeCompare(b),
+  const entries = Object.entries({ ...all, [part]: { ...all[part], [kind]: { ...pictures, slots: true } } }).sort(
+    ([a], [b]) => a.localeCompare(b),
   );
 
   writeFileSync(picturesFileOf(dir), `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
@@ -175,7 +179,7 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
                 sketch: null,
                 interaction: null,
                 bare: true,
-                emptySlots: true,
+                emptySlots: false,
                 checker: true,
                 params: new URLSearchParams(),
                 fresh,
