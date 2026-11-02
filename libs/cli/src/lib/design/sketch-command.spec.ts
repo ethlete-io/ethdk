@@ -334,6 +334,37 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'in progress' });
   });
 
+  it('check warns ROUND-NOT-READY on a drawn sketch left in progress, and stops once it is ready', async () => {
+    const target = acme();
+    const lines = output();
+    const warning =
+      'WARNING ROUND-NOT-READY components/button: round r1 is drawn but still in progress - run `design sketch ready components/button`';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(warning);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).not.toContain(warning);
+  });
+
+  it('check does not warn ROUND-NOT-READY while ready would refuse', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    vi.mocked(identicalRenderLines).mockResolvedValueOnce(['components/button variant b draws like a']);
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.some((line) => line.includes('ROUND-NOT-READY'))).toBe(false);
+  });
+
   it('refuses ready while a variant adds nothing visible, and check warns of it', async () => {
     const target = acme();
     const lines = output();

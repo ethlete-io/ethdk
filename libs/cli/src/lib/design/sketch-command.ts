@@ -749,6 +749,11 @@ const roundNoteRefusalOf = (sketch: Sketch): string | null => {
     : null;
 };
 
+const roundNotReadyWarningOf = (sketch: Sketch): string | null =>
+  sketch.status === 'ready' || sketch.hold
+    ? null
+    : `WARNING ROUND-NOT-READY ${sketch.target}: round ${runningRoundOf(sketch).key} is drawn but still in progress - run \`design sketch ready ${sketch.target}\``;
+
 const unloadedLinesOf = async (options: {
   target: string;
   config: DesignConfig;
@@ -957,9 +962,17 @@ const checked = async (context: Context) => {
   for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
     const unloaded = await unloadedLinesOf({ target, config, product, sketch });
 
+    const before = refused;
+
     refuse([...unloaded, ...openPointLinesOf({ product, sketch }).added, ...[roundNoteRefusalOf(sketch) ?? []].flat()]);
 
     if (!failed && unloaded.length === 0) refuse(await identicalRenderLines({ target, config, product, sketch }));
+
+    if (!failed && refused === before) {
+      const warning = roundNotReadyWarningOf(sketch);
+
+      if (warning !== null) console.warn(warning);
+    }
   }
 
   if (failed) return 1;
