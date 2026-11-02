@@ -198,6 +198,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 159).
 - **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
   E2E lädt Rahmen, während sich Dateien ändern (Befund 160).
+- **B70** Ein Go lässt sich zurücknehmen (Studio und CLI); Form offen bei Tom (Befund 162).
 
 ## C. CLI: Tempo und Ablauf
 

@@ -1613,6 +1613,12 @@ check` fails a part with a varying design prop that has no app input and is not 
      covers CLI commands only. Tool fix pending the cause (likely: a startup-time budget in the studio e2e, the
      sketch list served before slow work like render checks or hashing). Lesson: a wait nobody measures grows
      unseen.
+162. A go cannot be taken back (Tom, 2026-11-02): Studio has no action to withdraw a go, and `et design go`
+     (libs/cli/src/lib/design/system/go-command.ts) only grants one. The auto-carried go on `components/title-bar`
+     (go.json, `auto: true`, finding 155) can only leave by a hand edit of go.json. Why no check caught it: the go
+     decisions defined granting, stale and auto-carry, never withdrawal, and no e2e walks a go back. Tool fix: B70
+     (shape pending Tom's decision). Lesson: a release the person can give but not take back turns every wrong
+     release into a file edit.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
