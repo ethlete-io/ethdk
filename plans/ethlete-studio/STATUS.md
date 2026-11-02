@@ -65,6 +65,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A33** Zwei Designer in einem Projekt (E8).
 - **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).
 - **A35** Motion-Editor.
+- **A37** Design-Editor nach A35: der Designer passt im Sketch selbst an (echte Editor-Controls). Dazu Komfort wie in
+  Figma: einzelne Komponenten anklicken und ihren Zustand sehen, in verschachtelte Komponenten hineinklicken. Großes
+  Thema, eigene Grill-Runde vor dem Start (Tom, 02.11.).
 - **A36** Explorer: der Baum zeigt nur Teile, keine Zustände; Gruppen merken auf/zu; der Stift in der Leiste entfällt,
   „Sketches“ (nur offene) ganz oben, „Legacy“ zugeklappt ganz unten mit Projekten darunter. Zuerst Sketch (dl 02.11.).
 
