@@ -21,7 +21,7 @@ const KEEP_BUILDS = 2;
 const IN_USE = '.in-use-';
 const INSTALL_STATES = ['.yarn-state.yml', '.package-lock.json', '.modules.yaml', '.yarn-integrity'];
 
-const UNREAD_BY_BUILD = /^(?:plans\/|\.changeset\/|\.ethlete\/design\/(?:.*\/)?[^/]+\.json$)/u;
+const UNREAD_BY_BUILD = /^(?:plans\/|\.changeset\/|\.ethlete\/design\/[^/]+\/(?:sketches|comments)\/)/u;
 
 const gitOf = (cwd: string, args: string[]) =>
   execFileSync('git', ['--no-optional-locks', ...args], {
@@ -101,7 +101,7 @@ const installedPackagesOf = (dir: string) => {
 
 /**
  * The key of everything a harness build can read: the content of every tracked and not ignored untracked file of the
- * git checkout except plans, changesets and design JSON records, each installed package, the Node version and the
+ * git checkout except plans, changesets and design sketches and comments, each installed package, the Node version and the
  * build command. `null` outside a git checkout or with unresolved merge conflicts, where no build may be reused.
  */
 export const harnessBuildKeyOf = (options: { target: string; command: string[] }): string | null => {

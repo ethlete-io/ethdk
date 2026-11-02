@@ -51,10 +51,26 @@ describe('harnessBuildKeyOf', () => {
   });
 
   it.each([
+    '.ethlete/design/config.json',
+    '.ethlete/design/tsconfig.json',
+    '.ethlete/design/sdk/go.json',
+    '.ethlete/design/sdk/pictures.json',
+  ])('changes the key when %s changes', (path) => {
+    const { write, key } = checkout();
+
+    write(path, 'a');
+    const before = key();
+
+    write(path, 'b');
+
+    expect(key()).not.toBe(before);
+  });
+
+  it.each([
     'plans/note.md',
     '.changeset/change.md',
     '.ethlete/design/studio-lab/sketches/card/sketch.json',
-    '.ethlete/design/studio/pictures.json',
+    '.ethlete/design/sdk/comments/note.json',
   ])('keeps the key when %s changes', (path) => {
     const { write, key } = checkout();
 
