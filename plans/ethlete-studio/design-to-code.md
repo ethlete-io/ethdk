@@ -2792,4 +2792,6 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      most likely the pasted message. Cause: the subagent that drew the pages/sketches round had a brief ending at
      `sketch check` + shots and skipped ready on purpose; nothing (sketch report --done, sketch check) flags a drawn
      round left in progress; Studio's merge() (sketch-view.component.ts:523ff) is not gated by status. Tool fix
-     queued after the slice: Übernehmen only on a ready sketch; `sketch check` warns "drawn round left in progress".
+     queued after the slice: Übernehmen only on a ready sketch; `sketch check` warns "drawn round left in progress". Built (builder, f7e66dbb6): `design sketch check` warns ROUND-NOT-READY
+     when a sketch is neither ready nor held and ready would not refuse it (warning only); a sketch ready would refuse
+     already gets "ready will refuse: ..." from check. Studio half goes with the badge (finding 206).
