@@ -3048,3 +3048,9 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   Tom re-grants the four gos in one batch.
 - After the rebase (31e191378, base hash only, 21 states ok) Tom's earlier pick of variant a (2026-11-02 18:08) stands;
   no re-pick. The pick stays uncommitted until Studio commits it with the go (B139).
+
+227. B136 cause (builder subagent, 2026-11-02, uncommitted at stop): the "Pausiert" Enter/Space misses were a tool
+     bug, not an app bug: the action check compared a key-pressed control that still shows the focus ring against an
+     unfocused goal state (DIFF 427 px). Lesson: a keyboard press leaves focus, a click path does not, so the same
+     action has two end states and the check knew one. Tool fix (B136, in the tree, unverified): normalize focus
+     before the goal comparison of a key press. The "PICTURES CHANGED drawing" trace has no result yet.
