@@ -20,6 +20,8 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
+Builder (02.11., neu gestartet): parallel B49 (Vite fs.allow im Checkout-e2e), Befund 146 (check/ready gleich), B51 (Ursache bestätigen), B48 (Sichtbar-Gate in @ethlete/cli), B53 (deckendes Overlay). Nichts davon ist sichtbare UI.
+
 Pausiert seit 02.11. abends (Tom: keine neuen Fixes). `origin/next` = 7724d5f14. Nächste Session startet mit Toms
 Wahl: Sketch `components/title-bar` ist `ready` (A/B/C, Agent empfiehlt B); `pages/sketches` ist gezeichnet, aber
 nicht `ready` (Befund 146). Danach der Sketch zu B46. Was man sieht, startet immer mit einem gewählten Sketch.
