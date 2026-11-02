@@ -1,5 +1,26 @@
 # Parallel backlog - latest decisions (Q203 and later)
 
+### Studio order, explorer, merge canvas and "build-ready" decisions (Tom, 2026-11-02)
+
+1. **Order of list A:** A1 title bar, A36 explorer, A8 SDK tooltips, then A9 merge canvas and A10 build-ready, then
+   the sidebar (A5-A7), then the rest in list order. Anything visible starts with a sketch Tom picks (STATUS rule 4);
+   no visible UI is built from a decision alone.
+2. **Title bar (A1-A3):** a sketch `components/title-bar` with window controls, search and update button. After Tom's
+   pick, the built window controls are aligned to it and A2/A3 follow. The window-control behaviour decided earlier
+   stays. Builder calls accepted: "no client decorations" comes from the compositor's xdg-decoration preference (KDE
+   shows close only too); stock GNOME `appmenu:close` shows close only.
+3. **Explorer (A36):** the tree lists parts only, no state leaves; states are chosen in the part view. Groups remember
+   collapsed/expanded. The pencil (Sketches) rail item goes; a "Sketches" group with open sketches only sits at the top
+   of the tree. "Legacy" is one collapsed entry at the bottom, projects one level down, calls below. Sketch first.
+4. **Merge view (A9):** back to the one canvas (zoom, pan) as in System, with an e2e for zoom and pan. Tom wants a
+   deeper merge-view rework later.
+5. **Build-ready replaces go and acceptance (A10):** "Go geben" and "Änderung abnehmen" go away, with go.json and
+   accepted.json as human gates. A part is build-ready when its checks are green (today's `ready` conditions without the
+   human `by` and without no-go/stale-go); Studio computes it, no click. `design task` starts only for build-ready
+   parts. A direct edit to a merged part outside a sketch: no picture change, it holds at once; a picture change, Studio
+   turns it into a sketch with "old" and "new" variants to pick. The human decides only by picking in a sketch.
+6. **Tool (B30):** the "visible app region with no part" check runs for Studio in pre-push and fails the push.
+
 ### Title bar window controls decisions (Tom, 2026-11-02)
 
 Studio keeps its own title bar on every OS (search, update button). The window controls in it:

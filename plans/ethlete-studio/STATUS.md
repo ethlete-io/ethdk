@@ -20,7 +20,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Der Rest von Liste A wartet auf Toms Reihenfolge (Q8-Q10 bei Tom).
+Builder: A1-Fensterknöpfe gebaut und gepusht (fe4c9899b, a1698f47a); jetzt parallel B22, B30 und C1. Reihenfolge von Liste A (Tom, 02.11.): A1, A36, A8, dann A9 und A10, dann A5 bis A7, danach der Rest der Reihe nach. Was man sieht, startet immer mit einem Sketch.
 
 ## Erledigt
 
@@ -28,19 +28,19 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 
 ## A. Studio: was man sieht
 
-- **A1** Eigene Titelleiste (Windows, Linux; macOS behält die Ampel-Knöpfe).
-- **A2** Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
-- **A3** Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
+- **A1** Titelleiste als Teil: zuerst Sketch `components/title-bar` mit Fensterknöpfen, Suche und Update-Knopf; Tom wählt,
+  dann Code angleichen (die Fensterknöpfe sind gebaut, aber ohne Entwurf; Befund 133; dl 02.11.).
+- **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
+- **A3** Nach A1: Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
 - **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
 - **A5** Seitenleiste: Repo-Wechsel und „Projekt öffnen“ ins Logo-Menü; oben die Auswahl der Design-Systeme; die Auswahl
   unten entfällt.
 - **A6** Schnellwahl in der Leiste zeigt Logo oder zwei eindeutige Buchstaben, mit Tooltip (Q21).
 - **A7** Breite der Seitenleiste mit der Maus ziehen (Q133).
 - **A8** Tooltips aus ethlete/components statt nativer `title`-Tooltips (Befund 116).
-- **A9** Merge-Ansicht wieder mit Canvas und Zoom (Befund 117; Entwurf in E1).
-- **A10** Go überarbeiten: „Go geben“ und „Änderung abnehmen“ nebeneinander verwirren; neuer Name für „Go“ (Befund 109; E2).
-- **A11** „Go geben“ nur, wenn alle Prüfungen grün sind, sonst steht da, was fehlt (Q14).
-- **A12** Go bleibt gültig, wenn sich nur die Verknüpfung zum App-Code ändert (Q28).
+- **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
+- **A10** „Baubereit“ statt Go und Abnahme: ein Teil ist baubereit, wenn seine Prüfungen grün sind; direkte Änderung mit
+  anderem Bild wird ein Sketch „alt/neu“ (Befund 109; dl 02.11.).
 - **A13** Sketch „gewählt, aber nicht gemergt“ sichtbar machen oder beides in einem Schritt.
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
 - **A15** Kopf eines Sketches mit mehreren Teilen: Titel und „n Teile“ zum Aufklappen (Q244).
@@ -48,7 +48,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A17** Teil-Baum behält die Scroll-Position beim Neuladen (Befund 99).
 - **A18** Kommentar-Pins auch für gemergte Sketches und erledigte Kommentare in Sketches (Befund 122).
 - **A19** Inbox: echte Benutzer statt „Du“, Zustand „unterbrochen“, echte Fehlermeldung (Q18, Q19, Q26).
-- **A20** Eigener Baum für Sketches und Flows; Abschnitte im Teil-Baum (Q22, Q60).
+- **A20** Eigener Baum für Flows; Abschnitte im Teil-Baum (Q22, Q60).
 - **A21** Sketch-Ansicht: Variante ablehnen und wieder öffnen, Notizen, Diff-Listen – kommen sie zurück? (Q55; E7)
 - **A22** Flows: Pins, Notizen, Entwürfe, `jumpTo`; richtiges Seitenverhältnis je Preset; der eine Canvas (Q66, Q75, Q125).
 - **A23** „Verwerfen“ mit Rückfrage (Q70).
@@ -65,6 +65,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A33** Zwei Designer in einem Projekt (E8).
 - **A34** Übersetzung (i18n); die deutsche Label-Liste ist der Anfang (Q42).
 - **A35** Motion-Editor.
+- **A36** Explorer: der Baum zeigt nur Teile, keine Zustände; Gruppen merken auf/zu; der Stift in der Leiste entfällt,
+  „Sketches“ (nur offene) ganz oben, „Legacy“ zugeklappt ganz unten mit Projekten darunter. Zuerst Sketch (dl 02.11.).
 
 ## B. Design-CLI: neue Prüfungen
 
@@ -92,7 +94,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B25** `design dom --app` stellt Hover-, Active- und Klick-Zustände her, statt sie abzulehnen.
 - **B27** Kanonische Tailwind-Klassen im App-Code prüfen.
 - **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
-- **B30** `design check --live` meldet sichtbare App-Bereiche, die kein Teil abdeckt (Befund 133).
+- **B30** `design check --live` meldet sichtbare App-Bereiche, die kein Teil abdeckt; für Studio im Pre-Push als Fehler
+  (Befund 133).
 
 ## C. CLI: Tempo und Ablauf
 
@@ -116,8 +119,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 
 ## E. Fragen und Entwürfe für Tom
 
-- **E1** Merge-Ansicht: Canvas wie System oder statisch?
-- **E2** Go: ein Schritt pro Änderung oder feste Reihenfolge? Und welcher Name statt „Go“?
 - **E3** Logo-Knopf: Radius bei Hover und Active (Befund 107).
 - **E4** Schnellwahl: welche zwei Buchstaben, woher kommt das Logo?
 - **E6** Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
