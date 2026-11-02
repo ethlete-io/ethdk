@@ -2700,3 +2700,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      staged content; it at once found a red system-view spec in the uncommitted Sketches slice. Decision (technical):
      keep it on the working tree. Never `git stash --keep-index` in the hook: several agents share one checkout and a
      stash would take their uncommitted work. The hook output must name the failing spec file.
+     Red system-view spec (builder): outdated, not a regression - the row button label changed 'Wählen' ->
+     'Übernehmen' and openMerge (A13) only opens merge; the spec still clicked 'Wählen'. One-line spec fix, goes with
+     the Sketches slice. Full Studio suite: 456 passed, 1 expected fail, 0 failures. The earlier "98/98" report came
+     from a filtered run that left system-view.component.spec out. Lesson: a filtered run reported as green hides
+     specs the change touches; the pre-commit `vitest related` (B115) is the tool that catches it - no new rule.
