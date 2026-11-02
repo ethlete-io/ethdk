@@ -2934,3 +2934,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      copies the previous `by` ("tom" on entries Tom never touched; only `auto: true` tells them apart) but records
      the tool as `by` plus `carriedFrom: {by, at}`, and Studio shows "carried from Tom's go of <date>". That reverses
      Impl Q114, so it is Tom's call; nothing is built until he answers.
+
+218. `design task pages/sketches --verify 5a29b1b94` refused (25 files outside the allowed set) but exited 0, so no
+     implemented.json was written and ready did not run (builder, 2026-11-02). 21 of the 25 were design files of the
+     same commit (merged pages/sketches design, deleted sketch dirs); 4 were app wiring that feeds the part
+     (system-view/inbox-comments.ts, system-tree.ts, system-view.component.ts and its spec). Lesson: a refusal that
+     exits 0 reads as success in a script, and the allowed set knew only the part's own files, so a normal slice that
+     commits design and app together cannot verify. Tool fix (decided, technical, B125): verify exits 1 on refusal;
+     `.ethlete/design/**` never counts as implementation (one summary line); `task` lists wiring files up front (files
+     that import the part plus their direct imports) and verify allows them with one WIRING line each; no per-file
+     `--allow` flag. Then verify 5a29b1b94 again and mark ready.
