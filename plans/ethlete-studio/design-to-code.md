@@ -2973,3 +2973,22 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the builder's "one more level"): wiring = every non-spec file under the app that transitively imports the part
      (its ancestors in the import graph, stopping at the app root), plus the part's own spec; spec imports never add
      wiring. Keep the one WIRING line per file so a wide set stays visible.
+
+222. B117 compare slice landed (d4cd2c8b3, builder, 2026-11-02): the design side awaited `finished`, which skips
+     infinite animations, so it shot a random pulse frame while the app side ran with animations disabled; now held
+     at the start frame and verify 5a29b1b94 compares 9/9. The next gate, the action check, then missed 11 actions:
+     9x the shared host `DesignCanvas` (pan/zoom, every state) and 2x the "Pausiert" badge button (paused,
+     paused-reason). Facts for (B): the merged design renders that badge through `holdTrigger` as a real button with
+     `aria-expanded` that toggles `[data-sk-hold-reason]`, and has its own `paused-reason` state, so the design means
+     it to be clickable; only the `data-et-action` marker is missing. Lessons: (1) 5a29b1b94 ran compare but never the
+     action check, so 11 misses passed a commit unseen; (2) a design helper drew an interactive button with no action
+     marker and neither `check`, `sketch check` nor `sketch ready` flagged it, so the gap surfaced only at verify;
+     (3) a shared host component is chrome for every canvas page, not an action of each part. Tool fixes (decided,
+     technical): B129 the product config declares host components (DesignCanvas) and the action check reports them as
+     one "host ... not checked" line instead of a miss, never inferred; B130 a check rule flags any interactive
+     design element (button, `[aria-expanded]`, `[role=button]`, a click handler) without `data-et-action`, at draw
+     time; `holdTrigger` gets the marker in the merged design and in round-2 variant a, so Tom's pending go of
+     pages/sketches covers it (no extra design round; the app button stays); B131 `design compare` on a part with a
+     go runs the action check too. Also: frame-bootstrap.spec.ts and one UNSTYLED-SDK spec fail on clean HEAD
+     (withNgStyles export missing in the vm-loaded define-call); a builder subagent fixes it and reports why
+     pre-commit missed it (lesson pending).
