@@ -14,7 +14,7 @@ import { settledPanesOf } from './settled-panes';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
-import { Partless, partSelectorsOf, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
+import { PartCover, partCoverOf, Partless, uncoveredLineOf, uncoveredRegionsOnPage } from './uncovered-regions';
 
 type Storage = Record<string, unknown>;
 
@@ -375,12 +375,12 @@ export const openLivePage = async (options: {
 
 /**
  * A PNG of the app's `spec.host` element on the real page `url`, sized to `size`, opened as `openLivePage` does and
- * taken once the picture stops changing. `parts` are the selectors of the part components, which together with the
- * spec's `partless` selectors must cover every visible region of the page.
+ * taken once the picture stops changing. `parts` covers the part components, which together with the spec's
+ * `partless` selectors must cover every visible region of the page.
  */
 export const liveShotOf = async (options: {
   browser: Browser;
-  parts: string[];
+  parts: PartCover;
   url: string;
   size: { width: number; height: number };
   spec: LiveSpec;
@@ -526,7 +526,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
     };
     const loaded = module.default?.states;
     const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? loaded : {};
-    const parts = partSelectorsOf({ target, product });
+    const parts = partCoverOf({ target, product });
     const slotFill = live.spec.frame ? frameContentOf(readFileSync(resolve(live.dir, live.spec.frame))) : null;
     const shots: StateShot[] = [];
 

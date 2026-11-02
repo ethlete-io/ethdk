@@ -4,6 +4,7 @@ import { Browser } from '../thumb';
 import { componentSelectorOf } from './actions';
 import { ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
+import { listSketches, parseTarget, variantDirOf } from './sketch/sketch';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 
@@ -26,16 +27,17 @@ export type Partless = { selector: string; reason: string };
 
 export const MIN_REGION_SIDE = 4;
 
-const REGION_TREE_SCRIPT = `(({ covered }) => {
+const REGION_TREE_SCRIPT = `(({ covered, named }) => {
   const SKIP = new Set(['script', 'style', 'template', 'link', 'meta', 'noscript']);
   const PAINTED = new Set(['img', 'svg', 'canvas', 'video', 'iframe', 'input', 'textarea', 'select', 'picture']);
-  const matches = (element) => covered.some((selector) => {
-    try {
-      return element.matches(selector);
-    } catch {
-      return false;
-    }
-  });
+  const matches = (element) => named.some((name) => element.localName === name || element.localName.endsWith('-' + name)) ||
+    covered.some((selector) => {
+      try {
+        return element.matches(selector);
+      } catch {
+        return false;
+      }
+    });
   const visibleBoxOf = (element) => {
     const box = element.getBoundingClientRect();
     let left = Math.max(box.left, 0);
@@ -132,16 +134,48 @@ export const uncoveredRegionsOf = (tree: RegionNode, minSide = MIN_REGION_SIDE):
   return visit(tree, null);
 };
 
-/** The element selectors of the components the parts of `product` implement, by route or by component. */
-export const partSelectorsOf = (options: { target: string; product: ResolvedProduct }) =>
-  options.product.parts.flatMap((part) => {
-    const link = partLinkOf(part.source);
-    const path = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
-    const file = path === null ? null : resolve(options.target, path);
-    const selector = file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null;
+/** What covers an app region: part component selectors, and the names of sketched parts no component implements yet. */
+export type PartCover = { selectors: string[]; names: string[] };
 
-    return selector === null ? [] : [selector];
-  });
+const selectorOfLink = (target: string, source: string) => {
+  const link = partLinkOf(source);
+  const path = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
+  const file = path === null ? null : resolve(target, path);
+
+  return file && existsSync(file) ? componentSelectorOf(readFileSync(file, 'utf8')) : null;
+};
+
+/**
+ * What covers the app regions of `product`: the selector of each component a part implements, by route or by
+ * component, and for each target of an open sketch the selector its variants implement or, without one, its name,
+ * which matches an element named `<name>` or `<prefix>-<name>`.
+ */
+export const partCoverOf = (options: { target: string; product: ResolvedProduct }): PartCover => {
+  const { target, product } = options;
+  const selectors = product.parts.flatMap((part) => selectorOfLink(target, part.source) ?? []);
+  const names: string[] = [];
+
+  for (const sketch of listSketches({ productDir: product.dir, product: product.name })) {
+    if (typeof sketch === 'string') continue;
+
+    for (const key of sketch.targets) {
+      const parsed = parseTarget(key);
+
+      if (typeof parsed === 'string') continue;
+
+      const linked = sketch.variants.flatMap((variant) => {
+        const file = resolve(variantDirOf(sketch, variant), parsed.layer, parsed.name, `${parsed.name}.ts`);
+
+        return existsSync(file) ? (selectorOfLink(target, readFileSync(file, 'utf8')) ?? []) : [];
+      });
+
+      if (linked.length > 0) selectors.push(...linked);
+      else names.push(parsed.name);
+    }
+  }
+
+  return { selectors: [...new Set(selectors)], names: [...new Set(names)] };
+};
 
 /** The element, its component and its box, as a report names one uncovered region. */
 export const regionTextOf = (region: UncoveredRegion) =>
@@ -156,11 +190,12 @@ export const UNCOVERED_HINT =
 export const uncoveredLineOf = (region: UncoveredRegion, address: string) =>
   `UNCOVERED: ${regionTextOf(region)} on ${address} - ${UNCOVERED_HINT}`;
 
-/** The visible regions of the open app page that no part component and no `partless` selector covers. */
-export const uncoveredRegionsOnPage = async (options: { page: Page; parts: string[]; partless: Partless[] }) => {
+/** The visible regions of the open app page that no part, no open sketch's part and no `partless` selector covers. */
+export const uncoveredRegionsOnPage = async (options: { page: Page; parts: PartCover; partless: Partless[] }) => {
   const tree = (await options.page.evaluate(
     `${REGION_TREE_SCRIPT}(${JSON.stringify({
-      covered: [...options.parts, ...options.partless.map((entry) => entry.selector)],
+      covered: [...options.parts.selectors, ...options.partless.map((entry) => entry.selector)],
+      named: options.parts.names,
     })})`,
   )) as RegionNode | null;
 

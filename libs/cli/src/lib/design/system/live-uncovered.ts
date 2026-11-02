@@ -7,7 +7,7 @@ import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { LiveError, liveSpecOf, openLivePage } from './live-compare';
 import { ResolvedProduct } from './resolve-product';
 import { settledPanesOf } from './settled-panes';
-import { partSelectorsOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } from './uncovered-regions';
+import { partCoverOf, regionTextOf, UncoveredRegion, uncoveredRegionsOnPage } from './uncovered-regions';
 
 export type UncoveredFinding = { region: UncoveredRegion; states: string[] };
 
@@ -55,7 +55,7 @@ export const liveUncoveredOf = async (options: {
   if (!(await chromiumOf(target))) return 'the live check needs playwright or playwright-core in the checkout';
 
   const size = { width: presetSize.width, height: presetSize.height };
-  const parts = partSelectorsOf({ target, product });
+  const parts = partCoverOf({ target, product });
 
   return withHarnessUrl({
     target,

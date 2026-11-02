@@ -1,5 +1,10 @@
 import { uncoveredFindingLineOf, uncoveredFindingsOf } from './live-uncovered';
-import { RegionNode, uncoveredLineOf, uncoveredRegionsOf } from './uncovered-regions';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { DESIGN_DIR } from '../paths';
+import { resolveProduct } from './resolve-product';
+import { partCoverOf, RegionNode, uncoveredLineOf, uncoveredRegionsOf } from './uncovered-regions';
 
 const node = (
   tag: string,
@@ -107,5 +112,54 @@ describe('uncovered report lines', () => {
       'UNCOVERED: <div class="bar"> in <app-title-bar> at 0,0 800x36 in pages/a one, pages/a two',
       'UNCOVERED: <p> in <app-title-bar> at 0,0 800x36 in pages/a two',
     ]);
+  });
+});
+
+describe('partCoverOf', () => {
+  let target = '';
+  const write = (path: string, text: string) => {
+    mkdirSync(dirname(join(target, path)), { recursive: true });
+    writeFileSync(join(target, path), text);
+  };
+  const component = (path: string, selector: string) =>
+    write(path, `@Component({ selector: '${selector}', template: '' })\nexport class X {}\n`);
+
+  beforeEach(() => {
+    target = mkdtempSync(join(tmpdir(), 'part-cover-'));
+  });
+
+  afterEach(() => rmSync(target, { recursive: true, force: true }));
+
+  it('covers the components parts implement and the parts open sketches target, by link or else by name', () => {
+    const product = join(DESIGN_DIR, 'app');
+
+    component('apps/app/shell.component.ts', 'app-shell');
+    component('apps/app/menu.component.ts', 'app-menu');
+    write(
+      join(product, 'elements/shell/shell.ts'),
+      "export default definePart({ implements: 'apps/app/shell.component.ts', states: {} });\n",
+    );
+    write(join(product, 'components/tag/tag.ts'), 'export default definePart({ states: {} });\n');
+    write(
+      join(product, 'sketches/components-title-bar/sketch.json'),
+      JSON.stringify({ target: 'components/title-bar', status: 'in progress' }),
+    );
+    write(
+      join(product, 'sketches/components-title-bar/a/components/title-bar/title-bar.ts'),
+      'export default definePart({ states: {} });\n',
+    );
+    write(
+      join(product, 'sketches/elements-menu/sketch.json'),
+      JSON.stringify({ target: 'elements/menu', status: 'in progress' }),
+    );
+    write(
+      join(product, 'sketches/elements-menu/a/elements/menu/menu.ts'),
+      "export default definePart({ implements: 'apps/app/menu.component.ts', states: {} });\n",
+    );
+
+    expect(partCoverOf({ target, product: resolveProduct({ target, name: 'app', config: {} }) })).toEqual({
+      selectors: ['app-shell', 'app-menu'],
+      names: ['title-bar'],
+    });
   });
 });

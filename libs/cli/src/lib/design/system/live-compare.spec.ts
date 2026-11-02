@@ -167,11 +167,16 @@ describe('liveShotOf', () => {
 
   const shotOf = (
     path: string,
-    options: { size?: { width: number; height: number }; state?: LiveState; partless?: Partless[] } = {},
+    options: {
+      size?: { width: number; height: number };
+      state?: LiveState;
+      partless?: Partless[];
+      names?: string[];
+    } = {},
   ) =>
     liveShotOf({
       browser: browser as Browser,
-      parts: ['main'],
+      parts: { selectors: ['main'], names: options.names ?? [] },
       url,
       size: options.size ?? { width: 7, height: 5 },
       spec: { host: 'main', pages: {}, partless: options.partless },
@@ -229,5 +234,6 @@ describe('liveShotOf', () => {
     expect(
       (await shotOf('/titled', { partless: [{ selector: 'header', reason: 'window chrome' }] })).length,
     ).toBeGreaterThan(0);
+    expect((await shotOf('/titled', { names: ['header'] })).length).toBeGreaterThan(0);
   });
 }, 30_000);
