@@ -250,6 +250,10 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
+    "embedded": {
+      "components/canvas-viewport": "c04366e2b93ea341",
+      "components/zoom-chip": "427a6641722af0e4"
+    },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T23:23:12.144Z"
   },
@@ -277,6 +281,9 @@
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "a32d99056bdc10cc",
       ".ethlete/design/studio/foundations/icons/icons.ts": "9dfadae50297a76a",
       "libs/components/design/control.ts": "b0244bc4c0f922a6"
+    },
+    "embedded": {
+      "components/tree-row": "17c1f9748036a829"
     },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T22:14:59.756Z"
@@ -332,6 +339,10 @@
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "embedded": {
+      "components/shell-collapse": "5a8eb2acab2530ea",
+      "components/shell-project-switch": "fba3e43a647120ab"
     },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T23:25:07.773Z"
@@ -456,11 +467,21 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
+    "embedded": {
+      "components/canvas-viewport": "c04366e2b93ea341",
+      "components/comment-pin": "1ff4f13f4a665462",
+      "components/shell-collapse": "5a8eb2acab2530ea",
+      "components/shell-project-switch": "fba3e43a647120ab",
+      "components/zoom-chip": "427a6641722af0e4",
+      "elements/canvas-frames": "e40d4d5e7bc44fed",
+      "elements/shell-main": "2395b786f57164c1",
+      "elements/studio-menu": "7bde241074c0674c"
+    },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T23:28:49.188Z"
   },
   "pages/merge": {
-    "hash": "634f233d8e84e8ee",
+    "hash": "10cefd5e69c9fa25",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "2db7ffb8295043f6",
@@ -483,6 +504,8 @@
       ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
       ".ethlete/design/studio/assets/studio-mark-line.svg": "f9a0e58663473e8f",
       ".ethlete/design/studio/assets/studio-mark.svg": "772b2ce52c6abbc2",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "8af8e34c1b815043",
+      ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "194061e9f7ae9f6d",
       ".ethlete/design/studio/components/disclosure/disclosure.css": "e8694c045bf818de",
       ".ethlete/design/studio/components/disclosure/disclosure.ts": "41e851bd1027621b",
       ".ethlete/design/studio/components/shell-collapse/shell-collapse.ts": "4d475fcc93ed85d7",
@@ -493,10 +516,10 @@
       ".ethlete/design/studio/components/tree-row/tree-row.ts": "623660c0b12c32a5",
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
-      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "50a04e20d141c65b",
+      ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "a6ee700418ae324d",
       ".ethlete/design/studio/elements/part-tree/part-tree.ts": "a32d99056bdc10cc",
       ".ethlete/design/studio/elements/shell-main/shared/picker.css": "c8a3b45a227840db",
-      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "08b15397e505bb03",
+      ".ethlete/design/studio/elements/shell-main/shared/shell-main.ts": "f7eae1a2ac15c5cc",
       ".ethlete/design/studio/elements/shell-main/shell-main.css": "2fffdfe62e64abd7",
       ".ethlete/design/studio/elements/shell-main/shell-main.ts": "74262591a567d192",
       ".ethlete/design/studio/elements/studio-menu/setup.ts": "deb8d411ad0b54db",
@@ -534,8 +557,20 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
+    "embedded": {
+      "components/canvas-viewport": "c04366e2b93ea341",
+      "components/disclosure": "ef3dc9da0ed21276",
+      "components/shell-collapse": "5a8eb2acab2530ea",
+      "components/shell-project-switch": "fba3e43a647120ab",
+      "components/tree-row": "17c1f9748036a829",
+      "components/zoom-chip": "427a6641722af0e4",
+      "elements/canvas-frames": "e40d4d5e7bc44fed",
+      "elements/part-tree": "b914ca1ccd50afb8",
+      "elements/shell-main": "2395b786f57164c1",
+      "elements/studio-menu": "7bde241074c0674c"
+    },
     "by": "claude-opus-5-5",
-    "at": "2026-11-01T22:38:05.384Z"
+    "at": "2026-11-02T00:06:22.957Z"
   },
   "pages/sketches": {
     "hash": "ce8a9598326d4202",
@@ -644,6 +679,18 @@
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
+    "embedded": {
+      "components/canvas-viewport": "c04366e2b93ea341",
+      "components/comment-pin": "1ff4f13f4a665462",
+      "components/shell-collapse": "5a8eb2acab2530ea",
+      "components/shell-project-switch": "fba3e43a647120ab",
+      "components/tree-row": "17c1f9748036a829",
+      "components/zoom-chip": "427a6641722af0e4",
+      "elements/canvas-frames": "e40d4d5e7bc44fed",
+      "elements/part-tree": "b914ca1ccd50afb8",
+      "elements/shell-main": "2395b786f57164c1",
+      "elements/studio-menu": "7bde241074c0674c"
+    },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T23:22:35.807Z"
   },
@@ -747,6 +794,17 @@
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
+    },
+    "embedded": {
+      "components/canvas-viewport": "c04366e2b93ea341",
+      "components/shell-collapse": "5a8eb2acab2530ea",
+      "components/shell-project-switch": "fba3e43a647120ab",
+      "components/tree-row": "17c1f9748036a829",
+      "components/zoom-chip": "427a6641722af0e4",
+      "elements/canvas-frames": "e40d4d5e7bc44fed",
+      "elements/part-tree": "b914ca1ccd50afb8",
+      "elements/shell-main": "2395b786f57164c1",
+      "elements/studio-menu": "7bde241074c0674c"
     },
     "by": "claude-opus-5-5",
     "at": "2026-11-01T23:38:43.409Z"
