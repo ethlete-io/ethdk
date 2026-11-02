@@ -1,14 +1,3 @@
-const MODIFIERS = new Set([
-  'ShiftLeft',
-  'ShiftRight',
-  'ControlLeft',
-  'ControlRight',
-  'AltLeft',
-  'AltRight',
-  'MetaLeft',
-  'MetaRight',
-]);
-
 export const leavesWindow = (element: HTMLElement) => !element.ownerDocument.hasFocus();
 
 export const trackPointerFocus = (element: HTMLElement) => {
@@ -18,7 +7,7 @@ export const trackPointerFocus = (element: HTMLElement) => {
     if (event.button === 0 || event.button === 1) element.dataset['pointerFocus'] = '';
   });
   element.addEventListener('keydown', (event) => {
-    if (!MODIFIERS.has(event.code)) clear();
+    if (event.code === 'Tab') clear();
   });
   element.addEventListener('blur', () => {
     if (!leavesWindow(element)) clear();

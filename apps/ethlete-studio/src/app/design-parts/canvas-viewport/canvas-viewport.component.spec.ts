@@ -28,7 +28,7 @@ describe('CanvasViewportComponent', () => {
     expect(document.activeElement).toBe(viewport);
   });
 
-  it('hides the focus ring after a pointer click and shows it again on the next key press or blur', async () => {
+  it('hides the focus ring after a pointer click and shows it again on Tab or blur', async () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
 
     const fixture = TestBed.createComponent(HostComponent);

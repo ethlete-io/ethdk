@@ -34,7 +34,7 @@ export type { Camera, CameraTarget, Rect };
 
 const ARROW_STEP = 80;
 
-const ARROWS: Record<string, { x: number; y: number }> = {
+export const ARROWS: Record<string, { x: number; y: number }> = {
   ArrowLeft: { x: ARROW_STEP, y: 0 },
   ArrowRight: { x: -ARROW_STEP, y: 0 },
   ArrowUp: { x: 0, y: ARROW_STEP },

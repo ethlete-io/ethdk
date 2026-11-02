@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -21,6 +22,21 @@ const PAGES = [
     name: 'Sketches',
     view: { systemProduct: 'studio', systemEntry: 'sketch:pages/system' },
     shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
+  },
+  {
+    name: 'Sketches',
+    label: 'Chip',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:components/zoom-chip' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
+  },
+  {
+    name: 'Sketches',
+    label: 'Large',
+    view: { systemProduct: 'studio', systemEntry: 'sketch:elements/shell-main' },
+    shows: 'ethlete-sketch-view ethlete-sketches',
+    fits: 'width',
   },
   {
     name: 'Inbox',
@@ -193,7 +209,345 @@ const describe = (before, after) =>
     ? `camera ${before.camera.x.toFixed(1)},${before.camera.y.toFixed(1)}@${before.camera.zoom.toFixed(3)} -> ${after.camera.x.toFixed(1)},${after.camera.y.toFixed(1)}@${after.camera.zoom.toFixed(3)}`
     : 'no camera';
 
+const frameBoxes = (page, selector) =>
+  page.evaluate(
+    ({ CANVAS, selector }) => {
+      const canvas = [...document.querySelectorAll(CANVAS)].sort(
+        (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+      )[0];
+
+      return [...(canvas?.querySelectorAll(selector) ?? [])].map((frame) => {
+        const { left, top, width, height } = frame.getBoundingClientRect();
+
+        return { left, top, width, height, iframe: !!frame.querySelector('iframe') };
+      });
+    },
+    { CANVAS, selector },
+  );
+
+const settled = async (page, selector) => {
+  let last = '';
+  let same = 0;
+
+  for (let poll = 0; poll < 80 && same < 3; poll++) {
+    await page.waitForTimeout(250);
+    const now = await page.evaluate(
+      ({ CANVAS, selector }) =>
+        document.querySelector('[data-sk-changed="pending"]')
+          ? 'pending'
+          : [...(document.querySelector(CANVAS)?.querySelectorAll(selector) ?? [])]
+              .map((frame) => {
+                const { left, top, width, height } = frame.getBoundingClientRect();
+
+                return [left, top, width, height].map(Math.round).join();
+              })
+              .join(' '),
+      { CANVAS, selector },
+    );
+
+    same = now !== 'pending' && now === last ? same + 1 : 0;
+    last = now;
+  }
+};
+
 const CASES = [
+  {
+    name: 'wheel and ctrl-wheel over a frame centre move the camera',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      const selector = target.frame ?? FRAME;
+      const { view } = state;
+      const boxes = await frameBoxes(page, selector);
+      const centreOf = (box) => ({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+      const seen = (box) => {
+        const { x, y } = centreOf(box);
+
+        return box.width > 8 && x > view.left + 4 && x < view.right - 4 && y > view.top + 4 && y < view.bottom - 4;
+      };
+      const index = [boxes.findIndex((box) => box.iframe && seen(box)), boxes.findIndex(seen)].find((at) => at >= 0);
+
+      if (index === undefined) return { ok: false, detail: 'no frame centre in view' };
+      if (target.name === 'Sketches' && !boxes[index].iframe) return { ok: false, detail: 'no iframe frame' };
+
+      const before = boxes[index];
+      const towardsMiddle = centreOf(before).y < (view.top + view.bottom) / 2 ? -120 : 120;
+      await page.mouse.move(centreOf(before).x, centreOf(before).y);
+      await page.mouse.wheel(0, towardsMiddle);
+      await settle(page);
+      const panned = (await frameBoxes(page, selector))[index];
+
+      if (!seen(panned)) return { ok: false, detail: `the pan moved the frame centre out of view, top ${panned.top}` };
+      await page.mouse.move(centreOf(panned).x, centreOf(panned).y);
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -240);
+      await page.keyboard.up('Control');
+      await settle(page);
+      const zoomed = (await frameBoxes(page, selector))[index];
+      const pans = Math.abs(panned.top - before.top) > 20 || Math.abs(panned.left - before.left) > 20;
+      const zooms = zoomed.width > panned.width * 1.05;
+
+      return {
+        ok: pans && zooms,
+        detail: `iframe=${before.iframe} top ${before.top.toFixed(0)} -> ${panned.top.toFixed(0)} width ${panned.width.toFixed(0)} -> ${zoomed.width.toFixed(0)}`,
+      };
+    },
+  },
+  {
+    name: 'ctrl-wheel keeps the world point under the pointer',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      const selector = target.frame ?? FRAME;
+      const { view } = state;
+      const boxes = await frameBoxes(page, selector);
+      const index = boxes.findIndex(
+        (box) =>
+          box.width > 16 &&
+          box.left + box.width / 2 > view.left + 40 &&
+          box.left + box.width / 2 < view.right - 40 &&
+          box.top + box.height / 2 > view.top + 40 &&
+          box.top + box.height / 2 < view.bottom - 40,
+      );
+
+      if (index < 0) return { ok: false, detail: 'no frame centre in view' };
+
+      const start = boxes[index];
+      const pointer = { x: start.left + start.width * 0.3, y: start.top + start.height * 0.4 };
+      const drifts = [];
+      let before = start;
+
+      await page.mouse.move(pointer.x, pointer.y);
+
+      for (const delta of [-240, 240, 240]) {
+        await page.keyboard.down('Control');
+        await page.mouse.wheel(0, delta);
+        await page.keyboard.up('Control');
+        await settle(page);
+
+        const after = (await frameBoxes(page, selector))[index];
+        const fx = (pointer.x - before.left) / before.width;
+        const fy = (pointer.y - before.top) / before.height;
+
+        drifts.push(Math.hypot(after.left + fx * after.width - pointer.x, after.top + fy * after.height - pointer.y));
+        before = after;
+      }
+
+      return {
+        ok: drifts.every((drift) => drift <= 2) && before.width < start.width,
+        detail: `drift ${drifts.map((drift) => drift.toFixed(1)).join(' / ')} px, width ${start.width.toFixed(0)} -> ${before.width.toFixed(0)}`,
+      };
+    },
+  },
+  {
+    name: 'no text leaves its box at min zoom, Fit, 100 % and max zoom',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state) => {
+      const { view } = state;
+      const centre = { x: (view.left + view.right) / 2, y: (view.top + view.bottom) / 2 };
+      const wheelZoom = async (delta) => {
+        await page.mouse.move(centre.x, centre.y);
+        await page.keyboard.down('Control');
+        for (let step = 0; step < 30; step++) await page.mouse.wheel(0, delta);
+        await page.keyboard.up('Control');
+        await settle(page);
+      };
+      const shortcut = async (key) => {
+        await page.mouse.click(centre.x, centre.y);
+        await page.keyboard.press(key);
+        await settle(page);
+      };
+      const zooms = [
+        ['min', () => wheelZoom(100)],
+        ['Fit', () => shortcut('Shift+Digit1')],
+        ['100 %', () => shortcut('Shift+Digit0')],
+        ['max', () => wheelZoom(-100)],
+      ];
+      const faults = [];
+
+      for (const [label, zoom] of zooms) {
+        await zoom();
+        faults.push(
+          ...(await page.evaluate(
+            ({ CANVAS, label }) => {
+              const canvas = [...document.querySelectorAll(CANVAS)].sort(
+                (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+              )[0];
+              const found = [];
+
+              if (!canvas) return [`${label}: no canvas`];
+
+              const walker = document.createTreeWalker(canvas, NodeFilter.SHOW_TEXT);
+
+              for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                const box = node.parentElement?.getBoundingClientRect();
+
+                if (!node.textContent.trim() || !box || box.width === 0) continue;
+
+                const range = document.createRange();
+                range.selectNodeContents(node);
+
+                const text = range.getBoundingClientRect();
+
+                if (
+                  text.width > 0 &&
+                  (text.left < box.left - 1 ||
+                    text.right > box.right + 1 ||
+                    text.top < box.top - 1 ||
+                    text.bottom > box.bottom + 1)
+                )
+                  found.push(`${label}: "${node.textContent.trim().slice(0, 30)}" leaves its box`);
+              }
+
+              for (const row of canvas.querySelectorAll('[data-sk-row]')) {
+                const [head, stage] = row.children;
+
+                if (head && stage && head.getBoundingClientRect().right > stage.getBoundingClientRect().left + 0.5)
+                  found.push(`${label}: head overlaps the frames in row ${row.getAttribute('data-sk-row')}`);
+              }
+
+              return found;
+            },
+            { CANVAS, label },
+          )),
+        );
+      }
+
+      return { ok: faults.length === 0, detail: faults.slice(0, 4).join('; ') || '4 zooms' };
+    },
+  },
+  {
+    name: 'Fit is stable, + steps from it, 25 % report',
+    pages: ['Sketches'],
+    run: async (page, state) => {
+      const { view } = state;
+
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: 60000,
+      });
+      await page.mouse.click((view.left + view.right) / 2, (view.top + view.bottom) / 2);
+      await page.keyboard.press('Shift+Digit1');
+      await settle(page);
+
+      const shown = () =>
+        page.evaluate(() => {
+          const match = /(\d+)\s*%/.exec(
+            document.querySelector('ethlete-sketches ethlete-zoom-chip')?.textContent ?? '',
+          );
+
+          return match ? Number(match[1]) : null;
+        });
+      const percent = await shown();
+
+      if (percent === null) return { ok: false, detail: 'no zoom chip percent' };
+
+      await page.reload();
+      await page.waitForSelector('[data-sk-state]', { timeout: 30000 });
+      await settled(page, FRAME);
+      await page.getByRole('button', { name: 'Einpassen' }).first().click();
+      await settle(page);
+      const again = await shown();
+
+      await page.getByRole('button', { name: 'Vergrößern' }).first().click();
+      await settle(page);
+      const stepped = await shown();
+      const faults = [
+        ...(again !== null && Math.abs(again - percent) <= 1
+          ? []
+          : [`Fit ${percent} % then ${again} % after a reload`]),
+        ...(stepped !== null && Math.abs(stepped - Math.round(again * 1.5)) <= 1
+          ? []
+          : [`+ from Fit ${again} % shows ${stepped} %, expected ${Math.round(again * 1.5)} %`]),
+      ];
+      const report = percent >= 25 ? `Fit ${percent} %` : `too large for Fit: ${percent} %`;
+
+      return { ok: faults.length === 0, detail: [report, ...faults].join('; ') };
+    },
+  },
+  {
+    name: 'no state is marked before the compare answers',
+    pages: ['Sketches'],
+    run: async (page, _state, target) => {
+      const sketch = target.view.systemEntry.slice('sketch:'.length);
+      let release;
+      const held = new Promise((resolve) => (release = resolve));
+      let listed;
+
+      await page.route('**/__design/sketches?*', async (route) => {
+        if (route.request().url().includes('unchanged=no')) return route.continue();
+
+        await held;
+        const response = await route.fetch();
+
+        listed = await response.json();
+        await route.fulfill({ response, json: listed });
+      });
+      await page.reload();
+      await page.waitForSelector('[data-sk-state]', { timeout: 30000 });
+      await settle(page);
+
+      const early = await page.evaluate(() => ({
+        marked: document.querySelectorAll('[data-sk-changed="false"]:not([data-sk-variant="current"])').length,
+        first: document.querySelectorAll('[data-sk-first-change]').length,
+      }));
+
+      release();
+      await page.waitForFunction(() => !document.querySelector('[data-sk-changed="pending"]'), null, {
+        timeout: 60000,
+      });
+      await page.unroute('**/__design/sketches?*');
+
+      const entry = listed?.sketches?.find((candidate) => candidate.target === sketch);
+      const marks = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-sk-variant][data-sk-changed]')].map((cell) => ({
+          variant: cell.getAttribute('data-sk-variant'),
+          state: cell.getAttribute('data-sk-state'),
+          changed: cell.getAttribute('data-sk-changed'),
+        })),
+      );
+      const wrong = marks.filter(({ variant, state, changed }) => {
+        const listedTarget = entry?.targets?.find(
+          (candidate) => candidate.variant === variant && (candidate.part ?? entry.target) === entry.target,
+        );
+
+        if (!listedTarget) return false;
+
+        return changed !== String(!(listedTarget.unchanged ?? []).includes(state));
+      });
+      const faults = [
+        ...(early.marked ? [`${early.marked} marked unchanged before the compare`] : []),
+        ...(early.first ? ['"erste Änderung" before the compare'] : []),
+        ...(entry ? [] : [`no listed sketch ${sketch}`]),
+        ...wrong.slice(0, 3).map(({ variant, state, changed }) => `${variant}/${state} shows ${changed}`),
+      ];
+
+      return { ok: faults.length === 0, detail: faults.join('; ') || `${marks.length} marks match the compare` };
+    },
+  },
+  {
+    name: 'frames of one grid row share their top edge',
+    pages: ['Sketches'],
+    run: async (page) => {
+      const spread = await page.evaluate(() => {
+        let worst = 0;
+
+        for (const stage of document.querySelectorAll('[data-sk-stage]')) {
+          const rows = new Map();
+
+          for (const cell of stage.querySelectorAll('[data-sk-state]')) {
+            const frame = cell.querySelector('[data-sk-frame]');
+            const line = Math.round(cell.getBoundingClientRect().top);
+
+            if (frame) rows.set(line, [...(rows.get(line) ?? []), frame.getBoundingClientRect().top]);
+          }
+
+          for (const tops of rows.values()) worst = Math.max(worst, Math.max(...tops) - Math.min(...tops));
+        }
+
+        return worst;
+      });
+
+      return { ok: spread <= 1, detail: `widest top spread ${spread.toFixed(1)} px` };
+    },
+  },
   {
     name: 'a frame renders real content, not an error page',
     pages: ['System', 'Sketches'],
@@ -397,16 +751,37 @@ const CASES = [
       if (!state.frame || !state.empty) return { ok: false, detail: 'no frame or empty point' };
       const edges = () =>
         page.evaluate(
-          ({ FRAME, index }) => {
-            const frame = [...document.querySelectorAll(FRAME)][index];
+          ({ CANVAS, FRAME, index }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+            const box = [...canvas.querySelectorAll(FRAME)][index].getBoundingClientRect();
+            const ids = (window.__hoverEdgeIds ??= new WeakMap());
+            const edges = {};
 
-            return [frame, ...frame.querySelectorAll('*')].map((element) => {
+            for (const element of document.querySelectorAll('*')) {
+              const rect = element.getBoundingClientRect();
+              const over =
+                rect.right >= box.left - 8 &&
+                rect.left <= box.right + 8 &&
+                rect.bottom >= box.top - 8 &&
+                rect.top <= box.bottom + 8;
+
+              if (!over) continue;
+              if (!ids.has(element)) ids.set(element, (window.__hoverEdgeCount = (window.__hoverEdgeCount ?? 0) + 1));
+
               const style = getComputedStyle(element);
+              const marks = [...element.attributes].flatMap((attribute) =>
+                attribute.name.startsWith('data-') ? [attribute.name] : [],
+              );
 
-              return `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor} | ${style.boxShadow} | ${style.borderColor}`;
-            });
+              edges[ids.get(element)] =
+                `${element.localName}[${marks}] outline ${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor} | shadow ${style.boxShadow} | border ${style.borderStyle} ${style.borderWidth} ${style.borderColor}`;
+            }
+
+            return edges;
           },
-          { FRAME, index: state.frame.index },
+          { CANVAS, FRAME, index: state.frame.index },
         );
 
       await page.mouse.move(state.empty.x, state.empty.y);
@@ -416,7 +791,9 @@ const CASES = [
       await page.mouse.move(state.frame.x, state.frame.y);
       await settle(page);
       const after = await edges();
-      const changed = after.flatMap((edge, index) => (edge === before[index] ? [] : [`${before[index]} -> ${edge}`]));
+      const changed = Object.entries(after).flatMap(([id, edge]) =>
+        edge === before[id] ? [] : [`${before[id] ?? 'new'} -> ${edge}`],
+      );
 
       return { ok: changed.length === 0, detail: changed.length ? changed.join('; ') : 'unchanged' };
     },
@@ -485,7 +862,7 @@ const CASES = [
   },
   {
     name: 'Shift+1 fits all, window-wide',
-    run: async (page, state) => {
+    run: async (page, state, target) => {
       await page.mouse.move(state.view.left + 20, state.view.top + 20);
       await page.mouse.wheel(0, 900);
       await settle(page);
@@ -497,14 +874,16 @@ const CASES = [
       await settle(page);
       const after = await probe(page);
       const { view } = after;
-      const all = after.frames.every(
-        (frame) =>
-          frame.right - frame.left < 1 ||
-          (frame.left >= view.left - 2 &&
+      const fitsHeight = target.fits !== 'width';
+      const shown = after.frames.filter((frame) => frame.right - frame.left >= 1);
+      const all =
+        shown.every(
+          (frame) =>
+            frame.left >= view.left - 2 &&
             frame.right <= view.right + 2 &&
-            frame.top >= view.top - 2 &&
-            frame.bottom <= view.bottom + 2),
-      );
+            (!fitsHeight || (frame.top >= view.top - 2 && frame.bottom <= view.bottom + 2)),
+        ) &&
+        (fitsHeight || (shown.length > 0 && Math.min(...shown.map((frame) => frame.top)) >= view.top - 2));
 
       return { ok: all && after.camera?.y !== before.camera?.y, detail: `${describe(before, after)} allInView=${all}` };
     },
@@ -512,7 +891,7 @@ const CASES = [
   {
     name: 'hiding the panel keeps the frames',
     pages: ['System', 'Sketches', 'Flow'],
-    run: async (page) => {
+    run: async (page, _state, target) => {
       const firstFrame = () =>
         page.evaluate(
           ({ CANVAS, FRAME }) => {
@@ -520,14 +899,20 @@ const CASES = [
               (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
             )[0];
             const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+            const origin = canvas?.getBoundingClientRect();
 
-            return rect ? { left: rect.left, top: rect.top } : null;
+            return rect && origin ? { left: rect.left - origin.left, top: rect.top - origin.top, x: rect.left } : null;
           },
           { CANVAS, FRAME },
         );
       const head = page.getByText('Aktuell', { exact: true });
-      const headOffset = async (frame) =>
-        (await head.count()) ? (await head.first().boundingBox()).x - frame.left : 0;
+      const headOffset = async (frame) => ((await head.count()) ? (await head.first().boundingBox()).x - frame.x : 0);
+      // Sketches' Fit is sticky and re-fits to the wider canvas, so the case holds a fixed zoom.
+      if (target.name === 'Sketches') {
+        await page.getByRole('button', { name: 'Auf 100 % zoomen' }).click();
+        await settle(page);
+      }
+
       const before = await probe(page);
       const frameBefore = await firstFrame();
       const headBefore = frameBefore ? await headOffset(frameBefore) : 0;
@@ -553,6 +938,46 @@ const CASES = [
       };
     },
   },
+  {
+    name: 'a listing refresh every 1 s for 6 s re-navigates no iframe and leaves no 150px frame',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const sketchJson = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main/sketch.json');
+      const original = readFileSync(sketchJson, 'utf8');
+      const navigations = [];
+      const onNavigated = (frame) => {
+        if (frame !== page.mainFrame()) navigations.push(frame.url());
+      };
+      let flip = false;
+
+      page.on('framenavigated', onNavigated);
+
+      const timer = setInterval(() => {
+        flip = !flip;
+        writeFileSync(sketchJson, original.trimEnd() + (flip ? '\n\n' : '\n'));
+      }, 1000);
+
+      await page.waitForTimeout(6000);
+      clearInterval(timer);
+      writeFileSync(sketchJson, original);
+      page.off('framenavigated', onNavigated);
+      await page.waitForTimeout(1000);
+
+      const heights = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-sk-frame]')].map((frame) => ({
+          frame: Math.round(frame.getBoundingClientRect().height),
+          iframes: [...frame.querySelectorAll('iframe')].map((iframe) => iframe.offsetHeight),
+        })),
+      );
+      const placeholder = heights.filter((row) => row.frame <= 0 || row.iframes.some((height) => height === 150));
+
+      return {
+        ok: heights.length > 0 && navigations.length === 0 && placeholder.length === 0,
+        detail: `frames ${heights.length}, iframe re-navigations in 6 s ${navigations.length} (must be 0), frames with 150px placeholder or no height 1 s after the last refresh ${placeholder.length} (must be 0)`,
+      };
+    },
+  },
 ];
 
 const checkout = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));
@@ -563,22 +988,36 @@ for (const entry of readdirSync(root)) {
 
 cpSync(join(root, '.ethlete/design'), join(checkout, '.ethlete/design'), { recursive: true });
 
-const sketch = join(checkout, '.ethlete/design/studio/sketches/pages-system');
-
 rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
-mkdirSync(join(sketch, 'a/pages'), { recursive: true });
-cpSync(join(root, '.ethlete/design/studio/pages/system'), join(sketch, 'a/pages/system'), { recursive: true });
-writeFileSync(
-  join(sketch, 'sketch.json'),
-  JSON.stringify({
-    target: 'pages/system',
-    targets: ['pages/system'],
-    status: 'ready',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
-    variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
-  }),
+
+execFileSync(
+  'sh',
+  [
+    '-c',
+    'git -C "$0" archive HEAD .ethlete/design/studio/sketches/elements-shell-main | tar -x -C "$1"',
+    root,
+    checkout,
+  ],
+  { stdio: 'inherit' },
 );
+
+for (const target of ['pages/system', 'components/zoom-chip']) {
+  const folder = join(checkout, '.ethlete/design/studio/sketches', target.replace('/', '-'));
+
+  mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
+  cpSync(join(root, '.ethlete/design/studio', target), join(folder, 'a', target), { recursive: true });
+  writeFileSync(
+    join(folder, 'sketch.json'),
+    JSON.stringify({
+      target,
+      targets: [target],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'canvas e2e' }],
+      variantInfo: { a: { authors: ['canvas-e2e'], round: 'r1' } },
+    }),
+  );
+}
 
 const results = await withStudio(
   async ({ page, studioUrl }) => {
@@ -587,6 +1026,7 @@ const results = await withStudio(
     for (const target of PAGES) {
       for (const testCase of CASES) {
         if (!(testCase.pages ?? ['System', 'Sketches']).includes(target.name)) continue;
+        if (testCase.labels && !testCase.labels.includes(target.label)) continue;
 
         await page.goto(studioUrl);
         await page.evaluate(
@@ -604,6 +1044,7 @@ const results = await withStudio(
           { timeout: 30000 },
         );
         await page.waitForTimeout(2500);
+        await settled(page, target.frame ?? FRAME);
 
         const shown = await page.evaluate(
           ({ shows, hides }) => !!document.querySelector(shows) && !(hides && document.querySelector(hides)),
@@ -616,15 +1057,17 @@ const results = await withStudio(
           result = !shown
             ? { ok: false, detail: `the page does not show ${target.shows}` }
             : state
-              ? await testCase.run(page, state)
+              ? await testCase.run(page, state, target)
               : { ok: false, detail: 'no canvas' };
         } catch (error) {
           result = { ok: false, detail: String(error).split('\n')[0] };
         }
 
-        rows.push({ page: target.name, case: testCase.name, ...result });
+        const pageName = target.label ?? target.name;
+
+        rows.push({ page: pageName, case: testCase.name, ...result });
         console.log(
-          `${result.ok ? 'PASS' : 'FAIL'}  ${target.name.padEnd(9)} ${testCase.name.padEnd(36)} ${result.detail}`,
+          `${result.ok ? 'PASS' : 'FAIL'}  ${pageName.padEnd(9)} ${testCase.name.padEnd(36)} ${result.detail}`,
         );
       }
     }

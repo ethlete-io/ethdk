@@ -140,7 +140,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
           <div
             class="pointer-events-none relative box-border flex h-full flex-col gap-space-4 p-space-5 ps-[calc(var(--st-shell-inset-left)+var(--space-5))]"
           >
-            <header class="pointer-events-auto flex h-(--control-md) flex-none items-center gap-space-3">
+            <header class="flex h-(--control-md) flex-none items-center gap-space-3 *:pointer-events-auto">
               <span class="text-ui-lg font-ui-strong">{{ selected() }}</span>
               <span class="flex-1"></span>
               <div class="w-60">

@@ -36,7 +36,11 @@ export default [
     },
   },
   {
-    files: ['src/app/components/design-canvas/canvas-viewport.ts', 'src/app/components/design-canvas/pointer-focus.ts'],
+    files: [
+      'src/app/components/design-canvas/canvas-viewport.ts',
+      'src/app/components/design-canvas/frame-zoom-viewport.ts',
+      'src/app/components/design-canvas/pointer-focus.ts',
+    ],
     rules: {
       'ethlete/no-dom-query': 'off',
       'ethlete/no-direct-dom-manipulation': 'off',
