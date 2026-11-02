@@ -2719,3 +2719,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the Sketches slice. Full Studio suite: 456 passed, 1 expected fail, 0 failures. The earlier "98/98" report came
      from a filtered run that left system-view.component.spec out. Lesson: a filtered run reported as green hides
      specs the change touches; the pre-commit `vitest related` (B115) is the tool that catches it - no new rule.
+
+205. Zoomed far out on the elements/shell-main sketch, the view breaks in three ways (Tom, 2026-11-02, screenshot):
+     (a) the variant head keeps its 12 px floor while its column shrinks to the frame width, so the note wraps one
+     word per line and the head is about 8x taller than the frames below it; (b) of 3 x 15 frames only the first 3
+     Aktuell frames show content - the rest are thin empty outlines, all variant a/b frames included; (c) both
+     variant notes are English (B114 covers only new sketches; existing notes are not checked). Also "Variante a"
+     wraps onto two lines. Lesson: canvas.e2e and the shots run at 100 % and Fit only; nothing looks at the minimum
+     zoom with real data. Tool fix (decided, technical): canvas.e2e zooms each PAGES entry to the minimum zoom and
+     asserts (1) the variant head height stays within a bound of the frame grid height, (2) every frame has its
+     fitted height and a painted body; `sketch check` runs NOTE-LANGUAGE over all existing sketches, not only new
+     ones (B114). Cause of (b) pending from builder. Head behaviour below Fit: open question to Tom.
