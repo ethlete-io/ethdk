@@ -14,11 +14,15 @@ export const STUDIO_LABELS = {
   canvas: {
     label: 'Design Canvas',
   },
-  window: {
-    minimize: 'Minimieren',
-    maximize: 'Maximieren',
-    restore: 'Wiederherstellen',
-    close: 'Schließen',
+  titleBar: {
+    search: (product: string, part: string) => `Suchen in ${product}, ${part}`,
+    update: 'Update',
+    window: {
+      minimize: 'Minimieren',
+      maximize: 'Maximieren',
+      restore: 'Wiederherstellen',
+      close: 'Schließen',
+    },
   },
   sketches: {
     discard: 'Verwerfen',
