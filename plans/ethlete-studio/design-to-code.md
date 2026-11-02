@@ -2654,6 +2654,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      changes nothing visible offers no decision. Lesson: nothing checks that a variant differs from Aktuell. Tool fix
      (decided, technical): `sketch check` warns VARIANT-UNCHANGED when every state of a variant is pixel-identical to
      Aktuell (measured, not blocked); the Sketches view shows such a variant fully dimmed.
+     Update (builder, 6d0a553a6): VARIANT-UNCHANGED built (warning, reuses the unchanged-state compare); it also covers
+     a sketch with a single live variant, where the identical-renders refusal stayed silent. On zoom-chip it fires
+     for both a and b: the round "SDK button or own part" is a structural choice with no visible difference. The
+     full dimming in the Sketches view follows after the Sketches slice commits.
 
 202. canvas.e2e on real sketches (components-zoom-chip, elements-shell-main, added for findings 198/199) found three
      defects the sample fixture never showed (builder, 2026-11-02): ctrl-wheel zoom-in does not change the frame
