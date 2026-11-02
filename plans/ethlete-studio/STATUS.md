@@ -261,6 +261,12 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B99** Bash-Hook verweigert `pgrep -f`/`pkill -f`-Warteschleifen (matchen sich selbst) und verweist auf
   run_in_background oder Monitor; `restart` listet und beendet Hintergrund-Shells und Design-Prozesse der Session
   (Befund 173).
+- **B100** Restliche prüfbare Regeln aus dem B79-Audit (Entscheidung 3, Liste der Ermessensregeln in
+  design-to-code.md): `sketch` verweigert eine Skizze in einer Ebene, solange die Ebene darüber ungemergte Skizzen
+  oder offene Punkte hat (#47); Stop-Hook prüft im Explorationsmodus eine offene Frage und höchstens 120 Wörter (#48)
+  und bei aktivem Grilling das Rundenformat `❓ **Qn**` / `➡️` (#63); Plan-Lint beim Push verlangt pro Build-Slice
+  eine „in progress“-Notiz und einen „as built“-Abschnitt (#58, mit B92); Lint-Regel oder Stop-Hook zählt neue
+  Kommentare im Diff gegen die Allowlist (#93).
 
 ## C. CLI: Tempo und Ablauf
 

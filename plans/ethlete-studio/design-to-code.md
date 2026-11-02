@@ -1661,14 +1661,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      though it is plainly an element of its own inside the title bar (Tom, 2026-11-02: "wieso haben wir es nun als
      teil der titlebar? wieso passiert sowas noch immer"). Cause: the Q181 rule CONTROL-STATE lets a part draw
      interaction states when it declares its controls (Q164). The title bar declares `controls = { search, update,
-     minimize, maximize, close }` (components/title-bar/shared/chrome.ts:77) and forces states per control through a
+minimize, maximize, close }` (components/title-bar/shared/chrome.ts:77) and forces states per control through a
      `force` prop, so the check passed, although the search field is bespoke markup (an et-button with custom
      classes, a product/part label and a kbd) that exists nowhere else. The control declaration became the loophole
      the rule was meant to close. Tool fix: B72 (a declared control counts only when it is an embedded part or an
      SDK component used through its props; bespoke control markup inside a non-control part is a CONTROL-STATE error
      that names it for extraction). Lesson: an exemption a part grants itself is no rule.
 164. Every design render of a part with an `color="brand"` SDK button through `ng()` logs `etProvideColor="brand" has
-     no effect because no color themes are registered` (builder, 2026-11-02, update-dialog sketch). The brand fill
+no effect because no color themes are registered` (builder, 2026-11-02, update-dialog sketch). The brand fill
      still shows, so the render and the app may resolve colours by different paths, and check and ready pass. Why no
      check caught it: the render checks ignore console output. Tool fix: B74 (technical, grill decision: the `ng()`
      render registers the product's colour themes like the app does; the render check reports any SDK console
@@ -1757,7 +1757,7 @@ check` fails a part with a varying design prop that has no app input and is not 
 173. Dead processes in the builder session (Tom asked the grill session to clear them, 2026-11-02): three wait loops
      `until ! pgrep -f "design ... check ..."; do sleep N; done` ran 10-30 min and could never end, because `pgrep -f`
      matches the loop's own shell, whose command line contains the pattern; plus a full `design check --product
-     studio` (9 min) whose requesting subagent was gone after the builder ran out of context. Load was ~20. Why no
+studio` (9 min) whose requesting subagent was gone after the builder ran out of context. Load was ~20. Why no
      tool caught it: nothing refuses a self-matching wait loop, and nothing stops background work whose requester
      ended. Tool fix: B99 (Bash hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background
      completion or Monitor; the restart command lists and stops background shells and design processes of the
@@ -2322,3 +2322,26 @@ only). Technical gaps became B84-B98 in STATUS.md.
    the go rework (A10, "build-ready" replaces go) a nested part is build-ready on its own, and a host is build-ready
    only when its nested parts are. Tom noted the go question belongs to the go rework, not to a separate decision
    (B83 extended: a question touching a system under planned rework goes into that item).
+
+#### Judgment rules (decision 3)
+
+Rules from the B79 audit that no hook, check or refusal can test. Each stays prose, with the reason no tool fits.
+
+- #46 A wireframe is rough (regions only): "too polished" is a visual judgment; `flow.ts` and
+  `kit-outside-pages.ts` already catch the structural part (one sketch per screen, no kit outside pages).
+- #51 A reference informs, it is not a template: telling inspiration from copying needs the reference and taste;
+  no diff metric separates the two.
+- #61 Doc agent writes German to Tom, English to the builder and plans: a language check on chat output would
+  misfire on code, paths and quoted English, and the cost of a slip is low.
+- #64 Never answer a design question for the user: whether an answer is a design decision or a technical one is the
+  judgment itself (see #94).
+- #65 While afk, collect questions and sound only when blocked: "afk" and "blocking" are states only the agent
+  knows from the conversation.
+- #69 Write a handoff only when work is left: the hook can see the tree, but not an unrecorded decision or an
+  unfinished step of the user's task.
+- #94 Decide technical questions yourself, ask only product/UX: the split between technical and product is the
+  judgment; the B83 rule (name the owning part, check for a planned rework) narrows it but cannot decide it.
+
+Not judgment rules, so they get a tool (B100): #47 stage order, #48 one open call and word limit, #58 slice plan
+notes, #63 grill round format, #93 comment allowlist. Lifted or moved, so no tool: #84, #85, #86 (freezes lifted,
+decision 2), #91 (go rework, A10).
