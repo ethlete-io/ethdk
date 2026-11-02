@@ -251,6 +251,12 @@ describe('renderIssuesOf', () => {
       'components/inline-dialog': {
         body: page('<div role="dialog" style="margin-top: -60px; height: 80px">Pane</div>'),
       },
+      'components/painted-over': {
+        body: '<div style="position: relative; width: 300px; height: 160px"><header style="position: absolute; z-index: 1; top: 0; left: 0"><div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div></header><p style="position: absolute; z-index: 1; top: 40px; left: 8px; margin: 0">Round picker on top</p></div>',
+      },
+      'components/pane-over-pane': {
+        body: '<div style="position: relative; width: 300px; height: 160px"><div class="et-overlay" role="dialog" style="position: absolute; top: 20px; left: 0; width: 280px; height: 80px; background: white">Pane</div><div class="et-overlay" role="menu" style="position: absolute; top: 40px; left: 8px; background: white">Nested menu</div></div>',
+      },
     });
     const config = readConfig(target) ?? {};
 
@@ -270,6 +276,10 @@ describe('renderIssuesOf', () => {
       [
         'components/half-opaque',
         'the open overlay pane lets "Round one text below" (p) under it show through - give the pane an opaque background',
+      ],
+      [
+        'components/painted-over',
+        '"Round picker on top" (p) paints over the open overlay pane - lift the pane above it (z-index or stacking context)',
       ],
       [
         'components/see-through',

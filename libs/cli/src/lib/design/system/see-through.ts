@@ -19,7 +19,8 @@ const OPAQUE = 0.95;
 /**
  * The statements of the see-through check inside the frame script of `render-check`. They use `root` and `report`
  * of that script. Each point where text outside an open overlay pane lies under that pane must be covered by an
- * opaque background painted above the text, or the text shows through. They finish finite animations and force `pointer-events` on for the
+ * opaque background painted above the text, or the text shows through; text outside any overlay that paints above
+ * the pane is reported too. They finish finite animations and force `pointer-events` on for the
  * hit test and restore it.
  */
 export const SEE_THROUGH_STATEMENTS = `
@@ -66,10 +67,12 @@ export const SEE_THROUGH_STATEMENTS = `
         for (const node of texts) {
           const owner = node.parentElement;
           if (pane.contains(owner) || !shown(owner)) continue;
+          const floats = owner.closest(${JSON.stringify(OVERLAY_PANE_SELECTOR + ', [role="tooltip"]')}) !== null;
           const range = document.createRange();
           range.selectNodeContents(node);
           let total = 0;
           let through = 0;
+          let above = 0;
           for (const rect of range.getClientRects()) {
             const left = Math.max(rect.left, box.left, 0);
             const top = Math.max(rect.top, box.top, 0);
@@ -83,16 +86,22 @@ export const SEE_THROUGH_STATEMENTS = `
                 const stack = document.elementsFromPoint(x, y);
                 const under = stack.indexOf(owner);
                 const paneAt = stack.findIndex((element) => element === pane || pane.contains(element));
-                if (under < 0 || paneAt < 0 || paneAt > under) continue;
+                if (under < 0 || paneAt < 0) continue;
                 total++;
+                if (paneAt > under) {
+                  if (!floats) above++;
+                  continue;
+                }
                 const clear = stack.slice(0, under).reduce((rest, element) => (element.contains(owner) ? rest : rest * (1 - coverOf(element))), 1);
                 if (1 - clear < ${OPAQUE}) through++;
               }
           }
-          if (through === 0) continue;
+          if (through === 0 && above === 0) continue;
           const text = node.textContent.trim().replace(/\\s+/g, ' ');
           const name = owner.localName + (owner.classList[0] ? '.' + owner.classList[0] : '');
-          report(${JSON.stringify(SEE_THROUGH_RULE)}, pane, 'the open overlay pane lets "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" (' + name + ') under it show through at ' + through + ' of ' + total + ' points - give the pane an opaque background');
+          const quoted = '"' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '" (' + name + ')';
+          if (above > 0) report(${JSON.stringify(SEE_THROUGH_RULE)}, pane, quoted + ' paints over the open overlay pane at ' + above + ' of ' + total + ' points - lift the pane above it (z-index or stacking context)');
+          else report(${JSON.stringify(SEE_THROUGH_RULE)}, pane, 'the open overlay pane lets ' + quoted + ' under it show through at ' + through + ' of ' + total + ' points - give the pane an opaque background');
           break;
         }
       }
