@@ -231,7 +231,7 @@ describe('a denied class in the flows', () => {
     expect(
       await designAccept({
         target,
-        argv: ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', 'Tom approved it'],
+        argv: ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Tom approved it'],
         invocation: 'et design',
       }),
     ).toBe(1);

@@ -154,9 +154,9 @@ describe('part go', () => {
 
     expect(await go('components/chip', '--product', 'app-a')).toBe(2);
     expect(await go('components/gone', '--product', 'app-a', '--by', 'tom')).toBe(1);
-    expect(await go('components/chip', '--product', 'app-a', '--by', 'claude-opus-5-5')).toBe(0);
-    expect(lines.at(-1)).toBe('components/chip has a go in app-a');
-    expect(Object.keys(readGo(dir))).toEqual(['components/chip']);
+    expect(await go('components/chip', '--product', 'app-a', '--by', 'claude-opus-5-5')).toBe(1);
+    expect(lines.at(-1)).toContain('only Tom grants a go; agents report ready instead');
+    expect(readGo(dir)).toEqual({});
   });
 
   const tomCheckout = () => {
@@ -243,8 +243,9 @@ describe('part go', () => {
 
     const other = goWith(target, { isTTY: false, ask: async () => 'n' });
 
-    expect(await other.go('components/chip', '--product', 'app-a', '--by', 'claude-opus-5-5')).toBe(0);
+    expect(await other.go('components/chip', '--product', 'app-a', '--by', 'claude-opus-5-5')).toBe(1);
     expect(other.asked).toEqual([]);
+    expect(readGo(dir)).toEqual({});
   });
 
   it('et design go --batch shows every entry once and records them all as Tom on yes', async () => {

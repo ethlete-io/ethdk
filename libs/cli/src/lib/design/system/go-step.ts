@@ -5,7 +5,7 @@ import { repoRootOf } from './reachable-files';
 import { partKeyOf } from './resolve-product';
 import { configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';
-import { DesignStep, isTom } from './tom-confirm';
+import { DesignStep, onlyTomRefusalOf } from './tom-confirm';
 
 /** A go of one part as a step, or why it may not run; a go by Tom carries the notes of its decision check. */
 export const goStepOf = (options: {
@@ -17,6 +17,10 @@ export const goStepOf = (options: {
   draw?: DrawStates;
 }): DesignStep | string => {
   const { target, by, note } = options;
+  const refused = onlyTomRefusalOf({ by, action: 'go' });
+
+  if (refused) return refused;
+
   const config = configOf(target);
   const parsed = parseTarget(options.part);
 
@@ -32,15 +36,11 @@ export const goStepOf = (options: {
 
   if (typeof located === 'string') return located;
 
-  let notes: string[] = [];
+  const checked = tomGoCheckOf({ root: repoRootOf(product), note, files: located.design.files });
 
-  if (isTom(by)) {
-    const checked = tomGoCheckOf({ root: repoRootOf(product), note, files: located.design.files });
+  if ('refusal' in checked) return checked.refusal;
 
-    if ('refusal' in checked) return checked.refusal;
-
-    notes = checked.notes;
-  }
+  const { notes } = checked;
 
   return {
     line: [`go ${product.name} ${part}`, note, ...notes].filter(Boolean).join(' - '),

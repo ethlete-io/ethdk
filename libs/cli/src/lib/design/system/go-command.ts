@@ -1,7 +1,7 @@
 import { goBatch } from './go-batch';
 import { goStepOf } from './go-step';
 import { argsOf, authorOf, NEEDS_AUTHOR } from './sketch/cli-args';
-import { isTom, runSteps, tomConfirmRefusalOf, ttyPrompt, WriteCommandOptions } from './tom-confirm';
+import { runSteps, tomConfirmRefusalOf, ttyPrompt, WriteCommandOptions } from './tom-confirm';
 
 export const GO_USAGE =
   'go <layer>/<name> --product <name> --by <name> [--note "Impl Qnn"] | go --batch <file> (Tom confirms every entry)';
@@ -42,14 +42,12 @@ export const designGo = async (options: WriteCommandOptions) => {
     return 1;
   }
 
-  if (isTom(by)) {
-    const refusal = await tomConfirmRefusalOf({ steps: [step], invocation, prompt });
+  const refusal = await tomConfirmRefusalOf({ steps: [step], invocation, prompt });
 
-    if (refusal) {
-      console.error(refusal);
+  if (refusal) {
+    console.error(refusal);
 
-      return 1;
-    }
+    return 1;
   }
 
   return runSteps([step]);

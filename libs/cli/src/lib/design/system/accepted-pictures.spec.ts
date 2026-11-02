@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
 import { designAccept } from './accept-command';
 import { autoAcceptOf, DrawStates, readPictures, StatePictures } from './accepted-pictures';
-import { designGo } from './go-command';
 import { goStateOf, markPartGo, readGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { acceptPart, changedOutsideSketchOf, readAccepted, readMerged, recordMerged } from './sketch/merged-parts';
@@ -186,20 +185,11 @@ describe('autoAcceptOf', () => {
     expect(readAccepted(dir).at(-1)).toMatchObject({ part: CHIP, by: 'tom', auto: true });
   });
 
-  it('stores pictures after design go and design accept', async () => {
+  it('stores pictures after design accept', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });
 
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    expect(
-      await designGo({ target, argv: [CHIP, '--product', 'app-a', '--by', 'claude'], invocation: 'et', draw }),
-    ).toBe(0);
-    expect(readPictures(dir)[CHIP]?.go).toEqual({
-      hash: readGo(dir)[CHIP]?.hash,
-      states: { default: 'a1', hover: 'b2' },
-      slots: true,
-    });
 
     recordMerged({ product: productOf(target), parts: [CHIP] });
     appendFileSync(chip, '// edit\n');
@@ -207,9 +197,10 @@ describe('autoAcceptOf', () => {
     expect(
       await designAccept({
         target,
-        argv: [CHIP, '--product', 'app-a', '--by', 'claude', '--note', 'approved'],
+        argv: [CHIP, '--product', 'app-a', '--by', 'tom', '--note', 'approved'],
         invocation: 'et',
         draw,
+        prompt: { isTTY: true, ask: async () => 'y' },
       }),
     ).toBe(0);
     expect(readPictures(dir)[CHIP]?.review).toEqual({

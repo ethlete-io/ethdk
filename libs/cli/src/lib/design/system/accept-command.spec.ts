@@ -33,9 +33,9 @@ const editedHero = () => {
 
 const draw: DrawStates = async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }]));
 
-const accept = (target: string, argv: string[]) => designAccept({ target, argv, invocation: 'et design', draw });
+const accept = (target: string, argv: string[]) => designAccept({ target, argv, invocation: 'et design', draw, prompt: { isTTY: true, ask: async () => 'y' } });
 
-const FULL = ['elements/hero', '--product', 'acme', '--by', 'claude-opus-5-5', '--note', 'Tom approved the cleanup'];
+const FULL = ['elements/hero', '--product', 'acme', '--by', 'tom', '--note', 'Tom approved the cleanup'];
 
 describe('designAccept', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -49,8 +49,20 @@ describe('designAccept', () => {
     expect(await accept(target, FULL)).toBe(0);
     expect(changedOutsideSketchOf(productOf(target))).toEqual([]);
     expect(readAccepted(productDir)).toEqual([
-      expect.objectContaining({ part: 'elements/hero', by: 'claude-opus-5-5', note: 'Tom approved the cleanup' }),
+      expect.objectContaining({ part: 'elements/hero', by: 'tom', note: 'Tom approved the cleanup' }),
     ]);
+  });
+
+  it('refuses every --by but tom, and writes nothing', async () => {
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line) => void errors.push(String(line)));
+
+    const { target, productDir } = editedHero();
+
+    expect(await accept(target, FULL.map((arg) => (arg === 'tom' ? 'claude-opus-5-5' : arg)))).toBe(1);
+    expect(errors.join('\n')).toContain('only Tom grants an accept');
+    expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);
   });
 
   it('refuses a part with no change outside a sketch, and writes nothing', async () => {

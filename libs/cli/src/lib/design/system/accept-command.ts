@@ -6,7 +6,14 @@ import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
 import { AcceptRefusal, acceptPart, acceptRefusalOf, readMerged } from './sketch/merged-parts';
 import { parseTarget } from './sketch/sketch';
-import { DesignStep, isTom, runSteps, tomConfirmRefusalOf, ttyPrompt, WriteCommandOptions } from './tom-confirm';
+import {
+  DesignStep,
+  onlyTomRefusalOf,
+  runSteps,
+  tomConfirmRefusalOf,
+  ttyPrompt,
+  WriteCommandOptions,
+} from './tom-confirm';
 
 export const ACCEPT_USAGE =
   'accept <layer>/<name> --product <name> --by <model id> --note <why the user approved the direct edit>';
@@ -97,6 +104,10 @@ export const acceptStepOf = (options: {
   draw?: DrawStates;
 }): DesignStep | string => {
   const { target, by, note } = options;
+  const refused = onlyTomRefusalOf({ by, action: 'accept' });
+
+  if (refused) return refused;
+
   const config = configOf(target);
 
   if (typeof config === 'string') return config;
@@ -160,14 +171,12 @@ export const designAccept = async (options: WriteCommandOptions) => {
     return 1;
   }
 
-  if (isTom(by)) {
-    const refusal = await tomConfirmRefusalOf({ steps: [step], invocation, prompt: options.prompt ?? ttyPrompt() });
+  const refusal = await tomConfirmRefusalOf({ steps: [step], invocation, prompt: options.prompt ?? ttyPrompt() });
 
-    if (refusal) {
-      console.error(refusal);
+  if (refusal) {
+    console.error(refusal);
 
-      return 1;
-    }
+    return 1;
   }
 
   return runSteps([step]);
