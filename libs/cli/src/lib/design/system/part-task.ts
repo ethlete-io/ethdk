@@ -207,8 +207,8 @@ const relativeImportsOf = (file: string, source: string) =>
   );
 
 /**
- * The app files that wire the part in: each file of the app that imports the part's component folder, the files it
- * imports relatively inside the app, and the spec next to each.
+ * The app files that wire the part in: each non-spec file under the app's `src` folder that imports the part's component
+ * folder, directly or through other such files, and the part's own spec.
  */
 export const wiringFilesOf = (options: {
   files: string[];
@@ -216,31 +216,34 @@ export const wiringFilesOf = (options: {
   read: (file: string) => string | null;
 }) => {
   const dir = posix.dirname(options.component);
-  const app = `${options.component.split('/').slice(0, 2).join('/')}/`;
-  const appFiles = options.files.filter((file) => file.startsWith(app) && !file.startsWith(`${dir}/`));
+  const src = `${options.component.split('/').slice(0, 3).join('/')}/`;
   const existing = new Set(options.files);
   const resolved = (target: string) =>
     [`${target}.ts`, target, `${target}/index.ts`].find((candidate) => existing.has(candidate)) ?? null;
-  const importsOf = (file: string) => {
-    const source = /\.ts$/u.test(file) ? options.read(file) : null;
+  const candidates = options.files
+    .filter((file) => file.startsWith(src) && !file.startsWith(`${dir}/`))
+    .filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts'))
+    .map((file) => {
+      const source = options.read(file);
 
-    return source === null ? [] : relativeImportsOf(file, source);
-  };
-  const importers = appFiles.filter((file) =>
-    importsOf(file).some((target) => target === dir || target.startsWith(`${dir}/`)),
-  );
-  const wiring = new Set(
-    importers.flatMap((file) => [
-      file,
-      ...importsOf(file)
-        .map(resolved)
-        .filter((target): target is string => target !== null && appFiles.includes(target)),
-    ]),
-  );
+      return { file, imports: source === null ? [] : relativeImportsOf(file, source) };
+    });
+  const wiring = new Set([options.component.replace(/\.ts$/u, '.spec.ts')]);
+  const importsWiring = (target: string) =>
+    target === dir || target.startsWith(`${dir}/`) || wiring.has(resolved(target) ?? '');
 
-  return appFiles.filter(
-    (file) => wiring.has(file) || (file.endsWith('.spec.ts') && wiring.has(file.replace(/\.spec\.ts$/u, '.ts'))),
-  );
+  for (let grown = true; grown;) {
+    grown = false;
+
+    for (const { file, imports } of candidates) {
+      if (!wiring.has(file) && imports.some(importsWiring)) {
+        wiring.add(file);
+        grown = true;
+      }
+    }
+  }
+
+  return options.files.filter((file) => wiring.has(file));
 };
 
 /** The files git tracks under a folder at a revision. */
