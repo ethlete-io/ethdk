@@ -76,21 +76,44 @@ describe('identicalRenderLinesOf', () => {
     ]);
   });
 
-  it('names a variant whose first state draws like the first state of an earlier variant', async () => {
+  it('names a variant whose first changed state draws like the first changed state of an earlier variant', async () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { default: 1, hover: 3 } });
 
     expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
-      'elements/hero variant b first draws default with the same pixels as variant a draws first, so the Studio sketch view shows identical frames - make a state the variant changes its first state',
+      'elements/hero variant b first changes default, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant b',
     ]);
   });
 
-  it('names a lone variant whose first state draws like the product while another state changes', async () => {
+  it('accepts the variant once a state that draws differently is its first changed state', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { default: 1, hover: 3 } });
+    const reordered: SketchPartLoader = async ({ sketch: drawn }) => ({
+      default: {
+        note: 'n',
+        states: drawn?.variant === 'b' ? { hover: {}, default: {} } : { default: {}, hover: {} },
+        render: () => ({ body: '', styles: '' }),
+      },
+    });
+
+    expect(await identicalRenderLinesOf({ product, sketch, load: reordered, pictureOf })).toEqual([]);
+  });
+
+  it('compares a variant at its first changed state, not at a state it draws like the product', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { hover: 1 } });
+
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+      'elements/hero variant b first changes hover, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant b',
+    ]);
+  });
+
+  it('accepts a lone variant that draws its first state like the product and changes another one', async () => {
     const { product, sketch } = acme(['a']);
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({ a: { hover: 1 } }) })).toEqual([
-      'elements/hero variant a first draws default with the same pixels as Aktuell draws first, so the Studio sketch view shows identical frames - make a state the variant changes its first state',
-    ]);
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({ a: { hover: 1 } }) })).toEqual(
+      [],
+    );
   });
 
   it('leaves a lone variant that draws like the product to the no-visible-change merge', async () => {

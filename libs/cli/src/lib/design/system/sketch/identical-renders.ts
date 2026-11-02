@@ -57,27 +57,16 @@ const drawingOf = async (options: {
 const sameInEveryState = (drawn: Drawn, other: Drawn) =>
   drawn.states.size > 0 && [...drawn.states].every(([state, hash]) => other.states.get(state) === hash);
 
-const shownOf = (drawn: Drawn, order: string[]) => {
-  const state = order.find((name) => drawn.states.has(name));
-
-  return state === undefined ? null : { state, hash: drawn.states.get(state) };
-};
-
-const sameFirstFrameOf = (options: { drawn: Drawn; others: Drawn[]; order: string[] }) => {
-  const { drawn, others, order } = options;
-  const shown = shownOf(drawn, order);
-
-  return shown ? others.find((other) => shownOf(other, order)?.hash === shown.hash) : undefined;
-};
+const firstChangeOf = (drawn: Drawn, current: Drawn | null) =>
+  [...drawn.states]
+    .map(([state, hash]) => ({ state, hash }))
+    .find(({ state, hash }) => current?.states.get(state) !== hash) ?? null;
 
 const likeOf = (drawn: Drawn) => (drawn.name === AKTUELL ? AKTUELL : `variant ${drawn.name}`);
 
 const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: string }): string[] => {
   const { variants, current, of } = options;
   const refusals: string[] = [];
-  const order = [
-    ...new Set([...(current ? current.states.keys() : []), ...variants.flatMap((drawn) => [...drawn.states.keys()])]),
-  ];
 
   variants.forEach((drawn, index) => {
     const earlier = variants.slice(0, index);
@@ -90,12 +79,14 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
     if (!twin) {
       if (current && sameInEveryState(drawn, current)) return;
 
-      const first = sameFirstFrameOf({ drawn, others: [...earlier, ...(current ? [current] : [])], order });
-      const shown = shownOf(drawn, order);
+      const shown = firstChangeOf(drawn, current);
+      const like = earlier
+        .map((other) => ({ other, first: firstChangeOf(other, current) }))
+        .find(({ first }) => first !== null && first.hash === shown?.hash);
 
-      if (first && shown)
+      if (shown && like?.first)
         refusals.push(
-          `variant ${drawn.name}${of} first draws ${shown.state} with the same pixels as ${likeOf(first)} draws first, so the Studio sketch view shows identical frames - make a state the variant changes its first state`,
+          `variant ${drawn.name}${of} first changes ${shown.state}, which draws the same pixels as ${likeOf(like.other)} draws at its first change ${like.first.state}, so the Studio sketch view shows identical frames - make a state that draws differently the first changed state of variant ${drawn.name}`,
         );
 
       return;
@@ -114,8 +105,8 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
  * variant, or like the product's part when the sketch has more than one live variant. Of two variants that draw
  * alike in every state, only the later one is named. A lone variant like the product is a change without a visible
  * difference, which `sketch ready` merges on its own, so it is never named. A state that fails to draw counts as
- * different. Any other variant is named when the first state the Studio sketch view shows of it (the product's states
- * first, then the variants' new ones) draws like the first one shown of the product or of an earlier variant.
+ * different. Any other variant is named when its first changed state, in its own state order, draws like the first
+ * changed state of an earlier variant.
  */
 export const identicalRenderLinesOf = async (options: {
   product: ResolvedProduct;
