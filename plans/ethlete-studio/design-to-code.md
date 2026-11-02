@@ -2007,6 +2007,17 @@ Q16, from finding 126:
   Studio button.
 - The sketch-view sketch (finding 148) is drawn on this flow.
 
+### Title bar implementation decisions (Tom, 2026-11-02)
+
+- The go for components/title-bar after the `implements` link: Tom grants it himself in Studio (granted). An agent
+  never grants a go in Tom's name; the auto-mode classifier blocks it anyway.
+- The search button "studio / Part" ships now and does nothing on click until the command palette (A2) exists.
+- The macOS states draw the traffic-light window controls as demo content on the left, in a slot that compare
+  empties (the OS draws the real ones). Today the left side of `macos` and `macos-update` is empty, so the state
+  does not read as macOS. Visible design change: it needs a new go from Tom.
+- Technical (grill): os/left/right/update become app inputs; the layout follows the design (grid h-8, 1fr | auto |
+  1fr), not the app's flex h-9.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
