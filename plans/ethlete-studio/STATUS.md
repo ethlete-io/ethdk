@@ -111,6 +111,11 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B32** Harness-Render mit leeren Inputs meldet Demo-Text, der trotzdem sichtbar bleibt (Befund 104).
 - **B33** Prüfen, ob noch offen: `inventory.json` nicht Prettier-formatiert; erzwungenes Hover/Active auch auf
   disabled-Zuständen (dl, Systemlehren 01.11.).
+- **B34** Studio zeigt einen Sketch, der nicht `ready` ist, als „in Arbeit“, je Variante „Agent baut gerade“
+  (Rückschritt; Befund 136).
+- **B35** `sketch check` und `sketch ready` scheitern an einer Variante, die noch das unveränderte Gerüst ist (Befund 136).
+- **B36** Sketch-Ansicht: Rahmen in der gefitteten Größe des Teils, Spalten = Varianten + 1, Platz für den Kopf, „neu“
+  statt leerem „Aktuell“; E2E mit kurzem und neuem Teil (Befund 136).
 
 ## C. CLI: Tempo und Ablauf
 

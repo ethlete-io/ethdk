@@ -1326,6 +1326,16 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      spec before push. Why no check caught it: no spec measured hit rate or checked the key against the real build
      inputs. Lesson: a cache key is derived from what the build reads, and a spec proves both a hit on an unrelated edit
      and a miss on a real input.
+136. The components/title-bar sketch looked broken in Studio (Tom, 2026-11-02, screenshot): empty variant frames,
+     1440x900 frames for a 36 px bar, the "Variante c" head over the "Aktuell" column, an empty "Aktuell" frame for a
+     new part, English variant notes, and no "agent is building" state on the variants (a regression). Causes
+     (builder): the sketch was not `sketch ready` yet, b and c were untouched `sketch new` scaffolds, and Studio shows
+     an in-progress sketch like a finished one; sketches.component.html gives every frame 1440x900 and fixed 3 columns
+     with a row gap smaller than the variant head; sketch-view always puts "Aktuell" first without checking that the
+     part exists; no template sets the note language. Why no check caught it: a scaffold builds and renders, so
+     `sketch check` passes; `sketch check` and `shot` draw in their own fitted frames, and nothing renders Studio's
+     own sketch view with a short or a new part. Tool fixes: B34-B36. Lesson: the tool has to check the view Tom
+     actually looks at, not only the parts inside it.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
