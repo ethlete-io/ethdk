@@ -1,6 +1,6 @@
 import { definePart, drawing, html, ng } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
-import { controls, mark, QUESTION, RESTART_NOTE, states, studioWindow, type Props } from './shared/window';
+import { controls, grid, mark, QUESTION, RESTART_NOTE, states, studioWindow, type Props } from './shared/window';
 import styles from './update-dialog.css?inline';
 
 export default definePart({
@@ -9,6 +9,7 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
   states,
+  grid,
   controls,
   render: async (props: Props) => {
     const dialog = await anchoredDialog.render({
@@ -21,8 +22,8 @@ export default definePart({
             <span class="text-et-surface-muted">${RESTART_NOTE}</span>
           </div>
           <div class="flex justify-end gap-space-2">
-            <button et-button ${mark('later', props)} type="button" variant="outline" color="surface" size="xs">Später</button>
-            <button et-button ${mark('restart', props)} type="button" variant="filled" color="brand" size="xs">Neu starten</button>
+            ${mark('later', '<button et-button type="button" variant="outline" color="surface" size="xs">Später</button>', props)}
+            ${mark('restart', '<button et-button type="button" variant="filled" color="brand" size="xs">Neu starten</button>', props)}
           </div>
         </div>`,
         { imports: ['BUTTON_IMPORTS'] },
