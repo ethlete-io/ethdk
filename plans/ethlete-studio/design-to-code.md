@@ -2479,3 +2479,10 @@ decision 2), #91 (go rework, A10).
      `ready` reports the pairwise pixel share between variants in the round's leading states and refuses below a
      floor). Q2 decided by Tom: reject r2 b/c (--by tom) and add agent-only `sketch withdraw` for pixel-identical
      own variants (finding 184).
+     Cause (builder): `ready` refuses only on exact pixel equality of the first changed state; no notion of the
+     round's question states, no threshold, so g-j passed with a few hundred px of note text and offsets. Tool fix
+     (decided, technical): a round names its question states (`sketch round --asks zoom-7,zoom-200`, default: the
+     states the round added); `ready` compares every variant pair in each and refuses below ~2 % visible diff of the
+     frame area, ignoring text-only diffs in the variant-note region ("g and h look alike in zoom-7"). Lands with the
+     withdraw slice. Both Q2 actions were blocked by the builder's permission guard as acts in Tom's name / self-
+     modification; Tom has to run or confirm them in the builder session himself.
