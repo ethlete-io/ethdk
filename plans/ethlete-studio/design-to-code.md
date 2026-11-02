@@ -2604,6 +2604,12 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   `sketch.status` alone. pages/sketches draws the "Wartet auf deine Wahl" state first.
 - No per-variant status (Tom: too much). The "zeichnet diese Variante" placeholder stays for a variant without a
   picture.
+- pages/sketches round "Matrix und Zustandsnamen": Tom merged variant a (2026-11-02). The go on pages/sketches is
+  still the one from 11:14 and must be given anew by Tom.
+- Structure-only rounds (Tom, finding 208): a round whose variants differ only in code and draw the same pixels is not
+  a design choice. The `sketch ready` refusal stays as is (no "same pixels" waiver). components/zoom-chip is
+  withdrawn; Tom's choice for it (variant a: reset is a plain SDK transparent sm button, no own part) is applied as a
+  code change. Such questions come to Tom as plain questions, or are decided technically.
 - Open for later: the drawing placeholder "GPT-6.1 Sol zeichnet diese Variante" wraps hard in narrow columns.
 
 193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
