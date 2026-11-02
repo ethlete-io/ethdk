@@ -19,6 +19,7 @@ import {
   noteFailure,
   sendShot,
   finished,
+  heldAnimations,
   awaitSettled,
   ShotFailedError,
   ShotTimeoutError,
@@ -430,6 +431,7 @@ export const createPartShooter = (options: {
         await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
         await awaitSettled(page);
         await page.evaluate(finished);
+        await page.evaluate(heldAnimations);
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));
         if (frame.pan) await page.evaluate(panScriptOf(frame.pan));

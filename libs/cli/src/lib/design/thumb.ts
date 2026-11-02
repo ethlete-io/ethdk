@@ -112,6 +112,16 @@ export const finished = `document.getAnimations()
   .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
   .forEach((animation) => animation.finish())`;
 
+/**
+ * Cancels each running infinite animation, as a screenshot with disabled animations does in the app picture, so both
+ * pictures show its start frame; a paused one or one with a playback rate of 0 keeps its held frame.
+ */
+export const heldAnimations = `document.getAnimations()
+  .filter((animation) => animation.effect?.getComputedTiming().endTime === Infinity)
+  .filter((animation) => animation.playState === 'running' && animation.playbackRate !== 0)
+  .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
+  .forEach((animation) => animation.cancel())`;
+
 export type DrawPriority = 'high' | 'low';
 
 /**
