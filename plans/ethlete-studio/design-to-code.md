@@ -2290,3 +2290,22 @@ Merges committed: 9fe0b8a41 (title bar + title search + icons), f31a7febb (updat
 subagents, one per slice: causes of findings 166 and 167; B65 go auto-carry with slots drawn; B72 CONTROL-STATE;
 B66 harness host width; B75 identical-renders first changed state; `--et-kbd-color`; B77 background-only hook;
 zoom-chip `target` only in interaction rows.
+
+### Rule audit decisions (2026-11-02)
+
+From the B79 audit (.claude/handoffs/agent-results/b79-rule-audit.md: 100 rules, 17 enforced, 22 partly, 61 prose
+only). Technical gaps became B84-B98 in STATUS.md.
+
+1. Push: the builder may push `next` without asking when pre-push is green. Recorded in the builder-agent skill; a
+   hook allows push only to `next`.
+2. Freezes lifted: the design freeze (Q253/Q254), "no new process tooling until the MVP" and "no work on pages/flows
+   or pages/inventory until the MVP" existed to finish the MVP, which is done.
+3. Judgment rules: rules no tool can check go into one short list, each with one sentence why no tool fits. Every
+   other rule needs a hook, check or refusal.
+4. Claude config: the settings.json hook entries of B77 (background design commands) and B87 (git safety) are
+   approved by Tom; each new settings.json change needs its own approval.
+5. Sketches view has no selection: click and pan select nothing and draw no outline; Shift+2 fits the frame nearest
+   the view centre (B97). The outline Tom saw came from a window refocus (finding 158).
+6. pages/inbox sidebar declares its scroll instead of shortening demo data (B98).
+7. Tom's uncommitted sketch variants may be edited by the builder for mechanical fixes that change no pixels,
+   proven by before/after shots; the builder does not commit them.

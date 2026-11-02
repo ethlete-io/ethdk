@@ -248,6 +248,10 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Commit-Gate genauso; eine Regel verweigert Zeichnen beim Modul-Laden (Befund 172).
 - **B96** sdk components/stream: Consent- und Player-Error-Karte bei 320 px 3 px zu kurz (NESTED-SCROLL-Treffer);
   Fix im Stream-CSS in libs/components.
+- **B97** Sketches-Ansicht ohne Auswahl: Klick und Pan wählen nichts aus, kein Rahmen; Shift+2 zoomt auf den Frame
+  nächst der Ansichtsmitte (Befund 158, Entscheidung 02.11.).
+- **B98** pages/inbox: die Seitenleisten-Liste scrollt erklärt (Design zeigt das Scrollen, z. B. Ausblenden unten),
+  keine gekürzten Demo-Daten; danach Toms Go (NESTED-SCROLL-Treffer).
 
 ## C. CLI: Tempo und Ablauf
 
