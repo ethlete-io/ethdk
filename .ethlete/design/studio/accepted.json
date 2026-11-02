@@ -1735,5 +1735,42 @@
     "note": "approved by a click in Studio",
     "hash": "e1357c586c79616d",
     "at": "2026-11-01T23:33:20.154Z"
+  },
+  {
+    "part": "components/title-bar",
+    "by": "design check",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "77e55602792a2e6f",
+    "at": "2026-11-02T08:51:11.718Z",
+    "auto": true
+  },
+  {
+    "part": "components/title-bar",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "ee7696a17b0c043c",
+    "at": "2026-11-02T09:41:08.322Z"
+  },
+  {
+    "part": "components/update-dialog",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "ac56332d0f1f3ed0",
+    "at": "2026-11-02T09:50:22.189Z"
+  },
+  {
+    "part": "pages/sketches",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "0b4562dcde49225c",
+    "at": "2026-11-02T11:08:36.945Z",
+    "auto": true
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "user",
+    "note": "approved by a click in Studio",
+    "hash": "b319c9b68034f906",
+    "at": "2026-11-02T15:51:14.079Z"
   }
 ]

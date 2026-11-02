@@ -7,7 +7,7 @@
   "components/title-bar": "ee7696a17b0c043c",
   "components/tree-row": "39cd74bbb91664ba",
   "components/update-dialog": "ac56332d0f1f3ed0",
-  "components/zoom-chip": "495a0ba0d6d2e17a",
+  "components/zoom-chip": "b319c9b68034f906",
   "elements/canvas-frames": "2ef65299d3a0c178",
   "elements/part-tree": "4decbdf07174f4c8",
   "elements/shell-main": "ae33c034c1dd289c",
@@ -23,7 +23,7 @@
   "pages/inbox": "906d659aaeb8d41a",
   "pages/inventory": "a050641c3c773f51",
   "pages/merge": "c017306ebbc49a60",
-  "pages/sketches": "0b4562dcde49225c",
+  "pages/sketches": "4e3b1022c85e4d70",
   "pages/start": "0ba0bebf7cccdeaa",
   "pages/system": "e1357c586c79616d"
 }

@@ -10,6 +10,11 @@
     "pages/library": "db7e213adaa1d82e",
     "fixtures.ts": "cc87e40089c46ba6"
   },
+  "decision": {
+    "kind": "pick",
+    "variant": "c",
+    "decidedAt": "2026-11-01T22:28:16.847Z"
+  },
   "rounds": [
     {
       "key": "r1",

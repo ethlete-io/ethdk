@@ -1,11 +1,12 @@
 {
   "components/canvas-viewport": {
     "go": {
-      "hash": "a1b78e29542a5eb7",
+      "hash": "eaa9a97ff3365f42",
       "states": {
-        "canvas": "90b7ec8aa5e8937a",
-        "canvas-focus-visible": "8dbdbf4df9782098"
-      }
+        "canvas": "c343dd136c1a393c",
+        "canvas-focus-visible": "b4c6780582b952b8"
+      },
+      "slots": true
     }
   },
   "components/comment-pin": {
@@ -60,10 +61,11 @@
         "selected-resolved-hover": "ba09fbffd7412460",
         "selected-resolved-active": "976fcaea7b76ceee",
         "selected-resolved-focus-visible": "54223a8a9863cb01"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "26edf8a5ce1cb8d5",
+      "hash": "d01a9dd03b7d809f",
       "states": {
         "initials": "d12cb5d531da963b",
         "initials-hover": "7167613dee3e5e9b",
@@ -113,12 +115,13 @@
         "selected-resolved-hover": "ba09fbffd7412460",
         "selected-resolved-active": "976fcaea7b76ceee",
         "selected-resolved-focus-visible": "54223a8a9863cb01"
-      }
+      },
+      "slots": true
     }
   },
   "components/disclosure": {
     "go": {
-      "hash": "58b440ef4e8b0bc5",
+      "hash": "1d927e19f6ea69ca",
       "states": {
         "rest": "050eac4e15569696",
         "rest-hover": "add2de56fedc0630",
@@ -132,18 +135,20 @@
         "xs-hover": "5abaf1413a8dc578",
         "xs-active": "3935a50575e6b756",
         "xs-focus-visible": "e540190f03246628"
-      }
+      },
+      "slots": true
     }
   },
   "components/error-toast": {
     "go": {
-      "hash": "6c84f7059293204c",
+      "hash": "b1b73d5c0c693b59",
       "states": {
         "close": "e5e9c32d217dbe0c",
         "close-hover": "ab32c0f8892b0cfc",
         "close-active": "01c3d405bdced1c4",
         "close-focus-visible": "30fae495207f195a"
-      }
+      },
+      "slots": true
     }
   },
   "components/shell-collapse": {
@@ -154,16 +159,18 @@
         "collapse-hover": "b37fedd82bb78962",
         "collapse-active": "cb6a5163ecf4701d",
         "collapse-focus-visible": "b05aebd6079ce966"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "5bd5c9ce8c762016",
+      "hash": "a290b2aa3e5e2c2d",
       "states": {
         "collapse": "ff0cfbfb16c9272f",
         "collapse-hover": "b37fedd82bb78962",
         "collapse-active": "cb6a5163ecf4701d",
         "collapse-focus-visible": "b05aebd6079ce966"
-      }
+      },
+      "slots": true
     }
   },
   "components/shell-project-switch": {
@@ -181,10 +188,11 @@
         "project.option-hover": "6d2098c678e16050",
         "project.option-focus-visible": "4463d4d7328f8585",
         "project.option-selected": "d358745c9d1db36b"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "c50d2fb5eef0e812",
+      "hash": "f27b6c8294b63991",
       "states": {
         "closed": "957ecf97b7264ab9",
         "closed-hover": "69c002a92c93cbe2",
@@ -197,37 +205,86 @@
         "project.option-hover": "6d2098c678e16050",
         "project.option-focus-visible": "4463d4d7328f8585",
         "project.option-selected": "d358745c9d1db36b"
-      }
+      },
+      "slots": true
     }
   },
   "components/title-bar": {
     "review": {
-      "hash": "77e55602792a2e6f",
+      "hash": "ee7696a17b0c043c",
       "states": {
-        "linux-close": "f7732dd78202516a",
-        "linux-close-update": "eec7e33529729c6a",
-        "linux-full": "353f7c4cd37033f3",
-        "linux-full-update": "3a1ed615cebdf2de",
-        "linux-left": "6623c9fd88379d7d",
-        "windows": "de32276610097372",
-        "windows-update": "33faf57f14afaf9f",
-        "macos": "3877a803dd11170a",
-        "macos-update": "3c1e18db13c8affb"
-      }
+        "linux-full-update": "5b12eacaa5c5afe2",
+        "linux-full-update-hover": "7736534ef896ee0b",
+        "linux-full-update-active": "2c34101181be9636",
+        "linux-full-update-focus-visible": "89b5ba658d915958",
+        "linux-left": "07394e6a387567bc",
+        "linux-left-hover": "38e5e59bfcb8fa28",
+        "linux-left-active": "6a20da1d9641fba4",
+        "linux-left-focus-visible": "38320ab935649dfc",
+        "linux-close": "0c7e4f126b340f88",
+        "linux-close-hover": "7eba732a687ab78e",
+        "linux-close-active": "07d7bdfcb29dc28d",
+        "linux-close-focus-visible": "1090b78a579a565b",
+        "windows": "ee25a590198deff7",
+        "windows-hover": "194ceb6565123ac3",
+        "windows-active": "bfadc2883b16f25e",
+        "windows-focus-visible": "b82ad6417b168dc8",
+        "windows-update": "54068ec0f132f7c2",
+        "windows-update-hover": "c42922696e3009ad",
+        "windows-update-active": "c72489c560f1c3ac",
+        "windows-update-focus-visible": "e7a95c461cffb91c",
+        "linux-full": "1009de5248de705e",
+        "linux-close-update": "bf0dc6e2486f6ff3",
+        "macos": "46432383b290b56c",
+        "macos-update": "e1b7c78efbec58fc"
+      },
+      "slots": true
     },
     "go": {
-      "hash": "3754faf65978c07f",
+      "hash": "820090ecce636257",
       "states": {
-        "linux-close": "f7732dd78202516a",
-        "linux-close-update": "eec7e33529729c6a",
-        "linux-full": "353f7c4cd37033f3",
-        "linux-full-update": "3a1ed615cebdf2de",
-        "linux-left": "6623c9fd88379d7d",
-        "windows": "de32276610097372",
-        "windows-update": "33faf57f14afaf9f",
-        "macos": "3877a803dd11170a",
-        "macos-update": "3c1e18db13c8affb"
-      }
+        "linux-full-update": "5b12eacaa5c5afe2",
+        "linux-full-update-hover": "7736534ef896ee0b",
+        "linux-full-update-active": "2c34101181be9636",
+        "linux-full-update-focus-visible": "89b5ba658d915958",
+        "linux-left": "07394e6a387567bc",
+        "linux-left-hover": "38e5e59bfcb8fa28",
+        "linux-left-active": "6a20da1d9641fba4",
+        "linux-left-focus-visible": "38320ab935649dfc",
+        "linux-close": "0c7e4f126b340f88",
+        "linux-close-hover": "7eba732a687ab78e",
+        "linux-close-active": "07d7bdfcb29dc28d",
+        "linux-close-focus-visible": "1090b78a579a565b",
+        "windows": "ee25a590198deff7",
+        "windows-hover": "194ceb6565123ac3",
+        "windows-active": "bfadc2883b16f25e",
+        "windows-focus-visible": "b82ad6417b168dc8",
+        "windows-update": "54068ec0f132f7c2",
+        "windows-update-hover": "c42922696e3009ad",
+        "windows-update-active": "c72489c560f1c3ac",
+        "windows-update-focus-visible": "e7a95c461cffb91c",
+        "linux-full": "1009de5248de705e",
+        "linux-close-update": "bf0dc6e2486f6ff3",
+        "macos": "46432383b290b56c",
+        "macos-update": "e1b7c78efbec58fc"
+      },
+      "slots": true
+    }
+  },
+  "components/title-search": {
+    "go": {
+      "hash": "31fd8e3b0ddba98e",
+      "states": {
+        "studio": "2950ab052ab51ff2",
+        "studio-hover": "4f118fa05fa84409",
+        "studio-active": "5b5c63b21560c138",
+        "studio-focus-visible": "1c7bddacf1520bfe",
+        "long": "fad11262c3f0f8c9",
+        "long-hover": "9b966ac5c941d3f0",
+        "long-active": "cb705d22d9dc4cb8",
+        "long-focus-visible": "1430c631537fe0fa"
+      },
+      "slots": true
     }
   },
   "components/tree-row": {
@@ -287,10 +344,11 @@
         "inert-hover": "c0933e08be2b289f",
         "inert-active": "76fff29676a81694",
         "inert-focus-visible": "feb86ce0c48179c0"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "5b12b20a3f362890",
+      "hash": "40111d116d8457b6",
       "states": {
         "tree": "8fb2aaa9016e33a2",
         "leaf": "7b3caf7d0fcde56e",
@@ -345,22 +403,47 @@
         "inert-hover": "c0933e08be2b289f",
         "inert-active": "76fff29676a81694",
         "inert-focus-visible": "feb86ce0c48179c0"
-      }
+      },
+      "slots": true
     }
   },
   "components/update-dialog": {
     "review": {
-      "hash": "3f721990a4a5726b",
+      "hash": "ac56332d0f1f3ed0",
       "states": {
         "open": "5bb8dc1e72f095f6",
-        "long-version": "c3e847c8dcf7bcff",
-        "restart-focus-visible": "3b84eed8f6eb0795"
-      }
+        "long-version": "bed9eca8f738ff1f",
+        "restart": "5bb8dc1e72f095f6",
+        "restart-hover": "57a4d9a4130a6264",
+        "restart-active": "99478c1cacf41027",
+        "restart-focus-visible": "3b84eed8f6eb0795",
+        "later": "5bb8dc1e72f095f6",
+        "later-hover": "086803368f99fcb0",
+        "later-active": "c13337be921e9d77",
+        "later-focus-visible": "d08043e30d4f6641"
+      },
+      "slots": true
+    },
+    "go": {
+      "hash": "3c0907f52b9ccffa",
+      "states": {
+        "open": "5bb8dc1e72f095f6",
+        "long-version": "bed9eca8f738ff1f",
+        "restart": "5bb8dc1e72f095f6",
+        "restart-hover": "57a4d9a4130a6264",
+        "restart-active": "99478c1cacf41027",
+        "restart-focus-visible": "3b84eed8f6eb0795",
+        "later": "5bb8dc1e72f095f6",
+        "later-hover": "086803368f99fcb0",
+        "later-active": "c13337be921e9d77",
+        "later-focus-visible": "d08043e30d4f6641"
+      },
+      "slots": true
     }
   },
   "components/zoom-chip": {
-    "go": {
-      "hash": "19b060128f62ca4f",
+    "review": {
+      "hash": "b319c9b68034f906",
       "states": {
         "out": "0634f58d19ca69e8",
         "out-hover": "7277a079d470616b",
@@ -378,21 +461,33 @@
         "fit-hover": "e876478c84784202",
         "fit-active": "6ecfd4df268826de",
         "fit-focus-visible": "f5dab84794c9f714"
-      }
-    }
-  },
-  "elements/canvas-frames": {
+      },
+      "slots": true
+    },
     "go": {
-      "hash": "36063f35e143b64c",
+      "hash": "8822afa11302d974",
       "states": {
-        "default": "ed58c36697c0e0e9",
-        "out": "b11bc239393d4710",
-        "reset": "5d2478dd59e54791",
-        "in": "950ec1edba139b3b",
-        "fit": "f132eb258862120d"
-      }
+        "out": "0634f58d19ca69e8",
+        "out-hover": "7277a079d470616b",
+        "out-active": "3457f034eb7b0f4e",
+        "out-focus-visible": "2bdc6d1d73d2345e",
+        "reset": "4313085628615cb5",
+        "reset-hover": "6dffd136181707e5",
+        "reset-active": "d369faf5116ef498",
+        "reset-focus-visible": "0d55c86174dd6bb6",
+        "in": "1055041f0bec219e",
+        "in-hover": "23c410af8e78f998",
+        "in-active": "f8a3b0e32ebbf38d",
+        "in-focus-visible": "d8ee8a679a8f23c4",
+        "fit": "4313085628615cb5",
+        "fit-hover": "e876478c84784202",
+        "fit-active": "6ecfd4df268826de",
+        "fit-focus-visible": "f5dab84794c9f714"
+      },
+      "slots": true
     }
   },
+  "elements/canvas-frames": {},
   "elements/part-tree": {
     "review": {
       "hash": "4decbdf07174f4c8",
@@ -402,59 +497,42 @@
         "row-hover": "b614cb0ad28862c6",
         "row-active": "55138ef33a0c56f7",
         "row-focus-visible": "783e5fdcbe4397ed"
-      }
+      },
+      "slots": true
     },
     "go": {
       "hash": "4decbdf07174f4c8",
       "states": {
-        "components-open": "989111c424d10146",
-        "row": "989111c424d10146",
-        "row-hover": "d85a9c64a7493b1e",
-        "row-active": "0ee27be7bc3b5725",
-        "row-focus-visible": "132e89dac62435ea"
-      }
+        "components-open": "ff21ba2be34dd347",
+        "row": "ff21ba2be34dd347",
+        "row-hover": "b614cb0ad28862c6",
+        "row-active": "55138ef33a0c56f7",
+        "row-focus-visible": "783e5fdcbe4397ed"
+      },
+      "slots": true
     }
   },
   "elements/shell-main": {
-    "review": {
-      "hash": "ae33c034c1dd289c",
-      "states": {
-        "project-picker": "de37d6bfa270bc81",
-        "project-picker-focus-visible": "bd6ce2309cc47997",
-        "server-stopped": "40315785b46e7849",
-        "server-starting": "cb79eb7ae748181d",
-        "open": "e193e51195b4641f",
-        "open-focus-visible": "3090c60685e40469",
-        "hidden": "e5e3dd625b652d33",
-        "section": "e193e51195b4641f",
-        "section-hover": "120d1e6f1c7e8fd9",
-        "section-active": "195d3b7112b0df7c",
-        "section-focus-visible": "8deefd21e457a27f",
-        "product": "e193e51195b4641f",
-        "product-hover": "f559231fb235bda0",
-        "product-active": "738325db5a048854",
-        "product-focus-visible": "9ab9a0ec36edf4a1"
-      }
-    },
     "go": {
-      "hash": "15cc00a7e540b1a9",
+      "hash": "dbc75d10fc2de59b",
       "states": {
-        "project-picker": "de37d6bfa270bc81",
-        "project-picker-focus-visible": "bd6ce2309cc47997",
-        "server-stopped": "40315785b46e7849",
-        "server-starting": "cb79eb7ae748181d",
-        "open": "e193e51195b4641f",
-        "open-focus-visible": "3090c60685e40469",
-        "hidden": "e5e3dd625b652d33",
-        "section": "e193e51195b4641f",
-        "section-hover": "120d1e6f1c7e8fd9",
-        "section-active": "195d3b7112b0df7c",
-        "section-focus-visible": "8deefd21e457a27f",
-        "product": "e193e51195b4641f",
-        "product-hover": "f559231fb235bda0",
-        "product-active": "738325db5a048854",
-        "product-focus-visible": "9ab9a0ec36edf4a1"
-      }
+        "project-picker": "63f69d093e5e4710",
+        "project-picker-focus-visible": "c135e8f3c0c79fca",
+        "server-stopped": "fd290f1f763c679f",
+        "server-starting": "3aacaa8dd361f889",
+        "open": "ce160a4987aaa19b",
+        "open-focus-visible": "a38d3c684f45849a",
+        "hidden": "ee4c55084f885ee6",
+        "section": "ce160a4987aaa19b",
+        "section-hover": "76e103ccd41ab9d8",
+        "section-active": "2c045cf5b69cda6b",
+        "section-focus-visible": "d072e1844a07db05",
+        "product": "ce160a4987aaa19b",
+        "product-hover": "bbbe697efc926734",
+        "product-active": "3b1ed45bbe17112c",
+        "product-focus-visible": "6ab40b690e40df95"
+      },
+      "slots": true
     }
   },
   "elements/studio-menu": {
@@ -473,10 +551,11 @@
         "studio-menu.option-hover": "5c56162286cec138",
         "studio-menu.option-focus-visible": "4112ef92ca7a6281",
         "studio-menu.option-active": "5789225e9323665f"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "8fa16006875b4154",
+      "hash": "d302415ba6f521bb",
       "states": {
         "closed": "f3dd9d24f52f32bb",
         "closed-hover": "564c419701f79b50",
@@ -490,7 +569,8 @@
         "studio-menu.option-hover": "5c56162286cec138",
         "studio-menu.option-focus-visible": "4112ef92ca7a6281",
         "studio-menu.option-active": "5789225e9323665f"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/agent-logos": {
@@ -499,7 +579,8 @@
       "states": {
         "hosts": "3c0f61b34f56bd9d",
         "detail": "454dd0743c56c12f"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/colors": {
@@ -510,7 +591,8 @@
         "accent": "8377d8288385012f",
         "warning": "4c63198f09a4cc22",
         "error": "2b0f4d63b0a83080"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/icons": {
@@ -519,7 +601,8 @@
       "states": {
         "catalogue": "c81edabb3b7ddc79",
         "construction": "2444c727f6663db9"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/logo": {
@@ -528,7 +611,8 @@
       "states": {
         "sizes": "3a051d17aa8c4e60",
         "sidebar": "8794ba8cf41e9176"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/motion": {
@@ -536,7 +620,8 @@
       "hash": "7d6fb324da3cced7",
       "states": {
         "scale": "05fc2228fc9daa0d"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/spacing": {
@@ -544,7 +629,8 @@
       "hash": "b8821653c3476a2d",
       "states": {
         "scale": "63c26b8c6be7289c"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/type": {
@@ -552,99 +638,93 @@
       "hash": "55cbe2495f74530a",
       "states": {
         "scale": "9f0ee126b5499e38"
-      }
+      },
+      "slots": true
     }
   },
   "pages/flows": {
     "go": {
       "hash": "cccece4730c02440",
       "states": {
-        "flow": "dff99bb92b0c8a78",
-        "empty": "f125241ece45d39a"
-      }
+        "flow": "bc5ee8ddf1e7ce5d",
+        "empty": "17e02ac0074d5279"
+      },
+      "slots": true
     }
   },
   "pages/inbox": {
     "review": {
       "hash": "906d659aaeb8d41a",
       "states": {
-        "open": "e03b38f65a30e97b",
-        "with-resolved": "d5f8e29bfac826d0",
-        "active-only": "fb9a03214943a523",
-        "active-clear": "facaa8c8b618d0bb",
-        "all-clear": "80b600dbe9b1988c",
-        "comment-draft": "7039d1f3f6226770",
-        "comment-entry": "3f296b2b05e23880",
-        "loading": "c229ea46641daa62",
-        "load-error": "e1741df9cde9b1e0",
-        "long-list": "5654149ec34ca87e"
-      }
-    },
-    "go": {
-      "hash": "38d5fca8fc2bb6ce",
-      "states": {
-        "open": "e03b38f65a30e97b",
-        "with-resolved": "d5f8e29bfac826d0",
-        "active-only": "fb9a03214943a523",
-        "active-clear": "facaa8c8b618d0bb",
-        "all-clear": "80b600dbe9b1988c",
-        "comment-draft": "7039d1f3f6226770",
-        "comment-entry": "3f296b2b05e23880",
-        "loading": "c229ea46641daa62",
-        "load-error": "e1741df9cde9b1e0",
-        "long-list": "5654149ec34ca87e"
-      }
+        "open": "a57d89e2d6e4d79d",
+        "with-resolved": "6b5abbe813919065",
+        "active-only": "04c38b47e6547ce5",
+        "active-clear": "152c02f9525baf06",
+        "all-clear": "e82e0036e225c6c1",
+        "comment-draft": "cf2723a4c9ddadb5",
+        "comment-entry": "1cfd6b1549b60ed5",
+        "loading": "12404fa9d33c97ea",
+        "load-error": "e9109d9cfe666091",
+        "long-list": "9c089f40313c1b53"
+      },
+      "slots": true
     }
   },
   "pages/inventory": {
     "go": {
       "hash": "963f56a2b935222b",
       "states": {
-        "open": "71a8ccbc592e084d",
-        "approvable": "628480d5e9f38568",
-        "approved": "21237fc8d9bbdcb1",
-        "loading": "6ef93f7df89d659d"
-      }
+        "open": "33ee842b2f0b54ba",
+        "approvable": "7dfc68ca4e30f281",
+        "approved": "e0c239f8a27c3f6c",
+        "loading": "e6b6c8948c957159"
+      },
+      "slots": true
     }
   },
   "pages/merge": {
     "review": {
       "hash": "c017306ebbc49a60",
       "states": {
-        "open": "636461b061c19ca6",
-        "unchanged-open": "0383a210ee024bb7",
-        "merge-error": "83f3503f133635b1",
-        "added": "a59af58e135ddf8f",
-        "merging": "d666ba1d85cab779"
-      }
-    },
-    "go": {
-      "hash": "634f233d8e84e8ee",
-      "states": {
-        "open": "636461b061c19ca6",
-        "unchanged-open": "0383a210ee024bb7",
-        "merge-error": "83f3503f133635b1",
-        "added": "a59af58e135ddf8f",
-        "merging": "d666ba1d85cab779"
-      }
+        "open": "e9b80e02d2fef4a1",
+        "unchanged-open": "5b229da7d5eafd36",
+        "merge-error": "60a64f8df765ed66",
+        "added": "9e1a6609d00ff712",
+        "merging": "e8afd6b1ad6e49be"
+      },
+      "slots": true
     }
   },
   "pages/sketches": {
-    "review": {
-      "hash": "9e3f9d5a092a70c3",
-      "states": {
-        "page-sketch": "237b4c0eb1a892ae",
-        "page-100": "4079c3f8cfb0c422",
-        "zoomed-page": "50aead7e94eae58d"
-      }
-    },
     "go": {
-      "hash": "ce8a9598326d4202",
+      "hash": "53cf1054a9ceb964",
       "states": {
-        "page-sketch": "237b4c0eb1a892ae",
-        "page-100": "4079c3f8cfb0c422",
-        "zoomed-page": "50aead7e94eae58d"
-      }
+        "page-sketch": "201170a9b79c85aa",
+        "page-100": "4e1d6832b25987f0",
+        "zoomed-page": "889a4b7c00d8a7c9",
+        "drawing": "73162f1a5a471224",
+        "paused": "18fb403cac6107eb",
+        "paused-reason": "143ebb4738922c19",
+        "idle": "401186f14f975f73",
+        "new-part": "dd2615ce93895ce2",
+        "narrow-part": "29c91a19e1ecfcaa"
+      },
+      "slots": true
+    },
+    "review": {
+      "hash": "4e3b1022c85e4d70",
+      "states": {
+        "page-sketch": "201170a9b79c85aa",
+        "page-100": "4e1d6832b25987f0",
+        "zoomed-page": "889a4b7c00d8a7c9",
+        "drawing": "73162f1a5a471224",
+        "paused": "18fb403cac6107eb",
+        "paused-reason": "143ebb4738922c19",
+        "idle": "401186f14f975f73",
+        "new-part": "dd2615ce93895ce2",
+        "narrow-part": "29c91a19e1ecfcaa"
+      },
+      "slots": true
     }
   },
   "pages/start": {
@@ -653,42 +733,32 @@
       "states": {
         "no-repo": "b9ab9d87b11b749d",
         "no-products": "6cb36e32176445d2"
-      }
+      },
+      "slots": true
     },
     "go": {
-      "hash": "109488ca765065e5",
+      "hash": "3b50fcb2985c697d",
       "states": {
         "no-repo": "b9ab9d87b11b749d",
         "no-products": "6cb36e32176445d2"
-      }
+      },
+      "slots": true
     }
   },
   "pages/system": {
     "review": {
       "hash": "e1357c586c79616d",
       "states": {
-        "part": "ed4f54aa1dfb22dd",
-        "empty": "16defa3c206b227b",
-        "many-states": "ce733c8678999f8e",
-        "fit": "1d4b9ab81ead0681",
-        "points-closed": "6e32d8467e89c6fe",
-        "nothing-open": "74748f5130400465",
-        "part-focus-visible": "c2b8182bd699ca21",
-        "points-closed-focus-visible": "85902ac380c49a0a"
-      }
-    },
-    "go": {
-      "hash": "051c368c61f74fa9",
-      "states": {
-        "part": "ed4f54aa1dfb22dd",
-        "empty": "16defa3c206b227b",
-        "many-states": "ce733c8678999f8e",
-        "fit": "1d4b9ab81ead0681",
-        "points-closed": "6e32d8467e89c6fe",
-        "nothing-open": "74748f5130400465",
-        "part-focus-visible": "c2b8182bd699ca21",
-        "points-closed-focus-visible": "85902ac380c49a0a"
-      }
+        "part": "253839ff437533ed",
+        "empty": "f932d40afa6126cc",
+        "many-states": "b7b0928dd3e7948d",
+        "fit": "0b973541539c0c96",
+        "points-closed": "00437d5b1d8f6eaa",
+        "nothing-open": "d4ae1ca95980a11d",
+        "part-focus-visible": "f984687ed281e54b",
+        "points-closed-focus-visible": "27fa860380d4c643"
+      },
+      "slots": true
     }
   }
 }
