@@ -1734,6 +1734,10 @@ check` fails a part with a varying design prop that has no app input and is not 
      last committed design - only a manual before/after found it. Tool fix: B94 (never draw from stale dist: rebuild
      or refuse), B78 extended (state compare against the last committed design). Lesson: a warning in a long log is
      not a gate; a picture from stale code is worse than no picture.
+172. pages/sketches no longer renders: "location is not defined", raised from the title-search part's render
+     (builder, 2026-11-02). It started within this wave (kbd-color, B76 shell-main with the embedded title bar, or the
+     rebuilt components dist) and blocks the live check of B75. Cause pending (builder). Also pending: why a commit
+     that breaks a dependent sketch's render passed - which check runs the sketches that embed a changed part.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
