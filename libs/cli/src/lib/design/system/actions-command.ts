@@ -20,6 +20,7 @@ import {
   embeddedOwnersScriptOf,
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
+  isHostElementOf,
   embeddersOf,
   listenEmbeddedScriptOf,
   pairElementsOf,
@@ -467,7 +468,9 @@ export const checkActions = async (options: {
           await context.close();
         }
       });
-      const { paired, missing } = pairElementsOf({ design, app });
+      const hosts = product.config.harness?.hosts ?? [];
+      const notHost = (element: ActionElement) => !isHostElementOf({ key: element.key, hosts });
+      const { paired, missing } = pairElementsOf({ design: design.filter(notHost), app: app.filter(notHost) });
 
       for (const element of missing)
         pushLine({
@@ -692,6 +695,9 @@ export const checkActions = async (options: {
 export const actionLineOf = ({ state, element, input, failure, warning }: Line) =>
   `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
 
+/** The line the action check prints once per run for a host component the product declares. */
+export const hostLineOf = (host: string) => `host ${host}: not checked`;
+
 /** The failed lines `design actions` prints for a part, or why the check could not run. */
 export const partActionFailuresOf = async (options: {
   target: string;
@@ -702,6 +708,7 @@ export const partActionFailuresOf = async (options: {
   start?: StartHarnessServer;
   check?: typeof checkActions;
   checkLive?: typeof checkLiveActions;
+  onNote?: (line: string) => void;
 }): Promise<string[] | { unavailable: string }> => {
   const { target, config, product, part } = options;
   const stale = harnessStaleOf({ target, product });
@@ -717,6 +724,8 @@ export const partActionFailuresOf = async (options: {
   });
 
   if (typeof checked === 'string') return { unavailable: checked };
+
+  for (const host of product.config.harness?.hosts ?? []) options.onNote?.(hostLineOf(host));
 
   const failures = checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
 
@@ -816,6 +825,7 @@ export const designActions = async (options: {
   }
 
   for (const line of checked.lines) if (!printed.has(line)) console.log(actionLineOf(line));
+  for (const host of product.config.harness?.hosts ?? []) console.log(hostLineOf(host));
 
   if (checked.pictures !== null) console.log(`pictures: ${checked.pictures}`);
 

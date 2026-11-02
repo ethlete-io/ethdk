@@ -15,7 +15,7 @@ export const harnessProblemOf = (harness: unknown): string | null => {
   if (typeof harness !== 'object' || harness === null || Array.isArray(harness))
     return `harness must be { "app": "<repo path of the app>", "map": "<repo path of the generated .ts file>" }`;
 
-  const { app, map, shared, live } = harness as Partial<Record<keyof DesignHarness, unknown>>;
+  const { app, map, shared, live, hosts } = harness as Partial<Record<keyof DesignHarness, unknown>>;
 
   if (!isRepoPath(app)) return `harness.app must be a repo path, got ${JSON.stringify(app)}`;
   if (!isRepoPath(map) || !map.endsWith('.ts') || map.endsWith('.d.ts'))
@@ -32,6 +32,12 @@ export const harnessProblemOf = (harness: unknown): string | null => {
       posix.relative(posix.normalize(app), posix.normalize(live)).startsWith('..'))
   )
     return `harness.live must be the repo path of a .json file inside harness.app ${app}, got ${JSON.stringify(live)}`;
+
+  if (
+    hosts !== undefined &&
+    (!Array.isArray(hosts) || hosts.some((host) => typeof host !== 'string' || host === '' || /\s/.test(host)))
+  )
+    return `harness.hosts must be a list of accessible names without whitespace, got ${JSON.stringify(hosts)}`;
 
   if (shared === undefined) return null;
   if (!Array.isArray(shared)) return `harness.shared must be a list of repo paths, got ${JSON.stringify(shared)}`;

@@ -235,6 +235,7 @@ export const designTask = async (options: {
       part: task.part,
       url: args.values['--url'],
       start: options.start,
+      onNote: (line) => console.log(line),
     });
 
     if (!Array.isArray(failures)) {

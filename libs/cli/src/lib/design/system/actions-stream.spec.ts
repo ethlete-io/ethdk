@@ -81,7 +81,7 @@ describe('checkActions streaming', () => {
     const done = checkActions({
       target: '/tmp/none',
       config: {} as never,
-      product: { name: 'app-a', presets: {}, parts: [] } as never,
+      product: { name: 'app-a', config: {}, presets: {}, parts: [] } as never,
       part: 'components/chip',
       url: 'http://localhost:9',
       only: null,

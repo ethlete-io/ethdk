@@ -284,6 +284,10 @@ export const exemptFromDeclaringOf = (options: {
   );
 };
 
+/** Whether an element of `key` is one of the product's declared host components, by its accessible name. */
+export const isHostElementOf = (options: { key: string; hosts: readonly string[] }) =>
+  options.hosts.some((host) => options.key.endsWith(` "${host}"`));
+
 /** The name a report line gives an element. */
 export const elementNameOf = (element: ActionElement) =>
   element.occurrence === 0 ? element.key : `${element.key} (${element.occurrence + 1}.)`;

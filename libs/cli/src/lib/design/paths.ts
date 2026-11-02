@@ -44,7 +44,14 @@ export type DesignPreset = { width: number; height?: number };
  * change them. `live` is the JSON file that `et design compare --live` opens the app's real pages with. All repo paths
  * inside `app`.
  */
-export type DesignHarness = { app: string; map: string; shared?: string[]; live?: string };
+export type DesignHarness = {
+  app: string;
+  map: string;
+  shared?: string[];
+  live?: string;
+  /** Accessible names (whitespace removed) of the app's shared host components, which the action check skips. */
+  hosts?: string[];
+};
 
 /**
  * One product's design system: the render settings of a project, the product folder it extends

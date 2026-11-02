@@ -253,6 +253,50 @@ describe('part ready', () => {
     );
   });
 
+  it('reports a declared host once as not checked, never as a miss', async () => {
+    const { target } = checkout();
+    const { partActionFailuresOf: failuresOf } =
+      await vi.importActual<typeof import('./actions-command')>('./actions-command');
+    mkdirSync(join(target, 'apps/a'), { recursive: true });
+    mkdirSync(join(target, 'libs'), { recursive: true });
+    writeFileSync(
+      join(target, 'libs/chip.component.ts'),
+      "@Component({ selector: 'app-chip', template: '' })\nexport class ChipComponent {}\n",
+    );
+
+    const product = resolveProduct({
+      target,
+      name: 'app-a',
+      config: { harness: { app: 'apps/a', map: 'apps/a/harness.ts', hosts: ['DesignCanvas'] } },
+    });
+    const map = harnessMapOf({ target, product });
+
+    if (map === null || typeof map === 'string') throw new Error(`no harness map: ${map}`);
+
+    writeHarnessMap(map);
+    const check = vi.fn<typeof checkActions>(async () => ({
+      lines: [
+        { state: 'default', element: 'button "remove"', input: 'click', failure: null },
+        { state: 'hover', element: 'button "remove"', input: 'click', failure: null },
+      ],
+      pictures: null,
+    }));
+    const notes: string[] = [];
+
+    expect(
+      await failuresOf({
+        target,
+        config: {},
+        product,
+        part: 'components/chip',
+        url: 'http://localhost:1',
+        check,
+        onNote: (line) => notes.push(line),
+      }),
+    ).toEqual([]);
+    expect(notes).toEqual(['host DesignCanvas: not checked']);
+  });
+
   it('adds the failed live lines when ready runs with a url, and skips the live check without one', async () => {
     const { target } = checkout();
     const { partActionFailuresOf: failuresOf } =

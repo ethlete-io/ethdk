@@ -17,6 +17,7 @@ import {
   embeddersOf,
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
+  isHostElementOf,
   openedFromOf,
   pairElementsOf,
   parseAction,
@@ -404,6 +405,15 @@ describe('runActionInput', () => {
     } finally {
       await page.close();
     }
+  });
+
+  it('treats an element whose accessible name a declared host carries as that host, whatever its role', () => {
+    const hosts = ['DesignCanvas'];
+
+    expect(isHostElementOf({ key: 'generic "DesignCanvas"', hosts })).toBe(true);
+    expect(isHostElementOf({ key: 'region "DesignCanvas"', hosts })).toBe(true);
+    expect(isHostElementOf({ key: 'button "DesignCanvasZoom"', hosts })).toBe(false);
+    expect(isHostElementOf({ key: 'generic "DesignCanvas"', hosts: [] })).toBe(false);
   });
 
   it('keys an element without a role by its generic role, not its tag, and lists the controls around it', async (context) => {

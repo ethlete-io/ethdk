@@ -78,6 +78,8 @@ describe('harness config', () => {
     [{ app: 'apps/a', map: 'apps/a/parts.ts', shared: ['apps/b/i18n/**'] }, 'harness.shared "apps/b/i18n/**" must be'],
     [{ app: 'apps/a', map: 'apps/a/parts.ts', live: 'apps/b/live.json' }, 'harness.live must be'],
     [{ app: 'apps/a', map: 'apps/a/parts.ts', live: 'apps/a/live.ts' }, 'harness.live must be'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', hosts: 'DesignCanvas' }, 'harness.hosts must be a list'],
+    [{ app: 'apps/a', map: 'apps/a/parts.ts', hosts: ['Design Canvas'] }, 'harness.hosts must be a list'],
   ])('refuses %j', (value, message) => {
     expect(harnessProblemOf(value)).toContain(message);
   });
