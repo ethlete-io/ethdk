@@ -23,7 +23,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseiten-Rahmen, Doku). Lokal bleiben
 603713e13 (CI-Schritt `design compare --all`) und alles darüber, auch der Titelleisten-Merge, bis der Zoom-Chip und die
 3 Abweichungen behoben sind (B55, als Nächstes). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
-startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen), danach B62-Werkzeugteil; offen: B56, A13 (CLI),
+startet. Jetzt: A1 (Titelleiste an das gemergte Design angleichen; hing am fehlenden `implements`-Link, Befund 153), danach B62-Werkzeugteil; offen: B56, A13 (CLI),
 B58, B57, B59, B60, B61. Ursache von Befund 152 (c) beim Builder angefragt.
 
 Bei Tom:
@@ -182,6 +182,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   SDK-Fokusring und Overlay, Spec mit fremden Daten (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, E2E-Budget bis zur ersten Zeile; Render-Regel
   für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch (Befund 152).
+- **B63** Merge und `sketch ready` warnen bei einem Teil ohne `implements`-Link; der Go-Hash ignoriert den Link
+  (Befund 153).
 
 ## C. CLI: Tempo und Ablauf
 

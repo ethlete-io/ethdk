@@ -1521,6 +1521,13 @@ check` fails a part with a varying design prop that has no app input and is not 
      mid-token and a text block wrapped into more than about four lines narrower than about 25 characters). The
      layout fix itself is visible, so it goes into a merge-view sketch. Lesson: a list that is slow and a list that is
      cramped both pass a check that only looks at the finished, wide render.
+153. The merged components/title-bar has no `implements` link, so compare, task, the harness map and the implemented
+     record all refuse it ("has no implements link"); A1 stalled on it (builder, 2026-11-02). Adding the link changes
+     the part hash, so the go goes stale and must be granted again. Why no check caught it: `sketch ready` and the
+     merge accept a sketch whose part has no `implements` link and say nothing; the go hash covers the link although
+     the link changes nothing visible. Tool fix: B63 (`sketch ready` and the merge view warn "this part cannot be
+     compared or implemented until it has an implements link"; the go hash ignores the `implements` link, as already
+     planned for after the MVP). Lesson: a merged design that no tool can compare is not finished.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
