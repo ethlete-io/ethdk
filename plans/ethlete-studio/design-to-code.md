@@ -1654,6 +1654,11 @@ check` fails a part with a varying design prop that has no app input and is not 
      Tool fix: B75 (technical, grill decision: compare each variant at its first changed state, the one the sketch
      view shows first, and name the compared state in the message; a spec follows the message's own advice and
      expects ready to pass). Lesson: an error message is a promise, and a spec should keep it.
+166. In the `long` rows of components/title-search the centred label is cut at both ends: the product name shows as
+     a stray glyph at the start, the part name stops mid-word at the end with no ellipsis (builder report and shot,
+     2026-11-02); the design check passed with 0 problems. Cause pending (builder): why the render check's clipped
+     text rule missed text cut by centring inside a flex row. Tool fix pending the cause. Design fix with Tom (part
+     name truncates at the end, product stays whole).
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
