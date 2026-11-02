@@ -2694,3 +2694,9 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the spec gate runs hours and many stacked commits after the commit. Tool fix (decided, technical, B115):
      pre-commit runs `vitest related --run` over the staged apps/ethlete-studio files (measure the time; report if it
      exceeds ~20 s); `nx test ethlete-studio -- <filter>` must print the failure; code fix `content.body?.`.
+     Built (builder): c678b6931 (Nx 24 picks the 'summary' output style for AI agents; root .env
+     `NX_DEFAULT_OUTPUT_STYLE=static-failures-only`), fcf539a55 (`!content?.body` -> EMPTY in watchContent$),
+     9a58e0052 (pre-commit `vitest related`, ~10 s with one canvas file). The hook tests the working tree, not the
+     staged content; it at once found a red system-view spec in the uncommitted Sketches slice. Decision (technical):
+     keep it on the working tree. Never `git stash --keep-index` in the hook: several agents share one checkout and a
+     stash would take their uncommitted work. The hook output must name the failing spec file.
