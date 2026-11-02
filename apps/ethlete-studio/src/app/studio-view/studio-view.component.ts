@@ -82,7 +82,7 @@ const SERVER_ANSWER_RETRY_MS = 1000;
   encapsulation: ViewEncapsulation.None,
   imports: [ShellPageComponent, SystemViewComponent],
   host: {
-    class: 'grid h-dvh grid-rows-[minmax(0,1fr)] bg-(--et-surface-background-solid) text-text',
+    class: 'grid min-h-0 grow grid-rows-[minmax(0,1fr)] bg-(--et-surface-background-solid) text-text',
   },
 })
 export class StudioViewComponent {

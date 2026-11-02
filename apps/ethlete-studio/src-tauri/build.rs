@@ -17,6 +17,7 @@ fn main() {
             "design_server_state",
             "design_server_stop",
             "update_ready",
+            "window_chrome_watch",
             "workspace_check",
             "workspace_diff",
             "workspace_root",

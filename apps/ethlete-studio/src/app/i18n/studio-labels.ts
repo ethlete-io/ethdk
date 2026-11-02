@@ -14,6 +14,12 @@ export const STUDIO_LABELS = {
   canvas: {
     label: 'Design Canvas',
   },
+  window: {
+    minimize: 'Minimieren',
+    maximize: 'Maximieren',
+    restore: 'Wiederherstellen',
+    close: 'Schließen',
+  },
   sketches: {
     discard: 'Verwerfen',
     merge: 'Wählen',

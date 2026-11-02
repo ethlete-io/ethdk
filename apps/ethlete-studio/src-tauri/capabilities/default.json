@@ -22,6 +22,7 @@
     "allow-design-server-state",
     "allow-design-server-stop",
     "allow-update-ready",
+    "allow-window-chrome-watch",
     "allow-workspace-check",
     "allow-workspace-diff",
     "allow-workspace-root",

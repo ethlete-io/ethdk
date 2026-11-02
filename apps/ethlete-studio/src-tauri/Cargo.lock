@@ -1292,6 +1292,8 @@ dependencies = [
  "tauri-runtime-wry",
  "thiserror 2.0.20",
  "tokio",
+ "wayland-client",
+ "wayland-protocols",
 ]
 
 [[package]]

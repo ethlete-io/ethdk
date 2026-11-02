@@ -8,6 +8,9 @@ mod error;
 mod update;
 #[cfg(target_os = "macos")]
 mod webview_rebuild;
+mod window_chrome;
+#[cfg(target_os = "linux")]
+mod window_chrome_wayland;
 
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
@@ -183,6 +186,7 @@ pub fn run() {
         .manage(design_server::DesignServers::default())
         .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
+        .manage(window_chrome::ChromeWatch::default())
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
             design::design_project,
@@ -196,6 +200,7 @@ pub fn run() {
             design_server::design_server_stop,
             design_server::design_server_restart,
             update::update_ready,
+            window_chrome::window_chrome_watch,
             workspace_check,
             workspace_diff,
             workspace_root,
@@ -207,6 +212,7 @@ pub fn run() {
             if matches!(event, tauri::RunEvent::Exit) {
                 design_server::stop_every(&handle.state::<design_server::DesignServers>());
                 update::install_pending(&handle.state::<update::PendingUpdate>());
+                handle.state::<window_chrome::ChromeWatch>().stop();
             }
         });
 }
