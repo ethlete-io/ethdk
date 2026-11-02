@@ -1805,9 +1805,16 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      keeps its size in the harness); the "compare before go" part goes into A10 (build-ready requires a green compare
      for an implemented part). Lesson: the measuring frame must not change what it measures.
 179. The pages/sketches sketch (variant d) draws the Studio logo as a teal tile with a white mark; the app draws it
-     as a dark neutral tile (Tom, 2026-11-02, screenshots). Cause pending (builder): which side is the design truth,
-     and does the sketch embed the logo part or copy its markup. Why no tool caught it and tool fix: pending the
-     cause.
+     as a dark neutral tile (Tom, 2026-11-02, screenshots). Cause (builder): variants d, e and f call studioMenu() and
+     menu.setup but never add `menu.styles` to the page styles (d: sketches/pages-sketches/d/pages/sketches/sketches.ts
+     :224-257); a/b/c and the real pages include it. Without it studio-mark.svg falls back to `var(--accent,#25aea7)`.
+     Design truth is the neutral tile (studio-menu.css:3-4); the app matches it. The sketch embeds the part and copies
+     nothing. Side find: apps/ethlete-studio/src/app/components/studio-mark.component.ts (teal tile, other path) is
+     unused dead code - the B79 audit #5 even names it as the component to reuse. Why no tool caught it: no rule
+     checks that an embedded part's styles reach the page, and a var() fallback is valid CSS. Tool fix: B108
+     (rule UNUSED-PART-STYLES: a page or sketch renders a part and never returns its `.styles`; no visible colour
+     fallback in studio-mark.svg, so an unstyled embed looks plainly broken; delete the dead studio-mark component).
+     Lesson: a fallback that looks right hides a missing link; fall back to something obviously wrong or to nothing.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
