@@ -84,7 +84,9 @@ const result = await withStudio(
 
       if (!iframe) return false;
 
-      iframe.src = iframe.src;
+      const { src } = iframe;
+
+      iframe.src = src;
 
       return true;
     });
