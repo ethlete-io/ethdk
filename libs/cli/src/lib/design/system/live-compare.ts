@@ -11,6 +11,7 @@ import { occludedFramesOf } from './occluded';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
 import { settledPanesOf } from './settled-panes';
+import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { overlaySketch } from './sketch/overlay';
 import { findSketch, parseTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
@@ -389,6 +390,7 @@ export const liveShotOf = async (options: {
   state: LiveState;
   server: string;
   checkout: string;
+  frozen?: FrozenAnimation[];
   timeout?: number;
 }) => {
   const { browser, spec, size } = options;
@@ -420,6 +422,8 @@ export const liveShotOf = async (options: {
 
       if (!(await settledPanesOf({ page, count: 0, timeout: Math.max(deadline - Date.now(), 0) })))
         throw new LiveError(`the app page ${address} did not settle its overlay panes within ${timeout} ms`);
+
+      if (options.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(options.frozen));
 
       const shot = await page.screenshot({ type: 'png', animations: 'disabled', clip, timeout });
 
@@ -568,6 +572,7 @@ export const shootLiveStates: ShootStates = async ({ target, config, product, pa
             state,
             server: base,
             checkout: target,
+            frozen: frozenAnimationsOf(design.markup ?? ''),
           }),
         )
         .catch((error: unknown) => (error instanceof LiveError ? error.message : Promise.reject(error)));

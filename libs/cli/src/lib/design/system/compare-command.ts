@@ -30,6 +30,7 @@ import { doneParts, taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
 import { settledPanesOf } from './settled-panes';
+import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from './frozen-animations';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget, SketchTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
@@ -164,8 +165,16 @@ const clickOpen = async (options: {
 
 const OVERLAY_ROOTS = '.et-overlay-runtime-root, .cdk-overlay-container';
 
-/** The number of overlay panes a design picture draws, as `<et-overlay-container>` mocks. */
-const drawnPaneCountOf = (markup: string) => markup.match(/<et-overlay-container[\s>]/g)?.length ?? 0;
+/**
+ * The number of overlay panes a design picture draws: each `<et-overlay-container>`, `.et-overlay-runtime-pane`,
+ * `<et-menu>` and `<et-select-panel>` mock, as the app renders each of them in a pane of its own.
+ */
+export const drawnPaneCountOf = (markup: string) =>
+  [...markup.matchAll(/<([a-z][\w-]*)(\s[^>]*)?>/g)].filter(
+    ([, tag = '', attributes = '']) =>
+      ['et-overlay-container', 'et-menu', 'et-select-panel'].includes(tag) ||
+      /\sclass="(?:[^"]*\s)?et-overlay-runtime-pane[\s"]/.test(attributes),
+  ).length;
 
 const FORCED_POLL_MS = 50;
 
@@ -237,6 +246,7 @@ export const harnessShotOf = async (options: {
   opened?: { control: string; markup: string };
   roomAbove?: boolean;
   panes?: number;
+  frozen?: FrozenAnimation[];
   timeout?: number;
   /** Fails with the props the mounted component has no input for, but `designOnly`; skipped in a production build. */
   props?: { sent: unknown; designOnly: ReadonlySet<string> };
@@ -298,8 +308,10 @@ export const harnessShotOf = async (options: {
         throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
-    if (options.panes && !(await settledPanesOf({ page, count: options.panes, timeout })))
+    if (!(await settledPanesOf({ page, count: options.panes ?? 0, timeout })))
       throw new HarnessError(`the harness page ${url} did not settle its overlay panes within ${timeout} ms`);
+
+    if (options.frozen?.length) await page.evaluate(freezeAnimationsScriptOf(options.frozen));
 
     if (options.size && (await page.locator(OVERLAY_PANES).count()) === 0) {
       const hostBox = await host.evaluate((element) => {
@@ -467,6 +479,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           },
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           panes: drawnPaneCountOf(design.markup ?? ''),
+          frozen: frozenAnimationsOf(design.markup ?? ''),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }).catch((error: unknown) => {
           if (error instanceof DroppedPropsError) return { problem: error.message };
