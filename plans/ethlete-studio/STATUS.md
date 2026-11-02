@@ -192,8 +192,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B69** Live-Canvas erkennt einen Rahmen, der nicht lädt, und zeigt einen eigenen Zustand mit Grund und Neu laden;
   E2E lädt Rahmen, während sich Dateien ändern (Befund 160).
 - **B70** (geparkt bis zum Umbau des Go-Systems) Ein Go lässt sich zurücknehmen (Befund 162).
-- **B71** Schnelles Sketch-Lesen lädt keine Part-Module; E2E-Budget erste Sketch-Zeile ≤ 2 s nach Reload
-  (Befund 161, Builder baut).
+- **B71** Rest: erster Reload nach Kaltstart dauert 2,6 s statt ≤ 2 s; Ursache prüfen (volles Lesen blockiert den
+  Node-Thread?), dann yield oder Cache in targetsOf/openSketchProblemsOf; sketches-tree.e2e.mjs in package.json und
+  CI (mit B67) (Befund 161).
 - **B72** CONTROL-STATE: eigenes Control-Markup in einem Nicht-Control-Part ist ein Fehler, auch wenn der Part
   `controls` deklariert; Suchfeld der Titelleiste wird eigener Part (Befund 163).
 - **B74** `ng()`-Render registriert die Farb-Themes des Produkts; Render-Check meldet SDK-Konsolenwarnungen

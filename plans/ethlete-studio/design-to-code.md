@@ -1643,6 +1643,10 @@ check` fails a part with a varying design prop that has no app input and is not 
      returns list data only - target, variants, status, decision, target parts - with no module load, spec: it
      never calls the loader; the full read fills the targets; e2e budget: first sketch row within 2 s after
      reload, with the B62 budgets). Lesson: a path named "quick" is only quick once a test times it.
+     Update (builder, 2026-11-02): 1668e5ff6 (cli) + 94897104b (studio): the quick list loads no part modules and
+     runs no rules (8.5 s cold / 1.8 s warm -> 2 ms); problems and targets come with the full read. The new e2e
+     sketches-tree.e2e.mjs (2 s budget) still fails the first reload after a cold start (2.6 s, then 0.9 s) under
+     load 11-22; unproven cause: the previous full read blocks the Node thread. It is wired into nothing yet (B67).
 162. A go cannot be taken back (Tom, 2026-11-02): Studio has no action to withdraw a go, and `et design go`
      (libs/cli/src/lib/design/system/go-command.ts) only grants one. The auto-carried go on `components/title-bar`
      (go.json, `auto: true`, finding 155) can only leave by a hand edit of go.json. Why no check caught it: the go
