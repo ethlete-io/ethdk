@@ -15,13 +15,14 @@ import { PasswordInputDirective } from './headless';
 import { injectInputLabels } from './input-labels';
 import { ControlSuffixDirective } from '../form-field/partials';
 import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless/text-field-control.directive';
+import { TooltipDirective } from '../../tooltip';
 
 @Component({
   selector: 'et-password-input',
   templateUrl: './password-input.component.html',
   styleUrl: './password-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ControlSuffixDirective, IconDirective],
+  imports: [ControlSuffixDirective, IconDirective, TooltipDirective],
   providers: [provideIcons(EYE_ICON, EYE_SLASH_ICON, TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [
     {

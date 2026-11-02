@@ -294,7 +294,7 @@ describe('SchedulerComponent', () => {
     const cell = driver.cellFor(testAppointment('a').start);
 
     expect(cell).not.toBeNull();
-    expect(cell?.querySelector('[title="a"]')).not.toBeNull();
+    expect(cell?.querySelector('[aria-label="a"]')).not.toBeNull();
   });
 
   it('announces the full date of a month day cell, not the bare day number', () => {

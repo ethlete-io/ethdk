@@ -5,6 +5,7 @@ import { timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { GridComponent } from './grid.component';
 import { GridItemConfig, GridItemPosition } from './headless/grid.types';
+import { TooltipDirective } from '../tooltip';
 
 const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined) => {
   if (!a && !b) return true;
@@ -90,7 +91,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                 @for (cell of row.cells; track cell.bp) {
                   <td
                     [class.et-grid-debug-error]="cell.intMissing"
-                    [title]="cell.intMissing ? 'MISSING - layout.' + cell.bp + ' undefined in internal state' : ''"
+                    [etTooltip]="cell.intMissing ? 'MISSING - layout.' + cell.bp + ' undefined in internal state' : ''"
                     class="et-grid-debug-cell"
                   >
                     {{ fmtPos(cell.int) }}
@@ -100,7 +101,9 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                       [class.et-grid-debug-error]="cell.extMissing"
                       [class.et-grid-debug-warning]="!cell.extMissing && cell.mismatch"
                       [class.et-grid-debug-type]="!cell.extMissing && !cell.mismatch"
-                      [title]="cell.mismatch ? 'MISMATCH - ext=' + fmtPos(cell.ext) + ' int=' + fmtPos(cell.int) : ''"
+                      [etTooltip]="
+                        cell.mismatch ? 'MISMATCH - ext=' + fmtPos(cell.ext) + ' int=' + fmtPos(cell.int) : ''
+                      "
                       class="et-grid-debug-cell"
                     >
                       {{ fmtPos(cell.ext) }}
@@ -124,6 +127,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
   `,
   styleUrl: './grid-debug.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [TooltipDirective],
 })
 export class GridDebugComponent<TData = unknown> {
   private destroyRef = inject(DestroyRef);

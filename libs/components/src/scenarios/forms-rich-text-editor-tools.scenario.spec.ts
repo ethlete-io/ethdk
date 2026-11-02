@@ -875,7 +875,7 @@ describe('forms rich-text-editor tool scenarios', { timeout: 15_000 }, () => {
       '# Legacy field',
     ]);
     expect(chips.map((chip) => chip.disabled)).toEqual([false, false, true]);
-    expect(chips.map((chip) => chip.getAttribute('title'))).toEqual(['The recipient first name', null, null]);
+    expect(chips.map((chip) => chip.hasAttribute('aria-describedby'))).toEqual([true, false, false]);
 
     chips[0]!.click();
     s.tick();

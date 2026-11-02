@@ -149,10 +149,10 @@ describe('SchedulerTimeGridViewComponent keyboard', { timeout: 15_000 }, () => {
     focus(slotOf(WEDNESDAY, 9));
 
     pressKey(active(), 'Enter');
-    expect(active().getAttribute('title')).toBe('a');
+    expect(active().getAttribute('aria-label')).toBe('a');
 
     pressKey(active(), 'ArrowDown');
-    expect(active().getAttribute('title')).toBe('b');
+    expect(active().getAttribute('aria-label')).toBe('b');
 
     pressKey(active(), 'Escape');
     expect(active()).toBe(slotOf(WEDNESDAY, 9));
@@ -165,7 +165,7 @@ describe('SchedulerTimeGridViewComponent keyboard', { timeout: 15_000 }, () => {
 
     pressKey(active(), 'Enter');
 
-    expect(active().getAttribute('title')).toBe('holiday');
+    expect(active().getAttribute('aria-label')).toBe('holiday');
   });
 
   it('starts an hour-long appointment at the slot with Enter on an empty slot', () => {
@@ -216,7 +216,7 @@ describe('SchedulerTimeGridViewComponent resize handles', () => {
       appointments: [testAppointment('night', { start: new Date(2026, 6, 13, 20), end: new Date(2026, 6, 14, 10) })],
     });
 
-    expect(edgesOf('.et-scheduler-time-grid-block[title="night"]')).toEqual([['start'], ['end']]);
+    expect(edgesOf('.et-scheduler-time-grid-block[aria-label="night"]')).toEqual([['start'], ['end']]);
   });
 
   it('drops the start handle of an all-day entry that starts before the visible week', () => {
@@ -228,7 +228,7 @@ describe('SchedulerTimeGridViewComponent resize handles', () => {
       ],
     });
 
-    expect(edgesOf('.et-scheduler-time-grid-all-day-entry[title="trip"]')).toEqual([['end']]);
+    expect(edgesOf('.et-scheduler-time-grid-all-day-entry[aria-label="trip"]')).toEqual([['end']]);
   });
 });
 

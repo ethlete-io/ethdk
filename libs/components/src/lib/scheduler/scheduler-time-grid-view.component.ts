@@ -38,6 +38,7 @@ import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-sty
 import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
+import { TooltipDirective } from '../tooltip';
 
 const HOURS = /* @__PURE__ */ Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -92,7 +93,7 @@ const blockStartHour = (block: SchedulerTimeGridBlock) =>
   templateUrl: './scheduler-time-grid-view.component.html',
   styleUrl: './scheduler-time-grid-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent],
+  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent, TooltipDirective],
   hostDirectives: [SchedulerTimeGridDirective],
   host: {
     class: 'et-scheduler-time-grid-view',

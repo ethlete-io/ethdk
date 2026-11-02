@@ -226,7 +226,7 @@ describe('scheduler scenarios', () => {
     expect(today.getAttribute('aria-current')).toBe('date');
     expect(texts('.et-scheduler-appointment-title', today)).toEqual(['Kickoff', 'Kickoff prep', 'Slides']);
 
-    const kickoff = query('.et-scheduler-appointment[title="Kickoff"]', today);
+    const kickoff = query('.et-scheduler-appointment[aria-label="Kickoff"]', today);
 
     expect(query('.et-scheduler-appointment-dot', kickoff)).toBeTruthy();
     expect(query('.et-scheduler-appointment-time-range', kickoff).textContent?.trim()).toBe('9:00 AM–10:00 AM');
@@ -320,7 +320,7 @@ describe('scheduler scenarios', () => {
       'Slides',
     ]);
 
-    const prep = query('.et-scheduler-time-grid-block[title="Kickoff prep"]', wednesday);
+    const prep = query('.et-scheduler-time-grid-block[aria-label="Kickoff prep"]', wednesday);
 
     expect(prep.hasAttribute('data-nested')).toBe(true);
     expect(prep.style.getPropertyValue('--_et-scheduler-time-grid-block-depth')).toBe('1');
@@ -372,11 +372,11 @@ describe('scheduler scenarios', () => {
 
     s.tick();
 
-    query('.et-scheduler-appointment[title="Kickoff"]', host).click();
+    query('.et-scheduler-appointment[aria-label="Kickoff"]', host).click();
     s.tick(1000);
 
     expect(planner.selectedId()).toBe('kickoff');
-    expect(query('.et-scheduler-appointment[title="Kickoff"]', host).hasAttribute('data-selected')).toBe(true);
+    expect(query('.et-scheduler-appointment[aria-label="Kickoff"]', host).hasAttribute('data-selected')).toBe(true);
     expect(query('.et-scheduler-edit-surface-title', surface()!).textContent?.trim()).toBe('Kickoff');
     expect(texts('.et-scheduler-edit-surface-children-item-title', surface()!)).toEqual(['Kickoff prep']);
 
@@ -439,7 +439,7 @@ describe('scheduler scenarios', () => {
 
       button('Cancel', surface()!).click();
       s.tick(1000);
-      query('.et-scheduler-appointment[title="Kickoff"]', host).click();
+      query('.et-scheduler-appointment[aria-label="Kickoff"]', host).click();
       s.tick(1000);
 
       expect(query('.et-scheduler-edit-surface-panel').style.position).toBe('absolute');
@@ -568,18 +568,18 @@ describe('scheduler scenarios', () => {
     headless.updateAppointmentDrag(at(17, 9), at(17, 10));
     s.tick();
 
-    expect(query('.et-scheduler-appointment[title="Kickoff"]', monthCell(host, 17)).hasAttribute('data-dragging')).toBe(
-      true,
-    );
+    expect(
+      query('.et-scheduler-appointment[aria-label="Kickoff"]', monthCell(host, 17)).hasAttribute('data-dragging'),
+    ).toBe(true);
     expect(monthCell(host, 17).hasAttribute('data-drop-target')).toBe(true);
-    expect(monthCell(host, 15).querySelector('[title="Kickoff"]')).toBeNull();
+    expect(monthCell(host, 15).querySelector('[aria-label="Kickoff"]')).toBeNull();
 
     headless.commitAppointmentDrag();
     s.tick();
 
     expect(planner.rescheduled()?.previous).toBe(kickoff);
     expect(planner.rescheduled()?.appointment).toMatchObject({ id: 'kickoff', start: at(17, 9), end: at(17, 10) });
-    expect(monthCell(host, 15).querySelector('[title="Kickoff"]')).not.toBeNull();
+    expect(monthCell(host, 15).querySelector('[aria-label="Kickoff"]')).not.toBeNull();
 
     finish(s);
   });
@@ -728,7 +728,7 @@ describe('scheduler misuse scenarios', () => {
 
     s.tick();
 
-    query('.et-scheduler-appointment[title="Kickoff"]', host).click();
+    query('.et-scheduler-appointment[aria-label="Kickoff"]', host).click();
     expect(() => fixture.detectChanges()).not.toThrow();
     s.tick();
     expect(fixture.componentInstance.selectedId()).not.toBeNull();

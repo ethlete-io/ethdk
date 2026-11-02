@@ -481,7 +481,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
 
     s.flush();
 
-    const review = query('.et-scheduler-appointment[title="Review"]', host);
+    const review = query('.et-scheduler-appointment[aria-label="Review"]', host);
 
     expect([...review.children].map((child) => child.tagName.toLowerCase())).toEqual([
       'et-scheduler-badge-color-dot',
@@ -542,7 +542,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
 
     s.keydown('Enter', today);
     expect(calendar.draftRange()).toBeNull();
-    expect(document.activeElement?.getAttribute('title')).toBe('Review');
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Review');
 
     s.keydown(' ', today);
     expect(calendar.draftRange()).toEqual({ start: at(15, 0), end: endOfDay(15), allDay: true, phase: 'committed' });
@@ -611,7 +611,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     archived.set(null);
     s.tick();
 
-    query('.et-scheduler-appointment[title="Draft"]', host).click();
+    query('.et-scheduler-appointment[aria-label="Draft"]', host).click();
     s.tick(1000);
 
     expect(query('.et-scheduler-edit-surface-title', sheet()!).textContent?.trim()).toBe('Ticket Draft');
@@ -650,7 +650,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     });
     expect(sheet()).toBeNull();
 
-    query('.et-scheduler-appointment[title="Draft"]', host).click();
+    query('.et-scheduler-appointment[aria-label="Draft"]', host).click();
     s.tick(1000);
     openMenu(s, sheet()!);
     menuButton('Delete (with descendants)').click();
@@ -659,7 +659,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     expect(planner.deleted()).toEqual(['draft', 'notes']);
     expect(sheet()).toBeNull();
 
-    query('.et-scheduler-appointment[title="Retreat"]', host).click();
+    query('.et-scheduler-appointment[aria-label="Retreat"]', host).click();
     s.tick(1000);
     openMenu(s, sheet()!);
     menuButton('Archive').click();

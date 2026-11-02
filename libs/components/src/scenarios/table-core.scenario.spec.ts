@@ -518,7 +518,7 @@ describe('table core scenarios', () => {
     expect(quickFilterRows({ rows: MEMBERS, query: '30', columns: COLUMNS })).toEqual([]);
   });
 
-  it('names the failed-cell icon with its message when no tooltip feature draws the mark', () => {
+  it('names the failed-cell icon with its message', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(RosterComponent);
     const host = fixture.nativeElement as HTMLElement;
@@ -533,7 +533,7 @@ describe('table core scenarios', () => {
     expect(icon.getAttribute('role')).toBe('img');
     expect(icon.getAttribute('aria-label')).toBe('Score rejected');
     expect(icon.hasAttribute('aria-hidden')).toBe(false);
-    expect(icon.getAttribute('title')).toBe('Score rejected');
+    expect(icon.hasAttribute('title')).toBe(false);
   });
 });
 

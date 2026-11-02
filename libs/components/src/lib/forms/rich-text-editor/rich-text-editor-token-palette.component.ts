@@ -5,6 +5,7 @@ import { BUTTON_IMPORTS } from '../../button';
 import { RichTextEditorDirective } from './headless';
 import { resolveTriggerItems } from './headless/internals/rich-text-editor-trigger-source';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from './rich-text-editor-trigger';
+import { TooltipDirective } from '../../tooltip';
 
 /** A trigger and the items it currently offers, rendered as one run of chip buttons. */
 type RichTextEditorTokenPaletteGroup = {
@@ -35,7 +36,7 @@ type RichTextEditorTokenPaletteGroup = {
   templateUrl: './rich-text-editor-token-palette.component.html',
   styleUrl: './rich-text-editor-token-palette.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS],
+  imports: [...BUTTON_IMPORTS, TooltipDirective],
   host: {
     class: 'et-rte-token-palette',
     role: 'group',

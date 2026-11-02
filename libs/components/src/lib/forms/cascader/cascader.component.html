@@ -81,7 +81,7 @@
               animate.leave="et-cascader-crumb--leave"
             >
               <button
-                [attr.title]="crumb.label"
+                [etTooltip]="crumb.label"
                 [attr.data-current]="isCrumbCurrent($index) || null"
                 (click)="cascader.showColumn($index)"
                 class="et-cascader-breadcrumb"

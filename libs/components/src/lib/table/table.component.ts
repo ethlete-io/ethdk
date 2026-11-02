@@ -98,6 +98,7 @@ import {
   TableState,
   TableTemplateSlot,
 } from './table.types';
+import { TooltipDirective } from '../tooltip';
 
 /** One leading utility cell (selection, expander) - identical chrome in every row kind. */
 type TableLeadCellVm = {
@@ -283,7 +284,14 @@ let uniqueTableId = 0;
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgComponentOutlet, NgTemplateOutlet, IconDirective, ProvideColorDirective, TableCardSurfaceDirective],
+  imports: [
+    NgComponentOutlet,
+    NgTemplateOutlet,
+    IconDirective,
+    ProvideColorDirective,
+    TableCardSurfaceDirective,
+    TooltipDirective,
+  ],
   providers: [
     { provide: TABLE_FEATURE_HOST, useExisting: TableComponent },
     provideIcons(ARROW_UP_ICON, TRIANGLE_EXCLAMATION_ICON),

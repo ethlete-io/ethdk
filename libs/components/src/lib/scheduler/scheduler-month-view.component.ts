@@ -29,6 +29,7 @@ import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-sty
 import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
+import { TooltipDirective } from '../tooltip';
 
 /** The default month grid: one day cell per day, appointments as one-line badges with a "+N more" overflow. */
 @Component({
@@ -36,7 +37,7 @@ import { Appointment } from './scheduler.types';
   templateUrl: './scheduler-month-view.component.html',
   styleUrl: './scheduler-month-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS, ProvideColorDirective, NgComponentOutlet],
+  imports: [...MENU_IMPORTS, ProvideColorDirective, NgComponentOutlet, TooltipDirective],
   hostDirectives: [SchedulerMonthDirective],
   host: {
     class: 'et-scheduler-month-view',

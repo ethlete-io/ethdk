@@ -45,7 +45,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('stops a move dragged above the column at midnight instead of carrying it into the previous day', () => {
     mount([testAppointment('early', { start: new Date(2026, 6, 15, 1), end: new Date(2026, 6, 15, 2) })]);
 
-    drag('.et-scheduler-time-grid-block[title="early"]', yAt(1.5), -500);
+    drag('.et-scheduler-time-grid-block[aria-label="early"]', yAt(1.5), -500);
 
     expect(reschedules.map(({ appointment }) => [appointment.start, appointment.end])).toEqual([
       [new Date(2026, 6, 15, 0), new Date(2026, 6, 15, 1)],
@@ -55,7 +55,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('keeps a move dragged below the column starting on the same day', () => {
     mount([testAppointment('late', { start: new Date(2026, 6, 15, 22), end: new Date(2026, 6, 15, 23) })]);
 
-    drag('.et-scheduler-time-grid-block[title="late"]', yAt(22 + 5 / 60), COLUMN_HEIGHT + 500);
+    drag('.et-scheduler-time-grid-block[aria-label="late"]', yAt(22 + 5 / 60), COLUMN_HEIGHT + 500);
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 6, 15, 23, 45));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 6, 16, 0, 45));
@@ -64,7 +64,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('keeps the duration of a zero-length appointment while moving it', () => {
     mount([testAppointment('marker', { start: new Date(2026, 6, 15, 9), end: new Date(2026, 6, 15, 9) })]);
 
-    drag('.et-scheduler-time-grid-block[title="marker"]', yAt(9), yAt(11));
+    drag('.et-scheduler-time-grid-block[aria-label="marker"]', yAt(9), yAt(11));
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 6, 15, 11));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 6, 15, 11));
@@ -73,7 +73,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('moves the continuation of a midnight-spanning appointment by the dragged distance', () => {
     mount([testAppointment('night', { start: new Date(2026, 6, 14, 22), end: new Date(2026, 6, 15, 2) })]);
 
-    drag('.et-scheduler-time-grid-block[title="night"]', yAt(1), yAt(3));
+    drag('.et-scheduler-time-grid-block[aria-label="night"]', yAt(1), yAt(3));
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 6, 15, 0));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 6, 15, 4));
@@ -82,7 +82,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('clamps a resize of the end past the column bottom to midnight', () => {
     mount([testAppointment('a', { start: new Date(2026, 6, 15, 20), end: new Date(2026, 6, 15, 21) })]);
 
-    drag('.et-scheduler-time-grid-block[title="a"] [data-edge="end"]', yAt(21), COLUMN_HEIGHT + 500);
+    drag('.et-scheduler-time-grid-block[aria-label="a"] [data-edge="end"]', yAt(21), COLUMN_HEIGHT + 500);
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 6, 15, 20));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 6, 16, 0));
@@ -91,7 +91,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
   it('keeps a slot of duration when the start is resized past the end', () => {
     mount([testAppointment('a', { start: new Date(2026, 6, 15, 9), end: new Date(2026, 6, 15, 10) })]);
 
-    drag('.et-scheduler-time-grid-block[title="a"] [data-edge="start"]', yAt(9), yAt(14));
+    drag('.et-scheduler-time-grid-block[aria-label="a"] [data-edge="start"]', yAt(9), yAt(14));
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 6, 15, 9, 45));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 6, 15, 10));
@@ -106,7 +106,7 @@ describe('SchedulerTimeGridViewComponent dragging an appointment', { timeout: 15
     reschedules = [];
     driver.scheduler().headless.appointmentReschedule.subscribe((event) => reschedules.push(event));
 
-    drag('.et-scheduler-time-grid-block[title="dst"]', yAt(9), yAt(12));
+    drag('.et-scheduler-time-grid-block[aria-label="dst"]', yAt(9), yAt(12));
 
     expect(reschedules[0]?.appointment.start).toEqual(new Date(2026, 2, 29, 12));
     expect(reschedules[0]?.appointment.end).toEqual(new Date(2026, 2, 29, 13));

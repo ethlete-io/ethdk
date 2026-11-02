@@ -87,7 +87,7 @@ export const schedulerTestDriver = (options: SchedulerTestDriverOptions = {}) =>
     badges: () =>
       queryAll(fixture, '.et-scheduler-appointment, .et-scheduler-time-grid-block').map((element) => ({
         element,
-        id: element.getAttribute('title'),
+        id: element.getAttribute('aria-label'),
         title: textOf(element.querySelector('.et-scheduler-appointment-title')),
         timeRange: textOf(element.querySelector('.et-scheduler-appointment-time-range')),
         location: textOf(element.querySelector('.et-scheduler-appointment-location-text')),
@@ -114,7 +114,7 @@ export const schedulerTestDriver = (options: SchedulerTestDriverOptions = {}) =>
     clickAppointment: (id: AppointmentId) => {
       const element = query(
         fixture,
-        `.et-scheduler-appointment[title="${id}"], .et-scheduler-time-grid-block[title="${id}"]`,
+        `.et-scheduler-appointment[aria-label="${id}"], .et-scheduler-time-grid-block[aria-label="${id}"]`,
       );
 
       element?.click();

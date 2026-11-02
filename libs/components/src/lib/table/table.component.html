@@ -244,10 +244,10 @@
                 } @else {
                   <!-- Color-scoped here rather than on the cell: the mark is the only part that must read
                        as an error, and a provider per errored cell is cheap where one per cell would not
-                       be. The message rides along as `title`, which costs nothing. -->
+                       be. -->
                   <i
                     [etProvideColor]="errorColorTheme()"
-                    [attr.title]="cell.message"
+                    [etTooltip]="cell.message"
                     [label]="cell.message"
                     class="et-table-cell-error-icon"
                     etIcon="et-triangle-exclamation"
