@@ -1400,7 +1400,11 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      symlinked node_modules, Vite's fs.allow refuses the resolved paths. It needed a real node_modules folder of
      symlinks. canvas.e2e.mjs likely has the same blind spot, since it never inspects frame content. Tool fix: B49 (the
      e2e checkout helper builds node_modules as a folder of symlinks; every frame e2e fails on an error page inside a
-     frame). Lesson: a frame e2e that never looks inside the frame passes on an error page.
+     frame). Lesson: a frame e2e that never looks inside the frame passes on an error page. Update (builder, same day):
+     the new canvas.e2e.mjs assertion fails as intended (both frames Vite "403 Restricted", 34/36). Dead end:
+     per-entry node_modules symlinks do not help, Vite resolves them back outside fs.allow. Next: add the real
+     node_modules to the checkout's Vite server.fs.allow, and find out why the B36 e2e passed with per-entry
+     symlinks. Work parked in .claude/handoffs/b49-parked.patch.
 145. Tom pressed "Wählen" on the held components/title-bar sketch and nothing happened (2026-11-02). Probable cause (to
      confirm by the builder): the sketch is held, so it is back in progress and not ready; the CLI refuses the pick,
      and SketchViewComponent.run() in apps/ethlete-studio/src/app/system-view/sketch-view.component.ts swallows every
