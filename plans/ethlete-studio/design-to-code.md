@@ -2962,3 +2962,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      new `data-et-skip` in a sketch diff is listed in `sketch ready` output and in the Studio round head, so a skip is
      never invisible to the person who picks. Brief defect (builder): `D="node ... design"; $D` does not word-split in
      zsh; briefs use `yarn design`.
+
+221. B125 landed (e07475c08, builder, 2026-11-02): verify on 5a29b1b94 skips 21 design files, allows 6 wiring files,
+     and refuses only on the drawing compare (70 px animate-pulse). The earlier "exits 0" was wrong: the builder piped
+     the output through `tail`, which hid the exit code; a spec now locks exit 1. Weak point: system-view.component.ts
+     counts as wiring only because shell-logo.spec.ts happens to import both it and SketchesComponent; it is the
+     parent of the part's importer, which "importers plus their direct imports" misses. Lesson: a fixed import depth
+     and a spec's imports are proxies for "is on the path that mounts the part"; the next deeper nesting refuses
+     again, and a spec edit silently changes the allowed set. Tool fix (decided, technical, B128; doc agent overrides
+     the builder's "one more level"): wiring = every non-spec file under the app that transitively imports the part
+     (its ancestors in the import graph, stopping at the app root), plus the part's own spec; spec imports never add
+     wiring. Keep the one WIRING line per file so a wide set stays visible.
