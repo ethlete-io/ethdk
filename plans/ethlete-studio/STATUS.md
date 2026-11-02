@@ -267,6 +267,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   starten (Befund 175).
 - **B103** go und merge erzeugen eine veraltete Harness-Map (design-harness-parts.ts) neu oder verweigern mit dem
   Befehl; ein Studio-Klick darf nicht verloren gehen, darum ist Neu-Erzeugen der Standard (Befund 176).
+- **B104** `design check` endet mit einer Zusammenfassung je Regel („CONTROL-STATE: 3“) und einer Abschlusszeile; ein
+  Log ohne sie gilt als unfertig (Befund 177).
 
 ## C. CLI: Tempo und Ablauf
 

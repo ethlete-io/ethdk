@@ -1782,6 +1782,12 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      next compare. Tool fix: B103 (go and merge regenerate a stale harness map, or refuse with the command; a Studio
      click must not be lost, so regenerating is the default). Lesson: a step that hands work to the next step checks
      that the next step can run.
+177. B72 read as clean while it had 3 hits (builder, 2026-11-02): the CONTROL-STATE pass prints only after all 84
+     parts, so a log read mid-run showed "0 hits". Full run: zoom-chip `reset`, shell-main `section` and shell-main
+     `product` are own control markup in non-control parts. Why no tool caught it: `design check` ends without a
+     per-rule tally, so a partial log looks like a clean one. Tool fix: B104 (check ends with one summary line per
+     rule, e.g. "CONTROL-STATE: 3", and a final "complete" line; a log without it is unfinished). Lesson: a clean
+     result must say it is complete.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
