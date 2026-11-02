@@ -1,0 +1,21 @@
+{
+  "elements/list-row": {
+    "review": {
+      "hash": "f4a3d1da2c2eda96",
+      "states": {
+        "first": "12f8c899d6bae604",
+        "selected": "32c0becb86fff260"
+      }
+    }
+  },
+  "elements/shell-main": {
+    "review": {
+      "hash": "04577a3ec4c0e3d4",
+      "states": {
+        "library": "7aaaa2025ac30b2a",
+        "watchlist": "884e910d4d0c318a",
+        "signed in": "832ca531b137108c"
+      }
+    }
+  }
+}
