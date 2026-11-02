@@ -1613,6 +1613,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      regained it, so it is a focus effect. Cause pending (builder): which element takes focus or focus-visible on
      window refocus and why it draws the primary outline. Tool fix extends B67: the canvas e2e simulates window
      blur/refocus and asserts no frame outline appears.
+     Cause (builder, from code, not reproduced headless): the `ethlete-design-canvas` host (tabindex=0 +
+     FocusRingDirective, design-canvas.component.ts:202-206) draws `.et-focus-ring:focus-visible` (primary in dark).
+     Window blur fires `blur` on the canvas, which clears the pointer-focus mark (design-canvas :213,
+     pointer-focus.ts:22); refocus restores focus without a pointerdown, so Chromium/CEF matches :focus-visible and
+     the ring shows. Fix in B97: pointer-focus.ts keeps the mark on a blur caused by the window losing focus
+     (`!document.hasFocus()`), design-canvas uses only trackPointerFocus; applies to every et-focus-ring element
+     (changeset, focus-ring guide). Headless Chromium never loses window focus, so the e2e asserts only "pointer mark
+     survives a synthetic window blur"; Tom confirms the real ring in the app.
 159. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
      scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
      hides content from the shot and from Tom. Why no check caught it: the render checks look for clipped and
@@ -1796,6 +1804,10 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      (harness host without a line box, both sides clipped at the component root, a spec that a fixed-size element
      keeps its size in the harness); the "compare before go" part goes into A10 (build-ready requires a green compare
      for an implemented part). Lesson: the measuring frame must not change what it measures.
+179. The pages/sketches sketch (variant d) draws the Studio logo as a teal tile with a white mark; the app draws it
+     as a dark neutral tile (Tom, 2026-11-02, screenshots). Cause pending (builder): which side is the design truth,
+     and does the sketch embed the logo part or copy its markup. Why no tool caught it and tool fix: pending the
+     cause.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2365,6 +2377,8 @@ only). Technical gaps became B84-B98 in STATUS.md.
     only when the part styles it itself (own classes or overrides on it). A marked but unchanged embedded part (the
     two et-buttons in update-dialog) keeps its action, gets no state row, and its states live in its own part. The
     tool decides from the markup; no author rule (B106).
+11. Own controls found by CONTROL-STATE (Tom): zoom-chip `reset`, shell-main `section` and shell-main `product` each
+    get a sketch with two variants, the unchanged SDK button and a new own control part; Tom picks and merges.
 
 #### Judgment rules (decision 3)
 

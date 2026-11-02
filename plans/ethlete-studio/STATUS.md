@@ -23,7 +23,7 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 Builder (02.11.): alles lokal, ungepusht. Committet: Titelleisten-Merge 9fe0b8a41 + App db86c73d9, Update-Dialog-Merge
 f31a7febb, B77-Hook a7a1a1c23 (settings.json-Eintrag braucht Toms Ok vor dem Push), Zoom-Chip ad0b035e2,
 `--et-kbd-color` 2a13b5eba + title-search 6e3c4f00b (Zustands-Shots und compare stehen aus, dann neues Go), B66
-67b065c93, B69 e2d977408, B94 a733db40b, B86 a61f82bc5, B72 4f1ba2b3e, B102 2c72b7054, B103 f14d7bb6b, B101 11079df0b + 0130ca777. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, Befund 161. Offen: Ursache Befund 158; Compares: title-bar grün, title-search 1 px zu hoch (Ursache offen), shell-main und update-dialog laufen; neu erzeugte Harness-Map uncommittet (B103).
+67b065c93, B69 e2d977408, B94 a733db40b, B86 a61f82bc5, B72 4f1ba2b3e, B102 2c72b7054, B103 f14d7bb6b, B101 11079df0b + 0130ca777. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, Befund 161. Offen: Ursache Befund 179 (Logo in pages/sketches); Compares: title-bar grün, title-search 1 px zu hoch (Ursache offen), shell-main und update-dialog laufen; neu erzeugte Harness-Map uncommittet (B103).
 Danach: B80, B81 (nach B72), B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60,
 A13 (CLI), B62.
 
@@ -275,6 +275,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B106** „States by interaction“: Zustandszeile für ein markiertes Element nur, wenn der Part es selbst stylt;
   ein unveränderter eingebetteter Part behält seine Aktion ohne Zeile (Entscheidung 10, z. B. Buttons im
   update-dialog).
+- **B107** CONTROL-STATE-Treffer: je eine Skizze für zoom-chip `reset`, shell-main `section` und shell-main
+  `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); Tom wählt und mergt
+  (Entscheidung 11).
 
 ## C. CLI: Tempo und Ablauf
 
