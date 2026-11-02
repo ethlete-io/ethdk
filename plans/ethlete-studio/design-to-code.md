@@ -1376,13 +1376,14 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      B45 (the clipped check skips visually-hidden sr-only elements by itself; drop the skip from the sketch). Lesson:
      a skip attribute in a draft is a sign of a false positive in the tool, and each one needs a finding.
 142. All three components/title-bar variants flickered permanently in Studio's sketch view, as if without a fixed size
-     (Tom, 2026-11-02). Probable cause (builder, to confirm): uncommitted B36 frame-sizing edits in
-     apps/ethlete-studio/src/app/system-view/sketch-view.component.ts size each frame from the iframe's reported
-     width/height, and Tom's live-reloading tauri:dev picked them up; frame resizes, page re-measures, frame resizes
-     again. Why no check caught it: no spec feeds a second size report at the new size, and no e2e watches that a
-     rendered size stays stable over time. Tool fix: B47 (a spec that feeds the measured size back; a stability check
-     that renders the view, waits, and fails when a frame size still changes). Lesson: any size taken from a
-     measurement must be proven stable, not only correct once.
+     (Tom, 2026-11-02). Cause (builder, confirmed): uncommitted B36 edits in
+     apps/ethlete-studio/src/app/system-view/sketch-view.component.ts; each iframe size report recomputes variants(),
+     shots() derives from it and builds new SafeResourceUrl objects, so every iframe reloads, reports again, and the
+     loop repeats. A reload loop, not a size loop; Tom's live-reloading tauri:dev picked up the in-flight edit. Why no
+     check caught it: the specs check one report and never that the iframe src stays stable across reports; the e2e
+     checks the size after load, not that nothing reloads. Tool fix: B47 (spec: a repeated report sets no new src and
+     no new size; sketch-view e2e counts iframe load events for ~2 s after settling and fails above one per frame).
+     Lesson: a rendered view must be proven stable over time, not only correct once.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

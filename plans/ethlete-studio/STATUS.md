@@ -136,8 +136,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B46** Sketch im Kontext: Umschalter „Einzeln | Im Kontext“ in der Sketch-Ansicht, für jedes Produkt; bei
   mehreren Fundstellen die erste plus Auswahl; `sketch check` prüft die Passform im Kontext. Erst Sketch, dann Bau
   (Tom, 02.11.).
-- **B47** Größen aus einer Messung müssen stabil bleiben: Spec meldet die gemessene Größe zurück, eine Prüfung
-  rendert die Ansicht, wartet und scheitert, wenn sich ein Rahmen noch ändert (Befund 142, Flackern).
+- **B47** Ansicht bleibt stabil: Spec prüft, dass eine wiederholte Größenmeldung keine neue iframe-Quelle und keine
+  neue Größe setzt; E2E zählt iframe-Ladevorgänge 2 s nach dem Einschwingen, mehr als einer je Rahmen scheitert
+  (Befund 142, Flackern).
 
 ## C. CLI: Tempo und Ablauf
 
