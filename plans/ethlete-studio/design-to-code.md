@@ -2556,3 +2556,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      convenient case (compare finding 187). Tool fix (decided, technical): `sketch check` on a page part warns when
      the fixture renders only one part layer or one part width; the round must show a narrow part and a part with
      many states. Product questions (frame width, start zoom) go to Tom.
+
+### Sketches view real-data layout decisions (Tom, 2026-11-02)
+
+- Frame width: each state frame is as wide as the part's fitted size (B36), not the full row width.
+- Many states: a narrow part wraps its states into several columns (about 4 side by side) inside its variant row; a
+  wide part (for example the title-bar) keeps one column. Unchanged states stay dimmed, the first change marked.
+- Start zoom: the view opens at Fit; after that the zoom is kept per sketch, like the other canvas views.
+- Nothing else differs from design e.
