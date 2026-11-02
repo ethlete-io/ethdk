@@ -2507,3 +2507,8 @@ decision 2), #91 (go rework, A10).
      Sketches view): `sketch check` warns when a variant's fixture (the parts and states it renders) differs from its
      `from` variant's and the round note does not mention it. Tom: not blocking now; get the fold round merged so the
      Sketches view can be built.
+
+188. `sketch ready` reported pages/sketches ready, then Studio refused Tom's merge of e: "pages/sketches hat sich
+     seit dem Sketch geändert" (Tom, 2026-11-02). Lesson: ready must not pass a sketch whose base is stale - the user
+     hits the refusal only at merge. Tool fix (candidate, cause pending from builder): `ready` checks the base hash
+     the same way merge does, refuses on a stale base and names the rebase command.
