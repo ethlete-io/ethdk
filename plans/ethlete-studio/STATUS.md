@@ -203,6 +203,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 164).
 - **B75** Identische-Varianten-Check vergleicht den ersten geänderten Zustand jeder Variante und nennt ihn
   (Befund 165); blockiert `ready` von pages/sketches.
+- **B76** Kompositions-Check: jeder Part, den die App rendert, steckt im Design-Part seines Hosts; Titelleiste
+  gehört in die Shell (Befund 168).
 
 ## C. CLI: Tempo und Ablauf
 

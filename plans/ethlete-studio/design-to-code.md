@@ -1666,6 +1666,17 @@ check` fails a part with a varying design prop that has no app input and is not 
      clipped by the page frame. Tool fix pending the cause (likely: content cut by the page or window edge is a
      render problem unless the region is declared pannable, and a pannable region shows that it continues).
      Comments in Studio are not back in the UI yet, so Tom reports such feedback in chat.
+168. The title bar is not part of the shell design: elements/shell-main (Tom's screenshot, `hidden · width 1440`) shows
+     rail and content with no title bar, while the app puts `<ethlete-title-bar>` in app.component.ts above the
+     router outlet, outside the shell component (Tom, 2026-11-02: "titlebar ist doch eig auch teil der shell. wieso
+     also wurde nicht entdeckt dass sie dort rein muss?"). Cause (grill, from the code): components/title-bar was
+     sketched and built as a standalone part; nothing compares where the app renders a part with where the design
+     embeds it. The app's root template is no design part, so a part placed there belongs to no composition, and the
+     shell design never learns it is missing a child. Finding 157 had the same root (an edge part judged alone).
+     Tool fix: B76 (composition check: every implemented part the app renders must be embedded in the design part
+     that implements its host component, and markup outside any implemented component that hosts a part is an
+     error naming the part and the missing host; the sketch brief for a new chrome or edge part names the part that
+     will embed it). Lesson: a part with no parent in the design has no place in the product.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
