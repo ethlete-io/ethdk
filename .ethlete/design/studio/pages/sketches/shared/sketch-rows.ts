@@ -1,4 +1,4 @@
-import { html } from '@design-system';
+import { html, slot } from '@design-system';
 import button from '@system/components/button';
 import titleBar from '@system/components/title-bar';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
@@ -74,7 +74,7 @@ export const firstChanged = (row: Row): ShownState => row.changed[0] ?? SHOWN_ST
 export const fitFrame = (row: Row, state: ShownState) => {
   const look = row.changed.includes(state) ? row.look : '';
   return html`<div class="sk-fit relative w-full overflow-hidden" data-w="${ROW_PART.width}" data-et-skip="CLIPPED">
-    <div class="w-(--w) origin-top-left ${look}" data-sk-fit-inner style="--w: ${ROW_PART.width}px">
+    <div class="w-(--w) origin-top-left ${look}" data-sk-fit-inner style="--w: ${ROW_PART.width}px" ${slot('shot')}>
       ${shot[state] ?? ''}
     </div>
   </div>`;
