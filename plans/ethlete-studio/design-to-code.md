@@ -1801,6 +1801,18 @@ Q16, from finding 126:
    changes, test first.
 2. After the MVP: stop rebuilding the harness app on every command (harness-server.ts).
 
+### Sketch in context decisions (Tom, 2026-11-02)
+
+- A generic feature of the design tool, for every product, not a Studio special: a sketch can be seen in the context
+  of the existing design. Tom: "einen Sketch im Kontext von bestehendem Design sehen sehe ich als generell wichtig an".
+- The sketch view gets a toggle "Einzeln | Im Kontext", default "Einzeln"; it applies to all variants at once. "Im
+  Kontext" renders each variant in its real place inside the enclosing existing design (for components/title-bar:
+  the shell), the other parts at their current state.
+- A part used in several places: the first place is shown, a picker offers the others.
+- `sketch check` also renders each variant in its context and reports fit problems (height, overlap) (grill, tool
+  internal).
+- Visible UI: the builder sketches the sketch view with the toggle first, Tom picks, then it is built.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
