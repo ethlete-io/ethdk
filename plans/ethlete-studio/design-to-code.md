@@ -1401,6 +1401,16 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      symlinks. canvas.e2e.mjs likely has the same blind spot, since it never inspects frame content. Tool fix: B49 (the
      e2e checkout helper builds node_modules as a folder of symlinks; every frame e2e fails on an error page inside a
      frame). Lesson: a frame e2e that never looks inside the frame passes on an error page.
+145. Tom pressed "Wählen" on the held components/title-bar sketch and nothing happened (2026-11-02). Probable cause (to
+     confirm by the builder): the sketch is held, so it is back in progress and not ready; the CLI refuses the pick,
+     and SketchViewComponent.run() in apps/ethlete-studio/src/app/system-view/sketch-view.component.ts swallows every
+     error with `catchError(() => of(null))`, so Studio shows nothing. Second cause, a process error of the doc agent:
+     the sketch was held with --until "Tom picks", but a sketch whose variants are finished and that waits only on
+     Tom is `ready`, not held. Why no check caught it: no spec covers a refused decision; no rule says a Studio action
+     must never fail silently; `sketch hold` accepts a reason that only means "waiting for the user". Tool fix: B51
+     (every Studio action shows a refusal and its reason; "Wählen" on a sketch that is not ready says why it cannot
+     pick; `sketch hold` refuses a reason that names the user and points to `sketch ready`). Lesson: an action that can
+     be refused must say so, and "waiting for the user" is a state the tool already has.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

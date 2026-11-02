@@ -144,6 +144,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Tom, 02.11.; Befund 143).
 - **B49** E2E-Checkout baut node_modules als Ordner aus Symlinks (sonst Vite 403); jede Rahmen-E2E scheitert an einer
   Fehlerseite im Rahmen (Befund 144).
+- **B51** Keine Studio-Aktion scheitert still: Ablehnung samt Grund sichtbar; „Wählen“ auf einem nicht fertigen
+  Sketch sagt warum; `sketch hold` lehnt „wartet auf Tom“ als Grund ab und verweist auf `sketch ready` (Befund 145;
+  sichtbar, also erst Sketch).
 
 ## C. CLI: Tempo und Ablauf
 
