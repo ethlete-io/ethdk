@@ -1764,8 +1764,9 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      session it restarts). Lesson: a wait loop that greps for its own text waits forever.
 174. Two items landed with their real path unproven (builder, 2026-11-02): B69 e2d977408 verifies the failed-load
      state only in jsdom (server-restart.e2e passes, but no e2e loads a frame that fails), and Restart bumps the
-     epoch twice; B94 a733db40b was never run against a real stale dist. Cause of the double epoch bump: open (asked
-     the builder). Why no tool caught it: an item counts as done when its commit lands; nothing asks for proof on the
+     epoch twice; B94 a733db40b was never run against a real stale dist. Cause of the double epoch bump: two bump sites, `studio-view.component.ts:221` restartServer() on
+     designServerRestart$ and the pid bump at :168-172 added in e2d977408; fix drops :221 (no e2e counted frame
+     reloads). Why no tool caught it: an item counts as done when its commit lands; nothing asks for proof on the
      path the finding failed on. Tool fix: B101 (an e2e for the failed-load state and a single epoch bump per
      Restart; a spec that makes dist stale for real and expects shot to rebuild or refuse). Lesson: a fix is proven
      where the defect happened, not in the nearest cheap test.
@@ -1775,6 +1776,12 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      was rejected (Tom): it makes the builder write the text and then rewrite it, so it burns more tokens. Tool fix:
      B102. Lesson: put a role's output rule in its system prompt, where it costs nothing and weighs most; measure,
      do not block.
+176. Gos landed while the harness map was stale (builder, 2026-11-02): Tom's Studio gos for title-search,
+     title-bar and shell-main are in go.json, but their compares fail with "harness map design-harness-parts.ts is
+     stale". Why no tool caught it: go and merge do not look at the harness map, so the staleness shows up only at the
+     next compare. Tool fix: B103 (go and merge regenerate a stale harness map, or refuse with the command; a Studio
+     click must not be lost, so regenerating is the default). Lesson: a step that hands work to the next step checks
+     that the next step can run.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
