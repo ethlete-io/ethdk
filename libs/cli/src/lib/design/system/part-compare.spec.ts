@@ -15,6 +15,7 @@ import {
   harnessShotOf,
   ShootStates,
 } from './compare-command';
+import { partActionFailuresOf } from './actions-command';
 import { StartHarnessServer } from './harness-server';
 import {
   comparePngs,
@@ -384,6 +385,7 @@ describe('part compare', () => {
         argv: ['components/chip', '--product', 'app-a', ...argv],
         invocation: 'et design',
         shoot,
+        actions: async () => [],
       });
 
     expect(await compare(['--state'])).toBe(2);
@@ -402,7 +404,54 @@ describe('part compare', () => {
     shoot.mockResolvedValueOnce('the harness page http://localhost:9/__design-harness did not load');
     lines.length = 0;
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
-    expect(lines).toEqual(['the harness page http://localhost:9/__design-harness did not load']);
+    expect(lines).toEqual([
+      'the harness page http://localhost:9/__design-harness did not load',
+      'every declared action works',
+    ]);
+  });
+
+  it('runs the action check of a part with a go, and fails on a miss or when the check cannot run', async () => {
+    const target = checkout();
+    const lines = output();
+    const shoot = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+    const actions = vi.fn<typeof partActionFailuresOf>(async (options) => {
+      options.onNote?.('host DesignCanvas: not checked');
+
+      return [];
+    });
+    const compare = () =>
+      designCompare({
+        target,
+        argv: ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        shoot,
+        actions,
+      });
+
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+
+    expect(await compare()).toBe(0);
+    expect(actions).toHaveBeenCalledWith(
+      expect.objectContaining({ part: 'components/chip', url: 'http://localhost:9' }),
+    );
+    expect(lines).toEqual(['default ok', 'host DesignCanvas: not checked', 'every declared action works']);
+
+    actions.mockResolvedValueOnce(['default button "Pausiert" click FAILED the state paused was not reached']);
+    lines.length = 0;
+    expect(await compare()).toBe(1);
+    expect(lines).toEqual([
+      'default ok',
+      'default button "Pausiert" click FAILED the state paused was not reached',
+      '1 action missed',
+    ]);
+
+    actions.mockResolvedValueOnce({ unavailable: 'the harness map is stale' });
+    lines.length = 0;
+    expect(await compare()).toBe(1);
+    expect(lines).toEqual(['default ok', 'actions not checked: the harness map is stale']);
   });
 
   it('says a foundation has nothing to compare and exits 0', async () => {
@@ -485,14 +534,14 @@ describe('part compare', () => {
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'];
 
     markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
-    expect(await designCompare({ target, argv, invocation: 'et design', shoot })).toBe(0);
+    expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
     expect(lines.join('\n')).not.toContain('unapproved');
 
     const source = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');
 
     writeFileSync(source, `${readFileSync(source, 'utf8')}// changed\n`);
     lines.length = 0;
-    expect(await designCompare({ target, argv, invocation: 'et design', shoot })).toBe(0);
+    expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
     expect(lines[0]).toContain('unapproved: components/chip changed since its go');
   });
 
@@ -506,7 +555,14 @@ describe('part compare', () => {
       shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
     }));
     const compare = () =>
-      designCompare({ target, argv: ['components/chip', '--product', 'app-a'], invocation: 'et design', shoot, start });
+      designCompare({
+        target,
+        argv: ['components/chip', '--product', 'app-a'],
+        invocation: 'et design',
+        shoot,
+        start,
+        actions: async () => [],
+      });
 
     markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
 

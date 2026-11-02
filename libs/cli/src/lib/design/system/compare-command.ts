@@ -7,6 +7,7 @@ import { DesignConfig, DesignPreset } from '../paths';
 import { createDesignServer } from '../serve';
 import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../shot';
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
+import { partActionFailuresOf } from './actions-command';
 import { harnessStaleOf } from './harness-map';
 import { shootLiveStates } from './live-compare';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
@@ -587,6 +588,7 @@ export const designCompare = async (options: {
   invocation: string;
   shoot?: ShootStates;
   start?: StartHarnessServer;
+  actions?: typeof partActionFailuresOf;
 }) => {
   const { target, invocation } = options;
   const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset', '--sketch']);
@@ -709,5 +711,30 @@ export const designCompare = async (options: {
     return 1;
   }
 
-  return compared === 0 ? 0 : 1;
+  if (all || live) return compared === 0 ? 0 : 1;
+
+  const missed = await (options.actions ?? partActionFailuresOf)({
+    target,
+    config,
+    product,
+    part: keys[0] ?? '',
+    url: args.values['--url'],
+    start: options.start,
+    onNote: (line) => console.log(line),
+  });
+
+  if (!Array.isArray(missed)) {
+    console.error(`actions not checked: ${missed.unavailable}`);
+
+    return 1;
+  }
+
+  missed.forEach((line) => console.error(line));
+  console.log(
+    missed.length === 0
+      ? 'every declared action works'
+      : `${missed.length} action${missed.length === 1 ? '' : 's'} missed`,
+  );
+
+  return compared === 0 && missed.length === 0 ? 0 : 1;
 };
