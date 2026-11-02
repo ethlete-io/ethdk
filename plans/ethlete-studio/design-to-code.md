@@ -3026,3 +3026,23 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      control whose action belongs to its consumer (never inferred), then the remaining hits. Open before Tom's go of
      pages/sketches: why the check printed "PICTURES CHANGED ... drawing" after d2d484c55 (that state has no hold
      button). Flake: actions-stream.spec failed once under load.
+
+226. Round-2 sketch of pages/sketches went stale (Tom, 2026-11-02): d2d484c55 edited the merged pages/sketches design
+     (hold toggle action marker) while the round-2 sketch (78f0fbb3a) was open, so Studio showed the base as changed
+     since the sketch. Lesson: nothing stops a design commit on a part with an open sketch round; Tom finds it at his
+     pick. Tool fix (decided, technical, B138): `check` (and so pre-push) refuses a commit that changes a part's design
+     while it has an open sketch whose base no longer matches, unless the sketch is rebased in the same commit; the
+     refusal names the rebase command.
+
+### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
+
+- pages/sketches round 2: the builder rebases the round-2 sketch onto the current merged design and re-runs
+  `sketch check` and `sketch ready`; then Tom picks ("Übernehmen") and grants the go in Studio. No agent writes the go.
+- go.json commits (finding 219): Studio commits go.json itself when Tom clicks "Go geben", one commit per go, authored
+  as Tom. Today's uncommitted gos (title-bar, title-search, update-dialog, shell-main, zoom-chip, pages/sketches) go
+  in once in one Studio-made commit. The agent hook that denies go.json commits stays. (B139)
+- Carried gos (finding 217, B124, reverses Impl Q114): an auto-carried go is written with `by: <tool>` and
+  `carriedFrom: {by, at}`; Studio shows "übernommen aus Toms Go vom <date>". Existing entries with `auto: true` and a
+  copied `by` are migrated the same way.
+- B134: the builder declares the missing actions in comment-pin, title-bar, tree-row and update-dialog in one slice;
+  Tom re-grants the four gos in one batch.
