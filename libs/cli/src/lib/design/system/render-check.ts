@@ -17,6 +17,7 @@ import {
   PLAIN_CONTROL_SELECTOR,
   SDK_CONTROLS,
 } from './complete';
+import { ACTION_UNDECLARED_STATEMENTS, CLICK_LISTENER_INIT_SCRIPT } from './action-undeclared';
 import { DISABLED_INTERACTION_STATEMENTS } from './disabled-interaction';
 import { classesOf, cssBlocksOf } from './css-source';
 import { createDesignServer } from '../serve';
@@ -62,6 +63,7 @@ type Frame = {
   namespaces: string[];
   contrast: ContrastOptions;
   controlInputs: boolean;
+  embedControls: string[];
 };
 
 type PartModule = {
@@ -149,6 +151,7 @@ const inspectFrame = (options: {
   namespaces: string[];
   contrast: ContrastOptions;
   part: string | null;
+  embedControls: string[];
   sdkStylesOnly?: boolean;
 }) => `((options) => {
   const root = document.getElementById('root');
@@ -428,6 +431,7 @@ ${SEE_THROUGH_STATEMENTS}
       const named = element.tagName.toLowerCase() + (cls ? '.' + cls : '') + (text ? ' "' + (text.length > 32 ? text.slice(0, 31) + '…' : text) + '"' : '');
       report('CONTROL-PART-INPUT', element, named + ' is a control without data-et-control, so no control check sees it - mark it with control(markup, name) from @ethlete/components/design/control and declare the name in controls');
     }
+${ACTION_UNDECLARED_STATEMENTS}
 ${DISABLED_INTERACTION_STATEMENTS}
   return found;
 })(${JSON.stringify({ ...options, escapable: ESCAPABLE, controlInputs: PLAIN_CONTROL_SELECTOR, sdkControls: SDK_CONTROLS.join(', ') })})`;
@@ -471,6 +475,13 @@ const widthsOf = (value: unknown) =>
 
 const PART_TIMEOUT_MS = 120_000;
 
+const embedControlsOf = (controls: unknown) =>
+  typeof controls === 'object' && controls !== null
+    ? Object.entries(controls)
+        .filter(([, declared]) => typeof (declared as { part?: unknown } | null)?.part === 'string')
+        .map(([name]) => name)
+    : [];
+
 const inspect = async (options: {
   browser: Browser;
   base: string;
@@ -481,6 +492,9 @@ const inspect = async (options: {
   const { browser, base, frames } = options;
   const timeoutMs = options.timeoutMs ?? PART_TIMEOUT_MS;
   const context = await browser.newContext();
+
+  await context.addInitScript(CLICK_LISTENER_INIT_SCRIPT);
+
   const issues: RenderIssue[] = [];
   const groups = new Map<string, Frame[]>();
 
@@ -515,6 +529,7 @@ const inspect = async (options: {
             namespaces: frame.namespaces,
             contrast: frame.contrast,
             part: frame.controlInputs ? frame.address.part : null,
+            embedControls: frame.embedControls,
           };
           const inFrame = (await current.evaluate(inspectFrame(inspected))) as Found[];
           await current.evaluate(emptySlotsScriptOf(frame.address.part));
@@ -765,6 +780,7 @@ export const renderIssuesOf = async (options: {
           drawn.presets,
         );
         const controlInputs = part.layer !== 'foundations';
+        const embedControls = embedControlsOf(definition?.controls);
         const baselineKey = JSON.stringify([product, key]);
 
         framed.set(JSON.stringify([product, key, sketch]), typeof definition?.frame === 'function');
@@ -808,6 +824,7 @@ export const renderIssuesOf = async (options: {
                       namespaces,
                       contrast: { exceptions: mergedContrast.exceptions, pairs, scheme },
                       controlInputs,
+                      embedControls,
                     },
                   ];
                 }),
@@ -836,6 +853,7 @@ export const renderIssuesOf = async (options: {
                 skips,
                 namespaces,
                 controlInputs,
+                embedControls,
                 contrast: {
                   exceptions: exceptions.selectors,
                   pairs: measuresPairs.has(scheme) ? [] : pairs,

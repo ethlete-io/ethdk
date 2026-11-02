@@ -41,22 +41,22 @@ const PARTS: Record<string, { body: string; extra?: string; css?: string; states
   'components/embed-once': {
     body: '<div style="transform: translateX(4px)"><div data-et-embed-box style="overflow: hidden; width: 288px; height: 180px"><iframe data-et-embed="pages/tall" data-et-embed-scale="0.2" data-et-embed-drawn style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div></div>',
   },
-  'components/wrapped': { body: '<button style="width: 60px">Save the draft now</button>' },
+  'components/wrapped': { body: '<button data-et-action="emit:go" style="width: 60px">Save the draft now</button>' },
   'components/clamped': {
-    body: '<button style="width: 60px"><p style="margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden">Save the draft now please</p></button>',
+    body: '<button data-et-action="emit:go" style="width: 60px"><p style="margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden">Save the draft now please</p></button>',
   },
   'components/themed': {
     body: '<style>.et-color--known { color: red }</style><div class="et-color--known et-color--inherited"><p class="et-color--ghost" style="margin: 0">Themed</p></div>',
   },
   'components/ring-cut': {
-    body: '<div style="overflow: hidden"><button style="display: block; outline: 3px solid">Go</button></div>',
+    body: '<div style="overflow: hidden"><button data-et-action="emit:go" style="display: block; outline: 3px solid">Go</button></div>',
   },
   'components/shadow-cut': {
     body: '<div style="overflow: hidden"><p style="margin: 0; box-shadow: 0 0 0 4px currentColor">Lifted</p></div>',
   },
   'components/ring-frame': { body: '<p style="margin: 0; outline: 2px solid; outline-offset: 20px">Ring</p>' },
   'components/ring-room': {
-    body: '<div style="overflow: hidden; padding: 8px"><button style="display: block; outline: 3px solid; box-shadow: 0 0 0 9px transparent, 0 8px 24px currentColor, inset 0 0 0 20px currentColor">Go</button></div>',
+    body: '<div style="overflow: hidden; padding: 8px"><button data-et-action="emit:go" style="display: block; outline: 3px solid; box-shadow: 0 0 0 9px transparent, 0 8px 24px currentColor, inset 0 0 0 20px currentColor">Go</button></div>',
   },
   'components/underline-cut': {
     body: '<p style="margin: 0; width: 80px; overflow: hidden; font-size: 16px; line-height: 16px"><span style="text-decoration: underline wavy; text-underline-offset: 3px">Spelt</span></p>',
@@ -578,7 +578,8 @@ describe('renderIssuesOf', () => {
   }, 120_000);
 
   it('blocks only issues a sketch adds, also when it moves its demo frame out of render', async (context) => {
-    const card = '<div class="card"><p style="margin: 0; color: #f00">Low</p><button>Go</button></div>';
+    const card =
+      '<div class="card"><p style="margin: 0; color: #f00">Low</p><button data-et-action="emit:go">Go</button></div>';
     const target = checkout({
       'components/card': { body: `<div class="card-frame" style="padding: 8px">${card}</div>` },
     });
@@ -594,7 +595,7 @@ describe('renderIssuesOf', () => {
           'render:',
           'frame: (body: string) => `<div class="card-frame" style="padding: 8px">${body}</div>`,\n  render:',
         ),
-      fresh: source.replace('<button>', '<span style="color: #f88">New</span><button>'),
+      fresh: source.replace('<button ', '<span style="color: #f88">New</span><button '),
     };
 
     for (const [variant, file] of Object.entries(variants)) {
@@ -776,6 +777,54 @@ describe('groupedIssueLinesOf', () => {
     detail,
     sketch: { target: 'elements/shell', variant },
   });
+
+  it('flags an interactive element that declares no action while drawing', async (context) => {
+    const target = checkout({});
+    const dir = join(target, DESIGN_DIR, 'shop/components/hold');
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'hold.ts'),
+      `import { definePart, drawing, html } from '@design-system';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { default: {} },
+  controls: { hold: { kind: 'button', input: ['pointer'] }, canvas: { kind: 'field', part: 'components/canvas' } },
+  render: () =>
+    drawing({
+      body: html\`<div class="hold-row">
+        <span data-et-control="hold"><button type="button" aria-expanded="false" data-sk-hold>Paused</button></span>
+        <button type="button" data-et-action="emit:save">Save</button>
+        <span role="button" tabindex="0" data-et-skip="ACTION-UNDECLARED">Skipped</span>
+        <button type="button" disabled>Off</button>
+        <div data-et-control="canvas"><button type="button">Zoom</button></div>
+        <div class="hold-pick">Pick</div>
+        <p data-sk-hold-reason hidden>Why</p>
+      </div>\`,
+      setup: (root) => {
+        root.querySelector('.hold-row').addEventListener('click', () => undefined);
+        root.querySelector('.hold-pick').addEventListener('click', () => undefined);
+      },
+    }),
+});
+`,
+    );
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: [{ product: 'shop', sketch: null, parts: null }],
+    });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'ACTION-UNDECLARED')
+        .map((issue) => `${issue.part}: ${issue.detail.split(' is interactive')[0]}`),
+    ).toEqual(['components/hold: button "Paused"', 'components/hold: div.hold-pick "Pick"']);
+  }, 120_000);
 
   it('prints a finding that repeats across states, schemes and variants once, with where it was found', () => {
     const light = 'border 1.63:1 in the light scheme, needs 3.00:1';
