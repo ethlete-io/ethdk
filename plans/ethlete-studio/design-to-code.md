@@ -1958,6 +1958,15 @@ Q16, from finding 126:
 - A refused decide action (pick, discard) shows an error next to the decide controls, with the CLI's reason. It
   reuses the merge bar's `[error]` pattern and `refusalMessageOf`; no new design, no sketch needed.
 
+### Pick and merge decisions (Tom, 2026-11-02)
+
+- One button per variant, "Übernehmen", replaces "Wählen". It opens the existing merge screen directly; that screen
+  is the confirmation (changed states, then merge). Cancelling it leaves nothing picked. The state "picked but not
+  merged" disappears from Studio; the CLI's pick becomes part of the merge, not a separate user step.
+- No undo after a merge: a merge is final. A later change of mind is the agent's job (a new sketch or a fix), not a
+  Studio button.
+- The sketch-view sketch (finding 148) is drawn on this flow.
+
 ### Post-MVP tool fixes (builder, 2026-11-02, in progress)
 
 In progress, five parallel subagents, one per fix: (1) `task --verify` runs the actions check (findings 123/127);
