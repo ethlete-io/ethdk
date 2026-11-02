@@ -1609,6 +1609,10 @@ check` fails a part with a varying design prop that has no app input and is not 
      renderers died ~5 s after load ("Render process gone") under load ~16; load vs real crash unconfirmed. Second
      gap: the e2e "Sketches" page is a synthetic one-variant sketch, not pages/sketches r2, so this case could never go
      red - B67 also adds the real r2 sketch as an e2e target.
+     Update (Tom, 2026-11-02): neither hover nor click - the outline appeared after the Studio window lost focus and
+     regained it, so it is a focus effect. Cause pending (builder): which element takes focus or focus-visible on
+     window refocus and why it draws the primary outline. Tool fix extends B67: the canvas e2e simulates window
+     blur/refocus and asserts no frame outline appears.
 159. Two pages/sketches r2 variants put a native scrollbar inside the frame: the rows column of the sketch view
      scrolls on its own (Tom, 2026-11-02, two screenshots). Inside a canvas that pans and zooms, a nested scroll area
      hides content from the shot and from Tom. Why no check caught it: the render checks look for clipped and
