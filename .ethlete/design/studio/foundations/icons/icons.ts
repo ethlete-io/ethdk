@@ -14,6 +14,10 @@ import inbox from '@assets/icons/inbox.svg?raw';
 import more from '@assets/icons/more.svg?raw';
 import upDown from '@assets/icons/up-down.svg?raw';
 import panel from '@assets/icons/panel.svg?raw';
+import search from '@assets/icons/search.svg?raw';
+import minimize from '@assets/icons/minimize.svg?raw';
+import maximize from '@assets/icons/maximize.svg?raw';
+import close from '@assets/icons/close.svg?raw';
 
 export type IconName =
   | 'chevron-right'
@@ -30,7 +34,11 @@ export type IconName =
   | 'inbox'
   | 'more'
   | 'up-down'
-  | 'panel';
+  | 'panel'
+  | 'search'
+  | 'minimize'
+  | 'maximize'
+  | 'close';
 
 const icons: Record<IconName, string> = {
   'chevron-right': chevronRight,
@@ -48,12 +56,16 @@ const icons: Record<IconName, string> = {
   more,
   'up-down': upDown,
   panel,
+  search,
+  minimize,
+  maximize,
+  close,
 };
 
 export const iconNames = Object.keys(icons) as IconName[];
 
 /** An icon of the 16 px set as inline SVG in `currentColor`, 16 px by default; `cls` lets a host size or place it in its own CSS. */
-export const icon = (name: IconName, { size = 16, cls = '' }: { size?: number; cls?: string } = {}) =>
+export const icon = (name: IconName, { size = 16, cls = '' }: { size?: number | string; cls?: string } = {}) =>
   svgAsset(icons[name], { size, class: cls, attrs: { 'aria-hidden': 'true' } });
 
 const sheetIcons = iconNames.map((name) => ({ name, svg: icons[name] }));

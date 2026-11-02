@@ -1,0 +1,5 @@
+@layer components {
+  .st-title-bar {
+    width: 1440px;
+  }
+}

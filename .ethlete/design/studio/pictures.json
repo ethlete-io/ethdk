@@ -200,6 +200,36 @@
       }
     }
   },
+  "components/title-bar": {
+    "review": {
+      "hash": "77e55602792a2e6f",
+      "states": {
+        "linux-close": "f7732dd78202516a",
+        "linux-close-update": "eec7e33529729c6a",
+        "linux-full": "353f7c4cd37033f3",
+        "linux-full-update": "3a1ed615cebdf2de",
+        "linux-left": "6623c9fd88379d7d",
+        "windows": "de32276610097372",
+        "windows-update": "33faf57f14afaf9f",
+        "macos": "3877a803dd11170a",
+        "macos-update": "3c1e18db13c8affb"
+      }
+    },
+    "go": {
+      "hash": "3754faf65978c07f",
+      "states": {
+        "linux-close": "f7732dd78202516a",
+        "linux-close-update": "eec7e33529729c6a",
+        "linux-full": "353f7c4cd37033f3",
+        "linux-full-update": "3a1ed615cebdf2de",
+        "linux-left": "6623c9fd88379d7d",
+        "windows": "de32276610097372",
+        "windows-update": "33faf57f14afaf9f",
+        "macos": "3877a803dd11170a",
+        "macos-update": "3c1e18db13c8affb"
+      }
+    }
+  },
   "components/tree-row": {
     "review": {
       "hash": "39cd74bbb91664ba",
@@ -475,10 +505,10 @@
   },
   "foundations/icons": {
     "review": {
-      "hash": "cd091fce4b125934",
+      "hash": "9ed1f1902cc38349",
       "states": {
-        "catalogue": "8adbbc9defa4f339",
-        "construction": "403ec8c30ac4a168"
+        "catalogue": "c81edabb3b7ddc79",
+        "construction": "2444c727f6663db9"
       }
     }
   },
