@@ -293,7 +293,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   `product` mit zwei Varianten (unveränderter SDK-Button, neuer eigener Control-Part); Tom wählt und mergt
   (Entscheidung 11).
 - **B108** Regel UNUSED-PART-STYLES: eine Seite oder Skizze rendert einen Part und gibt nie seine `.styles` zurück;
-  studio-mark.svg ohne sichtbaren Farb-Fallback; tote `studio-mark.component.ts` in der App lösch; `menu.styles` in pages/sketches d/e/f ergänzen (Befund 179).
+  studio-mark.svg ohne sichtbaren Farb-Fallback; tote `studio-mark.component.ts` in der App löschen; `menu.styles` in pages/sketches d/e/f ergänzen (Befund 179).
 - **B109** Der Sketch-Datensatz nennt je Variante den zeichnenden Agenten oder die Session; Studio und `et design
 sketch` zeigen ihn (Befund 180).
 
