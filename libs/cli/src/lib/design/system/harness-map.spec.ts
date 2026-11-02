@@ -7,8 +7,11 @@ import { DesignHarness, DESIGN_DIR } from '../paths';
 import { designCompare } from './compare-command';
 import { harnessProblemOf } from './harness-config';
 import { designHarness } from './harness-command';
+import { Readable } from 'stream';
+import { IncomingMessage } from 'http';
+import { partGoAnswer } from '../studio-api';
 import { goStepOf } from './go-step';
-import { goMarkOf, markPartGo } from './part-go';
+import { goMarkOf, goPartOf, markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { designTask } from './task-command';
 
@@ -281,5 +284,45 @@ describe('design go with a stale harness map', () => {
     expect(await goOf(target, write)).toBe(1);
     expect(lines.join('\n')).toContain('run et design harness --product app-a');
     expect(goMarkOf({ product, part: 'components/chip' })).toBeNull();
+  });
+
+  const studioGo = (target: string) => {
+    const hash = goPartOf({
+      product: resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } }),
+      part: 'components/chip',
+    });
+
+    return partGoAnswer({
+      target,
+      url: new URL('http://localhost/?product=app-a'),
+      request: Object.assign(
+        Readable.from([
+          Buffer.from(JSON.stringify({ part: 'components/chip', hash: typeof hash === 'string' ? hash : hash.hash })),
+        ]),
+        { method: 'POST' },
+      ) as unknown as IncomingMessage,
+    });
+  };
+
+  it('records a Studio go and says why the map stayed stale when it cannot be written', async () => {
+    const { target, write } = checkout();
+    const product = resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } });
+
+    write('apps/app-a/src/harness/parts.ts/blocker', '');
+
+    const answer = await studioGo(target);
+
+    expect(answer.status).toBe(200);
+    expect(answer.body).toMatchObject({ harness: expect.stringContaining('run et design harness --product app-a') });
+    expect(goMarkOf({ product, part: 'components/chip' })).not.toBeNull();
+  });
+
+  it('answers a Studio go without a harness field once the map is regenerated', async () => {
+    const { target, map } = checkout();
+    const answer = await studioGo(target);
+
+    expect(answer.status).toBe(200);
+    expect(answer.body).not.toHaveProperty('harness');
+    expect(readFileSync(map, 'utf8')).toContain("'components/chip'");
   });
 });

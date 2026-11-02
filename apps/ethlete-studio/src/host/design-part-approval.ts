@@ -12,12 +12,12 @@ const partUrl = ({ port, product, path, part }: ProductAddress & { path: string;
 export const partApproval$ = (address: ProductAddress, part: string): Observable<PartApproval> =>
   designAnswer$<PartApproval>(partUrl({ ...address, path: 'open-points', part }));
 
-/** Stores the Studio user's go for a part at the hash Studio showed. */
+/** Stores the Studio user's go for a part at the hash Studio showed; `harness` says why the harness map stayed stale. */
 export const giveGo$ = (
   address: ProductAddress,
   approval: { part: string; hash: string },
-): Observable<{ go: PartGo }> =>
-  designAnswer$<{ go: PartGo }>(partUrl({ ...address, path: 'part-go' }), {
+): Observable<{ go: PartGo; harness?: string }> =>
+  designAnswer$<{ go: PartGo; harness?: string }>(partUrl({ ...address, path: 'part-go' }), {
     method: 'POST',
     body: JSON.stringify(approval),
   });

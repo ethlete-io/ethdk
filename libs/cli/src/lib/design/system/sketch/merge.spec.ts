@@ -97,6 +97,31 @@ const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero'
 describe('mergeSketch', { timeout: 60_000 }, () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it('regenerates the stale harness map after a Studio merge', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+    const harness = { app: 'apps/app', map: 'apps/app/src/harness/parts.ts' };
+
+    config.products.acme.harness = harness;
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const ready = readySketch(target);
+
+    picked(ready.sketch);
+
+    const answer = await sketchMergeAnswer({
+      target,
+      url: new URL('http://localhost/?product=acme&sketch=elements/hero'),
+      request: Object.assign(Readable.from([Buffer.from('{}')]), { method: 'POST' }) as unknown as IncomingMessage,
+    });
+
+    expect(answer.status).toBe(200);
+    expect(readFileSync(join(target, harness.map), 'utf8')).toContain('DESIGN_HARNESS_PARTS');
+  });
+
   it('records the merged parts, so a later change outside a sketch shows', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

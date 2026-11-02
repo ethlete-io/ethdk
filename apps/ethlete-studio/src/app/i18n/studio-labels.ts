@@ -89,6 +89,8 @@ export const STUDIO_LABELS = {
     giveGo: 'Go geben',
     giveGoTitle: 'Gibt diesen Teil in seinem jetzigen Stand zur Umsetzung frei',
     goGiven: 'Go erteilt',
+    harnessStale:
+      'Go gespeichert, aber die Harness-Map konnte nicht neu erzeugt werden. Führe den genannten Befehl aus.',
     accept: 'Änderung abnehmen',
     acceptTitle: 'Nimmt die direkte Änderung an diesem gemergten Teil ab',
     accepted: 'Änderung abgenommen',

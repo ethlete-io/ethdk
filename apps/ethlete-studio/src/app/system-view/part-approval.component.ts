@@ -124,7 +124,14 @@ export class PartApprovalComponent {
   protected busy = signal(false);
 
   protected giveGo(hash: string) {
-    this.run(giveGo$(this.address(), { part: this.part(), hash }).pipe(map(() => false)));
+    this.run(
+      giveGo$(this.address(), { part: this.part(), hash }).pipe(
+        tap(({ harness }) => {
+          if (harness) this.refusal.set({ text: LABELS.harnessStale, findings: [harness] });
+        }),
+        map(() => false),
+      ),
+    );
   }
 
   protected accept(hash: string) {

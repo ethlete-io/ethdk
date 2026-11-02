@@ -127,4 +127,19 @@ describe('PartApprovalComponent', () => {
       LABELS.failed('disk full'),
     );
   });
+
+  it('shows why the harness map stayed stale after a stored go', async () => {
+    const server: Server = {
+      approval: { hash: 'h1', go: null, directEdit: false },
+      answer: () => json({ go: GO, harness: 'run et design harness --product studio' }),
+    };
+    const { element, click } = await render(server);
+
+    await click('[data-part-give-go]');
+
+    const shown = element.querySelector('[data-part-approval-refusal]');
+
+    expect(shown?.textContent).toContain(LABELS.harnessStale);
+    expect(shown?.textContent).toContain('run et design harness --product studio');
+  });
 });
