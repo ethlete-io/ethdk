@@ -2169,9 +2169,12 @@ Q16, from finding 126:
   "Neu starten" filled). Tom merged it.
 - The dialog shows the version without build metadata: everything from `+` on is dropped
   (`v0.42.0-next.137+build...` shows as `v0.42.0-next.137`).
-- The builder commits Tom's title-bar merge once, exactly its paths (components/title-bar/, the four icons close,
-  maximize, minimize, search, and the merged.json/pictures.json lines), as "chore(repo): Merge ... sketch"; never
-  go.json.
+- The builder commits Tom's title-bar merge once, together with its follow-up edits and the new
+  components/title-search part (the merge content is no longer separable): exactly components/title-bar/,
+  components/title-search/, the four icons close, maximize, minimize, search, and those parts' merged.json and
+  pictures.json lines, as one "chore(repo): Merge ..." commit, after both parts check clean; never go.json. A commit
+  is no go: Tom grants both gos in Studio afterwards.
+- The builder commits Tom's update-dialog merge (variant b) once, exactly its paths and lines; never go.json.
 
 ### Sketch view states decision (Tom, 2026-11-02)
 
