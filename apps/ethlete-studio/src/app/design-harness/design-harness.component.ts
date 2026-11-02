@@ -3,15 +3,18 @@ import {
   Component,
   effect,
   inject,
+  Injector,
   OutputRef,
   reflectComponentType,
   Type,
+  signal,
   untracked,
   viewChild,
   ViewContainerRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { outputToObservable, toSignal } from '@angular/core/rxjs-interop';
+import { OVERLAY_REF, OverlayRef } from '@ethlete/components';
 import { injectRenderer } from '@ethlete/core';
 import { catchError, from, map, Observable, of, tap } from 'rxjs';
 import { DESIGN_HARNESS_PARTS } from './design-harness-parts';
@@ -63,6 +66,7 @@ export class DesignHarnessComponent {
   private platformLocation = inject(PlatformLocation);
   private document = inject(DOCUMENT);
   private renderer = injectRenderer();
+  private injector = inject(Injector);
   private outlet = viewChild('outlet', { read: ViewContainerRef });
   protected state = toSignal(stateOf$(this.platformLocation.search));
   protected page = new URLSearchParams(this.platformLocation.search).get('layout') === 'page';
@@ -77,7 +81,17 @@ export class DesignHarnessComponent {
       untracked(() => {
         outlet.clear();
 
-        const ref = outlet.createComponent(state.component);
+        const ref = outlet.createComponent(state.component, {
+          injector: Injector.create({
+            parent: this.injector,
+            providers: [
+              {
+                provide: OVERLAY_REF,
+                useValue: { close: () => undefined, busy: signal(false) } as unknown as OverlayRef,
+              },
+            ],
+          }),
+        });
 
         Object.entries(state.props).forEach(([name, value]) => {
           if (name === 'class') {
