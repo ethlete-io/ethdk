@@ -1509,6 +1509,17 @@ check` fails a part with a varying design prop that has no app input and is not 
      caught it: `design check` and `design task` judge the component against its own design only, never against the
      parts it composes, its app consumers, or inputs beyond the fixture. Tool fixes: B57 to B61. Lesson: a part
      implemented in isolation passes every check and still duplicates, fakes and drifts.
+152. Merge view feedback (Tom, 2026-11-02, title-bar C merge, which went through): (a) the "Geändert" list takes a
+     long time to appear; until then the panel shows only the heading and the canvas stays empty, with no loading
+     state; (b) in the narrow side panel the variant note wraps into six short lines beside the "Gewählt c" chip, and
+     the changed list breaks part keys and state names mid-token ("elements/part-" / "tree", "components-" / "open")
+     while repeating the part key on every row. Why no check caught it: no e2e measures the time to the first changed
+     row or asserts a loading state; the render check has no rule for identifiers broken across lines or for running
+     text squeezed into a narrow column. Tool fix: B62 (the merge view shows a loading state at once and fills the list
+     as states are judged; an e2e budget for the first row; a render-check rule that flags a code identifier wrapped
+     mid-token and a text block wrapped into more than about four lines narrower than about 25 characters). The
+     layout fix itself is visible, so it goes into a merge-view sketch. Lesson: a list that is slow and a list that is
+     cramped both pass a check that only looks at the finished, wide render.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

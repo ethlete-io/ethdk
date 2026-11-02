@@ -27,8 +27,7 @@ Session (Kontext 70 %).
 
 Bei Tom:
 
-- Titelleiste: Tom hat C gewählt. Der Merge scheiterte an Inline-SVGs (Befund 150); die Icons liegen jetzt in
-  `assets/`, ein Merge im Klon geht. Tom mergt C neu.
+- Titelleiste: C ist gemergt (02.11.). Jetzt gleicht der Builder den Code an (A1).
 - `pages/sketches` ist `ready`, wird aber erst gewählt, wenn die Sketch-Ansicht alle Zustände zeigt (Befund 148).
 - Danach: Sketch der Sketch-Ansicht (B54 sichtbar, mit „Übernehmen“ nach A13), dann B46.
 
@@ -45,8 +44,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 
 ## A. Studio: was man sieht
 
-- **A1** Titelleiste als Teil: zuerst Sketch `components/title-bar` mit Fensterknöpfen, Suche und Update-Knopf; Tom wählt,
-  dann Code angleichen (die Fensterknöpfe sind gebaut, aber ohne Entwurf; Befund 133; dl 02.11.).
+- **A1** Titelleiste: Sketch `components/title-bar` Variante C ist gemergt (02.11.); jetzt den Code angleichen
+  (Fensterknöpfe, Suchfeld „studio / Part“, Update-Knopf nur bei bereitem Update; Befund 133).
 - **A2** Nach A1: Suche in der Titelleiste; Klick oder Strg+K öffnet die Command Palette.
 - **A3** Nach A1: Knopf „Update“ in der Titelleiste, nur wenn ein Update bereit ist (Q90).
 - **A4** Arbeit (Rendern, Mergen) nur in der Ansicht zeigen, auf die man wartet.
@@ -180,6 +179,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (stattdessen `etFocusRing`) (Befund 151).
 - **B61** Skill für das Umsetzen eines Design-Parts: komponieren statt kopieren, keine Sample-Defaults, Label-Map,
   SDK-Fokusring und Overlay, Spec mit fremden Daten (Befund 151).
+- **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, E2E-Budget bis zur ersten Zeile; Render-Regel
+  für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch (Befund 152).
 
 ## C. CLI: Tempo und Ablauf
 
