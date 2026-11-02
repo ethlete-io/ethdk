@@ -4,7 +4,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Window Control Button — Design Specification
 
-Square icon-only button for toolbar and window chrome controls. No variants — single visual style with two kinds.
+Icon-only button for toolbar and window chrome controls. No variants — two kinds (`default`, `close`) and two shapes: `square` (Windows-style tile, default) and `round` (GNOME / Adwaita-style circle).
 
 ---
 
@@ -17,7 +17,7 @@ Square icon-only button for toolbar and window chrome controls. No variants — 
 
 - **Icon slot** — direct child content; always `1em × 1em` (matches `--_et-window-control-button-icon-size`)
 - **Loader** — absolutely positioned spinner that replaces the icon visually
-- **Shape** — square, fixed width and height per size, border-radius 4 px
+- **Shape** — `square`: fixed width and height per size (28 / 32 / 36 px), border-radius 4 px. `round`: a circle (20 / 24 / 28 px, icon 12 / 16 / 18 px) with a 10 % tint at rest, 15 % on hover and focus, 30 % while pressed; its `close` kind keeps that tint and has no red hover
 
 ---
 

@@ -64,6 +64,27 @@
       --_et-window-control-button-icon-size: 1.8rem;
     }
 
+    &:where([data-shape='round']) {
+      --et-theme-color-primary-opacity: 0.1;
+      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.1);
+      --_et-window-control-button-border-radius: 50%;
+    }
+
+    &:where([data-shape='round'][data-size='sm']) {
+      --_et-window-control-button-size: 2rem;
+      --_et-window-control-button-icon-size: 1.2rem;
+    }
+
+    &:where([data-shape='round'][data-size='md']) {
+      --_et-window-control-button-size: 2.4rem;
+      --_et-window-control-button-icon-size: 1.6rem;
+    }
+
+    &:where([data-shape='round'][data-size='lg']) {
+      --_et-window-control-button-size: 2.8rem;
+      --_et-window-control-button-icon-size: 1.8rem;
+    }
+
     @media (hover: hover) {
       &:hover {
         --et-theme-color-primary-opacity: 0.14;
@@ -103,19 +124,38 @@
       }
     }
 
-    &:where([data-kind='close']):focus-visible {
+    &:where([data-shape='round']) {
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.15;
+          --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.15);
+        }
+      }
+
+      &:focus-visible {
+        --et-theme-color-primary-opacity: 0.15;
+        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.15);
+      }
+
+      &:active {
+        --et-theme-color-primary-opacity: 0.3;
+        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    &:where([data-kind='close']:not([data-shape='round'])):focus-visible {
       background: var(--et-window-control-button-close-background, rgba(232, 17, 35, 0.92));
       color: var(--et-window-control-button-close-color, #ffffff);
     }
 
     @media (hover: hover) {
-      &:where([data-kind='close']):hover {
+      &:where([data-kind='close']:not([data-shape='round'])):hover {
         background: var(--et-window-control-button-close-background, rgba(232, 17, 35, 0.92));
         color: var(--et-window-control-button-close-color, #ffffff);
       }
     }
 
-    &:where([data-kind='close']):active {
+    &:where([data-kind='close']:not([data-shape='round'])):active {
       background: var(--et-window-control-button-close-background-active, rgba(196, 14, 29, 0.96));
       color: var(--et-window-control-button-close-color, #ffffff);
     }

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import '../../test-helpers';
 import {
   WINDOW_CONTROL_BUTTON_KINDS,
+  WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
   WindowControlButtonComponent,
 } from './window-control-button.component';
@@ -62,6 +63,19 @@ describe('WindowControlButtonComponent', () => {
       fixture.componentRef.setInput('kind', WINDOW_CONTROL_BUTTON_KINDS.CLOSE);
       fixture.detectChanges();
       expect(host.getAttribute('data-kind')).toBe('close');
+    });
+  });
+
+  describe('shape', () => {
+    it('defaults to data-shape="square"', () => {
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('square');
+    });
+
+    it('reflects round shape in data-shape', () => {
+      fixture.componentRef.setInput('shape', WINDOW_CONTROL_BUTTON_SHAPES.ROUND);
+      fixture.detectChanges();
+      expect(host.getAttribute('data-shape')).toBe('round');
     });
   });
 

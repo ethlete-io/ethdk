@@ -2,13 +2,13 @@
 
 Five button flavors, all attribute selectors on native `<button>` or `<a>` elements, plus a [split button](#split-button) container that groups two of them into one control. Import `BUTTON_IMPORTS`; icons inside buttons come from the [icon system](/components/icon).
 
-| Flavor         | Selector                     | For                                                          |
-| -------------- | ---------------------------- | ------------------------------------------------------------ |
-| Surface button | `[et-button]`                | The standard button - label with optional icon               |
-| Text button    | `[et-text-button]`           | No background/border; underline on hover                     |
-| Icon button    | `[et-icon-button]`           | Icon only (needs an `aria-label`)                            |
-| FAB            | `[et-fab]`                   | Floating action button; `expanded` toggles the extended pill |
-| Window control | `[et-window-control-button]` | Titlebar-style controls; `kind: 'default' \| 'close'`        |
+| Flavor         | Selector                     | For                                                                                 |
+| -------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| Surface button | `[et-button]`                | The standard button - label with optional icon                                      |
+| Text button    | `[et-text-button]`           | No background/border; underline on hover                                            |
+| Icon button    | `[et-icon-button]`           | Icon only (needs an `aria-label`)                                                   |
+| FAB            | `[et-fab]`                   | Floating action button; `expanded` toggles the extended pill                        |
+| Window control | `[et-window-control-button]` | Titlebar-style controls; `kind: 'default' \| 'close'`, `shape: 'square' \| 'round'` |
 
 ```html
 <button [loading]="saving()" et-button type="button" variant="filled" size="md" color="brand">
@@ -182,7 +182,7 @@ Base override tokens, all read by the surface button (`et-button`); the other fl
 
 Surface, FAB and icon button also share one opacity-ramp recipe for their outline/tonal/transparent variants: `--et-button-variant-opacity-hover-delta` (default `0.08`), `--et-button-variant-opacity-focus-delta` (default `0.12`) and `--et-button-variant-opacity-active-delta` (default `0.16`) are added to each variant's resting `--et-theme-color-primary-opacity` to get its hover/focus/active tint. The filled icon button subtracts the focus delta for its focus tint.
 
-The two icon-shaped flavors size themselves from their own tokens instead of `padding`: the icon button takes `--et-icon-button-size` (diameter), `--et-icon-button-icon-size` and `--et-icon-button-border-radius`; the FAB takes `--et-fab-size` (collapsed diameter), `--et-fab-icon-size`, `--et-fab-label-font-size` and `--et-fab-contents-gap`. The split button adds `--et-split-button-divider-color`. The window-control button's `kind: 'close'` state colours come from `--et-window-control-button-close-background`, `--et-window-control-button-close-background-active` and `--et-window-control-button-close-color` (defaults: a Windows-style red with white text).
+The two icon-shaped flavors size themselves from their own tokens instead of `padding`: the icon button takes `--et-icon-button-size` (diameter), `--et-icon-button-icon-size` and `--et-icon-button-border-radius`; the FAB takes `--et-fab-size` (collapsed diameter), `--et-fab-icon-size`, `--et-fab-label-font-size` and `--et-fab-contents-gap`. The split button adds `--et-split-button-divider-color`. The window-control button's `kind: 'close'` state colours come from `--et-window-control-button-close-background`, `--et-window-control-button-close-background-active` and `--et-window-control-button-close-color` (defaults: a Windows-style red with white text). `shape: 'round'` draws a GNOME (Adwaita) style circle with a faint tint at rest instead of the default square tile, and its `close` kind has no red hover.
 
 Most of them are set **per size** by the component (`--et-button-padding`, the two icon-button sizes, all four FAB sizes, …), in a `:where([data-size='…'])` block on the button itself. Two consequences:
 

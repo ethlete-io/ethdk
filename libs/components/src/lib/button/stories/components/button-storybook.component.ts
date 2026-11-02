@@ -15,7 +15,11 @@ import {
 import { BUTTON_SIZES, BUTTON_VARIANTS } from '../../button.types';
 import { BUTTON_IMPORTS } from '../../button.imports';
 import { ButtonColor } from '../../headless';
-import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES } from '../../window-control-button.component';
+import {
+  WINDOW_CONTROL_BUTTON_KINDS,
+  WINDOW_CONTROL_BUTTON_SHAPES,
+  WINDOW_CONTROL_BUTTON_SIZES,
+} from '../../window-control-button.component';
 
 const BUTTON_EXAMPLES = [
   {
@@ -326,6 +330,43 @@ export class ButtonFabStorybookComponent {
           }
         </div>
       </div>
+
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-xs font-semibold uppercase tracking-widest">round</p>
+        <div class="flex flex-wrap items-center gap-3">
+          @for (buttonExample of BUTTON_EXAMPLES; track buttonExample.size) {
+            <button
+              [size]="buttonExample.size"
+              [shape]="ROUND_SHAPE"
+              [color]="color()"
+              [disabled]="disabled()"
+              [loading]="loading()"
+              [progress]="progress()"
+              [pressed]="pressed()"
+              [attr.aria-label]="buttonExample.label"
+              et-window-control-button
+              type="button"
+            >
+              <i [etIcon]="buttonExample.iconName"></i>
+            </button>
+            <button
+              [size]="buttonExample.size"
+              [shape]="ROUND_SHAPE"
+              [kind]="CLOSE_KIND"
+              [color]="color()"
+              [disabled]="disabled()"
+              [loading]="loading()"
+              [progress]="progress()"
+              [pressed]="pressed()"
+              [attr.aria-label]="'Close'"
+              et-window-control-button
+              type="button"
+            >
+              <i etIcon="et-times"></i>
+            </button>
+          }
+        </div>
+      </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -341,6 +382,7 @@ export class ButtonWindowControlStorybookComponent {
 
   public readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
   public readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  public readonly ROUND_SHAPE = WINDOW_CONTROL_BUTTON_SHAPES.ROUND;
 }
 
 @Component({
