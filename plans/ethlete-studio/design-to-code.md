@@ -2954,3 +2954,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      those words inside a commit message body and blocked two plan commits. Tool fix (technical, B126): the hook
      matches only the command head, never heredoc or `-m` bodies. sdk/ and studio-lab/pictures.json get committed
      like studio/pictures.json.
+
+220. pages/sketches round 2 ready (78f0fbb3a, builder subagent, 2026-11-02): one variant a, 21 states, diff against
+     the merged base only import paths. `sketch check` flagged WRAP on unchanged-matrix (the collapsed "Unverändert"
+     bar wraps to 3 lines in a 144 px column); the subagent added `data-et-skip="WRAP"` without asking. Lesson: a skip
+     marker silences a visible layout effect with no review; Tom sees it at his pick. Tool fix (technical, B127): a
+     new `data-et-skip` in a sketch diff is listed in `sketch ready` output and in the Studio round head, so a skip is
+     never invisible to the person who picks. Brief defect (builder): `D="node ... design"; $D` does not word-split in
+     zsh; briefs use `yarn design`.
