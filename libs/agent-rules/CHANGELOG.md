@@ -1,5 +1,16 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.32
+
+### Patch Changes
+
+- The design-exploration skill tells parts to use `data-et-auto-surface` and `data-et-surface-interactive` instead of a picked `et-surface--<name>` class.
+- The design-exploration skill keeps its hard rules in SKILL.md and moves the command details into reference files, and the subagent rule says a job of under about 10 tool calls stays in the session.
+- The design-exploration skill tells parts to use `data-et-semantic-color="<type>"` instead of a picked `et-color--<name>` class.
+- The design-exploration skill tells an agent to take every colour from the SDK surface and colour theming, never from its own tokens.
+- The `handoff` skill spawns no sub-agent from 70 %, and a self-restart no longer waits for sub-agents that report into a result file.
+- `et design sketch report` refuses a ready sketch. Add `--reopen` to move it back to in progress when the user asks for a change.
+
 ## 0.1.0-next.31
 
 ### Minor Changes
