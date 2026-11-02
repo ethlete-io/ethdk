@@ -3,7 +3,12 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
-import { aktuellPlaceholderWarnings, shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
+import {
+  aktuellPlaceholderWarnings,
+  identicalRenderLines,
+  shotsShowNoChange,
+  variantsThatDoNotLoad,
+} from './ready-shots';
 import { designSketch } from './sketch-command';
 import { THEMING_TEXT } from './system/theming-text';
 import { sketchOpenPointsOf } from './system/read-open-points';
@@ -12,6 +17,7 @@ import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),
+  identicalRenderLines: vi.fn(async (): Promise<string[]> => []),
   shotsShowNoChange: vi.fn(async (): Promise<true | string> => 'variant a changes default'),
   variantsThatDoNotLoad: vi.fn(async (): Promise<string[]> => []),
 }));
@@ -147,7 +153,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)\ncomponents/button adds open points - close them before ready',
     );
     lines.length = 0;
-    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
     expect(lines).toContain(
       'ready will refuse: components/button a: components/button: 4 missing motions (default -> wide, long -> wide, wide -> default, wide -> long)',
     );
@@ -309,10 +317,42 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'variant a components/button does not load: exports is not defined',
     ]);
     lines.length = 0;
-    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
     expect(lines).toContain(
       'ready will refuse: components/button variant a components/button does not load: exports is not defined',
     );
+    expect(
+      findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'components', name: 'button' },
+      }),
+    ).toMatchObject({ status: 'in progress' });
+  });
+
+  it('refuses ready while a variant adds nothing visible, and check warns of it', async () => {
+    const target = acme();
+    const lines = output();
+    const same =
+      'components/button variant b draws the same pixels as variant a in every state (default, long) - it adds nothing visible: change it or reject it';
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    vi.mocked(identicalRenderLines).mockResolvedValueOnce([same]);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(
+      `${same}\ncomponents/button has variants that add nothing visible - fix them before ready`,
+    );
+
+    vi.mocked(identicalRenderLines).mockResolvedValueOnce([same]);
+    lines.length = 0;
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${same}`);
+    expect(lines.at(-1)).toBe('check ok - ready will refuse 1 (see above)');
     expect(
       findSketch({
         productDir: join(target, DESIGN_DIR, 'acme'),
@@ -731,7 +771,9 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--product', 'acme')).toBe(0);
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
-    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('check ok - ready will refuse 1 (see above)');
     expect(lines.pop()).toMatch(/^ready will refuse: components\/button round r1 has no note - set it with:/u);
     expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);

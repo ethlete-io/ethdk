@@ -77,7 +77,7 @@ const remember = (key: string, unchanged: string[]) => {
   return unchanged;
 };
 
-const framesOf = (part: LoadedPart, presets: string[] | null) => {
+export const framesOf = (part: Pick<LoadedPart, 'widths' | 'interactions'>, presets: string[] | null) => {
   const sizes = presets
     ? presets.map((preset) => ({ preset, width: null }))
     : Array.isArray(part.widths) && part.widths.length > 0

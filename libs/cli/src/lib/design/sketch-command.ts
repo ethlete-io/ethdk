@@ -14,7 +14,12 @@ import {
   variantWarningsOf,
 } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
-import { aktuellPlaceholderWarnings, shotsShowNoChange, variantsThatDoNotLoad } from './ready-shots';
+import {
+  aktuellPlaceholderWarnings,
+  identicalRenderLines,
+  shotsShowNoChange,
+  variantsThatDoNotLoad,
+} from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
 import { recordAutoMerge } from './system/sketch/merged-parts';
@@ -623,6 +628,13 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
 
   if (unloaded.length > 0) return fail(`${unloaded.join('\n')}\n${sketch.target} does not load - fix it before ready`);
 
+  const identical = await identicalRenderLines({ target: context.target, config: context.config, product, sketch });
+
+  if (identical.length > 0)
+    return fail(
+      `${identical.join('\n')}\n${sketch.target} has variants that add nothing visible - fix them before ready`,
+    );
+
   const ready =
     sketch.status === 'ready'
       ? sketch
@@ -922,15 +934,18 @@ const checked = async (context: Context) => {
     failed ||= all.length > 0;
   }
 
-  for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
-    const refusals = [
-      ...(await unloadedLinesOf({ target, config, product, sketch })),
-      ...openPointLinesOf({ product, sketch }).added,
-      ...[roundNoteRefusalOf(sketch) ?? []].flat(),
-    ];
+  let refused = 0;
+  const refuse = (lines: string[]) => {
+    lines.forEach((line) => console.warn(`ready will refuse: ${line}`));
+    refused += lines.length;
+  };
 
-    refusals.forEach((line) => console.error(`ready will refuse: ${line}`));
-    failed ||= refusals.length > 0;
+  for (const sketch of new Set(chosen.map((entry) => entry.sketch))) {
+    const unloaded = await unloadedLinesOf({ target, config, product, sketch });
+
+    refuse([...unloaded, ...openPointLinesOf({ product, sketch }).added, ...[roundNoteRefusalOf(sketch) ?? []].flat()]);
+
+    if (!failed && unloaded.length === 0) refuse(await identicalRenderLines({ target, config, product, sketch }));
   }
 
   if (failed) return 1;
@@ -948,7 +963,7 @@ const checked = async (context: Context) => {
 
   if ('issues' in rendered && rendered.issues.length > 0) return 1;
 
-  console.log('ok');
+  console.log(refused > 0 ? `check ok - ready will refuse ${refused} (see above)` : 'ok');
 
   return 0;
 };
