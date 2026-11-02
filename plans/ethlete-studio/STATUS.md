@@ -172,7 +172,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 148; sichtbar, also erst Sketch).
 - **B55** `design check` lehnt einen Part ab, dessen Design-Prop variiert, aber keinen App-Input hat (ohne zu
   zeichnen); zoom-chip-Design korrigiert; ein Durchlauf von compare über alle Parts findet weitere, die nie
-  vergleichbar waren (Befund 149).
+  vergleichbar waren; ein CI-Schritt vergleicht jeden fertigen Part erneut; die drei Abweichungen (shell-main,
+  merge, system) werden Richtung Design behoben (Befund 149).
 - **B56** Merge-Probelauf: check und ready prüfen jede Variante im gemergten Layout (auch shared/); die Ablehnung
   eines Merges zeigt die Befunde statt „Merge fehlgeschlagen.“ (Befund 150).
 - **B57** Kompositions-Check: importiert ein Design einen umgesetzten Part, muss die Komponente dessen Komponente

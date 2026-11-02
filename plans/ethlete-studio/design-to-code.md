@@ -1466,7 +1466,13 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
 check` fails a part with a varying design prop that has no app input and is not design-only, without drawing;
      the zoom-chip design sets `target` only where it sets `interaction`; a sweep runs compare over every part to
      find others that were never comparable). Lesson: "done" must mean a check has compared the part, not that no
-     check complained.
+     check complained. Sweep (builder, 2026-11-02, all 26 studio parts): 16 pass; zoom-chip cannot be compared;
+     foundations refuse with "has no implements link" (should say "nothing to compare", exit 0). Counted done but
+     deviating: elements/shell-main `project-picker` (10639 px), pages/merge `merging` (117 px), pages/system
+     `nothing-open` (33571 px); whether they drifted or were never green is being traced. Why no check: no pre-push or
+     CI step runs compare per part, and "done" is never re-verified; the B48 gate sees change against the base, not a
+     standing deviation. Added to B55: a CI step compares every done part; the three deviations are fixed toward the
+     design (moving closer to the design needs no sketch).
 150. Tom's merge of components/title-bar C failed with only "Merge fehlgeschlagen." (2026-11-02). The pick had worked;
      the merge was refused by INLINE-SVG on the sketch's shared/chrome.ts (window-control icons drawn inline), and the
      merge rolled back. Why no check caught it: inlineSvgsOf scans only the part's own folder, and in the sketch
