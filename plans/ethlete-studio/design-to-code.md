@@ -2486,3 +2486,9 @@ decision 2), #91 (go rework, A10).
      frame area, ignoring text-only diffs in the variant-note region ("g and h look alike in zoom-7"). Lands with the
      withdraw slice. Both Q2 actions were blocked by the builder's permission guard as acts in Tom's name / self-
      modification; Tom has to run or confirm them in the builder session himself.
+
+186. `sketch reject --by tom` recorded the verdict as "rejected by the agent" (Tom, 2026-11-02): sketch-command.ts
+     ~l.1062 maps every `--by` value except `designer` to `agent` silently, and the builder handed Tom a command with
+     `--by tom`. Tool fix (decided, technical): verdict commands accept only `designer` or a known model id for
+     `--by` and refuse anything else with the valid values; the usage/refusal text names `--by designer` for the
+     user. Tom re-runs b and c with `--by designer`.
