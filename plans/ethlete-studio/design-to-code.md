@@ -1520,6 +1520,10 @@ check` fails a part with a varying design prop that has no app input and is not 
      caught it: `design check` and `design task` judge the component against its own design only, never against the
      parts it composes, its app consumers, or inputs beyond the fixture. Tool fixes: B57 to B61. Lesson: a part
      implemented in isolation passes every check and still duplicates, fakes and drifts.
+     B61 built (builder, 2026-11-02, d7d7599b5, unpushed): skill `.agents/skills/studio-design-part` (compose, no
+     sample defaults, label map, etFocusRing and SDK overlay, no et-button internals, spec with foreign data,
+     implements link, verify order). No pointer in `design task` or AGENTS.md: the skill listing already surfaces it;
+     the B57-B60 tool messages name it once they exist.
 152. Merge view feedback (Tom, 2026-11-02, title-bar C merge, which went through): (a) the "Geändert" list takes a
      long time to appear; until then the panel shows only the heading and the canvas stays empty, with no loading
      state; (b) in the narrow side panel the variant note wraps into six short lines beside the "Gewählt c" chip, and

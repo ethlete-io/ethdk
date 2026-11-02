@@ -25,8 +25,8 @@ Builder (02.11.): pusht bis 062bca6f3 (B54-Werkzeugteil, Schutz gegen Fehlerseit
 3 Abweichungen behoben sind (B55, als Nächstes; alle drei sind Werkzeugfehler, keine App-Fehler). a9c366f99: Render-Prüfungen scheitern laut, wenn ihr Server nicht
 startet. Reihenfolge (Grill, 02.11., Tom: „in der Reihenfolge, die Sinn ergibt“): sofort parallel der Sketch der
 Sketch-Ansicht als Runde 2 von pages/sketches (Befund 148, B36, B34/B41, B38, „Übernehmen“ nach A13, Platz für
-B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B61, B58,
-B57, B59, B60 vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
+B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B58, B57, B59,
+B60 (B61-Skill gebaut, d7d7599b5, lokal) vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
 lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. Läuft: A1 mit
 macOS-Ampel als Demo-Inhalt, compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
 
@@ -181,8 +181,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   aus der Label-Map (Befund 151).
 - **B60** Lint für App-Templates: kein Überschreiben von `et-button`-Innereien, keine handgemachten Fokusringe
   (stattdessen `etFocusRing`) (Befund 151).
-- **B61** Skill für das Umsetzen eines Design-Parts: komponieren statt kopieren, keine Sample-Defaults, Label-Map,
-  SDK-Fokusring und Overlay, Spec mit fremden Daten (Befund 151).
 - **B62** Merge-Ansicht: Ladezustand sofort, Liste füllt sich laufend, jede geänderte Zeile nennt den Grund (Pixel,
   fehlt, Fehler); E2E-Budget bis zur ersten Zeile und bis die gemergte Sketch aus dem Baum fällt; Render-Regel
   für Bezeichner, die mitten im Wort umbrechen, und für Fließtext in zu schmaler Spalte; Layout per Sketch, auch für die
