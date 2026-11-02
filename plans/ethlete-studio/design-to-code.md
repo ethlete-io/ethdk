@@ -2893,3 +2893,15 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      the doc agent uses for every plan commit, sets a temporary index that leaks into child git calls. Tool fix
      (technical, B122): a spec runs the pre-commit hook under a path-limited commit and requires a spec that commits
      in a temp repo to pass.
+
+215. pages/sketches compare 8 of 9 states 0 px after af28afe38 and the app's gridFit loop (builder, 2026-11-02); the
+     ninth, `drawing`, differs by 70 px: two `animate-pulse` dots one colour unit off, because Playwright's
+     `animations: 'disabled'` resets infinite animations to an unstable frame. Accepted as noise for the Sketches slice
+     commit only, named in the commit message. Also: canvas.e2e copied sketch folders from the live tree and crashed
+     with ENOENT when Tom discarded elements-shell-main mid-run; it now extracts them from HEAD (`git archive`).
+     Lesson: a test fixture read mutable working state; compare keeps no PNG for ok states, so no edge check is
+     possible afterwards; its exit code cannot tell a known diff from a new one. Tool fix (technical, into B117): both
+     pictures freeze `animate-*` at a fixed frame; compare writes PNGs for ok states too (`--keep-all`). Rejected: a
+     per-state "known baseline" pixel allowance - it hides the next real diff in the same state; the noise source gets
+     fixed instead. App: state labels toggle with `hidden` (as the design does), not `@if`, so a fit crossing the
+     label scale measures the final rows.
