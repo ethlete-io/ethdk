@@ -26,16 +26,16 @@ import {
   pointerOpensOf,
   slotOnlyStatesOf,
 } from './part-compare';
-import { taskPartOf } from './part-task';
+import { doneParts, taskPartOf } from './part-task';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { watchSdkErrors } from './sdk-errors';
 import { settledPanesOf } from './settled-panes';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
-import { parseTarget } from './sketch/sketch';
+import { parseTarget, SketchTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 export const COMPARE_USAGE =
-  'compare <layer>/<name> --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
+  'compare <layer>/<name> | --all --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
 
 export type StateShot = { state: string; design: Buffer; app: Buffer } | { state: string; problem: string };
 
@@ -540,6 +540,7 @@ export const comparePart: ComparePart = async (options) => {
 };
 
 /**
+ * `et design compare --all` compares every done part and fails on any deviation or part it cannot compare; a foundation has nothing to compare.
  * `et design compare <layer>/<name> …` compares each state of a part with the app's harness page of its component;
  * with `--live` each live state of a page with the app's real page on the fixed sample of `harness.live`.
  */
@@ -553,7 +554,7 @@ export const designCompare = async (options: {
   const { target, invocation } = options;
   const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset', '--sketch']);
 
-  if (typeof args === 'string' || args.positional.length !== 1) {
+  if (typeof args === 'string' || args.positional.length !== (args.flags.has('--all') ? 0 : 1)) {
     if (typeof args === 'string') console.error(args);
 
     console.error(`usage: ${invocation} ${COMPARE_USAGE}`);
@@ -562,7 +563,8 @@ export const designCompare = async (options: {
   }
 
   const config = configOf(target);
-  const parsed = parseTarget(args.positional[0]);
+  const all = args.flags.has('--all');
+  const parsed = all ? null : parseTarget(args.positional[0]);
 
   if (typeof config === 'string' || typeof parsed === 'string') {
     console.error(typeof config === 'string' ? config : parsed);
@@ -586,33 +588,82 @@ export const designCompare = async (options: {
     return 2;
   }
 
-  const task = taskPartOf({ product, part: partKeyOf(parsed), allowStale: true });
-  const refusal = typeof task === 'string' ? task : live ? null : harnessStaleOf({ target, product });
+  if (all && (live || args.values['--state'] !== undefined || args.values['--preset'] !== undefined)) {
+    console.error('--all compares every state of every done part: pass no part, --state, --preset or --live');
 
-  if (typeof task === 'string' || refusal !== null) {
+    return 2;
+  }
+
+  const keys = all
+    ? doneParts({
+        product,
+        parts: product.parts.filter((part) => part.layer !== 'foundations').map(partKeyOf),
+      })
+    : [partKeyOf(parsed as SketchTarget)];
+
+  if (!all && parsed?.layer === 'foundations' && product.parts.some((part) => partKeyOf(part) === keys[0])) {
+    console.log(`${keys[0]}: foundation, nothing to compare`);
+
+    return 0;
+  }
+
+  if (all && keys.length === 0) {
+    console.log(`${product.name}: no done parts to compare`);
+
+    return 0;
+  }
+
+  const tasks = keys.map((key) => taskPartOf({ product, part: key, allowStale: true }));
+  const refusal = tasks.every((task) => typeof task !== 'string') && !live ? harnessStaleOf({ target, product }) : null;
+
+  if (refusal !== null) {
     console.error(refusal);
 
     return 1;
   }
+
+  let failed = 0;
+  const pending = tasks.flatMap((task) => (typeof task === 'string' ? [] : [task]));
+
+  for (const task of tasks) {
+    if (typeof task !== 'string') continue;
+
+    console.error(all ? `${task} - cannot be compared` : task);
+    failed++;
+  }
+
+  if (pending.length === 0) return 1;
 
   const compared = await withHarnessUrl({
     target,
     product,
     url: args.values['--url'],
     start: options.start,
-    run: (url) =>
-      comparePart({
-        target,
-        config,
-        product,
-        part: task.part,
-        url,
-        only: args.values['--state'] ?? null,
-        preset: args.values['--preset'] ?? null,
-        sketch: args.values['--sketch'] ?? null,
-        unapproved: task.unapproved === true,
-        shoot: options.shoot ?? (live ? shootLiveStates : undefined),
-      }),
+    run: async (url) => {
+      for (const task of pending) {
+        if (all) console.log(`== ${task.part}`);
+
+        const result = await comparePart({
+          target,
+          config,
+          product,
+          part: task.part,
+          url,
+          only: args.values['--state'] ?? null,
+          preset: args.values['--preset'] ?? null,
+          sketch: args.values['--sketch'] ?? null,
+          unapproved: task.unapproved === true,
+          shoot: options.shoot ?? (live ? shootLiveStates : undefined),
+        });
+
+        if (typeof result === 'string') {
+          console.error(result);
+          failed++;
+        } else if (!result.green) failed++;
+      }
+
+      return failed;
+    },
   });
 
   if (typeof compared === 'string') {
@@ -621,5 +672,5 @@ export const designCompare = async (options: {
     return 1;
   }
 
-  return compared.green ? 0 : 1;
+  return compared === 0 ? 0 : 1;
 };

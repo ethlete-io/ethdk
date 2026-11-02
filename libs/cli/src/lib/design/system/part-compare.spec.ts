@@ -24,6 +24,8 @@ import {
   slotOnlyStatesOf,
 } from './part-compare';
 import { markPartGo } from './part-go';
+import { markPartReady, readyPartOf } from './part-ready';
+import { markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 
 const pixelsOf = (width: number, height: number, colour: (x: number, y: number) => number): Pixels => {
@@ -387,6 +389,76 @@ describe('part compare', () => {
     lines.length = 0;
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines).toEqual(['the harness page http://localhost:9/__design-harness did not load']);
+  });
+
+  it('says a foundation has nothing to compare and exits 0', async () => {
+    const target = checkout();
+    const lines = output();
+    const shoot = vi.fn<ShootStates>();
+
+    mkdirSync(join(target, DESIGN_DIR, 'app-a/foundations/colors'), { recursive: true });
+    writeFileSync(
+      join(target, DESIGN_DIR, 'app-a/foundations/colors/colors.ts'),
+      'export default definePart({ states: { default: {} } });\n',
+    );
+
+    expect(
+      await designCompare({
+        target,
+        argv: ['foundations/colors', '--product', 'app-a'],
+        invocation: 'et design',
+        shoot,
+      }),
+    ).toBe(0);
+    expect(lines).toEqual(['foundations/colors: foundation, nothing to compare']);
+    expect(shoot).not.toHaveBeenCalled();
+  });
+
+  it('--all compares every done part and fails when one cannot be compared or deviates', async () => {
+    const target = checkout();
+    const lines = output();
+    const product = () => resolveProduct({ target, name: 'app-a', config: {} });
+    const all = (shoot: ShootStates) =>
+      designCompare({
+        target,
+        argv: ['--all', '--product', 'app-a', '--url', 'http://localhost:9'],
+        invocation: 'et design',
+        shoot,
+      });
+    const same = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => RED) }],
+    }));
+
+    expect(await all(same)).toBe(0);
+    expect(lines).toEqual(['app-a: no done parts to compare']);
+
+    markPartGo({ product: product(), part: 'components/chip', by: 'tom' });
+    markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
+
+    const found = readyPartOf({ product: product(), part: 'components/chip' });
+
+    await markPartReady({
+      product: product(),
+      part: 'components/chip',
+      hash: typeof found === 'string' ? found : found.hash,
+      by: 'tom',
+      pointsOf: async () => [],
+      actionsOf: async () => [],
+    });
+    lines.length = 0;
+    expect(await all(same)).toBe(0);
+    expect(lines).toEqual(['== components/chip', 'default ok']);
+
+    const deviating = vi.fn<ShootStates>(async () => ({
+      states: { default: {} },
+      shots: [{ state: 'default', design: pngOf(1, 1, () => RED), app: pngOf(1, 1, () => BLUE) }],
+    }));
+
+    expect(await all(deviating)).toBe(1);
+    expect(
+      await designCompare({ target, argv: ['--all', '--live', '--product', 'app-a'], invocation: 'et design' }),
+    ).toBe(2);
   });
 
   it('compares a part changed since its go and marks the result unapproved', async () => {
