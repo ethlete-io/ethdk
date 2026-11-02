@@ -414,8 +414,10 @@ describe('part task', () => {
         "import { InboxAgent } from '../design-parts/inbox/inbox-sample';",
       'apps/studio/src/app/system-view/system-tree.ts': "import { isAnswered } from './comment-pins';",
       'apps/studio/src/app/system-view/comment-pins.ts': 'export const isAnswered = true;',
-      'apps/studio/src/app/design-parts/sketches/sketches.component.spec.ts':
+      'apps/studio/src/app/design-parts/sketches/sketches.component.spec.ts': [
         "import { SketchesComponent } from './sketches.component';",
+        "import { HELPER } from '../../spec-only-helper';",
+      ].join('\n'),
       'apps/studio/src/app/system-view/shell-logo.spec.ts': [
         "import { SketchesComponent } from '../design-parts/sketches/sketches.component';",
         "import { modelNameOf } from './inbox-comments';",
@@ -432,6 +434,7 @@ describe('part task', () => {
         "import { CONFIG_EXTRA } from './config-extra';",
       ].join('\n'),
       'apps/studio/src/app/config-extra.ts': 'export const CONFIG_EXTRA = {};',
+      'apps/studio/src/app/spec-only-helper.ts': 'export const HELPER = {};',
     };
     const wiring = [
       'apps/studio/src/app/system-view/sketch-view.component.ts',
@@ -545,6 +548,16 @@ describe('part task', () => {
       ).toBe(0);
       expect(lines).toContain('WIRING apps/studio/src/app/system-view/inbox-comments.ts');
       expect(await verify(target, [...design, 'apps/studio/src/app/system-view/comment-pins.ts'], compare)).toBe(1);
+    });
+
+    it('never makes a file wiring because only a spec imports it', async () => {
+      const target = sketches();
+      const lines = output();
+      const compare = vi.fn<ComparePart>(async () => ({ green: true, states: { default: {} } }));
+
+      expect(await verify(target, [...design, 'apps/studio/src/app/spec-only-helper.ts'], compare)).toBe(1);
+      expect(lines).toContain('  apps/studio/src/app/spec-only-helper.ts');
+      expect(compare).not.toHaveBeenCalled();
     });
 
     it('refuses a file only a further ancestor imports', async () => {
