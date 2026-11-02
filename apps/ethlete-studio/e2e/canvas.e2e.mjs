@@ -195,6 +195,30 @@ const describe = (before, after) =>
 
 const CASES = [
   {
+    name: 'a frame renders real content, not an error page',
+    pages: ['System', 'Sketches'],
+    run: async (page) => {
+      const deadline = Date.now() + 15000;
+      let texts = [];
+
+      while (Date.now() < deadline) {
+        texts = [];
+
+        for (const frame of page.frames().filter((candidate) => candidate !== page.mainFrame())) {
+          texts.push(await frame.evaluate(() => document.body?.innerText.trim() ?? '').catch(() => ''));
+        }
+
+        if (texts.some((text) => text && !/403|restricted|forbidden|cannot (get|find)|error/i.test(text))) {
+          return { ok: true, detail: `${texts.length} frames` };
+        }
+
+        await page.waitForTimeout(500);
+      }
+
+      return { ok: false, detail: `no frame shows content: ${JSON.stringify(texts.map((text) => text.slice(0, 60)))}` };
+    },
+  },
+  {
     name: 'zoom chip sits at the canvas bottom right',
     pages: ['System', 'Sketches', 'Inbox'],
     viewport: WIDE,

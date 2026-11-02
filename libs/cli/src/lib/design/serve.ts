@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { Dirent, existsSync, readdirSync, readFileSync } from 'fs';
+import { Dirent, existsSync, readdirSync, readFileSync, realpathSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
@@ -924,6 +924,26 @@ const freePortOf = () =>
     });
   });
 
+/** The real directories a checkout's `node_modules` points into, which Vite refuses to serve unless allowed. */
+const installedRootsOf = (target: string) => {
+  const modules = join(target, 'node_modules');
+  const roots = new Set<string>();
+
+  try {
+    roots.add(realpathSync(modules));
+
+    for (const entry of readdirSync(modules, { withFileTypes: true })) {
+      if (entry.isSymbolicLink() && !entry.name.startsWith('.')) {
+        roots.add(dirname(realpathSync(join(modules, entry.name))));
+      }
+    }
+  } catch {
+    return [...roots];
+  }
+
+  return [...roots];
+};
+
 /**
  * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
  * middleware mode only to load design modules for a command. With `port`, it listens there instead
@@ -1023,7 +1043,7 @@ export const createDesignServer = async (options: {
         : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
-      fs: { allow: [target, here, ...baseDirs] },
+      fs: { allow: [target, here, ...baseDirs, ...installedRootsOf(target)] },
     },
   });
   const closing = server.close.bind(server);
