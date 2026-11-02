@@ -2572,3 +2572,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
      frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
      frame center, not only an empty point, for every PAGES entry.
+
+194. Variant notes are English again (Tom, 2026-11-02, components/zoom-chip variant a: "reset is a plain SDK
+     transparent sm button ..."). Finding 136 already named the cause ("no template sets the note language") but the
+     fix never got a B item - the same gap as finding 190. Tool fix (decided, technical, B114): `sketch new` and the
+     round template name the product's UI language (studio: German) for notes; `sketch check` warns NOTE-LANGUAGE
+     when a note's language differs from the product's (measured, not blocked); the open zoom-chip notes are
+     rewritten in German by their author.
