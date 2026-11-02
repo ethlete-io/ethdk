@@ -2564,3 +2564,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   wide part (for example the title-bar) keeps one column. Unchanged states stay dimmed, the first change marked.
 - Start zoom: the view opens at Fit; after that the zoom is kept per sketch, like the other canvas views.
 - Nothing else differs from design e.
+
+193. In the Sketches view the state frames (design-server iframes) swallow the wheel, so the canvas does not zoom or
+     pan over a frame (Tom, 2026-11-02). Lesson: the camera works over empty canvas but most of the Sketches view is
+     frames. Tool fix (decided, technical, cause pending from builder): `canvas.e2e.mjs` wheels and ctrl-wheels over a
+     frame center, not only an empty point, for every PAGES entry.
