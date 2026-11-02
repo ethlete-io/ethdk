@@ -59,6 +59,13 @@ if (kind === 'design') {
 if (kind === 'live') {
   if (!changes.some(({ file }) => LIVE_INPUTS.some((prefix) => file.startsWith(prefix)))) process.exit(0);
 
+  const worktree = process.env.ETHLETE_PREPUSH_WORKTREE;
+
+  if (worktree && resolve(worktree) !== root) {
+    const { copyOpenSketches } = await jiti.import(resolve(design, 'prepush-sketches.ts'));
+    copyOpenSketches({ from: worktree, to: root });
+  }
+
   const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' }).status ?? 1;
   const built = run('yarn', ['nx', 'build', 'cli']);
 
