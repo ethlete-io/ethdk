@@ -2767,3 +2767,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 207. Fully unchanged variants take as much room as changed ones (Tom, 2026-11-02, zoom-chip: both variants are
      pixel-identical to Aktuell, 2 x 16 dimmed frames). Tom's idea: hide unchanged variants by default, in a narrow
      collapsed accordion bar. Decided by Tom ("Sketches matrix and state name decisions").
+
+208. Übernehmen refuses on pages/sketches and components/zoom-chip: "pages/sketches is in progress - a variant is
+     picked once it is ready" (Tom, 2026-11-02; sketch.ts:970). All three open sketches are still status 'in
+     progress': the drawing sessions never ran the ready step (sketch-command.ts `loadedAndReady`). Studio still shows
+     an enabled Übernehmen on a sketch that is not ready, so the user finds out only by clicking. The ready step also
+     refuses variants that draw alike, which a structure-only round like zoom-chip r1 does by design. Tom reports the
+     zoom-chip refusal names pages/sketches too - wrong target pending from builder. Lesson: the pick depends on a step
+     no tool reminds the author of, and the UI offers an action the CLI refuses (same class as finding 184). Tool fix
+     (decided, technical): Studio shows Übernehmen only on a ready sketch (the badge "Wartet auf deine Wahl" = ready,
+     finding 206); a drawn round left in progress is reported. Cause and the alike-variant outcome pending from
+     builder.
