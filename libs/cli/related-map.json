@@ -1,0 +1,13 @@
+{
+  "src/bin.spec.ts": ["libs/cli/package.json", "libs/cli/src/index.ts"],
+  "src/lib/design/frame-bootstrap.spec.ts": ["libs/cli/design/web/frame.ts"],
+  "src/lib/design/frame-surfaces.spec.ts": ["libs/core/design/theme-css.ts"],
+  "src/lib/design/new-call.spec.ts": ["libs/cli/design/define-call.ts"],
+  "src/lib/playwright/failure-reporter.spec.ts": ["libs/cli/src/lib/playwright/failure-reporter.ts"],
+  "src/lib/design/system/check-rules.spec.ts": [
+    "libs/cli/src/lib/design/system/rules/*.ts",
+    "libs/cli/src/lib/design/system/render-check.ts",
+    "libs/cli/src/lib/design/system/nested-scroll.ts",
+    "libs/cli/src/lib/design/system/bespoke-controls.ts"
+  ]
+}
