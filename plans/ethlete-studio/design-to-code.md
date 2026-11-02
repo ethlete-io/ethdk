@@ -2454,3 +2454,12 @@ decision 2), #91 (go rework, A10).
      Tool fix (decided, technical): `design check` (and the app ESLint config, if a Tailwind v4 canonical-class rule
      is available) reports a class whose canonical form differs and auto-fixes it with `--fix`, using Tailwind v4's
      own canonicalization rather than a hand list. Queued after the Sketches view (priority, decision 12).
+
+- 181/182 follow-up (builder, 2026-11-02): e fixed (rows run to the window edge, page root clips, CLIPPED skip
+  removed; check ok in 8 states). HIDDEN-CONTENT exempts a part that declares a canvas control (canvas-viewport):
+  a cut at the window edge is correct there. 182 cause: the live compare runs only against the MERGED page design
+  (r1), never a sketch variant (`compare --live --sketch` is no step of `sketch ready`), and it reports a pixel total
+  that never reaches 0, so a 20 px strip drowns in ~200k px of by-design difference. Tool fix (decided, technical):
+  the live compare measures named regions on both sides (canvas viewport rect and clip rect, header, zoom chip) and
+  reports geometry deltas apart from pixels; `sketch ready` on a page sketch with `implements` runs that region
+  check against the live app for every region the variant does not claim to change.
