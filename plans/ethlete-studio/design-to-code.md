@@ -1307,6 +1307,12 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      timeout is clamped to at least 1 ms; every CLI wait goes through `withinLimit` in libs/cli/src/lib/design/wait.ts
      and names what it waits for; specs with fake timers and a really hanging child. Lesson: every limit gets a spec
      that runs past it, and 0 is never a valid "remaining" value for a library timeout.
+133. Studio got a visible title bar (A1, window controls) with no design part behind it (builder, 2026-11-02). The look
+     (app background, no bottom border, 24 px round buttons, 6 px gap) was picked by the builder, not designed. Why no
+     check caught it: `design check` and `compare` only look at parts that exist; nothing compares the live app against
+     the part list, so app chrome without a part is invisible to the tool. Tool fix (B30): `design check --live` reports
+     every visible app region that no part covers. Lesson: the tool must find what was never designed, not only what
+     differs from a design.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

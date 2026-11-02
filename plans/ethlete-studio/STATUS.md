@@ -92,6 +92,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B25** `design dom --app` stellt Hover-, Active- und Klick-Zustände her, statt sie abzulehnen.
 - **B27** Kanonische Tailwind-Klassen im App-Code prüfen.
 - **B28** Ein Teil darf seine Größe nicht vom Inhalt eines Slots nehmen (Q47).
+- **B30** `design check --live` meldet sichtbare App-Bereiche, die kein Teil abdeckt (Befund 133).
 
 ## C. CLI: Tempo und Ablauf
 
