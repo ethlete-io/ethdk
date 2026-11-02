@@ -209,6 +209,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B78** compare: einen DIFF vor dem Melden neu laufen lassen (FLAKY, wenn die Läufe abweichen); scheitern, wenn
   App und Design verschieden viele Overlay-Panes haben; Paritäts-Spec für die frozenAt-Mocks (Ursache der Flakes:
   Pane-Zählung ignorierte `<et-menu>`, caf6efa80).
+- **B79** (hoch) Durchgang durch alle Text-Regeln (Skills, Übergaben, Plan-Entscheidungen): je Regel, ob ein Werkzeug
+  sie prüft und welcher Hook oder Check es könnte; Produktfragen an Tom, der Rest wird zu B-Punkten (Tom,
+  02.11., Grundprinzip in design-to-code.md). Inventar macht die Grill-Session per Subagent.
 
 ## C. CLI: Tempo und Ablauf
 
