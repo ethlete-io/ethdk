@@ -1600,6 +1600,13 @@ check` fails a part with a varying design prop that has no app input and is not 
      rule NESTED-SCROLL: an element with overflow auto or scroll whose scroll size exceeds its box inside a design
      frame is reported; a part that must scroll declares it). Lesson: content behind a scrollbar is content no
      picture shows.
+160. A frame in the Sketches view sometimes shows the browser's own failed-load page (grey page with the sad document
+     icon) instead of the design (Tom, 2026-11-02, pages/sketches `page-sketch · desktop`). Cause pending (builder):
+     which frame request fails or is refused, and why only sometimes. Why no check caught it: B49 makes the CLI
+     tools fail loudly on an error page in a frame, but the live view has no state for a frame that failed, and no
+     e2e loads frames under churn (a sketch agent rewriting files). Tool fix: B69 (the live canvas detects a failed
+     frame load and shows its own state with the reason and a reload, retrying once on its own; an e2e loads frames
+     while files change). Lesson: a failure the tools catch is still a raw browser page for the person looking.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
@@ -2080,8 +2087,8 @@ Q16, from finding 126:
 - The Update button restarts and installs via a host command, after a confirm dialog: "Update auf v<version>
   installieren? Studio startet dafür neu." with "Neu starten" and "Später"; "Später" only closes the dialog, the
   button stays. The dialog is new visible surface and gets its own small sketch.
-- Open with Tom: how the title bar ends at the bottom (rec: a 1 px border in the theme's border colour, same
-  background; finding 157).
+- The title bar ends at the bottom with a 1 px border in the theme's border colour; the background stays the
+  same (finding 157).
 - Technical (grill): os/left/right/update become app inputs; the layout follows the design (grid h-8, 1fr | auto |
   1fr), not the app's flex h-9.
 
