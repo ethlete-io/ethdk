@@ -2447,3 +2447,10 @@ decision 2), #91 (go rework, A10).
      did not flag the bottom gap. (b) Before a grill question on an existing page, the grill session opens the
      real-app shot and asks only about differences from it. HIDDEN-CONTENT (181) stays: it would have flagged the
      early box edge too.
+
+183. Non-canonical Tailwind class in the design (Tom, 2026-11-02): `[&>*]:flex-none` where `*:flex-none` is the
+     canonical form, in `.ethlete/design/studio/pages/sketches/sketches.ts` and the pages-sketches variants a/b/c.
+     Only the editor's Tailwind IntelliSense flagged it; no lint or `design check` rule knows canonical classes.
+     Tool fix (decided, technical): `design check` (and the app ESLint config, if a Tailwind v4 canonical-class rule
+     is available) reports a class whose canonical form differs and auto-fixes it with `--fix`, using Tailwind v4's
+     own canonicalization rather than a hand list. Queued after the Sketches view (priority, decision 12).
