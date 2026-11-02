@@ -2536,3 +2536,23 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
        decided tool change gets a STATUS B item in the same commit as the decision. Side note: `ready` warned about 4
        unused exports left in `pages/sketches/shared/` by the merge (measureFrames, aim, projectColumn, holdReason);
        cleanup rides with B113.
+
+191. The Sketches view build lost the canvas (Tom, 2026-11-02): at 100 % it only scrolls up/down, zoom works only
+     via the zoom chip. Cause (builder): the uncommitted rewrite of `design-parts/sketches/sketches.component.*`
+     dropped `ethlete-design-canvas` and hand-rolled a camera from the design's own mock pan (`mountFit` in
+     `pages/sketches/shared/sketch-rows.ts`): plain wheel pans, ctrlKey is ignored, pan is clamped to a full-width
+     world, so there is no horizontal room. `canvas.e2e.mjs` covers the Sketches view but never ran: the slice's
+     subagent hit its context limit before its checks, and Tom saw the uncommitted tree live. Lesson: a design's mock
+     interaction code is a picture, not a spec for the app; and an interrupted slice reaches Tom's live app unchecked.
+     Tool fix (decided, technical): a lint rule in the studio app refuses `wheel`/pointer camera listeners in
+     `design-parts/**` outside `components/design-canvas` (CANVAS-CAMERA-OWN); the builder's subagent brief ends
+     every slice with the e2e of each view it touched, and a subagent stop without that run is reported to the
+     grill as "unchecked" (measured, not blocked).
+
+192. The Sketches view looks wrong on real data (Tom, 2026-11-02, components/zoom-chip with 16 states): every frame
+     is full width (~1650 px) around a 200 px chip, and at 100 % the "Aktuell" row alone fills the window, so no
+     variant is visible. Design e was judged only on the title-bar fixture (6 wide states at 59 %), which hides both
+     effects. Lesson: a page that lists user content must be sketched with the extremes of that content, not one
+     convenient case (compare finding 187). Tool fix (decided, technical): `sketch check` on a page part warns when
+     the fixture renders only one part layer or one part width; the round must show a narrow part and a part with
+     many states. Product questions (frame width, start zoom) go to Tom.
