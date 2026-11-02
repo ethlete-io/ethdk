@@ -631,9 +631,7 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   const identical = await identicalRenderLines({ target: context.target, config: context.config, product, sketch });
 
   if (identical.length > 0)
-    return fail(
-      `${identical.join('\n')}\n${sketch.target} has variants that add nothing visible - fix them before ready`,
-    );
+    return fail(`${identical.join('\n')}\n${sketch.target} draws variants alike - fix them before ready`);
 
   const ready =
     sketch.status === 'ready'

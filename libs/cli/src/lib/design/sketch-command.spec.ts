@@ -343,9 +343,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(identicalRenderLines).mockResolvedValueOnce([same]);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
-    expect(lines.at(-1)).toBe(
-      `${same}\ncomponents/button has variants that add nothing visible - fix them before ready`,
-    );
+    expect(lines.at(-1)).toBe(`${same}\ncomponents/button draws variants alike - fix them before ready`);
 
     vi.mocked(identicalRenderLines).mockResolvedValueOnce([same]);
     lines.length = 0;

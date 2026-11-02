@@ -521,13 +521,15 @@ rendering for one candidate in that variant's files and only common code in `sha
 `sketch ready` also refuses a live variant that adds nothing visible: one that draws every state of a target pixel
 for pixel like another live variant, or like the current part when the sketch has more than one live variant. A
 variant that matches another in some states only is fine. A lone variant that draws like the current part is a change
-without a visible difference, which `sketch ready` merges by itself.
+without a visible difference, which `sketch ready` merges by itself. The Studio sketch view shows each column's first
+state (the current part's states first), so `sketch ready` also refuses a variant whose first shown state draws like
+the current part's or an earlier variant's: make a state the variant changes its first state.
 
 `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
-not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible.
-Its last line then reads `check ok - ready will refuse <count> (see above)`. A hold and an already `ready` sketch are
-refused only by `sketch ready`.
+not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible
+or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
+above)`. A hold and an already `ready` sketch are refused only by `sketch ready`.
 
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags

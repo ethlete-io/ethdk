@@ -57,9 +57,27 @@ const drawingOf = async (options: {
 const sameInEveryState = (drawn: Drawn, other: Drawn) =>
   drawn.states.size > 0 && [...drawn.states].every(([state, hash]) => other.states.get(state) === hash);
 
+const shownOf = (drawn: Drawn, order: string[]) => {
+  const state = order.find((name) => drawn.states.has(name));
+
+  return state === undefined ? null : { state, hash: drawn.states.get(state) };
+};
+
+const sameFirstFrameOf = (options: { drawn: Drawn; others: Drawn[]; order: string[] }) => {
+  const { drawn, others, order } = options;
+  const shown = shownOf(drawn, order);
+
+  return shown ? others.find((other) => shownOf(other, order)?.hash === shown.hash) : undefined;
+};
+
+const likeOf = (drawn: Drawn) => (drawn.name === AKTUELL ? AKTUELL : `variant ${drawn.name}`);
+
 const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: string }): string[] => {
   const { variants, current, of } = options;
   const refusals: string[] = [];
+  const order = [
+    ...new Set([...(current ? current.states.keys() : []), ...variants.flatMap((drawn) => [...drawn.states.keys()])]),
+  ];
 
   variants.forEach((drawn, index) => {
     const earlier = variants.slice(0, index);
@@ -69,12 +87,22 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
     const others = [...earlier, ...later, ...(current && variants.length > 1 ? [current] : [])];
     const twin = others.find((other) => sameInEveryState(drawn, other));
 
-    if (!twin) return;
+    if (!twin) {
+      if (current && sameInEveryState(drawn, current)) return;
 
-    const like = twin.name === AKTUELL ? AKTUELL : `variant ${twin.name}`;
+      const first = sameFirstFrameOf({ drawn, others: [...earlier, ...(current ? [current] : [])], order });
+      const shown = shownOf(drawn, order);
+
+      if (first && shown)
+        refusals.push(
+          `variant ${drawn.name}${of} first draws ${shown.state} with the same pixels as ${likeOf(first)} draws first, so the Studio sketch view shows identical frames - make a state the variant changes its first state`,
+        );
+
+      return;
+    }
 
     refusals.push(
-      `variant ${drawn.name}${of} draws the same pixels as ${like} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: change it or reject it`,
+      `variant ${drawn.name}${of} draws the same pixels as ${likeOf(twin)} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: change it or reject it`,
     );
   });
 
@@ -86,7 +114,8 @@ const refusalsOf = (options: { variants: Drawn[]; current: Drawn | null; of: str
  * variant, or like the product's part when the sketch has more than one live variant. Of two variants that draw
  * alike in every state, only the later one is named. A lone variant like the product is a change without a visible
  * difference, which `sketch ready` merges on its own, so it is never named. A state that fails to draw counts as
- * different.
+ * different. Any other variant is named when the first state the Studio sketch view shows of it (the product's states
+ * first, then the variants' new ones) draws like the first one shown of the product or of an earlier variant.
  */
 export const identicalRenderLinesOf = async (options: {
   product: ResolvedProduct;
