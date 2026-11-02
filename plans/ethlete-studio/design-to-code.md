@@ -2905,3 +2905,20 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      per-state "known baseline" pixel allowance - it hides the next real diff in the same state; the noise source gets
      fixed instead. App: state labels toggle with `hidden` (as the design does), not `@if`, so a fit crossing the
      label scale measures the final rows.
+
+216. Sketches slice committed (fb434b68b B121, 155777af9 canvas camera + fixtures from HEAD, 5a29b1b94 Sketches
+     variant a; builder, 2026-11-02). B121 cause had a second half: each navigation opened a host
+     `window_chrome_watch` channel that was never closed. Why the tools missed it: the headless shell stub had no
+     `window_chrome_watch`, so headless runs had no title bar at all; the harness gave the chrome synchronously and
+     never navigates; e2e and verify look at settled frames only. Guard page-switch.e2e (chrome after 80 ms, rAF
+     frames) red 1/4 before, green 4/4 after; `withStudio` delivers chrome late by default, harness `?hostDelay=`.
+     UNSTYLED-SDK proven on real output: old build red (16 hits), new build none. The ng() fix changes no stored go or
+     accepted picture in any product (only the emptied-slot compare pictures of pages/sketches), so the pages/sketches
+     go stays valid. Open: the tree holds uncommitted Studio-written state since 2026-11-02 09:06 (go.json with
+     `auto: true` entries, accepted.json, merged.json, pictures.json, two studio-lab sketch.json) that no session owns,
+     and `design check` warns "changed outside a sketch" for canvas-viewport, disclosure, canvas-frames, shell-main,
+     pages/flows, pages/inventory. Lesson: Tom's Studio clicks write files, but nothing commits them or warns that
+     they float. Tool fix (technical, B123): `design check` warns UNCOMMITTED-DECISIONS when go/accepted/merged/
+     pictures differ from HEAD; the builder commits Studio-written state as its own commit per slice, after checking
+     no go entry was written by an agent. Also `design check <part>` ignores the positional part and checks the whole
+     product: honour it or reject it with a hint to `--part`.
