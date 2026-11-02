@@ -1456,7 +1456,12 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      variants that render identically. Tool fix: B54 (a check renders each part's states with fixture variations
      derived from its input types: counts 0/1/N, sizes from the matrix, optional inputs empty; `sketch ready` refuses
      variants whose renders are identical to each other or to Aktuell). Lesson: a part checked only against the
-     fixture it was designed for passes every input it was not.
+     fixture it was designed for passes every input it was not. Addendum (Tom, 2026-11-02, screenshot): the variant
+     note under each head ("Suche mittig, ohne Trennlinie; ...") is `text-ui-xs` and cut to one line with an
+     ellipsis, so the reason for a variant, the text Tom picks by, is too small and incomplete. Why no check: no rule
+     sets a minimum size for running text; xs is meant for short metadata. Tool fix, added to B54: a design check
+     warns on a sentence-length text node (over about 40 characters) set below `text-ui-sm` or truncated to one line;
+     the sketch-view sketch shows the full note at readable size.
 149. components/zoom-chip was never comparable, yet counted as done in the MVP (builder, 2026-11-02, found by the B48
      gate as "unjudged" in all 16 states). `design compare` fails every state: the design sets a `target` prop on
      every interaction row (zoom-chip.ts ~35), ZoomChipComponent has no `target` input, and designOnlyPropsOf
