@@ -1426,7 +1426,11 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      (variants a/b/c and shared/sketch-status.ts) (builder, 2026-11-02). Why no check caught it: check and ready run
      different rule sets, and no spec asserts that a sketch check passes implies ready's checks pass. Tool fix: B52
      (ready runs exactly check's rules plus its own gates; check reports UNUSED too). Lesson: two commands that judge
-     the same file must not disagree.
+     the same file must not disagree. Update (builder, 2026-11-02): cause confirmed; `ready` added
+     unusedInVariantOf() in readyRefusalOf, `check` ran only format and typecheck, and typecheck does not flag unused
+     imports. Fixed in e3e26ad3c: one variantGateProblemsOf() serves both. Next: check also reports ready's content
+     gates (open points a variant adds, running round without a note, variants that do not load) as "ready will
+     refuse: ..."; only workflow state (held, already ready) stays ready-only.
 147. The render checks missed a see-through overlay pane in pages/sketches variant A: the popover let the round picker
      text show through (builder, 2026-11-02). Why no check caught it: the clipped and overlap checks look at layout
      boxes, not at whether an overlay pane is opaque over the content below. Tool fix: B53 (an overlay pane must be
