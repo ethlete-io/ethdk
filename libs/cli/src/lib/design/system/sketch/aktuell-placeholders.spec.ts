@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aktuellPlaceholderWarningOf } from './aktuell-placeholders';
+import { aktuellPlaceholderWarningOf, unchangedVariantWarningOf } from './aktuell-placeholders';
 
 const unchanged = ['default', 'hover', 'active', 'focus', 'disabled'];
 
@@ -29,5 +29,21 @@ describe('aktuellPlaceholderWarningOf', () => {
 
   it('is silent when nothing is folded', () => {
     expect(aktuellPlaceholderWarningOf({ current: [], variants: [{ states: ['tree'], unchanged: [] }] })).toBeNull();
+  });
+});
+
+describe('unchangedVariantWarningOf', () => {
+  it('warns when every state draws like Aktuell, as zoom-chip variant a did', () => {
+    expect(unchangedVariantWarningOf({ states: ['default', 'zoomed'], unchanged: ['default', 'zoomed'] })).toBe(
+      'WARNING VARIANT-UNCHANGED every state (default, zoomed) draws the same pixels as Aktuell - the variant offers no decision',
+    );
+  });
+
+  it('is silent once one state differs', () => {
+    expect(unchangedVariantWarningOf({ states: ['default', 'zoomed'], unchanged: ['default'] })).toBeNull();
+  });
+
+  it('is silent for a variant without states', () => {
+    expect(unchangedVariantWarningOf({ states: [], unchanged: [] })).toBeNull();
   });
 });

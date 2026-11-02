@@ -663,6 +663,8 @@ hash `merged.json` records for it, so a frame drawn after the last merge or acce
 `sketch check` warns, without failing, when the "Aktuell" column of the Studio sketch view would draw only placeholders: every state
 left after the states each variant draws unchanged fold away is new in the sketch. The line reads
 `Aktuell shows only placeholders: open "<state>" to compare`.
+It also warns `VARIANT-UNCHANGED` for a live variant whose every state draws the same pixels as Aktuell, in every
+frame: such a variant offers no decision.
 
 A page does not draw the interactions of its controls. A page control names the component or
 element that draws it in `part`, instead of `input`, and that part must be design complete

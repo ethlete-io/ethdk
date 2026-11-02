@@ -25,7 +25,19 @@ export const aktuellPlaceholderWarningOf = (options: {
   return `Aktuell shows only placeholders: open "${folded[0]}" to compare`;
 };
 
-/** One warning per target part of the sketch whose "Aktuell" column would show only placeholders. */
+/** The `VARIANT-UNCHANGED` warning for a variant that draws every one of its states like the product; `null` otherwise. */
+export const unchangedVariantWarningOf = (options: { states: string[]; unchanged: string[] }): string | null => {
+  const { states, unchanged } = options;
+
+  if (states.length === 0 || states.some((state) => !unchanged.includes(state))) return null;
+
+  return `WARNING VARIANT-UNCHANGED every state (${states.join(', ')}) draws the same pixels as Aktuell - the variant offers no decision`;
+};
+
+/**
+ * One warning per target part of the sketch whose "Aktuell" column would show only placeholders, and one per live
+ * variant that draws every state of a target like the product.
+ */
 export const aktuellPlaceholderWarningsOf = async (options: {
   product: ResolvedProduct;
   sketch: Sketch;
@@ -64,10 +76,16 @@ export const aktuellPlaceholderWarningsOf = async (options: {
 
       if (read.problem) continue;
 
-      variants.push({
+      const compared = {
         states: read.states,
         unchanged: await unchangedStatesOf({ product, sketch, variant, load, pictureOf, part }),
-      });
+      };
+      const unchangedWarning = unchangedVariantWarningOf(compared);
+
+      variants.push(compared);
+
+      if (unchangedWarning !== null)
+        warnings.push(`${sketch.target} ${variant}${part === sketch.target ? '' : ` ${part}`}: ${unchangedWarning}`);
     }
 
     const warning = aktuellPlaceholderWarningOf({ current: current.states, variants });
