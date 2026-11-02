@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES, WindowControlButtonComponent } from '../../button';
+import { TooltipDirective } from '../../tooltip';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
   FOCUS_FRAME_ICON,
@@ -34,6 +35,7 @@ import { PipWindowComponent } from './pip-window.component';
     PipPlayerComponent,
     PipBackDirective,
     PipGridToggleDirective,
+    TooltipDirective,
     PipStageDirective,
     PipTitleBarTemplateDirective,
     PipCellDirective,

@@ -7,7 +7,6 @@ import { PIP_CHROME_REF_TOKEN } from './pip-chrome-ref.token';
     class: 'et-stream-pip-chrome__view-btn',
     type: 'button',
     '[attr.aria-label]': 'chrome?.state?.gridToggleLabel()',
-    '[attr.title]': 'chrome?.state?.gridToggleLabel()',
     '(click)': 'toggle($event)',
   },
 })
