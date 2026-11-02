@@ -2175,6 +2175,9 @@ Q16, from finding 126:
   pictures.json lines, as one "chore(repo): Merge ..." commit, after both parts check clean; never go.json. A commit
   is no go: Tom grants both gos in Studio afterwards.
 - The builder commits Tom's update-dialog merge (variant b) once, exactly its paths and lines; never go.json.
+- Title search long label (Tom): the product name always stays whole; the part name truncates at the end with an
+  ellipsis, and the label then aligns left instead of centring. Visible change to title-search before Tom's go; the
+  builder may commit it as a follow-up to the merge commit (same paths, never go.json).
 
 ### Sketch view states decision (Tom, 2026-11-02)
 
