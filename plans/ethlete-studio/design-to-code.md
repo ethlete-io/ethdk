@@ -2686,5 +2686,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 
 204. The unit test "CanvasFrameComponent failed page load > keeps the painted page" fails on HEAD (null
      content.body) and nobody noticed (builder, 2026-11-02, seen while fixing finding 200). Cause and first failing
-     commit pending from builder. Lesson to confirm: the pre-push hook runs typecheck and lint, not unit tests, so a red
-     Studio spec reaches the branch. Tool fix to decide once the cause is known.
+     commit pending from builder.
+     Cause (builder): `watchContent$` in canvas-frame.component.ts reads `content.body.firstElementChild` without a
+     null guard; a document without a body (empty, XML, error page) throws. Red since its own commit e2d977408: the
+     committing session never ran the spec it added; the commit is unpushed, so neither the pre-push `vitest related`
+     check nor CI ran on it; `nx test ethlete-studio -- <filter>` exits without useful output on this failure. Lesson:
+     the spec gate runs hours and many stacked commits after the commit. Tool fix (decided, technical, B115):
+     pre-commit runs `vitest related --run` over the staged apps/ethlete-studio files (measure the time; report if it
+     exceeds ~20 s); `nx test ethlete-studio -- <filter>` must print the failure; code fix `content.body?.`.
