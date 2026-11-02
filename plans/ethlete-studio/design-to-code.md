@@ -1677,6 +1677,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      that implements its host component, and markup outside any implemented component that hosts a part is an
      error naming the part and the missing host; the sketch brief for a new chrome or edge part names the part that
      will embed it). Lesson: a part with no parent in the design has no place in the product.
+169. The builder ran `design check` in the foreground and blocked its session for minutes; Tom had to step in
+     (Tom, 2026-11-02: "design check muss im hintergrund laufen IMMER"). Cause: the rule lives only in prose
+     (handoffs, skills), and a fresh session or a subagent does not carry it; nothing stops the call. Tool fix: B77
+     (technical, grill decision: a PreToolUse hook on Bash, shipped through libs/agent-rules like
+     subagent-model-policy.py, denies the long design commands - `design check`, `compare`, `ready`, `sketch ready`,
+     `harness`, `studio:e2e`, the visible-change gate - unless `run_in_background` is set, with a message naming
+     the background form; a spec per command). Lesson: a rule an agent must remember is a rule the next agent
+     forgets; the harness has to enforce it.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.
