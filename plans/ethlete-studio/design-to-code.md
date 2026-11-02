@@ -1762,6 +1762,13 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
      ended. Tool fix: B99 (Bash hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background
      completion or Monitor; the restart command lists and stops background shells and design processes of the
      session it restarts). Lesson: a wait loop that greps for its own text waits forever.
+174. Two items landed with their real path unproven (builder, 2026-11-02): B69 e2d977408 verifies the failed-load
+     state only in jsdom (server-restart.e2e passes, but no e2e loads a frame that fails), and Restart bumps the
+     epoch twice; B94 a733db40b was never run against a real stale dist. Cause of the double epoch bump: open (asked
+     the builder). Why no tool caught it: an item counts as done when its commit lands; nothing asks for proof on the
+     path the finding failed on. Tool fix: B101 (an e2e for the failed-load state and a single epoch bump per
+     Restart; a spec that makes dist stale for real and expects shot to rebuild or refuse). Lesson: a fix is proven
+     where the defect happened, not in the nearest cheap test.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

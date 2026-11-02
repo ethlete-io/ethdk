@@ -263,6 +263,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   und bei aktivem Grilling das Rundenformat `❓ **Qn**` / `➡️` (#63); Plan-Lint beim Push verlangt pro Build-Slice
   eine „in progress“-Notiz und einen „as built“-Abschnitt (#58, mit B92); Lint-Regel oder Stop-Hook zählt neue
   Kommentare im Diff gegen die Allowlist (#93).
+- **B101** Beweis auf dem echten Pfad für B69 und B94: E2E lädt einen Rahmen, der scheitert, und prüft den
+  eigenen Zustand; Restart erhöht die Epoch genau einmal; Spec macht das SDK-dist wirklich veraltet und erwartet,
+  dass shot neu baut oder verweigert (Befund 174).
 
 ## C. CLI: Tempo und Ablauf
 
