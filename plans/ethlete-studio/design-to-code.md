@@ -1754,6 +1754,14 @@ check` fails a part with a varying design prop that has no app input and is not 
      parts and sketches that embed it. Tool fix: B95 (a check of a changed part also renders every part and open
      sketch that embeds it; the commit gate does the same) plus a rule that refuses drawing at module load. Lesson:
      a part's check must cover its consumers, or a change is green where it is made and red where it is used.
+173. Dead processes in the builder session (Tom asked the grill session to clear them, 2026-11-02): three wait loops
+     `until ! pgrep -f "design ... check ..."; do sleep N; done` ran 10-30 min and could never end, because `pgrep -f`
+     matches the loop's own shell, whose command line contains the pattern; plus a full `design check --product
+     studio` (9 min) whose requesting subagent was gone after the builder ran out of context. Load was ~20. Why no
+     tool caught it: nothing refuses a self-matching wait loop, and nothing stops background work whose requester
+     ended. Tool fix: B99 (Bash hook refuses `pgrep -f`/`pkill -f` wait loops and points to run_in_background
+     completion or Monitor; the restart command lists and stops background shells and design processes of the
+     session it restarts). Lesson: a wait loop that greps for its own text waits forever.
 
 - Impl Q-C chip action coverage (grill, 2026-11-02, tool internal): the chip declares its action only in `part`,
   `points-closed` and their ring states; no extra states for fit or nothing-open.

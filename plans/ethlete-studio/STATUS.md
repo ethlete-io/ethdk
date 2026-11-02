@@ -258,6 +258,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   nächst der Ansichtsmitte (Befund 158, Entscheidung 02.11.).
 - **B98** pages/inbox: die Seitenleisten-Liste scrollt erklärt (Design zeigt das Scrollen, z. B. Ausblenden unten),
   keine gekürzten Demo-Daten; danach Toms Go (NESTED-SCROLL-Treffer).
+- **B99** Bash-Hook verweigert `pgrep -f`/`pkill -f`-Warteschleifen (matchen sich selbst) und verweist auf
+  run_in_background oder Monitor; `restart` listet und beendet Hintergrund-Shells und Design-Prozesse der Session
+  (Befund 173).
 
 ## C. CLI: Tempo und Ablauf
 
