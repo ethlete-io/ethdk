@@ -2309,3 +2309,8 @@ only). Technical gaps became B84-B98 in STATUS.md.
 6. pages/inbox sidebar declares its scroll instead of shortening demo data (B98).
 7. Tom's uncommitted sketch variants may be edited by the builder for mechanical fixes that change no pixels,
    proven by before/after shots; the builder does not commit them.
+8. Nested parts (A36): a part that belongs to a host lives under it in its path (`components/title-bar/title-search`)
+   and in the explorer; the check refuses it outside its host; shared parts (button, kbd) stay on their layer. In
+   the go rework (A10, "build-ready" replaces go) a nested part is build-ready on its own, and a host is build-ready
+   only when its nested parts are. Tom noted the go question belongs to the go rework, not to a separate decision
+   (B83 extended: a question touching a system under planned rework goes into that item).

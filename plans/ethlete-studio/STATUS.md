@@ -58,6 +58,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **A9** Merge-Ansicht mit dem einen Canvas (Zoom, Verschieben) und einem E2E-Test dafür (Befund 117; dl 02.11.).
 - **A10** „Baubereit“ statt Go und Abnahme: ein Teil ist baubereit, wenn seine Prüfungen grün sind; direkte Änderung mit
   anderem Bild wird ein Sketch „alt/neu“ (Befund 109; dl 02.11.).
+  Verschachtelte Parts sind eigenständig baubereit (eigene Zustände und Prüfungen); ein Host ist erst baubereit,
+  wenn seine verschachtelten Parts es sind (Tom, 02.11.).
 - **A13** Ein Knopf „Übernehmen“ statt „Wählen“: öffnet direkt die Merge-Ansicht, die ist die Bestätigung; Abbruch
   lässt nichts gewählt; kein Rückgängig nach dem Merge (Tom, 02.11.; „Pick and merge decisions“).
 - **A14** Hinweis an Sketches, die sehr wahrscheinlich automatisch mergen.
@@ -91,6 +93,9 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Werts aus Token, geerbtem Teil oder eigenem Wert, Rückgängig, Zusammenspiel mit Agenten).
 - **A36** Explorer: der Baum zeigt nur Teile, keine Zustände; Gruppen merken auf/zu; der Stift in der Leiste entfällt,
   „Sketches“ (nur offene) ganz oben, „Legacy“ zugeklappt ganz unten mit Projekten darunter. Zuerst Sketch (dl 02.11.).
+  Verschachtelte Parts: ein Part, der zu einem Host gehört, liegt fest im Pfad darunter
+  (`components/title-bar/title-search`) und im Explorer unter dem Host; der Check verweigert ihn außerhalb seines
+  Hosts; allgemein genutzte Parts (Button, kbd) bleiben auf ihrer Ebene (Tom, 02.11.).
 - **A38** Git in Studio: Repo holen, Branch anlegen und wechseln, Commit, Push, eingehende Änderungen und Konflikte, ohne
   eigenes Git-Setup; Chat, Editor und Git arbeiten auf demselben Stand (designer-workflow.md, Abschnitte 3 und 4).
 - **A39** Bestehenden Frontend-Code importieren: eine Ansicht mit ihren Abhängigkeiten und Fixtures
@@ -215,7 +220,8 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Regel für Inhalt, der außerhalb einer Pan-Region mehr als eine Zeilenhöhe am Fenster- oder Frame-Rand abgeschnitten
   ist. Spec: overflow-hidden + Skip + hohes Kind meldet, mit data-et-pan sauber (Befund 167).
 - **B83** Doc-Agent-Skill: vor jeder Grill-Frage den Part nennen, dem das Verhalten gehört; gehört es nicht dem Part
-  im Design, keine Frage (höchstens ein Befund für den Owner). Durchsetzung: B81 macht den Owner im Markup sichtbar
+  im Design, keine Frage (höchstens ein Befund für den Owner); berührt die Frage ein System mit geplantem Umbau
+  (z. B. Go -> A10), gehört sie in diesen Punkt statt in eine Einzelentscheidung. Durchsetzung: B81 macht den Owner im Markup sichtbar
   (Befund 170).
 - **B82** `design compare` vergleicht bei jeder deklarierten Breite des Parts, nicht nur bei der ersten (Befund 156).
 - **B84** Sketch-Ansicht markiert und sortiert jede Variante nach ihrem ersten geänderten Zustand (dem, den der
