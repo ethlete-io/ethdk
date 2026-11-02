@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { openSketchProblemsOf, typecheckVariant, variantWarningsOf } from './check-sketches';
+import { openSketchProblemsOf, typecheckVariant, variantProblemsOf, variantWarningsOf } from './check-sketches';
 import { createSketch, editRound, Sketch } from './sketch';
 
 const acme = () => {
@@ -231,6 +231,37 @@ describe('openSketchProblemsOf', () => {
     editRound({ sketch, round: 'r1', drops: ['empty', 'long'] });
 
     expect(messageOf()).toBeUndefined();
+  });
+
+  it("runs the rules over the sketch's shared/ files where the merge puts them", () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const glyph = join(sketch.dir, 'shared/glyph.ts');
+    const hero = join(sketch.dir, 'a/elements/hero/hero.ts');
+
+    mkdirSync(join(sketch.dir, 'shared'), { recursive: true });
+    writeFileSync(glyph, 'export const glyph = `<svg viewBox="0 0 1 1"></svg>`;\n');
+    writeFileSync(
+      hero,
+      `import { glyph } from '@shared/glyph';\n${readFileSync(hero, 'utf8')}\nexport const mark = glyph;\n`,
+    );
+
+    const variants = openSketchProblemsOf(product).variants;
+
+    expect(variants.find(({ variant }) => variant === 'a')?.problems).toContainEqual({
+      rule: 'INLINE-SVG',
+      file: glyph,
+      message: expect.stringContaining('draws an <svg> inline'),
+    });
+    expect(variants.find(({ variant }) => variant === 'b')?.problems).toEqual([]);
+    expect(variantProblemsOf({ product, sketch }).find(({ variant }) => variant === 'a')?.problems).toEqual(
+      variants.find(({ variant }) => variant === 'a')?.problems,
+    );
   });
 
   it('reports a sketch folder without sketch.json', () => {

@@ -7,6 +7,7 @@ import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { liveSpecOf } from '../live-compare';
+import { mergedLayoutProblemsOf } from './merged-layout';
 import { repoRootOf } from '../reachable-files';
 import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
@@ -89,9 +90,20 @@ export const variantProblemsOf = (options: {
     const overlaid = overlaySketch({ ...options, variant });
     const round = options.sketch.rounds.find((entry) => entry.key === options.sketch.variantInfo[variant]?.round);
     const variantDir = variantDirOf(options.sketch, variant);
+    const laidOver = ruleProblemsOf(overlaid);
+    const seen = new Set(laidOver.map((problem) => keyOf(options.product.dir, problem)));
+    const carried = mergedLayoutProblemsOf({ ...options, variant, overlaid }).filter(
+      ({ problem }) => !seen.has(keyOf(options.product.dir, problem)),
+    );
+    const carriedWasThere = new Set(
+      carried.flatMap(({ problem, mergedFile }) =>
+        had.has(keyOf(options.product.dir, { ...problem, file: mergedFile })) ? [problem] : [],
+      ),
+    );
     const wasThere = (problem: Problem) =>
+      carriedWasThere.has(problem) ||
       had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
-    const found = ruleProblemsOf(overlaid);
+    const found = [...laidOver, ...carried.map(({ problem }) => problem)];
     const target = overlaid.parts.find((part) => partKeyOf(part) === options.sketch.target);
     const metadataProblem: Problem[] =
       target && (withNote(target.source, '') === null || withMadeBy(target.source, ['author']) === null)

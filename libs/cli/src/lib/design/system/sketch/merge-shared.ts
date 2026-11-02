@@ -28,7 +28,7 @@ const sketchSharedDirsOf = (sketch: Sketch, variant: string) => [
 ];
 
 /** The files of the sketch's and the variant's `shared/` under their path there, the variant's file winning. */
-const sketchSharedFilesOf = (sketch: Sketch, variant: string) => {
+export const sketchSharedFilesOf = (sketch: Sketch, variant: string) => {
   const files = new Map<string, string>();
 
   for (const dir of sketchSharedDirsOf(sketch, variant).reverse())
