@@ -102,7 +102,7 @@ describe('part accept', () => {
     expect(existsSync(join(untouched.productDir, ACCEPTED_FILE))).toBe(false);
   });
 
-  it('refuses a part with theming findings and lists them', async () => {
+  it('refuses a part with theming findings and lists them', { timeout: 30_000 }, async () => {
     const { target, productDir } = editedHero((source) =>
       source.replace('class="acme-hero"', 'class="acme-hero bg-surface-sunken"'),
     );

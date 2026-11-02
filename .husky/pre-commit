@@ -30,3 +30,14 @@ if [ -n "$studio" ]; then
     exit 1
   }
 fi
+
+# The cli config resolves its includes and reporters against libs/cli, so vitest runs from there.
+cli=$(git diff --cached --name-only --diff-filter=ACM -- 'libs/cli/*' | sed "s|^|$PWD/|")
+
+if [ -n "$cli" ]; then
+  # shellcheck disable=SC2086
+  (cd libs/cli && npx vitest related --run --passWithNoTests $cli) || {
+    echo 'pre-commit: a cli spec related to the staged files fails (FAIL lines above name it). It runs on the working tree, so the red may be uncommitted work of another session in this checkout.' >&2
+    exit 1
+  }
+fi
