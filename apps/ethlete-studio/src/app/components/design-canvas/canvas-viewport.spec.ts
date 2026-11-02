@@ -33,7 +33,10 @@ const mount = (covered: number) => {
 };
 
 describe('mountCanvasViewport', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
   it('starts a fit right of the covered width', () => {
     const open = mount(0);
@@ -66,6 +69,7 @@ describe('mountCanvasViewport', () => {
 
     expect('pointerFocus' in element.dataset).toBe(false);
 
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true);
     element.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
     element.dispatchEvent(new FocusEvent('blur'));
 

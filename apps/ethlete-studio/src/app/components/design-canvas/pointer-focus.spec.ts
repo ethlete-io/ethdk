@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { trackPointerFocus } from './pointer-focus';
 
 const mount = () => {
@@ -11,6 +12,8 @@ const mount = () => {
 };
 
 describe('trackPointerFocus', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('keeps the mark through a modifier key press', () => {
     const element = mount();
 
@@ -25,6 +28,24 @@ describe('trackPointerFocus', () => {
     const element = mount();
 
     element.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab', bubbles: true }));
+
+    expect('pointerFocus' in element.dataset).toBe(false);
+  });
+
+  it('keeps the mark when the blur comes from the window losing focus', () => {
+    const element = mount();
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+
+    element.dispatchEvent(new FocusEvent('blur'));
+
+    expect('pointerFocus' in element.dataset).toBe(true);
+  });
+
+  it('clears the mark when focus moves inside the document', () => {
+    const element = mount();
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+
+    element.dispatchEvent(new FocusEvent('blur'));
 
     expect('pointerFocus' in element.dataset).toBe(false);
   });

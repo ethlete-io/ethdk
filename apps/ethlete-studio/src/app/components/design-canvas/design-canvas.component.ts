@@ -52,6 +52,7 @@ import {
   zoomAtPoint,
 } from './canvas-math';
 import { keptLiveIds, liveIdsOf, sameIds } from './live-frames';
+import { leavesWindow } from './pointer-focus';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 import { CommentPinComponent } from '../../design-parts/comment-pin/comment-pin.component';
 import { ZoomChipComponent } from '../../design-parts/zoom-chip/zoom-chip.component';
@@ -210,7 +211,7 @@ const isInteractive = (target: EventTarget | null) => {
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
     '[attr.data-pointer-focus]': 'pointerFocus() || null',
-    '(blur)': 'pointerFocus.set(false)',
+    '(blur)': 'clearPointerFocus()',
     '(wheel)': 'moveCameraByWheel($event)',
     '(pointerdown)': 'startPan($event)',
     '(click)': 'clickCanvas($event)',
@@ -869,6 +870,10 @@ export class DesignCanvasComponent {
 
   protected storeCells(id: string, rects: Record<string, Rect>) {
     this.cellRects.update((all) => ({ ...all, [id]: rects }));
+  }
+
+  protected clearPointerFocus() {
+    if (!leavesWindow(this.host.nativeElement)) this.pointerFocus.set(false);
   }
 
   protected startPan(event: PointerEvent) {

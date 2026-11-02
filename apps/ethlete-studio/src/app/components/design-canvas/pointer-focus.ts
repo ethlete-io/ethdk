@@ -9,6 +9,8 @@ const MODIFIERS = new Set([
   'MetaRight',
 ]);
 
+export const leavesWindow = (element: HTMLElement) => !element.ownerDocument.hasFocus();
+
 export const trackPointerFocus = (element: HTMLElement) => {
   const clear = () => delete element.dataset['pointerFocus'];
 
@@ -18,5 +20,7 @@ export const trackPointerFocus = (element: HTMLElement) => {
   element.addEventListener('keydown', (event) => {
     if (!MODIFIERS.has(event.code)) clear();
   });
-  element.addEventListener('blur', clear);
+  element.addEventListener('blur', () => {
+    if (!leavesWindow(element)) clear();
+  });
 };

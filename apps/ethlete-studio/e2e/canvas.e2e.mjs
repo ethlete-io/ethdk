@@ -281,6 +281,43 @@ const CASES = [
       state.frame ? noRingAfterPointer(page, state.frame) : { ok: false, detail: 'no frame point' },
   },
   {
+    name: 'window blur keeps the pointer mark',
+    pages: ['System', 'Sketches', 'Inbox'],
+    viewport: WIDE,
+    run: async (page, state) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      await settle(page);
+      const mark = (blurred) =>
+        page.evaluate(
+          ({ CANVAS, blurred }) => {
+            const canvas = [...document.querySelectorAll(CANVAS)].sort(
+              (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
+            )[0];
+
+            if (blurred) {
+              document.hasFocus = () => false;
+              canvas.dispatchEvent(new FocusEvent('blur'));
+              delete document.hasFocus;
+            }
+
+            return canvas.hasAttribute('data-pointer-focus');
+          },
+          { CANVAS, blurred },
+        );
+      const clicked = await mark(false);
+      await mark(true);
+      await settle(page);
+      const kept = await mark(false);
+      const ring = await ringOf(page);
+
+      return {
+        ok: clicked && kept && ring.focused && ring.rings.length === 0,
+        detail: `clicked=${clicked} kept=${kept} focused=${ring.focused} rings=[${ring.rings}]`,
+      };
+    },
+  },
+  {
     name: 'Tab focus shows the ring',
     pages: ['System', 'Sketches', 'Inbox'],
     viewport: WIDE,
