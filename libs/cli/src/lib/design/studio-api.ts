@@ -225,14 +225,12 @@ const partTargetsOf = async ({
   part,
   load,
   pictureOf,
-  skipUnchanged,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
   part: string;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
-  skipUnchanged?: boolean;
 }) => {
   const currentFile = product.parts.find((entry) => partKeyOf(entry) === part)?.file;
   const current =
@@ -269,10 +267,9 @@ const partTargetsOf = async ({
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
-        unchanged:
-          problem || skipUnchanged
-            ? []
-            : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
+        unchanged: problem
+          ? []
+          : await unchangedStatesOf({ product, sketch, variant, load, pictureOf, keepPictures: true, part }),
         ...(problem || !current || current.problem
           ? {}
           : { changes: variantChangesOf({ current, drawn: { states, note } }) }),
@@ -287,7 +284,6 @@ const targetsOf = async (options: {
   sketch: Sketch;
   load?: VariantPartLoader;
   pictureOf?: PictureOf;
-  skipUnchanged?: boolean;
 }) => (await Promise.all(options.sketch.targets.map((part) => partTargetsOf({ ...options, part })))).flat();
 
 /**
@@ -296,15 +292,19 @@ const targetsOf = async (options: {
  * draws it (`targets`, one entry per part and variant, tagged with `part`, the first part's entries first), with the states it
  * draws the same as the product now (`unchanged`), the states it adds and drops and its part note when that differs
  * from the product's (`changes`), and the live report
- * of the agent (`report`, `null` when none runs). `?unchanged=no` leaves `unchanged` empty and skips the pixel comparison, which
- * is the slow part of a cold call.
+ * of the agent (`report`, `null` when none runs). `?unchanged=no` answers the list only, without `problems` and `targets`: no rule check, no part module loads.
  */
 export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
   const { target } = asked;
-  const { unreadable, variants } = openSketchProblemsOf(product);
-  const sketches = listSketches({ productDir: product.dir, product: product.name }).filter(
-    (sketch): sketch is Sketch => typeof sketch !== 'string',
-  );
+  const light = asked.url.searchParams.get('unchanged') === 'no';
+  const listed = listSketches({ productDir: product.dir, product: product.name });
+  const sketches = listed.filter((sketch): sketch is Sketch => typeof sketch !== 'string');
+  const checked = light ? null : openSketchProblemsOf(product);
+  const unreadable =
+    checked?.unreadable ??
+    listed.flatMap((sketch): Problem[] =>
+      typeof sketch === 'string' ? [{ rule: 'SKETCH', file: product.dir, message: sketch }] : [],
+    );
 
   return {
     status: 200,
@@ -312,19 +312,17 @@ export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
       sketches: await Promise.all(
         sketches.map(async (sketch) => ({
           ...sketchOf({ sketch, target }),
-          problems: variants
-            .filter((entry) => entry.sketch.target === sketch.target)
-            .map((entry) => ({
-              variant: entry.variant,
-              problems: entry.problems.map((p) => problemOf({ target, problem: p })),
-            })),
-          targets: await targetsOf({
-            product,
-            sketch,
-            load: asked.load,
-            pictureOf: asked.pictureOf,
-            skipUnchanged: asked.url.searchParams.get('unchanged') === 'no',
-          }),
+          ...(checked
+            ? {
+                problems: checked.variants
+                  .filter((entry) => entry.sketch.target === sketch.target)
+                  .map((entry) => ({
+                    variant: entry.variant,
+                    problems: entry.problems.map((p) => problemOf({ target, problem: p })),
+                  })),
+                targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
+              }
+            : {}),
           report: readSketchReport({ checkout: target, sketch }),
         })),
       ),

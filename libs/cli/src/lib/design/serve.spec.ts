@@ -881,7 +881,7 @@ describe('the design server for sketches and comments', () => {
     ]);
   });
 
-  it('skips the unchanged-state comparison on request and still lists the states', async () => {
+  it('answers the quick sketch list without loading a part module, and the full one with the targets', async () => {
     const target = acme();
 
     readySketch(target);
@@ -892,18 +892,23 @@ describe('the design server for sketches and comments', () => {
 
       return { default: { states: { one: {} } } };
     });
-    type Listed = { sketches: { targets: { states: string[] }[] }[] };
+    type Listed = {
+      sketches: { target: string; variants: string[]; problems?: unknown[]; targets?: { states: string[] }[] }[];
+    };
     const quick = (await ask('/__design/sketches', '?product=acme&unchanged=no')).body as Listed;
-    const quickLoads = loaded.length;
 
-    loaded.length = 0;
+    expect(loaded).toEqual([]);
+    expect(quick.sketches.map(({ target, variants }) => ({ target, variants }))).toEqual([
+      { target: 'components/card', variants: ['a', 'b'] },
+    ]);
+    expect(quick.sketches[0]?.targets).toBeUndefined();
+    expect(quick.sketches[0]?.problems).toBeUndefined();
 
     const full = (await ask('/__design/sketches', '?product=acme')).body as Listed;
 
-    expect(quickLoads).toBeLessThan(loaded.length);
-    expect(quick.sketches[0]?.targets.map(({ states }) => states)).toEqual(
-      full.sketches[0]?.targets.map(({ states }) => states),
-    );
+    expect(loaded.length).toBeGreaterThan(0);
+    expect(full.sketches[0]?.targets?.length).toBeGreaterThan(0);
+    expect(full.sketches[0]?.problems).toEqual(expect.any(Array));
   });
 
   it('registers the parts of each sketch variant, resolved through that variant', async () => {
