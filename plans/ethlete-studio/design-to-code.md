@@ -1414,7 +1414,14 @@ part`: 77 s for 88 checks, 11 s harness build, about 63 s serial Playwright call
      must never fail silently; `sketch hold` accepts a reason that only means "waiting for the user". Tool fix: B51
      (every Studio action shows a refusal and its reason; "Wählen" on a sketch that is not ready says why it cannot
      pick; `sketch hold` refuses a reason that names the user and points to `sketch ready`). Lesson: an action that can
-     be refused must say so, and "waiting for the user" is a state the tool already has.
+     be refused must say so, and "waiting for the user" is a state the tool already has. Update (builder, 2026-11-02,
+     confirmed in code): `sketch hold` sets status 'in progress'; `pick` refuses anything not 'ready' (sketch.ts ~922);
+     run() at sketch-view.component.ts:457 swallows it with `catchError(() => of(null))`. Refuted: no code refuses a
+     "waiting for user" hold reason. About 30 silent `catchError(() => of(null)/EMPTY/of([]))` sites exist in
+     apps/ethlete-studio. Why no check caught it, sharpened: nothing checks that a user-action pipeline surfaces its
+     error; unit specs mock only the success path. Tool fix added to B51: an eslint rule `no-silent-catch-error` in
+     @ethlete/eslint-plugin (a catchError whose handler ignores the error and returns of()/EMPTY), warn first in
+     ethlete-studio; each site surfaces its error or carries a justified disable.
 146. `sketch check --fix` reports ok on the pages/sketches sketch while `sketch ready` fails on the same unused imports
      (variants a/b/c and shared/sketch-status.ts) (builder, 2026-11-02). Why no check caught it: check and ready run
      different rule sets, and no spec asserts that a sketch check passes implies ready's checks pass. Tool fix: B52
