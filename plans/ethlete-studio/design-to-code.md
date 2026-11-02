@@ -7,6 +7,11 @@ Status: decided (Tom, 2026-10-31), not built.
 A merged design becomes code under the control of the system, not of the agent. Tom: "Das System muss machen was
 geht, der Agent hat sonst zu viel Freiraum." No implementation without Tom's go (Q153).
 
+Core principle (Tom, 2026-11-02, finding 169; he had written it about 100 times in other words): a rule an agent
+must remember is a rule the next agent forgets; the tool has to enforce it. Every rule that lives only in prose
+(skills, handoffs, plan decisions, agent messages) and that a tool could check becomes a hook, a check or a refusal.
+Prose may explain a rule, never be its only guard. Every new finding answers: which tool enforces this now?
+
 ### Design to code decisions (Tom, 2026-10-31)
 
 - Q154 check, not generate: the agent implements the design. The system renders the real Angular component in the
