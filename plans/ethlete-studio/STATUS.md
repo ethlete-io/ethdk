@@ -20,12 +20,12 @@ erledigte Einträge werden gelöscht, die IDs der anderen bleiben. Die Quelle (B
 
 ## Gerade in Arbeit
 
-Builder (02.11.): alles lokal, ungepusht. Titelleisten-Merge committet (9fe0b8a41, mit title-search samt Kürzung und
-den Icons in foundations/icons, ohne go.json), App-Seite db86c73d9; DROPPED-PROP-Check f56864abf; compare-Settle
-caf6efa80. Als Nächstes: Commit von Toms Update-Dialog-Merge, dann Dialog + Neustart, B77 (Hook), Ursache Befund 166,
-B76 + Titelleiste in shell-main; dann B69, B71, B72, B74, B75 (blockiert `ready` von pages/sketches), B78, B65,
-B66, Befund 158, Ursache Befund 167; danach Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60, A13
-(CLI), B62.
+Builder (02.11.): alles lokal, ungepusht. Committet: Titelleisten-Merge 9fe0b8a41 + App db86c73d9, Update-Dialog-Merge
+f31a7febb, B77-Hook a7a1a1c23 (settings.json-Eintrag braucht Toms Ok vor dem Push), Zoom-Chip ad0b035e2,
+`--et-kbd-color` 2a13b5eba + title-search 6e3c4f00b (Zustands-Shots und compare stehen aus, dann neues Go), B66
+67b065c93. Läuft: Update-Dialog + Host-Neustart, B76 Titelleiste in shell-main, B65, B72, B75, B68, B69, Befund 161.
+Danach: B80, B81 (nach B72), B82, B71, B74, B78; Bau der Sketch-Ansicht Variante e, Code-Review B58, B57, B59, B60,
+A13 (CLI), B62.
 
 Bei Tom:
 
@@ -187,7 +187,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   compare leert (Befund 154).
 - **B65** (hoch) Go-Übernahme vergleicht das volle Bild mit Slots; eine Slot-Änderung macht das Go immer veraltet
   (Befund 155).
-- **B66** Harness-Host nimmt die Breiten des Parts aus der Design-Matrix statt `w-fit` (Befund 156).
 - **B67** E2E „Hover allein zeichnet keinen Rahmen“ prüft jede Outline und jeden Schatten über dem Rahmen im ganzen
   Canvas; `studio:e2e` läuft in CI (Job nach dem cli-Build, `canvas.e2e.mjs --built`, nur bei Änderungen in
   apps/ethlete-studio/** oder libs/cli/src/lib/design/**); die echte Skizze pages/sketches r2 wird E2E-Ziel statt der
@@ -220,6 +219,7 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   Hinweis (Scroll, Pan, Fade); ein Skip deckt nur den eigenen Schnitt des Elements, nicht den seiner Kinder; neue
   Regel für Inhalt, der außerhalb einer Pan-Region mehr als eine Zeilenhöhe am Fenster- oder Frame-Rand abgeschnitten
   ist. Spec: overflow-hidden + Skip + hohes Kind meldet, mit data-et-pan sauber (Befund 167).
+- **B82** `design compare` vergleicht bei jeder deklarierten Breite des Parts, nicht nur bei der ersten (Befund 156).
 
 ## C. CLI: Tempo und Ablauf
 

@@ -1577,7 +1577,10 @@ check` fails a part with a varying design prop that has no app input and is not 
 156. `design compare components/title-bar` fails SIZE in every state (builder, 2026-11-02): the design pins the bar to
      1440 px, the harness host is `w-fit`, so the grid's 1fr columns collapse and the app bar measures 496-781 px.
      Why no check caught it: the harness sizes the host to its content, which only fits parts with an intrinsic width.
-     Tool fix: B66 (the harness host takes the part's widths from the design matrix). Same review: the design passed
+     Tool fix: B66 (the harness host takes the part's widths from the design matrix). Done 67b065c93: compare reads
+     the part's first `widths` entry for both sides; title-bar passes all 25 states. Real cause: shot, merge-compare
+     and variant-diff already read `widths`, compare did not, and no spec had a part with widths - a shared input
+     read by some tools and not others. Follow-up B82: compare at every declared width. Same review: the design passed
      no product/part to the search text, the search button copies `[&>.et-button-contents]` classes (B61 forbids
      reaching into et-button), and hover/active/focus of the five controls were not drawn. Decisions (grill,
      technical): product/part become design props with states; the SDK button gets an option to stretch its contents
