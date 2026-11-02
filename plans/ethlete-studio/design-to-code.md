@@ -1669,15 +1669,25 @@ check` fails a part with a varying design prop that has no app input and is not 
      expects ready to pass). Lesson: an error message is a promise, and a spec should keep it.
 166. In the `long` rows of components/title-search the centred label is cut at both ends: the product name shows as
      a stray glyph at the start, the part name stops mid-word at the end with no ellipsis (builder report and shot,
-     2026-11-02); the design check passed with 0 problems. Cause pending (builder): why the render check's clipped
-     text rule missed text cut by centring inside a flex row. Tool fix pending the cause. Design fix with Tom (part
-     name truncates at the end, product stays whole).
+     2026-11-02); the design check passed with 0 problems. Cause (builder, from code, no run yet): (1) render-check.ts
+     `cutsOnPurpose` accepts `text-overflow: ellipsis` as an intentional cut, but the `truncate` sat on a flex
+     container, where no ellipsis is ever drawn; (2) the check compares scrollWidth > clientWidth, and centred
+     overflow spills left into negative offsets that scrollWidth ignores, so the left cut was invisible. Tool fix:
+     B80 (ellipsis counts only on inline text - a flex/grid container with ellipsis stays CLIPPED with the hint
+     "min-w-0 truncate on the inner span"; measure both edges, each child rect against the clip box). Lesson: a
+     check that trusts a declared intent (ellipsis) must verify the intent can take effect. Design fix with Tom
+     (part name truncates at the end, product stays whole).
 167. In pages/sketches r2 variant e the variant rows run past the bottom of the Studio window and are cut only by
      the window border (Tom, 2026-11-02, screenshot: the `windows` state row of a title-bar sample cut at the window
      edge); the sketch check passed. Tom: the implementation checks would likely report it as an error. Cause
-     pending (builder): whether the rows area is declared as a pan region and why no render rule reports content
-     clipped by the page frame. Tool fix pending the cause (likely: content cut by the page or window edge is a
-     render problem unless the region is declared pannable, and a pannable region shows that it continues).
+     (builder, from code): the sketch put `data-et-skip="CLIPPED"` on the absolute overflow-hidden rows container,
+     and render-check.ts `skipsOf` walks ancestors, so one skip silences every descendant's cut; variants a-f also
+     skip the whole page when camera != fit, d and f the rows area too. The tool has no pan-region concept, so a
+     skip was the only escape hatch. Tool fix: B81 (declared `data-et-pan` region whose cut passes only with a
+     continuation affordance; a skip covers only the marked element's own cut; a rule for content cut by the
+     window or frame edge by more than a row height outside a pan region). Lesson: an escape hatch without a
+     narrower legal option gets used wide - give the legitimate case its own name. Design question to Tom open:
+     do e's rows end inside the window, or is the pan cut fine.
      Comments in Studio are not back in the UI yet, so Tom reports such feedback in chat.
 168. The title bar is not part of the shell design: elements/shell-main (Tom's screenshot, `hidden · width 1440`) shows
      rail and content with no title bar, while the app puts `<ethlete-title-bar>` in app.component.ts above the

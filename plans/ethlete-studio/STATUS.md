@@ -214,6 +214,13 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
 - **B79** (hoch) Durchgang durch alle Text-Regeln (Skills, Übergaben, Plan-Entscheidungen): je Regel, ob ein Werkzeug
   sie prüft und welcher Hook oder Check es könnte; Produktfragen an Tom, der Rest wird zu B-Punkten (Tom,
   02.11., Grundprinzip in design-to-code.md). Inventar macht die Grill-Session per Subagent.
+- **B80** Render-Check CLIPPED: Ellipsis zählt nur auf Inline-Text (Flex/Grid mit Ellipsis bleibt CLIPPED, Hinweis
+  „min-w-0 truncate am inneren Span“); beide Kanten messen (Kind-Rect gegen Clip-Box, fängt justify-center ohne
+  -safe). Specs: Flex+Ellipsis CLIPPED, justify-center-safe sauber, Inline-truncate sauber (Befund 166).
+- **B81** Render-Check Pan-Regionen: `data-et-pan` erklärt eine Pan-Region, ein Schnitt dort nur mit Fortsetzungs-
+  Hinweis (Scroll, Pan, Fade); ein Skip deckt nur den eigenen Schnitt des Elements, nicht den seiner Kinder; neue
+  Regel für Inhalt, der außerhalb einer Pan-Region mehr als eine Zeilenhöhe am Fenster- oder Frame-Rand abgeschnitten
+  ist. Spec: overflow-hidden + Skip + hohes Kind meldet, mit data-et-pan sauber (Befund 167).
 
 ## C. CLI: Tempo und Ablauf
 
