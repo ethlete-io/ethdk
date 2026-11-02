@@ -28,7 +28,7 @@ Sketch-Ansicht als Runde 2 von pages/sketches (Befund 148, B36, B34/B41, B38, �
 B46; im Bau dazu Befund 100 und B47), weil er Toms Wählen blockiert; danach Code-Review B58, B57, B59,
 B60 (B61-Skill gebaut, d7d7599b5, lokal) vor weiterer Part-Umsetzung; dann A13 (CLI) und B62-Werkzeugteil. B56 gebaut (bbde5081e, ca7546773,
 lokal). Befund 152 (c) geklärt, Korrektur in Arbeit. A1 gebaut (b2306bcb6, lokal), 152 (c) behoben (4dd8cb9a5, lokal).
-Bei Tom: Ampel-Farbe, Klick auf Update; danach neues Go für die Titelleiste. Läuft: compare-Fixes (Overlays abwarten, Animationen einfrieren), Durchsicht-Repro (B53).
+Tom: Ampel grau, Update-Klick startet neu nach Rückfrage (Inhalt offen); offen: Abgrenzung der Titelleiste; danach neues Go für die Titelleiste. Läuft: compare-Fixes (Overlays abwarten, Animationen einfrieren). B53 gebaut (adc8da14f, lokal): Ursache war Stapelung, nicht Transparenz.
 
 Bei Tom:
 
