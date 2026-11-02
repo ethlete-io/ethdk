@@ -50,6 +50,9 @@ export type NgField = { value: unknown; errors?: (string | { kind: string; messa
 export type NgOptions = { imports?: string[]; fields?: Record<string, NgField> };
 
 const render = async (template: string, options: NgOptions) => {
+  if (typeof location === 'undefined')
+    return { markup: template.replace(/<([a-zA-Z][\w:.-]*)/g, '<$1 data-et-ng'), styles: [] };
+
   const params = new URLSearchParams(location.search);
   const response = await fetch('/__design/render', {
     method: 'POST',
@@ -70,7 +73,8 @@ const render = async (template: string, options: NgOptions) => {
 
 /**
  * Renders an Angular template with the real components on the design server and resolves with its
- * markup, led by the component styles this frame has not received yet. Rejects with the render error.
+ * markup, led by the component styles this frame has not received yet. Rejects with the render error. Outside a
+ * browser it resolves with the template unrendered, each element marked `data-et-ng`.
  */
 export const ng = async (template: string, options: NgOptions = {}) => {
   const { markup, styles } = await render(template, options);

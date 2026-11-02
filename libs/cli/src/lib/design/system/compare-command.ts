@@ -34,6 +34,7 @@ import { FrozenAnimation, freezeAnimationsScriptOf, frozenAnimationsOf } from '.
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget, SketchTarget } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
+import { drawnStateNamesOf } from './unchanged-rows';
 
 export const COMPARE_USAGE =
   'compare <layer>/<name> | --all --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
@@ -406,8 +407,11 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
     };
     const width = compareWidthOf({ part, widths: module.default?.widths });
     const loaded = module.default?.states;
+    const drawn = new Set(await drawnStateNamesOf(module.default));
     const states =
-      loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
+      loaded && typeof loaded === 'object' && !Array.isArray(loaded)
+        ? Object.fromEntries(Object.entries(loaded).filter(([state]) => drawn.has(state)))
+        : {};
 
     if (only !== null && !(only in states))
       return `${part} has no state "${only}" - its states: ${Object.keys(states).join(', ')}`;

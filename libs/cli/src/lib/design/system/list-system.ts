@@ -8,6 +8,7 @@ import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { SystemModules } from './system-modules';
+import { drawnStateNamesOf } from './unchanged-rows';
 import { unusedBasePartsOf } from './unused-base-parts';
 
 export const SYSTEM_PATH = '/__design/system';
@@ -271,7 +272,7 @@ export const readPartModule = async (options: {
       };
     }
 
-    const names = Object.keys(states);
+    const names = await drawnStateNamesOf(loaded);
 
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,

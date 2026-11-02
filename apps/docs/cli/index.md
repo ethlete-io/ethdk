@@ -637,7 +637,9 @@ A bare `data-et-surface` on the part's root element marks the part's own surface
 draws them with `interactionRows`: its `grid` needs a column for each of them, and every row
 needs a state in each of those columns, so the open row is drawn hovered too. In any grid, a row that draws a state in one
 column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
-on the grid line (`draws no selected active`). Flat states such as
+on the grid line (`draws no selected active`). A row whose forced elements are only SDK components rendered through
+`ng()` with no class, inline style or styled content of the part's own is drawn at rest only: Studio, `shot`, `compare`
+and the visible-change gate skip its interaction states. Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. When a descendant of the control draws an interaction or carries

@@ -14,6 +14,7 @@ import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { partHashOf } from './sketch/baseline';
 import { changedOutsideSketchOf, readAccepted, readMerged, recordAutoReview } from './sketch/merged-parts';
 import { createSystemModules, productModuleIdOf } from './system-modules';
+import { drawnStateNamesOf } from './unchanged-rows';
 
 export const PICTURES_FILE = 'pictures.json';
 
@@ -165,8 +166,7 @@ export const drawStatePictures: DrawStates = async ({ target, config, product, p
         const module = (await server.ssrLoadModule(productModuleIdOf({ file, product: product.name }))) as {
           default?: { states?: unknown };
         };
-        const loaded = module.default?.states;
-        const states = loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? Object.keys(loaded) : [];
+        const states = await drawnStateNamesOf(module.default);
         const pictureOf = async (state: string, fresh: boolean) =>
           sha16(
             (

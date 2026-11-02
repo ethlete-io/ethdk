@@ -13,6 +13,7 @@ import { findSketch, parseTarget, rejectionOf, Sketch } from './system/sketch/sk
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
+import { drawnStateNamesOf } from './system/unchanged-rows';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
 
@@ -306,8 +307,6 @@ export const changedCropsIn = async (options: {
   });
 };
 
-const stringsOf = (states: unknown) => (states && typeof states === 'object' ? Object.keys(states) : []);
-
 /**
  * `et design shot <layer>/<name> --states [--variants]` draws every state of a part, and with `--variants`
  * every variant of its open sketch too, into one contact sheet PNG, and prints where it wrote it.
@@ -475,7 +474,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       const module = (await server.ssrLoadModule(
         productModuleIdOf({ file: found.file, product, sketch: axis.sketch }),
       )) as { default?: { states?: unknown; grid?: unknown; widths?: unknown } };
-      const names = stringsOf(module.default?.states);
+      const names = await drawnStateNamesOf(module.default);
 
       const first = Array.isArray(module.default?.widths) ? (module.default.widths[0] as unknown) : undefined;
 
