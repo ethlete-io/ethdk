@@ -14,6 +14,8 @@ export type ServerIdentity = {
   builtAt: number;
   projectRoot: string;
   installed: ServerBuild | null;
+  /** The process that serves; a server restarted from a new build answers with a new one. */
+  pid: number;
 };
 
 /** The cli package folder that `@ethlete/cli` resolves to from `projectRoot`, or null when it is not installed there. */
@@ -39,6 +41,7 @@ export const serverIdentityOf = (projectRoot: string) => {
       builtAt: running.builtAt,
       projectRoot,
       installed,
+      pid: process.pid,
     };
   };
 };

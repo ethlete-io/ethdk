@@ -49,8 +49,9 @@ const startDesignServer = (checkout) =>
 /**
  * The design server listens on `::1` only, so every address here is `[::1]`: `localhost` and `127.0.0.1` are refused from Node.
  * Builds Studio into a scratch folder, runs a design server and a static server of its own on free ports, and
- * calls `run({ page, studioUrl, designPort })` in headless Chromium with a stubbed desktop shell. Stops only what it started.
- * `built` serves an existing Studio build folder instead of building one.
+ * calls `run({ page, studioUrl, designPort, restartDesign })` in headless Chromium with a stubbed desktop shell. Stops only
+ * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
+ * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
  */
 export const withStudio = async (run, { checkout = root, build = true, built } = {}) => {
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
@@ -126,7 +127,22 @@ export const withStudio = async (run, { checkout = root, build = true, built } =
       };
     });
 
-    return await run({ page, studioUrl: `http://[::1]:${studioPort}`, designPort: design.port });
+    const restartDesign = async (downMs) => {
+      const stopped = design.child;
+
+      design = null;
+      stopped.removeAllListeners('exit');
+      if (stopped.exitCode === null) {
+        await new Promise((done) => {
+          stopped.once('exit', done);
+          stopped.kill('SIGTERM');
+        });
+      }
+      await new Promise((done) => setTimeout(done, downMs));
+      design = await startDesignServer(checkout);
+    };
+
+    return await run({ page, studioUrl: `http://[::1]:${studioPort}`, designPort: design.port, restartDesign });
   } finally {
     await browser?.close();
     servers.forEach((server) => server.close());

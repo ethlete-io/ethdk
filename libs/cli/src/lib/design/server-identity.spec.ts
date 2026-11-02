@@ -37,6 +37,7 @@ describe('serverIdentityOf', () => {
 
     expect(identity.apiLevel).toBe(STUDIO_API_LEVEL);
     expect(identity.projectRoot).toBe(project);
+    expect(identity.pid).toBe(process.pid);
     expect(identity.stamp.build).toMatch(/^[0-9a-f]{12}$/);
     expect(identity.builtAt).toBeGreaterThan(0);
     expect(identity.installed).toMatchObject({ builtAt: 1_000_000, stamp: { version: '1.0.0' } });
@@ -63,6 +64,7 @@ describe('serverIdentityOf', () => {
           builtAt: Date.UTC(2026, 0, 1),
           projectRoot: project,
           installed,
+          pid: 1,
         },
       }).verdict,
     ).toBe('restart');
@@ -102,6 +104,7 @@ describe('judgeServerIdentity', () => {
     builtAt: 2000,
     projectRoot: '/work/app',
     installed: { stamp: stamp('aaa'), builtAt: 2000 },
+    pid: 1,
     ...patch,
   });
 

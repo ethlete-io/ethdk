@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme, signalHostElementIntersection } from '@ethlete/core';
 import {
   EMPTY,
@@ -47,7 +48,7 @@ import {
   withScheme,
 } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
-import { paintedFrame$ } from '../frame-paint';
+import { FrameLoad, designServerBack$, failedLoadReason$, frameLoad$ } from '../frame-paint';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameBorderComponent } from './canvas-frame-border.component';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
@@ -276,6 +277,19 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     @if (!active()) {
       <div class="absolute inset-0 size-full border-0"></div>
     }
+    @if (failure(); as reason) {
+      <div
+        [etProvideColor]="errorTheme()"
+        class="absolute top-[0.8em] right-[0.8em] left-[0.8em] flex items-center gap-[0.6em] rounded-md border border-(--et-theme-color-primary-solid) bg-(--et-surface-background-solid) p-[0.6em] text-[calc(1.2rem*min(var(--et-design-canvas-label-scale,1),2))] text-(--et-theme-color-primary-solid) shadow-md"
+        role="alert"
+        data-frame-failed
+      >
+        <span class="min-w-0 flex-1">Load failed. {{ reason }}</span>
+        <button (click)="reloadPage()" et-button type="button" variant="outline" size="xs" data-frame-reload>
+          Reload
+        </button>
+      </div>
+    }
     @for (box of borderBoxes(); track $index) {
       <ethlete-canvas-frame-border
         [style.left.px]="box?.x ?? 0"
@@ -288,6 +302,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    BUTTON_IMPORTS,
     NgTemplateOutlet,
     ProvideColorDirective,
     CanvasFrameBorderComponent,
@@ -307,6 +322,7 @@ type Wanted = { kind: 'page' | 'shot'; src: string };
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',
     '[attr.data-schemed]': 'copies().length > 0 || null',
+    '[attr.data-load-failed]': 'failure() !== null || null',
   },
 })
 export class CanvasFrameComponent {
@@ -438,6 +454,11 @@ export class CanvasFrameComponent {
 
   private newest = computed(() => this.iframes().at(-1)?.nativeElement ?? null);
 
+  protected failure = linkedSignal<HTMLIFrameElement | null, string | null>({
+    source: () => this.newest(),
+    computation: () => null,
+  });
+
   /** The window of the live page once it painted, to post messages to; `null` while the frame shows a shot. */
   public liveWindow = computed(() => {
     const iframe = this.newest();
@@ -475,16 +496,19 @@ export class CanvasFrameComponent {
         switchMap((iframe) => {
           const src = iframe && this.sources().at(-1)?.src;
 
-          return iframe && src
-            ? paintedFrame$(iframe).pipe(
-                filter(Boolean),
-                map(() => src),
-              )
-            : EMPTY;
-        }),
-        tap((src) => {
-          this.shown.set(src);
-          this.settled$.next(src);
+          if (!iframe || !src) return EMPTY;
+
+          let retried = false;
+
+          return frameLoad$(iframe).pipe(
+            switchMap((load) => {
+              const retry = load === 'failed' && !retried;
+
+              retried ||= load === 'failed';
+
+              return this.followLoad$({ iframe, src, load, retry });
+            }),
+          );
         }),
         takeUntilDestroyed(),
       )
@@ -536,6 +560,13 @@ export class CanvasFrameComponent {
     this.heightChange.emit(height);
   }
 
+  protected reloadPage() {
+    const iframe = this.newest();
+    const src = this.sources().at(-1)?.src;
+
+    if (iframe && src) iframe.src = src;
+  }
+
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
   }
@@ -568,6 +599,29 @@ export class CanvasFrameComponent {
       map(() => image),
       // eslint-disable-next-line ethlete/no-silent-catch-error -- an image that fails to decode renders as the existing empty frame
       catchError(() => of(null)),
+    );
+  }
+
+  private followLoad$(options: { iframe: HTMLIFrameElement; src: string; load: FrameLoad; retry: boolean }) {
+    const { iframe, src, load, retry } = options;
+
+    if (load === 'pending') return EMPTY;
+
+    if (load === 'painted') {
+      this.failure.set(null);
+      this.shown.set(src);
+      this.settled$.next(src);
+
+      return EMPTY;
+    }
+
+    return failedLoadReason$(src).pipe(
+      tap((reason) => {
+        this.failure.set(reason);
+        this.settled$.next(src);
+      }),
+      switchMap(() => (retry ? designServerBack$(src) : EMPTY)),
+      tap(() => (iframe.src = src)),
     );
   }
 

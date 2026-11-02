@@ -30,6 +30,7 @@ import {
   designServerStop$,
 } from '../../host/design';
 import { DesignChange, designChanges$ } from '../../host/design-changes';
+import { designServerReplaced$ } from '../../host/design-server-pid';
 import { PartsRedraw } from '../../host/design-parts';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { ShellAction, ShellPageComponent } from '../design-parts/shell-main/shell-page.component';
@@ -160,6 +161,14 @@ export class StudioViewComponent {
             : EMPTY;
         }),
         tap((project) => this.absorb(project)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.listeningPort)
+      .pipe(
+        switchMap((port) => (port === null ? EMPTY : designServerReplaced$(port))),
+        tap(() => this.epoch.update((value) => value + 1)),
         takeUntilDestroyed(),
       )
       .subscribe();

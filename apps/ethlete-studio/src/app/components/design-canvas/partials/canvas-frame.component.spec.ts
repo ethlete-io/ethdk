@@ -87,6 +87,81 @@ describe('CanvasFrameComponent swap between shot and page', () => {
   });
 });
 
+describe('CanvasFrameComponent failed page load', () => {
+  let fixture: ComponentFixture<CanvasFrameComponent>;
+  let up: boolean;
+
+  const flush = (ms = 20) => vi.advanceTimersByTimeAsync(ms);
+
+  const host = () => fixture.nativeElement as HTMLElement;
+
+  const iframes = () => [...host().querySelectorAll('iframe')];
+
+  const visible = () => iframes().filter((iframe) => !iframe.classList.contains('opacity-0'));
+
+  const post = (iframe: HTMLIFrameElement, type: string) =>
+    window.dispatchEvent(new MessageEvent('message', { source: iframe.contentWindow, data: { type } }));
+
+  const frameAt = (src: string) => ({ id: 'default', src, label: 'default', width: 300, height: 200 });
+
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => window.setTimeout(callback, 0));
+    up = false;
+    vi.stubGlobal('fetch', async () => {
+      if (!up) throw new TypeError('Failed to fetch');
+
+      return new Response('{}');
+    });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+    fixture = TestBed.createComponent(CanvasFrameComponent);
+    fixture.componentRef.setInput('frame', frameAt('http://localhost:4402/frame.html?revision=1'));
+    fixture.componentRef.setInput('width', 300);
+    fixture.componentRef.setInput('live', true);
+    await flush();
+    post(iframes()[0]!, 'design-explore:painted');
+    await flush();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('keeps the painted page over a load without a frame message, names why, and reloads once the server answers', async () => {
+    fixture.componentRef.setInput('frame', frameAt('http://localhost:4402/frame.html?revision=2'));
+    await flush();
+
+    const failing = iframes().at(-1)!;
+    const reloads: string[] = [];
+
+    expect(iframes()).toHaveLength(2);
+    failing.dispatchEvent(new Event('load'));
+    await flush(1000);
+
+    expect(visible()).toEqual([iframes()[0]]);
+    expect(host().querySelector('[data-frame-failed]')?.textContent).toContain(
+      'Nothing answers at localhost:4402, the design server may be restarting',
+    );
+
+    Object.defineProperty(failing, 'src', { configurable: true, set: (src: string) => reloads.push(src) });
+    up = true;
+    await flush(1000);
+
+    expect(reloads).toEqual(['http://localhost:4402/frame.html?revision=2']);
+
+    post(failing, 'design-explore:loading');
+    post(failing, 'design-explore:painted');
+    await flush();
+
+    expect(host().querySelector('[data-frame-failed]')).toBeNull();
+    expect(visible()).toEqual([failing]);
+  });
+});
+
 describe('CanvasFrameComponent shot states', () => {
   let fixture: ComponentFixture<CanvasFrameComponent>;
 
