@@ -207,7 +207,6 @@ MVP fertig (02.11.). Erledigte Einträge fliegen aus den Listen; die Historie st
   (Befund 165); blockiert `ready` von pages/sketches.
 - **B76** Kompositions-Check: jeder Part, den die App rendert, steckt im Design-Part seines Hosts; Titelleiste
   gehört in die Shell (Befund 168).
-- **B77** (hoch) Hook: lange Design-Befehle laufen nur im Hintergrund, sonst verweigert (Befund 169).
 - **B78** compare: einen DIFF vor dem Melden neu laufen lassen (FLAKY, wenn die Läufe abweichen); scheitern, wenn
   App und Design verschieden viele Overlay-Panes haben; Paritäts-Spec für die frozenAt-Mocks (Ursache der Flakes:
   Pane-Zählung ignorierte `<et-menu>`, caf6efa80).
