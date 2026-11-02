@@ -21,6 +21,8 @@ const KEEP_BUILDS = 2;
 const IN_USE = '.in-use-';
 const INSTALL_STATES = ['.yarn-state.yml', '.package-lock.json', '.modules.yaml', '.yarn-integrity'];
 
+const UNREAD_BY_BUILD = /^(?:plans\/|\.changeset\/|\.ethlete\/design\/(?:.*\/)?[^/]+\.json$)/u;
+
 const gitOf = (cwd: string, args: string[]) =>
   execFileSync('git', ['--no-optional-locks', ...args], {
     cwd,
@@ -99,8 +101,8 @@ const installedPackagesOf = (dir: string) => {
 
 /**
  * The key of everything a harness build can read: the content of every tracked and not ignored untracked file of the
- * git checkout, each installed package, the Node version and the build command. `null` outside a git checkout or with
- * unresolved merge conflicts, where no build may be reused.
+ * git checkout except plans, changesets and design JSON records, each installed package, the Node version and the
+ * build command. `null` outside a git checkout or with unresolved merge conflicts, where no build may be reused.
  */
 export const harnessBuildKeyOf = (options: { target: string; command: string[] }): string | null => {
   let tree: ReturnType<typeof workTreeFilesOf>;
@@ -117,8 +119,11 @@ export const harnessBuildKeyOf = (options: { target: string; command: string[] }
 
   hash.update(`${process.version}\0${options.command.join('\0')}\0`);
 
-  for (const [path, sha] of [...tree.files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+  for (const [path, sha] of [...tree.files].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (UNREAD_BY_BUILD.test(path)) continue;
+
     hash.update(`${path}\0${sha}\n`);
+  }
 
   for (const dir of new Set([tree.root, resolve(options.target)]))
     for (const line of installedPackagesOf(dir)) hash.update(`${dir}\0${line}\n`);
