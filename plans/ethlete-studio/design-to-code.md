@@ -4170,6 +4170,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      sorted separately: LOST-SURFACE comes from b266's uncommitted rule, the STALE line is stale SDK mocks
      (`nx build components`), SKIP-SCOPE/COVERED/DROPPED-PROP need a count on HEAD alone.
 
+332. B261 sketch shows three identical variants (Tom, 2026-11-03, Studio screenshot). components/sketch-status-badge
+     round 1 "Render-error status": Aktuell, a, b and c all draw only drawing/waiting/paused/idle; the render-failed
+     badge the round is about appears in no row, so Tom cannot pick. The variant notes describe three different
+     looks. Cause unknown; candidates: the matrix takes its columns from the base part's states and drops a state only
+     the variants declare, or the variants never added the state. Why no tool caught it: unknown until the cause is
+     known; neither sketch check nor sketch ready refuses a round whose variants render pixel-identical to each other
+     and to Aktuell in every shown column. Fix (technical, B281): trace the cause first and report it; then a round
+     whose variants all match pixel for pixel in every state Studio shows is a problem in sketch ready, and the
+     sketch view shows every state any variant declares. B261 goes back to the builder; no pick from Tom until fixed.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
