@@ -6,9 +6,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem, summaryText } from './check-system';
+import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
-import { createSketch, variantDirOf } from './sketch/sketch';
+import { createSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -341,6 +342,29 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
+  it('fails while a part an open sketch replaces changed since the sketch, until the sketch is rebased', async () => {
+    const target = acme();
+    const lines = output();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(withoutOpenPoints(lines)).toEqual([
+      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase elements/hero --product acme --by <model id>',
+      expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(SKETCH-BASE-STALE 1\)/),
+    ]);
+
+    rebaseSketch({ product, sketch });
+    lines.length = 0;
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(lines).toContain('SKETCH-BASE-STALE 0');
+  }, 60_000);
+
   it('checks one product with --product', async () => {
     const lines = output();
 
@@ -451,6 +475,41 @@ describe('checkDesign', () => {
     );
     expect(await checkDesign({ target, argv: ['--product', 'acme-base'], invocation: 'et design' })).toBe(1);
   }, 120_000);
+
+  it('fails on an element without an action in a part with no go, and warns once for a part with a go', async (context) => {
+    const target = acme();
+    const lines = output();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace(
+        'styles: styles + play.styles,',
+        "styles: styles + play.styles, setup: (root) => root.querySelector('h1')?.addEventListener('click', () => undefined),",
+      ),
+    );
+
+    const ungone = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+
+    expect(ungone).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/^ACTION-UNDECLARED acme elements\/hero default at /));
+
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+
+    markPartGo({ product, part: 'elements/hero', by: 'tom' });
+    lines.length = 0;
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(lines.filter((line) => line.includes('ACTION-UNDECLARED acme'))).toEqual([
+      expect.stringMatching(
+        /^WARNING ACTION-UNDECLARED acme elements\/hero: \d+ hits? on 1 element, unchanged since its go - first .*h1: h1 ".+" is interactive but declares no action$/,
+      ),
+    ]);
+  }, 180_000);
 
   it('lists a border under the non-text contrast rule as a contrast', async (context) => {
     const target = acme();

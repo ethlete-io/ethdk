@@ -1,4 +1,5 @@
 import { INTERACTIVE_SELECTOR } from './actions';
+import { ownerPartOf, RenderIssue } from './render-check';
 
 /** The rule an interactive design element breaks when it declares no `data-et-action`. */
 export const ACTION_UNDECLARED_RULE = 'ACTION-UNDECLARED';
@@ -46,3 +47,47 @@ export const ACTION_UNDECLARED_STATEMENTS = `
     }
   }
 `;
+
+/** The ACTION-UNDECLARED summary of one part whose go still holds, for `design check` to warn with. */
+export type ActionUndeclaredWarning = { product: string; part: string; line: string };
+
+/**
+ * Splits the ACTION-UNDECLARED issues of the parts whose go still holds off `issues`, as one warning line per part with
+ * the hit count and the first element. The issues of every other part stay errors.
+ */
+export const actionUndeclaredUnderGoOf = (options: {
+  issues: RenderIssue[];
+  isGo: (at: { product: string; part: string }) => boolean;
+}) => {
+  const issues: RenderIssue[] = [];
+  const groups = new Map<string, { product: string; part: string; found: RenderIssue[] }>();
+
+  for (const issue of options.issues) {
+    const at = { product: issue.product, part: ownerPartOf(issue) };
+
+    if (issue.rule !== ACTION_UNDECLARED_RULE || !options.isGo(at)) {
+      issues.push(issue);
+      continue;
+    }
+
+    const key = JSON.stringify([at.product, at.part]);
+    const group = groups.get(key) ?? { ...at, found: [] };
+
+    group.found.push(issue);
+    groups.set(key, group);
+  }
+
+  const warnings = [...groups.values()].map(({ product, part, found }): ActionUndeclaredWarning => {
+    const [first] = found as [RenderIssue, ...RenderIssue[]];
+    const elements = new Set(found.map((issue) => JSON.stringify([issue.part, issue.path]))).size;
+    const named = first.detail.split(' - ')[0];
+
+    return {
+      product,
+      part,
+      line: `WARNING ${ACTION_UNDECLARED_RULE} ${product} ${part}: ${found.length} hit${found.length === 1 ? '' : 's'} on ${elements} element${elements === 1 ? '' : 's'}, unchanged since its go - first ${first.path}: ${named}`,
+    };
+  });
+
+  return { issues, warnings };
+};

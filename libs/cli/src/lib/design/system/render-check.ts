@@ -84,6 +84,10 @@ export type RenderedGrid = Pick<RenderIssue, 'product' | 'part' | 'sketch'> & { 
 export const renderIssueLineOf = (issue: RenderIssue) =>
   `${issue.rule} ${issue.product} ${issue.part} ${issue.state} at ${issue.size}: ${issue.path} - ${issue.detail}`;
 
+/** The part whose code draws the element of an issue: the innermost embedded part on its path, else the drawn part. */
+export const ownerPartOf = (issue: RenderIssue) =>
+  [...issue.path.matchAll(/\[data-et-part=([^\]]+)\]/gu)].pop()?.[1] ?? issue.part;
+
 const SCHEME_IN_DETAIL = / in the (light|dark) scheme/u;
 
 /** The render issues as lines, one per finding that repeats across states, sizes, schemes and variants, with where it was found. */

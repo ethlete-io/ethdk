@@ -4,11 +4,12 @@ import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
+import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
 import { DrawnFindings, drawnFindingsFrom, statefulPartsOf } from './drawn-open-points';
 import { openPointsText } from './open-points';
-import { goMarkOf, goPartsOf } from './part-go';
+import { goMarkOf, goPartsOf, goStateOf } from './part-go';
 import { doneParts } from './part-task';
 import { actionsRerunOf, readyPartsOf } from './part-ready';
 import { staleLineOf, stalePartsOf, upgradeLegacyMarksOf } from './stale-parts';
@@ -20,7 +21,7 @@ import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
-import { RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
+import { ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
@@ -43,6 +44,7 @@ import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { staleBaselineOf } from './sketch/baseline';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
@@ -200,6 +202,24 @@ const typecheckOpenSketches = (options: { target: string; product: ResolvedProdu
         }),
   );
 
+const staleSketchBasesOf = (product: ResolvedProduct): { problem: Problem; line: string }[] =>
+  listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
+    if (typeof sketch === 'string' || sketch.decision) return [];
+
+    const changed = staleBaselineOf({ product, sketch });
+
+    if (!changed?.length) return [];
+
+    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
+
+    return [
+      {
+        problem: { rule: 'SKETCH-BASE-STALE', file: sketch.dir, message },
+        line: `SKETCH-BASE-STALE ${product.name} ${sketch.target}: ${message}`,
+      },
+    ];
+  });
+
 const warnChangedOutsideSketch = (product: ResolvedProduct) => {
   for (const part of changedOutsideSketchOf(product))
     console.warn(
@@ -212,9 +232,6 @@ const isInBasePart = (product: ResolvedProduct, file: string) =>
 
 const isBasePartKey = (product: ResolvedProduct, key: string) =>
   product.parts.find((part) => partKeyOf(part) === key)?.origin === 'base';
-
-const ownerPartOf = (issue: RenderIssue) =>
-  [...issue.path.matchAll(/\[data-et-part=([^\]]+)\]/gu)].pop()?.[1] ?? issue.part;
 
 const printBaseFindings = (product: ResolvedProduct, rules: string[]) => {
   if (rules.length === 0 || !product.base) return;
@@ -236,8 +253,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
-  const report = (problem: Problem, product: ResolvedProduct) => {
-    const line = lineOf(target, problem);
+  const report = (problem: Problem, product: ResolvedProduct, line = lineOf(target, problem)) => {
 
     if (options.known?.includes(line)) {
       console.warn(`NOTE (was there before) ${line}`);
@@ -310,6 +326,9 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
 
     if (options.warn && !options.part)
       typecheckOpenSketches({ target, product }).forEach((problem) => report(problem, product));
+
+    if (options.warn && !options.part)
+      staleSketchBasesOf(product).forEach(({ problem, line }) => report(problem, product, line));
   }
 
   return failed ? 1 : 0;
@@ -475,8 +494,22 @@ const renderSystem = async (
   });
   const isInBase = (issue: RenderIssue) =>
     resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));
-  const issues = rendered.issues.filter((issue) => !isInBase(issue));
+  const underGo = actionUndeclaredUnderGoOf({
+    issues: rendered.issues.filter((issue) => !isInBase(issue)),
+    isGo: ({ product, part }) => {
+      const found = resolved.find((candidate) => candidate.name === product);
 
+      return found !== undefined && goStateOf({ product: found, part }) === 'current';
+    },
+  });
+  const { issues } = underGo;
+
+  underGo.warnings.forEach(({ product, part, line }) => {
+    console.warn(line);
+    const counted = tallyOf(options.tally, { product, part });
+
+    if (counted) counted.warnings += 1;
+  });
   rendered.warnings
     .filter((issue) => !isInBase(issue))
     .forEach((issue) => {
