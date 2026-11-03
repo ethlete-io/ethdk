@@ -4148,6 +4148,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      frames through the same queue module with the same N as Studio, not one at a time and not all at once, so the
      check takes Studio's path; a mutation that unbounds N must turn a check spec red. B240 merges after (1) and (2).
 
+330. B273 (finding 320, CLIPPED inside SDK internals) does not reproduce. On elements/variant-cell a/b/c, the sketch
+     check and the part check show no CLIPPED, also with every `data-et-skip="CLIPPED"` removed; the drawn states
+     include the b "Lädt" badge with the spinner, so the spinner path is rendered. The earlier CLIPPED most likely came
+     from an older cli build. Why no tool caught the leftover: a skip that suppresses nothing passes silently, so dead
+     skips pile up and will hide a real clip later; SKIP-SCOPE only judges where a skip sits, not whether it is needed.
+     Decision (technical): rerun the variant-cell check once on a fresh `nx build cli` (the shared dist was older than
+     src); if still clean, delete the dead skips and close B273. New rule SKIP-UNUSED (B279): a `data-et-skip` that
+     suppresses no problem in any rendered state is a problem naming the element, so a skip lives only while it hides
+     something. Count its hits on studio, studio-lab and sdk before landing; each is removed, not suppressed.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
