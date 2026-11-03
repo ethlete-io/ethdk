@@ -16,7 +16,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BANNER_IMPORTS, BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
+import { BUTTON_IMPORTS, TreeNode } from '@ethlete/components';
 import { PartTreeComponent, PartTreeLayer, PartTreePart } from '../design-parts/part-tree/part-tree.component';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, concat, debounceTime, finalize, from, map, of, scan, switchMap } from 'rxjs';
@@ -79,7 +79,6 @@ import { ExceptionListComponent } from './exception-list.component';
 import { PartApprovalComponent } from './part-approval.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
-import { staleDesignMocks$ } from '../../host/design-stale-mocks';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
 import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
@@ -142,14 +141,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 
     <ng-template #shellCanvas>
       <main class="relative grid size-full min-h-0 min-w-0 pl-(--st-shell-inset-left)">
-        @if (staleMocks(); as stale) {
-          <et-banner
-            [heading]="EMPTY_LABELS.staleMocksHeading"
-            [description]="EMPTY_LABELS.staleMocks(stale.stale, stale.command)"
-            class="absolute top-space-3 left-[calc(var(--st-shell-inset-left)+var(--space-3))] z-10 max-w-120"
-            type="warning"
-          />
-        }
         @if (!port()) {
           <p [class]="NOTE">{{ LABELS.startServer }}</p>
         } @else if (call(); as shown) {
@@ -366,7 +357,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
-    BANNER_IMPORTS,
     BUTTON_IMPORTS,
     NgTemplateOutlet,
     PartTreeComponent,
@@ -429,11 +419,6 @@ export class SystemViewComponent {
   protected readonly INVENTORY_LABELS = STUDIO_LABELS.inventory;
   protected readonly START_LABELS = STUDIO_LABELS.start;
   protected readonly EMPTY_LABELS = STUDIO_LABELS.system;
-
-  protected staleMocks = toSignal(
-    toObservable(this.port).pipe(switchMap((port) => (port ? staleDesignMocks$(port) : of(null)))),
-    { initialValue: null },
-  );
 
   protected reading = toSignal(
     toObservable(

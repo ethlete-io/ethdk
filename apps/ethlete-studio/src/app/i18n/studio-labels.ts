@@ -68,9 +68,6 @@ export const STUDIO_LABELS = {
   },
   system: {
     none: 'Noch keine Teile.',
-    staleMocksHeading: 'Design-Mocks veraltet',
-    staleMocks: (mocks: string[], command: string) =>
-      `Die Zeichnungen nutzen alte Mocks (${mocks.join(', ')}). Baue sie neu: ${command}`,
     emptyTitle: 'Noch keine Teile',
     emptyExplainer:
       'Das Design-System eines Produkts wächst in Schichten: Foundations, Components, Elements und Pages. Dein Agent zeichnet jeden Teil als Sketch, du wählst unter Sketches. Bitte ihn zum Beispiel so:',
