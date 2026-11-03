@@ -11,6 +11,7 @@ import { designProduct } from './product-command';
 import { serveDesign } from './serve';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
 import { designShot, SHOT_USAGE } from './shot-command';
+import { COMMIT_HUNKS_USAGE, designCommitHunks } from './commit-hunks';
 import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
@@ -235,6 +236,10 @@ const helpOf = (invocation: string) =>
     '  working directory and returns its output, its images and its JSON. check on a call writes its receipt to',
     '  --receipt.',
     '',
+    `${invocation} ${COMMIT_HUNKS_USAGE}`,
+    '  Commit only the entries of the part from a shared JSON file (go.json, merged.json, accepted.json, ...): HEAD plus',
+    '  those entries is committed for that path, and entries of other parts stay uncommitted in the working tree.',
+    '',
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
     '',
@@ -457,6 +462,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designToken({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'commit-hunks') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designCommitHunks({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'inbox') {

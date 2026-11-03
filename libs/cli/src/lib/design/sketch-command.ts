@@ -1,4 +1,5 @@
 import { unusedInVariantOf } from './system/sketch/unused-closure';
+import { existsSync, readFileSync } from 'fs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
@@ -32,7 +33,7 @@ import {
 } from './ready-shots';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
-import { recordAutoMerge } from './system/sketch/merged-parts';
+import { ACCEPTED_FILE, MERGED_FILE, recordAutoMerge } from './system/sketch/merged-parts';
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
@@ -326,6 +327,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
       : []),
     `  sketch check ${at}`,
     `  sketch ready ${at} --by <model id>`,
+    `  a shared JSON file ready wrote (merged.json, accepted.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
     THEMING_TEXT,
   ];
 };
@@ -697,6 +699,8 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   if (typeof decided === 'string') return fail(decided);
 
+  const written = sharedFilesOf(product);
+  const before = written.map((file) => contentOf(file));
   const result = mergeSketch({ target: context.target, config: context.config, product, sketch: decided, author });
 
   if (!Array.isArray(result)) {
@@ -707,9 +711,33 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   for (const part of sketch.targets) recordAutoMerge({ product, part, by: author ?? 'user' });
   console.log(`No visible change in any state: merged ${sketch.targets.join(', ')} automatically.`);
+  commitHunksLines({
+    target: context.target,
+    files: written.filter((file, index) => contentOf(file) !== before[index]),
+    parts: sketch.targets,
+  }).forEach((line) => console.log(line));
 
   return 0;
 };
+
+const contentOf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
+
+const sharedFilesOf = (product: ResolvedProduct) => [
+  resolve(product.dir, MERGED_FILE),
+  resolve(product.dir, ACCEPTED_FILE),
+  ...(product.base ? [resolve(product.base.dir, MERGED_FILE)] : []),
+];
+
+const commitHunksLines = ({ target, files, parts }: { target: string; files: string[]; parts: string[] }) =>
+  files.length === 0
+    ? []
+    : [
+        'Shared files written; commit only the hunks of this sketch, never the whole file another session also edits:',
+        ...files.map(
+          (file) =>
+            `  et design commit-hunks ${relative(target, file)} ${parts.map((part) => `--part ${part}`).join(' ')}`,
+        ),
+      ];
 
 const noteProblemsBefore = ({ sketch, variant, before }: { sketch: Sketch; variant: string; before: Problem[] }) => {
   if (before.length > 0)

@@ -108,7 +108,11 @@ describe('designSketch', { timeout: 120_000 }, () => {
     );
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe('No visible change in any state: merged components/button automatically.');
+    expect(lines).toContain('No visible change in any state: merged components/button automatically.');
+    expect(lines.filter((line) => line.startsWith('  et design commit-hunks'))).toEqual([
+      '  et design commit-hunks .ethlete/design/acme/merged.json --part components/button',
+      '  et design commit-hunks .ethlete/design/acme/accepted.json --part components/button',
+    ]);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
     expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
       { part: 'components/button', by: 'claude-opus-5-5', auto: true },
@@ -421,7 +425,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       `  a: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts')}, ${join(DESIGN_DIR, 'acme/sketches/components-button/a/elements/hero/hero.ts')}  assets: ${join(DESIGN_DIR, 'acme/sketches/components-button/a/assets')}/`,
     );
     expect(await write(target, 'ready', 'elements/hero', '--product', 'acme')).toBe(0);
-    expect(lines.pop()).toBe('No visible change in any state: merged components/button, elements/hero automatically.');
+    expect(lines).toContain('No visible change in any state: merged components/button, elements/hero automatically.');
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(false);
     expect(JSON.parse(readFileSync(join(product, 'accepted.json'), 'utf8'))).toMatchObject([
       { part: 'components/button', auto: true },
@@ -1010,6 +1014,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       expect.stringContaining('sketch round components/button r1 --product acme --note'),
       '  sketch check components/button --product acme',
       '  sketch ready components/button --product acme --by <model id>',
+      expect.stringContaining('et design commit-hunks <file> --part components/button'),
       THEMING_TEXT,
     ]);
   });
@@ -1461,7 +1466,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(
       write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme'),
     ).toBe(0);
-    expect(lines.splice(lines.indexOf('Next:')).length).toBe(6);
+    expect(lines.splice(lines.indexOf('Next:')).length).toBe(7);
     expect(lines.splice(-3)).toEqual([
       `components/button in progress: ${DESIGN_DIR}/acme/sketches/components-button with a, b`,
       `  a: ${DESIGN_DIR}/acme/sketches/components-button/a/components/button/button.ts  assets: ${DESIGN_DIR}/acme/sketches/components-button/a/assets/`,

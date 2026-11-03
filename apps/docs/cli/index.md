@@ -387,13 +387,6 @@ A go also stores `actions`, the sorted `data-et-action` keys every state of the 
 dropping it is not. A new go of the part stores its current keys and so confirms the removal. A go stored before
 `actions` is not checked.
 
-A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
-`{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
-the capability. `et design check` fails `CAPABILITY-PLACE` for a place whose part does not declare that action, and for
-an entry without a place. An entry without a place that names its backlog item in `missing` (`"missing": "B157"`) is a
-warning instead, so the list of known gaps can only shrink: a new entry needs a place or a backlog item, and an entry
-that has a place again must drop `missing`.
-
 An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
 
 ```json
