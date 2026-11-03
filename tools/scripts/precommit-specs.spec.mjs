@@ -30,6 +30,7 @@ const repoWithValueSpec = () => {
     'tools/scripts/link-node-modules.mjs',
     'tools/scripts/cli-related-map.mjs',
     'tools/scripts/lint-css-properties.js',
+    'tools/scripts/sketch-round-ready.mjs',
   ]) {
     mkdirSync(dirname(join(repo, file)), { recursive: true });
     copyFileSync(join(sdk, file), join(repo, file));

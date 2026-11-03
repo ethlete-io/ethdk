@@ -355,26 +355,40 @@ describe('designSketch', { timeout: 120_000 }, () => {
     ).toMatchObject({ status: 'in progress' });
   });
 
-  it('check warns ROUND-NOT-READY on a drawn sketch left in progress, and stops once it is ready', async () => {
+  it('check fails ROUND-NOT-READY on a drawn sketch left in progress, and passes once it is ready', async () => {
     const target = acme();
     const lines = output();
-    const warning =
-      'WARNING ROUND-NOT-READY components/button: round r1 is drawn but still in progress - run `design sketch ready components/button`';
+    const problem =
+      'ROUND-NOT-READY components/button: round r1 is drawn but still in progress - run `design sketch ready components/button`';
 
-    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
     write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
 
-    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
-    expect(lines).toContain(warning);
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines).toContain(problem);
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     lines.length = 0;
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
-    expect(lines).not.toContain(warning);
+    expect(lines).not.toContain(problem);
   });
 
-  it('check does not warn ROUND-NOT-READY while ready would refuse', async () => {
+  it('report --done refuses a drawn round that is neither ready nor on hold', async () => {
+    const target = acme();
+    const lines = output();
+
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void lines.push(String(line)));
+    write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+
+    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(1);
+    expect(lines.join('\n')).toContain('ROUND-NOT-READY components/button: round r1 is drawn');
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
+  });
+
+  it('check does not fail ROUND-NOT-READY while ready would refuse', async () => {
     const target = acme();
     const lines = output();
 
@@ -835,6 +849,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     vi.mocked(identicalRenders).mockResolvedValueOnce([
       { variant: 'b', sibling: 'a', line: 'components/button variant b draws like variant a' },
     ]);
@@ -879,6 +894,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     expect(run(target, 'reject', 'components/button', '--variant', 'b', '--by', 'designer', '--product', 'acme')).toBe(
       0,
     );
@@ -1148,6 +1164,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines.join('\n')).toContain('sketch check components/button --fix');
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
     lines.length = 0;
+    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     expect(await run(target, 'check', 'components/button', '--fix', '--product', 'acme')).toBe(0);
     expect(lines.join('\n')).not.toContain('FORMAT');
   }, 30_000);
@@ -1160,6 +1177,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     rmSync(join(target, '.prettierignore'));
     writeFileSync(join(target, '.prettierrc'), '{ "printWidth": 40 }\n');
     write(target, 'new', 'components/button', '--override', '--variants', 'a,b', '--note', 'n', '--product', 'acme');
+    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
     write(target, 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme');
 
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
@@ -1239,6 +1257,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     const lines = output();
 
     write(target, 'new', 'components/button', '--override', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    write(target, 'hold', 'components/button', '--until', 'the round is picked', '--product', 'acme');
 
     expect(write(target, 'variant', 'components/button', 'b', '--from', 'a')).toBe(0);
     expect(lines.pop()).toContain('acme/sketches/components-button/b/');
@@ -1551,6 +1570,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'elements/hero: Aktuell shows only placeholders: open "default" to compare',
     ]);
     write(target, 'new', 'elements/hero', '--variants', 'a', '--note', 'n', '--product', 'acme');
+    write(target, 'hold', 'elements/hero', '--until', 'the round is picked', '--product', 'acme');
 
     expect(await run(target, 'check', '--product', 'acme')).toBe(0);
     expect(warnings).toContain('elements/hero: Aktuell shows only placeholders: open "default" to compare');

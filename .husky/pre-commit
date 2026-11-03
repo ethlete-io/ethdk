@@ -20,6 +20,9 @@ if [ -n "$styles" ]; then
   node ./tools/scripts/lint-css-properties.js $styles
 fi
 
+# Refuses a commit of a drawn sketch round that is neither ready nor on hold (a round the user could not pick).
+node ./tools/scripts/sketch-round-ready.mjs || exit 1
+
 # Lints the projects of the staged files and runs the Studio, cli and tools/scripts specs related to them against a checkout of the index, so the
 # commit is tested as it will land, never against uncommitted edits of other sessions in this checkout.
 # yarn commit already ran them before taking the lock and passes PRECOMMIT_SPECS_TREE; the hook skips when the staged

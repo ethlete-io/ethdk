@@ -591,6 +591,13 @@ not load, an open point a live variant adds, a running round without a note, and
 or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
 above)`. A hold and an already `ready` sketch are refused only by `sketch ready`.
 
+`sketch check` fails with `ROUND-NOT-READY <target>: round <key> is drawn but still in progress` when nothing else would make
+`sketch ready` refuse and the sketch is neither `ready` nor on hold: the round is drawn and only waits for `sketch ready`
+(or `sketch hold`). `sketch report --done` refuses the same round with the same message (a round without a note is not
+drawn yet). The pre-commit hook refuses a commit that stages files of such a round
+(`.ethlete/design/<product>/sketches/<id>/`): its `sketch.json` has variants and a note on the running round, but is neither
+`ready` nor held.
+
 `et design sketch merge <layer>/<name> --variant <key> --allowed-by <plan ref> --by <model>` merges a
 sketch the user has not picked in, only when `<key>` is its one live (not rejected) variant; both flags
 go together, and `accepted.json` logs the plan; the part note stays. With two live variants the user picks in Studio.

@@ -96,7 +96,8 @@ describe('a named sketch', { timeout: 120_000 }, () => {
     writeFileSync(sketchFile, original.replace("note: '", "note: 'named "));
     vi.mocked(renderIssuesOf).mockClear();
 
-    expect(await designSketch({ target, argv: ['check', id, '--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(await designSketch({ target, argv: ['check', id, '--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines.some((line) => line.includes('ROUND-NOT-READY'))).toBe(true);
     expect(vi.mocked(renderIssuesOf).mock.calls.length).toBeGreaterThan(0);
     expect(await write(target, 'ready', id, '--product', 'acme')).toBe(0);
     expect(lines.some((line) => line.includes('has problems'))).toBe(false);

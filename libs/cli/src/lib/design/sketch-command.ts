@@ -523,6 +523,10 @@ const reported = (context: Context) =>
       );
 
     if (done) {
+      const notReady = roundNoteRefusalOf(sketch) === null ? roundNotReadyProblemOf(sketch) : null;
+
+      if (notReady !== null) return fail(notReady);
+
       finishSketchReport({ checkout: context.target, sketch, variant });
       console.log(`${sketch.target} variant ${variant} marked done`);
 
@@ -799,10 +803,10 @@ const roundNoteRefusalOf = (sketch: Sketch): string | null => {
     : null;
 };
 
-const roundNotReadyWarningOf = (sketch: Sketch): string | null =>
+const roundNotReadyProblemOf = (sketch: Sketch): string | null =>
   sketch.status === 'ready' || sketch.hold
     ? null
-    : `WARNING ROUND-NOT-READY ${sketch.target}: round ${runningRoundOf(sketch).key} is drawn but still in progress - run \`design sketch ready ${sketch.target}\``;
+    : `ROUND-NOT-READY ${sketch.target}: round ${runningRoundOf(sketch).key} is drawn but still in progress - run \`design sketch ready ${sketch.target}\``;
 
 const unloadedLinesOf = async (options: {
   target: string;
@@ -1036,6 +1040,7 @@ const checked = async (context: Context) => {
   }
 
   let refused = 0;
+  let notReady = false;
   const refuse = (lines: string[]) => {
     lines.forEach((line) => console.warn(`ready will refuse: ${line}`));
     refused += lines.length;
@@ -1051,9 +1056,12 @@ const checked = async (context: Context) => {
     if (!failed && unloaded.length === 0) refuse(await identicalRenderLines({ target, config, product, sketch }));
 
     if (!failed && refused === before) {
-      const warning = roundNotReadyWarningOf(sketch);
+      const problem = roundNotReadyProblemOf(sketch);
 
-      if (warning !== null) console.warn(warning);
+      if (problem !== null) {
+        console.error(problem);
+        notReady = true;
+      }
     }
   }
 
@@ -1071,6 +1079,8 @@ const checked = async (context: Context) => {
   });
 
   if ('issues' in rendered && rendered.issues.length > 0) return 1;
+
+  if (notReady) return 1;
 
   console.log(refused > 0 ? `check ok - ready will refuse ${refused} (see above)` : 'ok');
 

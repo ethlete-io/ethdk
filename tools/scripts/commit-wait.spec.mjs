@@ -61,6 +61,7 @@ const repoWithCommitTool = () => {
     'tools/scripts/link-node-modules.mjs',
     'tools/scripts/cli-related-map.mjs',
     'tools/scripts/lint-css-properties.js',
+    'tools/scripts/sketch-round-ready.mjs',
     'tools/scripts/lint-changesets.js',
   ]) {
     mkdirSync(dirname(join(repo, file)), { recursive: true });
