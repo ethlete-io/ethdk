@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { readVitestReport, verdictOf } from './red-check.mjs';
 
 const script = fileURLToPath(new URL('./red-check.mjs', import.meta.url));
 
@@ -162,4 +163,27 @@ test('a spec that only throws a TypeError at the parent state is red by crash, n
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }
+});
+
+const vitestReport = JSON.parse(readFileSync(new URL('./red-check.vitest-report.json', import.meta.url), 'utf8'));
+const onlySpec = (name) => {
+  const read = readVitestReport({ testResults: vitestReport.testResults.filter((f) => f.name.endsWith(name)) });
+  return { ...read, ...verdictOf(read.failures, read.crashes) };
+};
+
+test('a vitest spec that only crashes is red by crash, not proof', () => {
+  const result = onlySpec('/crash.spec.ts');
+  assert.deepEqual(result.crashes['/fixture/crash.spec.ts'], ['crashes on a missing function']);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /^RED BY CRASH/);
+});
+
+test('a vitest spec with a crash and an assertion failure stays red', () => {
+  const result = onlySpec('/mixed.spec.ts');
+  assert.deepEqual(result.failures['/fixture/mixed.spec.ts'], [
+    'crashes on a missing function',
+    'fails on an assertion',
+  ]);
+  assert.deepEqual(result.crashes['/fixture/mixed.spec.ts'], ['crashes on a missing function']);
+  assert.equal(result.ok, true);
 });

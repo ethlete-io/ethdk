@@ -108,6 +108,34 @@ const runMjs = (checkout, specs, crashes) => {
   return failures;
 };
 
+export const readVitestReport = (report, specOf = () => undefined) => {
+  const failures = {};
+  const crashes = {};
+  for (const file of report.testResults) {
+    const failed = file.assertionResults.filter((t) => t.status === 'failed').map((t) => t.fullName);
+    const spec = specOf(file.name) ?? file.name;
+    failures[spec] = failed.length === 0 && file.status === 'failed' ? [LOAD_ONLY] : failed;
+    crashes[spec] = file.assertionResults
+      .filter((t) => t.status === 'failed' && CRASH.test(t.failureMessages?.[0] ?? ''))
+      .map((t) => t.fullName);
+  }
+  return { failures, crashes };
+};
+
+export const verdictOf = (failures, crashes) => {
+  const failed = Object.entries(failures).flatMap(([spec, names]) => names.map((name) => [spec, name]));
+  const red = failed.some(([, name]) => name !== LOAD_ONLY);
+  const proven = failed.some(([spec, name]) => name !== LOAD_ONLY && !crashes[spec]?.includes(name));
+  return {
+    ok: proven,
+    reason: proven
+      ? ''
+      : red
+        ? 'RED BY CRASH: every failing spec throws a TypeError or ReferenceError, not proof - stub the code to a behavioural red'
+        : 'no spec fails on an assertion at the parent state',
+  };
+};
+
 const runVitest = (checkout, specs, crashes) => {
   const failures = {};
   const byRoot = new Map();
@@ -131,15 +159,11 @@ const runVitest = (checkout, specs, crashes) => {
       { cwd: checkout, encoding: 'utf8', maxBuffer: 1 << 28 },
     );
     try {
-      const report = JSON.parse(readFileSync(outputFile, 'utf8'));
-      for (const file of report.testResults) {
-        const failed = file.assertionResults.filter((t) => t.status === 'failed').map((t) => t.fullName);
-        const spec = group.find((s) => file.name.endsWith(relative(root, s))) ?? file.name;
-        failures[spec] = failed.length === 0 && file.status === 'failed' ? [LOAD_ONLY] : failed;
-        crashes[spec] = file.assertionResults
-          .filter((t) => t.status === 'failed' && CRASH.test(t.failureMessages?.[0] ?? ''))
-          .map((t) => t.fullName);
-      }
+      const read = readVitestReport(JSON.parse(readFileSync(outputFile, 'utf8')), (name) =>
+        group.find((s) => name.endsWith(relative(root, s))),
+      );
+      Object.assign(failures, read.failures);
+      Object.assign(crashes, read.crashes);
     } catch {
       for (const spec of group) failures[spec] = run.status === 0 ? [] : ['(vitest produced no report)'];
     }
@@ -180,16 +204,8 @@ export const redCheck = (repo, commit, { dir } = {}) => {
       ...(ts.length ? runVitest(worktree, ts, crashes) : {}),
       ...(mjs.length ? runMjs(worktree, mjs, crashes) : {}),
     };
-    const failed = Object.entries(failures).flatMap(([spec, names]) => names.map((name) => [spec, name]));
-    const red = failed.some(([, name]) => name !== LOAD_ONLY);
-    const proven = failed.some(([spec, name]) => name !== LOAD_ONLY && !crashes[spec]?.includes(name));
     return {
-      ok: proven,
-      reason: proven
-        ? ''
-        : red
-          ? 'RED BY CRASH: every failing spec throws a TypeError or ReferenceError, not proof - stub the code to a behavioural red'
-          : 'no spec fails on an assertion at the parent state',
+      ...verdictOf(failures, crashes),
       failures,
       crashes,
       stubbed: stubbed.length > 0,
