@@ -169,6 +169,8 @@ export const portBaseChanges = (options: {
             continue;
           }
 
+          if (merged.equals(mine as Buffer)) continue;
+
           writes.push({ path, content: merged });
           ported.push({ variant, part, file, how: 'merged' });
         }
