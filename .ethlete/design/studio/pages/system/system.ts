@@ -1,6 +1,6 @@
 import { control } from '@ethlete/components/design/control';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
-import { definePart, drawing, html, slot, withAction } from '@design-system';
+import { definePart, drawing, html, slot } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import textarea from '@system/components/textarea';
@@ -19,6 +19,7 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from './shared/open-points';
+import { act, approvalControl, buttonExceptions, callView, exceptionRows, type Approval } from './shared/capabilities';
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
@@ -35,12 +36,12 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
     <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
-    ${withAction(copy.body, 'emit:copyPrompt')}
+    ${act(copy.body, 'emit:copyPrompt')}
   </div>
 </div>`;
 
-const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, acting: boolean) => {
-  const count = open.points.length;
+const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, acting: boolean, exceptions: number) => {
+  const count = open.points.length + exceptions;
   const drawn = await button.render(
     {
       label: count ? `${count} offen` : 'Nichts offen',
@@ -55,7 +56,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
   );
   const target = pressed ? 'points-closed' : 'part';
   return {
-    body: control(acting ? withAction(drawn.body, target) : drawn.body, 'open-points'),
+    body: control(acting ? act(drawn.body, target) : drawn.body, 'open-points'),
     styles: drawn.styles,
   };
 };
@@ -63,7 +64,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
 const commentButton = async (on: boolean, acting: boolean) => {
   const drawn = await button.render({ label: 'Kommentar', variant: 'outline', size: 'sm', pressed: on });
   const target = on ? 'points-closed' : 'comment-mode';
-  return { body: control(acting ? withAction(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
+  return { body: control(acting ? act(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
 };
 
 const commentTarget = (frame: string) =>
@@ -119,8 +120,8 @@ const commentDraft = async (text: string, phase?: SendPhase, reason = '') => {
     size: 'xs',
     disabled: !text,
   });
-  const sendMarkup = busy ? loading(send.body) : text ? withAction(send.body, 'emit:sendComment') : send.body;
-  const cancelMarkup = busy ? cancel.body : withAction(cancel.body, 'comment-mode');
+  const sendMarkup = busy ? loading(send.body) : text ? act(send.body, 'emit:sendComment') : send.body;
+  const cancelMarkup = busy ? cancel.body : act(cancel.body, 'comment-mode');
   return {
     body: html`<div
       class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
@@ -154,8 +155,30 @@ const pointLines = ({ icon: name, lines }: PointGroup) => {
   );
 };
 
-const popover = async (open: PartOpenPoints) => {
+const exceptionGroup = async () => {
+  const rows = await exceptionRows(buttonExceptions);
+  return {
+    body: html`<section class="border-t border-(--et-surface-border-solid) py-space-1">
+      <h3
+        class="m-0 flex items-center gap-space-2 px-space-3 py-space-1 text-ui-xs font-ui-strong text-et-surface-muted"
+      >
+        Ausnahmen<span class="font-code font-normal">${buttonExceptions.length}</span>
+      </h3>
+      ${rows.body}
+    </section>`,
+    styles: rows.styles,
+  };
+};
+
+const popover = async (open: PartOpenPoints, approval: Approval, withExceptions: boolean) => {
   const groups = groupsOf(open);
+  const exceptions = withExceptions ? await exceptionGroup() : undefined;
+  const approve = await approvalControl(approval, 'xs');
+  const footer = html`<footer
+    class="flex items-center justify-end gap-space-2 border-t border-(--et-surface-border-solid) px-space-3 py-space-2"
+  >
+    ${approve.body}
+  </footer>`;
   const list = groups.length
     ? html`<ul class="m-0 p-0 py-space-1 list-none divide-y divide-(--et-surface-border-solid)">
         ${groups.map((group) => `<li><ul class="m-0 p-0 py-space-1 list-none">${pointLines(group)}</ul></li>`).join('')}
@@ -177,7 +200,7 @@ const popover = async (open: PartOpenPoints) => {
         >
         <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">${open.part}</span>
       </header>
-      ${list}
+      ${list}${exceptions?.body ?? ''}${footer}
     </div>`,
   });
   return {
@@ -187,7 +210,7 @@ const popover = async (open: PartOpenPoints) => {
     >
       ${dialog.body}
     </div>`,
-    styles: dialog.styles,
+    styles: dialog.styles + (exceptions?.styles ?? '') + approve.styles,
   };
 };
 
@@ -262,8 +285,10 @@ export default definePart<{
   draft?: string;
   send?: SendPhase;
   reason?: string;
+  approval?: Approval;
+  call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry. The open-points popover also lists the exceptions of the part as an Ausnahmen group, each with its reason, state and a Freigeben button, and ends in a footer with Go geben (Go erteilt once given), or Änderung abnehmen for a direct edit of a merged part (Änderung abgenommen once done); the chip counts the exceptions with the points. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -304,12 +329,22 @@ export default definePart<{
       send: 'rejected',
       reason: REFUSED,
     },
+    'go-given': { approval: 'go-given' },
+    'direct-edit': { approval: 'accept' },
+    'edit-accepted': { approval: 'accepted' },
+    call: { call: 'open' },
+    'call-transferred': { call: 'transferred' },
   },
   controls: {
     comment: { kind: 'button', part: 'components/button' },
     'comment-cancel': { kind: 'button', part: 'components/button' },
     'comment-send': { kind: 'button', part: 'components/button' },
     'open-points': { kind: 'button', part: 'components/button' },
+    'give-go': { kind: 'button', part: 'components/button' },
+    accept: { kind: 'button', part: 'components/button' },
+    'exception-approve': { kind: 'button', part: 'components/button' },
+    transfer: { kind: 'button', part: 'components/button' },
+    theme: { kind: 'button', part: 'components/button' },
     popover: { kind: 'disclosure', part: 'components/anchored-dialog', surfaces: { body: 'open-points' } },
   },
   render: async ({
@@ -323,7 +358,28 @@ export default definePart<{
     draft,
     send,
     reason,
+    approval = 'go',
+    call,
   }) => {
+    if (call) {
+      const tree = await partTree.render(partTree.states['components-open']);
+      const view = await callView(call === 'transferred');
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'System',
+        product: 'studio',
+        side: tree.body,
+        content: view.body,
+      });
+
+      return drawing({
+        body: shell.body,
+        setup: menu.setup,
+        styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles + view.styles,
+      });
+    }
+
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
     }
@@ -352,9 +408,10 @@ export default definePart<{
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;
-    const toggle = await chip(points, !closed, chipFocus, acting && !commentMode);
+    const exceptionCount = clear ? 0 : buttonExceptions.length;
+    const toggle = await chip(points, !closed, chipFocus, acting && !commentMode, exceptionCount);
     const comment = await commentButton(commentMode, acting);
-    const dialog = closed ? undefined : await popover(points);
+    const dialog = closed ? undefined : await popover(points, approval, exceptionCount > 0);
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
