@@ -3473,3 +3473,11 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      forced controls are only unchanged SDK components; B171 (327bd8362) fixed only the `--state <name>` path, and a
      grid shot passes no name. Fix: `shotStateNamesOf` returns every defined state. Still open: shot and `sketch check`
      share no interaction driver, so the lesson (one measurement) is not met yet.
+274. pages/system rebase (builder, 2026-11-03, 288252ce4): two tool gaps. (1) `sketch ready` on a sketch whose status
+     is already ready exits 1 with "pages/system is ready, not in progress", also right after a rebase, so every rebase
+     reads as a failure. (2) The tree's go.json holds 127 changed lines nobody claims, one of them `"by": "tom"` ->
+     `"by": "user"`: the author of a go changed without a command that says so. Why no tool caught them: ready treats
+     its status as a gate, not as a state to refresh; go entries carry no writer, so a rewrite is untraceable. Fix
+     (technical): into B220 - `sketch ready` on a ready sketch with a refreshed base re-readies and exits 0 ("still
+     ready, base refreshed"); B223 - every go.json write names its command, and `by` is never rewritten on a refresh
+     (cause of the "user" value: open, builder to find).
