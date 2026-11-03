@@ -503,6 +503,23 @@
         "round-folded": "de71ace2ec062119"
       },
       "slots": true
+    },
+    "go": {
+      "hash": "103dbf98b2f42884",
+      "states": {
+        "default": "9718bdf96370547f",
+        "out": "f0e61a09da602d28",
+        "reset": "a201ca2a0ca90f90",
+        "in": "55abb8646130c7b8",
+        "fit": "f46062554b484a8e",
+        "selected": "7755a247782db999",
+        "active": "2d5046807168a41a",
+        "load-failed": "ad3bc0d838a2e3f4",
+        "loading": "fae6ef0bf902ef28",
+        "rounds": "5d75d78a9497aa55",
+        "round-folded": "de71ace2ec062119"
+      },
+      "slots": true
     }
   },
   "elements/part-tree": {
