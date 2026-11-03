@@ -4090,6 +4090,15 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      first case with timestamps in tools/scripts/verify-studio-headless.mjs and reruns once. The sketches-tree budget
      miss at low load counts as a real defect until B270c explains it. The B254 bisect follows B270c.
 
+325. Tom's picks (2026-11-03) and two process corrections. Picks: B240 variant b (switch beside the select), B257
+     variant b (no border, 38% fill), B265 variant a (no dialog pane, the card sits under the pin). Tom reports that
+     the B240 sketch shows render errors in Studio, although `sketch check` and `sketch ready` passed and the builder
+     read the shots. Why no tool caught it: unknown, the builder traces it before the merge; the lesson follows the
+     cause. Correction 1: a sketch pick is never a chat grill question; the grill session only says which sketches
+     wait in Studio, and Tom picks there. Correction 2: a question about one rule's display is too narrow when there
+     are hundreds of checks. Decision (technical, replaces the INLINE-UI tree question): warning-level problems of any
+     rule get no tree mark; they show in the part's detail only. The tree marks errors.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
