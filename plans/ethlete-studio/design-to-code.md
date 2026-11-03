@@ -3212,3 +3212,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      that imitates platform chrome needs the platform's own measures as a reference, not only our design. Fix: the
      look comes as a Studio sketch (B167); the part declares the platform measures it follows (button width/height,
      inset) in its note, and the check measures them (B168, technical).
+244. While proving B171/B172 the builder hit three CLI gaps (2026-11-03): `design shot` with a single `--state` and no
+     `--states`/`--variants` prints only usage; `--out` with `--variants` prints only usage; `sketch check` still checks
+     rejected (not only withdrawn) variants. No spec covers flag combinations, only the flags one by one, and a bare
+     usage print reads to an agent like its own typo, so it works around the tool instead of reporting it. Lesson: a
+     valid flag combination the tool refuses must say which combination and why, and each documented combination
+     gets a spec. Fix: B180 (technical) - accept both combinations, skip rejected variants with the withdrawn NOTE,
+     and a usage refusal names the conflicting flags.
