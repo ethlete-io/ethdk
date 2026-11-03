@@ -86,8 +86,21 @@ const discard = await button.render({ label: 'Verwerfen', variant: 'transparent'
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
 const pagePin = act(commentPinMark(pinProps(PAGE_PIN)), 'pinToggle');
 
-const pickerOf = (label: string) =>
-  select.render({ label: '', size: 'sm', value: 'round-1', options: [{ value: 'round-1', label }] });
+const pickerOf = async (label: string) => {
+  const picker = await select.render({
+    label: '',
+    size: 'sm',
+    value: 'round-1',
+    options: [{ value: 'round-1', label }],
+  });
+  return {
+    ...picker,
+    body: picker.body.replace(
+      'class="et-select-trigger"',
+      'data-et-action="emit:roundChange" class="et-select-trigger"',
+    ),
+  };
+};
 const pickers = {
   wide: await pickerOf('Runde 1 · Suche und Update'),
   narrow: await pickerOf('Runde 1 · Reset control: SDK button or own part'),
