@@ -1,4 +1,4 @@
-import { definePart, drawing, forceInteraction, html, interactionRows } from '@design-system';
+import { definePart, drawing, forceInteraction, html, interactionRows, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 
 type ZoomControl = 'out' | 'reset' | 'in' | 'fit';
@@ -17,9 +17,12 @@ const ARIA_LABEL: Record<ZoomControl, string> = {
 const OUTPUT: Record<ZoomControl, string> = { out: 'zoomOut', reset: 'zoomReset', in: 'zoomIn', fit: 'fit' };
 
 const chipButton = (id: ZoomControl, label: string, { target, interaction }: Props) => {
-  const markup = button({ label, variant: 'transparent', color: 'surface', size: 'sm' }).replace(
-    /^<button /,
-    `<button data-et-control="${id}" data-et-action="emit:${OUTPUT[id]}" aria-label="${ARIA_LABEL[id]}" data-can-animate `,
+  const markup = withAction(
+    button({ label, variant: 'transparent', color: 'surface', size: 'sm' }).replace(
+      /^<button /,
+      `<button data-et-control="${id}" aria-label="${ARIA_LABEL[id]}" data-can-animate `,
+    ),
+    `emit:${OUTPUT[id]}`,
   );
 
   return html`<span class="contents" data-camera-${id}

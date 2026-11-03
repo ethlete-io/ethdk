@@ -1,4 +1,12 @@
-import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
+import {
+  definePart,
+  drawing,
+  forceInteraction,
+  html,
+  interactionRows,
+  type Interaction,
+  withAction,
+} from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import menu from '@system/components/menu';
@@ -13,15 +21,18 @@ type Server = 'running' | 'stopped';
 type Props = { open: boolean; server?: Server; interaction?: MenuInteraction; option?: MenuInteraction };
 
 const studioTrigger = (open: boolean, interaction?: Exclude<Interaction, 'disabled'>) => {
-  const markup = button({
-    label: studioMark(40),
-    variant: 'transparent',
-    color: 'surface',
-    size: 'sm',
-    class: 'st-studio-trigger p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0]',
-  }).replace(
-    /^<button /,
-    `<button data-et-control="studio-menu" data-et-action="${open ? 'closed' : 'open'}" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+  const markup = withAction(
+    button({
+      label: studioMark(40),
+      variant: 'transparent',
+      color: 'surface',
+      size: 'sm',
+      class: 'st-studio-trigger p-0 [--et-button-border-radius:var(--radius-control-lg)] [--et-button-border-width:0]',
+    }).replace(
+      /^<button /,
+      `<button data-et-control="studio-menu" data-studio-trigger data-et-auto-surface aria-label="Studio-Menü" aria-haspopup="menu" aria-expanded="${open}" aria-controls="studio-menu-surface" `,
+    ),
+    open ? 'closed' : 'open',
   );
   return interaction ? forceInteraction(markup, interaction) : markup;
 };

@@ -1,5 +1,5 @@
 import pickerStyles from './picker.css?inline';
-import { drawing, forceInteraction, html, interactionRows, slot, type Interaction } from '@design-system';
+import { drawing, forceInteraction, html, interactionRows, slot, type Interaction, withAction } from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { control } from '@ethlete/components/design/control';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
@@ -158,12 +158,15 @@ const SERVER_LOG = [
   'design server exited with code 1',
 ];
 
-const restartButton = button({
-  label: 'Neu starten',
-  variant: 'outline',
-  color: 'surface',
-  size: 'sm',
-}).replace(/^<button /, '<button data-et-control="restart" data-et-action="emit:restartServer" ');
+const restartButton = withAction(
+  button({
+    label: 'Neu starten',
+    variant: 'outline',
+    color: 'surface',
+    size: 'sm',
+  }).replace(/^<button /, '<button data-et-control="restart" '),
+  'emit:restartServer',
+);
 
 const serverScreen = (server: 'stopped' | 'starting', log: string[]) =>
   html`<div class="box-border size-full overflow-auto pl-(--st-shell-inset-left)">

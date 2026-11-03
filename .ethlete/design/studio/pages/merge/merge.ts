@@ -1,4 +1,4 @@
-import { definePart, drawing, html, slot } from '@design-system';
+import { definePart, drawing, html, slot, withAction } from '@design-system';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import button from '@system/components/button';
 import { disclosure } from '@system/components/disclosure';
@@ -24,8 +24,6 @@ type Props = { unchanged: boolean; error?: string; selected?: number; merging?: 
 
 const SCALE = 0.37;
 const CROP_SCALE = 2;
-
-const act = (markup: string, action: string) => markup.replace(/<button /, `<button data-et-action="emit:${action}" `);
 
 const merge = await button.render({ label: 'Merge', variant: 'filled', size: 'sm' });
 const LOADER = `<div class="et-button-loader" aria-hidden="true" data-et-skip="CLIPPED"><div class="et-button-loader-spinner contents">${spinner({ diameter: 14, strokeWidth: 1.75 })}</div></div>`;
@@ -80,7 +78,7 @@ const ERROR = `${TARGET.part} hat sich seit dem Sketch geändert. Lass deinen Ag
 
 const panelOf = (unchanged: boolean, error: string, selected: Row, merging: boolean) =>
   html`<div class="flex flex-col gap-space-2 h-full box-border px-space-1 pt-space-1 pb-space-2">
-    <div class="mg-d-back flex">${act(back.body, 'back')}</div>
+    <div class="mg-d-back flex">${withAction(back.body, 'emit:back')}</div>
     <div class="flex flex-col gap-space-2 pb-space-3 border-b border-et-surface-border">
       <span class="font-code text-(length:--text-sm)">${TARGET.part}</span>
       <span class="flex items-center gap-space-2 text-et-surface-muted text-ui-xs"
@@ -96,7 +94,7 @@ const panelOf = (unchanged: boolean, error: string, selected: Row, merging: bool
     </div>
     <span class="flex-1"></span>
     <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">
-      ${act(merging ? loading(merge.body) : merge.body, 'merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
+      ${withAction(merging ? loading(merge.body) : merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
     </div>
   </div>`;
 

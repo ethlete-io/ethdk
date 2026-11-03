@@ -1,4 +1,4 @@
-import { html, slot } from '@design-system';
+import { html, slot, withAction } from '@design-system';
 import button from '@system/components/button';
 import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
@@ -202,12 +202,7 @@ export const rowHead = (row: Row, action?: string, mark = '') =>
     <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-note>
       ${row.note}
     </p>
-    ${
-      row.key === 'current'
-        ? ''
-        : (action ??
-          html`<span class="flex">${take.body.replace(/<button\b/, '<button data-et-action="emit:merge"')}</span>`)
-    }
+    ${row.key === 'current' ? '' : (action ?? html`<span class="flex">${withAction(take.body, 'emit:merge')}</span>`)}
   </div>`;
 
 export type Zoom = 'fit' | number;

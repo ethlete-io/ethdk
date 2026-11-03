@@ -1,6 +1,6 @@
 import { control } from '@ethlete/components/design/control';
 import { loaderStyles, spinner } from '@ethlete/components/design/loader';
-import { definePart, drawing, html, slot } from '@design-system';
+import { definePart, drawing, html, slot, withAction } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import textarea from '@system/components/textarea';
@@ -20,8 +20,6 @@ import {
   type PointGroup,
 } from './shared/open-points';
 
-const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="${action}"`);
-
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
 const ghostBox = '<span class="block w-15 h-10 rounded-sm outline outline-et-surface-border bg-et-surface-bg"></span>';
@@ -37,7 +35,7 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
     <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
-    ${act(copy.body, 'emit:copyPrompt')}
+    ${withAction(copy.body, 'emit:copyPrompt')}
   </div>
 </div>`;
 
@@ -57,7 +55,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
   );
   const target = pressed ? 'points-closed' : 'part';
   return {
-    body: control(acting ? act(drawn.body, target) : drawn.body, 'open-points'),
+    body: control(acting ? withAction(drawn.body, target) : drawn.body, 'open-points'),
     styles: drawn.styles,
   };
 };
@@ -65,7 +63,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
 const commentButton = async (on: boolean, acting: boolean) => {
   const drawn = await button.render({ label: 'Kommentar', variant: 'outline', size: 'sm', pressed: on });
   const target = on ? 'points-closed' : 'comment-mode';
-  return { body: control(acting ? act(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
+  return { body: control(acting ? withAction(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
 };
 
 const commentTarget = (frame: string) =>
@@ -120,8 +118,8 @@ const commentDraft = async (text: string, phase?: SendPhase) => {
     size: 'xs',
     disabled: !text,
   });
-  const sendMarkup = busy ? loading(send.body) : text ? act(send.body, 'emit:sendComment') : send.body;
-  const cancelMarkup = busy ? cancel.body : act(cancel.body, 'comment-mode');
+  const sendMarkup = busy ? loading(send.body) : text ? withAction(send.body, 'emit:sendComment') : send.body;
+  const cancelMarkup = busy ? cancel.body : withAction(cancel.body, 'comment-mode');
   return {
     body: html`<div
       class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"

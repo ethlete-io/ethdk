@@ -1,4 +1,12 @@
-import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
+import {
+  definePart,
+  drawing,
+  forceInteraction,
+  html,
+  interactionRows,
+  type Interaction,
+  withAction,
+} from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import type { MenuMockRow } from '@ethlete/components/design/menu';
 import menu from '@system/components/menu';
@@ -49,20 +57,23 @@ export const shellProjectSwitch = (
   { open = false, interaction }: Props = {},
   actions: { open: string; closed: string } = { open: 'open', closed: 'closed' },
 ) => {
-  const markup = button({
-    label: html`<span
-        class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm bg-et-surface-bg text-et-surface text-ui-xs font-ui-strong"
-        data-et-auto-surface
-        >E</span
-      ><span class="flex-1 min-w-0 overflow-hidden text-et-surface text-ellipsis whitespace-nowrap">ethlete-sdk</span
-      >${icon('up-down', { size: 16 })}`,
-    variant: 'transparent',
-    color: 'surface',
-    size: 'sm',
-    class: 'w-full h-control-md justify-start gap-space-2 py-0 px-space-2 text-left [&>.et-button-contents]:flex-1',
-  }).replace(
-    /^<button /,
-    `<button data-et-control="project" data-et-action="${open ? actions.closed : actions.open}" aria-haspopup="listbox" aria-expanded="${open}" data-can-animate `,
+  const markup = withAction(
+    button({
+      label: html`<span
+          class="st-shell-project-badge flex flex-none items-center justify-center rounded-control-sm bg-et-surface-bg text-et-surface text-ui-xs font-ui-strong"
+          data-et-auto-surface
+          >E</span
+        ><span class="flex-1 min-w-0 overflow-hidden text-et-surface text-ellipsis whitespace-nowrap">ethlete-sdk</span
+        >${icon('up-down', { size: 16 })}`,
+      variant: 'transparent',
+      color: 'surface',
+      size: 'sm',
+      class: 'w-full h-control-md justify-start gap-space-2 py-0 px-space-2 text-left [&>.et-button-contents]:flex-1',
+    }).replace(
+      /^<button /,
+      `<button data-et-control="project" aria-haspopup="listbox" aria-expanded="${open}" data-can-animate `,
+    ),
+    open ? actions.closed : actions.open,
   );
 
   return interaction ? forceInteraction(markup, interaction) : markup;

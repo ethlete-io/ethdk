@@ -1,4 +1,12 @@
-import { definePart, drawing, forceInteraction, html, interactionRows, type Interaction } from '@design-system';
+import {
+  definePart,
+  drawing,
+  forceInteraction,
+  html,
+  interactionRows,
+  type Interaction,
+  withAction,
+} from '@design-system';
 import { button, buttonStyles } from '@ethlete/components/design/button';
 import { icon } from '@system/foundations/icons';
 
@@ -9,15 +17,18 @@ type Props = { interaction?: CollapseInteraction };
 export const shellCollapseStyles = buttonStyles;
 
 export const shellCollapse = ({ interaction }: Props = {}) => {
-  const markup = button({
-    label: icon('panel', { size: 18 }),
-    variant: 'transparent',
-    color: 'surface',
-    size: 'sm',
-    class: 'size-control-sm p-0',
-  }).replace(
-    /^<button /,
-    '<button data-et-control="collapse" data-et-action="emit:collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',
+  const markup = withAction(
+    button({
+      label: icon('panel', { size: 18 }),
+      variant: 'transparent',
+      color: 'surface',
+      size: 'sm',
+      class: 'size-control-sm p-0',
+    }).replace(
+      /^<button /,
+      '<button data-et-control="collapse" title="Hide panel" aria-label="Hide panel" data-can-animate ',
+    ),
+    'emit:collapse',
   );
 
   return interaction ? forceInteraction(markup, interaction) : markup;

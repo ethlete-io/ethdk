@@ -1,4 +1,4 @@
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import select from '@system/components/select';
 import badge from '@system/components/badge';
@@ -80,11 +80,10 @@ const treeOf = (selected: string) =>
       { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true }] },
     ],
   });
-const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="emit:${action}"`);
 
 const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
 const chip = await zoomChip.render({ percent: 100, class: 'absolute right-space-3 bottom-space-3 z-3' });
-const pagePin = act(commentPinMark(pinProps(PAGE_PIN)), 'pinToggle');
+const pagePin = commentPinMark(pinProps(PAGE_PIN));
 
 const pickerOf = async (label: string) => {
   const picker = await select.render({
@@ -95,10 +94,7 @@ const pickerOf = async (label: string) => {
   });
   return {
     ...picker,
-    body: picker.body.replace(
-      'class="et-select-trigger"',
-      'data-et-action="emit:roundChange" class="et-select-trigger"',
-    ),
+    body: withAction(picker.body, { action: 'emit:roundChange', on: '.et-select-trigger' }),
   };
 };
 const pickers = {
@@ -175,9 +171,9 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
 };
 
 const sameToggle = (rows: Row[], open: boolean, body = '') =>
-  act(
+  withAction(
     disclosure({ label: sameLabel(rows), body, open, size: 'xs' }).replace(/ data-et-action="[^"]*"/, ''),
-    'sameToggle',
+    'emit:sameToggle',
   );
 
 const sameRows = (part: SketchPart, rows: Row[], view: View, open: boolean) =>
@@ -329,7 +325,7 @@ export default definePart<Props>({
         ${fresh ? tags.fresh.body : ''} ${statusMarkup(status, reason)}
         <span class="flex-1"></span>
         <span class="w-56 flex-none" data-sk-view-toggle-room></span>
-        ${act(discard.body, 'discard')}
+        ${withAction(discard.body, 'emit:discard')}
       </header>
       <div class="zr-picker absolute z-2 top-14 left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
         ${pickers[kind].body}

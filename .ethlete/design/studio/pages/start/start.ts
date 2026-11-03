@@ -1,10 +1,8 @@
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import { studioMark } from '@system/foundations/logo';
 
 type Props = { repo?: string };
-
-const act = (markup: string, action: string) => markup.replace(/<button /, `<button data-et-action="emit:${action}" `);
 
 const open = await button.render({ label: 'Repo öffnen', variant: 'filled' });
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
@@ -14,7 +12,7 @@ const header = (repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
     ${studioMark(24)}
     <span class="text-et-surface font-ui-strong text-ui-md">Ethlete Studio</span>
-    ${repo ? html`<span class="text-et-surface-muted text-ui-sm">${repo}</span>${act(other.body, 'otherRepo')}` : ''}
+    ${repo ? html`<span class="text-et-surface-muted text-ui-sm">${repo}</span>${withAction(other.body, 'emit:otherRepo')}` : ''}
   </header>`;
 
 const ghostProduct =
@@ -31,7 +29,7 @@ const noRepo = card(
       Studio liest das Design-System aus einem Git-Checkout. Öffne den Ordner eines Repos, in dem die Produkte liegen
       oder entstehen sollen.
     </p>
-    ${act(open.body, 'openRepo')}`,
+    ${withAction(open.body, 'emit:openRepo')}`,
 );
 
 const noProducts = (repo: string) =>
@@ -47,7 +45,7 @@ const noProducts = (repo: string) =>
       <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
         Lege in ${repo} das Produkt shop an, für das Design-System der Shop-App.
       </p>
-      ${act(copy.body, 'copyPrompt')}
+      ${withAction(copy.body, 'emit:copyPrompt')}
       <p class="m-0 text-et-surface-muted">Oder im Terminal: <code>et design product new shop</code></p>`,
   );
 
