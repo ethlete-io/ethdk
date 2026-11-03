@@ -3054,6 +3054,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 - Decided (technical): a capability without a place carries `missing: "B..."` and is then a warning, shrink-only like
   the orphan list; wiring after Tom's confirmation. A real-product spec that needs `dist/` fails with "needs dist"
   instead of skipping.
+- Tom confirmed the first studio list as it is (2026-11-03): all 65 entries become `confirmed: true`; wire
+  CAPABILITY-PLACE with `missing: "B..."` on the 24 without a place.
 
 ### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
 
