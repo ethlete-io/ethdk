@@ -150,6 +150,7 @@ describe('part go', () => {
         argv,
         invocation: 'et design',
         draw: async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }])),
+        declaredActions: async () => [],
       });
 
     expect(await go('components/chip', '--product', 'app-a')).toBe(2);
@@ -182,6 +183,7 @@ describe('part go', () => {
         argv,
         invocation: 'et design',
         draw: async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }])),
+        declaredActions: async () => ['open', 'emit:remove'],
         prompt: { isTTY: prompt.isTTY, ask: (question) => (asked.push(question), prompt.ask(question)) },
       });
 
@@ -224,7 +226,31 @@ describe('part go', () => {
 
     expect(await go(...tom, '--note', 'Impl Q7')).toBe(0);
     expect(lines).toContain(`  go app-a components/chip - Impl Q7 - design changed after Impl Q7 (${decision})`);
-    expect(readGo(dir)['components/chip']).toMatchObject({ by: 'tom', note: 'Impl Q7' });
+    expect(readGo(dir)['components/chip']).toMatchObject({
+      by: 'tom',
+      note: 'Impl Q7',
+      actions: ['emit:remove', 'open'],
+    });
+  });
+
+  it('records the action keys a Studio go finds in the part it loads', async () => {
+    const { target, dir } = checkout();
+    const definition = {
+      states: { default: {}, open: { open: true } },
+      render: (props: { open?: true }) => ({
+        body: `<button data-et-action="emit:remove"></button>${props.open ? "<div data-et-action='closed'></div>" : ''}`,
+      }),
+    };
+    const answer = await partGoAnswer({
+      target,
+      url: new URL('http://localhost/?product=app-a'),
+      request: request('POST', { part: 'components/chip', hash: hashOf(target) }),
+      load: async () => ({ default: definition }),
+      drawStates: async ({ parts }) => new Map(parts.map((part) => [part, { default: 'a1' }])),
+    });
+
+    expect(answer.status).toBe(200);
+    expect(readGo(dir)['components/chip']?.actions).toEqual(['closed', 'emit:remove']);
   });
 
   it('et design go --by tom refuses without a TTY and records nothing unless Tom answers yes', async () => {

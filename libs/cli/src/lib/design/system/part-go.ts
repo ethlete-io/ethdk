@@ -8,7 +8,8 @@ export const GO_FILE = 'go.json';
 
 /**
  * Who released a part for implementation, and at which design hash, with the hash of each file it covers; the go holds
- * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed.
+ * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed. `actions` holds
+ * the sorted action keys the part declared at the go, for ACTION-LOST.
  */
 export type PartGo = {
   hash: string;
@@ -18,6 +19,7 @@ export type PartGo = {
   note?: string;
   auto?: true;
   review?: string[];
+  actions?: string[];
 };
 
 export type GoRefusal = { status: number; error: string };
@@ -29,9 +31,15 @@ const goFileOf = (dir: string) => resolve(dir, GO_FILE);
 const isGo = (value: unknown): value is PartGo => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const { hash, by, at, files } = value as Record<string, unknown>;
+  const { hash, by, at, files, actions } = value as Record<string, unknown>;
 
-  return typeof hash === 'string' && typeof by === 'string' && typeof at === 'string' && isOptionalFileHashes(files);
+  return (
+    typeof hash === 'string' &&
+    typeof by === 'string' &&
+    typeof at === 'string' &&
+    isOptionalFileHashes(files) &&
+    (actions === undefined || (Array.isArray(actions) && actions.every((key) => typeof key === 'string')))
+  );
 };
 
 export const readGo = (dir: string): Record<string, PartGo> => {
@@ -90,7 +98,8 @@ export const goPartsOf = (product: ResolvedProduct) =>
 
 /**
  * Stores a go for a part at its current hash, or answers why not: 400 without `by`, 404 for an unknown part. A given
- * `hash` must match the part, else 409. A go needs no empty open-point list.
+ * `hash` must match the part, else 409. A go needs no empty open-point list. `actions` are the part's declared action
+ * keys, recorded sorted.
  */
 export const markPartGo = (options: {
   product: ResolvedProduct;
@@ -99,6 +108,7 @@ export const markPartGo = (options: {
   hash?: unknown;
   note?: string;
   at?: string;
+  actions?: string[];
 }): PartGo | GoRefusal => {
   const { product, part, by } = options;
 
@@ -116,6 +126,7 @@ export const markPartGo = (options: {
     by: by.trim(),
     at: options.at ?? new Date().toISOString(),
     ...(options.note ? { note: options.note } : {}),
+    ...(options.actions ? { actions: [...new Set(options.actions)].sort((a, b) => a.localeCompare(b)) } : {}),
   };
 
   writeGo({ dir: found.dir, part, go });

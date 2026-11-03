@@ -31,6 +31,7 @@ import { PART_HARNESS_ONLY, partActionFailuresOf } from './system/actions-comman
 import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
 import { goMarkOf, markPartGo } from './system/part-go';
+import { partActionsOf } from './system/action-lost';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
@@ -910,7 +911,7 @@ const shownHashRefusalOf = (options: { product: ResolvedProduct; part: string; s
 };
 
 /**
- * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, regenerates a
+ * POST `?product=`, body `{ part, hash }`: stores the Studio user's go for a part at the hash Studio showed, with the action keys it declares, regenerates a
  * stale harness map (`harness` says why it could not; the go stands), then its go pictures (`unstored` says why not). A refusal answers `reason`: `hash-missing` (400), `unknown-part` (404) or
  * `changed` (409). A go needs no empty open-point list.
  */
@@ -927,12 +928,21 @@ export const partGoAnswer = withProduct('POST', async (found) => {
 
   if (shown) return shown;
 
+  const load = found.asked.load;
+  const actions = load
+    ? await partActionsOf({
+        load: ({ file, product }) => load({ file, product, sketch: null }),
+        product: found.product,
+        part,
+      })
+    : undefined;
   const marked = markPartGo({
     product: found.product,
     part,
     by: STUDIO_CLICK,
     hash: body['hash'],
     note: 'studio click',
+    ...(Array.isArray(actions) ? { actions } : {}),
   });
 
   if ('status' in marked)

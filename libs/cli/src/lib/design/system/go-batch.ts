@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { acceptStepOf } from './accept-command';
 import { DrawStates } from './accepted-pictures';
+import { GoActionsOf } from './action-lost';
 import { decisionOf } from './go-guard';
 import { goStepOf } from './go-step';
 import { mergeStepOf } from './sketch/merge-step';
@@ -62,7 +63,12 @@ const isCommit = (target: string, sha: string) => {
   }
 };
 
-const stepOf = (options: { target: string; entry: GoListEntry; draw?: DrawStates }): DesignStep | string => {
+const stepOf = (options: {
+  target: string;
+  entry: GoListEntry;
+  draw?: DrawStates;
+  declaredActions?: GoActionsOf;
+}): DesignStep | string => {
   const { target, entry } = options;
   const note = entry.note.trim();
 
@@ -87,6 +93,7 @@ const stepOf = (options: { target: string; entry: GoListEntry; draw?: DrawStates
     by: 'tom',
     note,
     draw: options.draw,
+    declaredActions: options.declaredActions,
   });
 
   return typeof step === 'string' || entry.verify === undefined
@@ -100,6 +107,7 @@ export const goBatch = async (options: {
   file: string;
   invocation: string;
   draw?: DrawStates;
+  declaredActions?: GoActionsOf;
   prompt: TomPrompt;
 }) => {
   const entries = readGoList(options.file);
@@ -110,7 +118,9 @@ export const goBatch = async (options: {
     return 1;
   }
 
-  const steps = entries.map((entry) => stepOf({ target: options.target, entry, draw: options.draw }));
+  const steps = entries.map((entry) =>
+    stepOf({ target: options.target, entry, draw: options.draw, declaredActions: options.declaredActions }),
+  );
   const refusals = steps.flatMap((step, index) =>
     typeof step === 'string' ? [`${entries[index]?.action} ${entries[index]?.part}: ${step}`] : [],
   );

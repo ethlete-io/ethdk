@@ -1,5 +1,6 @@
 import { createInterface } from 'readline';
 import { DrawStates } from './accepted-pictures';
+import { GoActionsOf } from './action-lost';
 
 /** The terminal a `--by tom` write asks: whether stdin is a TTY, and how to ask one question there. */
 export type TomPrompt = { isTTY: boolean; ask: (question: string) => Promise<string> };
@@ -13,6 +14,7 @@ export type WriteCommandOptions = {
   argv: string[];
   invocation: string;
   draw?: DrawStates;
+  declaredActions?: GoActionsOf;
   prompt?: TomPrompt;
 };
 

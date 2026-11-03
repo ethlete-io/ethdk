@@ -1,4 +1,5 @@
 import { DrawStates, storePictures } from './accepted-pictures';
+import { GoActionsOf, goActionsOf } from './action-lost';
 import { tomGoCheckOf } from './go-guard';
 import { refreshHarnessMap } from './harness-map';
 import { goPartOf, markPartGo } from './part-go';
@@ -16,6 +17,7 @@ export const goStepOf = (options: {
   by: string;
   note: string | undefined;
   draw?: DrawStates;
+  declaredActions?: GoActionsOf;
 }): DesignStep | string => {
   const { target, by, note } = options;
   const refused = onlyTomRefusalOf({ by, action: 'go' });
@@ -56,7 +58,17 @@ export const goStepOf = (options: {
 
       if (refreshed) console.log('regenerated the stale harness map');
 
-      const marked = markPartGo({ product, part, by, note });
+      const actions = await (options.declaredActions ?? goActionsOf)({ target, config, product, part });
+
+      if (typeof actions === 'string') console.warn(`ACTIONS NOT RECORDED ${part}: ${actions}`);
+
+      const marked = markPartGo({
+        product,
+        part,
+        by,
+        note,
+        ...(typeof actions === 'string' ? {} : { actions }),
+      });
 
       if ('status' in marked) {
         console.error(marked.error);

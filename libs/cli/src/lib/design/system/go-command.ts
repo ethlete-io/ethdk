@@ -14,7 +14,14 @@ export const designGo = async (options: WriteCommandOptions) => {
   const prompt = options.prompt ?? ttyPrompt();
 
   if (typeof args !== 'string' && args.values['--batch'] !== undefined && args.positional.length === 0)
-    return goBatch({ target, file: args.values['--batch'], invocation, draw: options.draw, prompt });
+    return goBatch({
+      target,
+      file: args.values['--batch'],
+      invocation,
+      draw: options.draw,
+      declaredActions: options.declaredActions,
+      prompt,
+    });
 
   const by = typeof args === 'string' ? null : authorOf(args);
 
@@ -34,6 +41,7 @@ export const designGo = async (options: WriteCommandOptions) => {
     by,
     note: args.values['--note']?.trim() || undefined,
     draw: options.draw,
+    declaredActions: options.declaredActions,
   });
 
   if (typeof step === 'string') {
