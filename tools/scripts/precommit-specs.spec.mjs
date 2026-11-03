@@ -128,6 +128,11 @@ test('finds the specs that failed only by timeout', () => {
   assert.deepEqual(timedOutSpecs(''), []);
 });
 
+test('finds a timed-out spec behind the vitest project name', () => {
+  const timeout = ' FAIL  |cli| src/a.spec.ts > x\nError: Test timed out in 300ms.\n';
+  assert.deepEqual(timedOutSpecs(timeout), ['src/a.spec.ts']);
+});
+
 test('a docs-only staged commit starts no vitest', () => {
   const repo = repoWithValueSpec();
   write(repo, 'plans/p.md', 'x\n');

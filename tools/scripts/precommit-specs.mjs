@@ -44,7 +44,7 @@ export const isDocsOnly = (files) => files.every((file) => DOCS_ONLY.test(file))
 
 export const timedOutSpecs = (output) => {
   const failures = output.match(/^\s*(?:Error|AssertionError|TypeError)\b.*$/gm) ?? [];
-  const specs = [...output.matchAll(/^\s*FAIL\s+(\S+\.spec\.\w+)/gm)].map((match) => match[1]);
+  const specs = [...output.matchAll(/^\s*FAIL\s+(?:\|[^|\s]+\|\s+)?(\S+\.spec\.\w+)/gm)].map((match) => match[1]);
   const onlyTimeouts = failures.length > 0 && failures.every((line) => /timed out in \d+ms/.test(line));
   return onlyTimeouts ? [...new Set(specs)] : [];
 };
