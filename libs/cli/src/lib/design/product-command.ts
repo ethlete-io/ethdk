@@ -4,18 +4,13 @@ import { dirname, relative } from 'path';
 import { jsonLayoutOf } from './json-layout';
 import { configPathOf, DesignConfig, DesignProduct, readConfig } from './paths';
 import { isBuiltInBase } from './system/base';
+import { argsOf } from './system/sketch/cli-args';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
 
 export const PRODUCT_PATH = '/__design/product';
 
 const FROM_PROJECT_KEYS = ['styles', 'head', 'providers', 'themes'] as const;
-
-const valueOf = (argv: string[], flag: string) => {
-  const index = argv.indexOf(flag);
-
-  return index === -1 ? null : (argv[index + 1] ?? null);
-};
 
 /** Writes a product's `config.json` entry and its empty layer folders; answers with why it refused, or null. */
 export const createProduct = (options: {
@@ -70,23 +65,25 @@ export const createProduct = (options: {
  */
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const [verb, name] = argv;
+  const usage = `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`;
+  const args = argsOf(argv, ['--base', '--from-project'], []);
 
-  if (verb !== 'new' || !name || name.startsWith('--')) {
-    console.error(`USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`);
+  if (typeof args === 'string') {
+    console.error(`${args}\n${usage}`);
+
+    return 2;
+  }
+
+  const [verb, name] = args.positional;
+
+  if (verb !== 'new' || !name || args.positional.length > 2) {
+    console.error(usage);
 
     return 1;
   }
 
-  const flags = argv.slice(2);
-  const base = valueOf(flags, '--base');
-  const fromProject = valueOf(flags, '--from-project');
-
-  if ((flags.includes('--base') && !base) || (flags.includes('--from-project') && !fromProject)) {
-    console.error('A flag is missing its value.');
-
-    return 1;
-  }
+  const base = args.values['--base'] ?? null;
+  const fromProject = args.values['--from-project'] ?? null;
 
   const refused = createProduct({ target, name, base, fromProject });
 

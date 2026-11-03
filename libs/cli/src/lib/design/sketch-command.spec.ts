@@ -570,6 +570,13 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(lines[1]).toContain('usage: et design sketch new <layer>/<name> [<layer>/<name>…] --variants a,b');
   });
 
+  it("refuses a flag of another sketch command and lists only the command's own flags", () => {
+    const lines = output();
+
+    expect(run(acme(), 'ready', 'components/button', '--fix', '--by', 'x', '--product', 'acme')).toBe(2);
+    expect(lines[0]).toBe('unknown flag --fix (flags: --by, --product)');
+  });
+
   it('edits the title and note of a round and lists the rounds', () => {
     const target = acme();
     const lines = output();

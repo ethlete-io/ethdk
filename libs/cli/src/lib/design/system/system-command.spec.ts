@@ -45,6 +45,7 @@ describe('designSystem', () => {
 
     expect(await run(acme(), [])).toBe(2);
     expect(await run(acme(), ['--json', '--product'])).toBe(2);
+    expect(await run(acme(), ['--json', '--bogus'])).toBe(2);
     expect(await run(acme(), ['--json', '--product', 'nope'])).toBe(1);
     expect(error).toHaveBeenLastCalledWith('NO PRODUCT "nope" - config.json declares acme-base, acme.');
   });

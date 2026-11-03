@@ -1,6 +1,7 @@
 import { configPathOf, readConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { listSystem } from './list-system';
+import { argsOf } from './sketch/cli-args';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 /**
@@ -9,11 +10,12 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
  */
 export const designSystem = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const productIndex = argv.indexOf('--product');
-  const asked = productIndex === -1 ? null : argv[productIndex + 1];
+  const args = argsOf(argv, ['--product'], ['--json']);
+  const usage = `usage: ${invocation} system --json [--product <name>]`;
+  const asked = typeof args === 'string' ? null : (args.values['--product'] ?? null);
 
-  if (!argv.includes('--json') || asked === undefined) {
-    console.error(`usage: ${invocation} system --json [--product <name>]`);
+  if (typeof args === 'string' || !args.flags.has('--json') || args.positional.length > 0) {
+    console.error(typeof args === 'string' ? `${args}\n${usage}` : usage);
 
     return 2;
   }

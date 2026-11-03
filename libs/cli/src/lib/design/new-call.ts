@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 import { callsRootOf, readConfig } from './paths';
+import { argsOf } from './system/sketch/cli-args';
 import { writeStatus } from './status';
 
 const SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
@@ -78,19 +79,23 @@ ${PLACEHOLDER_STYLES}
  */
 export const newCall = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const slug = argv.find(
-    (argument, index) =>
-      !argument.startsWith('--') && !['--variants', '--stage', '--feature'].includes(argv[index - 1] ?? ''),
-  );
-  const listed = argv[argv.indexOf('--variants') + 1];
-  const stage = argv.includes('--stage') ? (argv[argv.indexOf('--stage') + 1] ?? '') : null;
-  const feature = argv.includes('--feature') ? (argv[argv.indexOf('--feature') + 1] ?? '') : null;
-  const keys = argv.includes('--variants') ? (listed ?? '').split(',').filter(Boolean) : ['a', 'b'];
+  const args = argsOf(argv, ['--variants', '--stage', '--feature'], []);
+  const usage = `usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`;
+
+  if (typeof args === 'string') {
+    console.error(`${args}\n${usage}`);
+
+    return 2;
+  }
+
+  const [slug] = args.positional;
+  const listed = args.values['--variants'];
+  const stage = args.values['--stage'] ?? null;
+  const feature = args.values['--feature'] ?? null;
+  const keys = listed === undefined ? ['a', 'b'] : listed.split(',').filter(Boolean);
 
   if (!slug || stage === null) {
-    console.error(
-      `usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
-    );
+    console.error(usage);
 
     return 2;
   }

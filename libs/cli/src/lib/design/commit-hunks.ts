@@ -120,10 +120,10 @@ const waitForIndexLock = async (target: string) => {
   await waitForLock(join(git(target, ['rev-parse', '--absolute-git-dir']).trim(), 'index.lock'));
 };
 
-const fail = (message: string) => {
+const fail = (message: string, code = 1) => {
   console.error(message);
 
-  return 1;
+  return code;
 };
 
 /**
@@ -140,10 +140,10 @@ export const designCommitHunks = async (options: { target: string; argv: string[
   const bad = asParts.find((part) => typeof part === 'string');
 
   if (typeof args === 'string' || !asked || extra.length > 0 || asParts.length + ids.length === 0) {
-    return fail(`${typeof args === 'string' ? `${args}\n` : ''}usage: ${invocation} ${COMMIT_HUNKS_USAGE}`);
+    return fail(`${typeof args === 'string' ? `${args}\n` : ''}usage: ${invocation} ${COMMIT_HUNKS_USAGE}`, 2);
   }
 
-  if (typeof bad === 'string') return fail(bad);
+  if (typeof bad === 'string') return fail(bad, 2);
 
   const parts = asParts.flatMap((part) => (typeof part === 'string' ? [] : [partKeyOf(part)]));
   const absolute = isAbsolute(asked) ? asked : resolve(target, asked);

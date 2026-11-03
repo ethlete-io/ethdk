@@ -100,8 +100,9 @@ describe('designCommitHunks', () => {
 
     expect(await run(target, 'p/merged.json', '--part', 'components/x')).toBe(0);
     expect(log.mock.calls.flat().join('\n')).toContain('holds no uncommitted entry of components/x');
-    expect(await run(target, 'p/merged.json')).toBe(1);
-    expect(await run(target, 'p/merged.json', '--part', 'nope')).toBe(1);
+    expect(await run(target, 'p/merged.json')).toBe(2);
+    expect(await run(target, 'p/merged.json', '--part', 'nope')).toBe(2);
+    expect(await run(target, 'p/merged.json', '--part', 'components/x', '--bogus')).toBe(2);
   });
 });
 
@@ -233,7 +234,7 @@ describe('designCommitHunks over every shared file under .ethlete/design', () =>
         const changed = { capabilities: [{ ...list[0], label: 'changed' }, ...list.slice(1), { id: 'brand-new' }] };
 
         write(target, 'p/x.json', changed);
-        expect(await run(target, 'p/x.json')).toBe(1);
+        expect(await run(target, 'p/x.json')).toBe(2);
         expect(await run(target, 'p/x.json', '--id', list[0].id)).toBe(0);
         expect(JSON.parse(git(target, 'show', 'HEAD:p/x.json'))).toEqual({
           capabilities: [{ ...list[0], label: 'changed' }, ...list.slice(1)],

@@ -93,6 +93,15 @@ describe('newCall', () => {
     expect(existsSync(calls(target))).toBe(false);
   });
 
+  it('refuses an unknown flag', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
+
+    expect(newCall({ target, argv: ['app/one', '--stage', 'component', '--bogus'], invocation: 'et design' })).toBe(2);
+    expect(error.mock.calls.flat().join('')).toContain('unknown flag --bogus');
+    expect(existsSync(calls(target))).toBe(false);
+  });
+
   it('takes a sketch, the quick exploration outside the design order', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);

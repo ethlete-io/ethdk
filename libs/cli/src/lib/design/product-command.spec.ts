@@ -123,6 +123,15 @@ describe('designProduct', () => {
     expect(existsSync(join(target, DESIGN_DIR, 'other/fixtures.ts'))).toBe(false);
   });
 
+  it('refuses an unknown flag and creates nothing', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = make();
+
+    expect(run(target, 'new', 'shop', '--bogus')).toBe(2);
+    expect(error.mock.calls.flat().join('')).toContain('unknown flag --bogus (flags: --base, --from-project)');
+    expect(existsSync(join(target, DESIGN_DIR, 'shop'))).toBe(false);
+  });
+
   it('creates a product over POST with another product as its base', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = make();

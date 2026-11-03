@@ -91,12 +91,12 @@ describe('a named sketch', { timeout: 120_000 }, () => {
     const original = readFileSync(sketchFile, 'utf8');
 
     writeFileSync(sketchFile, original.replace(/^ {2}note: .*$/mu, "  note: ['x'].join(''),"));
-    expect(await write(target, 'check', id, '--product', 'acme')).toBe(1);
+    expect(await designSketch({ target, argv: ['check', id, '--product', 'acme'], invocation: 'et design' })).toBe(1);
     expect(lines.some((line) => line.includes(`merge cannot write metadata to ${id.split('@')[0]}`))).toBe(true);
     writeFileSync(sketchFile, original.replace("note: '", "note: 'named "));
     vi.mocked(renderIssuesOf).mockClear();
 
-    expect(await write(target, 'check', id, '--product', 'acme')).toBe(0);
+    expect(await designSketch({ target, argv: ['check', id, '--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(vi.mocked(renderIssuesOf).mock.calls.length).toBeGreaterThan(0);
     expect(await write(target, 'ready', id, '--product', 'acme')).toBe(0);
     expect(lines.some((line) => line.includes('has problems'))).toBe(false);
