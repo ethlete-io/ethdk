@@ -4002,6 +4002,17 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      timing case that fails while the load is above the core count reports "NOT MEASURED (load <n>)" instead of FAIL,
      and the slice stays unverified until a run below the core count passes. Behaviour cases keep failing as before.
 
+317. The inbox host sketch for comment-draft (B265, 153ca659d, builder, 2026-11-03) shows two more blind spots.
+     (1) A card moved out of its dialog pane fell back to the base surface and drew almost black, with no warning,
+     until data-et-auto-surface was added. (2) Variant b gets its no-card look by stripping the part's class string in
+     b/pages/inbox/bare-comment-draft.ts; STALE-REPLACE does not catch it, and the same kind of hack sat in the inbox
+     editor pin until B248b. Why no tool caught them: no rule compares a filled box with the surface around it, and no
+     rule looks at string rewrites of a part's rendered markup or classes. Decision (technical): B266 grows to three
+     checks: NESTED-SURFACE (a bordered, filled box whose nearest surface pane draws the same background, with only
+     padding between the edges), LOST-SURFACE (a filled card whose fill equals the canvas around it), and
+     PART-REWRITE (a page or sketch that rewrites an imported part's markup or class string instead of passing an
+     option). A merge of variant b turns the strip into a `card` option on comment-draft.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
