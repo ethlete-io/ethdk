@@ -1,10 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { SystemEmptyComponent } from './system-empty.component';
+import { CommentDraftComponent, CommentSendPhase } from './comment-draft.component';
 import { OpenPointsChipComponent } from './open-points-chip.component';
 import { MANY_STATES_LAYERS, OPEN_POINTS_SAMPLE, SYSTEM_LAYERS } from './system-page-sample';
 
@@ -63,12 +65,44 @@ export const FRAME_HEAD_CLASS =
         >
           <figure [class]="FRAME_CLASS">
             <figcaption [class]="FRAME_HEAD_CLASS">{{ frame() }}</figcaption>
-            <div [class.w-md]="fit()" [class.h-45]="fit()">
-              <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
+            <div class="relative">
+              <div [class.w-md]="fit()" [class.h-45]="fit()">
+                <ng-container *ngTemplateOutlet="frameShot; context: { $implicit: frame() }" />
+              </div>
+              @if (commentMode()) {
+                <div
+                  [title]="LABELS.commentOn(frame())"
+                  (click)="draft.set('')"
+                  (keydown.enter)="draft.set('')"
+                  class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
+                  role="button"
+                  tabindex="0"
+                ></div>
+                @if (draft() !== null) {
+                  <ethlete-comment-draft
+                    [text]="draft() ?? ''"
+                    [phase]="send()"
+                    (textChange)="draft.set($event)"
+                    (send)="sendComment.emit($event)"
+                    (discard)="draft.set(null)"
+                    class="absolute top-[42%] left-[38%] z-4"
+                  />
+                }
+              }
             </div>
           </figure>
         </ethlete-canvas-frames>
-        <div class="absolute top-space-3 right-space-3">
+        <div class="absolute top-space-3 right-space-3 flex gap-space-2">
+          <button
+            [pressed]="commentMode()"
+            (click)="toggleComments()"
+            et-button
+            type="button"
+            variant="outline"
+            size="sm"
+          >
+            {{ LABELS.comment }}
+          </button>
           <ethlete-open-points-chip [(closed)]="closed" [part]="part()" [groups]="groups()" />
         </div>
       }
@@ -82,7 +116,9 @@ export const FRAME_HEAD_CLASS =
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
+    BUTTON_IMPORTS,
     CanvasFramesComponent,
+    CommentDraftComponent,
     NgTemplateOutlet,
     OpenPointsChipComponent,
     PartTreeComponent,
@@ -99,6 +135,9 @@ export class SystemPageComponent {
   public nothingOpen = input(false);
   public fit = input(false);
   public closed = model(false);
+  public commentMode = model(false);
+  public draft = model<string | null>(null);
+  public send = input<CommentSendPhase | null>(null);
   public layers = input(SYSTEM_LAYERS);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
   public frame = input('button');
@@ -114,10 +153,19 @@ export class SystemPageComponent {
   public zoomReset = output();
   public zoomIn = output();
   public fitAll = output();
+  public sendComment = output<string>();
 
   protected readonly LABELS = STUDIO_LABELS.system;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
 
   public groups = computed(() => (this.nothingOpen() ? [] : this.openPoints()));
+
+  protected toggleComments() {
+    const on = !this.commentMode();
+
+    this.commentMode.set(on);
+    if (on) this.closed.set(true);
+    else this.draft.set(null);
+  }
 }

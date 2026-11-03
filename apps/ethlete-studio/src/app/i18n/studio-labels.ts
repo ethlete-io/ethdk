@@ -81,6 +81,16 @@ export const STUDIO_LABELS = {
     sketchOpen: 'Sketch noch nicht gemergt',
     noGo: 'Noch kein Go',
     staleGo: 'Go ist veraltet',
+    comment: 'Kommentar',
+    commentOn: (frame: string) => `Kommentar zu ${frame}`,
+  },
+  commentDraft: {
+    comment: 'Kommentar',
+    placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
+    cancel: 'Abbrechen',
+    send: 'Senden',
+    sendAgain: 'Erneut senden',
+    notSent: 'Nicht gesendet. Der Design-Server hat nicht geantwortet.',
   },
   shell: {
     designSystem: 'Design-System',
