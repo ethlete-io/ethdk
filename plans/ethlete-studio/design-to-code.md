@@ -485,7 +485,7 @@ only; the builder starts when Tom gives the start.
   `projectPicker='open'` (API), not by pointer, so autofocus drew a focus ring (8355 px). Autofocus stays on in the
   app (keyboard open focuses the first item); the compare harness opens the picker by a real pointer click (cli
   change), and the app drops `autoFocus="false"`.
-- Impl Q15 go by the builder (Tom, 2026-11-01): when Tom approves a concrete design change in the chat (for example
+- Impl Q15 go by the builder (Tom, 2026-11-01) - replaced by Impl Q119: when Tom approves a concrete design change in the chat (for example
   the Impl Q13 transform line), the builder may record the new go with `--by tom`; the commit message names the
   decision. A new design or a larger change still needs Tom's own go. The Impl Q13 go stays.
 - Impl Q16 verify revision (Tom, 2026-11-01): no tool change. With parallel committers the builder passes the
@@ -1841,7 +1841,7 @@ studio` (9 min) whose requesting subagent was gone after the builder ran out of 
 - Impl Q44 project row states (Tom, 2026-11-01): shell-project-switch's `project` control is now a `select`, which
   needs `project.option-hover`, `option-focus-visible` and `option-selected`. Draw the 3 states with the menu mock's
   forced rows; go `--by tom`.
-- Impl Q45 accept by the builder (Tom, 2026-11-01): same rule as Impl Q15 for the go. When Tom approves a concrete
+- Impl Q45 accept by the builder (Tom, 2026-11-01) - replaced by Impl Q119: same rule as Impl Q15 for the go. When Tom approves a concrete
   design change in the chat, the builder may run `design accept` for it, always `--by tom` (not the model name), and
   names the decision. A new design Tom accepts himself. The Impl Q44 accept stays.
 - Impl Q46 shared label map in verify (Tom, 2026-11-01): `task --verify` allows `apps/ethlete-studio/src/app/i18n/**`
@@ -4179,6 +4179,37 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      and to Aktuell in every shown column. Fix (technical, B281): trace the cause first and report it; then a round
      whose variants all match pixel for pixel in every state Studio shows is a problem in sketch ready, and the
      sketch view shows every state any variant declares. B261 goes back to the builder; no pick from Tom until fixed.
+
+333. B265 go and B278 (builder, 2026-11-03). (a) The grill session told the builder to record the pages/inbox go with
+     `--by tom` under Impl Q15; the CLI refused (TTY confirm, Impl Q119, b873da3ee), and the builder then prepared a
+     go batch file for Tom. Both were wrong: Impl Q119 replaced Q15/Q45, and finding 74's direction says Tom approves
+     only by a click in Studio, never by a command or batch file. Why no tool caught it: the decisions list keeps
+     superseded entries (Q15) without a "replaced by" mark, so a reader of Q15 alone acts on a dead rule. Fix: Q15
+     and Q45 get a "replaced by Impl Q119" mark; the batch file is deleted; pages/inbox waits for Tom's go click in
+     Studio (A10 replaces the go). (b) B278 3675d9c5f: capabilities.json named comment-write emit:send, but since
+     9cb6ce68e the inbox draws the shared comment-draft whose send button declares emit:sendComment; the data was the
+     wrong side. The app still emits `send` from comment-draft and InboxComponent, so design and app disagree.
+     Decision: the app output is renamed to sendComment in a part commit. Why no check caught it: CAPABILITY-PLACE
+     runs only in the full check and its own spec; a design-part commit does not select it. Fix: the part check and
+     `yarn commit`'s related specs run CAPABILITY-PLACE for every capability whose place names the changed part.
+     (c) `design actions pages/inbox --state comment-draft` reports "has no interactive element", so the send button
+     was never pressed; cause unknown, the builder traces it. (d) commit-hunks wrote capabilities.json unformatted
+     (d983abfc5 reformat, same data); commit-hunks must write Prettier-formatted JSON, spec on a real file.
+
+334. B270c (builder, 2026-11-03, f59f1c5f9, b9c558b37). The 5e525ca9b skip is gone (symlinked dist: matching hash
+     passes, differing hash refuses; red-check RED), the harness and e2e-check stamp their phases, the worktree spec
+     asserts its own path, lint is clean. B267's proof landed: full `nx build cli`, `design --help` rc 0. e2e-check
+     21dcfc17f twice (load 16-28/32, then 6.1/32): canvas FAIL at canvas.e2e.mjs:1295 and sketches-tree FAIL (cold
+     load) in both runs, so deterministic, not load. Cause 1: suites pin DE_PORT; on a busy port the cli prints
+     "Port ... is already in use" and keeps running, the harness waits only for "Local:" and hangs 180 s, the
+     watchdog SIGKILL skips `finally`, and the orphan server holds the port for the next run (loop reproduced; 7
+     orphan canvas servers were found). Why no tool caught it: a busy pinned port is not an error anywhere, and no
+     invariant checks that a run leaves no server behind. Fix (B282): the cli exits non-zero on a busy pinned port, the
+     harness fails on that line and takes a free port, e2e-check kills the process group, and an e2e-check spec
+     asserts no design server outlives the run. Cause 2: in an e2e worktree GET /__design/system (and /stamp,
+     /comment-events) does not answer within 12 s, while the main tree answers at +4.2 s; not found yet (untracked
+     or gitignored artifact, or cold vite optimize). sketches-tree's budget miss is likely the same. frame-load-failed
+     and server-restart are re-checked after B240 phase 2.
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
