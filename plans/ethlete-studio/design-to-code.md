@@ -3410,3 +3410,7 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      made from a withdrawn one says "from withdrawn <v>". Also: a spec timed out at 5 s under load in pre-commit
      (passes alone in 1.5 s) - goes into B207 (re-run a timed-out spec once alone); two checks in one session disagreed
      after a dist rebuild - B191.
+     B210 cause (c12a65e92): `design shot` took its state names from `drawnStateNamesOf`, which drops every row whose
+     forced controls are only unchanged SDK components; B171 (327bd8362) fixed only the `--state <name>` path, and a
+     grid shot passes no name. Fix: `shotStateNamesOf` returns every defined state. Still open: shot and `sketch check`
+     share no interaction driver, so the lesson (one measurement) is not met yet.
