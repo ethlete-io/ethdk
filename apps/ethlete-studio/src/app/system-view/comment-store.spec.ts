@@ -8,11 +8,13 @@ import { CommentSource, injectCommentStore, provideCommentStore } from './commen
 const host = vi.hoisted(() => ({
   list: vi.fn<(address: ProductAddress) => Observable<ListedComments>>(),
   changes: vi.fn<(port: number) => Observable<CommentEvent>>(),
+  write: vi.fn<(address: ProductAddress, comment: unknown) => Observable<ListedComment>>(),
 }));
 
 vi.mock('../../host/design', () => ({
   listedComments$: host.list,
   commentChanges$: host.changes,
+  writeComment$: host.write,
 }));
 
 const listed = (id: string, createdAt: string): ListedComment => ({
@@ -170,5 +172,70 @@ describe('CommentStore', () => {
     expect(host.list.mock.calls.length).toBe(loads + 1);
 
     vi.useRealTimers();
+  });
+
+  describe('writing a comment', () => {
+    const DRAFT = {
+      frameId: 'f',
+      place: { part: 'components/card', state: 'empty', size: 'phone' },
+      point: { x: 10.4, y: 20.6 },
+    };
+
+    it('writes the trimmed text at the rounded point, closes the draft and reloads, comment mode stays on', () => {
+      const { store } = setup();
+      const written = new Subject<ListedComment>();
+
+      host.write.mockReset().mockReturnValue(written);
+      store.toggle();
+      store.start(DRAFT);
+      store.send('  Zu eng  ');
+
+      expect(host.write).toHaveBeenCalledWith(ADDRESS, {
+        part: 'components/card',
+        state: 'empty',
+        size: 'phone',
+        point: { x: 10, y: 21 },
+        text: 'Zu eng',
+      });
+      expect(store.sendPhase()).toBe('busy');
+
+      store.cancel();
+      expect(store.draft()).toEqual(DRAFT);
+
+      const loads = host.list.mock.calls.length;
+
+      written.next(listed('c', '2026-10-27T10:00:03Z'));
+      TestBed.tick();
+
+      expect(store.sendPhase()).toBeNull();
+      expect(store.draft()).toBeNull();
+      expect(store.active()).toBe(true);
+      expect(host.list.mock.calls.length).toBe(loads + 1);
+    });
+
+    it('keeps the draft and its text after a failed send and shows the error phase', () => {
+      const { store } = setup();
+
+      host.write.mockReset().mockReturnValue(throwError(() => new Error('offline')));
+      store.toggle();
+      store.start(DRAFT);
+      store.draftText.set('Zu eng');
+      store.send(store.draftText());
+
+      expect(store.sendPhase()).toBe('error');
+      expect(store.draft()).toEqual(DRAFT);
+      expect(store.draftText()).toBe('Zu eng');
+    });
+
+    it('ends comment mode and drops the draft on a second toggle', () => {
+      const { store } = setup();
+
+      store.toggle();
+      store.start(DRAFT);
+      store.toggle();
+
+      expect(store.active()).toBe(false);
+      expect(store.draft()).toBeNull();
+    });
   });
 });

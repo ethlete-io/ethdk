@@ -165,6 +165,22 @@
     ></div>
   }
 
+  @for (target of pointTargets(); track target.frame.id) {
+    <div
+      [style.left.px]="target.x"
+      [style.top.px]="target.y"
+      [style.width.px]="target.width"
+      [style.height.px]="target.height"
+      [title]="pointingTitle()(target.frame.label)"
+      (click)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
+      (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width, crop: target.frame.crop }, $event)"
+      class="absolute cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
+      role="button"
+      tabindex="0"
+      data-comment-target
+    ></div>
+  }
+
   @for (placed of placedPins(); track placed.pin.id) {
     <div
       [style.left.px]="placed.x"
@@ -194,6 +210,18 @@
           <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
         </div>
       }
+    </div>
+  }
+  @if (placedDraft(); as placed) {
+    <div
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.transform]="'scale(' + labelScale() + ')'"
+      (click)="$event.stopPropagation()"
+      class="absolute z-4 origin-top-left"
+      data-comment-draft
+    >
+      <ng-content select="[canvasDraft]" />
     </div>
   }
   <ng-content />

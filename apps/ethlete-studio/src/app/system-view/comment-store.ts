@@ -1,10 +1,11 @@
-import { Signal, computed, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { EMPTY, Observable, catchError, filter, map, of, retry, scan, startWith, switchMap, tap, timer } from 'rxjs';
-import { ListedComments, ProductAddress, commentChanges$, listedComments$ } from '../../host/design';
+import { ListedComments, ProductAddress, commentChanges$, listedComments$, writeComment$ } from '../../host/design';
+import { CommentSendPhase } from '../design-parts/system-page/comment-draft.component';
 import { rememberView, rememberedView } from '../studio-view/remembered';
-import { numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
+import { CommentDraft, commentPlaceOf, numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
 export type CommentSource = { address: ProductAddress | null; revision: number };
@@ -24,8 +25,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 const sameAddress = (a: ProductAddress | null, b: ProductAddress | null) =>
   a?.port === b?.port && a?.product === b?.product;
 
-/** The open comments of the shown product, the resolved threads and the panel, for the system view and its children. */
+/** The open comments of the shown product, the resolved threads, the comment mode with its draft and the panel. */
 export class CommentStore {
+  private destroyRef = inject(DestroyRef);
+
   private source = signal<Signal<CommentSource>>(signal(NO_SOURCE));
 
   private address = computed(() => this.source()().address, { equal: sameAddress });
@@ -116,6 +119,14 @@ export class CommentStore {
 
   public panelOpen = signal(rememberedView().commentsOpen ?? false);
 
+  public active = signal(false);
+
+  public draft = signal<CommentDraft | null>(null);
+
+  public draftText = signal('');
+
+  public sendPhase = signal<CommentSendPhase | null>(null);
+
   /** Reads the comments of the product `source` names, again whenever its revision changes. */
   public connect(source: Signal<CommentSource>) {
     this.source.set(source);
@@ -125,6 +136,61 @@ export class CommentStore {
   public retry() {
     this.reloads.update((count) => count + 1);
     this.reconnects.update((count) => count + 1);
+  }
+
+  public toggle() {
+    if (this.active()) this.end();
+    else this.active.set(true);
+  }
+
+  /** Ends comment mode and drops the draft. */
+  public end() {
+    this.active.set(false);
+    this.cancel();
+  }
+
+  public start(draft: CommentDraft) {
+    if (this.sendPhase() === 'busy') return;
+
+    this.draft.set(draft);
+    this.draftText.set('');
+    this.sendPhase.set(null);
+  }
+
+  public cancel() {
+    if (this.sendPhase() === 'busy') return;
+
+    this.draft.set(null);
+    this.draftText.set('');
+    this.sendPhase.set(null);
+  }
+
+  /** Writes the draft with `text`; comment mode stays on, a failed send keeps the draft. */
+  public send(text: string) {
+    const address = this.address();
+    const draft = this.draft();
+    const trimmed = text.trim();
+
+    if (!address || !draft || !trimmed || this.sendPhase() === 'busy') return;
+
+    this.sendPhase.set('busy');
+    writeComment$(address, { ...commentPlaceOf(draft.place, draft.point), text: trimmed })
+      .pipe(
+        tap(() => {
+          this.sendPhase.set(null);
+          this.draft.set(null);
+          this.draftText.set('');
+          this.reloads.update((count) => count + 1);
+        }),
+        catchError((error: unknown) => {
+          console.error('Writing the comment failed:', messageOf(error));
+          this.sendPhase.set('error');
+
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   /** Shows or hides the comment sidebar, and remembers it for the next start. */

@@ -1,6 +1,6 @@
 import { CommentPlace, CommentResolution, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
-import { CanvasPin } from '../components/design-canvas/canvas-pin';
+import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
 import { senderOf } from './inbox-comments';
 
 export type NumberedComment = ListedComment & { number: number };
@@ -75,3 +75,19 @@ export const pinsOf = (frames: CanvasFrame[], comments: (ListedComment & { numbe
         ]
       : [];
   });
+
+/** A comment the user is typing, on a frame and optionally at a point on it. */
+export type CommentDraft = { frameId: string; place: FramePlace; point: { x: number; y: number } | null };
+
+/** The draft for a click in comment mode, or `null` when the frame has no place to comment on. */
+export const commentDraftOf = (frames: CanvasFrame[], pick: FramePoint): CommentDraft | null => {
+  const place = frames.find((frame) => frame.id === pick.frameId)?.place;
+
+  return place ? { frameId: pick.frameId, place, point: pick.point } : null;
+};
+
+/** Where a new comment sits: the frame's place, and the point on it the user clicked, if any. */
+export const commentPlaceOf = (place: FramePlace, point: { x: number; y: number } | null): CommentPlace => ({
+  ...place,
+  ...(point ? { point: { x: Math.round(point.x), y: Math.round(point.y) } } : {}),
+});

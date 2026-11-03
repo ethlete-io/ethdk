@@ -61,7 +61,8 @@ import {
   pickedPartKeyOf,
   treeOf,
 } from './system-tree';
-import { otherSizeFrameOf, pinsOf } from './comment-pins';
+import { commentDraftOf, otherSizeFrameOf, pinsOf } from './comment-pins';
+import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { InboxComponent, InboxLoad } from '../design-parts/inbox/inbox.component';
 import { StartComponent } from '../design-parts/start/start.component';
 import { SystemEmptyComponent } from '../design-parts/system-page/system-empty.component';
@@ -79,6 +80,7 @@ import { PartApprovalComponent } from './part-approval.component';
 import { openPointGroupsOf } from './open-points';
 import { partOpenPoints$ } from '../../host/design-open-points';
 import { OpenPointsChipComponent } from '../design-parts/system-page/open-points-chip.component';
+import { CommentDraftComponent } from '../design-parts/system-page/comment-draft.component';
 import { DesignServerAction } from '../design-parts/studio-menu/studio-menu.component';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
@@ -219,6 +221,17 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   {{ INVENTORY_LABELS.toggle }}
                 </button>
               }
+              <button
+                [pressed]="commentStore.active()"
+                (click)="commentStore.toggle()"
+                et-button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-comment-mode
+              >
+                {{ EMPTY_LABELS.comment }}
+              </button>
               <ethlete-open-points-chip [part]="partShown.key" [groups]="openPointGroups()" />
             </div>
             <ethlete-design-canvas
@@ -228,9 +241,23 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               [cameraKey]="cameraKey()"
               [restoredCamera]="restoredCamera()"
               [zoomChipClass]="PART_ZOOM_CHIP_CLASS"
+              [pointing]="commentStore.active()"
+              [pointingTitle]="EMPTY_LABELS.commentOn"
+              [draft]="commentStore.draft()"
+              (pointPick)="startComment($event)"
               (cameraChange)="rememberCamera($event)"
               class="-ms-(--st-shell-inset-left) min-h-0"
-            />
+            >
+              @if (commentStore.draft()) {
+                <ethlete-comment-draft
+                  [(text)]="commentStore.draftText"
+                  [phase]="commentStore.sendPhase()"
+                  (send)="commentStore.send($event)"
+                  (discard)="commentStore.cancel()"
+                  canvasDraft
+                />
+              }
+            </ethlete-design-canvas>
           } @else {
             <ethlete-system-empty
               [product]="product()?.name ?? ''"
@@ -339,6 +366,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ExceptionListComponent,
     PartApprovalComponent,
     OpenPointsChipComponent,
+    CommentDraftComponent,
   ],
   providers: [provideCommentStore()],
   host: { class: 'block size-full min-h-0' },
@@ -998,6 +1026,12 @@ export class SystemViewComponent {
     if (section !== 'Inbox') this.railSection.set(section);
     if (section === 'System' && (this.flow() || this.sketch())) this.activate(this.part()?.key ?? '');
     if (section === 'Sketches' && !this.sketch()) this.openFirstSketch();
+  }
+
+  protected startComment(pick: FramePoint) {
+    const draft = commentDraftOf(this.placeableFrames(), pick);
+
+    if (draft) this.commentStore.start(draft);
   }
 
   protected jumpToComment(id: string) {

@@ -22,7 +22,15 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { EMPTY, Subject, buffer, debounceTime, exhaustMap, switchMap, tap, timer } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrameDirective } from './canvas-frame.directive';
-import { CanvasFrame, cropPointOf, cropRectOf, placeableFramesOf, schemeBoxOf } from './canvas-frame';
+import {
+  CanvasFrame,
+  FrameCrop,
+  cropPointOf,
+  cropRectOf,
+  pagePointOfCrop,
+  placeableFramesOf,
+  schemeBoxOf,
+} from './canvas-frame';
 import {
   CameraScene,
   CameraTarget,
@@ -33,7 +41,7 @@ import {
   uncoveredCentre,
   UncoveredView,
 } from './canvas-camera';
-import { CanvasPin, FrameOutline } from './canvas-pin';
+import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
   Point,
@@ -270,6 +278,17 @@ export class DesignCanvasComponent {
   public pins = input<CanvasPin[]>([]);
 
   public outlines = input<FrameOutline[]>([]);
+
+  /** While on, every frame that has a `place` is a target, and a click on it reports the point through `pointPick`. */
+  public pointing = input(false);
+
+  /** The title of a target, from the frame's label. */
+  public pointingTitle = input<(label: string) => string>((label) => label);
+
+  /** Where the projected `[canvasDraft]` content sits, on a frame; `null` hides it. */
+  public draft = input<FramePoint | null>(null);
+
+  public pointPick = output<FramePoint>();
 
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
   public cameraChange = output<Camera | null>();
@@ -584,6 +603,21 @@ export class DesignCanvasComponent {
     });
   });
 
+  protected pointTargets = computed(() =>
+    this.pointing() ? this.targets().filter((placed) => placed.frame.place) : [],
+  );
+
+  protected placedDraft = computed(() => {
+    const draft = this.draft();
+    const frame = draft && this.framesById().get(draft.frameId);
+    const crop = frame?.frame.crop;
+    const point = crop && draft?.point ? cropPointOf(crop, draft.point) : (draft?.point ?? null);
+
+    if (!frame || !draft) return null;
+
+    return { x: frame.x + (point?.x ?? frame.width), y: frame.y + (point?.y ?? 0) };
+  });
+
   protected placedOutlines = computed(() => {
     const byId = this.framesById();
 
@@ -745,6 +779,25 @@ export class DesignCanvasComponent {
     if (this.activeId() !== id) this.activeId.set(null);
   }
 
+  protected pickPoint(frame: { id: string; width: number; crop?: FrameCrop }, event: Event) {
+    event.stopPropagation();
+    if (this.consumeSwallowedClick()) return;
+    if (!(event instanceof MouseEvent)) {
+      this.pointPick.emit({ frameId: frame.id, point: null });
+
+      return;
+    }
+
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const scale = box.width / frame.width;
+    const point = {
+      x: Math.max(0, (event.clientX - box.left) / scale),
+      y: Math.max(0, (event.clientY - box.top) / scale),
+    };
+
+    this.pointPick.emit({ frameId: frame.id, point: frame.crop ? pagePointOfCrop(frame.crop, point) : point });
+  }
+
   protected toggleRow(key: string, event: MouseEvent) {
     event.stopPropagation();
     this.rowToggle.emit(key);
@@ -814,6 +867,8 @@ export class DesignCanvasComponent {
 
   /** Makes the frame `id` live and active, as a double click on it does; a grid cell's `id` makes its grid frame live. */
   public activate(id: string) {
+    if (this.pointing()) return;
+
     const frame = this.frames().find(
       (candidate) => candidate.id === id || candidate.grid?.cells.some((cell) => cell.id === id),
     );

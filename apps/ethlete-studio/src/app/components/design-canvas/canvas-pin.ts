@@ -17,3 +17,6 @@ export type CanvasPin = {
 
 /** An accent rectangle over a frame, in CSS pixels from its top left corner. */
 export type FrameOutline = { frameId: string; x: number; y: number; width: number; height: number };
+
+/** A point on a frame the user clicked in pointing mode, in CSS pixels from its top left corner; `null` for the whole state. */
+export type FramePoint = { frameId: string; point: { x: number; y: number } | null };

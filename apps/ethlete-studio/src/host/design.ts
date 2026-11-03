@@ -661,6 +661,12 @@ const productUrl = ({ port, product }: ProductAddress, path: string) =>
 export const listedComments$ = (address: ProductAddress): Observable<ListedComments> =>
   designAnswer$<ListedComments>(productUrl(address, 'comments'));
 
+/** Writes a comment into the product's `comments/` folder. */
+export const writeComment$ = (
+  address: ProductAddress,
+  comment: CommentPlace & { text: string },
+): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
+
 /** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
 export type CommentEvent = 'connected' | 'changed';
 
