@@ -145,3 +145,21 @@ test('an added module the auto stub cannot satisfy is reported', () => {
     rmSync(repo, { recursive: true, force: true });
   }
 });
+
+test('a spec that only throws a TypeError at the parent state is red by crash, not proof', () => {
+  const repo = makeCommit(
+    { 'value.mjs': 'export const value = 1;\n', 'value.spec.mjs': specOf(`import { value } from './value.mjs';`, '') },
+    {
+      'value.mjs': 'export const value = 1;\nexport const twice = (n) => n * 2;\n',
+      'value.spec.mjs': specOf(`import * as m from './value.mjs';`, 'assert.equal(m.twice(2), 4);'),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /red by crash: rule/);
+    assert.match(result.stdout, /NOT RED: RED BY CRASH/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});

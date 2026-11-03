@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { linkNodeModules } from './link-node-modules.mjs';
 
 const LOAD_ONLY = '(spec file failed to run)';
+const CRASH = /^\s*(TypeError|ReferenceError)\b/;
 
 const isSpec = (file) => /\.spec\.(ts|mjs)$/.test(file);
 
@@ -87,19 +88,27 @@ export const parseTap = (output) =>
     .map((m) => m[1])
     .filter((name) => !name.endsWith('.mjs'));
 
-const runMjs = (checkout, specs) => {
+export const parseTapCrashes = (output) =>
+  output
+    .split(/^(?=\s*(?:not )?ok \d+ - )/m)
+    .map((block) => [/^\s*not ok \d+ - (.+?)(?: # .*)?$/m.exec(block)?.[1], /^\s*name: '(\w+)'/m.exec(block)?.[1]])
+    .filter(([name, error]) => name && CRASH.test(error ?? ''))
+    .map(([name]) => name);
+
+const runMjs = (checkout, specs, crashes) => {
   const failures = {};
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   for (const spec of specs) {
     const run = spawnSync('node', ['--test', '--test-reporter=tap', spec], { cwd: checkout, encoding: 'utf8', env });
     failures[spec] = parseTap(run.stdout);
+    crashes[spec] = parseTapCrashes(run.stdout);
     if (run.status !== 0 && failures[spec].length === 0) failures[spec] = [LOAD_ONLY];
   }
   return failures;
 };
 
-const runVitest = (checkout, specs) => {
+const runVitest = (checkout, specs, crashes) => {
   const failures = {};
   const byRoot = new Map();
   for (const spec of specs) {
@@ -127,6 +136,9 @@ const runVitest = (checkout, specs) => {
         const failed = file.assertionResults.filter((t) => t.status === 'failed').map((t) => t.fullName);
         const spec = group.find((s) => file.name.endsWith(relative(root, s))) ?? file.name;
         failures[spec] = failed.length === 0 && file.status === 'failed' ? [LOAD_ONLY] : failed;
+        crashes[spec] = file.assertionResults
+          .filter((t) => t.status === 'failed' && CRASH.test(t.failureMessages?.[0] ?? ''))
+          .map((t) => t.fullName);
       }
     } catch {
       for (const spec of group) failures[spec] = run.status === 0 ? [] : ['(vitest produced no report)'];
@@ -163,12 +175,23 @@ export const redCheck = (repo, commit, { dir } = {}) => {
 
     const ts = specs.filter((s) => s.endsWith('.ts'));
     const mjs = specs.filter((s) => s.endsWith('.mjs'));
-    const failures = { ...(ts.length ? runVitest(worktree, ts) : {}), ...(mjs.length ? runMjs(worktree, mjs) : {}) };
-    const red = Object.values(failures).some((names) => names.some((n) => n !== LOAD_ONLY));
+    const crashes = {};
+    const failures = {
+      ...(ts.length ? runVitest(worktree, ts, crashes) : {}),
+      ...(mjs.length ? runMjs(worktree, mjs, crashes) : {}),
+    };
+    const failed = Object.entries(failures).flatMap(([spec, names]) => names.map((name) => [spec, name]));
+    const red = failed.some(([, name]) => name !== LOAD_ONLY);
+    const proven = failed.some(([spec, name]) => name !== LOAD_ONLY && !crashes[spec]?.includes(name));
     return {
-      ok: red,
-      reason: red ? '' : 'no spec fails on an assertion at the parent state',
+      ok: proven,
+      reason: proven
+        ? ''
+        : red
+          ? 'RED BY CRASH: every failing spec throws a TypeError or ReferenceError, not proof - stub the code to a behavioural red'
+          : 'no spec fails on an assertion at the parent state',
       failures,
+      crashes,
       stubbed: stubbed.length > 0,
     };
   } finally {
@@ -200,7 +223,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       `${spec}: ${names.length === 0 ? 'passes at the parent state' : loadOnly ? 'LOAD-ONLY (fails to load, not red)' : `${names.length} failing`}`,
     );
     if (loadOnly && result.stubbed) console.log('  auto stub failed, hand stub needed');
-    else if (!loadOnly) for (const name of names) console.log(`  red: ${name}`);
+    else if (!loadOnly)
+      for (const name of names)
+        console.log(`  ${result.crashes?.[spec]?.includes(name) ? 'red by crash' : 'red'}: ${name}`);
   }
   console.log(result.ok ? 'RED: the specs fail without the commit' : `NOT RED: ${result.reason}`);
   process.exit(result.ok ? 0 : 1);
