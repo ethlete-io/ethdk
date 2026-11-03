@@ -4051,6 +4051,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      priority, not queued: a change that only touches a part's declaration (B269's `controls: {}`) still needs a
      manual copy into every open variant plus `sketch rebase --ported`.
 
+321. The render-error badge sketch (B261, 0eb774996, builder, 2026-11-03) needed the same manual step as B253: variants
+     copied before B269 lacked `controls: {}` and passed ready only after a hand copy plus `sketch rebase --ported`.
+     The second hit in one day moves the low-priority note of finding 320 into the queue. Why no tool caught it: sketch
+     rebase does not compare a part's declaration (controls, motions, states) between Aktuell and the variants.
+     Decision (technical, B274): `sketch rebase` carries a declaration-only change of the part into every open variant
+     on its own and prints what it carried; a spec rebases a sketch after `controls: {}` is added to the part.
+     Also from B261: the new `failed` state does not fit the exported SketchStatus (pages/sketches tags map, TS7053),
+     so the variants use SketchBadgeStatus = SketchStatus | 'failed'. A merge adds `failed` to SketchStatus and the
+     tags map instead; showing the badge on the sketches page is its own pages/sketches sketch after the pick.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
