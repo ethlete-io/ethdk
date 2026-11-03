@@ -4295,6 +4295,14 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      demands a sketch even when the HEAD app matches its design. Fix: the gate judges a state with no base
      picture against its design and passes it when the app matches. The withdrawn sketch was never committed.
 
+343. Tom (2026-11-04, screenshot of the components/shell-project-switch grid, row open): the cells that render
+     as a live iframe (rest, hover, active) clip the open project list to two rows and show a scrollbar; the cell
+     that renders as a static picture (focus-visible) shows the full list with "design-playground" and "Projekt
+     öffnen…". So one part draws two different looks, depending on how the cell renders. Tom's call: when a part
+     can hold a scroll container, the design draws both cases on purpose - a state where the content fits, and a
+     state where it is scrollable. Open: give the scrollable parts an explicit scrolled state, and make iframe and
+     static cells size the same content the same way, so the scrollbar only shows in the state that asks for it.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
