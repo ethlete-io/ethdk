@@ -3057,11 +3057,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 
 228. pages/sketches clips its canvas at the panel edge (Tom, 2026-11-03, screenshots; recurring, Tom: "this error is
      made here constantly"): in `unchanged-matrix-open` the variant head with "Übernehmen" is cut at the right edge of
-     the tree panel. The app canvas runs full width under the floating panel (finding 44); the sketches design draws its
-     own canvas box with `left: calc(var(--st-shell-inset-left) + var(--space-5))` and `overflow-clip`
-     (sketches.ts:325). Tom: the design follows the app as built. Go on round 2 stays; the fix comes as a design change
-     with a new go. Why no tool caught it: (1) sketches hand-draws its canvas viewport instead of the shared
-     `canvasView` from `elements/canvas-frames` that system uses, so the finding-44 fix never reached it (rule 1: one
-     canvas); (2) the Impl Q78 edge state (a sample crossing the panel edge) exists for system only; nothing makes a
-     canvas page without one fail. Lesson: a fix to a shared shape that pages copy instead of import reaches only the
-     page that imports it. Tool fix: open, put to Tom.
+     the tree panel (68 of 108 px). The app canvas runs full width under the floating panel and clips only at the
+     shell-main edge (finding 44); round 2 added `overflow-x: clip` on a hand-drawn canvas box at
+     `left: calc(var(--st-shell-inset-left) + var(--space-5))` (sketches.ts:325). Second cause: the variant head never
+     sticks; only the state-name gutter follows the pan (`.sk-gutter`, `translateX(var(--sk-pan-x))`). Tom: the
+     design follows the app as built; go on round 2 stays, the fix comes as a design change with a new go. Why no
+     tool caught it (builder, measured): (1) the page root carries `data-et-skip="CLIPPED"`, which every descendant
+     inherits, so no clip check ran on the page; (2) no rule measures an interactive control against its clipping
+     ancestor; (3) sketches hand-draws its canvas box instead of the shared `canvasView` from
+     `elements/canvas-frames` (rule 1: one canvas), so the finding-44 fix never reached it; (4) compare takes the
+     design as truth and would have asked to copy the clip into the app. States that cross the edge existed
+     (zoomed-page, sticky-names, unchanged-matrix*); only a human saw the picture. Lesson: a fix to a shared shape
+     that pages copy instead of import reaches only the page that imports it, and a skip on a page root silences a
+     whole page. Tool fix: CUT-CONTROL rule (own code, a CLIPPED skip does not silence it); a CLIPPED skip may not
+     sit on an ancestor of an interactive control; shared canvas enforced by check (open, put to Tom).
