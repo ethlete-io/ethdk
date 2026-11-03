@@ -3480,4 +3480,9 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      its status as a gate, not as a state to refresh; go entries carry no writer, so a rewrite is untraceable. Fix
      (technical): into B220 - `sketch ready` on a ready sketch with a refreshed base re-readies and exits 0 ("still
      ready, base refreshed"); B223 - every go.json write names its command, and `by` is never rewritten on a refresh
-     (cause of the "user" value: open, builder to find).
+     Cause (builder): no `by` was rewritten - the 127 lines only reorder keys; the "user" line is a diff alignment
+     artifact. The CLI writer sorts keys on every write; the hand copy-aside hunk commit e2f9391d7 appended three new
+     entries instead, and every later hunk commit kept that order. Fix: into B204 - commit-hunks writes keys in the
+     writer's sorted order (spec: committed file equals the writer's output), reports a semantically empty hunk as
+     "order only", and the manual copy-aside rule leaves the brief once B204 covers every file. The sorted go.json is
+     committed as-is.
