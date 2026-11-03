@@ -474,7 +474,7 @@ sketch` zeigen ihn (Befund 180).
 - **E6** Entwürfe vor der Rückkehr: Chat, Notizen, Menü-Einträge, Server-Status, Scan, Update-Hinweis, „Ausnahmen N“,
   Inventar-Einstieg, „Alle Produkte“.
 - **E7** Sketch-Ansicht: kommen Ablehnen, Notizen und Diff-Listen zurück, und wo?
-- **E8** Zwei Designer: was muss ein Designer sehen? Tom denkt an Echtzeit wie in Figma.
+- **E8** Zwei Designer: was muss ein Designer sehen? Tom denkt an Echtzeit wie in Figma. Dazu Benutzerrollen und Rechte (Designer/Entwickler), aus A10 hierher verschoben (Tom, 03.11.).
 - **E9** Live-iframes im Raster und Nachbarschaft im Sketch: erst messen, dann entscheiden.
 - **E10** `floating-action`: Normalisierung erweitern oder `fa-page` behalten?
 - **E11** Öffentliche Fokus-Rahmen-Tokens: SDK-API-Entscheidung.

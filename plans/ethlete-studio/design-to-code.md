@@ -3861,4 +3861,7 @@ Technical (doc agent): `design task` gates on build-ready and names the red chec
 is always on; go.actions/review carry moves to the ready mark; pictures.json kind go is rekeyed to ready; remove
 go.json, accepted.json, the go-*.ts commands, the Studio give-go and accept buttons and endpoints, the git-safety
 go rule, and the go docs, with a migration that deletes both files. Built as B249 (build-ready + removal), B250
-(designer/developer split check), B251 (undesigned-state sketch + required data states).
+(designer/developer split check), B251 (undesigned-state sketch + required data states). 7. User roles (Tom): none now. Designer part and developer part are properties of the part that tools check, not
+of a person; the only human decision stays the sketch pick, with `by` as today. Roles and rights come with E8
+(two designers on one design, multi-user sessions). 8. Solo case (Tom builds Studio as designer and developer, the builder agent does the developer work): the same
+flow as a team. An undesigned state the builder renders becomes a sketch that Tom picks. No solo shortcut.
