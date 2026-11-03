@@ -30,7 +30,7 @@ describe('TreeRowComponent', () => {
     ]);
   });
 
-  it('fires rowPress with the row on click and Enter', async () => {
+  it('fires rowPress with the row on click, Enter and Space', async () => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
     });
@@ -39,6 +39,7 @@ describe('TreeRowComponent', () => {
     const rows = [
       { label: 'Components', depth: 0, kind: 'group' as const, expanded: true },
       { label: 'empty', depth: 1, kind: 'leaf' as const },
+      { label: 'filled', depth: 1, kind: 'leaf' as const },
     ];
     const pressed: string[] = [];
 
@@ -51,6 +52,8 @@ describe('TreeRowComponent', () => {
     items[0]?.click();
     items[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
-    expect(pressed).toEqual(['Components', 'empty']);
+    items[2]?.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+    expect(pressed).toEqual(['Components', 'empty', 'filled']);
   });
 });

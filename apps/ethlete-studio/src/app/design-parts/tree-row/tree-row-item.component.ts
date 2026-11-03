@@ -129,6 +129,7 @@ const SELECTED_CLASS =
     '[attr.aria-current]': 'item().selected ? "true" : null',
     '(click)': 'rowPress.emit()',
     '(keydown.enter)': 'rowPress.emit()',
+    '(keydown.space)': 'rowPress.emit(); $event.preventDefault()',
   },
 })
 export class TreeRowItemComponent {
