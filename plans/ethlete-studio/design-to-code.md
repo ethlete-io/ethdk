@@ -3904,6 +3904,27 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      Fix (B258, decided, technical): find the nondeterministic source in the merge thumbnails and make it stable.
      `design shot` runs each state twice and reports a part whose two runs differ as a problem.
 
+308. Owner of the canvas e2e red "a listing refresh re-navigates no iframe" (B232, finding 287), found by bisect
+     (builder, 2026-11-03). First bad commit is 030fe2f36 ("Draw the round 2 Sketches page in the sketch view"); its parent
+     f05409524 passes with 0 navigations. B241 is not the owner. Mechanism: the iframes are destroyed and recreated, not
+     re-navigated. Each refresh reads the listing twice (concat(quick, full), system-view.component.ts:511). The quick
+     read has no `unchanged` list, so every shot gets changed:null (system-tree.ts:1382), and an all-unchanged variant row
+     lands in changedRows, which renders its iframes. The full read then sets changed:false, and sameRows
+     (sketches.component.ts:243-250) moves the row into the collapsed "same" group, so the iframes are destroyed. This
+     repeats on every refresh. The sketch view shares the path, but it only flashes all-unchanged variants, so it does not
+     explain Tom's single slow frame (finding 306). Untested candidate for that: sketchRevisionOf
+     (studio-view/frame-revisions.ts:109-123) gives one revision to the whole sketch, so any redraw changes every frame's
+     src. Why no tool caught it: when 030fe2f36 landed, the canvas suite crashed in setup (it ran `git archive` on the
+     elements-shell-main sketch, which 5a29b1b94 had deleted, from 155777af9 to 8d5d281cb), and before 03d197841 e2e-check
+     did not count a crash before the first case as a failure. When the suite ran again, finding 287 filed the red as a
+     separate bug without a bisect. The STATUS B197 line "e2e-check 4221e7cb3: canvas 104/105" cannot be true, because
+     that revision's own suite crashes in setup, so the run used an uncommitted tree. Fix (B232, decided, technical): the
+     quick read's changed:null means "unknown" and keeps a row in its previous group until the full listing arrives.
+     Fix (B259, decided, technical): e2e-check always runs the suite from a clean worktree of the named revision, never
+     from the working tree, and prints the suite's own sha. A red that appears in an e2e run is bisected before it is filed
+     as a separate bug. Fix (B260, decided, technical): probe sketchRevisionOf. If a redraw reloads unchanged frames, the
+     revision becomes per frame (one picture, one revision).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
