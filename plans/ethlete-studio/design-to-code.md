@@ -3054,3 +3054,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      unfocused goal state (DIFF 427 px). Lesson: a keyboard press leaves focus, a click path does not, so the same
      action has two end states and the check knew one. Tool fix (B136, in the tree, unverified): normalize focus
      before the goal comparison of a key press. The "PICTURES CHANGED drawing" trace has no result yet.
+
+228. pages/sketches clips its canvas at the panel edge (Tom, 2026-11-03, screenshots; recurring, Tom: "this error is
+     made here constantly"): in `unchanged-matrix-open` the variant head with "Übernehmen" is cut at the right edge of
+     the tree panel. The app canvas runs full width under the floating panel (finding 44); the sketches design draws its
+     own canvas box with `left: calc(var(--st-shell-inset-left) + var(--space-5))` and `overflow-clip`
+     (sketches.ts:325). Tom: the design follows the app as built. Go on round 2 stays; the fix comes as a design change
+     with a new go. Why no tool caught it: (1) sketches hand-draws its canvas viewport instead of the shared
+     `canvasView` from `elements/canvas-frames` that system uses, so the finding-44 fix never reached it (rule 1: one
+     canvas); (2) the Impl Q78 edge state (a sample crossing the panel edge) exists for system only; nothing makes a
+     canvas page without one fail. Lesson: a fix to a shared shape that pages copy instead of import reaches only the
+     page that imports it. Tool fix: open, put to Tom.
