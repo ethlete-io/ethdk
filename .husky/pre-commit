@@ -22,5 +22,6 @@ fi
 
 # Runs the Studio and cli specs related to the staged files against a checkout of the index, so the
 # commit is tested as it will land, never against uncommitted edits of other sessions in this checkout.
-# yarn commit already ran them before taking the lock; it passes PRECOMMIT_SPECS_TREE, and only that exact tree skips.
+# yarn commit already ran them before taking the lock and passes PRECOMMIT_SPECS_TREE; the hook skips when the staged
+# tree equals it or differs only by files that select no specs (commits other sessions landed meanwhile).
 node ./tools/scripts/precommit-specs.mjs

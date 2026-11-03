@@ -61,6 +61,7 @@ const repoWithCommitTool = () => {
     'tools/scripts/link-node-modules.mjs',
     'tools/scripts/cli-related-map.mjs',
     'tools/scripts/lint-css-properties.js',
+    'tools/scripts/lint-changesets.js',
   ]) {
     mkdirSync(dirname(join(repo, file)), { recursive: true });
     copyFileSync(join(sdk, file), join(repo, file));
@@ -113,6 +114,47 @@ test('runs the path specs before the lock in a worktree without foreign edits, a
   assert.deepEqual(run('git', ['show', '--name-only', '--format=', 'HEAD']).stdout.trim().split('\n'), [
     'libs/cli/src/lock.spec.ts',
   ]);
+  assert.equal(worktrees(), 1);
+  assert.deepEqual(leftovers(tmp), []);
+});
+
+test('a new untracked changeset needs no git add, and a docs commit landing during the specs keeps the hook skip', () => {
+  const { repo, tmp, run, yarnCommit, worktrees } = repoWithCommitTool();
+  const ran = join(tmp, '..', `${basename(repo)}-race-ran`);
+  created.push(ran);
+  put(
+    repo,
+    'libs/cli/src/race.spec.ts',
+    `import { spawnSync } from 'node:child_process';\nimport { existsSync, writeFileSync } from 'node:fs';\nimport { expect, test } from 'vitest';\nimport { value } from './value';\n\ntest('race', () => {\n  expect(value).toBe(1);\n  if (existsSync(${JSON.stringify(ran)})) return;\n  writeFileSync(${JSON.stringify(ran)}, '');\n  writeFileSync(${JSON.stringify(join(repo, 'plans/STATUS.md'))}, 'B204\\n');\n  const git = (args) => spawnSync('git', args, { cwd: ${JSON.stringify(repo)} }).status;\n  expect(git(['commit', '-qm', 'docs(repo): Record B204', '--', 'plans/STATUS.md'])).toBe(0);\n});\n`,
+  );
+  put(repo, 'plans/STATUS.md', 'B203\n');
+  writeFileSync(ran, '');
+  assert.equal(run('git', ['add', 'libs/cli/src/race.spec.ts', 'plans/STATUS.md']).status, 0);
+  assert.equal(run('git', ['commit', '-qm', 'race', '--', 'libs/cli/src/race.spec.ts', 'plans/STATUS.md']).status, 0);
+  rmSync(ran);
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 2 - 1;\n');
+  put(
+    repo,
+    '.changeset/studio-vitest-console-error.md',
+    "---\n'ethlete-studio': none\n---\n\nThe Studio vitest setup stubs `ResizeObserver` and `document.fonts`, and fails any spec that logs `console.error`.\n",
+  );
+
+  const result = yarnCommit([
+    '-qm',
+    'test(repo): Fail Studio specs that log console.error',
+    '--',
+    'libs/cli/src/value.ts',
+    '.changeset/studio-vitest-console-error.md',
+  ]);
+
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /specs already ran in yarn commit; the 1 files committed since select no specs/);
+  assert.equal(result.stdout.match(/Test Files/g)?.length, 1, result.stdout);
+  assert.deepEqual(run('git', ['show', '--name-only', '--format=', 'HEAD']).stdout.trim().split('\n'), [
+    '.changeset/studio-vitest-console-error.md',
+    'libs/cli/src/value.ts',
+  ]);
+  assert.equal(run('git', ['log', '-1', '--format=%s', 'HEAD^']).stdout.trim(), 'docs(repo): Record B204');
   assert.equal(worktrees(), 1);
   assert.deepEqual(leftovers(tmp), []);
 });

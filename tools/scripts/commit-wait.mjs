@@ -27,6 +27,28 @@ export const waitForLock = async (lock, { intervalMs = 500, reportMs = 15000, lo
   }
 };
 
+const holdsLock = (result) => result.status !== 0 && /index\.lock/.test(result.stderr);
+
+const untrackedPaths = (root, paths) =>
+  spawnSync('git', ['ls-files', '-z', '--others', '--exclude-standard', '--', ...paths], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+    .stdout.split('\0')
+    .filter(Boolean);
+
+const addUntracked = async (root, lock, paths) => {
+  const fresh = untrackedPaths(root, paths);
+  if (!fresh.length) return 0;
+  for (;;) {
+    await waitForLock(lock);
+    const added = spawnSync('git', ['add', '--', ...fresh], { cwd: root, encoding: 'utf8' });
+    if (holdsLock(added)) continue;
+    process.stderr.write(added.stderr);
+    return added.status ?? 1;
+  }
+};
+
 export const commit = async (root, args) => {
   const separator = args.indexOf('--');
   const paths = separator === -1 ? [] : args.slice(separator + 1);
@@ -39,7 +61,10 @@ export const commit = async (root, args) => {
     env[TESTED_TREE_ENV] = specs.tree;
   }
 
-  await waitForLock(join(gitDir(root), 'index.lock'));
+  const lock = join(gitDir(root), 'index.lock');
+  const added = await addUntracked(root, lock, paths);
+  if (added !== 0) return added;
+  await waitForLock(lock);
   return spawnSync('git', ['commit', ...args], { cwd: root, env, stdio: 'inherit' }).status ?? 1;
 };
 

@@ -67,6 +67,9 @@ const relatedMapAt = (root, rev) => {
   return map.status === 0 ? JSON.parse(map.stdout) : {};
 };
 
+const selectsNoSpecs = (root, files, rev) =>
+  !files.length || isDocsOnly(files) || !suitesForFiles(files, relatedMapAt(root, rev)).length;
+
 const runSuites = (checkout, suites) => {
   for (const suite of suites) {
     const run = runVitest(join(checkout, suite.cwd), [
@@ -144,9 +147,8 @@ export const runPathSpecs = (root, paths) => {
       [],
     );
   const files = changes.filter((change) => change.status !== 'D').map((change) => change.file);
-  if (!files.length || isDocsOnly(files)) return { status: 0, tree };
+  if (selectsNoSpecs(root, files, tree)) return { status: 0, tree };
   const suites = suitesForFiles(files, relatedMapAt(root, tree));
-  if (!suites.length) return { status: 0, tree };
 
   const worktree = join(mkdtempSync(join(tmpdir(), 'yarn-commit-')), 'tree');
   const cleanup = () => removeWorktree(root, worktree);
@@ -178,17 +180,37 @@ export const runPathSpecs = (root, paths) => {
   }
 };
 
-export const runStagedSpecs = (root) => {
+const changedSinceTested = (root, tested, staged) => {
+  const diff = spawnSync('git', ['diff-tree', '-r', '--name-only', '--no-renames', '-z', tested, staged], {
+    cwd: root,
+    env: withoutGitEnv(),
+    encoding: 'utf8',
+  });
+  return diff.status === 0 ? diff.stdout.split('\0').filter(Boolean) : null;
+};
+
+const alreadyTested = (root) => {
   const tested = process.env[TESTED_TREE_ENV];
-  if (tested && tested === stagedTree(root)) {
+  if (!tested) return false;
+  const staged = stagedTree(root);
+  if (tested === staged) {
     console.error('pre-commit: specs already ran for this exact tree in yarn commit; skipping them.');
-    return 0;
+    return true;
   }
+  const changed = changedSinceTested(root, tested, staged);
+  if (!changed || !selectsNoSpecs(root, changed, staged)) return false;
+  console.error(
+    `pre-commit: specs already ran in yarn commit; the ${changed.length} files committed since select no specs; skipping them.`,
+  );
+  return true;
+};
+
+export const runStagedSpecs = (root) => {
+  if (alreadyTested(root)) return 0;
 
   const files = git(root, ['diff', '--cached', '--name-only', '--diff-filter=ACM', '-z']).split('\0').filter(Boolean);
-  if (!files.length || isDocsOnly(files)) return 0;
+  if (selectsNoSpecs(root, files, '')) return 0;
   const suites = suitesForFiles(files, relatedMapAt(root, ''));
-  if (!suites.length) return 0;
 
   const checkout = mkdtempSync(join(tmpdir(), 'pre-commit-'));
 
