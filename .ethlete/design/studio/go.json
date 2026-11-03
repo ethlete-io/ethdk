@@ -972,7 +972,7 @@
     "auto": true
   },
   "pages/system": {
-    "hash": "dc365bb1feecf99f",
+    "hash": "0ceac56c458efee4",
     "files": {
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.css": "cc95cf5e7b73338f",
       ".ethlete/design/sdk/components/anchored-dialog/anchored-dialog.ts": "330868da6086adf8",
@@ -1036,7 +1036,7 @@
       ".ethlete/design/studio/elements/studio-menu/studio-menu.ts": "bf1bed223e86405f",
       ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464",
       ".ethlete/design/studio/foundations/logo/logo.ts": "c6fdcd018df6d00f",
-      ".ethlete/design/studio/pages/system/shared/capabilities.ts": "f9fd9a1f6fa35001",
+      ".ethlete/design/studio/pages/system/shared/capabilities.ts": "0052ac3a3f9868c6",
       ".ethlete/design/studio/pages/system/shared/many-states.ts": "c135fda5d1f832db",
       ".ethlete/design/studio/pages/system/shared/open-points.ts": "5de98752abfaa910",
       ".ethlete/design/studio/pages/system/system.ts": "d1c5386ccbc11333",
@@ -1088,7 +1088,7 @@
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
     },
     "by": "user",
-    "at": "2026-11-03T15:51:51.310Z",
+    "at": "2026-11-03T16:45:24.118Z",
     "note": "studio click",
     "actions": [
       "comment-draft",
