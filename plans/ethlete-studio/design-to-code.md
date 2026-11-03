@@ -3774,3 +3774,6 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      plain `git commit -i -- <path>`), red-check RED (3 cases); a real hook probe (5-param arrow in libs/cli) was
      refused by max-params in 5 s. Not verified: the eslint-rules specs of `yarn test:tools`
      (apps/ethlete-studio/eslint-rules) are still not selected by a commit.
+     Decided (doc agent) on the eslint-rules gap: B245b, technical, but general rather than one more directory. `yarn
+commit` derives the selection from the spec list of `yarn test:tools`: a staged file in a directory that holds
+     such specs runs those specs. A new directory in test:tools is then covered without another patch.
