@@ -109,7 +109,7 @@ export const variantProblemsOf = (options: {
       carriedWasThere.has(problem) ||
       had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
     const found = [...laidOver, ...carried.map(({ problem }) => problem)];
-    const target = overlaid.parts.find((part) => partKeyOf(part) === options.sketch.target);
+    const target = overlaid.parts.find((part) => partKeyOf(part) === partKeyOf(options.sketch));
     const metadataProblem: Problem[] =
       target && (withNote(target.source, '') === null || withMadeBy(target.source, ['author']) === null)
         ? [

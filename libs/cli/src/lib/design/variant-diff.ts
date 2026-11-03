@@ -51,7 +51,7 @@ export const diffVariant = async (options: {
   load: VariantPartLoad;
 }): Promise<VariantDiff> => {
   const { product, sketch, variant, size, params, pictureOf, boxOf, load } = options;
-  const target = options.part ?? sketch.target;
+  const target = options.part ?? partKeyOf(sketch);
   const drawn: SketchVariant = { target: sketch.target, variant };
   const file = overlaySketch({ product, sketch, variant }).parts.find((part) => partKeyOf(part) === target)?.file;
   const current = product.parts.find((part) => partKeyOf(part) === target);
