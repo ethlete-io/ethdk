@@ -7,7 +7,8 @@ export type StateDiff =
   | { state: string; kind: 'differs'; base: number; head: number; diff: Buffer }
   | { state: string; kind: 'new' }
   | { state: string; kind: 'broken'; problem: string }
-  | { state: string; kind: 'unjudged'; problem: string };
+  | { state: string; kind: 'unjudged'; problem: string }
+  | { state: string; kind: 'undrivable'; problem: string };
 
 export type PartDiff = { part: string; states: StateDiff[] };
 
@@ -21,6 +22,7 @@ export type VisibleChangeVerdict = {
   changed: string[];
   unjudged: string[];
   reasons: string[];
+  undrivable: string[];
 };
 
 const DIFF_RED = 0xff0000ff;
@@ -47,7 +49,11 @@ export const stateDiffOf = (options: { base: StateShot | null; head: StateShot }
   if ('problem' in head)
     return base && !('problem' in base)
       ? { state, kind: 'broken', problem: head.problem }
-      : { state, kind: 'unjudged', problem: head.problem };
+      : {
+          state,
+          kind: head.undrivable && base && 'problem' in base && base.undrivable ? 'undrivable' : 'unjudged',
+          problem: head.problem,
+        };
   if (!base || 'problem' in base) return { state, kind: 'new' };
 
   const change = comparePngs({ design: base.app, app: head.app });
@@ -86,9 +92,40 @@ export const sketchedPartsOf = (evidence: SketchEvidence[]) => {
   return parts;
 };
 
+const mergedEntriesOf = (text: string | null): Record<string, unknown> => {
+  try {
+    const parsed: unknown = JSON.parse(text ?? '{}');
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const decisionOf = (entry: unknown) =>
+  entry && typeof entry === 'object' && !Array.isArray(entry)
+    ? JSON.stringify({ ...(entry as Record<string, unknown>), hash: null })
+    : null;
+
+/**
+ * The parts a sketch merge recorded in `merged.json` between the base and HEAD: a part first recorded there, or one
+ * whose recorded pick changed. A hash refresh alone is no merge.
+ */
+export const mergedPartsOf = (options: { base: string | null; head: string | null }) => {
+  const base = mergedEntriesOf(options.base);
+  const head = mergedEntriesOf(options.head);
+
+  return new Set(
+    Object.entries(head).flatMap(([part, entry]) =>
+      !(part in base) || (decisionOf(entry) !== null && decisionOf(entry) !== decisionOf(base[part])) ? [part] : [],
+    ),
+  );
+};
+
 /**
  * A part passes when its app draws alike at base and HEAD, when a picked or merged sketch of it is in the range, or
- * when every changed state is strictly closer to HEAD's design. A state HEAD can no longer draw always fails, and so does any state the gate could not judge.
+ * when every changed state is strictly closer to HEAD's design. A state HEAD can no longer draw always fails, and so does any state the gate could not judge,
+ * but a state neither app has an element to force the design's interaction on: that is a problem of the part, listed as `undrivable`.
  */
 export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<string> }): VisibleChangeVerdict => {
   const { part, states } = options.diff;
@@ -96,6 +133,7 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
   const unjudgedStates = states.filter((state) => state.kind === 'unjudged');
   const unjudged = unjudgedStates.map((state) => state.state);
   const reasons = [...new Set(unjudgedStates.map((state) => (state.kind === 'unjudged' ? state.problem : '')))];
+  const undrivable = states.filter((state) => state.kind === 'undrivable').map((state) => state.state);
   const verdict = (pass: boolean, why: VisibleChangeVerdict['why']): VisibleChangeVerdict => ({
     part,
     pass,
@@ -103,6 +141,7 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
     changed: changed.map((state) => state.state),
     unjudged,
     reasons,
+    undrivable,
   });
 
   if (changed.some((state) => state.kind === 'broken')) return verdict(false, 'broken');
@@ -123,12 +162,17 @@ export const visibleChangeSummaryOf = (options: {
 }) => {
   const { verdicts, range, seconds } = options;
   const failed = options.problems + verdicts.filter((verdict) => !verdict.pass).length;
-  const unjudged = verdicts.filter((verdict) => verdict.unjudged.length > 0);
-  const count = unjudged.reduce((sum, verdict) => sum + verdict.unjudged.length, 0);
-  const list =
-    count === 0
+  const listOf = (what: string, of: (verdict: VisibleChangeVerdict) => string[]) => {
+    const listed = verdicts.filter((verdict) => of(verdict).length > 0);
+    const count = listed.reduce((sum, verdict) => sum + of(verdict).length, 0);
+
+    return count === 0
       ? ''
-      : ` - ${count} state(s) unjudged: ${unjudged.map((verdict) => `${verdict.part} (${verdict.unjudged.join(', ')})`).join('; ')}`;
+      : ` - ${count} state(s) ${what}: ${listed.map((verdict) => `${verdict.part} (${of(verdict).join(', ')})`).join('; ')}`;
+  };
+  const list =
+    listOf('unjudged', (verdict) => verdict.unjudged) +
+    listOf('undrivable, a problem of the part', (verdict) => verdict.undrivable);
 
   return failed === 0
     ? `No part looks different in ${range} without a sketch (${seconds} s)${list}.`

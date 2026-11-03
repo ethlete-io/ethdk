@@ -41,7 +41,9 @@ import { drawnStateNamesOf } from './unchanged-rows';
 export const COMPARE_USAGE =
   'compare <layer>/<name> | --all --product <name> [--url <app dev server url>] [--state <name>] [--preset <name>] [--live [--sketch <variant>]]';
 
-export type StateShot = { state: string; design: Buffer; app: Buffer } | { state: string; problem: string };
+/** A state compare could not draw; `undrivable` when the app has no element to force the design's interaction on. */
+export type StateShot =
+  { state: string; design: Buffer; app: Buffer } | { state: string; problem: string; undrivable?: true };
 
 export type ShootStates = (options: {
   target: string;
@@ -52,6 +54,8 @@ export type ShootStates = (options: {
   only: string | null;
   preset?: string | null;
   sketch?: string | null;
+  /** Draws the app even for a state compare cannot check against its design: one that differs only inside slots, or sends props the app has no input for. */
+  appOnly?: boolean;
 }) => Promise<{ states: Record<string, unknown>; shots: StateShot[] } | string>;
 
 export type ComparePart = (options: {
@@ -72,6 +76,8 @@ const ROOM_PX = 1024;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 class HarnessError extends Error {}
+
+class UndrivableError extends HarnessError {}
 
 class DroppedPropsError extends Error {}
 
@@ -207,7 +213,7 @@ const forcedTargetOf = async (options: {
   const { interaction, label, role, text } = forced;
 
   if (label === null && text === '')
-    throw new HarnessError(
+    throw new UndrivableError(
       `the design forces ${interaction} on a <${role}> without an aria-label or text - compare cannot find it in the app`,
     );
 
@@ -230,13 +236,13 @@ const forcedTargetOf = async (options: {
 
       if (count === 1) return matches;
       if (count > 1)
-        throw new HarnessError(
+        throw new UndrivableError(
           `the harness page ${url} has ${count} elements with ${named} to force ${interaction} on`,
         );
     }
 
     if (Date.now() > deadline)
-      throw new HarnessError(`the harness page ${url} has no element with ${named} to force ${interaction} on`);
+      throw new UndrivableError(`the harness page ${url} has no element with ${named} to force ${interaction} on`);
 
     await page.waitForTimeout(FORCED_POLL_MS);
   }
@@ -326,7 +332,7 @@ export const harnessShotOf = async (options: {
         await page.keyboard.press('Shift');
         await element.focus({ timeout });
       } else
-        throw new HarnessError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
+        throw new UndrivableError(`compare cannot force ${interaction} on "${forced.label ?? forced.text}" in the app`);
     }
 
     if (!(await settledPanesOf({ page, count: options.panes ?? 0, timeout })))
@@ -385,7 +391,7 @@ export const harnessShotOf = async (options: {
 };
 
 /** Draws each state of a part, or the `only` one, as its design frame and as the app's harness page, in one Chromium. */
-export const shootStates: ShootStates = async ({ target, config, product, part, url, only, preset }) => {
+export const shootStates: ShootStates = async ({ target, config, product, part, url, only, preset, appOnly }) => {
   const frame = compareFrameOf({ presets: product.presets, part, preset: preset ?? null });
 
   if (typeof frame === 'string') return frame;
@@ -470,7 +476,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
 
       const base = slotOnly.get(state);
 
-      if (base !== undefined) {
+      if (base !== undefined && !appOnly) {
         shots.push({
           state,
           problem: `draws like ${base} once compare empties its slots - it differs from ${base} only inside slot() regions, so compare cannot check it`,
@@ -493,26 +499,31 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           size: frame.size,
           width,
           forced,
-          props: {
-            sent,
-            designOnly: new Set([
-              ...designOnlyPropsOf({
-                states,
-                opens,
-                state,
-                forced: forced.map(({ interaction }) => interaction),
-                forcing,
-                selected: drawsSelectedOf(design.markup ?? ''),
+          ...(appOnly
+            ? {}
+            : {
+                props: {
+                  sent,
+                  designOnly: new Set([
+                    ...designOnlyPropsOf({
+                      states,
+                      opens,
+                      state,
+                      forced: forced.map(({ interaction }) => interaction),
+                      forcing,
+                      selected: drawsSelectedOf(design.markup ?? ''),
+                    }),
+                    ...sampled,
+                  ]),
+                },
               }),
-              ...sampled,
-            ]),
-          },
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           panes: drawnPaneCountOf(design.markup ?? ''),
           frozen: frozenAnimationsOf(design.markup ?? ''),
           ...(open ? { opened: { control: open.control, markup: design.markup ?? '' } } : {}),
         }).catch((error: unknown) => {
           if (error instanceof DroppedPropsError) return { problem: error.message };
+          if (error instanceof UndrivableError) return { problem: error.message, undrivable: true as const };
 
           throw error;
         }),

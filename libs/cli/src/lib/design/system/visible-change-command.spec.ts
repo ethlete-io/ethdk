@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { sketchedPartsOf } from './visible-change';
-import { baseCommitOf, sketchEvidenceOf } from './visible-change-command';
+import { baseCommitOf, mergedInRangeOf, sketchEvidenceOf } from './visible-change-command';
 
 const repoOf = () => {
   const root = mkdtempSync(join(tmpdir(), 'et-visible-change-spec-'));
@@ -56,6 +56,31 @@ describe('sketchEvidenceOf', () => {
       expect(sketchedPartsOf(evidence)).toEqual(new Set(['components/badge', 'pages/home', 'components/chip']));
       expect(baseCommitOf({ root, base })).toBe(base);
       expect(baseCommitOf({ root, base: 'nope' })).toBe('no commit "nope"');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('mergedInRangeOf', () => {
+  it('finds a part a merge recorded in merged.json in base..HEAD with no sketch.json ever committed', () => {
+    const { root, git, write } = repoOf();
+    const dir = '.ethlete/design/app';
+
+    try {
+      write(`${dir}/merged.json`, { 'components/chip': 'abc' });
+      git('add', '.');
+      git('commit', '--quiet', '-m', 'base');
+
+      const base = git('rev-parse', 'HEAD');
+
+      write(`${dir}/merged.json`, { 'components/chip': 'abd', 'components/update-dialog': 'def' });
+      git('add', '.');
+      git('commit', '--quiet', '-m', 'merge');
+
+      expect(mergedInRangeOf({ root, base, productDir: join(root, dir) })).toEqual(
+        new Set(['components/update-dialog']),
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

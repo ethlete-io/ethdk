@@ -20,6 +20,7 @@ import { harnessEntriesOf, harnessOf, harnessStaleOf } from './harness-map';
 import { HarnessServer, startHarnessServer, StartHarnessServer } from './harness-server';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
 import {
+  mergedPartsOf,
   PartDiff,
   SketchEvidence,
   sketchedPartsOf,
@@ -83,6 +84,16 @@ export const sketchEvidenceOf = (options: { root: string; base: string; productD
   }
 
   return evidence;
+};
+
+/** The parts a sketch merge recorded in the product's `merged.json` in base..HEAD, also of a sketch never committed. */
+export const mergedInRangeOf = (options: { root: string; base: string; productDir: string }) => {
+  const file = `${relative(options.root, options.productDir)}/merged.json`;
+
+  return mergedPartsOf({
+    base: gitOrNull(options.root, ['show', `${options.base}:${file}`]),
+    head: gitOrNull(options.root, ['show', `HEAD:${file}`]),
+  });
 };
 
 const linkNodeModules = (options: { root: string; clone: string }) => {
@@ -172,7 +183,7 @@ const stateLineOf = (state: StateDiff) =>
     ? `${state.state} differs (${state.base} -> ${state.head} px off the design)`
     : state.kind === 'new'
       ? `${state.state} has no base picture`
-      : state.kind === 'broken' || state.kind === 'unjudged'
+      : state.kind === 'broken' || state.kind === 'unjudged' || state.kind === 'undrivable'
         ? `${state.state} ${state.kind}: ${state.problem}`
         : `${state.state} same`;
 
@@ -203,7 +214,7 @@ const shotsOf = async (options: {
   part: string;
   url: string;
 }) => {
-  const shot = await options.shoot({ ...options, url: options.url, only: null });
+  const shot = await options.shoot({ ...options, url: options.url, only: null, appOnly: true });
 
   return typeof shot === 'string' ? shot : shot.shots;
 };
@@ -303,7 +314,10 @@ export const checkVisibleChange = async (options: {
         console.log(`${name}: the base harness app did not start, so every part counts as new: ${base}`);
 
       const baseUrl = base && typeof base !== 'string' ? base.url : null;
-      const sketched = sketchedPartsOf(sketchEvidenceOf({ root, base: commit, productDir: product.dir }));
+      const sketched = new Set([
+        ...sketchedPartsOf(sketchEvidenceOf({ root, base: commit, productDir: product.dir })),
+        ...mergedInRangeOf({ root, base: commit, productDir: product.dir }),
+      ]);
       let pictures: string | null = null;
 
       for (const { part } of entries.filter((candidate) => !options.parts || options.parts.includes(candidate.part))) {
@@ -328,7 +342,7 @@ export const checkVisibleChange = async (options: {
 
         for (const state of states) {
           if (state.kind === 'same') continue;
-          if (verdict.why !== 'invisible') console.log(`  ${stateLineOf(state)}`);
+          if (verdict.why !== 'invisible' || state.kind === 'undrivable') console.log(`  ${stateLineOf(state)}`);
           if (state.kind !== 'differs') continue;
 
           pictures ??= mkdtempSync(join(tmpdir(), 'et-design-visible-change-'));

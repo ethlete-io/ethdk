@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { encodePng, Pixels } from './part-compare';
 import {
   deviationOf,
+  mergedPartsOf,
   PartDiff,
   sketchedPartsOf,
   stateDiffOf,
@@ -64,6 +65,43 @@ describe('stateDiffOf', () => {
       state: 's',
       kind: 'new',
     });
+  });
+
+  it('is undrivable only when neither app has an element to force the interaction on', () => {
+    const undrivable = { state: 's', problem: 'no "49 offen" button', undrivable: true as const };
+
+    expect(stateDiffOf({ base: undrivable, head: undrivable })).toEqual({
+      state: 's',
+      kind: 'undrivable',
+      problem: 'no "49 offen" button',
+    });
+    expect(stateDiffOf({ base: { state: 's', problem: 'old' }, head: undrivable })).toMatchObject({ kind: 'unjudged' });
+    expect(stateDiffOf({ base: null, head: undrivable })).toMatchObject({ kind: 'unjudged' });
+    expect(stateDiffOf({ base: { state: 's', design, app: oneOff }, head: undrivable })).toMatchObject({
+      kind: 'broken',
+    });
+  });
+});
+
+describe('mergedPartsOf', () => {
+  it('takes a part first recorded in merged.json or whose recorded pick changed, not a hash refresh', () => {
+    const base = JSON.stringify({
+      'components/chip': 'aaa',
+      'components/card': { hash: 'bbb', variant: 'a', decidedBy: 'tom', at: '1' },
+      'components/pin': { hash: 'ccc', variant: 'a', decidedBy: 'tom', at: '1' },
+    });
+    const head = JSON.stringify({
+      'components/chip': 'aaa2',
+      'components/card': { hash: 'bbb2', variant: 'a', decidedBy: 'tom', at: '1' },
+      'components/pin': { hash: 'ccc2', variant: 'b', decidedBy: 'tom', at: '2' },
+      'components/update-dialog': 'ddd',
+    });
+
+    expect(mergedPartsOf({ base, head })).toEqual(new Set(['components/pin', 'components/update-dialog']));
+    expect(mergedPartsOf({ base: null, head })).toEqual(
+      new Set(['components/chip', 'components/card', 'components/pin', 'components/update-dialog']),
+    );
+    expect(mergedPartsOf({ base, head: 'not json' })).toEqual(new Set());
   });
 });
 
@@ -162,6 +200,18 @@ describe('visibleChangeVerdictOf', () => {
       }),
     ).toMatchObject({ pass: false, why: 'unjudged', unjudged: ['idle'], reasons: ['slots'] });
   });
+
+  it('lists a state neither app can be driven into as undrivable, without failing the part for it', () => {
+    expect(
+      visibleChangeVerdictOf({
+        diff: diffOf([
+          { state: 'rest', kind: 'same' },
+          { state: 'focus-visible', kind: 'undrivable', problem: 'no button' },
+        ]),
+        sketched: new Set(),
+      }),
+    ).toMatchObject({ pass: true, why: 'invisible', unjudged: [], undrivable: ['focus-visible'] });
+  });
 });
 
 describe('visibleChangeSummaryOf', () => {
@@ -172,6 +222,7 @@ describe('visibleChangeSummaryOf', () => {
     changed: [],
     unjudged,
     reasons: [],
+    undrivable: [] as string[],
   });
 
   it('lists every unjudged state of a pass', () => {
@@ -197,6 +248,19 @@ describe('visibleChangeSummaryOf', () => {
       }),
     ).toBe(
       '2 part(s) fail the visible-change gate in abc..HEAD. Pick and merge a sketch of each, or move it closer to its design - 1 state(s) unjudged: elements/tree (empty).',
+    );
+  });
+
+  it('lists the undrivable states as problems of their part', () => {
+    expect(
+      visibleChangeSummaryOf({
+        verdicts: [{ ...verdictOf('pages/system', true), undrivable: ['part-focus-visible'] }],
+        problems: 0,
+        range: 'abc..HEAD',
+        seconds: 2,
+      }),
+    ).toBe(
+      'No part looks different in abc..HEAD without a sketch (2 s) - 1 state(s) undrivable, a problem of the part: pages/system (part-focus-visible).',
     );
   });
 
