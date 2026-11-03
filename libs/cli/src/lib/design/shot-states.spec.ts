@@ -39,17 +39,15 @@ const titleBar = () => {
 };
 
 describe('shotStateNamesOf', () => {
-  it('accepts an interaction state of a row the grid leaves out as unchanged', async () => {
+  it('draws the hover, active and focus-visible cells of a row the grid leaves out as unchanged', async () => {
     const part = titleBar();
 
-    expect(await shotStateNamesOf(part, ['windows-hover'])).toContain('windows-hover');
-    expect(await shotStateNamesOf(part, ['windows-focus-visible', 'windows-active'])).toEqual(
-      expect.arrayContaining(['windows-focus-visible', 'windows-active']),
-    );
+    expect(await shotStateNamesOf(part)).toContain('windows-hover');
+    expect(await shotStateNamesOf(part)).toEqual(expect.arrayContaining(['windows-focus-visible', 'windows-active']));
   });
 
-  it('keeps the drawn states and ignores a name the part does not define', async () => {
-    const names = await shotStateNamesOf(titleBar(), ['nope']);
+  it('keeps the drawn states and invents none', async () => {
+    const names = await shotStateNamesOf(titleBar());
 
     expect(names).toContain('linux-full-update-hover');
     expect(names).not.toContain('nope');
