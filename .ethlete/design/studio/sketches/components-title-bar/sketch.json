@@ -93,7 +93,13 @@
     {
       "key": "r1",
       "title": "Windows 11 caption buttons",
-      "note": "windows and windows-update draw native Windows 11 caption tiles: 46 x 31 px flush to the top-right corner, no gaps or radius, 10 px glyph, subtle 6 % hover and 4 % press on minimize and maximize, the error theme's fill on the close hover, focus and press, focus ring inset. Linux and macOS unchanged. A Studio-only route (Tailwind sizing on the square button, writing its private variables) drew the same pixels and was withdrawn; the choice between it and an SDK caption shape is a build decision, not a design one."
+      "note": "windows and windows-update draw native Windows 11 caption tiles: 46 x 31 px flush to the top-right corner, no gaps or radius, 10 px glyph, subtle 6 % hover and 4 % press on minimize and maximize, the error theme's fill on the close hover, focus and press, focus ring inset. Linux and macOS unchanged. A Studio-only route (Tailwind sizing on the square button, writing its private variables) drew the same pixels and was withdrawn; the choice between it and an SDK caption shape is a build decision, not a design one.",
+      "lost": "r1 a drew native 46 px Windows tiles; at rest each shows only a 10 px glyph, so the three read as loose icons with big gaps (Tom: much too far apart)"
+    },
+    {
+      "key": "r2",
+      "title": "Caption tile width",
+      "note": "Same SDK caption shape, flush top-right, no gaps, same hover/focus/press and error close; only the tile width differs: c 36 px, d 32 px (square to the 32 px bar), e 46 px kept for comparison."
     }
   ],
   "variantInfo": {
@@ -106,6 +112,21 @@
       "authors": ["claude-opus-5-5"],
       "round": "r1",
       "note": "Studio-only: the square SDK button sized and toned with Tailwind on the title bar (w-11.5, h-full, rounded-none, hover opacity, glyph size). No SDK change, but it writes the button's private --_et-window-control-button-icon-size and opacity variables from Studio."
+    },
+    "c": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "36 px caption tiles: the three sit closer as one group (108 px), still clearly a Windows tile row; hover fill 36 x 31 px. Same SDK caption shape, only its width changes."
+    },
+    "d": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "32 px caption tiles, square to the 32 px bar: the tightest group (96 px), hover fills a near-square 32 x 31 px; reads more like the Linux/mac icon buttons than native Windows. Same SDK caption shape, only its width changes."
+    },
+    "e": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r2",
+      "note": "46 px native Windows 11 tiles, unchanged from r1 a, kept for side-by-side comparison (138 px group, widest gaps at rest)."
     }
   },
   "rejections": {
@@ -113,6 +134,16 @@
       {
         "by": "agent",
         "decidedAt": "2026-11-03T09:52:35.388Z",
+        "reason": "identisch mit a",
+        "reasonBy": "agent",
+        "status": "withdrawn",
+        "withdrawnBy": "claude-opus-5-5"
+      }
+    ],
+    "e": [
+      {
+        "by": "agent",
+        "decidedAt": "2026-11-03T10:13:37.144Z",
         "reason": "identisch mit a",
         "reasonBy": "agent",
         "status": "withdrawn",
