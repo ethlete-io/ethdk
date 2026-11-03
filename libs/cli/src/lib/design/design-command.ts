@@ -28,6 +28,7 @@ import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
 import { rebuildStaleDist } from './system/stale-dist';
+import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
@@ -341,6 +342,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target } = splitCheckout(argv.slice(1), root);
 
     if (!rebuildStaleDist({ target, config: readConfig(target) })) return 1;
+  }
+
+  if (guardsDesignMocks(argv)) {
+    const { target } = splitCheckout(argv.slice(1), root);
+
+    if (!designMocksFresh({ target })) return 1;
   }
 
   if (argv[0] === 'check') {
