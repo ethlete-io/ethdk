@@ -75,7 +75,9 @@ const commentTarget = (frame: string) =>
     data-et-action="comment-draft"
   ></div>`;
 
-type SendPhase = 'busy' | 'error';
+type SendPhase = 'busy' | 'error' | 'rejected';
+
+const REFUSED = 'part components/button no longer exists';
 
 const LOADER = `<div class="et-button-loader" aria-hidden="true" data-et-skip="CLIPPED"><div class="et-button-loader-spinner contents">${spinner({ diameter: 12, strokeWidth: 1.5 })}</div></div>`;
 
@@ -84,17 +86,16 @@ const loading = (markup: string) =>
     .replace(/^<button /, '<button data-loading="true" aria-busy="true" aria-disabled="true" ')
     .replace(/<\/button>$/, `${LOADER}</button>`);
 
-const sendError = html`<p
-  class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
-  data-et-semantic-color="error"
-  role="alert"
->
-  ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span
-    >Nicht gesendet. Der Design-Server hat nicht geantwortet.</span
+const sendError = (text: string) =>
+  html`<p
+    class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
+    data-et-semantic-color="error"
+    role="alert"
   >
-</p>`;
+    ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span>${text}</span>
+  </p>`;
 
-const commentDraft = async (text: string, phase?: SendPhase) => {
+const commentDraft = async (text: string, phase?: SendPhase, reason = '') => {
   const busy = phase === 'busy';
   const field = await textarea.render({
     field: {
@@ -124,7 +125,7 @@ const commentDraft = async (text: string, phase?: SendPhase) => {
     body: html`<div
       class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
     >
-      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}${phase === 'error' ? sendError : ''}
+      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}${phase === 'error' ? sendError('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? sendError(reason) : ''}
       <div class="flex justify-end gap-space-2">
         ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
       </div>
@@ -260,8 +261,9 @@ export default definePart<{
   commentMode?: boolean;
   draft?: string;
   send?: SendPhase;
+  reason?: string;
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text, shows an error line under the field and turns Senden into Erneut senden.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text: a network or server error shows "Kommentar nicht gesendet. Erneut versuchen." under the field and turns Senden into Erneut senden; a send the server refuses with a 4xx shows the server reason there and keeps Senden, with no retry.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -295,6 +297,13 @@ export default definePart<{
       draft: TYPED,
       send: 'error',
     },
+    'send-rejected': {
+      closed: true,
+      commentMode: true,
+      draft: TYPED,
+      send: 'rejected',
+      reason: REFUSED,
+    },
   },
   controls: {
     comment: { kind: 'button', part: 'components/button' },
@@ -313,6 +322,7 @@ export default definePart<{
     commentMode = false,
     draft,
     send,
+    reason,
   }) => {
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
@@ -335,7 +345,7 @@ export default definePart<{
     const shot = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
-    const writing = draft === undefined ? undefined : await commentDraft(draft, send);
+    const writing = draft === undefined ? undefined : await commentDraft(draft, send, reason);
     const body = commentMode
       ? html`<div class="relative">${shot}${commentTarget('button')}${writing?.body ?? ''}</div>`
       : shot;
