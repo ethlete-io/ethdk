@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -55,16 +55,30 @@ describe('staleCliBuildMessage', () => {
     expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
   });
 
-  it('does nothing when the build lives outside root (a worktree sharing dist by symlink)', () => {
-    const other = mkdtempSync(join(tmpdir(), 'b267b-'));
+  describe('with a dist symlinked from outside root', () => {
+    let other: string;
 
-    try {
+    beforeEach(() => {
+      other = mkdtempSync(join(tmpdir(), 'b270c-'));
+      symlinkSync(buildDir, join(other, 'dist'));
+    });
+
+    afterEach(() => rmSync(other, { recursive: true, force: true }));
+
+    it('passes when the hash matches', () => {
+      write(join(other, 'libs/cli/src/index.ts'), 'export const a = 1;');
+      write(join(other, 'libs/cli/design/part.ts'), 'export const b = 1;');
+
+      expect(staleCliBuildMessage({ root: other, buildDir: join(other, 'dist') })).toBeUndefined();
+    });
+
+    it('refuses when the hash differs', () => {
       write(join(other, 'libs/cli/src/index.ts'), 'export const a = 99;');
 
-      expect(staleCliBuildMessage({ root: other, buildDir })).toBeUndefined();
-    } finally {
-      rmSync(other, { recursive: true, force: true });
-    }
+      expect(staleCliBuildMessage({ root: other, buildDir: join(other, 'dist') })).toContain(
+        'NX_NO_CLOUD=true npx nx build cli',
+      );
+    });
   });
 
   it('does nothing outside the sdk repo', () => {
