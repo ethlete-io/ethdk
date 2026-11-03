@@ -3491,3 +3491,11 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      it: the B207 unit spec fed made-up output without the prefix, never a captured real run. Lesson: a spec for a
      parser of tool output takes its fixture from a captured real run of that tool. Fix: eba8f6885; the rule goes into
      the styleguide/testing guidance (builder). Still unverified: a Studio-suite run through the B214 worktree.
+276. Builder report (2026-11-03, e245c85de, B201): two tool gaps. (1) `yarn agents:sync` reorders the two Stop hooks in
+     .claude/settings.json on every run: the hand registration of builder-chat-words.py (3326a7670) and the sync
+     disagree on order, so the tree is dirty after each sync. (2) In a full product check, RENDER timeouts from
+     parallel load (shell-project-switch, studio-menu: 10-13 s alone, 0 findings) read as real findings. Why no tool
+     caught them: sync rewrites the whole hook list instead of merging into it; the checker has one RENDER code for a
+     timeout and a broken render. Fix (technical): B224 - agents:sync keeps the existing order of hook entries and
+     only inserts or removes its own, so a second sync is a no-op; into B221 - a render timeout gets its own code,
+     distinct from a render error, and is re-run once alone before it counts.
