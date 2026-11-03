@@ -3711,3 +3711,12 @@ studio` on the new commits.
 at: 12:13:42Z}` and the sketch dir is gone, so B228 is proven on the real case. B240's shot part is
      behaviourally red-checked. B240 Studio toggle: where the toggle goes is a look question, so the builder sketches
      it on design-parts/sketches, and Tom picks.
+
+294. B227 + B240 data (builder, 2026-11-03). B227 2699545b4: argsOf takes each command's switches, so any other
+     --flag gives "unknown flag --x (flags: ...)" and exit 2 across all 18 callers. Real repro: `design shot
+components/title-bar --prodct studio`. The behavioural red is quoted. Why no tool caught it: argsOf had no list
+     of valid switches, so no spec could assert a refusal. Gaps, which go into B227b (decided, technical): `sketch`
+     lists the union of its subcommands' flags; check.ts, new-call.ts, product-command.ts, system-command.ts and
+     visible-change-command.ts parse argv by hand and ignore unknown flags; commit-hunks exits 1 on bad usage
+     instead of 2 (align it and its specs). B240 data side 0f7c28b68: hideWithdrawn defaults to false, and the view
+     wiring waits for Tom's pick of the control sketch.
