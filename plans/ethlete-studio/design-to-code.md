@@ -4099,6 +4099,20 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      are hundreds of checks. Decision (technical, replaces the INLINE-UI tree question): warning-level problems of any
      rule get no tree mark; they show in the part's detail only. The tree marks errors.
 
+326. B267b (00fafc71f, c0c163c4a) removes the stale refusal in the e2e tree: the tree builds its own cli dist and
+     `cliBuildProblem` fails the run when the dist is outside the tree or its source hash differs. Two defects remain.
+     (a) 5e525ca9b makes the B267 guard skip when the build dir resolves outside the checkout: a silent pass for any
+     tree that symlinks dist. Why no tool caught it: no spec asserts that a guard never passes without comparing; the
+     skip was written to quiet a symptom. Decision: drop the skip, not turn it into a warning (finding 295). The guard
+     compares the source hash wherever the dist lives; match passes, mismatch refuses. A spec covers a symlinked dist
+     with a matching and a differing hash. (b) The e2e-check spec that reads `git worktree list` flakes while other
+     agents hold worktrees, and e2e-check.mjs and its spec carry lint errors (empty catch, empty arrow). Why no tool
+     caught it: the spec reads machine-global state, and the lint errors predate the pre-push lint scope. Fix: the
+     spec asserts only the tree's own worktree path; the lint errors get fixed. The real run e2e-check 117eb20bb shows
+     0 stale but 3 FAIL at load 15-23 of 32 cores: canvas crash at canvas.e2e.mjs:1295 (waitForFunction timeout),
+     frame-load-failed 121 s, server-restart 121 s. Load is below the core count, so these are real failures until
+     B270c explains them; B255 stays open on them.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
