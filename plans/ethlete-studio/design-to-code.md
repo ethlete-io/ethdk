@@ -4289,6 +4289,12 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      comment inputs of system-page (commentMode, draft, send, reason) are on KNOWN_UNBOUND_INPUTS, because no app
      template uses the component yet.
 
+342. Correction to finding 341: Tom cannot pick components/title-search in Studio. A one-variant sketch whose
+     variant equals the part shows only the "Aktuell" column, so there is nothing to pick (Tom's screenshot,
+     2026-11-03). The real defect is in the gate: a part new in the range has no base picture, so the gate
+     demands a sketch even when the HEAD app matches its design. Fix: the gate judges a state with no base
+     picture against its design and passes it when the app matches. The withdrawn sketch was never committed.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
