@@ -39,6 +39,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
+import { withLoopMotionHint } from './loop-motion-hint';
 import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
 import {
@@ -758,12 +759,22 @@ const commitHunksLines = ({ target, files, parts }: { target: string; files: str
         ),
       ];
 
-const noteProblemsBefore = ({ sketch, variant, before }: { sketch: Sketch; variant: string; before: Problem[] }) => {
-  if (before.length > 0)
+const noteProblemsBefore = ({
+  target,
+  sketch,
+  variant,
+  before,
+}: {
+  target: string;
+  sketch: Sketch;
+  variant: string;
+  before: Problem[];
+}) =>
+  before.forEach((problem) =>
     console.warn(
-      `NOTE ${sketch.target} ${variant}: ${before.length} problem${before.length === 1 ? ' was' : 's were'} there before (design check lists them)`,
-    );
-};
+      `NOTE ${sketch.target} ${variant}: ${problem.rule} ${relative(target, problem.file)}: ${problem.message} (there before)`,
+    ),
+  );
 
 const variantGateProblemsOf = (options: {
   target: string;
@@ -777,7 +788,7 @@ const openPointLinesOf = ({ product, sketch }: { product: ResolvedProduct; sketc
   const pointLinesOf = (variant: string, list: PartOpenPoints[]) =>
     openPointsText(product.name, list)
       .slice(1)
-      .map((line) => `${sketch.target} ${variant}: ${line.trim()}`);
+      .map((line) => `${sketch.target} ${variant}: ${withLoopMotionHint(line.trim())}`);
   const points = sketch.variants
     .filter((variant) => !rejectionOf(sketch, variant))
     .map((variant) => ({
@@ -823,7 +834,7 @@ const readyRefusalOf = (
     `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`;
   const found = variantProblemsOf({ product, sketch });
 
-  found.forEach(noteProblemsBefore);
+  found.forEach((entry) => noteProblemsBefore({ target: context.target, ...entry }));
 
   const problems = found
     .filter(({ variant }) => !rejectionOf(sketch, variant))
@@ -1018,7 +1029,7 @@ const checked = async (context: Context) => {
   for (const { sketch, variant, problems, before } of chosen) {
     const typed = typecheckVariant({ target, product, sketch, variant });
 
-    noteProblemsBefore({ sketch, variant, before });
+    noteProblemsBefore({ target, sketch, variant, before });
 
     variantWarningsOf({ target, product, sketch, variant }).forEach((warning) =>
       console.warn(`${sketch.target} ${variant}: ${warning}`),

@@ -1576,7 +1576,7 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(warnings).toContain('elements/hero: Aktuell shows only placeholders: open "default" to compare');
   }, 120_000);
 
-  it('notes the problems that were there before as one count per variant', async () => {
+  it('prints each problem that was there before as its own line per variant', async () => {
     const target = acme();
     const warnings: string[] = [];
 
@@ -1590,10 +1590,12 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     await run(target, 'check', '--product', 'acme');
 
-    expect(warnings.filter((line) => line.startsWith('NOTE'))).toEqual([
-      'NOTE elements/hero a: 2 problems were there before (design check lists them)',
-      'NOTE elements/hero b: 2 problems were there before (design check lists them)',
-    ]);
+    const notes = warnings.filter((line) => line.startsWith('NOTE'));
+
+    expect(notes).toHaveLength(4);
+    expect(notes.filter((line) => line.startsWith('NOTE elements/hero a: '))).toHaveLength(2);
+    expect(notes.filter((line) => line.startsWith('NOTE elements/hero b: '))).toHaveLength(2);
+    expect(notes.every((line) => line.endsWith('(there before)') && line.includes('hero.css'))).toBe(true);
   }, 120_000);
 
   it('draws each variant of the open sketches and reports what breaks a render rule', async (context) => {
