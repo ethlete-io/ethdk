@@ -4113,6 +4113,19 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      frame-load-failed 121 s, server-restart 121 s. Load is below the core count, so these are real failures until
      B270c explains them; B255 stays open on them.
 
+327. B263 (f7f7f3b17) lands the finding-311 fix in the draw path: render-check marks a state whose drawing holds
+     `aria-busy="true"` or `data-loading="true"` as busy, and ongoing work counts it whatever its name. New rule
+     STATE-NOT-IN-COMPONENT reads the linked component's phase/state union. Decision (technical): the narrow reading.
+     A state that sets a phase value must be named after it (`busy`, `busy-<detail>`); a state that sets no phase
+     (`empty`, `typed`) is free, since input states are no app phases. Two gaps. (a) The rule found 0 hits today
+     because the B248b comment-draft sketch had no `implements` link; with the link added to the 87fffd218^ source it
+     flags "sending". Why no tool caught it: IMPLEMENTS only checks a link that exists; nothing asks for one, so every
+     component-reading rule is silently skipped on an unlinked part. Fix: a part without `implements` whose name
+     matches an existing app component gets a problem that names the path (count the hits on studio first; each is
+     either linked or explained). (b) sketch check and sketch ready still see state names only, because
+     sketch-command.ts does not pass `rendered.busy`. Finding 311 happened in a sketch, so B263 stays open until that
+     wiring lands (with B264b, after B272).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
