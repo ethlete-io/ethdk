@@ -3387,19 +3387,49 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      frames (each of the 60 iframes is recreated once after the first render; 6 connections give a 15-20 s first
      paint). The builder adds a pages/sketches design state with no report file. Not verified: the Tauri app, the
      remembered camera after reload, the sticky column shadow while panning.
-265. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
+     B197b (03d197841): e2e-check judges each suite (`judgeSuiteRun`): timeout, `N/0 passed`, a silent exit 0 and a
+     nonzero exit with no PASS/FAIL line are red; the runner's own `0/0 passed` exited 0 too and now exits 1 for
+     canvas, page-switch and studio-menu. The canvas suite alone runs over 9 minutes, long enough to get skipped.
+     Fix: B212 (technical) - split canvas.e2e by view so e2e-check runs only the touched views; the three suites without
+     a case count print `N/M passed`.
+265. CANVAS-CAMERA-OWN built (B196, 7a7caf5ff, f53a0a03e, e57fa1868): a local ESLint rule for
+     `apps/ethlete-studio/src/app/design-parts/**` flags pan/zoom/camera state, wheel and pointer-move listeners and
+     clamp math on pan values; red on the real 030fe2f36 and 5a29b1b94 components. HEAD is green only through a known
+     list: Sketches still owns its camera, flows owns a zoom copy. red-check said NOT RED on 7a7caf5ff because it cannot
+     stub `export default`. The rule skips external `.html` templates. Decided (technical): B213 - design-canvas owns the
+     Sketches camera and exposes zoom as a signal for the flows chip, the known list goes empty, the rule reads
+     `templateUrl`; red-check's default-export stub goes into B217.
+266. system-view.component.spec "on a flow" logs `ResizeObserver is not defined` 6 times (flows-page `mountCamera` ->
+     canvas-viewport.ts:199, since ea4459688) and the suite passes (builder, 2026-11-03). Why no tool caught it: vitest
+     passes a spec that logs `console.error`, so a real error is stderr noise. Lesson: a logged error fails the spec,
+     as in the Storybook test-runner. Fix: B215 (technical) - the Studio vitest setup stubs ResizeObserver and a spec
+     that logs `console.error` fails.
+267. B178 merge (e888db413): the merged column, group and reload buttons of canvas-frames carry `data-et-action` but no
+     `data-et-control`, so `design check` reports 5 CONTROL-UNDECLARED after the merge. Why no tool caught it: `sketch
+ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketch merge` on Tom's pick records the
+     agent in accepted.json, and a failed commit loop restored stale JSON backups over the working file twice (no
+     foreign hunk lost; the copy-aside risk B204 removes). Fix (technical): B216 - a follow-up sketch declares the
+     controls; B217 - `sketch ready` runs CONTROL-UNDECLARED per variant, `sketch merge --decided-by tom` records Tom.
+     A pairwise `unreachable` list costing 2n entries per new state goes to B194 `instant`.
+268. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
      (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
      spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
      happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
      the spec stubs the installed-cli lookup instead of reading node_modules.
-266. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
+269. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
      against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
      exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
      compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
      session. Lesson: in a multi-agent checkout a commit waits, it does not fail, and a ban targets the harmful
      subcommand only. Fix (technical): B207 - a commit with no related spec starts none, and `yarn commit` waits for
      the lock with a message; B208 - the stash ban covers only writing subcommands and leaves `list`/`show` alone.
-267. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
+     Correction (builder, 2026-11-03): the >4 min wait was a foreign hook holding `.git/index.lock` (a docs-only hook
+     takes 0.1 s). `git commit -- <paths>` runs pre-commit on a temporary index of HEAD + those paths, but the specs
+     read the shared working tree with other agents' unfinished edits, and the lock stays held while they run. Landed:
+     19ec4dd67 (docs-only skip, timeout re-run), 74cf900b0 (`yarn commit` waits for the lock), b3c669203 (B206).
+     Decided (technical): B214 - `yarn commit` runs the related specs before it takes the lock, in a throwaway worktree
+     of HEAD + the paths; the hook then does not run them again. That fixes the lock time and the foreign edits at once.
+270. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
      state draws identical frames" fired on linux-full-update while the shot showed 0 px change: the merged markup was
      refactored after the sketch's baseline, so every variant trips it. (2) `design shot` still prints "not drawn" for
      the hover, active and focus-visible cells of title-bar after B171. (3) `sketch variant --from e` built on a
