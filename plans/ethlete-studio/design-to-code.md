@@ -3163,3 +3163,9 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      (hit-test controls and canvas regions; an opaque element of another subtree on top is red), red first on both real
      cases; look fix as a Studio sketch inside B142(b) (gutter only label height, translucent; a second variant if a
      real alternative exists, Tom picks in Studio).
+238. Three builder slices in one morning (B152 87de26aff, B155 653c345ad, B156 2666cc517) shipped new specs that
+     were never seen red; each report says so itself (builder, 2026-11-03). Red-first is a rule in the sub-agent brief
+     only, and nothing checks it, so it erodes under load. Lesson: a rule an agent must remember is a rule that slips;
+     the proof that a spec can fail must be produced by a tool, not promised in a report. Fix: B161, a `red-check`
+     script: for a commit that adds or changes specs, it checks out the parent's non-spec files, runs the changed specs,
+     and fails unless at least one new test fails there; the builder's report quotes its output.
