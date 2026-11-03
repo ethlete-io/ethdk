@@ -3192,3 +3192,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      later/restart), the consumer calls the window API; tree-row gets an app output `rowPress` + design
      `emit:rowPress` (B166). B158 checks reach, not only cover: UNREACHABLE <part> <state>: <action> for hidden,
      invisible, zero-size or covered. Look fix for far-out as variants in the B142(b) sketch.
+243. Tom (2026-11-03): "we only have Linux and Mac" title bars. A `windows` state exists in components/title-bar and
+     in the app, but it draws the same small `et-window-control-button` size md as Linux, only square and with a
+     0.5 gap inside the bar padding; it does not read as Windows (native caption buttons are wide, full bar height,
+     flush to the top-right edge, no gaps). Every check was green because each checks the design against itself or
+     the app against the design; nothing compares an OS-native imitation with the native original. Lesson: a part
+     that imitates platform chrome needs the platform's own measures as a reference, not only our design. Fix: the
+     look comes as a Studio sketch (B167); the part declares the platform measures it follows (button width/height,
+     inset) in its note, and the check measures them (B168, technical).
