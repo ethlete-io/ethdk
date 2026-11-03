@@ -3674,3 +3674,15 @@ studio` on the new commits.
      signature change passes as proof. Fix (B238, decided, technical): red-check labels a failure that is a thrown
      TypeError/ReferenceError outside an assertion "RED BY CRASH", and that is not proof. The slice then quotes a
      behavioural red.
+
+291. B209 + B220a (builder, 2026-11-03). B209 07947d6ce: the identical-renders ready rule takes the first changed
+     state from shot's own pixel diff (shooter.changedBoxesOf) at framesOf()[0]. The behavioural red is quoted. The
+     real repro (finding 273) did not reproduce, not even on 9e94a2dc3, so its cause is unknown. shot-command.ts still
+     picks its frame inline. B239 (decided, technical): one shared frame helper for shot and ready. B220a 7e1759fef,
+     fa830a267: `sketch rebase` ports base changes 3-way per file, finding the old base in git by its baseline hash;
+     a conflict lists the files, writes nothing and exits 1. `sketch ready` on a ready sketch exits 0 "still ready".
+     Real repro, title-bar on d961cb00d: f/g/h conflicted on import line 1 although they already held the change, so
+     the builder added `--ported` (keep the hand-ported files) as an escape. Why no tool caught it: decision 272's
+     "conflict -> abort" never considered a variant that already holds the change. Into B220b: a conflict resolves on
+     its own when the variant side holds every line the product added. The rebased sketch is committed as
+     baseline-only. Tom's stale pick f stays uncommitted; his new pick overwrites it.
