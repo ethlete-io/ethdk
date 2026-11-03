@@ -4079,6 +4079,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      clean e2e run and its red-check line; a frame-load-failed miss of the render-error badge (1 of 2 runs) is open
      until B270 lands.
 
+324. The cold-worktree hypothesis of finding 319 is wrong (builder, 2026-11-03, B270 part 2, two runs of
+     `yarn e2e-check 21dcfc17f`). The build takes 14 s and the load stayed below the 32 cores, yet canvas stalls after
+     the build and before its first case in every run, and sketches-tree misses its budget at load 6.4 (reloads
+     5808/2616/2629 ms against 2000). Second fact: the e2e worktree symlinks the shared dist, so it tests whatever
+     dist another agent built last, not the sha. Why no tool caught it: B259 promised "the worktree is the revision"
+     but nothing checks that the dist inside it was built from that revision. Decision (technical): no BUILD TIMEOUT
+     or warm-up gets built. B267b gives the e2e tree its own dist built from the sha; until then every e2e verdict on
+     a dist-dependent commit is suspect. Then B270c logs the design server ready line, the chromium launch and the
+     first case with timestamps in tools/scripts/verify-studio-headless.mjs and reruns once. The sketches-tree budget
+     miss at low load counts as a real defect until B270c explains it. The B254 bisect follows B270c.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
