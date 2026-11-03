@@ -3795,3 +3795,8 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      uncommitted refresh before the next commit. Fix (B246, decided, technical): the check prints each go it
      refreshed with the commit-hunks command to run, and `yarn commit` refuses while a refreshed go of a part in the
      commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03).
+
+### Go carry decisions (2026-11-03)
+
+- Tom: agents commit an automatic go carry themselves (`auto: true`, design hash changed, no state picture
+  changed) with `design commit-hunks`. A new go, or a go after a state picture changed, stays Tom's or Studio's.
