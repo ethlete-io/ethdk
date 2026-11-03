@@ -3057,6 +3057,16 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 - Tom confirmed the first studio list as it is (2026-11-03): all 65 entries become `confirmed: true`; wire
   CAPABILITY-PLACE with `missing: "B..."` on the 24 without a place.
 
+### Uncommitted design files, comment errors and canvas frames decisions (Tom, 2026-11-03)
+
+- Tom's uncommitted design files (`.ethlete/design/studio/go.json`, `merged.json`, `pages/system/system.ts`, the
+  deleted `sketches/pages-system/*`): the builder commits them as they are, only Tom's lines, split with
+  `design commit-hunks`. This unblocks `design ready`/go for pages/system and the pages/system part of B189.
+- Comment send error (B189): two texts. Network or server error: "Kommentar nicht gesendet. Erneut versuchen." with
+  a retry button. A 4xx shows the server's reason, with no retry button.
+- B178 frame size: variant a - frames keep fitting their content, as in the app. No size field, no corner grip.
+- B178 round switch: keep it, label "Unveränderte Zustände zeigen", off by default.
+
 ### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
 
 - pages/sketches round 2: the builder rebases the round-2 sketch onto the current merged design and re-runs
