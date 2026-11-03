@@ -1,7 +1,7 @@
 {
   "target": "pages/system",
   "status": "ready",
-  "createdAt": "2026-11-03T09:17:36.017Z",
+  "createdAt": "2026-11-03T10:03:33.244Z",
   "baseline": {
     "foundations/agent-logos": "46bcf29865e6c1f4",
     "foundations/colors": "bc0d499f48f9253f",
@@ -27,7 +27,7 @@
     "components/chart": "ac3f5741017eb4dc",
     "components/checkbox": "c1eb1c126ffeb175",
     "components/chip": "33788c7f782dfa16",
-    "components/comment-pin": "6be2548f33f0eecb",
+    "components/comment-pin": "60a213cdfc41a3e3",
     "components/copy-button": "11d4ec41b64ab055",
     "components/description-list": "039eb367dca8ed8b",
     "components/dialog": "fae8a8006ea0d4d3",
@@ -73,7 +73,7 @@
     "components/toolbar": "8963a8ba9a488f1b",
     "components/tooltip": "d8d78f8928e32679",
     "components/tree": "7826d5e508a8602c",
-    "components/tree-row": "54f5146401761474",
+    "components/tree-row": "9b985495f700b73f",
     "components/update-dialog": "7d31143556b325c3",
     "components/zoom-chip": "b319c9b68034f906",
     "elements/canvas-frames": "476cc61921af955d",
@@ -86,21 +86,26 @@
     "pages/merge": "c017306ebbc49a60",
     "pages/sketches": "68ebc69e49dbe146",
     "pages/start": "0ba0bebf7cccdeaa",
-    "pages/system": "e1357c586c79616d",
+    "pages/system": "84569608ba4595c7",
     "fixtures.ts": "909089fbef7b8f34"
   },
   "rounds": [
     {
       "key": "r1",
-      "title": "Kommentar-Button",
-      "note": "Ein Kommentar-Button oben rechts in der Teil-Ansicht, wie vor 8cf715654: Klick schaltet den Kommentar-Modus, ein Klick auf einen Rahmen öffnet einen Entwurf."
+      "title": "Places for go, accept, exceptions, theme and transfer",
+      "note": "r1 gives the five Studio capabilities without a design (B175) a place on pages/system. a puts go, accept and exceptions as their own buttons in the top-right toolbar, like the app today; b gathers them in the open-points popover, so the review of a part ends in one place. Both draw the legacy call view with the theme switch and the transfer button in its header."
     }
   ],
   "variantInfo": {
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "Kommentar-Button oben rechts neben dem Offene-Punkte-Chip, Umschalter wie früher (outline, sm). Gedrückt ist der Kommentar-Modus an: der Rahmen bekommt eine Fadenkreuz-Fläche (Kommentar zu …). Ein Klick darauf öffnet am Klickpunkt den Entwurf mit Textfeld, Abbrechen und Senden; Senden ist leer gesperrt. Beim Senden sind Textfeld und Abbrechen gesperrt und Senden dreht einen Spinner; schlägt es fehl, bleibt der Text, eine Fehlerzeile steht unter dem Feld und Senden heißt Erneut senden. Kostet einen Platz mehr in der Kopfleiste."
+      "note": "Toolbar: Go geben (or Änderung abnehmen) and an Ausnahmen toggle sit beside Kommentar and the open-points chip, as in the app today. Costs: up to five buttons in the toolbar; the go is reachable while points are still open."
+    },
+    "b": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r1",
+      "note": "Im Popover: the open-points popover lists exceptions as a group with Freigeben per line and ends in a footer with Go geben or Änderung abnehmen. Costs: one click more to give the go; the toolbar stays at two buttons; the app's three toolbar components merge into the popover."
     }
   }
 }

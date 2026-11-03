@@ -19,8 +19,15 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from '@shared/open-points';
-
-const act = (markup: string, action: string) => markup.replace(/<button\b/, `<button data-et-action="${action}"`);
+import {
+  act,
+  approvalControl,
+  buttonExceptions,
+  callView,
+  exceptionRows,
+  pointArrow,
+  type Approval,
+} from '@shared/capabilities';
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
@@ -192,6 +199,51 @@ const popover = async (open: PartOpenPoints) => {
   };
 };
 
+const exceptionsToggle = async (open: boolean) => {
+  const drawn = await button.render({
+    label: `Ausnahmen ${buttonExceptions.length}`,
+    variant: 'outline',
+    color: 'surface',
+    size: 'sm',
+    pressed: open,
+  });
+  const titled = drawn.body.replace(
+    /<button\b/,
+    '<button title="Ausnahmen dieses Teils, die auf deine Freigabe warten" data-arrow-trigger',
+  );
+  return {
+    body: control(act(titled, open ? 'points-closed' : 'exceptions'), 'exceptions'),
+    styles: drawn.styles,
+  };
+};
+
+const exceptionsPopover = async () => {
+  const rows = await exceptionRows(buttonExceptions);
+  const dialog = await anchoredDialog.render({
+    label: 'Ausnahmen',
+    modal: false,
+    content: html`<div class="w-xl text-ui-sm">
+      <header
+        class="flex items-baseline gap-space-2 px-space-3 pt-space-3 pb-space-2 border-b border-(--et-surface-border-solid)"
+      >
+        <span class="text-(--et-surface-color-solid) font-ui-strong">Ausnahmen</span>
+        <span class="ms-auto font-code text-(--et-surface-color-muted-solid) text-ui-xs">components/button</span>
+      </header>
+      ${rows.body}
+    </div>`,
+  });
+  return {
+    body: html`<div
+      class="absolute top-full right-0 mt-2.5 [&_.et-overlay-arrow]:left-0"
+      style="transform: translate3d(0, 0, 0)"
+      data-arrow-pane
+    >
+      ${dialog.body}
+    </div>`,
+    styles: dialog.styles + rows.styles,
+  };
+};
+
 const TYPED = 'Der Abstand unter der Kopfzeile wirkt zu knapp.';
 
 const FIT_PADDING = 64;
@@ -262,8 +314,11 @@ export default definePart<{
   commentMode?: boolean;
   draft?: string;
   send?: SendPhase;
+  approval?: Approval;
+  exceptions?: boolean;
+  call?: 'open' | 'transferred';
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text, shows an error line under the field and turns Senden into Erneut senden.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text, shows an error line under the field and turns Senden into Erneut senden. Left of Kommentar sit the review actions of the part: Go geben (Go erteilt once given), or Änderung abnehmen for a direct edit of a merged part (Änderung abgenommen once done), and the Ausnahmen toggle, whose popover lists each exception with its reason and state and a Freigeben button. A legacy call shows a header with its slug and headline, the surface and colour theme switches, and Als übertragen markieren, which turns into an übertragen badge.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -297,12 +352,24 @@ export default definePart<{
       draft: TYPED,
       send: 'error',
     },
+    exceptions: { closed: true, exceptions: true },
+    'go-given': { closed: true, approval: 'go-given' },
+    'direct-edit': { closed: true, approval: 'accept' },
+    'edit-accepted': { closed: true, approval: 'accepted' },
+    call: { call: 'open' },
+    'call-transferred': { call: 'transferred' },
   },
   controls: {
     comment: { kind: 'button', part: 'components/button' },
     'comment-cancel': { kind: 'button', part: 'components/button' },
     'comment-send': { kind: 'button', part: 'components/button' },
     'open-points': { kind: 'button', part: 'components/button' },
+    'give-go': { kind: 'button', part: 'components/button' },
+    accept: { kind: 'button', part: 'components/button' },
+    exceptions: { kind: 'button', part: 'components/button' },
+    'exception-approve': { kind: 'button', part: 'components/button' },
+    transfer: { kind: 'button', part: 'components/button' },
+    theme: { kind: 'button', part: 'components/button' },
     popover: { kind: 'disclosure', part: 'components/anchored-dialog', surfaces: { body: 'open-points' } },
   },
   render: async ({
@@ -315,7 +382,29 @@ export default definePart<{
     commentMode = false,
     draft,
     send,
+    approval = 'go',
+    exceptions = false,
+    call,
   }) => {
+    if (call) {
+      const tree = await partTree.render(partTree.states['components-open']);
+      const view = await callView(call === 'transferred');
+      const menu = await studioMenu({ open: false });
+      const shell = await shellMain.render({
+        studio: menu.body,
+        section: 'System',
+        product: 'studio',
+        side: tree.body,
+        content: view.body,
+      });
+
+      return drawing({
+        body: shell.body,
+        setup: menu.setup,
+        styles: shell.styles + menu.styles + tree.styles + canvasFrameStyles + view.styles,
+      });
+    }
+
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
     }
@@ -347,6 +436,9 @@ export default definePart<{
     const toggle = await chip(points, !closed, chipFocus, acting && !commentMode);
     const comment = await commentButton(commentMode, acting);
     const dialog = closed ? undefined : await popover(points);
+    const approve = await approvalControl(approval);
+    const exceptionToggle = await exceptionsToggle(exceptions);
+    const exceptionList = exceptions ? await exceptionsPopover() : undefined;
     const menu = await studioMenu({ open: false });
     const shell = await shellMain.render({
       studio: menu.body,
@@ -355,13 +447,15 @@ export default definePart<{
       side: tree.body,
       content: html`${frames}
         <div class="absolute top-space-3 right-space-3 flex gap-space-2">
+          ${approve.body}
+          <div class="relative flex" data-arrow-host>${exceptionToggle.body}${exceptionList?.body ?? ''}</div>
           ${comment.body}${toggle.body}${dialog?.body ?? ''}
         </div>`,
     });
 
     return drawing({
       body: shell.body,
-      setup: fit ? [menu.setup, fitAll] : menu.setup,
+      setup: fit ? [menu.setup, fitAll] : exceptions ? [menu.setup, pointArrow] : menu.setup,
       styles:
         shell.styles +
         menu.styles +
@@ -370,7 +464,10 @@ export default definePart<{
         comment.styles +
         (writing?.styles ?? '') +
         toggle.styles +
-        (dialog?.styles ?? ''),
+        (dialog?.styles ?? '') +
+        approve.styles +
+        exceptionToggle.styles +
+        (exceptionList?.styles ?? ''),
     });
   },
 });
