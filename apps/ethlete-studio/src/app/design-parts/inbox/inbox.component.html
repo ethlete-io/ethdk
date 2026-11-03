@@ -39,7 +39,8 @@
                 <div class="box-border flex w-80 flex-col items-stretch p-3">
                   @if (draft()) {
                     <et-textarea
-                      [value]="DRAFT_TEXT"
+                      [value]="shownDraftText()"
+                      (valueChange)="draftTextChange.emit($event)"
                       class="min-w-0 flex-1"
                       aria-label="Kommentar"
                       placeholder="Kommentar hinzufügen"
@@ -47,7 +48,7 @@
                       resize="none"
                     />
                     <button
-                      (click)="send.emit(DRAFT_TEXT)"
+                      (click)="send.emit(shownDraftText())"
                       class="self-end"
                       et-button
                       type="button"

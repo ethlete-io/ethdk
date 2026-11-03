@@ -455,6 +455,43 @@ describe('SystemViewComponent on a reload', () => {
     expect(aside()).toContain('1 offen');
     expect(aside()).toContain('Too light');
   });
+
+  it('sends the pending comment draft from the Inbox editor with the text of the store', async () => {
+    const written: unknown[] = [];
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comment') && init?.method === 'POST') {
+        written.push(JSON.parse(String(init.body)));
+
+        return json({ ...HOVER_COMMENT, id: '2', text: 'Zu eng' });
+      }
+      if (url.includes('/__design/comments')) return json({ comments: [HOVER_COMMENT], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web' });
+    const element: HTMLElement = fixture.nativeElement;
+    const store = fixture.componentInstance['commentStore'];
+
+    fixture.componentInstance['pickSection']('Inbox');
+    store.start({
+      frameId: 'f',
+      place: { part: 'elements/rating', state: 'default', size: 'fitted' },
+      point: { x: 1, y: 2 },
+    });
+    store.draftText.set('Zu eng');
+    await settle(fixture);
+
+    [...element.querySelectorAll<HTMLButtonElement>('ethlete-inbox button')]
+      .find((button) => button.textContent?.trim() === 'Senden')
+      ?.click();
+    await settle(fixture);
+
+    expect(written).toEqual([expect.objectContaining({ text: 'Zu eng' })]);
+  });
 });
 
 describe('SystemViewComponent on a product without parts or without products', () => {

@@ -38,18 +38,20 @@ export class InboxComponent {
   public showResolved = model(false);
   public openOn = input<InboxOpenOn>('all');
   public draft = input(false);
+  public draftText = input<string>();
   public entry = input(false);
   public load = input<InboxLoad>('loaded');
   public canvas = input<TemplateRef<unknown> | null>(null);
 
   public shellAction = output<ShellAction>();
   public send = output<string>();
+  public draftTextChange = output<string>();
   public pick = output<string>();
   public retry = output();
 
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
-  protected readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
+  public readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
 
   public inScope = computed(() => {
     const openOn = this.openOn();
@@ -67,5 +69,6 @@ export class InboxComponent {
   protected openCount = computed(() => this.inScope().filter((c) => !c.resolved).length);
   protected onActivePart = computed(() => this.visible().filter((c) => c.part === this.activePart()));
   protected onOtherParts = computed(() => this.visible().filter((c) => c.part !== this.activePart()));
+  protected shownDraftText = computed(() => this.draftText() ?? this.DRAFT_TEXT);
   protected editorOpen = computed(() => this.draft() || this.entry());
 }
