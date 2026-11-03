@@ -793,7 +793,32 @@
   },
   "pages/system": {
     "review": {
-      "hash": "a8cacb703e9e5945",
+      "hash": "a6f2e98ea88772f5",
+      "states": {
+        "part": "df23c311d17aea1b",
+        "empty": "f932d40afa6126cc",
+        "many-states": "b7b0928dd3e7948d",
+        "fit": "cf9965ca7c47e3ae",
+        "points-closed": "1c8eb34a2d3d0465",
+        "nothing-open": "5e20380a8268be88",
+        "part-focus-visible": "9d120568552bc02f",
+        "points-closed-focus-visible": "9f90b36ae20dede6",
+        "comment-mode": "fd1ccf8a555a9305",
+        "comment-draft": "85873260ab1cded4",
+        "comment-draft-typed": "be4c5128d4521cf1",
+        "send-busy": "28aa1233836c1b0f",
+        "send-error": "a5a5c530b70932e4",
+        "send-rejected": "eec8feba439a98d6",
+        "go-given": "376fb05b90fc17bc",
+        "direct-edit": "2b424cf9880c405e",
+        "edit-accepted": "0154385791d51959",
+        "call": "4e2d361ab0b31ba4",
+        "call-transferred": "768ec5b1bcc253ff"
+      },
+      "slots": true
+    },
+    "go": {
+      "hash": "e28807965982369e",
       "states": {
         "part": "df23c311d17aea1b",
         "empty": "f932d40afa6126cc",
