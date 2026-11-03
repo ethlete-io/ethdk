@@ -3988,6 +3988,20 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      B248b itself is accepted with "NOT RED": the change only empties a data list, the rule's own spec covers the
      mechanism, and the check runs show 0 INLINE-UI hits on pages/inbox and pages/system.
 
+315. An empty controls object counts as missing (builder, 2026-11-03, B262). The extracted components/sketch-status-badge
+     and elements/variant-cell are not interactive, but both carry the open point "no controls declared", and
+     `controls: {}` does not clear it because open-points.ts treats an empty object like an absent key. That blocks
+     `ready` for every non-interactive part. Why no tool caught it: no spec separates "declared none" from "not
+     declared". Decision (technical, B269): an explicit `controls: {}` counts as declared-none; a spec asserts that a
+     part with `controls: {}` has no open point and a part without the key keeps it.
+316. A timing case of the e2e suite fails under machine load (builder, 2026-11-03, B232). `yarn e2e-check 21dcfc17f`
+     passed canvas 109/109, but sketches-tree "first sketch row after reload" took 5943/2916/2782 ms against a 2000 ms
+     budget at a load average of about 19; two reruns at normal load took about 700 ms. Why no tool caught it:
+     e2e-check reports a timing budget as PASS or FAIL whatever the load, so a busy machine reads as a regression.
+     Decision (technical, B270): e2e-check prints the 1-minute load average and the core count with every result; a
+     timing case that fails while the load is above the core count reports "NOT MEASURED (load <n>)" instead of FAIL,
+     and the slice stays unverified until a run below the core count passes. Behaviour cases keep failing as before.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
