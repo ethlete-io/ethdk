@@ -3566,3 +3566,16 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
 - B199 (Tom: "yes, I think"): the builder confirms that the tree is byte-equal to variant c and that the Studio
   merge record names c. Both true -> commit c and migrate canvas-frames to `instant` (B194) in the same commit.
   Either false -> report, commit nothing.
+
+282. B221 + B222 (builder, 2026-11-03, a293f319f, 5f839ff40, ecf7b626b). B221: the real silent pass was `design ready`.
+     drawnFindingsOf (drawn-open-points.ts) ignored a state that never drew, so ready now refuses ("cannot draw").
+     page-sketch did not fail again on its own. Its cause is lost because render-check kept only the first line of
+     frame.ts' error; RENDER now carries the whole message. Inference, unproven: a module import failed under
+     full-run load. A timed-out part is redrawn once on its own; a second timeout is RENDER-TIMEOUT (exit 1, blocks
+     ready). B222: check.ts' parser dropped args and read an unknown flag as the value of the flag before it. Why no
+     tool caught it: no spec fed check an unknown or form-ignored flag, and no spec had a state that never drew.
+     Fix: a positional part narrows every list. An unknown flag, an ignored flag or a retired flag gives exit 2.
+     Decisions (technical, doc-agent): (1) with no browser, a CI run passes "RENDER CHECK SKIPPED", and a dev-machine
+     --product/--part run fails with exit 1. (2) The frame.ts import retry stays until the next full-run failure shows
+     its cause. B227 adds the unknown-arg guard to every design subcommand. Open: a full `design check --product
+studio` on the new commits.
