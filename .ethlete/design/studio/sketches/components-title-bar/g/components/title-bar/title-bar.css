@@ -1,0 +1,29 @@
+@layer components {
+  .st-title-bar {
+    width: 1440px;
+  }
+
+  .et-window-control-button[data-shape='caption'] {
+    --_et-window-control-button-border-radius: 0;
+    --_et-window-control-button-icon-size: 12px;
+
+    width: 46px;
+    height: 100%;
+
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: 0.06;
+      }
+    }
+
+    &:focus-visible {
+      --et-theme-color-primary-opacity: 0.06;
+
+      outline-offset: -2px;
+    }
+
+    &:active {
+      --et-theme-color-primary-opacity: 0.04;
+    }
+  }
+}

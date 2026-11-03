@@ -1,4 +1,4 @@
-import { definePart, drawing, html, ng } from '@design-system';
+import { definePart, drawing, html, ng, withAction } from '@design-system';
 import { button } from '@ethlete/components/design/button';
 import titleSearchPart from '@system/components/title-search';
 import {
@@ -37,10 +37,7 @@ const sideControls = (props: Props, buttons: WindowButton[]) =>
 
 const update = (props: Props) =>
   titleBarControl(
-    button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }).replace(
-      /<button\b/,
-      '<button data-et-action="emit:update"',
-    ),
+    withAction(button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }), 'emit:update'),
     'update',
     props,
   );

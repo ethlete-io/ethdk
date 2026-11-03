@@ -99,7 +99,13 @@
     {
       "key": "r2",
       "title": "Caption tile width",
-      "note": "Same SDK caption shape, flush top-right, no gaps, same hover/focus/press and error close; only the tile width differs: c 36 px, d 32 px (square to the 32 px bar), e 46 px kept for comparison."
+      "note": "Same SDK caption shape, flush top-right, no gaps, same hover/focus/press and error close; only the tile width differs: c 36 px, d 32 px (square to the 32 px bar), e 46 px kept for comparison.",
+      "lost": "r2 tried 36 and 32 px tiles; Tom: the 46 px tile size is correct, the icons are not - the 10 px icon box draws only ~6 px of ink because the 16-unit viewBox pads the stroke"
+    },
+    {
+      "key": "r3",
+      "title": "Caption glyph ink size",
+      "note": "46 px tiles as e/a; only the glyph ink differs: f 10 px (native Win11), g 12 px, h 14 px, each a 1 px stroke at full opacity drawn from its own caption glyph assets."
     }
   ],
   "variantInfo": {
@@ -127,6 +133,21 @@
       "authors": ["claude-opus-5-5"],
       "round": "r2",
       "note": "46 px native Windows 11 tiles, unchanged from r1 a, kept for side-by-side comparison (138 px group, widest gaps at rest)."
+    },
+    "f": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r3",
+      "note": "46 px tiles with native Windows 11 glyph ink: measured 10 x 1 px minimize, 10 x 10 px maximize and close (r2 e measured 6 x 6 px), 1 px stroke at full opacity from the variant's own caption-*.svg assets on a 10 px viewBox."
+    },
+    "g": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r3",
+      "note": "46 px tiles, glyph ink one step up: measured 12 x 1 px minimize, 12 x 12 px maximize and close, 1 px stroke at full opacity; reads a bit heavier than native Windows, matches the 12 px icons elsewhere in Studio."
+    },
+    "h": {
+      "authors": ["claude-opus-5-5"],
+      "round": "r3",
+      "note": "46 px tiles, largest glyph ink: measured 14 x 1 px minimize, 14 x 14 px maximize and close, 1 px stroke at full opacity; clearly larger than native Windows, the glyphs fill almost half the bar height."
     }
   },
   "rejections": {
