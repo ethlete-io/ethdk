@@ -103,6 +103,8 @@ Left out, it defaults to `{ "@ethlete/*": "node_modules/@ethlete/*" }` in a chec
 so a consumer repo only sets `base`. A checkout that builds its own packages maps them, for example
 `{ "@ethlete/*": "dist/libs/*" }`.
 
+Run from a repo checkout, `et design` prints `WARN: the built cli is older than libs/cli/src` to stderr as its first line when the built `dist/libs/cli` is older than the source. It names both times and the rebuild command (`NX_NO_CLOUD=true npx nx build cli`), and never refuses. An installed package prints nothing.
+
 `generated` lists stylesheets a command generates from one part, for example SDK theme classes generated
 from a colours part:
 
