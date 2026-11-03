@@ -20,31 +20,6 @@ if [ -n "$styles" ]; then
   node ./tools/scripts/lint-css-properties.js $styles
 fi
 
-# vitest resolves relative paths against the Studio root, not the repo root, so pass absolute ones.
-studio=$(git diff --cached --name-only --diff-filter=ACM -- 'apps/ethlete-studio/*' | sed "s|^|$PWD/|")
-
-if [ -n "$studio" ]; then
-  # shellcheck disable=SC2086
-  npx vitest related --run --passWithNoTests --reporter=default --config apps/ethlete-studio/vite.config.mts $studio || {
-    echo 'pre-commit: a Studio spec related to the staged files fails (FAIL lines above name it). It runs on the working tree, so the red may be uncommitted work of another session in this checkout.' >&2
-    exit 1
-  }
-fi
-
-# The cli config resolves its includes and reporters against libs/cli, so vitest runs from there.
-cli=$(git diff --cached --name-only --diff-filter=ACM -- 'libs/cli/*' | sed "s|^|$PWD/|")
-
-# Specs that load a source by path or text are invisible to `vitest related`; the map names the sources each one reads.
-staged_all=$(git diff --cached --name-only --diff-filter=ACM)
-# shellcheck disable=SC2086
-mapped=$(node ./tools/scripts/cli-related-map.mjs specs $staged_all | sed "s|^|$PWD/|")
-cli="$cli $mapped"
-
-if [ -n "$(echo $cli)" ]; then
-  # A path-limited commit sets GIT_INDEX_FILE to a temporary index; specs that run git in their own repos must not inherit it.
-  # shellcheck disable=SC2086
-  (cd libs/cli && env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE npx vitest related --run --passWithNoTests $cli) || {
-    echo 'pre-commit: a cli spec related to the staged files fails (FAIL lines above name it). It runs on the working tree, so the red may be uncommitted work of another session in this checkout.' >&2
-    exit 1
-  }
-fi
+# Runs the Studio and cli specs related to the staged files against a checkout of the index, so the
+# commit is tested as it will land, never against uncommitted edits of other sessions in this checkout.
+node ./tools/scripts/precommit-specs.mjs
