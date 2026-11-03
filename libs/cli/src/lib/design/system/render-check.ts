@@ -42,6 +42,26 @@ export type RenderIssue = {
 /** One state of a part that was drawn, at the size it was drawn in. */
 export type RenderedState = Pick<RenderIssue, 'product' | 'part' | 'state' | 'size' | 'sketch'>;
 
+const BUSY_MARK = 'BUSY';
+
+/** One drawn state of a part whose render holds `aria-busy="true"` or a loading button, so it shows ongoing work. */
+export type BusyState = Pick<RenderIssue, 'product' | 'part' | 'state' | 'sketch'>;
+
+/** @internal The states the busy marks of `issues` name, once each. */
+export const busyStatesOf = (issues: RenderIssue[]): BusyState[] => {
+  const seen = new Set<string>();
+
+  return issues.flatMap(({ rule, product, part, state, sketch }) => {
+    const key = JSON.stringify([product, part, state, sketch]);
+
+    if (rule !== BUSY_MARK || seen.has(key)) return [];
+
+    seen.add(key);
+
+    return [{ product, part, state, sketch }];
+  });
+};
+
 /** The parts of one product to draw, as it draws or as one sketch variant draws it; every part when `parts` is null. */
 export type RenderJob = { product: string; sketch: SketchVariant | null; parts: string[] | null };
 
@@ -129,6 +149,8 @@ const ESCAPABLE = ['CLIPPED', 'WRAP', NESTED_SCROLL_RULE];
 
 const WARNING_RULES = new Set(['UNDEFINED-CLASS', 'EMBED-SCALE']);
 
+const BUSY_SELECTOR = '[aria-busy="true"], [data-loading="true"]';
+
 const PATH_DEPTH = 4;
 
 const tagOf = (name: string) => /^[a-z0-9-]+/u.exec(name)?.[0] ?? name;
@@ -206,6 +228,9 @@ const inspectFrame = (options: {
 
   const partRoot = root.querySelector('[data-et-part]') ?? root.querySelector(':scope > :not(style)');
   if (!partRoot) return found;
+
+  const busy = root.querySelector('${BUSY_SELECTOR}');
+  if (busy) found.push({ rule: '${BUSY_MARK}', path: pathOf(busy), detail: 'draws ongoing work' });
 
   const sheets = [...document.styleSheets].map((sheet) => {
     try {
@@ -661,7 +686,13 @@ export const renderIssuesOf = async (options: {
   partTimeoutMs?: number;
   onProgress?: (line: string) => void;
 }): Promise<
-  | { issues: RenderIssue[]; warnings: RenderIssue[]; grids: RenderedGrid[]; drawn: RenderedState[] }
+  | {
+      issues: RenderIssue[];
+      warnings: RenderIssue[];
+      grids: RenderedGrid[];
+      drawn: RenderedState[];
+      busy?: BusyState[];
+    }
   | { unavailable: string }
 > => {
   const { target, config, jobs } = options;
@@ -904,7 +935,7 @@ export const renderIssuesOf = async (options: {
       }
     }
 
-    const inspected = await queue.run((browser) =>
+    const all = await queue.run((browser) =>
       inspectRetryingTimeouts({
         browser,
         base,
@@ -914,6 +945,7 @@ export const renderIssuesOf = async (options: {
           options.onProgress?.(`[${done}/${total}] ${part} ${Math.round(ms / 1000)}s`),
       }),
     );
+    const inspected = all.filter((issue) => issue.rule !== BUSY_MARK);
     const isInput = (issue: RenderIssue) => issue.rule === 'CONTROL-PART-INPUT';
     const sketched = inspected.filter((issue) => issue.sketch && !WARNING_RULES.has(issue.rule));
     const compared = [...new Set(sketched.map((issue) => JSON.stringify([issue.product, issue.part])))];
@@ -960,6 +992,7 @@ export const renderIssuesOf = async (options: {
         ...firstOfEach(inspected.filter((issue) => WARNING_RULES.has(issue.rule))),
       ],
       grids,
+      busy: busyStatesOf(all),
       drawn: frames
         .filter(({ contrast }) => contrast.scheme !== 'dark')
         .map(({ address }) => ({

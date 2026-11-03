@@ -325,7 +325,10 @@ A part names the code that builds it in `implements`: a component or element nam
 names its route, `implements: { route: '/system' }`, and for compare the presentational component the route renders,
 `implements: { route: '/inbox', component: 'apps/app/src/app/inbox/inbox.component.ts' }`. `et design check` fails
 with `IMPLEMENTS-MISSING` when a path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal or not
-the shape of its layer.
+the shape of its layer. It fails with `STATE-NOT-IN-COMPONENT` when a state sets a value of a phase or state union the
+linked component takes as `input()` or `model()` (a type named `…Phase` or `…State`, or an inline union on an input
+named `phase` or `state`) but is not named after that value: `sending: { phase: 'busy' }` must be the state `busy`
+(`busy-long` is fine).
 
 `et design check` fails with `UNBOUND-INPUT` when an `input()` or `model()` of an app component that implements a part is
 bound by no template of the app (a consumer binds it with `[x]`, `[(x)]` or a plain attribute), and with `SAMPLE-DEFAULT`
@@ -342,8 +345,8 @@ for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
 not an open point: `et design check` lists those on one `UNLINKED <product>: <part>, ...` line. Outside `foundations/` and `pages/`, every ordered pair of a part's states needs a
 motion unless it is `unreachable` or a state name contains `focus`, for example `no motion collapsed -> expanded`, and
-a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner` needs a looping
-motion: `no looping motion in loading`. The list does not change the exit code. The render step runs even when a static rule fails, so both
+a state whose name contains `loading`, `pending`, `busy`, `progress`, `indeterminate` or `spinner`, or whose drawing
+holds `aria-busy="true"` or a loading button whatever its name, needs a looping motion: `no looping motion in loading`. The list does not change the exit code. The render step runs even when a static rule fails, so both
 kinds of findings show in one run. A part that does not load or draw gets no render rule checked: one line names
 it, for example `NOT CHECKED studio render rules on 1 part: components/menu - it did not draw, see RENDER above`,
 and without a browser one line counts every part, `NOT CHECKED studio render rules on all 80 parts - <why>`. A

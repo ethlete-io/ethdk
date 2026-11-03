@@ -288,6 +288,24 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('names the states whose render is busy or holds a loading button, and keeps them out of the issues', async (context) => {
+    const target = checkout({
+      'components/send-busy': { body: '<button type="button" aria-busy="true">Senden</button>', states: 'sending: {}' },
+      'components/send-loading': { body: '<button type="button" data-loading="true">Senden</button>' },
+      'components/send-idle': { body: '<button type="button" aria-busy="false">Senden</button>' },
+    });
+    const config = readConfig(target) ?? {};
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+    expect(rendered.busy?.map(({ part, state }) => `${part} ${state}`).sort()).toEqual([
+      'components/send-busy sending',
+      'components/send-loading default',
+    ]);
+    expect(rendered.issues.filter((issue) => issue.rule === 'BUSY')).toEqual([]);
+  }, 120_000);
+
   it('measures the contrast of text in an inert preview, which stays visible', async (context) => {
     const tile = (inner: string) =>
       `<div style="background: rgb(220 220 220); padding: 8px; width: 200px">${inner}</div>`;

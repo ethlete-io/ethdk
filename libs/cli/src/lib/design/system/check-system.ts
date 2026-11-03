@@ -24,9 +24,10 @@ import { canonicalClassesOf } from './rules/canonical-class';
 import { componentCopiesOf } from './rules/component-copy';
 import { deniedClassesOf } from './rules/denied-class';
 import { nativeTitlesOf } from './rules/native-title';
-import { ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
+import { BusyState, ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
+import { statesNotInComponentOf } from './rules/state-in-component';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
@@ -71,6 +72,7 @@ const RULES = [
   staleNotesOf,
   badWidthsOf,
   badLinksOf,
+  statesNotInComponentOf,
   unknownInteractionsOf,
   kitOutsidePagesOf,
   inlineUiInPageProblemsOf,
@@ -395,9 +397,9 @@ const countCannotDraw = (options: CheckOptions & { product: ResolvedProduct; why
 };
 
 const drawnFindingsFor = async (
-  options: CheckOptions & { product: ResolvedProduct; rendered: RenderIssue[] },
+  options: CheckOptions & { product: ResolvedProduct; rendered: RenderIssue[]; busy?: BusyState[] },
 ): Promise<DrawnFindings> => {
-  const { product, rendered } = options;
+  const { product, rendered, busy } = options;
   const stateful = statefulPartsOf(product, options.part ? [options.part] : null);
   let gaps: Map<string, CompletenessGap[] | string> | null = null;
 
@@ -414,7 +416,7 @@ const drawnFindingsFor = async (
     }
   }
 
-  const { failed, ...findings } = drawnFindingsFrom({ product, issues: rendered, gaps, stateful });
+  const { failed, ...findings } = drawnFindingsFrom({ product, issues: rendered, busy, gaps, stateful });
 
   for (const line of failed) {
     console.log(cannotDrawLine({ product: product.name, line }));
@@ -427,7 +429,9 @@ const drawnFindingsFor = async (
   return findings;
 };
 
-const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[] | null; notDrawn?: string }) => {
+const printOpenPoints = async (
+  options: CheckOptions & { rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string },
+) => {
   const { target, config, products, rendered } = options;
 
   for (const name of products) {
@@ -530,7 +534,7 @@ const printUndrawn = (issues: RenderIssue[]) => {
 
 const renderSystem = async (
   options: CheckOptions,
-): Promise<{ code: number; rendered: RenderIssue[] | null; notDrawn?: string }> => {
+): Promise<{ code: number; rendered: RenderIssue[] | null; busy?: BusyState[]; notDrawn?: string }> => {
   const { code, fatal } = reportSystem({ ...options, warn: true });
 
   if (fatal) return { code, rendered: null };
@@ -610,7 +614,7 @@ const renderSystem = async (
         rendered.issues.filter((issue) => issue.product === product.name && isInBase(issue)).map((issue) => issue.rule),
       );
 
-  return { code: code !== 0 || issues.length > 0 ? 1 : 0, rendered: issues };
+  return { code: code !== 0 || issues.length > 0 ? 1 : 0, rendered: issues, busy: rendered.busy };
 };
 
 /**
@@ -638,9 +642,9 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     lines.forEach((line) => console.log(line));
   }
 
-  const { code, rendered, notDrawn } = await renderSystem(counted);
+  const { code, rendered, busy, notDrawn } = await renderSystem(counted);
 
-  await printOpenPoints({ ...counted, rendered, notDrawn });
+  await printOpenPoints({ ...counted, rendered, busy, notDrawn });
 
   let failed = 0;
   let partsTotal = 0;

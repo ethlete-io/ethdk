@@ -351,4 +351,32 @@ describe('sketchAddedPointsOf', () => {
       ),
     ).toEqual([{ part: 'components/a', points: [{ kind: 'missing-motion', from: 'pending', to: 'pending' }] }]);
   });
+
+  it('asks a loop in a state whose render is busy whatever its name, as the comment-draft sending state (finding 311)', () => {
+    const draft = (busyStates: OpenPointsInput['busyStates']) =>
+      openPointsOf(
+        input({
+          parts: [
+            {
+              key: 'components/comment-draft',
+              layer: 'components',
+              linked: false,
+              controls: true,
+              motion: { states: ['empty', 'typed', 'sending', 'error'], motions: [], unreachable: [], instant: true },
+            },
+          ],
+          busyStates,
+        }),
+      );
+
+    expect(draft([])).toEqual([]);
+    expect(
+      draft([
+        { part: 'components/comment-draft', state: 'sending' },
+        { part: 'components/other', state: 'typed' },
+      ]),
+    ).toEqual([
+      { part: 'components/comment-draft', points: [{ kind: 'missing-motion', from: 'sending', to: 'sending' }] },
+    ]);
+  });
 });

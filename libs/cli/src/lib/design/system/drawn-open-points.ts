@@ -2,10 +2,10 @@ import { DesignConfig } from '../paths';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput } from './open-points';
 import { contrastsOf, missingStatesOf } from './read-open-points';
-import { RENDER_TIMEOUT, RenderIssue, renderIssuesOf } from './render-check';
+import { BusyState, RENDER_TIMEOUT, RenderIssue, renderIssuesOf } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 
-export type DrawnFindings = Required<Pick<OpenPointsInput, 'missingStates' | 'contrasts'>>;
+export type DrawnFindings = Required<Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'>>;
 
 /** Whether a render issue says a whole part did not draw. */
 export const isPartUndrawn = (issue: RenderIssue) =>
@@ -34,13 +34,14 @@ export const statefulPartsOf = (product: ResolvedProduct, parts: string[] | null
     .filter((key) => parts === null || parts.includes(key));
 
 /**
- * The open-point findings of a drawn product: the contrasts its render `issues` found, the missing control states in
+ * The open-point findings of a drawn product: the contrasts its render `issues` found, the states its `busy` marks name, the missing control states in
  * the `gaps` of its completeness check, and one `<part>: <why>` line per part or state the render issues say did not
  * draw and per stateful part the completeness check could not draw.
  */
 export const drawnFindingsFrom = (options: {
   product: ResolvedProduct;
   issues: RenderIssue[];
+  busy?: BusyState[];
   gaps: Map<string, CompletenessGap[] | string> | null;
   stateful: string[];
 }): DrawnFindings & { failed: string[] } => {
@@ -49,6 +50,9 @@ export const drawnFindingsFrom = (options: {
 
   return {
     contrasts: contrastsOf(own),
+    busyStates: (options.busy ?? [])
+      .filter((busy) => busy.product === product.name && busy.sketch === null)
+      .map(({ part, state }) => ({ part, state })),
     missingStates: gaps ? missingStatesOf(gaps) : [],
     failed: [
       ...undrawnLinesOf(own),
@@ -83,6 +87,7 @@ export const drawnFindingsOf = async (options: {
   const { failed, ...findings } = drawnFindingsFrom({
     product,
     issues: rendered.issues,
+    busy: rendered.busy,
     gaps: checked?.gaps ?? null,
     stateful,
   });

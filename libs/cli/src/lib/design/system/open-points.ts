@@ -51,7 +51,8 @@ export type PartMotions = {
 /**
  * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `motion` is left out when its
  * states cannot be read; `missingStates` and `contrasts` come
- * from drawing the parts, so a check without a browser leaves them out.
+ * from drawing the parts, so a check without a browser leaves them out. `busyStates` are drawn states whose render
+ * holds `aria-busy="true"` or a loading button: each is ongoing work whatever its name.
  */
 export type OpenPointsInput = {
   parts: {
@@ -73,15 +74,25 @@ export type OpenPointsInput = {
   }[];
   missingStates?: { part: string; control: string }[];
   contrasts?: { part: string; state: string; path: string }[];
+  busyStates?: { part: string; state: string }[];
 };
 
 const STATELESS_LAYERS: Layer[] = ['foundations', 'pages'];
 
 const ONGOING_WORK = ['loading', 'pending', 'busy', 'progress', 'indeterminate', 'spinner'];
 
-const isOngoingWork = (state: string) => ONGOING_WORK.some((word) => state.includes(word));
+const isOngoingWork = (state: string, busy: string[]) =>
+  busy.includes(state) || ONGOING_WORK.some((word) => state.includes(word));
 
-const missingMotionsOf = (layer: Layer, motion: PartMotions | undefined): OpenPoint[] => {
+const missingMotionsOf = ({
+  layer,
+  motion,
+  busy,
+}: {
+  layer: Layer;
+  motion: PartMotions | undefined;
+  busy: string[];
+}): OpenPoint[] => {
   if (!motion || STATELESS_LAYERS.includes(layer)) return [];
 
   const covered = (from: string, to: string) =>
@@ -90,7 +101,7 @@ const missingMotionsOf = (layer: Layer, motion: PartMotions | undefined): OpenPo
 
   return motion.states.flatMap((from) =>
     motion.states.flatMap((to) => {
-      const needed = from === to ? isOngoingWork(from) : !from.includes('focus') && !to.includes('focus');
+      const needed = from === to ? isOngoingWork(from, busy) : !from.includes('focus') && !to.includes('focus');
 
       return needed && !covered(from, to) ? [{ kind: 'missing-motion' as const, from, to }] : [];
     }),
@@ -115,7 +126,11 @@ export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
         .map(({ state, path }) => ({ kind: 'contrast' as const, state, path })),
       ...(linked && go === 'missing' ? [{ kind: 'no-go' as const }] : []),
       ...(linked && go === 'stale' ? [{ kind: 'stale-go' as const }] : []),
-      ...missingMotionsOf(layer, motion),
+      ...missingMotionsOf({
+        layer,
+        motion,
+        busy: (input.busyStates ?? []).filter((busy) => busy.part === key).map(({ state }) => state),
+      }),
       ...input.sketches
         .filter((sketch) => sketch.targets.includes(key))
         .map((sketch) => ({

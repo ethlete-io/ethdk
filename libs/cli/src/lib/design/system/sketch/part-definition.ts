@@ -76,6 +76,32 @@ export const stateNamesOf = (source: string): string[] | null => {
   return names.includes(null) ? null : (names as string[]);
 };
 
+/** The string literal props each state of `definePart({ states: { … } })` writes, by state name, read without running it. */
+export const stateLiteralPropsOf = (source: string): Record<string, Record<string, string>> => {
+  const { definition } = definitionOf(source);
+  const states = definition ? fieldOf(definition, 'states')?.initializer : undefined;
+
+  if (!states || !ts.isObjectLiteralExpression(states)) return {};
+
+  return Object.fromEntries(
+    states.properties.flatMap((state) => {
+      const name = ts.isPropertyAssignment(state) ? nameOf(state.name) : null;
+
+      if (!ts.isPropertyAssignment(state) || name === null || !ts.isObjectLiteralExpression(state.initializer))
+        return [];
+
+      const props = state.initializer.properties.flatMap((prop) => {
+        const key = ts.isPropertyAssignment(prop) ? nameOf(prop.name) : null;
+        const value = ts.isPropertyAssignment(prop) ? literalOf(prop.initializer) : null;
+
+        return key !== null && value !== null ? [[key, value] as const] : [];
+      });
+
+      return [[name, Object.fromEntries(props)]];
+    }),
+  );
+};
+
 /** The model ids in the `madeBy` literal of a part file; none when it has no such array of strings. */
 export const madeByOf = (source: string): string[] => {
   const { definition } = definitionOf(source);

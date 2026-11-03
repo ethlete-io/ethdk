@@ -58,7 +58,7 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
  */
 export const readOpenPoints = (
   product: ResolvedProduct,
-  rendered: Pick<OpenPointsInput, 'missingStates' | 'contrasts'> = {},
+  rendered: Pick<OpenPointsInput, 'missingStates' | 'contrasts' | 'busyStates'> = {},
 ): PartOpenPoints[] => {
   const source = { productDir: product.dir, product: product.name };
 
@@ -121,29 +121,33 @@ export const missingStatesOf = (
 
 /**
  * The open points of `targets` as a sketch variant draws them, of the kinds the sketch closes itself, split into the
- * ones the variant adds to the merged parts and the ones it inherits from them.
+ * ones the variant adds to the merged parts and the ones it inherits from them. `busy` names the drawn states of each
+ * side whose render shows ongoing work.
  */
 export const sketchOpenPointsOf = ({
   merged,
   variant,
   targets,
+  busy = { merged: [], variant: [] },
 }: {
   merged: ResolvedProduct;
   variant: ResolvedProduct;
   targets: string[];
+  busy?: Record<'merged' | 'variant', NonNullable<OpenPointsInput['busyStates']>>;
 }): { added: PartOpenPoints[]; inherited: PartOpenPoints[] } => {
-  const ownOf = (product: ResolvedProduct) =>
+  const ownOf = (product: ResolvedProduct, busyStates: NonNullable<OpenPointsInput['busyStates']>) =>
     openPointsOf({
       parts: partInputsOf(product).filter((part) => targets.includes(part.key)),
       comments: [],
       sketches: [],
+      busyStates,
     }).flatMap(({ part, points }) => {
       const own = points.filter((point) => SKETCH_KINDS.includes(point.kind));
 
       return own.length > 0 ? [{ part, points: own }] : [];
     });
 
-  return sketchAddedPointsOf(ownOf(merged), ownOf(variant));
+  return sketchAddedPointsOf(ownOf(merged, busy.merged), ownOf(variant, busy.variant));
 };
 
 /** The own parts outside `foundations/` that have no `implements` link; parts from the base product are left out. */

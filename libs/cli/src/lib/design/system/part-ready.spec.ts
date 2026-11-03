@@ -130,6 +130,7 @@ describe('part ready', () => {
     vi.mocked(drawnFindingsOf).mockResolvedValueOnce({
       contrasts: [{ part: 'components/chip', state: 'default', path: 'span' }],
       missingStates: [],
+      busyStates: [],
     });
 
     expect(await post(target, { part: 'components/chip', hash: hashOf(target), by: 'tom' })).toEqual({
