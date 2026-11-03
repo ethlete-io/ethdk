@@ -3542,3 +3542,16 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
   writing stash subcommand (push, save, pop, apply, drop, clear, branch, create, store) stays refused.
 - B224 follow-up (Tom: yes): the builder restores `.claude/settings.json` with `git checkout .claude/settings.json`
   (the diff was hook order only); a later `yarn agents:sync` must then leave it unchanged.
+
+281. B205 + B225 (builder, 2026-11-03, 4247f5042, 21bc27863). B205: SAMPLE-DEFAULT flags `??`/`||`/ternary fallbacks to
+     sample constants; the real hit is inbox.component.ts:72 `this.draftText() ?? this.DRAFT_TEXT`. Decision: the
+     line-based match stays; an AST walk only after a real multi-line miss. Not run: a full `design check` with the
+     final code. B225: the hook ran the specs again because HEAD moved during the run (485dbbd76 landed 2 s before the
+     commit), so marker tree != staged tree. Why no tool caught it: the B214 spec never had a concurrent commit. Fix:
+     the hook also skips when the files between marker and staged tree select no specs; `yarn commit` adds untracked
+     given paths itself. Accepted gap: a mid-run commit whose files select no specs is skipped, the same blind spot
+     the selection rule has for staged files. Not verified: git-add retry under lock contention.
+     Title-bar r3 (2026-11-03): Studio asked Tom to rebase for d961cb00d, a declarations-only change that draws
+     nothing, while `sketch rebase` only rewrites baseline hashes (B220 not built). Lesson: a "needs rebase" signal
+     says whether the change draws anything. Into B220: rebase ports new states; Studio marks a draw-free base change
+     as "base refreshed, no visual change" instead of blocking the pick. title-bar is B220's real reproduction.
