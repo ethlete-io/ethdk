@@ -3,10 +3,7 @@
     {
       "id": "comment-write",
       "label": "Kommentar schreiben",
-      "place": {
-        "part": "pages/inbox",
-        "action": "emit:sendComment"
-      },
+      "place": { "part": "pages/inbox", "action": "emit:sendComment" },
       "confirmed": true
     },
     {
@@ -54,10 +51,7 @@
     {
       "id": "comments-retry",
       "label": "Kommentare erneut laden",
-      "place": {
-        "part": "pages/inbox",
-        "action": "emit:retry"
-      },
+      "place": { "part": "pages/inbox", "action": "emit:retry" },
       "confirmed": true
     },
     {
@@ -128,28 +122,19 @@
     {
       "id": "inventory-approve",
       "label": "Inventory freigeben",
-      "place": {
-        "part": "pages/inventory",
-        "action": "emit:approveInventory"
-      },
+      "place": { "part": "pages/inventory", "action": "emit:approveInventory" },
       "confirmed": true
     },
     {
       "id": "inventory-reload",
       "label": "Inventory neu laden",
-      "place": {
-        "part": "pages/inventory",
-        "action": "emit:reloadInventory"
-      },
+      "place": { "part": "pages/inventory", "action": "emit:reloadInventory" },
       "confirmed": true
     },
     {
       "id": "inventory-toggle",
       "label": "Inventory ein- und ausblenden",
-      "place": {
-        "part": "pages/inventory",
-        "action": "emit:toggleInventory"
-      },
+      "place": { "part": "pages/inventory", "action": "emit:toggleInventory" },
       "confirmed": true
     },
     {
@@ -471,10 +456,7 @@
     {
       "id": "frame-select",
       "label": "Frame wählen",
-      "place": {
-        "part": "elements/canvas-frames",
-        "action": "selected"
-      },
+      "place": { "part": "elements/canvas-frames", "action": "selected" },
       "confirmed": true
     },
     {
@@ -488,19 +470,13 @@
     {
       "id": "grid-columns-toggle",
       "label": "Spalten und Gruppen im Raster umschalten",
-      "place": {
-        "part": "elements/canvas-frames",
-        "action": "emit:columnToggle"
-      },
+      "place": { "part": "elements/canvas-frames", "action": "emit:columnToggle" },
       "confirmed": true
     },
     {
       "id": "frame-reload",
       "label": "Frame neu laden",
-      "place": {
-        "part": "elements/canvas-frames",
-        "action": "emit:reload"
-      },
+      "place": { "part": "elements/canvas-frames", "action": "emit:reload" },
       "confirmed": true
     },
     {
