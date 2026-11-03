@@ -58,20 +58,7 @@
       width: var(--et-switch-track-width);
       height: var(--et-switch-track-height);
       border-radius: calc(var(--et-switch-track-height) / 2);
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
-      box-shadow: inset 0 0 0 1px var(--et-surface-interaction-solid);
-    }
-
-    /* hover-capable pointers only — on touch, :hover sticks after a tap */
-    @media (hover: hover) {
-      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
-        .et-switch-track,
-      :where(et-choice-field:has(.et-choice-field-label-area:hover))
-        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
-        .et-switch-track {
-        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
-        box-shadow: inset 0 0 0 1px var(--et-surface-interaction-hover-solid);
-      }
+      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 38%, transparent);
     }
 
     :where(et-choice-field[data-error])

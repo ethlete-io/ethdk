@@ -597,20 +597,15 @@ test.describe('choice-inputs / async validation', () => {
 });
 
 test.describe('switch / track edge', () => {
-  test('the off track draws a surface-interaction edge', async ({ page }) => {
+  test('the off track draws no edge, at rest and hovered', async ({ page }) => {
     const root = await openStory(page, SWITCH_DEFAULT);
     const track = root.locator('et-switch:not([aria-checked="true"]) .et-switch-track').first();
-    const color = await track.evaluate((el) => {
-      const probe = document.createElement('span');
-      probe.style.border = '1px solid var(--et-surface-interaction-solid)';
-      el.appendChild(probe);
-      const value = getComputedStyle(probe).borderTopColor;
-      probe.remove();
 
-      return value;
-    });
-
-    await expect(track).toHaveCSS('box-shadow', `${color} 0px 0px 0px 1px inset`);
+    await expect(track).toHaveCSS('box-shadow', 'none');
+    const rest = await settledBackgroundColor(track);
+    await track.hover();
+    await expect(track).toHaveCSS('box-shadow', 'none');
+    expect(await settledBackgroundColor(track)).toBe(rest);
   });
 
   for (const [scheme, edge] of [
