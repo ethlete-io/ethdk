@@ -3611,3 +3611,8 @@ studio` on the new commits.
 - Tom: slow down. No new sub-agents until 15:00 today. Running sub-agents finish their current slice and get no
   follow-up. The builder works the queue alone, one slice at a time: TS2345 fix check, then B229, B220
   (title-bar), B227/B228.
+- canvas-frames (Tom, 13:09): Tom merged it again in Studio and confirmed it in chat. The tree equals variant c, and
+  the merge deleted the sketch dir again, so Tom's chat message is the only record of the pick (B228's second
+  repro). The builder commits c together with the `instant` migration and quotes B226's real repro.
+- pages/system: Tom gave the go. go.json holds hash 9117d961d91424fa, which is neither the old nor the merged hash.
+  The builder checks it before committing.
