@@ -40,6 +40,7 @@ import { staleReplacesOf } from './rules/stale-replace';
 import { CHECK_RULES } from './check-rules';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
+import { orphanEndpointProblemsOf } from './rules/orphan-endpoint';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
@@ -74,6 +75,7 @@ const RULES = [
   deniedClassesOf,
   nativeTitlesOf,
   utilityCssOf,
+  orphanEndpointProblemsOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
