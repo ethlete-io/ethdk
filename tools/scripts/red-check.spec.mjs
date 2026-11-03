@@ -187,3 +187,25 @@ test('a vitest spec with a crash and an assertion failure stays red', () => {
   assert.deepEqual(result.crashes['/fixture/mixed.spec.ts'], ['crashes on a missing function']);
   assert.equal(result.ok, true);
 });
+
+test('a range reads red where the single sha of its last commit does not', () => {
+  const repo = makeRepo(1, 2, 2);
+  try {
+    const base = git(repo, 'rev-parse', 'HEAD~1');
+    git(repo, 'reset', '-q', '--hard', base);
+    writeFileSync(join(repo, 'lib/value.mjs'), 'export const value = 2;\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'fix');
+    writeFileSync(join(repo, 'lib/value.spec.mjs'), specFor(2));
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'spec');
+    const single = spawnSync('node', [script, 'HEAD'], { cwd: repo, encoding: 'utf8' });
+    assert.equal(single.status, 1, single.stdout + single.stderr);
+    assert.match(single.stdout, /NOT RED/);
+    const range = spawnSync('node', [script, `${base}..HEAD`], { cwd: repo, encoding: 'utf8' });
+    assert.equal(range.status, 0, range.stdout + range.stderr);
+    assert.match(range.stdout, /red: value is 2/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});

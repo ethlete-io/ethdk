@@ -11,8 +11,18 @@ const isSpec = (file) => /\.spec\.(ts|mjs)$/.test(file);
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 1 << 28 }).trim();
 
-export const changedFiles = (repo, commit) =>
-  git(repo, 'diff-tree', '--no-commit-id', '--name-status', '-r', '--no-renames', '--root', commit)
+export const changedFiles = (repo, commit, base) =>
+  git(
+    repo,
+    'diff-tree',
+    '--no-commit-id',
+    '--name-status',
+    '-r',
+    '--no-renames',
+    '--root',
+    ...(base ? [base] : []),
+    commit,
+  )
     .split('\n')
     .filter(Boolean)
     .map((line) => {
@@ -172,13 +182,15 @@ const runVitest = (checkout, specs, crashes) => {
 };
 
 export const redCheck = (repo, commit, { dir } = {}) => {
-  const files = changedFiles(repo, commit);
+  const [rangeBase, rangeHead] = commit.includes('..') ? commit.split('..') : [];
+  const files = rangeHead ? changedFiles(repo, rangeHead, rangeBase) : changedFiles(repo, commit);
   const specs = files.filter((f) => isSpec(f.file) && f.status !== 'D').map((f) => f.file);
   if (specs.length === 0) return { ok: false, reason: 'the commit adds or changes no spec files', failures: {} };
 
-  const sha = git(repo, 'rev-parse', commit);
-  const parents = git(repo, 'rev-list', '--parents', '-n', '1', sha).split(' ').slice(1);
-  const base = parents[0];
+  const sha = git(repo, 'rev-parse', rangeHead ?? commit);
+  const base = rangeHead
+    ? git(repo, 'rev-parse', rangeBase)
+    : git(repo, 'rev-list', '--parents', '-n', '1', sha).split(' ')[1];
   const worktree = resolve(dir ?? mkdtempSync(join(tmpdir(), 'red-check-')));
 
   try {
@@ -228,7 +240,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const dir = dirAt >= 0 ? args.splice(dirAt, 2)[1] : undefined;
   const commit = args[0];
   if (!commit) {
-    console.error('usage: red-check.mjs <commit> [--dir <worktree dir>]');
+    console.error('usage: red-check.mjs <commit | base..head> [--dir <worktree dir>]');
     process.exit(2);
   }
   const repo = git(process.cwd(), 'rev-parse', '--show-toplevel');
