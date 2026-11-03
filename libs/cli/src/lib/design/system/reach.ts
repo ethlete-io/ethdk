@@ -9,6 +9,8 @@ export const UNREACHABLE_RULE = 'UNREACHABLE';
 const ACTION_SAMPLES_PER_SIDE = 3;
 const REGION_SAMPLES_PER_SIDE = 5;
 const OPAQUE = 0.95;
+const PAN_STEP = 32;
+const PAN_MAX_STEPS = 200;
 
 /**
  * The statements of the reach check inside the frame script of `render-check`. They use `root`, `report` and
@@ -104,24 +106,64 @@ export const REACH_STATEMENTS = `
       if (hidden) report('${UNREACHABLE_RULE}', element, labelOf(element) + ' is ' + hidden.why + ' in a state that declares it, so it can not be pressed');
       else shownActions.push(element);
     }
-    for (const element of shownActions) {
-      const box = visibleBoxOf(element);
-      if (!box) continue;
-      const blocked = coversOf(element, box, ${ACTION_SAMPLES_PER_SIDE}, false);
-      if (blocked.hits === blocked.total)
-        report('${UNREACHABLE_RULE}', element, labelOf(element) + ' is covered: a click at any point of it lands on ' + pathOf(blocked.most));
-    }
     const force = document.createElement('style');
     force.textContent = '* { pointer-events: auto !important; }';
-    document.head.append(force);
-    try {
+    const judge = (pose) => {
+      const sampled = [];
       for (const element of shownActions) {
         const box = visibleBoxOf(element);
-        if (!box) continue;
-        const covered = coversOf(element, box, ${ACTION_SAMPLES_PER_SIDE}, true);
-        if (covered.hits > 0)
-          report('${COVERED_RULE}', element, labelOf(element) + ': ' + covered.hits + ' of ' + covered.total + ' points lie under the opaque ' + pathOf(covered.most));
+        if (box) sampled.push({ element, points: pointsOf(box, ${ACTION_SAMPLES_PER_SIDE}).map((point) => ({ point, click: null, cover: null })) });
       }
+      for (const { points, element } of sampled)
+        for (const sample of points) sample.click = coverOf(document.elementFromPoint(...sample.point), element, false, document.documentElement);
+      document.head.append(force);
+      try {
+        for (const { points, element } of sampled)
+          for (const sample of points) sample.cover = coverOf(document.elementFromPoint(...sample.point), element, true, document.documentElement) ?? sample.click;
+      } finally {
+        force.remove();
+      }
+      for (const { element, points } of sampled) {
+        const counts = new Map();
+        for (const { cover } of points) if (cover) counts.set(cover, (counts.get(cover) ?? 0) + 1);
+        const hits = [...counts.values()].reduce((sum, count) => sum + count, 0);
+        if (hits === 0) continue;
+        const most = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+        if (points.every(({ click }) => click)) {
+          report('${UNREACHABLE_RULE}', element, labelOf(element) + ' is covered: a click at any point of it lands on ' + pathOf(most) + pose);
+          continue;
+        }
+        const under = solid(most) ? 'the opaque ' + pathOf(most) : pathOf(most) + ', which takes the click there';
+        report('${COVERED_RULE}', element, labelOf(element) + ': ' + hits + ' of ' + points.length + ' points lie under ' + under + pose);
+      }
+    };
+    judge('');
+    const placesOf = (elements) => elements.map((element) => element.getBoundingClientRect()).map((rect) => [rect.left, rect.top]);
+    const wheel = (canvas, x, y) => canvas.dispatchEvent(new WheelEvent('wheel', { deltaX: x, deltaY: y, bubbles: true, cancelable: true }));
+    const canvases = new Set();
+    for (const element of shownActions)
+      for (let at = element.parentElement; at && at !== root; at = at.parentElement) {
+        const style = getComputedStyle(at);
+        if (style.overflowX !== 'visible' || style.overflowY !== 'visible') canvases.add(at);
+      }
+    for (const canvas of canvases) {
+      const inside = shownActions.filter((element) => canvas.contains(element));
+      for (const [dx, dy, way] of [[1, 0, 'right'], [-1, 0, 'left'], [0, 1, 'down'], [0, -1, 'up']]) {
+        const start = placesOf(inside);
+        for (let step = 1; step <= ${PAN_MAX_STEPS}; step++) {
+          const before = placesOf(inside).join(' ');
+          wheel(canvas, dx * ${PAN_STEP}, dy * ${PAN_STEP});
+          if (placesOf(inside).join(' ') === before) break;
+          judge(' when ' + pathOf(canvas) + ' is panned ' + step * ${PAN_STEP} + 'px ' + way);
+        }
+        const back = placesOf(inside)
+          .map(([left, top], index) => [left - start[index][0], top - start[index][1]])
+          .sort((a, b) => Math.abs(b[0]) + Math.abs(b[1]) - Math.abs(a[0]) - Math.abs(a[1]))[0];
+        if (back[0] || back[1]) wheel(canvas, back[0], back[1]);
+      }
+    }
+    document.head.append(force);
+    try {
       for (const element of root.querySelectorAll('[data-et-projected]')) {
         const outer = element.parentElement?.closest('[data-et-projected]');
         if (!outer || element.closest('[inert], [aria-hidden="true"]') || element.getClientRects().length === 0) continue;
