@@ -3432,12 +3432,20 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      `git apply --3way` of the diff conflicts. Lesson: a design change to a part with an open sketch reaches the sketch
      in the same step. B220 grows: `sketch rebase` ports new merged states into every variant (3-way; on conflict it
      lists the conflicts and stops), and a design commit on a part with an open sketch names that sketch.
-270. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
+270. B169 report (builder, 2026-11-03): "Transform failed" did not reproduce in two private-outDir runs, but pages/sketches
+     state page-sketch fails to render ("design-explore: state failed"), so its render rules were NOT CHECKED, and
+     `design check pages/inbox` still checks all 29 parts. Why no tool caught it: an unrendered state reads as a note,
+     and the CLI accepts a part argument it never reads. Lesson: a check that could not run is red, and an ignored
+     argument is an error. Fix (technical): B221 - re-run page-sketch on tmp/b169-compile to tell a build problem from
+     a real one; a state that fails to render fails the check. B222 - `design check <part>` narrows the run; an
+     argument no command reads is an error. Full `yarn e2e-check 4221e7cb3` (B197): 104/105, the only FAIL is the
+     expected B198 case.
+271. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
      (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
      spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
      happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
      the spec stubs the installed-cli lookup instead of reading node_modules.
-271. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
+272. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
      against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
      exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
      compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
@@ -3450,7 +3458,7 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      19ec4dd67 (docs-only skip, timeout re-run), 74cf900b0 (`yarn commit` waits for the lock), b3c669203 (B206).
      Decided (technical): B214 - `yarn commit` runs the related specs before it takes the lock, in a throwaway worktree
      of HEAD + the paths; the hook then does not run them again. That fixes the lock time and the foreign edits at once.
-272. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
+273. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
      state draws identical frames" fired on linux-full-update while the shot showed 0 px change: the merged markup was
      refactored after the sketch's baseline, so every variant trips it. (2) `design shot` still prints "not drawn" for
      the hover, active and focus-visible cells of title-bar after B171. (3) `sketch variant --from e` built on a
