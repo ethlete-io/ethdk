@@ -3045,6 +3045,16 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
   part view (`motion`) go on the studio capability list and come back later as Studio sketches; the motion strip
   much later, as planned. `part-ready` is deleted: "ready to build" follows from green checks.
 
+- First studio list (B157, 1627a0d53): `.ethlete/design/studio/capabilities.json`, 65 capabilities, 38 with a place,
+  24 without, 3 known missing (B151); all `confirmed: false` until Tom confirms. The 24 without a place: comment
+  reply/done/withdraw and note write/change/delete/flow-note (endpoints, no caller, B145/B148); drawn without a
+  `data-et-action` (comment-write on pages/inbox, inventory approve/reload/toggle); in the app but drawn by no part
+  (go-give, edit-accept, exception-approve, call-transfer, theme-pick, preset-pick, frame-select, frame-resize,
+  grid-columns-toggle, frame-reload, comments-retry, sketch-round, prompt-copy-flows).
+- Decided (technical): a capability without a place carries `missing: "B..."` and is then a warning, shrink-only like
+  the orphan list; wiring after Tom's confirmation. A real-product spec that needs `dist/` fails with "needs dist"
+  instead of skipping.
+
 ### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
 
 - pages/sketches round 2: the builder rebases the round-2 sketch onto the current merged design and re-runs
