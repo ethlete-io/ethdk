@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -163,4 +163,40 @@ test('a started case is the last case reached when the suite then goes silent', 
     idleMs: 300,
   });
   assert.equal(result.lastCase, 'RUN   [timing] slow one');
+});
+
+const fakeTree = ({ recorded, hashOf = 'h1', link }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'b267b-tree-'));
+  const dist = link ?? join(dir, 'dist/libs/cli');
+  mkdirSync(join(dist, 'src/lib'), { recursive: true });
+  writeFileSync(join(dist, 'src/index.js'), '');
+  writeFileSync(join(dist, 'src/lib/source-hash.js'), `exports.cliSourceHash = () => ${JSON.stringify(hashOf)};`);
+  writeFileSync(join(dist, 'build-info.json'), JSON.stringify({ sourceHash: recorded }));
+  mkdirSync(join(dir, 'libs/cli/scripts'), { recursive: true });
+  writeFileSync(join(dir, 'libs/cli/scripts/write-build-info.mts'), '');
+  if (link) {
+    mkdirSync(join(dir, 'dist/libs'), { recursive: true });
+    symlinkSync(link, join(dir, 'dist/libs/cli'));
+  }
+  return dir;
+};
+
+test('cliBuildProblem passes for a dist built from the tree', () => {
+  const dir = fakeTree({ recorded: 'h1' });
+  assert.equal(check.cliBuildProblem(dir), undefined);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('cliBuildProblem fails for a dist built from other sources', () => {
+  const dir = fakeTree({ recorded: 'other' });
+  assert.match(check.cliBuildProblem(dir), /not built from the tree revision/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('cliBuildProblem fails for a dist symlinked out of the tree', () => {
+  const outside = mkdtempSync(join(tmpdir(), 'b267b-out-'));
+  const dir = fakeTree({ recorded: 'h1', link: join(outside, 'cli') });
+  assert.match(check.cliBuildProblem(dir), /resolves outside/);
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(outside, { recursive: true, force: true });
 });

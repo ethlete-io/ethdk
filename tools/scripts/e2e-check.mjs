@@ -1,7 +1,8 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { availableParallelism, loadavg, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { join, sep } from 'node:path';
 import { selectE2eFolders, readIndex, ALL } from '../../apps/storybook-e2e/affected.mjs';
 import { linkNodeModules } from './link-node-modules.mjs';
 import { mapChanged, STUDIO_E2E } from './e2e-map.mjs';
@@ -15,11 +16,34 @@ const changedFilesOf = (repo, commit) =>
     .split('\n')
     .filter(Boolean);
 
+export const cliBuildProblem = (dir) => {
+  const dist = join(dir, 'dist/libs/cli');
+
+  if (!existsSync(join(dist, 'src/index.js'))) return 'dist/libs/cli is missing from the tree';
+
+  if (!(realpathSync(dist) + sep).startsWith(realpathSync(dir) + sep))
+    return `dist/libs/cli of the tree resolves outside it (${realpathSync(dist)})`;
+
+  if (!existsSync(join(dir, 'libs/cli/scripts/write-build-info.mts'))) return undefined;
+
+  let recorded;
+  try {
+    recorded = JSON.parse(readFileSync(join(dist, 'build-info.json'), 'utf8')).sourceHash;
+  } catch {
+    return 'dist/libs/cli of the tree has no build-info.json';
+  }
+
+  const { cliSourceHash } = createRequire(import.meta.url)(join(dist, 'src/lib/source-hash.js'));
+
+  return recorded === cliSourceHash(join(dir, 'libs/cli'))
+    ? undefined
+    : 'dist/libs/cli of the tree was not built from the tree revision (source hash differs)';
+};
+
 export const createRevisionWorktree = (repo, commit) => {
   const dir = join(mkdtempSync(join(tmpdir(), 'e2e-check-tree-')), 'tree');
   git(repo, 'worktree', 'add', '--detach', dir, commit);
   linkNodeModules(repo, dir);
-  if (existsSync(join(repo, 'dist'))) symlinkSync(join(repo, 'dist'), join(dir, 'dist'));
 
   let removed = false;
   const remove = () => {
@@ -171,15 +195,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (suites.length) {
     console.log(`studio suites: ${suites.join(', ')}`);
 
-    if (!existsSync(join(repo, 'dist/libs/cli/src/index.js'))) {
-      console.log('SKIPPED studio suites: dist/libs/cli is missing - run: npx nx build cli');
-      results.push(...suites.map((suite) => ({ suite, status: 'skipped' })));
-    } else if (dry) {
+    if (dry) {
       results.push(...suites.map((suite) => ({ suite, status: 'listed' })));
     } else {
       const scratch = mkdtempSync(join(tmpdir(), 'e2e-check-'));
 
       try {
+        execFileSync('npx', ['nx', 'build', 'cli', '--skip-nx-cache'], {
+          cwd: repo,
+          stdio: 'ignore',
+          env: { ...process.env, NX_NO_CLOUD: 'true' },
+        });
+        const problem = cliBuildProblem(repo);
+
+        if (problem) throw new Error(`cli build does not match the revision: ${problem}`);
+
         execFileSync(
           'npx',
           ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
