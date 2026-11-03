@@ -3085,3 +3085,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      when the tree is green, and a clean staged part cannot be committed while the tree is red. Lesson: a check
      before a commit must test what the commit contains. Tool fix (B143): pre-commit runs `vitest related` against
      a checkout of the index, like pre-push does for HEAD. Builder rule: never give two parallel slices one file.
+
+231. Studio has no way to write a comment any more (Tom, 2026-11-03): there is no comment button. Cause (from the
+     record): finding 49 removed the legacy top-right chrome ("Notiz", "Kommentar", ...) because no page design showed
+     it, and 8cf715654 deleted the comment draft and thread components with it; no page design ever drew an entry for
+     writing a comment. Why no tool caught it: the checks compare the app against the designs, so a capability the
+     designs never drew is "legacy" and its removal looks like a fix; nothing lists the user actions that existed
+     before and are gone after. Lesson: matching the app to the design can delete a capability the design forgot.
+     Tool fix: open, put to Tom.
