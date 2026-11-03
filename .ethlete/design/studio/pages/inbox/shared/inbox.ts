@@ -1,12 +1,15 @@
 import { definePart, drawing, html, ng, slot, withAction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
+import { switchStyles } from '@ethlete/components/design/switch';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { commentPinMark } from '@system/components/comment-pin';
+import { commentRow, commentRowStyles, type Thread } from '@system/components/comment-row';
 import button from '@system/components/button';
+import switchPart from '@system/components/switch';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
-import { type Agent, agentLogo } from '@system/foundations/agent-logos';
+import type { Agent } from '@system/foundations/agent-logos';
 import { icon } from '@system/foundations/icons';
 import styles from './inbox.css?inline';
 
@@ -19,20 +22,7 @@ type Props = {
   comments?: Comment[];
 };
 
-type Comment = {
-  id: string;
-  author: string;
-  initials: string;
-  agent?: Agent;
-  when: string;
-  part: string;
-  state: string;
-  text: string;
-  replies: number;
-  unread?: boolean;
-  resolved?: boolean;
-  cell?: number;
-};
+type Comment = Thread & { id: string; cell?: number };
 
 const COMMENTS: Comment[] = [
   {
@@ -207,44 +197,7 @@ const LONG: Comment[] = [
 const SELECTED = 'c1';
 const ACTIVE_PART = 'button';
 
-const replyIcon = icon('reply', { size: 14, cls: 'flex-none' });
-const checkIcon = icon('check', { size: 14, cls: 'flex-none' });
-
-const countClass = 'flex items-center gap-0.5 text-et-surface-muted';
-
-const row = (c: Comment) => {
-  const selected = c.id === SELECTED;
-  const strong = c.resolved ? 'text-et-surface-muted' : 'text-et-surface';
-
-  return html`<div
-    class="flex gap-space-2 p-space-2 rounded-control-md cursor-pointer ${selected ? 'bg-et-theme/20' : ''}"
-    data-et-control="row"
-    data-et-action="emit:pick"
-    role="button"
-    tabindex="0"
-  >
-    <span
-      class="ib-avatar flex flex-none items-center justify-center size-5 bg-et-surface-bg text-et-surface text-(length:--text-xs) font-ui-strong"
-      data-et-auto-surface
-      >${c.agent ? agentLogo(c.agent, 'size-3') : c.initials}</span
-    >
-    <div class="flex flex-1 flex-col gap-0.5 min-w-0">
-      <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
-        <span class="${strong} font-ui-medium">${c.author}</span>
-        <span class="flex-1 text-et-surface-muted">${c.when}</span>
-        ${c.unread ? '<span class="ib-unread size-1.5 bg-et-theme" title="Ungelesen"></span>' : ''}
-      </div>
-      <p class="m-0 line-clamp-2 ${strong} text-ui-sm">${c.text}</p>
-      <div class="flex items-center gap-space-1 text-ui-xs whitespace-nowrap">
-        <span
-          class="flex-1 min-w-0 overflow-hidden text-ellipsis ${selected ? 'text-et-theme-ink' : 'text-et-surface-muted'} font-code"
-          >${c.part} › ${c.state}</span
-        >
-        ${c.resolved ? `<span class="${countClass}">${checkIcon}</span>` : c.replies > 0 ? `<span class="${countClass}">${replyIcon}${c.replies}</span>` : ''}
-      </div>
-    </div>
-  </div>`;
-};
+const row = (c: Comment) => commentRow({ thread: c, selected: c.id === SELECTED });
 
 const groupHead = (title: string, count: number) =>
   `<div class="flex items-center justify-between pt-space-3 px-space-2 pb-space-1 not-first:mt-space-2 not-first:border-t border-et-surface-border text-et-surface-muted text-(length:--text-xs)"><span class="font-code">${title}</span><span>${count}</span></div>`;
@@ -301,14 +254,15 @@ export const inbox = () =>
       comment: { kind: 'field' as const, part: 'components/textarea' },
       send: { kind: 'button' as const, part: 'components/button' },
       resolved: { kind: 'button' as const, part: 'components/switch' },
-      row: { kind: 'row' as const, input: ['pointer' as const, 'keyboard' as const] },
+      row: { kind: 'row' as const, part: 'components/comment-row' as const },
       retry: { kind: 'button' as const, part: 'components/button' },
     },
     render: async ({ showResolved, openOn, draft, entry, load, comments: list = COMMENTS }) => {
-      const controls = await ng(
-        `<span class="ib-control inline-flex">${control(`<et-switch [checked]="${showResolved}" aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange" />`, 'resolved')}</span>`,
-        { imports: ['SWITCH_IMPORTS'] },
-      );
+      const resolved = await switchPart.render({
+        checked: showResolved,
+        attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
+      });
+      const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
       const dialog =
         draft || entry
           ? await anchoredDialog.render({
@@ -330,13 +284,13 @@ export const inbox = () =>
             <div class="mt-1.25">${dialog.body}</div>
           </div>`
         : '';
-      const retry = await ng(
-        control(
-          `<button et-button type="button" variant="outline" color="surface" size="sm" data-et-action="emit:retry">Erneut laden</button>`,
-          'retry',
-        ),
-        { imports: ['BUTTON_IMPORTS'] },
-      );
+      const retryButton = await button.render({
+        label: 'Erneut laden',
+        variant: 'outline',
+        color: 'surface',
+        size: 'sm',
+      });
+      const retry = control(withAction(retryButton.body, 'emit:retry'), 'retry');
       const comments = (load ? [] : list).filter(
         (c) =>
           c.resolved ||
@@ -433,7 +387,15 @@ export const inbox = () =>
       return drawing({
         body: shell.body,
         setup: menu.setup,
-        styles: shell.styles + menu.styles + canvasFrameStyles + (dialog?.styles ?? '') + styles,
+        styles:
+          retryButton.styles +
+          shell.styles +
+          menu.styles +
+          canvasFrameStyles +
+          (dialog?.styles ?? '') +
+          commentRowStyles +
+          switchStyles +
+          styles,
       });
     },
   });

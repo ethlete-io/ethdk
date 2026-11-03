@@ -1,7 +1,8 @@
 import { definePart, drawing, html, slot, withAction } from '@design-system';
-import { loaderStyles, spinner } from '@ethlete/components/design/loader';
+import { loaderStyles } from '@ethlete/components/design/loader';
 import button from '@system/components/button';
 import { disclosure } from '@system/components/disclosure';
+import { listRow } from '@system/components/list-row';
 import disclosureStyles from '@system/components/disclosure.css?inline';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -26,11 +27,7 @@ const SCALE = 0.37;
 const CROP_SCALE = 2;
 
 const merge = await button.render({ label: 'Merge', variant: 'filled', size: 'sm' });
-const LOADER = `<div class="et-button-loader" aria-hidden="true" data-et-skip="CLIPPED"><div class="et-button-loader-spinner contents">${spinner({ diameter: 14, strokeWidth: 1.75 })}</div></div>`;
-const loading = (markup: string) =>
-  markup
-    .replace(/^<button /, '<button data-loading="true" aria-busy="true" aria-disabled="true" ')
-    .replace(/<\/button>$/, `${LOADER}</button>`);
+const mergeBusy = await button.render({ label: 'Merge', variant: 'filled', size: 'sm', loading: true });
 const ARROW = icon('arrow-left', { size: 14 });
 const back = await button.render({
   label: `${ARROW}<span>Zurück zum Sketch</span>`,
@@ -63,17 +60,6 @@ const addedShot = (row: Row) =>
     Neu in ${TARGET.variant}
   </div>`;
 
-const listRow = (selected: Row) => (row: Row) =>
-  html`<li
-    class="px-space-2 py-space-1 rounded-control-sm cursor-pointer data-selected:bg-et-theme/20"
-    data-et-control="row"
-    data-et-action="emit:pick"
-    tabindex="0"
-    ${row === selected ? ' data-selected' : ''}
-  >
-    ${rowCaption(row, true)}
-  </li>`;
-
 const ERROR = `${TARGET.part} hat sich seit dem Sketch geändert. Lass deinen Agent den Sketch rebasen.`;
 
 const panelOf = (unchanged: boolean, error: string, selected: Row, merging: boolean) =>
@@ -87,14 +73,14 @@ const panelOf = (unchanged: boolean, error: string, selected: Row, merging: bool
     </div>
     <span class="text-et-surface-muted text-ui-xs">Geändert</span>
     <ul class="flex flex-col gap-0.5 m-0 p-0 list-none">
-      ${CHANGED.map(listRow(selected)).join('')}
+      ${CHANGED.map((row) => listRow({ content: rowCaption(row, true), selected: row === selected })).join('')}
     </ul>
     <div data-et-skip="WRAP">
       ${disclosure({ label: unchangedLabel, body: unchangedBody, open: unchanged, size: 'xs' })}
     </div>
     <span class="flex-1"></span>
     <div class="flex flex-col gap-space-3 pt-space-3 border-t border-et-surface-border">
-      ${withAction(merging ? loading(merge.body) : merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
+      ${withAction(merging ? mergeBusy.body : merge.body, 'emit:merge')}${error ? html`<p class="m-0 text-et-theme-ink text-ui-xs" data-et-semantic-color="error">${error}</p>` : ''}
     </div>
   </div>`;
 
@@ -112,7 +98,7 @@ export default definePart<Props>({
   },
   controls: {
     toggle: { kind: 'disclosure', part: 'components/disclosure', surfaces: { body: 'unchanged-open' } },
-    row: { kind: 'row', input: ['pointer'] },
+    row: { kind: 'row', part: 'components/list-row' },
   },
   render: async ({ unchanged, error = '', selected = 1, merging = false }) => {
     const row = CHANGED[selected] ?? CHANGED[0];

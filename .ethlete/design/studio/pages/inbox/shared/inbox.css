@@ -12,9 +12,4 @@
     --et-switch-thumb-size: 14px;
     --et-switch-thumb-offset: 2px;
   }
-
-  .ib-avatar,
-  .ib-unread {
-    border-radius: 50%;
-  }
 }

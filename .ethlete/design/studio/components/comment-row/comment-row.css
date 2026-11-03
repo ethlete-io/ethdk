@@ -1,0 +1,6 @@
+@layer components {
+  .st-crow-avatar,
+  .st-crow-unread {
+    border-radius: 50%;
+  }
+}

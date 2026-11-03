@@ -1,8 +1,8 @@
 import { control } from '@ethlete/components/design/control';
-import { loaderStyles, spinner } from '@ethlete/components/design/loader';
-import { definePart, drawing, html, slot } from '@design-system';
+import { definePart, drawing, html, slot, withAction } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
+import { commentTarget } from '@system/components/comment-target';
 import textarea from '@system/components/textarea';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
@@ -19,7 +19,7 @@ import {
   type PartOpenPoints,
   type PointGroup,
 } from './shared/open-points';
-import { act, approvalControl, buttonExceptions, callView, exceptionRows, type Approval } from './shared/capabilities';
+import { approvalControl, buttonExceptions, callView, exceptionRows, type Approval } from './shared/capabilities';
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 
@@ -36,7 +36,7 @@ const emptyCanvas = html`<div class="h-full flex items-center justify-center ps-
     <p class="m-0 p-space-3 rounded-(--radius-control-md) bg-et-surface-bg text-et-surface text-ui-sm">
       Lege die Foundations für studio an: Farben, Schrift und Abstände.
     </p>
-    ${act(copy.body, 'emit:copyPrompt')}
+    ${withAction(copy.body, 'emit:copyPrompt')}
   </div>
 </div>`;
 
@@ -56,7 +56,7 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
   );
   const target = pressed ? 'points-closed' : 'part';
   return {
-    body: control(acting ? act(drawn.body, target) : drawn.body, 'open-points'),
+    body: control(acting ? withAction(drawn.body, target) : drawn.body, 'open-points'),
     styles: drawn.styles,
   };
 };
@@ -64,28 +64,12 @@ const chip = async (open: PartOpenPoints, pressed: boolean, focused: boolean, ac
 const commentButton = async (on: boolean, acting: boolean) => {
   const drawn = await button.render({ label: 'Kommentar', variant: 'outline', size: 'sm', pressed: on });
   const target = on ? 'points-closed' : 'comment-mode';
-  return { body: control(acting ? act(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
+  return { body: control(acting ? withAction(drawn.body, target) : drawn.body, 'comment'), styles: drawn.styles };
 };
-
-const commentTarget = (frame: string) =>
-  html`<div
-    class="absolute inset-0 cursor-crosshair bg-(--et-theme-color-primary-solid)/6"
-    title="Kommentar zu ${frame}"
-    role="button"
-    tabindex="0"
-    data-et-action="comment-draft"
-  ></div>`;
 
 type SendPhase = 'busy' | 'error' | 'rejected';
 
 const REFUSED = 'part components/button no longer exists';
-
-const LOADER = `<div class="et-button-loader" aria-hidden="true" data-et-skip="CLIPPED"><div class="et-button-loader-spinner contents">${spinner({ diameter: 12, strokeWidth: 1.5 })}</div></div>`;
-
-const loading = (markup: string) =>
-  markup
-    .replace(/^<button /, '<button data-loading="true" aria-busy="true" aria-disabled="true" ')
-    .replace(/<\/button>$/, `${LOADER}</button>`);
 
 const sendError = (text: string) =>
   html`<p
@@ -119,9 +103,10 @@ const commentDraft = async (text: string, phase?: SendPhase, reason = '') => {
     variant: 'filled',
     size: 'xs',
     disabled: !text,
+    loading: busy,
   });
-  const sendMarkup = busy ? loading(send.body) : text ? act(send.body, 'emit:sendComment') : send.body;
-  const cancelMarkup = busy ? cancel.body : act(cancel.body, 'comment-mode');
+  const sendMarkup = busy ? send.body : text ? withAction(send.body, 'emit:sendComment') : send.body;
+  const cancelMarkup = busy ? cancel.body : withAction(cancel.body, 'comment-mode');
   return {
     body: html`<div
       class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
@@ -131,7 +116,7 @@ const commentDraft = async (text: string, phase?: SendPhase, reason = '') => {
         ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
       </div>
     </div>`,
-    styles: field.styles + cancel.styles + send.styles + (busy ? loaderStyles : ''),
+    styles: field.styles + cancel.styles + send.styles,
   };
 };
 
@@ -339,6 +324,7 @@ export default definePart<{
     comment: { kind: 'button', part: 'components/button' },
     'comment-cancel': { kind: 'button', part: 'components/button' },
     'comment-send': { kind: 'button', part: 'components/button' },
+    'comment-target': { kind: 'button', part: 'components/comment-target' },
     'open-points': { kind: 'button', part: 'components/button' },
     'give-go': { kind: 'button', part: 'components/button' },
     accept: { kind: 'button', part: 'components/button' },
@@ -402,9 +388,8 @@ export default definePart<{
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
     const writing = draft === undefined ? undefined : await commentDraft(draft, send, reason);
-    const body = commentMode
-      ? html`<div class="relative">${shot}${commentTarget('button')}${writing?.body ?? ''}</div>`
-      : shot;
+    const target = control(commentTarget({ frame: 'button', action: 'comment-draft' }), 'comment-target');
+    const body = commentMode ? html`<div class="relative">${shot}${target}${writing?.body ?? ''}</div>` : shot;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;

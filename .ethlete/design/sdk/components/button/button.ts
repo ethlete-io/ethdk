@@ -7,6 +7,7 @@ import {
   iconButtonStyles,
 } from '@ethlete/components/design/button';
 import { iconMarkup } from '@ethlete/components/design/icon';
+import { loaderStyles } from '@ethlete/components/design/loader';
 import { SDK_ICONS } from '@ethlete/components/design/icon-set';
 import { definePart, drawing, forceInteraction, interactionRows } from '@design-system';
 import hover from './button.css?inline';
@@ -19,7 +20,9 @@ type Props = (ButtonMockOptions | IconOnly) & { interaction?: ButtonInteraction 
 
 const control = ({ interaction, ...options }: Props) => {
   const drawn = 'iconOnly' in options ? iconButton(options) : button(options);
-  const markup = drawn.replace(/^<(button|a) /, '<$1 data-et-control="button" data-can-animate ');
+  const markup = drawn
+    .replace(/^<(button|a) /, '<$1 data-et-control="button" data-can-animate ')
+    .replace('<div class="et-button-loader"', '<div class="et-button-loader" data-et-skip="CLIPPED"');
 
   return interaction ? forceInteraction(markup, interaction) : markup;
 };
@@ -77,6 +80,12 @@ export default definePart({
   render: (props: Props) =>
     drawing({
       body: control(props),
-      styles: ['iconOnly' in props ? iconButtonStyles : buttonStyles, hover].join('\n'),
+      styles: [
+        'iconOnly' in props ? iconButtonStyles : buttonStyles,
+        hover,
+        !('iconOnly' in props) && props.loading && loaderStyles,
+      ]
+        .filter(Boolean)
+        .join('\n'),
     }),
 });

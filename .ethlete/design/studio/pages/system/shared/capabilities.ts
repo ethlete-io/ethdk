@@ -1,11 +1,8 @@
 import { control } from '@ethlete/components/design/control';
-import { html, slot } from '@design-system';
+import { html, slot, withAction } from '@design-system';
 import badge from '@system/components/badge';
 import button from '@system/components/button';
 import { canvasFrame, canvasView } from '@system/elements/canvas-frames';
-
-export const act = (markup: string, action: string) =>
-  markup.replace(/<button\b/, `<button data-et-action="${action}"`);
 
 type Drawn = { body: string; styles: string };
 
@@ -20,13 +17,13 @@ export const approvalControl = async (approval: Approval, size: 'sm' | 'xs' = 's
 
   const go = approval === 'go';
   const drawn = await button.render({ label: go ? 'Go geben' : 'Änderung abnehmen', variant: 'filled', size });
-  const titled = drawn.body.replace(
-    /<button\b/,
-    `<button title="${go ? 'Gibt diesen Teil in seinem jetzigen Stand zur Umsetzung frei' : 'Nimmt die direkte Änderung an diesem gemergten Teil ab'}"`,
-  );
+  const title = go
+    ? 'Gibt diesen Teil in seinem jetzigen Stand zur Umsetzung frei'
+    : 'Nimmt die direkte Änderung an diesem gemergten Teil ab';
+  const acting = control(withAction(drawn.body, go ? 'emit:giveGo' : 'emit:accept'), go ? 'give-go' : 'accept');
 
   return {
-    body: control(act(titled, go ? 'emit:giveGo' : 'emit:accept'), go ? 'give-go' : 'accept'),
+    body: html`<span class="contents" title="${title}">${acting}</span>`,
     styles: drawn.styles,
   };
 };
@@ -55,7 +52,7 @@ export const exceptionRows = async (exceptions: PartException[]): Promise<Drawn>
               >${reopened ? 'wieder offen - der Teil hat sich geändert' : 'offen'}</span
             >
           </span>
-          ${control(act(approve.body, 'emit:approveException'), 'exception-approve')}
+          ${control(withAction(approve.body, 'emit:approveException'), 'exception-approve')}
         </li>`,
     )
     .join('');
@@ -93,7 +90,7 @@ const themeSwitch = async (): Promise<Drawn> => {
           role="group"
           aria-label="${label}"
         >
-          ${buttons.map((drawn) => control(act(drawn.body, 'emit:pickTheme'), 'theme')).join('')}
+          ${buttons.map((drawn) => control(withAction(drawn.body, 'emit:pickTheme'), 'theme')).join('')}
         </div>`,
         styles: buttons.map((drawn) => drawn.styles).join(''),
       };
@@ -108,7 +105,9 @@ export const callView = async (transferred: boolean): Promise<Drawn> => {
   const transfer = transferred
     ? await badge.render({ badges: [{ label: 'übertragen', variant: 'tonal', size: 'sm' }] })
     : await button.render({ label: 'Als übertragen markieren', variant: 'outline', color: 'surface', size: 'sm' });
-  const transferMarkup = transferred ? transfer.body : control(act(transfer.body, 'emit:markTransferred'), 'transfer');
+  const transferMarkup = transferred
+    ? transfer.body
+    : control(withAction(transfer.body, 'emit:markTransferred'), 'transfer');
   const frames = await canvasView(
     [canvasFrame('03-narrow-lane', html`<div class="w-md h-45" ${slot('shot')}></div>`)],
     '100%',
