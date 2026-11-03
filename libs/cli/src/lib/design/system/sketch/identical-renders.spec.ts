@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { PictureOf } from '../../merge-compare';
+import { BoxOf } from '../../variant-diff';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { identicalRenderLinesOf } from './identical-renders';
@@ -31,6 +32,9 @@ const drawing =
     marks: [],
   });
 
+const boxOf: BoxOf = async (before, after) =>
+  before[0] === after[0] && before.length > 0 === after.length > 0 ? [] : [{ x: 0, y: 0, width: 1, height: 1 }];
+
 describe('identicalRenderLinesOf', () => {
   it('names a variant that draws like another one in every state', async () => {
     const { product, sketch } = acme(['a', 'b']);
@@ -40,7 +44,7 @@ describe('identicalRenderLinesOf', () => {
       b: { default: 1, hover: 2 },
     });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
       'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
@@ -53,14 +57,14 @@ describe('identicalRenderLinesOf', () => {
       b: { default: 3, hover: 2 },
     });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([]);
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([]);
   });
 
   it('names every variant when all of them draw like the product', async () => {
     const { product, sketch } = acme(['a', 'b', 'c']);
     const pictureOf = drawing({});
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
       'elements/hero variant a draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: redraw it',
       'elements/hero variant b draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
       'elements/hero variant c draws the same pixels as variant a in every state (default, hover) - it adds nothing visible: withdraw it with `sketch withdraw elements/hero --variant c --by <model id>` or redraw it',
@@ -71,7 +75,7 @@ describe('identicalRenderLinesOf', () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: { default: 1 } });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
       'elements/hero variant b draws the same pixels as Aktuell in every state (default, hover) - it adds nothing visible: redraw it',
     ]);
   });
@@ -80,7 +84,7 @@ describe('identicalRenderLinesOf', () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { default: 1, hover: 3 } });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
       'elements/hero variant b first changes default, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
@@ -96,14 +100,14 @@ describe('identicalRenderLinesOf', () => {
       },
     });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load: reordered, pictureOf })).toEqual([]);
+    expect(await identicalRenderLinesOf({ product, sketch, load: reordered, pictureOf, boxOf })).toEqual([]);
   });
 
   it('compares a variant at its first changed state, not at a state it draws like the product', async () => {
     const { product, sketch } = acme(['a', 'b']);
     const pictureOf = drawing({ a: { default: 1, hover: 2 }, b: { hover: 1 } });
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf })).toEqual([
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([
       'elements/hero variant b first changes hover, which draws the same pixels as variant a draws at its first change default, so the Studio sketch view shows identical frames - withdraw it with `sketch withdraw elements/hero --variant b --by <model id>` or redraw it',
     ]);
   });
@@ -111,15 +115,15 @@ describe('identicalRenderLinesOf', () => {
   it('accepts a lone variant that draws its first state like the product and changes another one', async () => {
     const { product, sketch } = acme(['a']);
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({ a: { hover: 1 } }) })).toEqual(
-      [],
-    );
+    expect(
+      await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({ a: { hover: 1 } }), boxOf }),
+    ).toEqual([]);
   });
 
   it('leaves a lone variant that draws like the product to the no-visible-change merge', async () => {
     const { product, sketch } = acme(['a']);
 
-    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({}) })).toEqual([]);
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf: drawing({}), boxOf })).toEqual([]);
   });
 
   it('skips a rejected variant', async () => {
@@ -127,6 +131,44 @@ describe('identicalRenderLinesOf', () => {
     const rejected: Sketch = { ...sketch, rejections: { b: [{ by: 'designer', decidedAt: '2026-11-02' }] } };
     const pictureOf = drawing({ a: { default: 1 }, b: { default: 1 } });
 
-    expect(await identicalRenderLinesOf({ product, sketch: rejected, load, pictureOf })).toEqual([]);
+    expect(await identicalRenderLinesOf({ product, sketch: rejected, load, pictureOf, boxOf })).toEqual([]);
+  });
+
+  it('takes the first changed state from the pixel diff of design shot, not from the PNG bytes', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const pictureOf: PictureOf = async ({ sketch: drawn, state }) => {
+      const pixels: Record<string, Record<string, number[]>> = {
+        a: { default: [0, 1], hover: [2] },
+        b: { default: [0, 1], hover: [3] },
+      };
+
+      return { png: Buffer.from(pixels[drawn?.variant ?? 'now']?.[state] ?? [0]), marks: [] };
+    };
+
+    expect(await identicalRenderLinesOf({ product, sketch, load, pictureOf, boxOf })).toEqual([]);
+  });
+
+  it('takes the first changed state at the frame design shot draws, the first width', async () => {
+    const { product, sketch } = acme(['a', 'b']);
+    const wide: SketchPartLoader = async () => ({
+      default: {
+        note: 'n',
+        widths: [320, 1440],
+        states: { default: {}, hover: {} },
+        render: () => ({ body: '', styles: '' }),
+      },
+    });
+    const pictureOf: PictureOf = async ({ sketch: drawn, state, width }) => {
+      const pixels: Record<string, number> = {
+        'a default 1440': 5,
+        'a hover 320': 2,
+        'b default 1440': 5,
+        'b hover 320': 3,
+      };
+
+      return { png: Buffer.from([pixels[`${drawn?.variant ?? 'now'} ${state} ${width}`] ?? 0]), marks: [] };
+    };
+
+    expect(await identicalRenderLinesOf({ product, sketch, load: wide, pictureOf, boxOf })).toEqual([]);
   });
 });

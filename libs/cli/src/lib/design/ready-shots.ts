@@ -154,6 +154,7 @@ export const identicalRenders = async (options: {
         product,
         sketch,
         pictureOf: shooter.pictureOf,
+        boxOf: shooter.changedBoxesOf,
         load: ({ file, product: name, sketch: drawn }) =>
           live.ssrLoadModule(productModuleIdOf({ file, product: name, sketch: drawn })),
       });

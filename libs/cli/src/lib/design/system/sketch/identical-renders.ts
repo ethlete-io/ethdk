@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { PictureOf } from '../../merge-compare';
+import { BoxOf } from '../../variant-diff';
 import { readPartModule } from '../list-system';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
@@ -7,7 +8,9 @@ import { overlaySketch } from './overlay';
 import { rejectionOf, Sketch } from './sketch';
 import { framesOf, SketchPartLoader } from './unchanged-states';
 
-type Drawn = { name: string; states: Map<string, string> };
+type DrawnState = { hash: string; shot: Buffer };
+
+type Drawn = { name: string; states: Map<string, DrawnState> };
 
 const AKTUELL = 'Aktuell';
 
@@ -18,7 +21,7 @@ const drawingOf = async (options: {
   sketch: SketchVariant | null;
   load: SketchPartLoader;
   pictureOf: PictureOf;
-}): Promise<Map<string, string> | null> => {
+}): Promise<Map<string, DrawnState> | null> => {
   const { product, part, file, sketch, load, pictureOf } = options;
   const read = await readPartModule({
     part: { file },
@@ -33,7 +36,7 @@ const drawingOf = async (options: {
     { widths: 'widths' in read ? read.widths : undefined, interactions: read.interactions },
     layer === 'pages' ? Object.keys(product.presets) : null,
   );
-  const states = new Map<string, string>();
+  const states = new Map<string, DrawnState>();
 
   for (const state of read.states) {
     try {
@@ -45,7 +48,7 @@ const drawingOf = async (options: {
       const hash = createHash('sha256');
 
       frames.forEach((frame, index) => hash.update(JSON.stringify(frame)).update(pictures[index]?.png ?? ''));
-      states.set(state, hash.digest('hex'));
+      states.set(state, { hash: hash.digest('hex'), shot: pictures[0]?.png ?? Buffer.alloc(0) });
     } catch {
       continue;
     }
@@ -55,12 +58,20 @@ const drawingOf = async (options: {
 };
 
 const sameInEveryState = (drawn: Drawn, other: Drawn) =>
-  drawn.states.size > 0 && [...drawn.states].every(([state, hash]) => other.states.get(state) === hash);
+  drawn.states.size > 0 && [...drawn.states].every(([state, { hash }]) => other.states.get(state)?.hash === hash);
 
-const firstChangeOf = (drawn: Drawn, current: Drawn | null) =>
-  [...drawn.states]
-    .map(([state, hash]) => ({ state, hash }))
-    .find(({ state, hash }) => current?.states.get(state) !== hash) ?? null;
+const samePixels = async (boxOf: BoxOf, pair: [DrawnState, DrawnState]) =>
+  (await boxOf(pair[0].shot, pair[1].shot)).length === 0;
+
+const firstChangeOf = async (boxOf: BoxOf, pair: { drawn: Drawn; current: Drawn | null }) => {
+  for (const [state, picture] of pair.drawn.states) {
+    const before = pair.current?.states.get(state);
+
+    if (!before || !(await samePixels(boxOf, [before, picture]))) return { state, picture };
+  }
+
+  return null;
+};
 
 const likeOf = (drawn: Drawn) => (drawn.name === AKTUELL ? AKTUELL : `variant ${drawn.name}`);
 
@@ -69,16 +80,17 @@ export type IdenticalRender = { variant: string; sibling: string | null; line: s
 const withdrawAdviceOf = (target: string, variant: string) =>
   `withdraw it with \`sketch withdraw ${target} --variant ${variant} --by <model id>\` or redraw it`;
 
-const refusalsOf = (options: {
+const refusalsOf = async (options: {
   variants: Drawn[];
   current: Drawn | null;
   of: string;
   target: string;
-}): IdenticalRender[] => {
-  const { variants, current, of, target } = options;
+  boxOf: BoxOf;
+}): Promise<IdenticalRender[]> => {
+  const { variants, current, of, target, boxOf } = options;
   const refusals: IdenticalRender[] = [];
 
-  variants.forEach((drawn, index) => {
+  for (const [index, drawn] of variants.entries()) {
     const earlier = variants.slice(0, index);
     const later = variants
       .slice(index + 1)
@@ -87,21 +99,28 @@ const refusalsOf = (options: {
     const twin = others.find((other) => sameInEveryState(drawn, other));
 
     if (!twin) {
-      if (current && sameInEveryState(drawn, current)) return;
+      if (current && sameInEveryState(drawn, current)) continue;
 
-      const shown = firstChangeOf(drawn, current);
-      const like = earlier
-        .map((other) => ({ other, first: firstChangeOf(other, current) }))
-        .find(({ first }) => first !== null && first.hash === shown?.hash);
+      const shown = await firstChangeOf(boxOf, { drawn, current });
+      let like: { other: Drawn; first: { state: string } } | undefined;
 
-      if (shown && like?.first)
+      for (const other of shown ? earlier : []) {
+        const first = await firstChangeOf(boxOf, { drawn: other, current });
+
+        if (shown && first && (await samePixels(boxOf, [first.picture, shown.picture]))) {
+          like = { other, first };
+          break;
+        }
+      }
+
+      if (shown && like)
         refusals.push({
           variant: drawn.name,
           sibling: like.other.name === AKTUELL ? null : like.other.name,
           line: `variant ${drawn.name}${of} first changes ${shown.state}, which draws the same pixels as ${likeOf(like.other)} draws at its first change ${like.first.state}, so the Studio sketch view shows identical frames - ${withdrawAdviceOf(target, drawn.name)}`,
         });
 
-      return;
+      continue;
     }
 
     refusals.push({
@@ -109,7 +128,7 @@ const refusalsOf = (options: {
       sibling: twin.name === AKTUELL ? null : twin.name,
       line: `variant ${drawn.name}${of} draws the same pixels as ${likeOf(twin)} in every state (${[...drawn.states.keys()].join(', ')}) - it adds nothing visible: ${twin.name === AKTUELL ? 'redraw it' : withdrawAdviceOf(target, drawn.name)}`,
     });
-  });
+  }
 
   return refusals;
 };
@@ -120,7 +139,8 @@ const refusalsOf = (options: {
  * alike in every state, only the later one is named. A lone variant like the product is a change without a visible
  * difference, which `sketch ready` merges on its own, so it is never named. A state that fails to draw counts as
  * different. Any other variant is named when its first changed state, in its own state order, draws like the first
- * changed state of an earlier variant.
+ * changed state of an earlier variant. "Changed" and "draws like" there are the pixel diff of `design shot` (`boxOf`),
+ * at the frame a shot draws: the first preset or width, no interaction.
  */
 export const identicalRenderLinesOf = async (options: Parameters<typeof identicalRendersOf>[0]): Promise<string[]> =>
   (await identicalRendersOf(options)).map((render) => render.line);
@@ -134,8 +154,9 @@ export const identicalRendersOf = async (options: {
   sketch: Sketch;
   load: SketchPartLoader;
   pictureOf: PictureOf;
+  boxOf: BoxOf;
 }): Promise<IdenticalRender[]> => {
-  const { product, sketch, load, pictureOf } = options;
+  const { product, sketch, load, pictureOf, boxOf } = options;
   const live = sketch.variants.filter((variant) => !rejectionOf(sketch, variant));
   const found: IdenticalRender[] = [];
 
@@ -155,9 +176,10 @@ export const identicalRendersOf = async (options: {
     const now = file ? await drawingOf({ product, part, file, sketch: null, load, pictureOf }) : null;
     const of = sketch.targets.length > 1 ? ` ${part}` : '';
 
-    refusalsOf({ variants, current: now ? { name: AKTUELL, states: now } : null, of, target: sketch.target }).forEach(
-      (render) => found.push({ ...render, line: `${sketch.target} ${render.line}` }),
-    );
+    const current = now ? { name: AKTUELL, states: now } : null;
+
+    for (const render of await refusalsOf({ variants, current, of, target: sketch.target, boxOf }))
+      found.push({ ...render, line: `${sketch.target} ${render.line}` });
   }
 
   return found;
