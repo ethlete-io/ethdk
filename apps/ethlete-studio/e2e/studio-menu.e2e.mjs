@@ -81,4 +81,4 @@ const results = await withStudio(
 const failed = results.filter((row) => !row.ok);
 
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
-process.exit(failed.length ? 1 : 0);
+process.exit(failed.length || !results.length ? 1 : 0);

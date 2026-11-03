@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -14,23 +14,67 @@ const changedFilesOf = (repo, commit) =>
     .split('\n')
     .filter(Boolean);
 
-const runSuite = (repo, suite, built) => {
-  const started = Date.now();
-  const result = spawnSync('node', [`${STUDIO_E2E}/${suite}.e2e.mjs`, ...(built ? ['--built', built] : [])], {
-    cwd: repo,
-    encoding: 'utf8',
-    timeout: SUITE_TIMEOUT_MS,
-    maxBuffer: 1 << 28,
-  });
-  const tail = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim().split('\n').slice(-6).join('\n');
+const HEARTBEAT_MS = 30 * 1000;
+const CASE_LINE = /^(PASS|FAIL)\b/m;
+const TOTAL_LINE = /^(\d+)\/(\d+) passed/m;
 
-  return {
-    ok: result.status === 0,
-    timedOut: result.error?.code === 'ETIMEDOUT',
-    seconds: (Date.now() - started) / 1000,
-    tail,
-  };
+export const judgeSuiteRun = ({ status, timedOut, output }) => {
+  const text = output.trim();
+  const total = TOTAL_LINE.exec(text);
+
+  if (timedOut) return { ok: false, reason: 'timed out' };
+  if (total && Number(total[2]) === 0) return { ok: false, reason: 'ran zero cases' };
+  if (status !== 0) return { ok: false, reason: CASE_LINE.test(text) ? 'failed' : 'crashed before its first case' };
+  if (!text) return { ok: false, reason: 'produced no output' };
+
+  return { ok: true, reason: '' };
 };
+
+export const runSuite = (repo, suite, built, { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS } = {}) =>
+  new Promise((resolve) => {
+    const started = Date.now();
+    const child = spawn('node', [script ?? `${STUDIO_E2E}/${suite}.e2e.mjs`, ...(built ? ['--built', built] : [])], {
+      cwd: repo,
+    });
+    let output = '';
+    let pending = '';
+    let cases = 0;
+    let timedOut = false;
+
+    const take = (chunk) => {
+      output += chunk;
+      pending += chunk;
+      const lines = pending.split('\n');
+      pending = lines.pop();
+      for (const line of lines) {
+        if (CASE_LINE.test(line)) cases++;
+        onLine(line);
+      }
+    };
+
+    child.stdout.on('data', (chunk) => take(chunk.toString()));
+    child.stderr.on('data', (chunk) => take(chunk.toString()));
+
+    const beat = setInterval(
+      () => onLine(`... running, ${((Date.now() - started) / 1000).toFixed(0)}s, ${cases} case(s) done`),
+      heartbeatMs,
+    );
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGKILL');
+    }, SUITE_TIMEOUT_MS);
+
+    child.on('close', (status) => {
+      clearInterval(beat);
+      clearTimeout(timer);
+      resolve({
+        ...judgeSuiteRun({ status, timedOut, output }),
+        timedOut,
+        seconds: (Date.now() - started) / 1000,
+        tail: output.trim().split('\n').slice(-6).join('\n'),
+      });
+    });
+  });
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
@@ -68,8 +112,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           { cwd: repo, stdio: 'ignore', env: { ...process.env, NX_NO_CLOUD: 'true' } },
         );
         for (const suite of suites) {
-          const run = runSuite(repo, suite, scratch);
-          console.log(`${run.ok ? 'PASS' : run.timedOut ? 'TIMEOUT' : 'FAIL'} ${suite} (${run.seconds.toFixed(0)}s)`);
+          const run = await runSuite(repo, suite, scratch, {
+            onLine: (line) => console.log(`  [${suite}] ${line}`),
+          });
+          console.log(
+            `${run.ok ? 'PASS' : run.timedOut ? 'TIMEOUT' : 'FAIL'} ${suite} (${run.seconds.toFixed(0)}s)${run.ok ? '' : ` - ${run.reason}`}`,
+          );
           if (!run.ok) console.log(run.tail.replace(/^/gm, '  '));
           results.push({ suite, status: run.ok ? 'pass' : 'fail' });
         }
