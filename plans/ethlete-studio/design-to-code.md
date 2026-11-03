@@ -3751,3 +3751,15 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      pre-push, which is 523 commits away on next. "The builder should remember" is no fix. Fix (B244, decided,
      technical): `yarn commit` runs `nx lint` on the projects of the staged files (cached, so cheap) and refuses the
      commit on a lint error.
+
+298. B244 as built (builder, 2026-11-03). f4e6e5b8b: `yarn commit -- <paths>` maps each non-docs path to the nx
+     project whose project.json owns it (lint target or eslint.config.mjs), and runs `nx run-many -t lint` on them in
+     the throwaway worktree, after tsc and before the specs, with the main checkout's nx cache. A lint error refuses
+     the commit and names the projects. Verified: a node:test case builds a tiny nx repo and is refused on a
+     `no-debugger` error, a docs file lints nothing, and the clean commit lands; red-check RED; a real probe (a
+     5-param arrow in libs/cli) was refused by max-params in 11 s with tsc. Not verified: a plain `git commit` without
+     paths (the hook) does not lint; ethlete-studio lint time. Second defect found on the way: 50024f9b8 made every
+     tsc error block, but its end-to-end case in commit-wait.spec.mjs still asserted the opposite and failed; aligned
+     in f4e6e5b8b. Why no tool caught it: `yarn commit` selects only Studio and cli suites, so a change in
+     tools/scripts runs none of `yarn test:tools`. Recommended fix (B245): a tools/scripts change runs the
+     tools/scripts specs (node --test) in the same worktree.
