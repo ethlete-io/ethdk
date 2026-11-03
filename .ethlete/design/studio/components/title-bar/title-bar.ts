@@ -71,7 +71,7 @@ export default definePart({
           `<div class="flex items-center gap-2">${props.os === 'macos' ? MAC_RESERVE : ''}${sideControls(props, props.left)}</div>`,
           { imports },
         )}${search.body}${await ng(
-          `<div class="flex items-center justify-end gap-2${props.os === 'windows' ? ' self-stretch' : ''}">${props.update ? update(props) : ''}${sideControls(props, props.right)}</div>`,
+          `<div class="flex items-center justify-end gap-2 ${props.os === 'windows' ? 'self-stretch' : ''}">${props.update ? update(props) : ''}${sideControls(props, props.right)}</div>`,
           { imports },
         )}
       </div>`,
