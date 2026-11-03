@@ -3535,3 +3535,10 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      Why no tool caught it: each command assembles its own report lines, with no shared note list. Fix: B226 -
      `design check` prints the instant lines from the same source. elements/canvas-frames moves to `instant` in the
      B199 commit. Not run yet: B194 through the built CLI.
+
+### Stash hook and settings order decisions (2026-11-03)
+
+- B208 (Tom: yes): `.claude/hooks/ethlete/git-safety.py` lets `git stash list` and `git stash show` pass; every
+  writing stash subcommand (push, save, pop, apply, drop, clear, branch, create, store) stays refused.
+- B224 follow-up (Tom: yes): the builder restores `.claude/settings.json` with `git checkout .claude/settings.json`
+  (the diff was hook order only); a later `yarn agents:sync` must then leave it unchanged.
