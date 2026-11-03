@@ -3136,3 +3136,9 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      when it is red on that real defect; a shared build output cannot hold a private experiment. Fix: B142 starts with
      a spec on the real pages/sketches render that must report CUT-CONTROL; debugging runs in specs or a private
      outDir, never in the shared dist/ (builder sub-agent brief).
+236. `studio-api-level.spec.ts` fails since B147 (a028e8707): `rules/orphan-endpoint.ts` contains the string
+     `/__design/`, which that spec forbids in cli sources outside the server. Nobody noticed, because the pre-commit
+     hook runs only the specs `libs/cli/related-map.json` maps to the changed files, and a spec that scans every cli
+     source is mapped to none of them (builder, 2026-11-03). Lesson: a spec that guards all sources of a lib must run
+     for any change in that lib; a related map that only knows direct relations hides it. Fix: B156, the related map
+     lists source-wide specs (studio-api-level) as related to every cli source file, new ones included.
