@@ -786,7 +786,7 @@ export const designActions = async (options: {
   start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product', '--url', '--state'], ['--live']);
+  const args = argsOf(options.argv, { values: ['--product', '--url', '--state'], switches: ['--live'] });
   const live = typeof args !== 'string' && args.flags.has('--live');
 
   if (typeof args === 'string' || args.positional.length > 1 || (!live && args.positional.length !== 1)) {

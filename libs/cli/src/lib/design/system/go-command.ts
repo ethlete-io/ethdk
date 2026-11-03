@@ -9,7 +9,7 @@ export const GO_USAGE =
 /** `et design go <layer>/<name> …` releases a part for implementation at its current hash; `--batch` runs a go list. */
 export const designGo = async (options: WriteCommandOptions) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--by', '--note', '--batch'], []);
+  const args = argsOf(argv, { values: ['--product', '--by', '--note', '--batch'], switches: [] });
   const usage = `usage: ${invocation} ${GO_USAGE}`;
   const prompt = options.prompt ?? ttyPrompt();
 

@@ -133,7 +133,7 @@ const fail = (message: string, code = 1) => {
  */
 export const designCommitHunks = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--part', '--id', '--message'], []);
+  const args = argsOf(argv, { values: ['--part', '--id', '--message'], switches: [] });
   const [asked, ...extra] = typeof args === 'string' ? [] : args.positional;
   const asParts = (typeof args === 'string' ? [] : (args.repeated['--part'] ?? [])).map(parseTarget);
   const ids = typeof args === 'string' ? [] : (args.repeated['--id'] ?? []);

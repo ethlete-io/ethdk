@@ -169,7 +169,7 @@ export const designDom = async (options: {
   start?: StartHarnessServer;
 }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product', '--state', '--url'], ['--app']);
+  const args = argsOf(options.argv, { values: ['--product', '--state', '--url'], switches: ['--app'] });
 
   if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);

@@ -1287,8 +1287,7 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const flags = flagsOf(command);
-  const args = argsOf(rest, flags.values, flags.switches);
+  const args = argsOf(rest, flagsOf(command));
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
   if (!run || typeof args === 'string' || unauthored) {

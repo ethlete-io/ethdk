@@ -97,7 +97,7 @@ export const designTask = async (options: {
 }) => {
   const { target, invocation } = options;
   const { rest, rev } = verifyOf(options.argv);
-  const args = argsOf(rest, ['--product', '--url'], []);
+  const args = argsOf(rest, { values: ['--product', '--url'], switches: [] });
 
   if (typeof args === 'string' || args.positional.length !== 1) {
     if (typeof args === 'string') console.error(args);

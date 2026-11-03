@@ -10,7 +10,7 @@ import { createSystemModules, productModuleIdOf } from './system-modules';
  */
 export const designSystem = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product'], ['--json']);
+  const args = argsOf(argv, { values: ['--product'], switches: ['--json'] });
   const usage = `usage: ${invocation} system --json [--product <name>]`;
   const asked = typeof args === 'string' ? null : (args.values['--product'] ?? null);
 

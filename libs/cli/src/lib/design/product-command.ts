@@ -66,7 +66,7 @@ export const createProduct = (options: {
 export const designProduct = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const usage = `USAGE ${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`;
-  const args = argsOf(argv, ['--base', '--from-project'], []);
+  const args = argsOf(argv, { values: ['--base', '--from-project'], switches: [] });
 
   if (typeof args === 'string') {
     console.error(`${args}\n${usage}`);

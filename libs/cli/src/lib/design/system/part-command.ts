@@ -81,7 +81,7 @@ const removalProblemOf = ({ target, product, key }: { target: string; product: R
 export const designPart = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const usage = `usage: ${invocation} ${PART_USAGE}`;
-  const args = argsOf(argv.slice(1), ['--product', '--by'], []);
+  const args = argsOf(argv.slice(1), { values: ['--product', '--by'], switches: [] });
 
   if (argv[0] !== 'remove' || typeof args === 'string' || args.positional.length !== 1 || authorOf(args) === null) {
     if (typeof args === 'string') console.error(args);

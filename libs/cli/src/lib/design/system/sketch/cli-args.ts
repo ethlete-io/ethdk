@@ -13,7 +13,8 @@ export type Args = {
  * Splits an argument list into positionals, the flags that take a value, and switches. With `switches`, any other
  * `--flag` is refused with a message that lists the known flags.
  */
-export const argsOf = (argv: string[], valueFlags: string[], switches?: string[]): Args | string => {
+export const argsOf = (argv: string[], flags: { values: string[]; switches?: string[] }): Args | string => {
+  const { values: valueFlags, switches } = flags;
   const args: Args = { positional: [], values: {}, repeated: {}, flags: new Set() };
 
   for (let index = 0; index < argv.length; index++) {

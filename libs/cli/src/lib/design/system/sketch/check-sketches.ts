@@ -65,6 +65,7 @@ const liveStateProblemsOf = (options: { product: ResolvedProduct; overlaid: Sket
 
       if (own === null || mergedNames === null) {
         console.warn(`NOTE ${key}: live states not checked: spread states`);
+
         return [];
       }
 

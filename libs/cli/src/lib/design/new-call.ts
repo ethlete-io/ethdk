@@ -79,7 +79,7 @@ ${PLACEHOLDER_STYLES}
  */
 export const newCall = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--variants', '--stage', '--feature'], []);
+  const args = argsOf(argv, { values: ['--variants', '--stage', '--feature'], switches: [] });
   const usage = `usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`;
 
   if (typeof args === 'string') {
