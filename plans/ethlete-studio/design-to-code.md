@@ -3128,3 +3128,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      (technical): B153 compare accepts every design prop the harness map consumes (first); B154 STATE-NO-SOURCE - each
      design state prop of an implemented part maps to app data or to an input a consumer binds; B155 UNBOUND-INPUT and
      SAMPLE-DEFAULT, both ratcheted. App fix: the sketch list delivers the hold data.
+
+235. CUT-CONTROL (c5d3271a1) reports 0 on pages/sketches although the design still clips "Übernehmen" (finding
+     228); the rule was proven only on a fixture, never on the case that motivated it (builder, 2026-11-03). Cause
+     open (button outside the scanned root, or the CLIPPED skip still exempts it). A dist debug patch was overwritten
+     by a parallel cli rebuild, because all agents share one dist/. Lesson: a rule built for a real defect is done only
+     when it is red on that real defect; a shared build output cannot hold a private experiment. Fix: B142 starts with
+     a spec on the real pages/sketches render that must report CUT-CONTROL; debugging runs in specs or a private
+     outDir, never in the shared dist/ (builder sub-agent brief).
