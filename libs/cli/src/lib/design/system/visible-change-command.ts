@@ -182,7 +182,7 @@ const stateLineOf = (state: StateDiff) =>
   state.kind === 'differs'
     ? `${state.state} differs (${state.base} -> ${state.head} px off the design)`
     : state.kind === 'new'
-      ? `${state.state} has no base picture`
+      ? `${state.state} has no base picture (${state.head} px off the design)`
       : state.kind === 'broken' || state.kind === 'unjudged' || state.kind === 'undrivable'
         ? `${state.state} ${state.kind}: ${state.problem}`
         : `${state.state} same`;
@@ -197,6 +197,8 @@ const verdictLineOf = (verdict: VisibleChangeVerdict, range: string) => {
       return `PASS ${verdict.part}: ${states} changed with a picked or merged sketch in ${range}`;
     case 'closer':
       return `PASS ${verdict.part}: ${states} changed closer to the design`;
+    case 'matches':
+      return `PASS ${verdict.part}: ${states} new, matches its design`;
     case 'broken':
       return `FAIL ${verdict.part}: the app no longer draws ${states}`;
     case 'unjudged':

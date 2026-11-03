@@ -50,7 +50,11 @@ describe('stateDiffOf', () => {
   });
 
   it('is new without a base picture, broken when only HEAD fails to draw, and unjudged when both fail', () => {
-    expect(stateDiffOf({ base: null, head: { state: 's', design, app: oneOff } })).toEqual({ state: 's', kind: 'new' });
+    expect(stateDiffOf({ base: null, head: { state: 's', design, app: oneOff } })).toEqual({
+      state: 's',
+      kind: 'new',
+      head: 1,
+    });
     expect(stateDiffOf({ base: { state: 's', design, app: oneOff }, head: { state: 's', problem: 'boom' } })).toEqual({
       state: 's',
       kind: 'broken',
@@ -61,9 +65,10 @@ describe('stateDiffOf', () => {
       kind: 'unjudged',
       problem: 'boom',
     });
-    expect(stateDiffOf({ base: { state: 's', problem: 'old' }, head: { state: 's', design, app: oneOff } })).toEqual({
+    expect(stateDiffOf({ base: { state: 's', problem: 'old' }, head: { state: 's', design, app: design } })).toEqual({
       state: 's',
       kind: 'new',
+      head: 0,
     });
   });
 
@@ -174,16 +179,46 @@ describe('visibleChangeVerdictOf', () => {
     ).toMatchObject({ pass: false, why: 'visible', changed: ['idle', 'hover', 'focus'] });
   });
 
-  it('needs a sketch for a state the base app could not draw', () => {
+  it('needs a sketch for a state the base app could not draw that does not match its design', () => {
     expect(
-      visibleChangeVerdictOf({ diff: diffOf([{ state: 'idle', kind: 'new' }]), sketched: new Set() }),
+      visibleChangeVerdictOf({ diff: diffOf([{ state: 'idle', kind: 'new', head: 3 }]), sketched: new Set() }),
     ).toMatchObject({ pass: false, why: 'visible' });
     expect(
       visibleChangeVerdictOf({
-        diff: diffOf([{ state: 'idle', kind: 'new' }]),
+        diff: diffOf([{ state: 'idle', kind: 'new', head: 3 }]),
         sketched: new Set(['components/chip']),
       }),
     ).toMatchObject({ pass: true, why: 'sketched' });
+  });
+
+  it('passes a state without a base picture that matches its design, alone or beside closer states', () => {
+    expect(
+      visibleChangeVerdictOf({
+        diff: diffOf([
+          { state: 'idle', kind: 'new', head: 0 },
+          { state: 'hover', kind: 'new', head: 0 },
+        ]),
+        sketched: new Set(),
+      }),
+    ).toMatchObject({ pass: true, why: 'matches', changed: ['idle', 'hover'] });
+    expect(
+      visibleChangeVerdictOf({
+        diff: diffOf([
+          { state: 'idle', kind: 'new', head: 0 },
+          { state: 'hover', kind: 'differs', base: 4, head: 1, diff: design },
+        ]),
+        sketched: new Set(),
+      }),
+    ).toMatchObject({ pass: true, why: 'closer' });
+    expect(
+      visibleChangeVerdictOf({
+        diff: diffOf([
+          { state: 'idle', kind: 'new', head: 0 },
+          { state: 'hover', kind: 'new', head: 2 },
+        ]),
+        sketched: new Set(),
+      }),
+    ).toMatchObject({ pass: false, why: 'visible' });
   });
 
   it('fails a state HEAD can no longer draw even with a sketch, and fails a state neither side draws', () => {

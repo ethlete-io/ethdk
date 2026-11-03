@@ -5,7 +5,7 @@ import { comparePngs, decodePng } from './part-compare';
 export type StateDiff =
   | { state: string; kind: 'same' }
   | { state: string; kind: 'differs'; base: number; head: number; diff: Buffer }
-  | { state: string; kind: 'new' }
+  | { state: string; kind: 'new'; head: number }
   | { state: string; kind: 'broken'; problem: string }
   | { state: string; kind: 'unjudged'; problem: string }
   | { state: string; kind: 'undrivable'; problem: string };
@@ -18,7 +18,7 @@ export type SketchEvidence = { text: string; merged: boolean };
 export type VisibleChangeVerdict = {
   part: string;
   pass: boolean;
-  why: 'invisible' | 'sketched' | 'closer' | 'visible' | 'broken' | 'unjudged';
+  why: 'invisible' | 'sketched' | 'closer' | 'matches' | 'visible' | 'broken' | 'unjudged';
   changed: string[];
   unjudged: string[];
   reasons: string[];
@@ -54,7 +54,8 @@ export const stateDiffOf = (options: { base: StateShot | null; head: StateShot }
           kind: head.undrivable && base && 'problem' in base && base.undrivable ? 'undrivable' : 'unjudged',
           problem: head.problem,
         };
-  if (!base || 'problem' in base) return { state, kind: 'new' };
+  if (!base || 'problem' in base)
+    return { state, kind: 'new', head: deviationOf({ design: head.design, app: head.app }) };
 
   const change = comparePngs({ design: base.app, app: head.app });
 
@@ -124,7 +125,7 @@ export const mergedPartsOf = (options: { base: string | null; head: string | nul
 
 /**
  * A part passes when its app draws alike at base and HEAD, when a picked or merged sketch of it is in the range, or
- * when every changed state is strictly closer to HEAD's design. A state HEAD can no longer draw always fails, and so does any state the gate could not judge,
+ * when every changed state is strictly closer to HEAD's design or, without a base picture, matches it. A state HEAD can no longer draw always fails, and so does any state the gate could not judge,
  * but a state neither app has an element to force the design's interaction on: that is a problem of the part, listed as `undrivable`.
  */
 export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<string> }): VisibleChangeVerdict => {
@@ -148,7 +149,13 @@ export const visibleChangeVerdictOf = (options: { diff: PartDiff; sketched: Set<
   if (unjudged.length > 0) return verdict(false, 'unjudged');
   if (changed.length === 0) return verdict(true, 'invisible');
   if (options.sketched.has(part)) return verdict(true, 'sketched');
-  if (changed.every((state) => state.kind === 'differs' && state.head < state.base)) return verdict(true, 'closer');
+  if (changed.every((state) => state.kind === 'new' && state.head === 0)) return verdict(true, 'matches');
+  if (
+    changed.every(
+      (state) => (state.kind === 'differs' && state.head < state.base) || (state.kind === 'new' && state.head === 0),
+    )
+  )
+    return verdict(true, 'closer');
 
   return verdict(false, 'visible');
 };
