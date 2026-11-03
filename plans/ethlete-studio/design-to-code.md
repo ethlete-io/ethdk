@@ -3362,3 +3362,16 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      `partKeyOf`, grep every other `sketch.target` equality check, and add one spec that drives a named sketch through
      `sketch check`/`ready`/`go`. Also open: `server-identity.spec` "reports no installed cli when the project has
      none" failed in the full design vitest run; the builder re-runs it on a clean HEAD.
+262. B173 (builder, 2026-11-03): `commit-hunks` splits only part-keyed files, so the agent committed
+     `capabilities.json` (keyed by capability id) by hand - the hand commit `commit-hunks` exists to replace. Why no
+     tool caught it: B184 was specified for go/merged/pictures; nothing lists the shared design JSON files the tool
+     must cover. Lesson: a tool for "shared files" is tested against the list of every shared file, not the ones that
+     prompted it. Fix: B204 (technical) - `commit-hunks` covers every shared JSON under `.ethlete/design`
+     (capabilities.json by `--id <capability>`); a file it cannot split refuses with a message; one spec iterates all
+     shared files.
+263. B173 (builder, 2026-11-03): the inbox `draftText` still falls back to the fixture text through `??`. The live
+     store holds `''`, so nothing shows it today, but an `undefined` would show sample text in the app. Why no tool
+     caught it: SAMPLE-DEFAULT only reads input initializers (`sample-default.ts`), not other expressions that fall
+     back to sample data. Lesson: sample data reachable through any fallback is the same defect as a sample default.
+     Fix: B205 (technical) - SAMPLE-DEFAULT checks every expression in an implementing component that falls back to a
+     sample identifier (`??`, `||`, ternary); the inbox fallback goes with B189.
