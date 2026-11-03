@@ -4211,6 +4211,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      or gitignored artifact, or cold vite optimize). sketches-tree's budget miss is likely the same. frame-load-failed
      and server-restart are re-checked after B240 phase 2.
 
+335. B256 banner sketch empty in Studio (Tom, 2026-11-03, screenshot). pages/system round 1 "Veraltete Design-Mocks"
+     shows about 20 rows x 4 columns of empty frames at 25 % zoom. The builder had reported "all 6 frames render" from
+     the sketch shot. Two causes. (a) The frame flood of finding 329: the view mounts every frame at once; the bounded
+     queue (B240 phase 2) has not landed. (b) The shot and the Studio view draw different frame sets: the shot drew the
+     round's 2 new states (stale-one, stale-many) plus `part` per column, Studio draws every pages/system state per
+     column. Why no tool caught it: the builder's proof was the shot, and nothing ties the shot's frame set to what
+     the Studio view mounts. Fix (B284): the sketch shot draws exactly the frame set the Studio view mounts (one
+     shared list function), and a spec asserts both lists are equal for a round. Open question for the builder: should
+     a round show only the states it touches (plus a reference state) instead of every base state; recommend with
+     facts. B256 is not pickable until B240 phase 2 lands and the view renders.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
