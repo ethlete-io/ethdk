@@ -3300,3 +3300,34 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      `dblclick:` prefix read by CAPABILITY-PLACE; B193 `"automatic": true` with a required `why`, accepted without a
      place but listed in every capability report (never silent); B194 an `instant` declaration replacing per-pair
      `unreachable`. Scratch names are slugged per agent in the builder brief.
+257. Tom (2026-11-03): the Sketches canvas no longer pans past the top-left (B186). Cause (builder): 030fe2f36 added
+     `clampPan` / `room` / `shownPan` in `design-parts/sketches/sketches.component.ts`, probably for the sticky state
+     column; Flows, System and Inbox have no clamp. Why nothing caught it: the CANVAS-CAMERA-OWN lint rule from finding
+     191 was decided but never built and had no STATUS B item, and as decided it would only have seen wheel/pointer
+     listeners, not camera math; canvas.e2e's "left drag on an empty area pans" would have gone red on Sketches, but
+     no e2e ran for 030fe2f36, and no case pans past the content edges on purpose. Lessons: a decided tool fix without
+     a B item is not decided; a rule must target the defect class (camera state owned outside the canvas), not one
+     symptom; a slice that touches a view is not done without that view's e2e. Fix: B186 (clamp removed, sticky gutter
+     keeps max(0, -x), e2e "pan beyond every edge" on every canvas view, red first); B196 (technical) builds
+     CANVAS-CAMERA-OWN for any pan/zoom state or clamp in `design-parts/**` outside the canvas component; B197
+     (technical) a script maps a commit's changed files to the views they touch and runs those e2e; slice reports
+     quote it like red-check.
+258. The empty title-bar frames in the same screenshot were a slow load (builder, 2026-11-03): all 60 iframes are
+     destroyed and recreated right after the first render (60 ERR_ABORTED), then load 6 at a time (~15-20 s), and every
+     Vite full reload from parallel agents' edits under `.ethlete/design` reloads them again. While loading, a frame
+     shows only its bordered 150 px measuring strip, so Tom cannot tell loading from broken. No check measures load
+     work (frame creations, aborted requests). Fix: B198 (technical) - no iframe recreation after first render, visible
+     frames load first; a spec counts iframe creations == frame count. B199 - the canvas-frames loading state as a
+     Studio sketch, after Tom's B178 pick.
+259. The sketch header read "Letzte Änderung von ·" with no name (builder, 2026-11-03): sketch title-bar has no report
+     file, `lastChange()` (`sketch-view.component.ts`) returns empty by/since, and the label renders the separators
+     anyway. Samples always carried a report, so no state showed the missing case. Lesson: a sample set includes the
+     missing optional data. Fix in B186: fall back to the newest variant's author, drop empty parts, red spec; a
+     sketch-view state without a report file.
+260. B183 deviated from the decision (builder, 2026-11-03, c56a88d4a): instead of loading the module, the LIVE check
+     now skips a part whose state names it cannot read statically - silently. A check that skips without a word reads
+     as passed (same class as findings 246 and 254). Decided (technical): B183 reopened - (a) now a NOTE "live states
+     not checked: <part>: spread states"; (b) load the module through the B182 private build, then remove the skip.
+     Also: a `hold` set for a CLI bug outlives its fix and `ready` only refuses (B200: the refusal names
+     `sketch release <part> --by`); parallel commit-hunks race on `.git/index.lock`, and d962c4109 picked up two foreign
+     auto-accept entries (B184 retries on the lock and stages only its own hunks).
