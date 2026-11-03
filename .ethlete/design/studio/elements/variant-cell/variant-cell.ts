@@ -74,6 +74,7 @@ export default definePart({
       },
     ],
   },
+  controls: {},
   instant: 'A cell dims or gains its mark at once when the comparison ends.',
   frame: (body) =>
     html`<div

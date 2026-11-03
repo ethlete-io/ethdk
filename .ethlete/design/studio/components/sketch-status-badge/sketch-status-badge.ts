@@ -28,6 +28,7 @@ export default definePart({
     paused: { status: 'paused' },
     idle: { status: 'idle' },
   },
+  controls: {},
   instant: 'The badge swaps its label at once when the sketch status changes.',
   render: ({ status }: Props) => sketchStatusBadge(status),
 });
