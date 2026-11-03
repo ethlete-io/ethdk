@@ -1,5 +1,22 @@
-import { Component, computed, inject, input, output, signal, ViewEncapsulation } from '@angular/core';
-import { WINDOW_CHROME } from '../../../host/window';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  inputBinding,
+  output,
+  outputBinding,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { anchoredDialogOverlayStrategy, injectOverlayManager } from '@ethlete/components';
+import { catchError, EMPTY, Observable } from 'rxjs';
+import { closeWindow$, minimizeWindow$, toggleMaximizeWindow$, WINDOW_CHROME } from '../../../host/window';
+import { restartForUpdate$ } from '../../../host/update';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
+import { UpdateDialogComponent } from '../../components/update-dialog/update-dialog.component';
 import { injectUpdateCheck } from '../../update-check';
 import { DesignServerAction, StudioMenuComponent } from '../studio-menu/studio-menu.component';
 import { ShellMainComponent, ShellSection } from './shell-main.component';
@@ -50,6 +67,10 @@ export const SHELL_SAMPLE: ShellState = {
       (projectChange)="action.emit({ kind: 'project', name: $event })"
       (openProject)="action.emit({ kind: 'openProject' })"
       (restartServer)="action.emit({ kind: 'server', action: 'restart' })"
+      (updateRequest)="openUpdateDialog($event)"
+      (minimizeRequest)="run(minimizeWindow$())"
+      (maximizeRequest)="run(toggleMaximizeWindow$())"
+      (closeRequest)="run(closeWindow$())"
       fill
     >
       <ethlete-studio-menu
@@ -68,6 +89,8 @@ export const SHELL_SAMPLE: ShellState = {
   host: { class: 'block size-full' },
 })
 export class ShellPageComponent {
+  private destroyRef = inject(DestroyRef);
+  private overlay = injectOverlayManager();
   protected updateCheck = injectUpdateCheck();
   protected chrome = inject(WINDOW_CHROME);
 
@@ -77,10 +100,38 @@ export class ShellPageComponent {
 
   public action = output<ShellAction>();
 
+  protected minimizeWindow$ = minimizeWindow$;
+  protected toggleMaximizeWindow$ = toggleMaximizeWindow$;
+  protected closeWindow$ = closeWindow$;
+
   protected menuOpen = signal(false);
   protected screen = computed(() => {
     const server = this.shell().server;
 
     return server === 'stopped' || server === 'starting' ? server : null;
   });
+
+  protected openUpdateDialog(event: MouseEvent) {
+    const version = this.updateCheck.version();
+
+    if (!version) return;
+
+    this.overlay.open(UpdateDialogComponent, {
+      origin: event,
+      role: 'dialog',
+      ariaLabel: STUDIO_LABELS.updateDialog.label,
+      strategies: anchoredDialogOverlayStrategy(),
+      bindings: [inputBinding('version', () => version), outputBinding('restart', () => this.run(restartForUpdate$()))],
+    });
+  }
+
+  protected run(action$: Observable<void>) {
+    action$
+      .pipe(
+        // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed window control or refused restart has nothing to recover or show
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
 }

@@ -1,17 +1,10 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { EMPTY, Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 import { WindowChrome } from '../../../host/window';
 import { TitleBarComponent } from './title-bar.component';
 
-const host = vi.hoisted(() => ({ close: vi.fn<() => Observable<void>>() }));
-
-vi.mock('../../../host/window', () => ({
-  closeWindow$: host.close,
-  minimizeWindow$: () => EMPTY,
-  toggleMaximizeWindow$: () => EMPTY,
-  isWindowMaximized$: () => of(false),
-}));
+vi.mock('../../../host/window', () => ({ isWindowMaximized$: () => of(false) }));
 
 type Props = Omit<WindowChrome, 'preferNoCsd'> & { update?: boolean; product?: string; part?: string };
 
@@ -27,7 +20,7 @@ const render = (props: Props) => {
   const bar = element.querySelector<HTMLElement>('[data-tauri-drag-region="deep"]');
   const buttons = [...element.querySelectorAll<HTMLElement>('[data-window-button]')];
 
-  return { element, bar, buttons, names: buttons.map((button) => button.dataset['windowButton']) };
+  return { fixture, element, bar, buttons, names: buttons.map((button) => button.dataset['windowButton']) };
 };
 
 const linux = (left: WindowChrome['left'], right: WindowChrome['right']): Props => ({ os: 'linux', left, right });
@@ -83,12 +76,26 @@ describe('TitleBarComponent', () => {
     expect(search?.getAttribute('aria-label')).toBe('Suchen in shop, Checkout Summary');
   });
 
-  it('closes the window from the close button', () => {
-    host.close.mockReturnValue(EMPTY);
-    const { buttons } = render(linux([], ['close']));
+  it('fires the window outputs from the window buttons', () => {
+    const { fixture, buttons } = render(linux(['close'], ['minimize', 'maximize']));
+    const fired: string[] = [];
+    const { componentInstance: bar } = fixture;
 
-    buttons[0]?.click();
+    bar.minimize.subscribe(() => fired.push('minimize'));
+    bar.maximize.subscribe(() => fired.push('maximize'));
+    bar.close.subscribe(() => fired.push('close'));
+    buttons.forEach((button) => button.click());
 
-    expect(host.close).toHaveBeenCalled();
+    expect(fired).toEqual(['close', 'minimize', 'maximize']);
+  });
+
+  it('fires the update output with the click from the update button', () => {
+    const { fixture, bar } = render({ ...linux([], []), update: true });
+    const events: MouseEvent[] = [];
+
+    fixture.componentInstance.updatePress.subscribe((event) => events.push(event));
+    bar?.lastElementChild?.querySelector<HTMLElement>('button')?.click();
+
+    expect(events).toHaveLength(1);
   });
 });

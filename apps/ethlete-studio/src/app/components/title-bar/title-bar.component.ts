@@ -1,27 +1,16 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, inject, input, inputBinding, ViewEncapsulation } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
-  anchoredDialogOverlayStrategy,
   BUTTON_IMPORTS,
-  injectOverlayManager,
   WINDOW_CONTROL_BUTTON_KINDS,
   WINDOW_CONTROL_BUTTON_SHAPES,
   WINDOW_CONTROL_BUTTON_SIZES,
 } from '@ethlete/components';
-import { catchError, EMPTY, fromEvent, Observable, startWith, switchMap } from 'rxjs';
-import {
-  closeWindow$,
-  isWindowMaximized$,
-  minimizeWindow$,
-  toggleMaximizeWindow$,
-  WindowButton,
-  WindowChrome,
-} from '../../../host/window';
+import { catchError, EMPTY, fromEvent, startWith, switchMap } from 'rxjs';
+import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
-import { injectUpdateCheck } from '../../update-check';
 import { TitleSearchComponent } from '../title-search/title-search.component';
-import { UpdateDialogComponent } from '../update-dialog/update-dialog.component';
 
 @Component({
   selector: 'ethlete-title-bar',
@@ -42,7 +31,7 @@ import { UpdateDialogComponent } from '../update-dialog/update-dialog.component'
 
       <div class="flex items-center justify-end gap-2">
         @if (update()) {
-          <button (click)="openUpdateDialog($event)" et-button type="button" variant="filled" color="brand" size="xs">
+          <button (click)="updatePress.emit($event)" et-button type="button" variant="filled" color="brand" size="xs">
             {{ LABELS.update }}
           </button>
         }
@@ -60,7 +49,7 @@ import { UpdateDialogComponent } from '../update-dialog/update-dialog.component'
                   [shape]="shape()"
                   [size]="SIZE"
                   [attr.aria-label]="LABELS.window.minimize"
-                  (click)="run(minimize$())"
+                  (click)="minimize.emit()"
                   et-window-control-button
                   type="button"
                   color="surface"
@@ -84,7 +73,7 @@ import { UpdateDialogComponent } from '../update-dialog/update-dialog.component'
                   [shape]="shape()"
                   [size]="SIZE"
                   [attr.aria-label]="isMaximized() ? LABELS.window.restore : LABELS.window.maximize"
-                  (click)="run(toggleMaximize$())"
+                  (click)="maximize.emit()"
                   et-window-control-button
                   type="button"
                   color="surface"
@@ -114,7 +103,7 @@ import { UpdateDialogComponent } from '../update-dialog/update-dialog.component'
                   [size]="SIZE"
                   [kind]="CLOSE_KIND"
                   [attr.aria-label]="LABELS.window.close"
-                  (click)="run(close$())"
+                  (click)="close.emit()"
                   et-window-control-button
                   type="button"
                   color="surface"
@@ -144,16 +133,19 @@ import { UpdateDialogComponent } from '../update-dialog/update-dialog.component'
   host: { class: 'block shrink-0' },
 })
 export class TitleBarComponent {
-  private destroyRef = inject(DestroyRef);
-  private overlay = injectOverlayManager();
-  private updateCheck = injectUpdateCheck();
-
   public os = input.required<WindowChrome['os']>();
   public left = input<WindowButton[]>([]);
   public right = input<WindowButton[]>([]);
   public update = input(false);
   public product = input('');
   public part = input('');
+
+  // eslint-disable-next-line @angular-eslint/no-output-rename -- the design's update output shares its name with the update input
+  public updatePress = output<MouseEvent>({ alias: 'update' });
+  public minimize = output();
+  public maximize = output();
+  // eslint-disable-next-line @angular-eslint/no-output-native -- the design declares emit:close
+  public close = output();
 
   protected readonly LABELS = STUDIO_LABELS.titleBar;
   protected readonly SIZE = WINDOW_CONTROL_BUTTON_SIZES.MD;
@@ -173,32 +165,4 @@ export class TitleBarComponent {
     ),
     { initialValue: false },
   );
-
-  protected minimize$ = minimizeWindow$;
-  protected toggleMaximize$ = toggleMaximizeWindow$;
-  protected close$ = closeWindow$;
-
-  protected openUpdateDialog(event: MouseEvent) {
-    const version = this.updateCheck.version();
-
-    if (!version) return;
-
-    this.overlay.open(UpdateDialogComponent, {
-      origin: event,
-      role: 'dialog',
-      ariaLabel: STUDIO_LABELS.updateDialog.label,
-      strategies: anchoredDialogOverlayStrategy(),
-      bindings: [inputBinding('version', () => version)],
-    });
-  }
-
-  protected run(action$: Observable<void>) {
-    action$
-      .pipe(
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- a failed window control click has nothing to recover or show
-        catchError(() => EMPTY),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
 }

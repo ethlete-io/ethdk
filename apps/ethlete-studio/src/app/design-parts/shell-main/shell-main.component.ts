@@ -54,6 +54,10 @@ export class ShellMainComponent {
   public projectChange = output<string>();
   public openProject = output();
   public restartServer = output();
+  public updateRequest = output<MouseEvent>();
+  public minimizeRequest = output();
+  public maximizeRequest = output();
+  public closeRequest = output();
 
   protected readonly SECTIONS = SECTIONS;
   protected readonly LABELS = STUDIO_LABELS.designServer;

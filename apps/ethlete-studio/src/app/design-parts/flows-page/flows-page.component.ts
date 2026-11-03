@@ -60,8 +60,7 @@ export const FLOWS_SHOT = { width: 1440, height: 900, scale: 0.18, colGap: 140, 
                 [item]="row"
                 [attr.aria-level]="1"
                 [attr.aria-selected]="row.selected"
-                (click)="pick.emit(row.label)"
-                (keydown.enter)="pick.emit(row.label)"
+                (rowPress)="pick.emit(row.label)"
                 ethlete-tree-row-item
                 role="treeitem"
                 tabindex="0"

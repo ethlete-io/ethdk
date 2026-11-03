@@ -1,4 +1,4 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { injectSemanticColorTheme, ProvideColorDirective, SurfaceInteractiveDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
@@ -127,12 +127,16 @@ const SELECTED_CLASS =
     '[attr.data-kind]': 'item().kind',
     '[attr.data-selected]': 'item().selected ? "" : null',
     '[attr.aria-current]': 'item().selected ? "true" : null',
+    '(click)': 'rowPress.emit()',
+    '(keydown.enter)': 'rowPress.emit()',
   },
 })
 export class TreeRowItemComponent {
   protected warningTheme = injectSemanticColorTheme('warning');
 
   public item = input.required<TreeRow>();
+
+  public rowPress = output();
 
   protected readonly STATUS_TITLE = STATUS_TITLE;
   protected readonly STATUS_CLASS = STATUS_CLASS;

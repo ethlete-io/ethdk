@@ -1,8 +1,5 @@
-import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, input, output, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS, OverlayCloseDirective } from '@ethlete/components';
-import { catchError, EMPTY } from 'rxjs';
-import { restartForUpdate$ } from '../../../host/update';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
 export const displayVersion = (version: string) => version.split('+')[0] ?? version;
@@ -16,10 +13,10 @@ export const displayVersion = (version: string) => version.split('+')[0] ?? vers
         <span class="text-et-surface-muted">{{ LABELS.note }}</span>
       </div>
       <div class="flex justify-end gap-space-2">
-        <button et-button etOverlayClose variant="outline" color="surface" size="xs">
+        <button (click)="later.emit()" et-button etOverlayClose variant="outline" color="surface" size="xs">
           {{ LABELS.later }}
         </button>
-        <button (click)="restart()" et-button type="button" variant="filled" color="brand" size="xs">
+        <button (click)="restart.emit()" et-button type="button" variant="filled" color="brand" size="xs">
           {{ LABELS.restart }}
         </button>
       </div>
@@ -29,21 +26,12 @@ export const displayVersion = (version: string) => version.split('+')[0] ?? vers
   imports: [BUTTON_IMPORTS, OverlayCloseDirective],
 })
 export class UpdateDialogComponent {
-  private destroyRef = inject(DestroyRef);
-
   public version = input.required<string>();
+
+  public later = output();
+  public restart = output();
 
   protected readonly LABELS = STUDIO_LABELS.updateDialog;
 
   protected question = computed(() => this.LABELS.question(displayVersion(this.version())));
-
-  protected restart() {
-    restartForUpdate$()
-      .pipe(
-        // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused restart leaves the downloaded update for the next quit
-        catchError(() => EMPTY),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
 }

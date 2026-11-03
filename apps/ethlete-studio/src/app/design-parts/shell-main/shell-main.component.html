@@ -8,6 +8,10 @@
       [right]="chrome.right"
       [update]="update()"
       [product]="product()"
+      (update)="updateRequest.emit($event)"
+      (minimize)="minimizeRequest.emit()"
+      (maximize)="maximizeRequest.emit()"
+      (close)="closeRequest.emit()"
       class="col-span-full"
     />
   }
