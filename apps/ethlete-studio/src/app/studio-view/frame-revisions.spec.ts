@@ -49,6 +49,12 @@ describe('frame revisions', () => {
     expect(revisionOf(frameRevisionsWith(failing, { all: false, parts: [], errored: true }), card)).toBe(0);
   });
 
+  it('reads a retried frame as the frame it retries', () => {
+    const src = 'http://localhost:1/frame.html?product=web&part=components%2Fbutton&state=solid';
+
+    expect(reportedFrameOf(`${src}&retry=3`)?.frame).toBe(reportedFrameOf(src)?.frame);
+  });
+
   it('keeps the revision a frame shows once it draws again', () => {
     const src = 'http://localhost:1/frame.html?product=web&part=components%2Fbutton&state=solid';
     const failed = reportedFrameOf(src);

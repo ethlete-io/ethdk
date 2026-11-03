@@ -151,6 +151,7 @@ export class SketchesComponent {
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
   public status = input<SketchStatus>('waiting');
+  public errored = input<readonly string[]>([]);
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
@@ -234,6 +235,10 @@ export class SketchesComponent {
 
     return size < MIN_LABEL ? null : size;
   });
+  protected shownStatus = computed(() =>
+    this.errored().length > 0 && (this.status() === 'waiting' || this.status() === 'idle') ? 'errored' : this.status(),
+  );
+
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
   protected sameRows = computed(() =>
     this.shownRows().filter(

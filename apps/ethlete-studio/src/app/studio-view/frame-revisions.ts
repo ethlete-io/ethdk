@@ -1,6 +1,7 @@
 import { EMPTY, Observable, filter, fromEvent, map } from 'rxjs';
 import { DrawnPart, PartsRedraw } from '../../host/design-parts';
 import { frameMessageOf } from '../components/design-canvas/canvas-frame';
+import { RETRY_PARAM } from '../system-view/sketch-frame-retries';
 
 /**
  * What each drawn part last reloaded at. Every change takes the next `seq`, so a frame's revision only
@@ -55,6 +56,7 @@ export const reportedFrameOf = (src: string): ReportedFrame | null => {
 
   params.delete('revision');
   params.delete('epoch');
+  params.delete(RETRY_PARAM);
 
   return { drawn, frame: JSON.stringify([drawnKeyOf(drawn), params.toString()]), revision };
 };

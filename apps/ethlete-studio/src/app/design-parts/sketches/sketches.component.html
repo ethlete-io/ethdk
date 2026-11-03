@@ -19,7 +19,7 @@
           <et-badge variant="tonal" size="sm">{{ LABELS.fresh }}</et-badge>
         </div>
       }
-      @switch (status()) {
+      @switch (shownStatus()) {
         @case ('paused') {
           <span class="flex min-w-0 items-center gap-space-2">
             <button
@@ -52,6 +52,13 @@
           <span class="flex items-center gap-space-2">
             <div class="flex flex-wrap items-center">
               <et-badge variant="tonal" size="sm">{{ LABELS.status.waiting }}</et-badge>
+            </div>
+          </span>
+        }
+        @case ('errored') {
+          <span class="flex items-center gap-space-2">
+            <div class="flex flex-wrap items-center">
+              <et-badge variant="tonal" size="sm" data-sk-render-error>{{ LABELS.status.errored }}</et-badge>
             </div>
           </span>
         }
@@ -293,9 +300,9 @@
           ><span class="size-1.5 animate-pulse rounded-full bg-(--et-theme-color-primary-solid)"></span
           >{{ LABELS.drawingMark }}</span
         >
-      } @else if (status() === 'waiting') {
+      } @else if (status() === 'waiting' && !errored().includes(row.key)) {
         <span class="flex">
-          <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm">
+          <button (click)="merge.emit(row.key)" et-button type="button" variant="outline" size="sm" data-sk-merge>
             {{ LABELS.merge }}
           </button>
         </span>

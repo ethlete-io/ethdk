@@ -47,7 +47,13 @@ export const STUDIO_LABELS = {
     drawingVariant: 'zeichnet diese Variante',
     drawingHint: 'Der Rahmen füllt sich, sobald die erste Ansicht steht.',
     fresh: 'neu',
-    status: { drawing: 'zeichnet', waiting: 'Wartet auf deine Wahl', paused: 'Pausiert', idle: 'Keine Aktivität' },
+    status: {
+      drawing: 'zeichnet',
+      waiting: 'Wartet auf deine Wahl',
+      paused: 'Pausiert',
+      idle: 'Keine Aktivität',
+      errored: 'Render-Fehler in dieser Runde',
+    },
     holdUntil: (until: string) => `Wartet auf ${until}`,
     lastChange: (by: string, since: string) =>
       by || since ? [by ? `Letzte Änderung von ${by}` : 'Letzte Änderung', since].filter(Boolean).join(' · ') : '',

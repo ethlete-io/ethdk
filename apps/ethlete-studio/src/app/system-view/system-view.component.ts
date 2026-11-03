@@ -320,6 +320,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [part]="shown.part"
         [epoch]="epoch()"
         [revision]="sketchRevision()"
+        [changes]="frameRevisions().seq"
         [view]="view()"
         [surface]="surface()"
         [color]="color()"

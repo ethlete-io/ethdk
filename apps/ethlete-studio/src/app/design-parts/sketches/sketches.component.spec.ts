@@ -237,6 +237,16 @@ describe('SketchesComponent', () => {
     expect(idle.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
 
+  it('offers no Übernehmen for a variant with an errored frame and says the round has a render error', async () => {
+    const y = { ...ROWS[1], key: 'y', note: 'Variante y' } as SketchRow;
+    const root: HTMLElement = (await render({ camera: '100', status: 'waiting', rows: [...ROWS, y], errored: ['x'] }))
+      .nativeElement;
+
+    expect(textOf(root.querySelector('header et-badge'))).toBe(LABELS.status.errored);
+    expect(root.querySelector('[data-sk-row="x"] [data-sk-merge]')).toBeNull();
+    expect(textOf(root.querySelector('[data-sk-row="y"] [data-sk-merge]'))).toBe(LABELS.merge);
+  });
+
   it('opens at a restored camera and selects a clicked frame', async () => {
     const fixture = await render({ restoredCamera: { zoom: 0.5, x: -40, y: -60 } });
     const root: HTMLElement = fixture.nativeElement;

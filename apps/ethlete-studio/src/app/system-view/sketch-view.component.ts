@@ -60,6 +60,12 @@ import { MergeColumn, mergeFrameIdOf, partNameOf, sketchCompare$ } from './merge
 import { refusalMessageOf } from './inventory';
 import { PageShell, PageShellAction } from './page-shell';
 import {
+  NO_SKETCH_FRAME_RETRIES,
+  SketchFrameEvent,
+  retriedSrcOf,
+  sketchFrameRetriesWith,
+} from './sketch-frame-retries';
+import {
   CURRENT,
   mergePreviewOf,
   partKeyOf,
@@ -117,6 +123,7 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
         [round]="shownRoundKey()"
         [pins]="variantPins()"
         [selected]="picked() ?? undefined"
+        [errored]="erroredVariants()"
         [error]="mergeError()"
         [shot]="shot"
         [tree]="shell().tree"
@@ -174,6 +181,7 @@ export class SketchViewComponent {
   public part = input<ListedPart | null>(null);
   public epoch = input(0);
   public revision = input(0);
+  public changes = input(0);
   public view = input(0);
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
@@ -444,14 +452,43 @@ export class SketchViewComponent {
     });
   });
 
-  protected rowShots = computed(
-    () =>
-      new Map<string, SafeResourceUrl>(
-        this.sketchRows().flatMap((row) =>
-          row.shots.map((shot) => [`${row.key} ${shot.state}`, this.safeUrlOf(shot.src)] as const),
+  private frameRetries = toSignal(
+    merge(
+      toObservable(computed(() => this.sketch().target)).pipe(map((): SketchFrameEvent => ({ kind: 'reset' }))),
+      toObservable(this.changes).pipe(map((seq): SketchFrameEvent => ({ kind: 'change', seq }))),
+      fromEvent<MessageEvent>(this.document.defaultView ?? [], 'message').pipe(
+        map((event) => ({ shot: this.shotShowing(event.source), message: frameMessageOf(event.data) })),
+        filter(
+          (report): report is { shot: string; message: HeightMessage } =>
+            report.shot !== null && report.message?.type === 'height',
         ),
+        map(({ shot, message }): SketchFrameEvent => ({ kind: 'report', shot, errored: !!message.errored })),
       ),
+    ).pipe(scan(sketchFrameRetriesWith, NO_SKETCH_FRAME_RETRIES)),
+    { initialValue: NO_SKETCH_FRAME_RETRIES },
   );
+
+  protected erroredVariants = computed(() => {
+    const { failing } = this.frameRetries();
+
+    return this.sketchRows()
+      .filter((row) => row.shots.some((shot) => `${row.key} ${shot.state}` in failing))
+      .map((row) => row.key);
+  });
+
+  protected rowShots = computed(() => {
+    const { retry } = this.frameRetries();
+
+    return new Map<string, SafeResourceUrl>(
+      this.sketchRows().flatMap((row) =>
+        row.shots.map((shot) => {
+          const key = `${row.key} ${shot.state}`;
+
+          return [key, this.safeUrlOf(retriedSrcOf(shot.src, retry[key]))] as const;
+        }),
+      ),
+    );
+  });
 
   private newestAuthor = computed(() => {
     const { variants, variantInfo } = this.sketch();
