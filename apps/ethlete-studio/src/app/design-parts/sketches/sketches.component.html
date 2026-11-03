@@ -289,7 +289,7 @@
     <p
       #note
       [style.font-size.px]="noteSize()"
-      class="m-0 leading-[1.35] text-et-surface-muted [overflow-wrap:anywhere]"
+      class="m-0 leading-[1.35] text-et-surface-muted wrap-anywhere"
       data-sk-note
     >
       {{ row.note }}
@@ -345,7 +345,7 @@
         [class.text-et-surface]="!same"
         [class.text-et-surface-muted]="same"
         [style.font-size.px]="labelFont()"
-        class="min-w-0 font-code leading-[1.35] [overflow-wrap:anywhere]"
+        class="min-w-0 font-code leading-[1.35] wrap-anywhere"
         data-sk-label-text
         ><span [class.hidden]="transposed()">{{ item.state }}{{ same ? LABELS.stateSeparator : '' }}</span
         >{{ same ? LABELS.unchanged : '' }}</span
