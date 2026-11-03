@@ -3,6 +3,7 @@ import { dirname, isAbsolute, relative, resolve } from 'path';
 import { addedPartsOf, changedPartsOf, DrawnPart } from './changed-parts';
 import { DESIGN_DIR, DesignConfig, readConfig } from './paths';
 import { PrepushChange } from './prepush-changes';
+import { repoInvocation } from '../invocation';
 import { ruleProblemsOf, partOfFile, staleSketchBasesOf } from './system/check-system';
 import { Problem } from './system/problem';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './system/resolve-product';
@@ -164,6 +165,7 @@ export const prepushDesignCheck = (options: { target: string; changes: PrepushCh
   const { target, changes } = options;
   const config = readConfig(target);
   const touched = config ? touchedPartsOf({ target, config, changes }) : new Map<string, Set<string>>();
+  const invocation = repoInvocation({ root: target, subcommand: 'design' });
   const lines: string[] = [];
   const changed = new Set(changes.map(({ file }) => resolve(target, file)));
   let failed = 0;
@@ -180,7 +182,7 @@ export const prepushDesignCheck = (options: { target: string; changes: PrepushCh
     const problems = ruleProblemsOf(product).filter(isOwn);
 
     lines.push(`design check ${name}: ${parts.size} touched part${parts.size === 1 ? '' : 's'}`);
-    const stale = staleSketchBasesOf(product, parts);
+    const stale = staleSketchBasesOf({ product, parts, invocation });
 
     problems.forEach((problem) => lines.push(`${problem.rule} ${relative(target, problem.file)}: ${problem.message}`));
     stale.forEach(({ line }) => lines.push(line));

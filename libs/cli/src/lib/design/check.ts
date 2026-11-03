@@ -469,7 +469,7 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
     if (appClasses) return checkAppClasses({ target, config: readConfig(target) ?? {}, products });
     if (live) return checkLive({ target, config: readConfig(target) ?? {}, products });
 
-    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products, part, invocation });
   }
 
   if (part) {
@@ -486,13 +486,13 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
       return 1;
     }
 
-    return checkSystemRendered({ target, config, products: holding, part });
+    return checkSystemRendered({ target, config, products: holding, part, invocation });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystemRendered({ target, config, products: Object.keys(config.products) });
+    return checkSystemRendered({ target, config, products: Object.keys(config.products), invocation });
 
   const slug = flags['--call']?.[0];
   let failure = '';

@@ -9,7 +9,7 @@ import { checkSystem, summaryText } from './check-system';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
-import { createSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
+import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -352,16 +352,43 @@ describe('checkDesign', () => {
 
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(1);
     expect(withoutOpenPoints(lines)).toEqual([
-      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase elements/hero --product acme --by <model id>',
+      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run yarn design sketch rebase elements/hero --product acme --by <model id>',
       expect.stringMatching(/^RENDER CHECK NOT RUN - 1 problem above stop it \(SKETCH-BASE-STALE 1\)/),
     ]);
 
     rebaseSketch({ product, sketch });
     lines.length = 0;
 
-    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(0);
+    expect(lines).toContain('SKETCH-BASE-STALE 0');
+  }, 60_000);
+
+  it('reports a stale base on a picked sketch and skips a discarded one', async () => {
+    const target = acme();
+    const lines = output();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+
+    const picked = decideSketch({ sketch: { ...sketch, status: 'ready' }, decision: { kind: 'pick', variant: 'a' } });
+
+    if (typeof picked === 'string') throw new Error(picked);
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(1);
+    expect(lines).toContain('SKETCH-BASE-STALE 1');
+
+    const discarded = decideSketch({ sketch: picked, decision: { kind: 'discard' } });
+
+    if (typeof discarded === 'string') throw new Error(discarded);
+
+    lines.length = 0;
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'yarn design' })).toBe(0);
     expect(lines).toContain('SKETCH-BASE-STALE 0');
   }, 60_000);
 

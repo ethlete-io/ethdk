@@ -47,6 +47,7 @@ import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { staleBaselineOf } from './sketch/baseline';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
+import { repoInvocation } from '../../invocation';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';
 
 const RULES = [
@@ -108,6 +109,8 @@ type CheckOptions = {
   part?: string;
   tally?: Tally;
   drawPictures?: DrawStates;
+  /** How the repo runs `et design`; defaults to the one its package.json implies. */
+  invocation?: string;
 };
 
 const PRODUCT_LEVEL = '(product)';
@@ -203,18 +206,24 @@ const typecheckOpenSketches = (options: { target: string; product: ResolvedProdu
   );
 
 /**
- * One SKETCH-BASE-STALE problem, with its printed line, per open sketch whose base changed since it was drawn or
+ * One SKETCH-BASE-STALE problem, with its printed line, per undiscarded sketch (open or picked) whose base changed since it was drawn or
  * rebased; with `parts`, only the sketches where one of those parts changed.
  */
-export const staleSketchBasesOf = (product: ResolvedProduct, parts?: Set<string>): (Problem & { line: string })[] =>
-  listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
-    if (typeof sketch === 'string' || sketch.decision) return [];
+export const staleSketchBasesOf = (options: {
+  product: ResolvedProduct;
+  invocation: string;
+  parts?: Set<string>;
+}): (Problem & { line: string })[] => {
+  const { product, invocation, parts } = options;
+
+  return listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
+    if (typeof sketch === 'string' || sketch.decision?.kind === 'discard') return [];
 
     const changed = staleBaselineOf({ product, sketch });
 
     if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
 
-    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
+    const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run ${invocation} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
 
     return [
       {
@@ -225,6 +234,7 @@ export const staleSketchBasesOf = (product: ResolvedProduct, parts?: Set<string>
       },
     ];
   });
+};
 
 const warnChangedOutsideSketch = (product: ResolvedProduct) => {
   for (const part of changedOutsideSketchOf(product))
@@ -333,7 +343,11 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     if (options.warn && !options.part)
       typecheckOpenSketches({ target, product }).forEach((problem) => report(problem, product));
 
-    if (options.warn && !options.part) staleSketchBasesOf(product).forEach((problem) => report(problem, product));
+    if (options.warn && !options.part)
+      staleSketchBasesOf({
+        product,
+        invocation: options.invocation ?? repoInvocation({ root: target, subcommand: 'design' }),
+      }).forEach((problem) => report(problem, product));
   }
 
   return failed ? 1 : 0;

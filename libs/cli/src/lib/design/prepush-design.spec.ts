@@ -1,4 +1,4 @@
-import { appendFileSync, cpSync, mkdtempSync } from 'fs';
+import { appendFileSync, cpSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -113,6 +113,10 @@ describe('prepushDesignCheck', () => {
 
     if (typeof sketch === 'string') throw new Error(sketch);
 
+    writeFileSync(
+      join(target, 'package.json'),
+      JSON.stringify({ packageManager: 'yarn@4.0.0', scripts: { design: 'et design' } }),
+    );
     appendFileSync(join(target, inAcme('elements/hero/hero.css')), '.acme-hero { padding: 0; }\n');
 
     const changes = [{ status: 'M', file: inAcme('elements/hero/hero.css') }];
@@ -120,7 +124,7 @@ describe('prepushDesignCheck', () => {
 
     expect(result.code).toBe(1);
     expect(result.lines).toContain(
-      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase elements/hero --product acme --by <model id>',
+      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run yarn design sketch rebase elements/hero --product acme --by <model id>',
     );
 
     rebaseSketch({ product, sketch });
