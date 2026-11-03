@@ -3,19 +3,32 @@
   "status": "in progress",
   "createdAt": "2026-10-27T00:48:22.919Z",
   "baseline": {
-    "foundations/tokens": "39e21d4fa77461c1",
-    "components/button": "35d7f28a9862a6d4",
-    "components/card": "ac1a52f518531150",
-    "elements/list-row": "0182c25e208d63d1",
-    "pages/library": "db7e213adaa1d82e",
+    "foundations/tokens": "6cc47d5fc0ab874e",
+    "components/button": "f18c8ec725b0a452",
+    "components/card": "ae4dca8205da35f5",
+    "elements/add-film-dialog": "7c8a3f4a7a3f34f6",
+    "elements/list-row": "a69aacc50adeb343",
+    "elements/login-dialog": "caa9575b9acd2dd8",
+    "elements/shell-main": "f7b0328eb2f489ca",
+    "pages/film-detail": "d0a345c5e093ffa8",
+    "pages/library": "98aa11cc9a25c286",
     "fixtures.ts": "cc87e40089c46ba6"
   },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "",
+      "note": ""
+    }
+  ],
   "variantInfo": {
     "a": {
-      "authors": ["gemini-3-argon"]
+      "authors": ["gemini-3-argon"],
+      "round": "r1"
     },
     "b": {
-      "authors": ["gpt-5.6-sol", "claude-opus-5-5"]
+      "authors": ["gpt-5.6-sol", "claude-opus-5-5"],
+      "round": "r1"
     }
   }
 }
