@@ -3515,3 +3515,11 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      of 275 - the rule covers the shape of a spec's input too (commit shape, file set), not only parsed text. Fix:
      B214 reopened - find why the marker missed, `yarn commit -- <paths>` adds untracked paths itself, spec on that
      real shape, one live commit where the hook skips.
+279. B201 (builder, 2026-11-03, 2afda8d28): reach sweeps pan positions and COVERED names the opaque cover first. Two
+     gaps. (1) The sub-agent never saw the two real Studio "Übernehmen" cases the slice came from and built synthetic
+     ones (pan-gutter, pan-header), so whether the real buttons now turn red is unchecked. (2) No spec had an opaque
+     pane with a transparent child, so the first draft's wrong blame passed its own specs. Why no tool caught (1): a
+     builder sub-agent brief names the slice, not the defect's real reproduction. Lesson: a fix is verified on the
+     real case that reported it; synthetic specs come on top. Fix: the builder sub-agent brief carries each defect's
+     real reproduction (part, state, element) and the slice report quotes the check on it; B201 stays open until
+     `design check` on the part holding the Übernehmen buttons reports them.
