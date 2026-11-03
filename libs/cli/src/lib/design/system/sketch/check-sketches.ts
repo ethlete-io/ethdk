@@ -60,10 +60,12 @@ const liveStateProblemsOf = (options: { product: ResolvedProduct; overlaid: Sket
       const key = partKeyOf(part);
       const page = live.spec.pages[key];
       const merged = product.parts.find((candidate) => partKeyOf(candidate) === key);
-      const known = new Set([
-        ...(stateNamesOf(part.source) ?? []),
-        ...(merged ? (stateNamesOf(merged.source) ?? []) : []),
-      ]);
+      const own = stateNamesOf(part.source);
+      const mergedNames = merged ? stateNamesOf(merged.source) : [];
+
+      if (own === null || mergedNames === null) return [];
+
+      const known = new Set([...own, ...mergedNames]);
 
       return Object.entries(page?.states ?? {})
         .filter(([, state]) => !known.has(state.design))
