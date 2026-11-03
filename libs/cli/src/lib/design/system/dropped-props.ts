@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { INTERACTIONS } from '../force-interactions';
 import { createDesignServer } from '../serve';
 import { DesignConfig } from '../paths';
+import { productSampledPropsOf } from './harness-samples';
 import { designOnlyPropsOf } from './part-compare';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
@@ -94,8 +95,9 @@ export const componentInputsOf = (source: string): string[] | null => {
 export const droppedStatePropsOf = (options: {
   states: Record<string, unknown>;
   inputs: readonly string[];
+  sampled?: readonly string[];
 }): Map<string, string[]> => {
-  const { states, inputs } = options;
+  const { states, inputs, sampled = [] } = options;
   const forcedOf = (state: string, props: unknown): string[] => [
     ...INTERACTIONS.filter((known) => state.endsWith(`-${known}`)),
     ...Object.values(isRecord(props) ? props : {}).flatMap((value) => {
@@ -119,7 +121,7 @@ export const droppedStatePropsOf = (options: {
       selected: true,
     });
     const keys = Object.keys(isRecord(props) ? props : {}).filter(
-      (key) => !inputs.includes(key) && !designOnly.has(key),
+      (key) => !inputs.includes(key) && !sampled.includes(key) && !designOnly.has(key),
     );
 
     if (keys.length > 0) dropped.set(state, keys);
@@ -168,7 +170,9 @@ export const droppedPropProblemsOf = async (options: {
 
       if (!isRecord(states)) continue;
 
-      for (const [state, dropped] of droppedStatePropsOf({ states, inputs }))
+      const sampled = productSampledPropsOf({ target, product, part: partKeyOf(part) });
+
+      for (const [state, dropped] of droppedStatePropsOf({ states, inputs, sampled }))
         problems.push({
           rule: 'DROPPED-PROP',
           file: part.file,

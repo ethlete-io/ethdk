@@ -9,6 +9,7 @@ import { checkerScriptOf, createPartShooter, pixelBoxOf, viewportOf } from '../s
 import { awaitFonts, Browser, createDrawQueue, DRAW_TIMEOUT_MS } from '../thumb';
 import { partActionFailuresOf } from './actions-command';
 import { harnessStaleOf } from './harness-map';
+import { productSampledPropsOf } from './harness-samples';
 import { shootLiveStates } from './live-compare';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import {
@@ -454,6 +455,7 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
       drawn: Object.fromEntries([...designs].map(([state, design]) => [state, drawnSurfacesOf(design.markup ?? '')])),
     });
     const shots: StateShot[] = [];
+    const sampled = productSampledPropsOf({ target, product, part });
     const forcing = new Set(
       [...designs].flatMap(([state, design]) => (forcedElementsOf(design?.markup ?? '').length > 0 ? [state] : [])),
     );
@@ -493,14 +495,17 @@ export const shootStates: ShootStates = async ({ target, config, product, part, 
           forced,
           props: {
             sent,
-            designOnly: designOnlyPropsOf({
-              states,
-              opens,
-              state,
-              forced: forced.map(({ interaction }) => interaction),
-              forcing,
-              selected: drawsSelectedOf(design.markup ?? ''),
-            }),
+            designOnly: new Set([
+              ...designOnlyPropsOf({
+                states,
+                opens,
+                state,
+                forced: forced.map(({ interaction }) => interaction),
+                forcing,
+                selected: drawsSelectedOf(design.markup ?? ''),
+              }),
+              ...sampled,
+            ]),
           },
           roomAbove: (design.marks.find((mark) => mark.parts.includes(part))?.y ?? 0) > 0,
           panes: drawnPaneCountOf(design.markup ?? ''),
