@@ -334,6 +334,16 @@ finding in a part the product takes from its base, before or in the render, does
 counts them, for example `94 findings in base product sdk (UTILITY-CSS 94) - they do not block this product; run et design check --product sdk for the base's own`. A part the product
 overrides is checked as its own.
 
+The render check also asks whether each declared action can be reached in every state that draws it. `UNREACHABLE`
+fails an element with `data-et-action` that the state hides (`visibility: hidden`, or `display: none` from CSS - a
+`hidden` attribute is left out), fades to `opacity: 0`, draws at zero size, gives `pointer-events: none`, or buries
+so that a click at every point of its unclipped box lands on another element, for example `UNREACHABLE studio
+pages/sketches far-out at desktop: … - "Übernehmen" (emit:merge) is hidden (visibility: hidden) in a state that
+declares it`. `COVERED` fails an action, and a projected region (`slot(...)`, `data-et-projected`), where an opaque
+element of another subtree paints above any of its sample points, for example a sticky column panned over a canvas;
+open overlay panes and tooltips do not count. Neither rule is silenced by a `CLIPPED` skip; an element panned or
+clipped fully out of view is not judged.
+
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
 `{ part, drawn, points }`. Contrasts and missing control states need a draw, so only `&draw=true` with a `part`
@@ -542,7 +552,7 @@ the same pixels as a sibling variant in its first changed state. `sketch.json` k
 treats it like a rejected variant. `sketch reject`, `reopen` and `withdraw` refuse a `--by` that is neither `designer`
 nor a model id (`claude-…`, `gpt-…`, `gemini-…`, `codex-…`).
 
-`sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
+`sketch check` skips a withdrawn variant and prints one `NOTE <target> <variant>: withdrawn, not checked` line for it. `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
 not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible
 or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
@@ -656,7 +666,7 @@ needs a state in each of those columns, so the open row is drawn hovered too. In
 column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
 on the grid line (`draws no selected active`). A row whose forced elements are only SDK components rendered through
 `ng()` with no class, inline style or styled content of the part's own is drawn at rest only: Studio, `shot`, `compare`
-and the visible-change gate skip its interaction states. Flat states such as
+and the visible-change gate skip its interaction states, though `shot --state <name>` still draws one you name. Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. When a descendant of the control draws an interaction or carries
