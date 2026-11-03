@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from './paths';
 import { parseNameStatus } from './prepush-changes';
 import { prepushDesignCheck, touchedPartsOf } from './prepush-design';
+import { resolveProduct } from './system/resolve-product';
+import { createSketch, rebaseSketch } from './system/sketch/sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-prepush-design-'));
@@ -102,6 +104,28 @@ describe('prepushDesignCheck', () => {
 
     expect(result.code).toBe(1);
     expect(result.lines.some((line) => line.includes('hero.css'))).toBe(true);
+  });
+
+  it('fails on a touched part an open sketch replaces whose base changed since the sketch, until it is rebased', () => {
+    const { target, config } = acme();
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] });
+
+    if (typeof sketch === 'string') throw new Error(sketch);
+
+    appendFileSync(join(target, inAcme('elements/hero/hero.css')), '.acme-hero { padding: 0; }\n');
+
+    const changes = [{ status: 'M', file: inAcme('elements/hero/hero.css') }];
+    const result = prepushDesignCheck({ target, changes });
+
+    expect(result.code).toBe(1);
+    expect(result.lines).toContain(
+      'SKETCH-BASE-STALE acme elements/hero: elements/hero changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase elements/hero --product acme --by <model id>',
+    );
+
+    rebaseSketch({ product, sketch });
+
+    expect(prepushDesignCheck({ target, changes }).code).toBe(0);
   });
 
   it('passes when the problem sits in a part the change does not touch', () => {

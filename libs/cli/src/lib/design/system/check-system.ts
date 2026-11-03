@@ -202,19 +202,25 @@ const typecheckOpenSketches = (options: { target: string; product: ResolvedProdu
         }),
   );
 
-const staleSketchBasesOf = (product: ResolvedProduct): { problem: Problem; line: string }[] =>
+/**
+ * One SKETCH-BASE-STALE problem, with its printed line, per open sketch whose base changed since it was drawn or
+ * rebased; with `parts`, only the sketches where one of those parts changed.
+ */
+export const staleSketchBasesOf = (product: ResolvedProduct, parts?: Set<string>): (Problem & { line: string })[] =>
   listSketches({ productDir: product.dir, product: product.name }).flatMap((sketch) => {
     if (typeof sketch === 'string' || sketch.decision) return [];
 
     const changed = staleBaselineOf({ product, sketch });
 
-    if (!changed?.length) return [];
+    if (!changed?.length || (parts && !changed.some((part) => parts.has(part)))) return [];
 
     const message = `${changed.join(', ')} changed since the sketch was drawn - bring each variant up to date, then run et design sketch rebase ${sketch.target} --product ${product.name} --by <model id>`;
 
     return [
       {
-        problem: { rule: 'SKETCH-BASE-STALE', file: sketch.dir, message },
+        rule: 'SKETCH-BASE-STALE',
+        file: sketch.dir,
+        message,
         line: `SKETCH-BASE-STALE ${product.name} ${sketch.target}: ${message}`,
       },
     ];
@@ -253,8 +259,8 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
-  const report = (problem: Problem, product: ResolvedProduct, line = lineOf(target, problem)) => {
-
+  const report = (problem: Problem & { line?: string }, product: ResolvedProduct) => {
+    const line = problem.line ?? lineOf(target, problem);
     if (options.known?.includes(line)) {
       console.warn(`NOTE (was there before) ${line}`);
 
@@ -327,8 +333,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean; blocking?: strin
     if (options.warn && !options.part)
       typecheckOpenSketches({ target, product }).forEach((problem) => report(problem, product));
 
-    if (options.warn && !options.part)
-      staleSketchBasesOf(product).forEach(({ problem, line }) => report(problem, product, line));
+    if (options.warn && !options.part) staleSketchBasesOf(product).forEach((problem) => report(problem, product));
   }
 
   return failed ? 1 : 0;

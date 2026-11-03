@@ -3,7 +3,7 @@ import { dirname, isAbsolute, relative, resolve } from 'path';
 import { addedPartsOf, changedPartsOf, DrawnPart } from './changed-parts';
 import { DESIGN_DIR, DesignConfig, readConfig } from './paths';
 import { PrepushChange } from './prepush-changes';
-import { ruleProblemsOf, partOfFile } from './system/check-system';
+import { ruleProblemsOf, partOfFile, staleSketchBasesOf } from './system/check-system';
 import { Problem } from './system/problem';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './system/resolve-product';
 import { createSystemModules, fileOfModuleId, productModuleIdOf, SystemModules } from './system/system-modules';
@@ -180,8 +180,11 @@ export const prepushDesignCheck = (options: { target: string; changes: PrepushCh
     const problems = ruleProblemsOf(product).filter(isOwn);
 
     lines.push(`design check ${name}: ${parts.size} touched part${parts.size === 1 ? '' : 's'}`);
+    const stale = staleSketchBasesOf(product, parts);
+
     problems.forEach((problem) => lines.push(`${problem.rule} ${relative(target, problem.file)}: ${problem.message}`));
-    failed += problems.length;
+    stale.forEach(({ line }) => lines.push(line));
+    failed += problems.length + stale.length;
   }
 
   if (touched.size > 0) lines.push(failed === 0 ? 'ok' : `${failed} design problem${failed === 1 ? '' : 's'}`);
