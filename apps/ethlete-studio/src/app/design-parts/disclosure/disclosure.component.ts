@@ -3,7 +3,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { SurfaceInteractiveDirective } from '@ethlete/core';
 
 export const DISCLOSURE_BODY_CLASS =
-  'flex flex-col gap-space-1 m-0 text-et-surface-muted text-(length:--text-xs) *:flex *:gap-space-2';
+  'flex flex-col gap-space-1 m-0 pt-space-1 pl-[calc(var(--space-2)+14px+var(--space-2))] list-none text-et-surface-muted text-(length:--text-xs) *:flex *:gap-space-2';
 
 @Component({
   selector: 'ethlete-disclosure',

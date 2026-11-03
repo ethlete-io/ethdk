@@ -31,11 +31,9 @@
   <span>{{ label() }}</span>
 </button>
 @if (open()) {
-  <div
-    class="pt-space-1 pl-[calc(var(--space-2)+14px+var(--space-2))] transition-opacity duration-(--duration-appear) ease-(--ease-standard) starting:opacity-0"
-  >
+  <div class="transition-opacity duration-(--duration-appear) ease-(--ease-standard) starting:opacity-0">
     @if (body(); as html) {
-      <div [innerHTML]="html" class="contents"></div>
+      <div [innerHTML]="html" class="pt-space-1 pl-[calc(var(--space-2)+14px+var(--space-2))]"></div>
     }
     <ng-content />
   </div>
