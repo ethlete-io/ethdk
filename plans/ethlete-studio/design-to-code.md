@@ -4239,6 +4239,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      that Studio UI text is for a designer. Fix: a rule flags command text (`npx`, `nx `, `yarn `, `--flag`,
      env assignments) in a studio product drawing or app template. The pages/system sketch 2862bad2e is withdrawn.
 
+337. The B264b slice (busy sketch renders count as ongoing work, motions hint in every check) is spec-green in the
+     tree but uncommitted: `yarn commit` refused twice because its related-spec run in the HEAD worktree failed
+     `motion-shot.spec.ts` (72 instead of >= 300), the B268 flake. The flaky spec does not touch the changed code. Why
+     no tool caught it: B268 was reopened as a flake but queued behind other work, while the commit gate still runs
+     the flaky spec for every slice that shares its related set; one known flake blocks unrelated slices. Fix: a
+     reopened flake in a spec the commit gate runs goes to the head of the builder queue (B268 before B264b's
+     commit), and the B268 fix drives the motion steps from the fake clock, not the wall clock. Open B264b caveat:
+     merged-side busy is passed as [], so a busy state the merged part already has under a non-loading name shows
+     as "added" in a sketch; the builder states whether that needs a row.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
