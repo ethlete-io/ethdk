@@ -1,21 +1,22 @@
 {
   "components/canvas-viewport": {
-    "hash": "36e9588a6f860c36",
+    "hash": "eaa9a97ff3365f42",
     "by": "tom",
-    "at": "2026-11-01T12:44:14.995Z",
+    "at": "2026-11-02T09:06:47.627Z",
     "files": {
       ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.css": "8af8e34c1b815043",
       ".ethlete/design/studio/components/canvas-viewport/canvas-viewport.ts": "194061e9f7ae9f6d",
-      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/button.ts": "3685748294a141e7",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/button.component.css": "3fdffd80ea5224a1",
       "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
       "libs/core/design/interactive-styles.ts": "781528322bd34499",
       "libs/core/src/lib/theming/color-interactive-styles.component.css": "8baece3a25375ed8",
       "libs/core/src/lib/theming/surface-interactive-styles.component.css": "944cbb76b1d15611"
-    }
+    },
+    "auto": true
   },
   "components/comment-pin": {
     "hash": "26edf8a5ce1cb8d5",
@@ -56,9 +57,34 @@
     "note": "studio click"
   },
   "components/disclosure": {
-    "hash": "58b440ef4e8b0bc5",
+    "hash": "1d927e19f6ea69ca",
     "by": "tom",
-    "at": "2026-11-01T17:04:09.094Z"
+    "at": "2026-11-02T08:46:27.989Z",
+    "files": {
+      ".ethlete/design/studio/assets/icons/arrow-left.svg": "abb6abd09d460189",
+      ".ethlete/design/studio/assets/icons/check.svg": "4af09beffbcc19b8",
+      ".ethlete/design/studio/assets/icons/chevron-down.svg": "9984134378e832d4",
+      ".ethlete/design/studio/assets/icons/chevron-right.svg": "1a04df114a80da2e",
+      ".ethlete/design/studio/assets/icons/close.svg": "7c9d7c7b0369ac38",
+      ".ethlete/design/studio/assets/icons/comment.svg": "fb680460d7117789",
+      ".ethlete/design/studio/assets/icons/error.svg": "2d3285675d3b2d19",
+      ".ethlete/design/studio/assets/icons/flow.svg": "453c012e8a063e82",
+      ".ethlete/design/studio/assets/icons/grid.svg": "0325b982baf41f85",
+      ".ethlete/design/studio/assets/icons/inbox.svg": "e661f5cf4c65c1c9",
+      ".ethlete/design/studio/assets/icons/maximize.svg": "743f8061df8f16f7",
+      ".ethlete/design/studio/assets/icons/minimize.svg": "1bc111272e357d8d",
+      ".ethlete/design/studio/assets/icons/more.svg": "c899b8912231575e",
+      ".ethlete/design/studio/assets/icons/panel.svg": "05c325920c46d969",
+      ".ethlete/design/studio/assets/icons/pencil.svg": "61f6ed00cf70bfc1",
+      ".ethlete/design/studio/assets/icons/reply.svg": "34c9698a4d28d7b0",
+      ".ethlete/design/studio/assets/icons/search.svg": "3826f566b7d86a3c",
+      ".ethlete/design/studio/assets/icons/up-down.svg": "05a3e87643e7d442",
+      ".ethlete/design/studio/assets/icons/warning.svg": "881d773ddae1de3e",
+      ".ethlete/design/studio/components/disclosure/disclosure.css": "e8694c045bf818de",
+      ".ethlete/design/studio/components/disclosure/disclosure.ts": "41e851bd1027621b",
+      ".ethlete/design/studio/foundations/icons/icons.ts": "c1871a82f392f464"
+    },
+    "auto": true
   },
   "components/error-toast": {
     "hash": "6c84f7059293204c",
@@ -203,9 +229,9 @@
     "at": "2026-11-01T17:04:08.901Z"
   },
   "elements/canvas-frames": {
-    "hash": "36063f35e143b64c",
+    "hash": "79c32e9ab2d15c7d",
     "by": "tom",
-    "at": "2026-11-01T23:05:19.192Z",
+    "at": "2026-11-02T09:06:47.712Z",
     "files": {
       ".ethlete/design/sdk/components/button/button.css": "822be602807516b4",
       ".ethlete/design/sdk/components/button/button.ts": "2db7ffb8295043f6",
@@ -214,12 +240,12 @@
       ".ethlete/design/studio/components/zoom-chip/zoom-chip.ts": "10cf796195954e40",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.css": "a88875d65bc788fe",
       ".ethlete/design/studio/elements/canvas-frames/canvas-frames.ts": "a6ee700418ae324d",
-      "libs/components/design/button.ts": "ce30348dc93a258d",
+      "libs/components/design/button.ts": "3685748294a141e7",
       "libs/components/design/control.ts": "b0244bc4c0f922a6",
       "libs/components/design/icon-set.ts": "2aab551c1dd9aedc",
       "libs/components/design/icon.ts": "829a95253b948ba9",
       "libs/components/src/lib/button/button-properties-styles.component.css": "83b177f186fcba5e",
-      "libs/components/src/lib/button/button.component.css": "a001a99c33842289",
+      "libs/components/src/lib/button/button.component.css": "3fdffd80ea5224a1",
       "libs/components/src/lib/button/icon-button.component.css": "5078362cb58dd2df",
       "libs/components/src/lib/focus-ring/focus-ring-styles.component.css": "9d05c7ab83fe167d",
       "libs/components/src/lib/icon/headless/icon-definition.ts": "180b7ea77305a404",
