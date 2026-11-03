@@ -3961,6 +3961,15 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      button, whatever its name; when the part has an implementing app component, its state names must match that
      component's phase values, and the check names the mismatch.
 
+312. sketch ready reports pre-existing problems only as a count (builder, 2026-11-03, B240). It prints "5 problems were
+     there before" per variant and the code never lists them, so nobody can check whether they matter or whether a
+     variant added one in their place. The problem list of a plain part check on pages/sketches (36 SKIP-SCOPE,
+     2 COVERED) does not map to the 5. Why no tool caught it: no spec asserts that a counted problem is also printed.
+     Decision (technical, own slice B264, not folded into B255): sketch check and sketch ready print each pre-existing
+     problem as rule, file, message and variant, in the same line format the part check uses; a spec asserts the
+     printed lines equal the count. The B240 pixel compare is not final yet: b and c are 0 px, a differs only in the
+     caption strip, and the "after" side was a later HEAD, so the exact a7bad251a^ vs a7bad251a shot is still owed.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
