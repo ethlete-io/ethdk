@@ -4,6 +4,8 @@ import select from '@system/components/select';
 import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
 import { holdTrigger } from '@system/components/hold-trigger';
+import { type SketchStatus, sketchStatusBadge } from '@system/components/sketch-status-badge';
+import { variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -13,15 +15,7 @@ import { PAGE_PIN, pinProps } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
-import {
-  HOLD,
-  IDLE,
-  STATUS_LABEL,
-  type SketchStatus,
-  drawingPlaceholder,
-  modelName,
-  toggleHold,
-} from '@shared/sketch-status';
+import { HOLD, IDLE, drawingPlaceholder, modelName, toggleHold } from '@shared/sketch-status';
 import {
   PARTS,
   type PartKind,
@@ -125,10 +119,10 @@ const pickers = {
 const tag = async (label: string) =>
   (await badge.render({ badges: [{ label, variant: 'tonal', size: 'sm' }] })) as { body: string; styles: string };
 const tags = {
-  drawing: await tag(STATUS_LABEL.drawing),
-  waiting: await tag(STATUS_LABEL.waiting),
-  paused: await tag(STATUS_LABEL.paused),
-  idle: await tag(STATUS_LABEL.idle),
+  drawing: await sketchStatusBadge('drawing'),
+  waiting: await sketchStatusBadge('waiting'),
+  paused: await sketchStatusBadge('paused'),
+  idle: await sketchStatusBadge('idle'),
   fresh: await tag('neu'),
 };
 
@@ -407,6 +401,7 @@ export default definePart<Props>({
         Object.values(tags)
           .map((entry) => entry.styles)
           .join('') +
+        variantCellStyles +
         kit +
         styles +
         below,

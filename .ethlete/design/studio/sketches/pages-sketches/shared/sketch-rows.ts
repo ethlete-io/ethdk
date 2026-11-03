@@ -1,7 +1,8 @@
-import { html, slot, withAction } from '@design-system';
+import { html, withAction } from '@design-system';
 import button from '@system/components/button';
 import titleBar from '@system/components/title-bar';
 import zoomChip from '@system/components/zoom-chip';
+import { variantCell } from '@system/elements/variant-cell';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
 export type RowKey = 'current' | 'a' | 'b' | 'c';
@@ -125,45 +126,16 @@ const firstChanged = (row: Row) => (row.key === 'current' ? undefined : row.chan
 
 const unchanged = (row: Row, state: string) => row.key !== 'current' && !row.changed.includes(state);
 
-const frame = (part: SketchPart, row: Row, state: string) => {
-  const look = row.changed.includes(state) ? row.look : '';
-  return html`<div
-    class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]"
-    data-sk-frame
-    data-et-skip="CLIPPED"
-  >
-    <div
-      class="w-(--w) origin-top-left scale-(--sk-scale) ${look}"
-      data-sk-fit-inner
-      style="--w: ${part.width}px"
-      ${slot('shot')}
-    >
-      ${shot[`${part.key}:${state}`] ?? ''}
-    </div>
-  </div>`;
-};
-
-export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) => {
-  const same = !pending && unchanged(row, state);
-  const first = !pending && state === firstChanged(row);
-  return html`<div
-    class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1 ${same ? 'opacity-50' : ''}"
-    data-sk-state="${state}"
-    style="${place}"
-  >
-    <span
-      class="row-start-1 flex min-w-0 flex-wrap items-center gap-x-space-2 in-data-sk-labels-hidden:hidden"
-      data-sk-label
-      ><span
-        class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere ${
-          same ? 'text-et-surface-muted' : 'text-et-surface'
-        }"
-        ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span>${same ? 'unverändert' : ''}</span
-      >${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}</span
-    >
-    ${frame(part, row, state)}
-  </div>`;
-};
+export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) =>
+  variantCell({
+    state,
+    width: part.width,
+    shot: shot[`${part.key}:${state}`] ?? '',
+    look: row.changed.includes(state) ? row.look : '',
+    same: !pending && unchanged(row, state),
+    first: !pending && state === firstChanged(row),
+    place,
+  });
 
 export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
   html`<div class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),var(--sk-frame))] gap-x-6 gap-y-space-3" data-sk-stage>

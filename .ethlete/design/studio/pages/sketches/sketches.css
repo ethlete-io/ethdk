@@ -2,9 +2,6 @@
   .sk-row[data-selected] {
     box-shadow: 0 0 0 2px var(--et-theme-color-primary-solid);
   }
-  .sk-fit {
-    box-shadow: 0 0 0 1px var(--et-surface-border-solid);
-  }
   .sk-same {
     box-shadow: 0 0 0 1px var(--et-surface-border-solid);
   }

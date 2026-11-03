@@ -1,8 +1,6 @@
 import { html } from '@design-system';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
-export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
-
 type Model = { name: string; agent: Agent };
 
 export const OPUS: Model = { name: 'Opus 5.5', agent: 'claude' };
@@ -10,13 +8,6 @@ export const SOL: Model = { name: 'GPT-6.1 Sol', agent: 'codex' };
 
 export const HOLD = { until: 'B34/B36/B38', by: OPUS, since: 'seit 12 Min' };
 export const IDLE = { since: 'seit 25 Min', last: 'Letzte Änderung von Opus 5.5' };
-
-export const STATUS_LABEL: Record<SketchStatus, string> = {
-  drawing: 'zeichnet',
-  waiting: 'Wartet auf deine Wahl',
-  paused: 'Pausiert',
-  idle: 'Keine Aktivität',
-};
 
 export const modelName = (model: Model) =>
   html`<span class="inline-flex items-center gap-space-1"
