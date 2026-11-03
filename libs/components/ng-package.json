@@ -32,6 +32,11 @@
       "output": "./src/lib"
     },
     {
+      "glob": "button.types.ts",
+      "input": "src/lib/button",
+      "output": "./src/lib/button"
+    },
+    {
       "glob": "{icon-definition,*-icon,*-icons}.ts",
       "input": "src/lib/icon/headless",
       "output": "./src/lib/icon/headless"

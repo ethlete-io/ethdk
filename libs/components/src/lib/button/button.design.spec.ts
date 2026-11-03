@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { button, ButtonMockOptions, iconButton, IconButtonMockOptions } from '../../../design/button';
 import '../../test-helpers';
-import { mockShapeOf, shapeOf } from '../testing/design-mock-shape';
+import { DesignMockShape, mockShapeOf, shapeOf } from '../testing/design-mock-shape';
 import { ButtonComponent } from './button.component';
 import { IconButtonComponent } from './icon-button.component';
 import { ButtonIconAlignment, ButtonSize, ButtonVariant } from './button.types';
@@ -17,6 +17,7 @@ import { ButtonIconAlignment, ButtonSize, ButtonVariant } from './button.types';
       [iconAlignment]="iconAlignment()"
       [pressed]="pressed()"
       [disabled]="disabled()"
+      [loading]="loading()"
       [color]="color()"
       et-button
     >
@@ -31,6 +32,7 @@ class ButtonHost {
   public iconAlignment = input<ButtonIconAlignment>('start');
   public pressed = input<boolean | undefined>(undefined);
   public disabled = input(false);
+  public loading = input(false);
   public color = input<string | undefined>(undefined);
 }
 
@@ -71,7 +73,13 @@ const CASES: ButtonMockOptions[] = [
   { label: 'Save', variant: 'tonal', size: 'xl', iconAlignment: 'end', pressed: false },
   { label: 'Save', variant: 'transparent', pressed: true },
   { label: 'Save', disabled: true, size: 'xs' },
+  { label: 'Save', loading: true, size: 'sm' },
 ];
+
+const withoutSpinner = (shape: DesignMockShape): DesignMockShape => ({
+  ...shape,
+  children: shape.children.filter((child) => child.tag !== 'et-spinner').map(withoutSpinner),
+});
 
 describe('button design mock', () => {
   beforeEach(() => {
@@ -94,7 +102,7 @@ describe('button design mock', () => {
   it.each(CASES)('draws the classes the component renders for %o', async (options) => {
     const fixture = TestBed.createComponent(ButtonHost);
 
-    for (const name of ['variant', 'size', 'iconAlignment', 'pressed', 'disabled', 'color'] as const) {
+    for (const name of ['variant', 'size', 'iconAlignment', 'pressed', 'disabled', 'loading', 'color'] as const) {
       if (options[name] !== undefined) fixture.componentRef.setInput(name, options[name]);
     }
 
@@ -104,9 +112,11 @@ describe('button design mock', () => {
 
     const [real, anchor] = fixture.nativeElement.querySelectorAll('[et-button]');
 
-    expect(mockShapeOf(button({ ...options, icon: '<i>i</i>' }), '.et-button')).toEqual(shapeOf(real));
+    expect(withoutSpinner(mockShapeOf(button({ ...options, icon: '<i>i</i>' }), '.et-button'))).toEqual(
+      withoutSpinner(shapeOf(real)),
+    );
 
-    if (!options.pressed && !options.disabled && options.iconAlignment !== 'end') {
+    if (!options.pressed && !options.disabled && !options.loading && options.iconAlignment !== 'end') {
       expect(mockShapeOf(button({ ...options, tag: 'a' }), '.et-button')).toEqual(shapeOf(anchor));
     }
   });

@@ -2,7 +2,9 @@ import { interactiveStyles } from '@ethlete/core/design/interactive-styles';
 import focusRing from '../src/lib/focus-ring/focus-ring-styles.component.css?inline';
 import buttonProperties from '../src/lib/button/button-properties-styles.component.css?inline';
 import buttonBase from '../src/lib/button/button.component.css?inline';
+import { BUTTON_SPINNER_CONFIG } from '../src/lib/button/button.types';
 import iconButtonBase from '../src/lib/button/icon-button.component.css?inline';
+import { spinner } from './loader';
 
 export type ButtonMockOptions = {
   /** The label, as HTML. */
@@ -19,6 +21,8 @@ export type ButtonMockOptions = {
   /** Makes the button a toggle: `false` draws it unpressed, left out it is no toggle. */
   pressed?: boolean;
   disabled?: boolean;
+  /** Draws the busy button with its spinner, like `loading` on `et-button`. Needs `loaderStyles` from the loader mock. */
+  loading?: boolean;
   tag?: 'button' | 'a';
   class?: string;
   style?: string;
@@ -49,6 +53,7 @@ export const button = (options: ButtonMockOptions) => {
     options.pressed && 'data-pressed="true"',
     options.pressed !== undefined && `aria-pressed="${options.pressed}"`,
     options.disabled && (tag === 'button' ? 'disabled aria-disabled="true"' : 'aria-disabled="true"'),
+    options.loading && `data-loading="true" aria-busy="true"${options.disabled ? '' : ' aria-disabled="true"'}`,
     `data-icon-alignment="${iconAlignment}"`,
     `data-variant="${variant}"`,
     `data-size="${size}"`,
@@ -58,7 +63,11 @@ export const button = (options: ButtonMockOptions) => {
     options.style && `style="${options.style}"`,
   ].filter(Boolean);
 
-  return `<${tag} ${attributes.join(' ')}>${iconAlignment === 'start' ? iconBox : ''}<div class="et-button-contents">${label}</div>${iconAlignment === 'end' ? iconBox : ''}</${tag}>`;
+  const loader = options.loading
+    ? `<div class="et-button-loader" aria-hidden="true">${spinner(BUTTON_SPINNER_CONFIG[size]).replace('class="et-spinner', 'class="et-button-loader-spinner et-spinner')}</div>`
+    : '';
+
+  return `<${tag} ${attributes.join(' ')}>${iconAlignment === 'start' ? iconBox : ''}<div class="et-button-contents">${label}</div>${iconAlignment === 'end' ? iconBox : ''}${loader}</${tag}>`;
 };
 
 export type IconButtonMockOptions = Omit<ButtonMockOptions, 'label' | 'icon' | 'iconAlignment'> & {
