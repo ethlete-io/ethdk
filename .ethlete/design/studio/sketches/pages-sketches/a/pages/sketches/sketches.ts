@@ -184,10 +184,7 @@ const gridRow = (part: SketchPart, row: Row, view: View) => {
 };
 
 const sameToggle = (rows: Row[], open: boolean, body = '') =>
-  withAction(
-    disclosure({ label: sameLabel(rows), body, open, size: 'xs' }).replace(/ data-et-action="[^"]*"/, ''),
-    'emit:sameToggle',
-  );
+  disclosure({ label: sameLabel(rows), body, open, size: 'xs', action: 'emit:sameToggle' });
 
 const sameRows = (part: SketchPart, rows: Row[], view: View, open: boolean) =>
   rows.length === 0
