@@ -110,6 +110,16 @@ describe('design check shows what design ready refuses', () => {
     } as never);
     vi.mocked(partsCompletenessOf).mockResolvedValue({ gaps: new Map(), exceptions: [], hints: new Map() });
 
+    expect(
+      drawnFindingsFrom({
+        product,
+        issues: [
+          { ...undrawn, rule: 'RENDER-TIMEOUT', state: '-', detail: 'drawing the part did not finish within 120s' },
+        ],
+        gaps: null,
+        stateful: [],
+      }).failed,
+    ).toEqual(['pages/home: drawing the part did not finish within 120s']);
     expect(await drawnFindingsOf({ target, config, product, parts: ['pages/home'] })).toEqual({
       unavailable:
         'pages/home: state empty did not draw - design-explore: state "empty" of "pages/home" failed - films is undefined',

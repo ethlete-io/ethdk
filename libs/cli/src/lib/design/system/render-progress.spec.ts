@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { renderIssuesOf } from './render-check';
+import { inspectRetryingTimeouts, RenderIssue, renderIssuesOf } from './render-check';
 
 const checkout = (bodyOf: (name: string) => string = () => '<p style="margin: 0; color: #000">Text</p>') => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-progress-'));
@@ -56,17 +56,39 @@ describe('render check progress', () => {
     expect(lines[1]).toMatch(/^\[2\/2\] components\/two \d+s$/);
   }, 120_000);
 
-  it('reports a part that does not finish in time as a RENDER issue and goes on with the next', async (context) => {
+  it('reports a part that does not finish in time, also alone, as RENDER-TIMEOUT and goes on with the next', async (context) => {
     const { rendered, lines } = await render({ partTimeoutMs: 1 });
 
     if ('unavailable' in rendered) return context.skip(rendered.unavailable);
 
-    const timeouts = rendered.issues.filter((issue) => issue.rule === 'RENDER').map((issue) => issue.part);
+    const timeouts = rendered.issues.filter((issue) => issue.rule === 'RENDER-TIMEOUT').map((issue) => issue.part);
 
     expect(timeouts).toEqual(['components/one', 'components/two']);
     expect(rendered.issues[0]?.detail).toContain('did not finish within');
     expect(lines).toHaveLength(2);
   }, 120_000);
+
+  it('draws a part that timed out once more alone and keeps that answer', async () => {
+    const frame = (part: string) => ({ address: { product: 'shop', part, sketch: null } }) as never;
+    const timeout = { rule: 'RENDER-TIMEOUT', product: 'shop', part: 'components/one', sketch: null } as RenderIssue;
+    const other = { ...timeout, rule: 'CONTRAST', part: 'components/two' };
+    const calls: string[][] = [];
+    const inspectOf = async (options: { frames: { address: { part: string } }[] }) => {
+      calls.push(options.frames.map((each) => each.address.part));
+
+      return calls.length === 1 ? [timeout, other] : [];
+    };
+
+    const issues = await inspectRetryingTimeouts({
+      browser: null as never,
+      base: '',
+      frames: [frame('components/one'), frame('components/two')],
+      inspectOf: inspectOf as never,
+    });
+
+    expect(calls).toEqual([['components/one', 'components/two'], ['components/one']]);
+    expect(issues).toEqual([other]);
+  });
 
   it('reports an SDK error a part logs on that part and lets other errors pass', async (context) => {
     const logging = (message: string) => `<img src="x" onerror="console.error(${message})">`;

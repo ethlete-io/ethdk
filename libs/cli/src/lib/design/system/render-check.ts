@@ -511,6 +511,31 @@ const embedControlsOf = (controls: unknown) =>
         .map(([name]) => name)
     : [];
 
+/** The render rule of a part whose drawing did not finish in time, apart from a part that failed to draw. */
+export const RENDER_TIMEOUT = 'RENDER-TIMEOUT';
+
+const timedOutKeyOf = (address: { product: string; part: string; sketch: string | null }) =>
+  JSON.stringify([address.product, address.part, address.sketch]);
+
+/** @internal Inspects `frames`, then the parts that timed out once more alone, and keeps that second answer. */
+export const inspectRetryingTimeouts = async (
+  options: Parameters<typeof inspect>[0] & { inspectOf?: typeof inspect },
+) => {
+  const inspectOf = options.inspectOf ?? inspect;
+  const first = await inspectOf(options);
+  const timedOut = new Set(first.filter((issue) => issue.rule === RENDER_TIMEOUT).map(timedOutKeyOf));
+
+  if (timedOut.size === 0) return first;
+
+  const again = await inspectOf({
+    ...options,
+    frames: options.frames.filter((frame) => timedOut.has(timedOutKeyOf(frame.address))),
+    onPart: undefined,
+  });
+
+  return [...first.filter((issue) => !timedOut.has(timedOutKeyOf(issue))), ...again];
+};
+
 const inspect = async (options: {
   browser: Browser;
   base: string;
@@ -586,7 +611,7 @@ const inspect = async (options: {
 
         if (first)
           issues.push({
-            rule: 'RENDER',
+            rule: RENDER_TIMEOUT,
             product: first.product,
             part: first.part,
             state: '-',
@@ -878,7 +903,7 @@ export const renderIssuesOf = async (options: {
     }
 
     const inspected = await queue.run((browser) =>
-      inspect({
+      inspectRetryingTimeouts({
         browser,
         base,
         frames,

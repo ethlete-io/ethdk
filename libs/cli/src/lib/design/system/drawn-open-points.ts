@@ -2,14 +2,15 @@ import { DesignConfig } from '../paths';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { OpenPointsInput } from './open-points';
 import { contrastsOf, missingStatesOf } from './read-open-points';
-import { RenderIssue, renderIssuesOf } from './render-check';
+import { RENDER_TIMEOUT, RenderIssue, renderIssuesOf } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 
 export type DrawnFindings = Required<Pick<OpenPointsInput, 'missingStates' | 'contrasts'>>;
 
 /** Whether a render issue says a whole part did not draw. */
 export const isPartUndrawn = (issue: RenderIssue) =>
-  issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error');
+  issue.rule === RENDER_TIMEOUT ||
+  (issue.rule === 'RENDER' && issue.state === '-' && !issue.detail.startsWith('logged SDK error'));
 
 /** Whether a render issue says one state of a part did not draw. */
 export const isStateUndrawn = (issue: RenderIssue) =>
