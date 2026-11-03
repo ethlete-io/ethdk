@@ -1,7 +1,7 @@
 {
   "components/canvas-viewport": {
     "go": {
-      "hash": "eaa9a97ff3365f42",
+      "hash": "bf5a7c1692b1bb2b",
       "states": {
         "canvas": "c343dd136c1a393c",
         "canvas-focus-visible": "b4c6780582b952b8"
@@ -154,7 +154,7 @@
   },
   "components/error-toast": {
     "go": {
-      "hash": "b1b73d5c0c693b59",
+      "hash": "09b795eb4e32f2ec",
       "states": {
         "close": "e5e9c32d217dbe0c",
         "close-hover": "ab32c0f8892b0cfc",
@@ -176,7 +176,7 @@
       "slots": true
     },
     "go": {
-      "hash": "f0971fcf255e486a",
+      "hash": "9a7de2809bf72a75",
       "states": {
         "collapse": "ff0cfbfb16c9272f",
         "collapse-hover": "b37fedd82bb78962",
@@ -205,7 +205,7 @@
       "slots": true
     },
     "go": {
-      "hash": "ed7fb1d9e03cad3b",
+      "hash": "cc00f576420c57d3",
       "states": {
         "closed": "957ecf97b7264ab9",
         "closed-hover": "69c002a92c93cbe2",
@@ -222,30 +222,31 @@
       "slots": true
     }
   },
+  "components/sketch-status-badge": {
+    "go": {
+      "hash": "a8dd348740787e1f",
+      "states": {
+        "drawing": "df183268126c9953",
+        "waiting": "e3e17b69ccfcde66",
+        "paused": "691875f9133f7e6e",
+        "idle": "7f328f824721f024",
+        "failed": "588f64fd65554c00"
+      },
+      "slots": true
+    }
+  },
   "components/title-bar": {
     "review": {
-      "hash": "ee7696a17b0c043c",
+      "hash": "55d4fd733a8fe009",
       "states": {
         "linux-full-update": "5b12eacaa5c5afe2",
         "linux-full-update-hover": "7736534ef896ee0b",
         "linux-full-update-active": "2c34101181be9636",
         "linux-full-update-focus-visible": "89b5ba658d915958",
         "linux-left": "07394e6a387567bc",
-        "linux-left-hover": "38e5e59bfcb8fa28",
-        "linux-left-active": "6a20da1d9641fba4",
-        "linux-left-focus-visible": "38320ab935649dfc",
         "linux-close": "0c7e4f126b340f88",
-        "linux-close-hover": "7eba732a687ab78e",
-        "linux-close-active": "07d7bdfcb29dc28d",
-        "linux-close-focus-visible": "1090b78a579a565b",
-        "windows": "ee25a590198deff7",
-        "windows-hover": "194ceb6565123ac3",
-        "windows-active": "bfadc2883b16f25e",
-        "windows-focus-visible": "b82ad6417b168dc8",
-        "windows-update": "54068ec0f132f7c2",
-        "windows-update-hover": "c42922696e3009ad",
-        "windows-update-active": "c72489c560f1c3ac",
-        "windows-update-focus-visible": "e7a95c461cffb91c",
+        "windows": "ac6ddd3c305bf14e",
+        "windows-update": "83efabd2bd6ec748",
         "linux-full": "1009de5248de705e",
         "linux-close-update": "bf0dc6e2486f6ff3",
         "macos": "46432383b290b56c",
@@ -254,28 +255,16 @@
       "slots": true
     },
     "go": {
-      "hash": "820090ecce636257",
+      "hash": "7748b2b384f5143e",
       "states": {
         "linux-full-update": "5b12eacaa5c5afe2",
         "linux-full-update-hover": "7736534ef896ee0b",
         "linux-full-update-active": "2c34101181be9636",
         "linux-full-update-focus-visible": "89b5ba658d915958",
         "linux-left": "07394e6a387567bc",
-        "linux-left-hover": "38e5e59bfcb8fa28",
-        "linux-left-active": "6a20da1d9641fba4",
-        "linux-left-focus-visible": "38320ab935649dfc",
         "linux-close": "0c7e4f126b340f88",
-        "linux-close-hover": "7eba732a687ab78e",
-        "linux-close-active": "07d7bdfcb29dc28d",
-        "linux-close-focus-visible": "1090b78a579a565b",
-        "windows": "ee25a590198deff7",
-        "windows-hover": "194ceb6565123ac3",
-        "windows-active": "bfadc2883b16f25e",
-        "windows-focus-visible": "b82ad6417b168dc8",
-        "windows-update": "54068ec0f132f7c2",
-        "windows-update-hover": "c42922696e3009ad",
-        "windows-update-active": "c72489c560f1c3ac",
-        "windows-update-focus-visible": "e7a95c461cffb91c",
+        "windows": "ac6ddd3c305bf14e",
+        "windows-update": "83efabd2bd6ec748",
         "linux-full": "1009de5248de705e",
         "linux-close-update": "bf0dc6e2486f6ff3",
         "macos": "46432383b290b56c",
@@ -478,7 +467,7 @@
       "slots": true
     },
     "go": {
-      "hash": "44e6c0174f4abaf7",
+      "hash": "9c7c17809d132757",
       "states": {
         "out": "0634f58d19ca69e8",
         "out-hover": "7277a079d470616b",
@@ -518,7 +507,7 @@
       "slots": true
     },
     "go": {
-      "hash": "103dbf98b2f42884",
+      "hash": "a47f630ccfc5a7be",
       "states": {
         "default": "9718bdf96370547f",
         "out": "f0e61a09da602d28",
@@ -561,7 +550,7 @@
   },
   "elements/shell-main": {
     "go": {
-      "hash": "a6054f6212a4bdfc",
+      "hash": "3f023b3269959328",
       "states": {
         "project-picker": "63f69d093e5e4710",
         "project-picker-focus-visible": "c135e8f3c0c79fca",
@@ -602,7 +591,7 @@
       "slots": true
     },
     "go": {
-      "hash": "41ea6e7424084cba",
+      "hash": "d3076f3f357b1e74",
       "states": {
         "closed": "f3dd9d24f52f32bb",
         "closed-hover": "564c419701f79b50",
@@ -715,11 +704,27 @@
         "long-list": "9c089f40313c1b53"
       },
       "slots": true
+    },
+    "go": {
+      "hash": "092daf9df54cb933",
+      "states": {
+        "open": "60e6013a47fa76cf",
+        "with-resolved": "7c6c1cf0783c5686",
+        "active-only": "92b605d56df4ea67",
+        "active-clear": "800223be72392ba7",
+        "all-clear": "0b981efb75a99d26",
+        "comment-draft": "478c7e6c0fb1289e",
+        "comment-entry": "db6a29556a905fbe",
+        "loading": "9f10902d6cd4fef8",
+        "load-error": "31cd51221347e001",
+        "long-list": "8827de88f1a13954"
+      },
+      "slots": true
     }
   },
   "pages/inventory": {
     "go": {
-      "hash": "50641d27a4fdd7e7",
+      "hash": "8757ae553f586b92",
       "states": {
         "open": "33ee842b2f0b54ba",
         "approvable": "7dfc68ca4e30f281",
@@ -796,7 +801,7 @@
       "slots": true
     },
     "go": {
-      "hash": "9da85f30f0ef6850",
+      "hash": "b5cdbc304b6ce3f1",
       "states": {
         "no-repo": "b9ab9d87b11b749d",
         "no-products": "6cb36e32176445d2"

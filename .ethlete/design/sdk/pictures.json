@@ -4,7 +4,8 @@
       "hash": "6a914711035c5ff4",
       "states": {
         "default": "c155e7a4b7816c18"
-      }
+      },
+      "slots": true
     }
   },
   "components/accordion": {
@@ -17,7 +18,8 @@
         "header-hover": "fd48d46d36b59eb4",
         "header-active": "279f73b114d58409",
         "header-focus-visible": "356cbe1c75e05a28"
-      }
+      },
+      "slots": true
     }
   },
   "components/anchored-dialog": {
@@ -28,7 +30,8 @@
         "filter": "3ecf9f95f7739891",
         "no-arrow": "a071879be802f635",
         "top-start": "afe5a3fd876a51e4"
-      }
+      },
+      "slots": true
     }
   },
   "components/avatar": {
@@ -43,7 +46,8 @@
         "sizes-square": "4d5873a5d8ed942f",
         "group": "a07bd20e73ee9a11",
         "group-overflow": "62f139cafffeb336"
-      }
+      },
+      "slots": true
     }
   },
   "components/badge": {
@@ -59,7 +63,8 @@
         "filled-sizes": "32a4aba7f63bb9e2",
         "tonal-sizes": "ead8e2aba5f28300",
         "outline-sizes": "7261acab13a7a741"
-      }
+      },
+      "slots": true
     }
   },
   "components/banner": {
@@ -78,22 +83,24 @@
         "error-close-focus-visible": "e3ad1633f79c6298",
         "error-action-focus-visible": "3a7814314a0f89cc",
         "all": "976aa0288f065d46"
-      }
+      },
+      "slots": true
     }
   },
   "components/bracket": {
     "review": {
       "hash": "619e74fa7a872701",
       "states": {
-        "in-progress": "ae945ae43435a8d0",
+        "in-progress": "f3ab66d030676481",
         "decided": "aba796d9b7842bcb",
         "journey-hover": "d73a7a849142a127",
         "journey-pinned": "650dc6e65066156d",
         "legend-focus-visible": "eb9277daae78b4b8",
-        "compact": "a977bd47320b4e54",
+        "compact": "464b5752ab82a6e2",
         "continue": "ab933a758a3198aa",
         "mirrored": "56155ef11ff1e266"
-      }
+      },
+      "slots": true
     }
   },
   "components/breadcrumb": {
@@ -110,7 +117,8 @@
         "overflow-active": "745239a2f104a71c",
         "overflow-focus-visible": "9dd3207cca2ab28f",
         "overflow-open": "420efab7c4ebd67b"
-      }
+      },
+      "slots": true
     }
   },
   "components/calendar": {
@@ -138,7 +146,8 @@
         "label-hover": "5be9690aaf3db985",
         "label-focus-visible": "542c032d68f9934b",
         "long-label": "91cc80b2b1aedc72"
-      }
+      },
+      "slots": true
     }
   },
   "components/card": {
@@ -152,7 +161,8 @@
         "plain": "66c053feaa292fdc",
         "confirm-focus-visible": "99256c7b85e143df",
         "cancel-focus-visible": "fd2d27b75b898c6f"
-      }
+      },
+      "slots": true
     }
   },
   "components/carousel": {
@@ -181,7 +191,8 @@
         "no-controls": "8d5f38deaa8d92d1",
         "long-caption": "7573eb4701ca1139",
         "single-slide": "c9ea38447dd4af8b"
-      }
+      },
+      "slots": true
     }
   },
   "components/chart": {
@@ -208,7 +219,8 @@
         "pie-tooltip": "29c5211c0d3bb80b",
         "pie-empty": "947e6f6fc960a5b8",
         "pie-long-label": "d1963dbd70e9d03f"
-      }
+      },
+      "slots": true
     }
   },
   "components/checkbox": {
@@ -250,7 +262,8 @@
         "group-option-focus-visible": "e0b27e3208f2d6cf",
         "group-select-all-focus-visible": "3d123922bd1a982f",
         "group-horizontal": "4ba79230402a94d6"
-      }
+      },
+      "slots": true
     }
   },
   "components/chip": {
@@ -279,7 +292,8 @@
         "plain": "68de797256f49fec",
         "readonly": "f7ab82870d39783c",
         "row": "b466a93483c5bc62"
-      }
+      },
+      "slots": true
     }
   },
   "components/copy-button": {
@@ -298,7 +312,8 @@
         "size-sm": "b745683efa1f5ce2",
         "size-lg": "6eab38c58d15ff35",
         "size-xl": "2a8a769e53abda29"
-      }
+      },
+      "slots": true
     }
   },
   "components/description-list": {
@@ -312,7 +327,8 @@
         "empty-value": "197947215f59b60c",
         "grouped": "cdbdb6050acc4626",
         "grouped-stacked": "7f5931c625a9b912"
-      }
+      },
+      "slots": true
     }
   },
   "components/dialog": {
@@ -328,7 +344,8 @@
         "alert-cancel-focus-visible": "1a2348e71d42a962",
         "alert-confirm-focus-visible": "e4fc1c7939532c0e",
         "long-body": "d35f577b371df692"
-      }
+      },
+      "slots": true
     }
   },
   "components/divider": {
@@ -338,7 +355,8 @@
         "default": "5ec0a2fc0676392b",
         "vertical": "b082e751e00753f5",
         "list": "23e0cc456feac15f"
-      }
+      },
+      "slots": true
     }
   },
   "components/empty-state": {
@@ -352,7 +370,8 @@
         "action-hover": "1471412161baa502",
         "action-active": "99e545bdb88f2b62",
         "action-focus-visible": "d44c3774fa958f00"
-      }
+      },
+      "slots": true
     }
   },
   "components/floating-action": {
@@ -371,7 +390,8 @@
         "floating-danger-hover": "f1b8336b58accef0",
         "floating-over-row": "2224384af92c64dc",
         "hidden": "8a381c217f7a9272"
-      }
+      },
+      "slots": true
     }
   },
   "components/form-field": {
@@ -435,7 +455,8 @@
         "disabled": "a7dc8bd3b89d6d86",
         "textarea-focused": "2179e9fa8358232c",
         "textarea-disabled": "b33636ca58fd8910"
-      }
+      },
+      "slots": true
     }
   },
   "components/grid": {
@@ -452,7 +473,8 @@
         "dragging": "697a99cd8a2d812e",
         "resizing": "a93ab348bac6e0dd",
         "long-title": "8f942f2413ec4817"
-      }
+      },
+      "slots": true
     }
   },
   "components/input": {
@@ -491,7 +513,8 @@
         "size-sm": "2d0fcb94cd92cf2d",
         "size-lg": "eed5757e469987ee",
         "align-center": "6756392f03418a87"
-      }
+      },
+      "slots": true
     }
   },
   "components/kbd": {
@@ -504,7 +527,8 @@
         "in-text": "682c26fec5005351",
         "shortcut-list-apple": "d7e68626de373515",
         "shortcut-list-other": "f5bf9c6c673a06a5"
-      }
+      },
+      "slots": true
     }
   },
   "components/loader": {
@@ -517,7 +541,8 @@
         "progress-bar": "c6c774e72a8a880e",
         "progress-bar-themed": "c9784ca63965a2ce",
         "brand-loader": "e310b8be458ee062"
-      }
+      },
+      "slots": true
     }
   },
   "components/masonry": {
@@ -529,7 +554,8 @@
         "narrow": "baebe1c85df78d99",
         "single-column": "73ebcaddfe46a618",
         "rtl": "161a1dbe33df900a"
-      }
+      },
+      "slots": true
     }
   },
   "components/match": {
@@ -537,7 +563,7 @@
       "hash": "7f8a33e5ad380ec5",
       "states": {
         "finished": "e0721d60aeefeb18",
-        "live": "b3a98d87b161afb2",
+        "live": "67003b4157b397df",
         "scheduled": "a157161cda9c877c",
         "series": "520ec1b38f878137",
         "outcome": "44a6c4fd8f3a9457",
@@ -547,7 +573,8 @@
         "wide": "08f021ad9ef24e5c",
         "hover": "29fb8b46d3253598",
         "focus-visible": "62cc3dc246e9e403"
-      }
+      },
+      "slots": true
     }
   },
   "components/menu": {
@@ -565,7 +592,8 @@
         "checked-focus-visible": "a0b0489b25de9843",
         "disabled": "4a36bfac361b5fa7",
         "submenu-open": "e03bfd630450fe9f"
-      }
+      },
+      "slots": true
     }
   },
   "components/notification": {
@@ -575,15 +603,16 @@
         "success": "c3c1f36978ec1c1f",
         "error": "29b085b103781336",
         "info": "80b67c005f0b0095",
-        "loading": "d584e7cf8d9ea5ad",
+        "loading": "6dd0a7fe61850184",
         "close-hover": "eebf133753dc549d",
         "close-focus-visible": "8f579614f7fcbd00",
         "action-focus-visible": "295177af38d0896b",
         "secondary-focus-visible": "2ab2eea28974c6a9",
         "success-close-focus-visible": "31f7127aeab59209",
         "success-action-focus-visible": "22a145836e0cab6a",
-        "stack": "1c907f5527c83373"
-      }
+        "stack": "af897560bcdd215e"
+      },
+      "slots": true
     }
   },
   "components/otp-input": {
@@ -608,7 +637,8 @@
         "readonly-focus": "7ec2b471e6d71031",
         "pin-partial": "28a9c72581afeb55",
         "pin-focus": "f2d4d085ba5fea2f"
-      }
+      },
+      "slots": true
     }
   },
   "components/pagination": {
@@ -631,7 +661,8 @@
         "sm": "9b2d8ea2def1a8d9",
         "links": "0fd2de2d5936c26d",
         "compact": "2d41e4817fb35fca"
-      }
+      },
+      "slots": true
     }
   },
   "components/picture": {
@@ -648,7 +679,8 @@
         "loading": "c10a7554a630e075",
         "error-slot": "f6dc5b1c824bffae",
         "error-bare": "e551767378d9303f"
-      }
+      },
+      "slots": true
     }
   },
   "components/progress-steps": {
@@ -665,7 +697,8 @@
         "upcoming-focus-visible": "3db08f4d5e190344",
         "complete-hover": "d136321b1c3748d5",
         "complete-focus-visible": "44ed19d9cb3e2618"
-      }
+      },
+      "slots": true
     }
   },
   "components/query-error": {
@@ -689,7 +722,8 @@
         "brand-color": "2c7495aa32f9bc3e",
         "brand-retry-hover": "05970ab57f9e8d62",
         "brand-retry-focus-visible": "1f97c12f26ae722b"
-      }
+      },
+      "slots": true
     }
   },
   "components/radio-group": {
@@ -726,7 +760,8 @@
         "card-hover": "d386aec6c0abb10c",
         "card-focus-visible": "00e15a5db707790d",
         "card-checked-focus-visible": "88896dc35afd4a86"
-      }
+      },
+      "slots": true
     }
   },
   "components/scheduler": {
@@ -742,7 +777,8 @@
         "month": "6b7d63d1a35d6f62",
         "month-cell-focus-visible": "be057fd57d602b6c",
         "agenda": "a5d1cb06ff6e943d"
-      }
+      },
+      "slots": true
     }
   },
   "components/scrollable": {
@@ -775,7 +811,8 @@
         "item-size-half": "76df08dabab4a4f2",
         "item-size-third": "380f0a0f0903a1bf",
         "item-size-quarter": "ab119cfca667615f"
-      }
+      },
+      "slots": true
     }
   },
   "components/scrollbar": {
@@ -794,7 +831,8 @@
         "thumb-hover": "ab7e253d7ef00647",
         "dragging": "ab7e253d7ef00647",
         "auto-hidden": "d6acf595ab85d152"
-      }
+      },
+      "slots": true
     }
   },
   "components/select-panel": {
@@ -812,7 +850,8 @@
         "disabled": "3e509752031d39e1",
         "panel-grouped": "7da85d280f915a7d",
         "panel-all-selected": "cd460cb7a98fa7f8"
-      }
+      },
+      "slots": true
     }
   },
   "components/skeleton": {
@@ -824,7 +863,8 @@
         "shapes": "04819264b86aebde",
         "in-text": "0c596ef47c6c616d",
         "static": "b3d9d5b276245989"
-      }
+      },
+      "slots": true
     }
   },
   "components/slider": {
@@ -860,7 +900,8 @@
         "range-marks": "509cfa827cb209dd",
         "vertical": "36205f751123c9aa",
         "vertical-marks": "06de437598bf2e29"
-      }
+      },
+      "slots": true
     }
   },
   "components/standings": {
@@ -875,7 +916,8 @@
         "pick-handle-focus-visible": "080128add07ebd57",
         "pick-dragging": "bccefdb20a0901b0",
         "pick-locked": "905ac6c7be728775"
-      }
+      },
+      "slots": true
     }
   },
   "components/stat-tile": {
@@ -891,7 +933,8 @@
         "no-value": "5d4581016f30e3fa",
         "without-sparkline": "2ca0e4364edba685",
         "loading": "e483278e7bce86e1"
-      }
+      },
+      "slots": true
     }
   },
   "components/stream": {
@@ -906,7 +949,8 @@
         "consent-hover": "7e1f71f276a92c6f",
         "consent-active": "7e1f71f276a92c6f",
         "consent-focus-visible": "7e1f71f276a92c6f"
-      }
+      },
+      "slots": true
     }
   },
   "components/switch": {
@@ -933,7 +977,8 @@
         "label-lg": "c0a95c59bc13ad75",
         "card-off": "ab5d5d66503c74d1",
         "card-on": "b8a82ccf862904ab"
-      }
+      },
+      "slots": true
     }
   },
   "components/table": {
@@ -970,7 +1015,8 @@
         "density-sm": "59e74ae9fd295724",
         "density-lg": "afcba547e92865d1",
         "align-center": "92b193f25ba887a6"
-      }
+      },
+      "slots": true
     }
   },
   "components/tabs": {
@@ -996,7 +1042,8 @@
         "no-divider": "ee92a2be788fe4ae",
         "vertical": "9cde9581a3efb9da",
         "panel": "f9668530d74400a6"
-      }
+      },
+      "slots": true
     }
   },
   "components/textarea": {
@@ -1031,7 +1078,8 @@
         "no-label": "a78eebcf924db3ea",
         "size-sm": "720e49b574434406",
         "size-lg": "b67011527edc23d8"
-      }
+      },
+      "slots": true
     }
   },
   "components/timeline": {
@@ -1046,7 +1094,8 @@
         "no-time": "8bee68202a275009",
         "long-content": "d6b88be3672ff54b",
         "single": "7cb548420859048d"
-      }
+      },
+      "slots": true
     }
   },
   "components/toolbar": {
@@ -1064,7 +1113,8 @@
         "size-md": "8071e0cc9d08446f",
         "size-lg": "e88766d06899cee4",
         "size-xl": "468bdc63d0940176"
-      }
+      },
+      "slots": true
     }
   },
   "components/tooltip": {
@@ -1080,7 +1130,8 @@
         "left": "a10e1d3d8e40ab63",
         "bottom-start": "3fc2976a641d399c",
         "top-end": "50ecf2c35b632cca"
-      }
+      },
+      "slots": true
     }
   },
   "components/tree": {
@@ -1097,7 +1148,8 @@
         "selected-focus-visible": "291eeccea5fa1070",
         "collapsed": "41dfc7bb8eb9e31a",
         "expanded": "d3f80fae3e1b6362"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/colors": {
@@ -1114,7 +1166,8 @@
         "warning-dark": "f06870392413632d",
         "contrast-light": "ee6e862bff9c1ab4",
         "contrast-dark": "46ae7c4c4aed1c90"
-      }
+      },
+      "slots": true
     }
   },
   "foundations/elevation": {
@@ -1123,7 +1176,8 @@
       "states": {
         "overview": "b81931cd91126c4c",
         "stacked": "3ce87de3d3129be5"
-      }
+      },
+      "slots": true
     }
   }
 }
