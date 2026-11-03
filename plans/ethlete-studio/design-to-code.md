@@ -3101,3 +3101,11 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      ACTION-LOST would not have caught 231 (the buttons were never a design action). Added tool fix (B147,
      technical): ORPHAN-ENDPOINT - every Studio API path the CLI serves needs an app caller, else `design check`
      fails.
+
+232. studio-lab `pages/film-detail` state `reviewing` fails CONTRAST ("What did you think?" 2.07:1, needs 4.5) since
+     the UTILITY-CSS fix (aa0040aa9, builder, 2026-11-03). It was hidden before: 23 UTILITY-CSS errors made the check
+     skip the render check for the whole product, and the report did not say how much went unchecked. Lesson: a
+     blocking error in one rule hid every later rule, so "red for one reason" looked like the full picture. Tool fix
+     (B150, technical): the render check runs even when a static rule fails; if a rule really cannot run, the report
+     names it as "not checked" with the parts it skipped. Product fix (B149): a one-variant sketch that sets the text
+     to the product's text token at AA, for Tom's pick in Studio.
