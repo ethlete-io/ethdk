@@ -3830,6 +3830,17 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      draft) is fixed inside that sketch. The builder also verifies whether COMPONENT-COPY flags inbox.ts:309/316-335.
      If it does not, that is a gap in the same item.
 
+304. Tom cannot pick on the B240 sketch (pages/sketches, 5e51db22a, 2026-11-03: "it does not seem ready, I cannot
+     pick anything; this happens more and more often"). The badge says "Keine Aktivität" and no variant offers
+     Übernehmen. The empty b/page-100 frame was only still loading (Tom), but the loading state looks bad. This is
+     finding 208 again: a drawn round committed while still in progress. Why no tool caught it: f7e66dbb6 made
+     ROUND-NOT-READY a warning, and a warning that nothing blocks on is no fix (finding 295). Cause of the missing
+     ready step: pending from builder. Fix (B252, decided, technical): ROUND-NOT-READY becomes a problem; the commit
+     hook and `sketch report --done` refuse a drawn round that is neither ready nor held. Loading state (B253): a
+     sketch of the variant-frame loading state with 2-3 variants, or a B251 case if loading is not a designed state
+     of the part. The builder checks whether the slow frame is the failing B241 e2e case (a listing refresh
+     re-navigates iframes and leaves 150px frames).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
@@ -3865,14 +3876,3 @@ go rule, and the go docs, with a migration that deletes both files. Built as B24
 of a person; the only human decision stays the sketch pick, with `by` as today. Roles and rights come with E8
 (two designers on one design, multi-user sessions). 8. Solo case (Tom builds Studio as designer and developer, the builder agent does the developer work): the same
 flow as a team. An undesigned state the builder renders becomes a sketch that Tom picks. No solo shortcut.
-
-304. Tom cannot pick on the B240 sketch (pages/sketches, 5e51db22a, 2026-11-03: "it does not seem ready, I cannot
-     pick anything; this happens more and more often"). The badge says "Keine Aktivität" and no variant offers
-     Übernehmen. The empty b/page-100 frame was only still loading (Tom), but the loading state looks bad. This is
-     finding 208 again: a drawn round committed while still in progress. Why no tool caught it: f7e66dbb6 made
-     ROUND-NOT-READY a warning, and a warning that nothing blocks on is no fix (finding 295). Cause of the missing
-     ready step: pending from builder. Fix (B252, decided, technical): ROUND-NOT-READY becomes a problem; the commit
-     hook and `sketch report --done` refuse a drawn round that is neither ready nor held. Loading state (B253): a
-     sketch of the variant-frame loading state with 2-3 variants, or a B251 case if loading is not a designed state
-     of the part. The builder checks whether the slow frame is the failing B241 e2e case (a listing refresh
-     re-navigates iframes and leaves 150px frames).
