@@ -15,5 +15,4 @@ export const KNOWN_ORPHAN_ENDPOINTS: KnownOrphan[] = [
   { path: '/__design/sketch-diff', backlog: 'B151' },
   { path: '/__design/sketch-crop', backlog: 'B151' },
   { path: '/__design/motion', backlog: 'B151' },
-  { path: '/__design/part-ready', backlog: 'B151' },
 ];

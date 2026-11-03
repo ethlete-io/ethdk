@@ -27,8 +27,7 @@ import {
 } from './system/notes/note';
 import { approveException, listExceptions } from './system/exceptions';
 import { approveInventory, Inventory } from './system/inventory';
-import { PART_HARNESS_ONLY, partActionFailuresOf } from './system/actions-command';
-import { drawnPartPointsOf, markPartReady, readyMarkOf, readyPartOf } from './system/part-ready';
+import { drawnPartPointsOf, readyMarkOf, readyPartOf } from './system/part-ready';
 import { refreshHarnessMap } from './system/harness-map';
 import { goMarkOf, markPartGo } from './system/part-go';
 import { partActionsOf } from './system/action-lost';
@@ -90,7 +89,6 @@ export const EXCEPTIONS_PATH = '/__design/exceptions';
 export const EXCEPTION_APPROVE_PATH = '/__design/exception-approve';
 export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
-export const PART_READY_PATH = '/__design/part-ready';
 export const PART_GO_PATH = '/__design/part-go';
 export const PART_ACCEPT_PATH = '/__design/part-accept';
 
@@ -805,14 +803,6 @@ const knownPartOf = (product: ResolvedProduct, part: unknown): string | Answer =
     : refusal({ status: 404, reason: 'unknown-part', message: `product "${product.name}" has no part "${part}"` });
 };
 
-const actionFailuresOf = async ({ asked, config, product }: Found, part: string) => {
-  const failures = await partActionFailuresOf({ target: asked.target, config, product, part });
-
-  return Array.isArray(failures)
-    ? failures
-    : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
-};
-
 const drawnPointsOf = async ({ asked, config, product }: Found, part: string) => {
   const points = await drawnPartPointsOf({ target: asked.target, config, product, part });
 
@@ -852,43 +842,6 @@ export const openPointsAnswer = withProduct('GET', async (found) => {
   const directEdit = changedOutsideSketchOf(found.product).includes(part);
 
   return { status: 200, body: { part, hash, ready, go, directEdit, drawn: draw === 'true', points } };
-});
-
-/**
- * POST `?product=`, body `{ part, hash, by }`: marks a part ready at the hash Studio showed. It draws the part and
- * refuses with 422 and the `points` while its open-point list is not empty, and with the failed `actions` lines while
- * `design actions` fails for it.
- */
-export const partReadyAnswer = withProduct('POST', async (found) => {
-  const body = await bodyOf(found.asked.request);
-
-  if (!body) return failure(400, 'the body must be a JSON object');
-
-  const part = knownPartOf(found.product, body['part']);
-
-  if (typeof part !== 'string') return part;
-
-  const marked = await markPartReady({
-    product: found.product,
-    part,
-    hash: body['hash'],
-    by: body['by'],
-    pointsOf: () => drawnPointsOf(found, part),
-    actionsOf: () => actionFailuresOf(found, part),
-    actionsNote: PART_HARNESS_ONLY,
-  });
-
-  if ('status' in marked)
-    return {
-      status: marked.status,
-      body: {
-        error: marked.error,
-        ...(marked.points ? { points: marked.points } : {}),
-        ...(marked.actions ? { actions: marked.actions } : {}),
-      },
-    };
-
-  return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
 });
 
 const STUDIO_CLICK = 'user';

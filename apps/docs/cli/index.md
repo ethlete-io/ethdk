@@ -339,10 +339,7 @@ while there are any; then it runs the action check on the harness app (`--url`, 
 failed lines. With `--url` and a live spec it also runs `et design actions --live` for the part and adds its failed
 lines prefixed `live `; without `--url` the refusal notes that it checked the part harness only. Otherwise it stores the part hash, who and when in `.ethlete/design/<product>/ready.json`
 (the base's file for a part the product takes from its base). Any edit of the part changes its hash, and the mark
-then reads as not ready. Studio sends `POST /__design/part-ready?product=` with `{ part, hash, by }`: 400 without
-`by` or `hash`, 404 for an unknown part, 409 when the part changed since `hash`, 422 with `{ error, points }` while it
-has open points, 422 with `{ error, actions }` while an action check fails, 503 when it cannot draw or check the
-actions. `et design check` prints a `READY <product>: <parts>` line after the open
+then reads as not ready. `et design check` prints a `READY <product>: <parts>` line after the open
 points when a mark holds.
 
 A go releases a part for implementation. `et design go components/chip --product app-a --by tom` stores the part hash,

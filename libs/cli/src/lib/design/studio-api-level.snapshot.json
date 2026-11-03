@@ -1,5 +1,5 @@
 {
-  "apiLevel": 2,
+  "apiLevel": 3,
   "routes": [
     "/__design/calls",
     "/__design/comment",
@@ -25,7 +25,6 @@
     "/__design/open-points",
     "/__design/part-accept",
     "/__design/part-go",
-    "/__design/part-ready",
     "/__design/product",
     "/__design/queue",
     "/__design/render",

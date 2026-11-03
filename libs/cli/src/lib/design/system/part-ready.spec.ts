@@ -5,12 +5,12 @@ import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { openPointsAnswer, partReadyAnswer } from '../studio-api';
+import { openPointsAnswer } from '../studio-api';
 import { checkActions, PART_HARNESS_ONLY, partActionFailuresOf } from './actions-command';
 import { harnessMapOf, writeHarnessMap } from './harness-map';
 import { checkLiveActions } from './live-actions';
 import { drawnFindingsOf } from './drawn-open-points';
-import { markPartReady, readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
+import { drawnPartPointsOf, markPartReady, readReady, readyMarkOf, readyPartOf, readyPartsOf } from './part-ready';
 import { markPartGo } from './part-go';
 import { designReady } from './ready-command';
 import { resolveProduct } from './resolve-product';
@@ -53,14 +53,41 @@ const hashOf = (target: string, part = 'components/chip') => {
 
 const goOf = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom' });
 
-const post = (target: string, body: unknown) =>
-  partReadyAnswer({
-    target,
-    url: new URL('http://localhost/?product=app-a'),
-    request: Object.assign(Readable.from([Buffer.from(JSON.stringify(body))]), {
-      method: 'POST',
-    }) as unknown as IncomingMessage,
+const post = async (target: string, body: { part?: string; hash?: string; by?: string }) => {
+  const product = productOf(target);
+  const part = body.part ?? '';
+  const marked = await markPartReady({
+    product,
+    part,
+    hash: body.hash,
+    by: body.by,
+    pointsOf: async () => {
+      const points = await drawnPartPointsOf({ target, config: {}, product, part });
+
+      return 'unavailable' in points ? { status: 503, error: `cannot draw ${part}: ${points.unavailable}` } : points;
+    },
+    actionsOf: async () => {
+      const failures = await partActionFailuresOf({ target, config: {}, product, part });
+
+      return Array.isArray(failures)
+        ? failures
+        : { status: 503, error: `cannot check the actions of ${part}: ${failures.unavailable}` };
+    },
+    actionsNote: PART_HARNESS_ONLY,
   });
+
+  if ('status' in marked)
+    return {
+      status: marked.status,
+      body: {
+        error: marked.error,
+        ...(marked.points ? { points: marked.points } : {}),
+        ...(marked.actions ? { actions: marked.actions } : {}),
+      },
+    };
+
+  return { status: 200, body: { part, hash: marked.hash, ready: marked, points: [] } };
+};
 
 const output = () => {
   const lines: string[] = [];
@@ -123,7 +150,6 @@ describe('part ready', () => {
 
     expect((await post(target, { part: 'components/chip', hash })).status).toBe(400);
     expect((await post(target, { part: 'components/chip', by: 'tom' })).status).toBe(400);
-    expect((await post(target, { hash, by: 'tom' })).status).toBe(400);
     expect((await post(target, { part: 'components/gone', hash, by: 'tom' })).status).toBe(404);
     expect((await post(target, { part: 'components/chip', hash: 'stale', by: 'tom' })).status).toBe(409);
 
