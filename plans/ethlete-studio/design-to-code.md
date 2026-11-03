@@ -3486,3 +3486,8 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      writer's sorted order (spec: committed file equals the writer's output), reports a semantically empty hunk as
      "order only", and the manual copy-aside rule leaves the brief once B204 covers every file. The sorted go.json is
      committed as-is.
+275. B214 (builder, 2026-11-03, 7593257f8, eba8f6885): the B207 timeout re-run never fired in the real repo. vitest
+     prints `FAIL |cli| src/x.spec.ts`; the parser regex had no room for the `|cli|` project prefix. Why no tool caught
+     it: the B207 unit spec fed made-up output without the prefix, never a captured real run. Lesson: a spec for a
+     parser of tool output takes its fixture from a captured real run of that tool. Fix: eba8f6885; the rule goes into
+     the styleguide/testing guidance (builder). Still unverified: a Studio-suite run through the B214 worktree.
