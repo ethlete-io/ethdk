@@ -130,18 +130,3 @@ export const callView = async (transferred: boolean): Promise<Drawn> => {
     styles: themes.styles + transfer.styles,
   };
 };
-
-export const pointArrow = (root: HTMLElement) => {
-  for (const host of root.querySelectorAll<HTMLElement>('[data-arrow-host]')) {
-    const trigger = host.querySelector<HTMLElement>('[data-arrow-trigger]');
-    const pane = host.querySelector<HTMLElement>('[data-arrow-pane]');
-    const arrow = pane?.querySelector<HTMLElement>('.et-overlay-arrow');
-
-    if (!trigger || !pane || !arrow) continue;
-
-    const anchor = trigger.getBoundingClientRect();
-    const left = anchor.left + anchor.width / 2 - pane.getBoundingClientRect().left - arrow.offsetWidth / 2;
-
-    pane.style.setProperty('--et-floating-arrow-translate', `translate3d(${left}px, 0, 0)`);
-  }
-};
