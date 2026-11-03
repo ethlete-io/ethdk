@@ -1,0 +1,33 @@
+export type KnownUnboundInput = { file: string; input: string };
+
+export const KNOWN_UNBOUND_INPUTS: KnownUnboundInput[] = [
+  { file: 'apps/ethlete-studio/src/app/design-parts/disclosure/disclosure.component.ts', input: 'body' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts', input: 'heading' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/error-toast/error-toast.component.ts', input: 'message' },
+  {
+    file: 'apps/ethlete-studio/src/app/design-parts/shell-project-switch/shell-project-switch.component.ts',
+    input: 'bare',
+  },
+  { file: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts', input: 'part' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/tree-row/tree-row.component.ts', input: 'rows' },
+  { file: 'apps/ethlete-studio/src/app/components/update-dialog/update-dialog.component.ts', input: 'version' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/part-tree/part-tree.component.ts', input: 'warningTitle' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/shell-main/shell-main.component.ts', input: 'fill' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/studio-menu/studio-menu.component.ts', input: 'bare' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'openOn' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'draft' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/inbox/inbox.component.ts', input: 'entry' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'camera' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts', input: 'reason' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'shell' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'empty' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'manyStates' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'nothingOpen' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'fit' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'layers' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'manyStatesLayers' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'frame' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'shot' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'part' },
+  { file: 'apps/ethlete-studio/src/app/design-parts/system-page/system-page.component.ts', input: 'openPoints' },
+];
