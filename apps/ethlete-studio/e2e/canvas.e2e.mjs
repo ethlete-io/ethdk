@@ -1035,6 +1035,123 @@ const CASES = [
       };
     },
   },
+  {
+    name: 'first load creates one iframe per frame and aborts no frame request',
+    pages: ['Sketches'],
+    run: async (page) => {
+      const aborted = [];
+      const onFailed = (request) => {
+        if (request.resourceType() === 'document' && request.frame() !== page.mainFrame()) aborted.push(request.url());
+      };
+
+      page.on('requestfailed', onFailed);
+
+      try {
+        await page.addInitScript(() => {
+          if (window.__frameLoad) return;
+
+          const record = { created: [], srcAt: new Map(), loadedAt: new Map() };
+          const create = Document.prototype.createElement;
+          const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+          const setAttribute = Element.prototype.setAttribute;
+          const noteSrc = (iframe) => {
+            if (!record.srcAt.has(iframe)) record.srcAt.set(iframe, performance.now());
+          };
+
+          window.__frameLoad = record;
+          Document.prototype.createElement = function (tag, ...rest) {
+            const element = create.call(this, tag, ...rest);
+
+            if (element instanceof HTMLIFrameElement) record.created.push(element);
+
+            return element;
+          };
+          Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+            ...src,
+            set(value) {
+              noteSrc(this);
+              src.set.call(this, value);
+            },
+          });
+          Element.prototype.setAttribute = function (name, value) {
+            if (this instanceof HTMLIFrameElement && name === 'src') noteSrc(this);
+
+            return setAttribute.call(this, name, value);
+          };
+          document.addEventListener(
+            'load',
+            (event) => {
+              const iframe = event.target;
+
+              if (iframe instanceof HTMLIFrameElement && iframe.hasAttribute('src') && !record.loadedAt.has(iframe)) {
+                record.loadedAt.set(iframe, performance.now());
+              }
+            },
+            true,
+          );
+        });
+        await page.reload();
+        await page.waitForFunction(
+          ({ CANVAS, FRAME }) => document.querySelector(CANVAS)?.querySelector(FRAME),
+          { CANVAS, FRAME },
+          { timeout: 30000 },
+        );
+
+        const loadState = () =>
+          page.evaluate(() => {
+            const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+
+            return `${iframes.length}/${iframes.filter((iframe) => window.__frameLoad.loadedAt.has(iframe)).length}`;
+          });
+        const deadline = Date.now() + 90000;
+        let stable = 0;
+        let last = '';
+
+        while (stable < 4 && Date.now() < deadline) {
+          await page.waitForTimeout(500);
+          const now = await loadState();
+          const [frames, loaded] = now.split('/');
+
+          stable = now === last && frames === loaded && frames !== '0' ? stable + 1 : 0;
+          last = now;
+        }
+
+        const load = await page.evaluate(() => {
+          const record = window.__frameLoad;
+          const iframes = [...document.querySelectorAll('[data-sk-frame] iframe')];
+          const keyOf = (iframe) => `${iframe.dataset['variant']} ${iframe.dataset['state']}`;
+          const shownKeys = new Set(iframes.map(keyOf));
+          const inView = (iframe) => {
+            const box = iframe.getBoundingClientRect();
+
+            return box.right > 0 && box.bottom > 0 && box.left < innerWidth && box.top < innerHeight;
+          };
+          const srcAt = (iframe) => record.srcAt.get(iframe) ?? Infinity;
+          const visible = iframes.filter(inView);
+          const hidden = iframes.filter((iframe) => !inView(iframe));
+
+          return {
+            frames: iframes.length,
+            created: record.created.length,
+            createdForShown: record.created.filter((iframe) => shownKeys.has(keyOf(iframe))).length,
+            urls: iframes.map((iframe) => iframe.src),
+            visible: visible.length,
+            visibleFirst: hidden.length === 0 || Math.max(...visible.map(srcAt)) <= Math.min(...hidden.map(srcAt)),
+            visibleLoadedMs: Math.round(Math.max(0, ...visible.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
+            allLoadedMs: Math.round(Math.max(0, ...iframes.map((iframe) => record.loadedAt.get(iframe) ?? NaN))),
+          };
+        });
+        const shownAborts = aborted.filter((url) => load.urls.includes(url)).length;
+
+        return {
+          ok: stable >= 4 && load.frames > 0 && load.createdForShown === load.frames && shownAborts === 0,
+          detail: `${stable >= 4 ? 'settled' : `not settled in 90 s (${last} loaded)`}, iframes ${load.frames}, created for them ${load.createdForShown} (must equal), created in all ${load.created}, aborted requests of shown frames ${shownAborts} of ${aborted.length} (must be 0), ${load.visible} visible got src first ${load.visibleFirst}, visible loaded at ${load.visibleLoadedMs} ms, all at ${load.allLoadedMs} ms after reload`,
+        };
+      } finally {
+        page.off('requestfailed', onFailed);
+      }
+    },
+  },
 ];
 
 const checkout = mkdtempSync(join(tmpdir(), 'studio-canvas-e2e-'));

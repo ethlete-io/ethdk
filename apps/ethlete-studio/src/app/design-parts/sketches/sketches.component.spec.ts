@@ -43,8 +43,15 @@ const render = async (inputs: Record<string, unknown>) => {
 
 const textOf = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
+const LIST_WIDTH = 10000;
+
 describe('SketchesComponent', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
+    });
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
     });

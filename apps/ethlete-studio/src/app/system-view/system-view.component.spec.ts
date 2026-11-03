@@ -667,6 +667,9 @@ describe('SystemViewComponent on a merge', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? 10000 : 0;
+    });
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
     });
@@ -674,6 +677,7 @@ describe('SystemViewComponent on a merge', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     localStorage.clear();
   });
 

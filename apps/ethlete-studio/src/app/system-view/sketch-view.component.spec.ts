@@ -113,11 +113,16 @@ const noComments = (url: string) =>
 const buttonNamed = (root: HTMLElement, name: string) =>
   [...root.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
 
+const LIST_WIDTH = 10000;
+
 describe('SketchViewComponent', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal('EventSource', SilentEventSource);
     vi.stubGlobal('ResizeObserver', SilentResizeObserver);
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.hasAttribute('data-sk-rows') ? LIST_WIDTH : 0;
+    });
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideCommentStore(), ...provideColorThemesWithTailwind4(THEMES)],
     });
@@ -125,6 +130,7 @@ describe('SketchViewComponent', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     localStorage.clear();
   });
 

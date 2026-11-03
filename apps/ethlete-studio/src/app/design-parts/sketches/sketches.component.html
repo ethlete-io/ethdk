@@ -172,7 +172,7 @@
                 }
               }
             </div>
-          } @else {
+          } @else if (listMeasured()) {
             @for (row of changedRows(); track row.key) {
               <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }" />
             }
