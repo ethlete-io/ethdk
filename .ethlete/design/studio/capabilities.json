@@ -53,10 +53,8 @@
     {
       "id": "comments-retry",
       "label": "Kommentare erneut laden",
-      "place": null,
-      "confirmed": true,
-      "why": "the app's inbox has a retry button (retry.emit); pages/inbox draws no retry action",
-      "missing": "B174"
+      "place": { "part": "pages/inbox", "action": "emit:retry" },
+      "confirmed": true
     },
     {
       "id": "comment-pin-toggle",

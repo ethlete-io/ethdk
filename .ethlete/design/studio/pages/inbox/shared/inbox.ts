@@ -329,7 +329,7 @@ export const inbox = () =>
         : '';
       const retry = await ng(
         control(
-          `<button et-button type="button" variant="outline" color="surface" size="sm">Erneut laden</button>`,
+          `<button et-button type="button" variant="outline" color="surface" size="sm" data-et-action="emit:retry">Erneut laden</button>`,
           'retry',
         ),
         { imports: ['BUTTON_IMPORTS'] },
