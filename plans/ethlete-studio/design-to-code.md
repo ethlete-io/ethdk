@@ -4126,6 +4126,14 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      sketch-command.ts does not pass `rendered.busy`. Finding 311 happened in a sketch, so B263 stays open until that
      wiring lands (with B264b, after B272).
 
+328. Correction to finding 325 (builder, B255b). The premise was stale: list-system.ts fills `part.problems` from
+     error rules only, so no warning reaches the Studio tree today, and the part detail has no problem list at all.
+     Why no tool caught it: the decision was taken from the rule list, not from the listing code, and no spec pins
+     which severities the listing carries. Decision: the policy already holds; no new UI. Warnings stay in the CLI
+     output of `design check`; "detail only" from finding 325 is dropped. B255b becomes a spec: a warning-rule problem
+     never enters `part.problems`, with a mutation that lets one in and turns it red. The same slice gives
+     system-tree.spec a red proof by mutation, since its red-check on 117eb20bb only fails to load.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
