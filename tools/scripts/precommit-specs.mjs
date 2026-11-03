@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
 import { linkNodeModules } from './link-node-modules.mjs';
 
@@ -20,13 +20,12 @@ const withoutGitEnv = () => {
   return env;
 };
 
-export const suitesForFiles = (files, relatedMap) => {
+export const suitesForFiles = (files, relatedMap, toolSpecGlobs = []) => {
   const cli = [
     ...files.filter((file) => file.startsWith('libs/cli/')),
     ...specsForFiles(files, relatedMap).map((spec) => `libs/cli/${spec}`),
   ];
   const studio = files.filter((file) => file.startsWith('apps/ethlete-studio/'));
-  const tools = files.filter((file) => file.startsWith('tools/scripts/'));
 
   return [
     studio.length && {
@@ -36,7 +35,10 @@ export const suitesForFiles = (files, relatedMap) => {
       files: studio,
     },
     cli.length && { name: 'cli', cwd: 'libs/cli', args: [], files: cli },
-    tools.length && { name: 'tools/scripts', cwd: '.', node: true, files: tools },
+    ...toolSpecGlobs.map((glob) => {
+      const owned = files.filter((file) => file.startsWith(`${dirname(glob)}/`));
+      return owned.length && { name: dirname(glob), cwd: '.', node: glob, files: owned };
+    }),
   ].filter(Boolean);
 };
 
@@ -64,18 +66,29 @@ const runVitest = (cwd, args) => {
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 };
 
+/** The spec globs `yarn test:tools` passes to `node --test`, read from package.json at `rev`. */
+export const toolSpecGlobsAt = (root, rev) => {
+  const manifest = spawnSync('git', ['show', `${rev}:package.json`], { cwd: root, encoding: 'utf8' });
+  if (manifest.status !== 0) return [];
+  const script = JSON.parse(manifest.stdout).scripts?.['test:tools'] ?? '';
+  return script.split(/\s+/).filter((arg) => /\.spec\.m?js$/.test(arg));
+};
+
 const relatedMapAt = (root, rev) => {
   const map = spawnSync('git', ['show', `${rev}:libs/cli/related-map.json`], { cwd: root, encoding: 'utf8' });
   return map.status === 0 ? JSON.parse(map.stdout) : {};
 };
 
 const selectsNoSpecs = (root, files, rev) =>
-  !files.length || isDocsOnly(files) || !suitesForFiles(files, relatedMapAt(root, rev)).length;
+  !files.length ||
+  isDocsOnly(files) ||
+  !suitesForFiles(files, relatedMapAt(root, rev), toolSpecGlobsAt(root, rev)).length;
 
-const runNodeTests = (checkout) => {
-  const specs = readdirSync(join(checkout, 'tools/scripts'))
-    .filter((file) => file.endsWith('.spec.mjs'))
-    .map((file) => join('tools/scripts', file));
+const runNodeTests = (checkout, glob) => {
+  const name = new RegExp(`^${basename(glob).replace(/[.]/g, '\\.').replace(/\*/g, '.*')}$`);
+  const specs = readdirSync(join(checkout, dirname(glob)))
+    .filter((file) => name.test(file))
+    .map((file) => join(dirname(glob), file));
   if (!specs.length) return 0;
   const env = withoutGitEnv();
   delete env.NODE_TEST_CONTEXT;
@@ -94,7 +107,7 @@ const runNodeTests = (checkout) => {
 const runSuites = (checkout, suites) => {
   for (const suite of suites) {
     if (suite.node) {
-      if (runNodeTests(checkout) !== 0) {
+      if (runNodeTests(checkout, suite.node) !== 0) {
         console.error(`pre-commit: a ${suite.name} spec fails (the ✖ lines above name it).`);
         return 1;
       }
@@ -250,7 +263,7 @@ export const runPathSpecs = (root, paths) => {
   const linted = lintProjectsForFiles(root, files);
   const noSpecs = selectsNoSpecs(root, files, tree);
   if (noSpecs && projects.length === 0 && linted.length === 0) return { status: 0, tree };
-  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree));
+  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree), toolSpecGlobsAt(root, tree));
 
   const worktree = join(mkdtempSync(join(tmpdir(), 'yarn-commit-')), 'tree');
   const cleanup = () => removeWorktree(root, worktree);
@@ -315,7 +328,7 @@ export const runStagedSpecs = (root) => {
   const linted = lintProjectsForFiles(root, files);
   const noSpecs = selectsNoSpecs(root, files, '');
   if (noSpecs && !linted.length) return 0;
-  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, ''));
+  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, ''), toolSpecGlobsAt(root, ''));
 
   const checkout = mkdtempSync(join(tmpdir(), 'pre-commit-'));
 

@@ -301,21 +301,24 @@ test('a lint error in a project of the staged files blocks yarn commit and a pla
   assert.equal(passed.status, 0, passed.stdout + passed.stderr);
 });
 
-test('a tools/scripts change runs the tools/scripts specs and a failing one blocks the commit', () => {
+test('a change in a test:tools spec directory runs its specs and a failing one blocks the commit', () => {
   const { repo, run, yarnCommit } = repoWithCommitTool();
-  put(repo, 'tools/scripts/double.mjs', 'export const double = (n) => n * 2;\n');
+  put(repo, 'package.json', JSON.stringify({ scripts: { 'test:tools': 'node --test tools/lint/*.spec.mjs' } }));
+  run('git', ['add', 'package.json']);
+  run('git', ['commit', '-qm', 'manifest', '--no-verify']);
+  put(repo, 'tools/lint/double.mjs', 'export const double = (n) => n * 2;\n');
   put(
     repo,
-    'tools/scripts/double.spec.mjs',
+    'tools/lint/double.spec.mjs',
     "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { double } from './double.mjs';\n\ntest('double', () => assert.equal(double(2), 4));\n",
   );
-  const added = yarnCommit(['-qm', 'double', '--', 'tools/scripts/double.mjs', 'tools/scripts/double.spec.mjs']);
+  const added = yarnCommit(['-qm', 'double', '--', 'tools/lint/double.mjs', 'tools/lint/double.spec.mjs']);
   assert.equal(added.status, 0, added.stdout + added.stderr);
   const head = run('git', ['rev-parse', 'HEAD']).stdout;
 
-  put(repo, 'tools/scripts/double.mjs', 'export const double = (n) => n * 3;\n');
-  const refused = yarnCommit(['-qm', 'triple', '--', 'tools/scripts/double.mjs']);
+  put(repo, 'tools/lint/double.mjs', 'export const double = (n) => n * 3;\n');
+  const refused = yarnCommit(['-qm', 'triple', '--', 'tools/lint/double.mjs']);
   assert.notEqual(refused.status, 0, refused.stdout + refused.stderr);
-  assert.match(refused.stderr, /a tools\/scripts spec fails/);
+  assert.match(refused.stderr, /a tools\/lint spec fails/);
   assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
 });
