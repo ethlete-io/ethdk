@@ -253,4 +253,12 @@ describe('SketchesComponent', () => {
 
     expect(frame?.hasAttribute('data-selected')).toBe(true);
   });
+
+  it('opens at a camera panned past the top-left of the content', async () => {
+    const root: HTMLElement = (await render({ camera: { zoom: 1, x: 120, y: 80 } })).nativeElement;
+
+    expect(root.querySelector<HTMLElement>('[data-sk-rows] > div')?.style.transform).toBe(
+      'translate(120px, 80px) scale(1)',
+    );
+  });
 });

@@ -117,11 +117,6 @@ const noteAt = (scale: number, fit: number) => {
 
 const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === null);
 
-const clampPan = ({ x, y }: Pan, room: Pan): Pan => ({
-  x: Math.min(0, Math.max(-room.x, x)),
-  y: Math.min(0, Math.max(-room.y, y)),
-});
-
 @Component({
   selector: 'ethlete-sketches',
   templateUrl: './sketches.component.html',
@@ -178,7 +173,6 @@ export class SketchesComponent {
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
-  private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
   private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
@@ -188,7 +182,6 @@ export class SketchesComponent {
   private labels = viewChildren('stateLabel', { read: ElementRef<HTMLElement> });
   private labelRows = viewChildren('labelRow', { read: ElementRef<HTMLElement> });
   private listSize = signalElementDimensions(this.list);
-  private worldSize = signalElementDimensions(this.world);
 
   protected readonly LABELS = STUDIO_LABELS.sketches;
   protected readonly CURRENT = SKETCH_CURRENT;
@@ -205,7 +198,7 @@ export class SketchesComponent {
 
     if (restored) return { x: restored.x, y: restored.y };
 
-    return typeof camera === 'object' ? { x: Math.min(0, camera.x), y: Math.min(0, camera.y) } : { x: 0, y: 0 };
+    return typeof camera === 'object' ? { x: camera.x, y: camera.y } : { x: 0, y: 0 };
   });
   private userCamera$ = new Subject<Camera | null>();
   public shownRows = computed(() =>
@@ -267,22 +260,9 @@ export class SketchesComponent {
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
-  private room = computed<Pan | null>(() => {
-    const world = this.worldSize().offset;
-    const list = this.listSize().client;
-
-    if (!world?.width || !list) return null;
-
-    return { x: Math.max(0, world.width - list.width), y: Math.max(0, world.height - list.height) };
-  });
-  private shownPan = computed(() => {
-    const room = this.room();
-
-    return room ? clampPan(this.pan(), room) : this.pan();
-  });
-  protected panX = computed(() => -this.shownPan().x);
+  protected panX = computed(() => Math.max(0, -this.pan().x));
   protected worldTransform = computed(() => {
-    const { x, y } = this.shownPan();
+    const { x, y } = this.pan();
 
     return `translate(${x}px, ${y}px) scale(1)`;
   });
@@ -292,7 +272,7 @@ export class SketchesComponent {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
         frameSelector: '[data-sk-frame]',
-        camera: () => ({ ...this.shownPan(), zoom: this.shownZoom() }),
+        camera: () => ({ ...this.pan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
@@ -493,7 +473,7 @@ export class SketchesComponent {
   }
 
   private zoomTo(zoom: number) {
-    this.move({ ...this.shownPan(), zoom });
+    this.move({ ...this.pan(), zoom });
   }
 
   private move(camera: Camera) {
@@ -501,10 +481,7 @@ export class SketchesComponent {
 
     if (zoom !== this.shownZoom()) this.zoom.set(zoom);
     this.pan.set({ x: camera.x, y: camera.y });
-
-    const { x, y } = this.shownPan();
-
-    this.userCamera$.next({ x, y, zoom });
+    this.userCamera$.next({ x: camera.x, y: camera.y, zoom });
   }
 
   private show(target: CameraTarget, pressed: HTMLElement | null) {
@@ -532,7 +509,7 @@ export class SketchesComponent {
         write: () => {
           const moved = frame.getBoundingClientRect();
           const view = list.getBoundingClientRect();
-          const { x, y } = this.shownPan();
+          const { x, y } = this.pan();
 
           this.move({
             x: x + view.left + FOCUS_PADDING - moved.left,

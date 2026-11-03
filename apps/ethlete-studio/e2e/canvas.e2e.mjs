@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -8,6 +7,7 @@ import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
+const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
 
 process.env['DE_PORT'] ??= '4473';
 
@@ -60,6 +60,29 @@ const CANVAS = 'ethlete-design-canvas, ethlete-canvas-viewport';
 const FRAME = 'ethlete-canvas-frame, [data-canvas-frame], [data-sk-frame]';
 const ARROW_STEP = 80;
 const SETTLE_MS = 600;
+const EDGE_ROOM = 200;
+const ARROWS_BY = {
+  ArrowLeft: { x: ARROW_STEP, y: 0 },
+  ArrowRight: { x: -ARROW_STEP, y: 0 },
+  ArrowUp: { x: 0, y: ARROW_STEP },
+  ArrowDown: { x: 0, y: -ARROW_STEP },
+};
+const PAN_EDGES = [
+  { name: 'left', key: 'ArrowLeft', room: (content, view) => view.left + EDGE_ROOM - content.left },
+  { name: 'top', key: 'ArrowUp', room: (content, view) => view.top + EDGE_ROOM - content.top },
+  { name: 'right', key: 'ArrowRight', room: (content, view) => content.right - (view.right - EDGE_ROOM) },
+  { name: 'bottom', key: 'ArrowDown', room: (content, view) => content.bottom - (view.bottom - EDGE_ROOM) },
+];
+
+const contentOf = (frames) =>
+  frames.length
+    ? {
+        left: Math.min(...frames.map((frame) => frame.left)),
+        top: Math.min(...frames.map((frame) => frame.top)),
+        right: Math.max(...frames.map((frame) => frame.left + frame.width)),
+        bottom: Math.max(...frames.map((frame) => frame.top + frame.height)),
+      }
+    : null;
 
 const probe = (page) =>
   page.evaluate(
@@ -861,6 +884,40 @@ const CASES = [
     },
   },
   {
+    name: 'pan beyond every edge of the content',
+    pages: ['System', 'Sketches', 'Inbox', 'Flow'],
+    run: async (page, state, target) => {
+      if (!state.empty) return { ok: false, detail: 'no empty point' };
+      await page.mouse.click(state.empty.x, state.empty.y);
+      await settle(page);
+
+      const selector = target.frame ?? FRAME;
+      const failed = [];
+
+      for (const edge of PAN_EDGES) {
+        const before = await probe(page);
+        const content = contentOf(await frameBoxes(page, selector));
+
+        if (!content) return { ok: false, detail: 'no frames' };
+
+        const presses = Math.max(1, Math.ceil(edge.room(content, before.view) / ARROW_STEP) + 1);
+
+        for (let press = 0; press < presses; press++) await page.keyboard.press(edge.key);
+        await settle(page);
+
+        const after = await probe(page);
+        const by = { x: ARROWS_BY[edge.key].x * presses, y: ARROWS_BY[edge.key].y * presses };
+        const beyond = edge.room(contentOf(await frameBoxes(page, selector)), after.view) < 0;
+
+        if (!moved(before, after, by) || !beyond) {
+          failed.push(`${edge.name}: ${presses} x ${edge.key} ${describe(before, after)} beyond=${beyond}`);
+        }
+      }
+
+      return { ok: failed.length === 0, detail: failed.join('; ') || 'all four edges' };
+    },
+  },
+  {
     name: 'Shift+1 fits all, window-wide',
     run: async (page, state, target) => {
       await page.mouse.move(state.view.left + 20, state.view.top + 20);
@@ -990,18 +1047,7 @@ cpSync(join(root, '.ethlete/design'), join(checkout, '.ethlete/design'), { recur
 
 rmSync(join(checkout, '.ethlete/design/studio/sketches'), { recursive: true, force: true });
 
-execFileSync(
-  'sh',
-  [
-    '-c',
-    'git -C "$0" archive HEAD .ethlete/design/studio/sketches/elements-shell-main | tar -x -C "$1"',
-    root,
-    checkout,
-  ],
-  { stdio: 'inherit' },
-);
-
-for (const target of ['pages/system', 'components/zoom-chip']) {
+for (const target of ['pages/system', 'components/zoom-chip', 'elements/shell-main']) {
   const folder = join(checkout, '.ethlete/design/studio/sketches', target.replace('/', '-'));
 
   mkdirSync(join(folder, 'a', dirname(target)), { recursive: true });
@@ -1027,6 +1073,7 @@ const results = await withStudio(
       for (const testCase of CASES) {
         if (!(testCase.pages ?? ['System', 'Sketches']).includes(target.name)) continue;
         if (testCase.labels && !testCase.labels.includes(target.label)) continue;
+        if (only && !testCase.name.includes(only)) continue;
 
         await page.goto(studioUrl);
         await page.evaluate(
