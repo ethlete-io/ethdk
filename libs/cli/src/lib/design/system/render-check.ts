@@ -31,6 +31,7 @@ import { unchangedStatesOf } from './sketch/unchanged-states';
 import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
+import { INTERACTIVE_SELECTOR } from './actions';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -309,7 +310,7 @@ ${NESTED_SCROLL_STATEMENTS}
         top: style.overflowY === 'visible' ? -Infinity : top,
         bottom: style.overflowY === 'visible' ? Infinity : top + at.clientHeight,
       };
-      return { name: pathOf(at), box };
+      return { name: pathOf(at), box, style };
     }
     return frameBox();
   };
@@ -347,6 +348,35 @@ ${NESTED_SCROLL_STATEMENTS}
     const shadowPast = pastOf(rect, shadow, clip.box);
     if (outlinePast > 1) report('CLIPPED', element, 'outline ' + Math.round(outlinePast) + 'px past ' + clip.name);
     else if (shadowPast > 1) report('CLIPPED', element, 'box-shadow ' + Math.round(shadowPast) + 'px past ' + clip.name);
+  }
+
+  const unseen = (element) => {
+    if (getComputedStyle(element).visibility === 'hidden' || element.closest('[inert], [aria-hidden="true"]')) return true;
+    for (let at = element; at && at !== root; at = at.parentElement) if (getComputedStyle(at).opacity === '0') return true;
+    return false;
+  };
+  const interactive = ${JSON.stringify(INTERACTIVE_SELECTOR)};
+  for (const element of root.querySelectorAll(interactive)) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    const clip = clipOf(element.parentElement);
+    if (!clip.style || unseen(element)) continue;
+    const shown = {
+      width: Math.min(rect.right, clip.box.right) - Math.max(rect.left, clip.box.left),
+      height: Math.min(rect.bottom, clip.box.bottom) - Math.max(rect.top, clip.box.top),
+    };
+    if (shown.width <= 0 || shown.height <= 0) continue;
+    const cuts = [];
+    if (clips(clip.style.overflowX) && rect.width - shown.width > 1) cuts.push(Math.round(rect.width - shown.width) + 'px of its width');
+    if (clips(clip.style.overflowY) && rect.height - shown.height > 1) cuts.push(Math.round(rect.height - shown.height) + 'px of its height');
+    if (cuts.length) report('CUT-CONTROL', element, cuts.join(' and ') + ' is cut by ' + clip.name + ', so the control is only partly reachable');
+  }
+  for (const element of root.querySelectorAll('[data-et-skip~="CLIPPED"]')) {
+    if (!element.querySelector(interactive)) continue;
+    const path = pathOf(element);
+    if (seen.has('SKIP-SCOPE' + path)) continue;
+    seen.add('SKIP-SCOPE' + path);
+    found.push({ rule: 'SKIP-SCOPE', path, detail: 'data-et-skip=CLIPPED on ' + path + ' covers interactive controls - put the skip on the clipped element itself' });
   }
 
   const metrics = document.createElement('canvas').getContext('2d');

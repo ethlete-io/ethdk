@@ -422,6 +422,49 @@ describe('renderIssuesOf', () => {
     );
   }, 120_000);
 
+  it('flags a control cut by its clip, and a CLIPPED skip over controls', async (context) => {
+    const pan = (style: string, inner = '<button>Übernehmen</button>', skip = '') =>
+      `<div${skip} style="position: relative; width: 300px; height: 80px; ${style}"><div style="transform: translateX(-60px)">${inner}</div></div>`;
+    const target = checkout({
+      'components/pan-cut': { body: pan('overflow: clip', undefined, ' data-et-skip="CLIPPED"') },
+      'components/pan-scrolls': { body: pan('overflow: auto') },
+      'components/pan-gone': {
+        body: '<div style="width: 300px; height: 80px; overflow: clip"><div style="transform: translateX(-400px)"><button>Übernehmen</button></div></div>',
+      },
+      'components/pan-hidden': {
+        body: `<div style="visibility: hidden">${pan('overflow: clip')}</div>`,
+      },
+      'components/pan-faded': { body: `<div style="opacity: 0">${pan('overflow: clip')}</div>` },
+      'components/pan-inert': { body: `<div inert>${pan('overflow: clip')}</div>` },
+      'components/pan-aria-hidden': { body: `<div aria-hidden="true">${pan('overflow: clip')}</div>` },
+      'components/pan-skipped': { body: `<div data-et-skip="CUT-CONTROL">${pan('overflow: clip')}</div>` },
+      'components/pan-sticky': {
+        body: '<div style="width: 300px; height: 80px; overflow: auto"><div style="display: flex; width: 600px"><button style="position: sticky; left: 0">Übernehmen</button></div></div>',
+      },
+      'components/pan-skip-on-clip': {
+        body: '<div><div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div></div>',
+      },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'CUT-CONTROL' || issue.rule === 'SKIP-SCOPE')
+        .map((issue) => `${issue.rule} ${issue.part}: ${issue.path} - ${issue.detail}`)
+        .sort(),
+    ).toEqual([
+      'CUT-CONTROL components/pan-cut: div[data-et-part=components/pan-cut] > div > button - 60px of its width is cut by div[data-et-part=components/pan-cut], so the control is only partly reachable',
+      'SKIP-SCOPE components/pan-cut: div[data-et-part=components/pan-cut] - data-et-skip=CLIPPED on div[data-et-part=components/pan-cut] covers interactive controls - put the skip on the clipped element itself',
+    ]);
+  }, 120_000);
+
   it('flags an SDK component whose styles rode in a slot the picture empties', async (context) => {
     const hidden =
       '.et-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }';
