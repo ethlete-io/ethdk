@@ -514,7 +514,7 @@ const embedControlsOf = (controls: unknown) =>
 /** The render rule of a part whose drawing did not finish in time, apart from a part that failed to draw. */
 export const RENDER_TIMEOUT = 'RENDER-TIMEOUT';
 
-const timedOutKeyOf = (address: { product: string; part: string; sketch: string | null }) =>
+const timedOutKeyOf = (address: { product: string; part: string; sketch: SketchVariant | null }) =>
   JSON.stringify([address.product, address.part, address.sketch]);
 
 /** @internal Inspects `frames`, then the parts that timed out once more alone, and keeps that second answer. */
