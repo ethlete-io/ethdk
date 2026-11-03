@@ -3078,3 +3078,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      answers it (the builder looks up what the app does and copies it), and a look question belongs in Studio as a
      sketch, not in a chat round. Lesson: the grill round had no rule that keeps look questions out. Fix: the
      doc-agent skill now routes look questions to a sketch and treats "as built" as a fact for the builder.
+
+230. Builder commit 3be274358 (B133) swept the B138 draft in check-system.ts/.spec into its commit (two parallel
+     slices on one file), so HEAD was red until 7b6e79545 (builder, 2026-11-03). Why no tool caught it: pre-commit
+     runs the related specs on the working tree, not on the index, so a commit whose staged content is red passes
+     when the tree is green, and a clean staged part cannot be committed while the tree is red. Lesson: a check
+     before a commit must test what the commit contains. Tool fix (B143): pre-commit runs `vitest related` against
+     a checkout of the index, like pre-push does for HEAD. Builder rule: never give two parallel slices one file.
