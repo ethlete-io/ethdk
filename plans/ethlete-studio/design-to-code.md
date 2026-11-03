@@ -3925,6 +3925,22 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      as a separate bug. Fix (B260, decided, technical): probe sketchRevisionOf. If a redraw reloads unchanged frames, the
      revision becomes per frame (one picture, one revision).
 
+309. Tree marks (B254/B255 results, builder, 2026-11-03). B254 built in 9e7ebf434: a variant with an errored frame
+     offers no Übernehmen, and the badge reads "Render-Fehler in dieser Runde" (red-check RED; e2e pending under B259).
+     The badge reuses the neutral tonal badge, and sketch-status.ts has no such status. Its look goes to Tom as a sketch
+     (B261). B255 as specified was moot: the live part title already names the rule (system-tree.ts:289), and the
+     open-list warnings never reach the tree (list-system.ts:322 sends only ruleProblemsOf). Facts on the live server
+     (HEAD 855305f90): no part and no sketch carries a mark now; Tom's Studio is a dev build from 09:59, so an old
+     build is ruled out. The triangles Tom saw were most likely error-level INLINE-UI hits while B247 was uncommitted
+     and had no open list yet. Two real defects: (a) a sketch entry with a problem gets title = sketch.target
+     (system-tree.ts:121), so its tooltip names the target path, not the variant or the rule; (b) the listing carries
+     5 product-level problems that the tree never shows (SAMPLE-DEFAULT inbox.component.ts:72; UNBOUND-INPUT
+     system-page.component.ts commentMode, draft, send, reason), because they are not attached to the part whose file
+     they sit in. Why no tool caught it: nothing compares the problems in the listing with the problems the tree draws.
+     Fix (B255, decided, technical): a sketch entry's title lists "<variant>: <rule>: <message>" per problem; a
+     product-level problem attaches to the part that owns its file (one product row only when no part owns the file);
+     a spec asserts that every listed problem reaches some tree row.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
