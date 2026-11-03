@@ -3720,3 +3720,16 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      visible-change-command.ts parse argv by hand and ignore unknown flags; commit-hunks exits 1 on bad usage
      instead of 2 (align it and its specs). B240 data side 0f7c28b68: hideWithdrawn defaults to false, and the view
      wiring waits for Tom's pick of the control sketch.
+
+295. Title-bar f merge, 0c full studio check (builder, 2026-11-03, after 72ecd0adb): exit 1, 29 parts, 270
+     findings. components/title-bar has 0 problems and 1 warning: CLASS-GLUED-INTERPOLATION in title-bar.ts, where
+     `gap-2` is glued to a `${...}`, so Tailwind emits no CSS and the merged f draws without that gap. Why no tool
+     caught it: the code is only a warning, so sketch check, ready and merge let the variant through, although a
+     glued class in a design file is always a dropped class. Fix (B242, decided, technical): CLASS-GLUED-INTERPOLATION
+     is a problem in design files and blocks ready and merge. The f defect itself is fixed in a tidy commit before
+     Tom's go: it restores the gap the variant already declares, so it is no look choice, and Tom sees it at the go.
+     20 embedding parts went stale with the merge (shell-main, flows, inbox, inventory, merge, sketches, system, ...).
+     "No new problem from the merge" is unproven: the pre-merge run was lost, and nothing kept a baseline. Why no
+     tool caught it: a merge does not name the parts it makes stale, and does not check them. Fix (B243, decided,
+     technical, extends B236): a merge prints the embedding parts it made stale and checks them before and after,
+     reporting only the new problem codes.
