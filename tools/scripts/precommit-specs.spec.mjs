@@ -77,7 +77,7 @@ test('fails a staged break although the working tree holds a fix', () => {
 });
 
 test('maps staged files to the Studio and cli suites', () => {
-  const suites = suitesForFiles(['apps/ethlete-studio/a.ts', 'libs/x/r.ts', 'README.md'], {
+  const suites = suitesForFiles(['apps/ethlete-studio/a.ts', 'libs/x/r.ts', 'tools/scripts/t.mjs', 'README.md'], {
     'src/m.spec.ts': ['libs/x/*.ts'],
   });
   assert.deepEqual(
@@ -85,6 +85,7 @@ test('maps staged files to the Studio and cli suites', () => {
     [
       ['Studio', ['apps/ethlete-studio/a.ts']],
       ['cli', ['libs/cli/src/m.spec.ts']],
+      ['tools/scripts', ['tools/scripts/t.mjs']],
     ],
   );
   assert.deepEqual(suitesForFiles(['README.md'], {}), []);

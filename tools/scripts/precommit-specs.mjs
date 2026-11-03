@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
@@ -26,6 +26,7 @@ export const suitesForFiles = (files, relatedMap) => {
     ...specsForFiles(files, relatedMap).map((spec) => `libs/cli/${spec}`),
   ];
   const studio = files.filter((file) => file.startsWith('apps/ethlete-studio/'));
+  const tools = files.filter((file) => file.startsWith('tools/scripts/'));
 
   return [
     studio.length && {
@@ -35,6 +36,7 @@ export const suitesForFiles = (files, relatedMap) => {
       files: studio,
     },
     cli.length && { name: 'cli', cwd: 'libs/cli', args: [], files: cli },
+    tools.length && { name: 'tools/scripts', cwd: '.', node: true, files: tools },
   ].filter(Boolean);
 };
 
@@ -70,8 +72,34 @@ const relatedMapAt = (root, rev) => {
 const selectsNoSpecs = (root, files, rev) =>
   !files.length || isDocsOnly(files) || !suitesForFiles(files, relatedMapAt(root, rev)).length;
 
+const runNodeTests = (checkout) => {
+  const specs = readdirSync(join(checkout, 'tools/scripts'))
+    .filter((file) => file.endsWith('.spec.mjs'))
+    .map((file) => join('tools/scripts', file));
+  if (!specs.length) return 0;
+  const env = withoutGitEnv();
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync('node', ['--test', ...specs], {
+    cwd: checkout,
+    env,
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+    timeout: Number(process.env.PRECOMMIT_SPECS_TIMEOUT_MS ?? 20 * 60 * 1000),
+  });
+  process.stdout.write(result.stdout ?? '');
+  process.stderr.write(result.stderr ?? '');
+  return result.status;
+};
+
 const runSuites = (checkout, suites) => {
   for (const suite of suites) {
+    if (suite.node) {
+      if (runNodeTests(checkout) !== 0) {
+        console.error(`pre-commit: a ${suite.name} spec fails (the ✖ lines above name it).`);
+        return 1;
+      }
+      continue;
+    }
     const run = runVitest(join(checkout, suite.cwd), [
       'related',
       '--run',
@@ -273,7 +301,7 @@ const alreadyTested = (root) => {
     return true;
   }
   const changed = changedSinceTested(root, tested, staged);
-  if (!changed || !selectsNoSpecs(root, changed, staged)) return false;
+  if (!changed || !selectsNoSpecs(root, changed, staged) || lintProjectsForFiles(root, changed).length) return false;
   console.error(
     `pre-commit: specs already ran in yarn commit; the ${changed.length} files committed since select no specs; skipping them.`,
   );
@@ -284,15 +312,17 @@ export const runStagedSpecs = (root) => {
   if (alreadyTested(root)) return 0;
 
   const files = git(root, ['diff', '--cached', '--name-only', '--diff-filter=ACM', '-z']).split('\0').filter(Boolean);
-  if (selectsNoSpecs(root, files, '')) return 0;
-  const suites = suitesForFiles(files, relatedMapAt(root, ''));
+  const linted = lintProjectsForFiles(root, files);
+  const noSpecs = selectsNoSpecs(root, files, '');
+  if (noSpecs && !linted.length) return 0;
+  const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, ''));
 
   const checkout = mkdtempSync(join(tmpdir(), 'pre-commit-'));
 
   try {
     git(root, ['checkout-index', '--all', `--prefix=${checkout}/`]);
     linkNodeModules(root, checkout);
-    return runSuites(checkout, suites);
+    return runLint(root, checkout, linted) || runSuites(checkout, suites);
   } finally {
     rmSync(checkout, { recursive: true, force: true });
   }

@@ -20,8 +20,8 @@ if [ -n "$styles" ]; then
   node ./tools/scripts/lint-css-properties.js $styles
 fi
 
-# Runs the Studio and cli specs related to the staged files against a checkout of the index, so the
+# Lints the projects of the staged files and runs the Studio, cli and tools/scripts specs related to them against a checkout of the index, so the
 # commit is tested as it will land, never against uncommitted edits of other sessions in this checkout.
 # yarn commit already ran them before taking the lock and passes PRECOMMIT_SPECS_TREE; the hook skips when the staged
-# tree equals it or differs only by files that select no specs (commits other sessions landed meanwhile).
+# tree equals it or differs only by files that select no specs and lint no project (commits other sessions landed meanwhile).
 node ./tools/scripts/precommit-specs.mjs

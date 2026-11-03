@@ -259,7 +259,7 @@ test('a type error vitest passes blocks the commit, an older one in an untouched
   assert.equal(passed.status, 0, passed.stdout + passed.stderr);
 });
 
-test('a lint error in a project of the staged files blocks the commit, docs files lint nothing', () => {
+test('a lint error in a project of the staged files blocks yarn commit and a plain git commit, docs files lint nothing', () => {
   const { repo, run, yarnCommit } = repoWithCommitTool();
   put(repo, 'package.json', JSON.stringify({ name: 'repo', private: true }));
   put(repo, 'nx.json', JSON.stringify({}));
@@ -287,6 +287,11 @@ test('a lint error in a project of the staged files blocks the commit, docs file
   assert.match(refused.stderr, /lint fails in cli/);
   assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
 
+  const plain = run('git', ['commit', '-qm', 'plain', '-i', '--', 'libs/cli/src/value.ts']);
+  assert.notEqual(plain.status, 0, plain.stdout + plain.stderr);
+  assert.match(plain.stderr, /lint fails in cli/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+
   put(repo, 'libs/cli/NOTES.md', 'notes\n');
   const docs = yarnCommit(['-qm', 'docs', '--', 'libs/cli/NOTES.md']);
   assert.equal(docs.status, 0, docs.stdout + docs.stderr);
@@ -294,4 +299,23 @@ test('a lint error in a project of the staged files blocks the commit, docs file
   put(repo, 'libs/cli/src/value.ts', 'export const value = 1;\nexport const other = 2;\n');
   const passed = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.ts']);
   assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+});
+
+test('a tools/scripts change runs the tools/scripts specs and a failing one blocks the commit', () => {
+  const { repo, run, yarnCommit } = repoWithCommitTool();
+  put(repo, 'tools/scripts/double.mjs', 'export const double = (n) => n * 2;\n');
+  put(
+    repo,
+    'tools/scripts/double.spec.mjs',
+    "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { double } from './double.mjs';\n\ntest('double', () => assert.equal(double(2), 4));\n",
+  );
+  const added = yarnCommit(['-qm', 'double', '--', 'tools/scripts/double.mjs', 'tools/scripts/double.spec.mjs']);
+  assert.equal(added.status, 0, added.stdout + added.stderr);
+  const head = run('git', ['rev-parse', 'HEAD']).stdout;
+
+  put(repo, 'tools/scripts/double.mjs', 'export const double = (n) => n * 3;\n');
+  const refused = yarnCommit(['-qm', 'triple', '--', 'tools/scripts/double.mjs']);
+  assert.notEqual(refused.status, 0, refused.stdout + refused.stderr);
+  assert.match(refused.stderr, /a tools\/scripts spec fails/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
 });
