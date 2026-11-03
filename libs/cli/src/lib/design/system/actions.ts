@@ -288,6 +288,37 @@ export const exemptFromDeclaringOf = (options: {
 export const isHostElementOf = (options: { key: string; hosts: readonly string[] }) =>
   options.hosts.some((host) => options.key.endsWith(` "${host}"`));
 
+/**
+ * The elements the action check covers for one state: the part's own. A design element an embedded part draws, and the
+ * app element it pairs with, are left to that part's own check. A declared host the design does not draw is app chrome
+ * and is left out too; `skipped` names the hosts that were.
+ */
+export const ownScopeOf = <TDesign extends ActionElement & { owners: readonly string[] }>(options: {
+  design: TDesign[];
+  app: ActionElement[];
+  hosts: readonly string[];
+}) => {
+  const idOf = (element: ActionElement) => `${element.key}#${element.occurrence}`;
+  const own = options.design.filter((element) => element.owners.length === 0);
+  const embedded = new Set(options.design.filter((element) => element.owners.length > 0).map(idOf));
+  const ownIds = new Set(own.map(idOf));
+  const drawnKeys = new Set(options.design.map((element) => element.key));
+  const skipped = new Set<string>();
+  const app = options.app.filter((element) => {
+    if (embedded.has(idOf(element)) && !ownIds.has(idOf(element))) return false;
+
+    const host = options.hosts.find((candidate) => isHostElementOf({ key: element.key, hosts: [candidate] }));
+
+    if (host === undefined || drawnKeys.has(element.key)) return true;
+
+    skipped.add(host);
+
+    return false;
+  });
+
+  return { design: own, app, skipped: [...skipped] };
+};
+
 /** The name a report line gives an element. */
 export const elementNameOf = (element: ActionElement) =>
   element.occurrence === 0 ? element.key : `${element.key} (${element.occurrence + 1}.)`;

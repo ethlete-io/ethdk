@@ -20,7 +20,7 @@ import {
   embeddedOwnersScriptOf,
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
-  isHostElementOf,
+  ownScopeOf,
   embeddersOf,
   listenEmbeddedScriptOf,
   pairElementsOf,
@@ -228,7 +228,7 @@ export const checkActions = async (options: {
   url: string;
   only: string | null;
   onLine?: (line: Line) => void;
-}): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[] } | string> => {
+}): Promise<{ lines: Line[]; pictures: string | null; embedders?: string[]; hosts?: string[] } | string> => {
   const { target, config, product, part, url, only, onLine } = options;
   const frame = compareFrameOf({ presets: product.presets, part, preset: null });
 
@@ -427,6 +427,7 @@ export const checkActions = async (options: {
       return cached;
     };
     const lines: Line[] = [];
+    const skippedHosts: string[] = [];
     const pushLine = (line: Line) => {
       lines.push(line);
       onLine?.(line);
@@ -485,8 +486,11 @@ export const checkActions = async (options: {
         }
       });
       const hosts = product.config.harness?.hosts ?? [];
-      const notHost = (element: ActionElement) => !isHostElementOf({ key: element.key, hosts });
-      const { paired, missing } = pairElementsOf({ design: design.filter(notHost), app: app.filter(notHost) });
+      const scope = ownScopeOf({ design, app, hosts });
+
+      skippedHosts.push(...scope.skipped.filter((host) => !skippedHosts.includes(host)));
+
+      const { paired, missing } = pairElementsOf({ design: scope.design, app: scope.app });
 
       for (const element of missing)
         pushLine({
@@ -708,7 +712,7 @@ export const checkActions = async (options: {
       lines.push(...checkedElements.flat());
     }
 
-    return { lines, pictures: dir, embedders: embedders ? await embedders : [] };
+    return { lines, pictures: dir, embedders: embedders ? await embedders : [], hosts: skippedHosts };
   } catch (error) {
     return messageOf(error);
   } finally {
@@ -721,8 +725,9 @@ export const checkActions = async (options: {
 export const actionLineOf = ({ state, element, input, failure, warning }: Line) =>
   `${state} ${element}${input === null ? '' : ` ${input}`} ${failure === null ? `ok${warning ? ` (warning: ${warning})` : ''}` : `FAILED ${failure}`}`;
 
-/** The line the action check prints once per run for a host component the product declares. */
-export const hostLineOf = (host: string) => `host ${host}: not checked`;
+/** The line the action check prints once per run for a declared host component it skipped in a state. */
+export const hostLineOf = (host: string) =>
+  `host ${host}: skipped - the app's own chrome around the part, which the design does not draw`;
 
 /** The failed lines `design actions` prints for a part, or why the check could not run. */
 export const partActionFailuresOf = async (options: {
@@ -751,7 +756,7 @@ export const partActionFailuresOf = async (options: {
 
   if (typeof checked === 'string') return { unavailable: checked };
 
-  for (const host of product.config.harness?.hosts ?? []) options.onNote?.(hostLineOf(host));
+  for (const host of checked.hosts ?? []) options.onNote?.(hostLineOf(host));
 
   const failures = checked.lines.filter((line) => line.failure !== null).map(actionLineOf);
 
@@ -851,7 +856,7 @@ export const designActions = async (options: {
   }
 
   for (const line of checked.lines) if (!printed.has(line)) console.log(actionLineOf(line));
-  for (const host of product.config.harness?.hosts ?? []) console.log(hostLineOf(host));
+  for (const host of checked.hosts ?? []) console.log(hostLineOf(host));
 
   if (checked.pictures !== null) console.log(`pictures: ${checked.pictures}`);
 

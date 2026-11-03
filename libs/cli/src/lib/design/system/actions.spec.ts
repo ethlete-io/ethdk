@@ -18,6 +18,7 @@ import {
   enclosingControlsScriptOf,
   exemptFromDeclaringOf,
   isHostElementOf,
+  ownScopeOf,
   openedFromOf,
   pairElementsOf,
   parseAction,
@@ -414,6 +415,37 @@ describe('runActionInput', () => {
     expect(isHostElementOf({ key: 'region "DesignCanvas"', hosts })).toBe(true);
     expect(isHostElementOf({ key: 'button "DesignCanvasZoom"', hosts })).toBe(false);
     expect(isHostElementOf({ key: 'generic "DesignCanvas"', hosts: [] })).toBe(false);
+  });
+
+  it('leaves the elements an embedded part draws, and their app twins, to that part', () => {
+    const design = [
+      { ...element({ key: 'button "Own"', action: 'emit:own' }), owners: [] as string[] },
+      { ...element({ key: 'button "Close"', action: 'emit:close' }), owners: ['components/title-bar'] },
+    ];
+    const app = [element({ key: 'button "Own"' }), element({ key: 'button "Close"' })];
+    const scope = ownScopeOf({ design, app, hosts: [] });
+
+    expect(scope.design).toEqual([design[0]]);
+    expect(scope.app).toEqual([app[0]]);
+    expect(pairElementsOf(scope).missing).toEqual([]);
+  });
+
+  it('skips a declared host only where the design does not draw it, and names it', () => {
+    const hosts = ['DesignCanvas'];
+    const app = [element({ key: 'generic "DesignCanvas"' }), element({ key: 'button "Own"' })];
+    const bare = ownScopeOf({ design: [], app, hosts });
+
+    expect(bare.app).toEqual([app[1]]);
+    expect(bare.skipped).toEqual(['DesignCanvas']);
+
+    const drawn = ownScopeOf({
+      design: [{ ...element({ key: 'generic "DesignCanvas"', action: 'emit:x' }), owners: [] as string[] }],
+      app,
+      hosts,
+    });
+
+    expect(drawn.app).toEqual(app);
+    expect(drawn.skipped).toEqual([]);
   });
 
   it('keys an element without a role by its generic role, not its tag, and lists the controls around it', async (context) => {

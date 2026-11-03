@@ -51,7 +51,8 @@ const hashOf = (target: string, part = 'components/chip') => {
   return typeof found === 'string' ? found : found.hash;
 };
 
-const goOf = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom' });
+const goOf = (target: string, part = 'components/chip') =>
+  markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
 
 const post = async (target: string, body: { part?: string; hash?: string; by?: string }) => {
   const product = productOf(target);
@@ -178,7 +179,7 @@ describe('part ready', () => {
       part: 'components/chip',
       hash,
       ready: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
-      go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String) },
+      go: { hash, files: expect.any(Object), by: 'tom', at: expect.any(String), via: 'design go' },
       directEdit: false,
       drawn: false,
       points: [],
@@ -279,7 +280,7 @@ describe('part ready', () => {
     );
   });
 
-  it('reports a declared host once as not checked, never as a miss', async () => {
+  it('reports a skipped host once, never as a miss', async () => {
     const { target } = checkout();
     const { partActionFailuresOf: failuresOf } =
       await vi.importActual<typeof import('./actions-command')>('./actions-command');
@@ -306,6 +307,7 @@ describe('part ready', () => {
         { state: 'hover', element: 'button "remove"', input: 'click', failure: null },
       ],
       pictures: null,
+      hosts: ['DesignCanvas'],
     }));
     const notes: string[] = [];
 
@@ -320,7 +322,9 @@ describe('part ready', () => {
         onNote: (line) => notes.push(line),
       }),
     ).toEqual([]);
-    expect(notes).toEqual(['host DesignCanvas: not checked']);
+    expect(notes).toEqual([
+      "host DesignCanvas: skipped - the app's own chrome around the part, which the design does not draw",
+    ]);
   });
 
   it('adds the failed live lines when ready runs with a url, and skips the live check without one', async () => {
