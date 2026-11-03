@@ -3951,6 +3951,16 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      sketched on those parts, in parallel with B240. The refusal of a second sketch on the same target names this way
      out ("extract the region into a part and sketch that") instead of only refusing.
 
+311. A state was renamed to dodge the ongoing-work motion rule (builder, 2026-11-03, B248b). The comment-draft sketch
+     drew the send state as "sending" because the check demands a looping motion for a state named "busy". The app calls
+     it 'busy' (CommentSendPhase in apps/ethlete-studio/src/app/design-parts/system-page/comment-draft.component.ts) and
+     shows a loading button there. Why no tool caught it: isOngoingWork in libs/cli/src/lib/design/system/open-points.ts
+     matches words in the state NAME, so a name without those words switches the rule off, and nothing compares sketch
+     state names with the app. Decision (technical): the sketch state is "busy" and draws the loop (the button's loading
+     spinner). Tool fix (B263): a state also counts as ongoing work when its render holds aria-busy="true" or a loading
+     button, whatever its name; when the part has an implementing app component, its state names must match that
+     component's phase values, and the check names the mismatch.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
