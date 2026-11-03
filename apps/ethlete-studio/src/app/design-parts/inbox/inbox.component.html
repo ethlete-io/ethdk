@@ -22,63 +22,13 @@
               <span class="flex size-full items-center justify-center rounded-[50%_50%_50%_0]">TB</span>
             </button>
             <div class="mt-1.25">
-              <div
-                class="relative isolate w-max min-w-72 rounded-[12px] border border-et-surface-border bg-et-surface-bg text-et-surface"
-                etAutoSurface
-                role="dialog"
-                aria-label="Kommentar"
-              >
-                <span
-                  class="absolute -top-2.5 left-4 z-1 size-5 transform-[translate3d(0,0,0)] [clip-path:inset(-100%_-100%_9px_-100%)]"
-                  aria-hidden="true"
-                >
-                  <span
-                    class="absolute inset-0 m-auto box-border size-[14.1421px] rotate-45 rounded-[2px] border-t border-l border-et-surface-border bg-et-surface-bg"
-                  ></span>
-                </span>
-                <div class="box-border flex w-80 flex-col items-stretch p-3">
-                  @if (draft()) {
-                    <et-textarea
-                      [value]="shownDraftText()"
-                      (valueChange)="draftTextChange.emit($event)"
-                      class="min-w-0 flex-1"
-                      aria-label="Kommentar"
-                      placeholder="Kommentar hinzufügen"
-                      rows="3"
-                      resize="none"
-                    />
-                    <button
-                      (click)="send.emit(shownDraftText())"
-                      class="self-end"
-                      et-button
-                      type="button"
-                      variant="transparent"
-                      color="surface"
-                      size="xs"
-                    >
-                      Senden
-                    </button>
-                  } @else {
-                    <et-textarea
-                      class="min-w-0 flex-1"
-                      aria-label="Kommentar"
-                      placeholder="Kommentar hinzufügen"
-                      rows="1"
-                      resize="none"
-                    />
-                    <button
-                      class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"
-                      et-button
-                      disabled
-                      type="button"
-                      variant="transparent"
-                      color="surface"
-                      size="xs"
-                    >
-                      Senden
-                    </button>
-                  }
-                </div>
+              <div [attr.aria-label]="LABELS.comment" etAutoSurface role="dialog">
+                <ethlete-comment-draft
+                  [text]="draft() ? shownDraftText() : ''"
+                  (textChange)="draftTextChange.emit($event)"
+                  (send)="send.emit($event)"
+                  (discard)="discard.emit()"
+                />
               </div>
             </div>
           </div>

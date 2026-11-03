@@ -1,10 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, model, output, TemplateRef, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS, SWITCH_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { AutoSurfaceDirective, injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
+import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { CanvasFramesComponent } from '../canvas-frames/canvas-frames.component';
+import { CommentDraftComponent } from '../system-page/comment-draft.component';
 import { FRAME_CLASS, FRAME_HEAD_CLASS } from '../system-page/system-page.component';
 import { INBOX_SAMPLE, InboxComment } from './inbox-sample';
 
@@ -19,13 +21,13 @@ export type InboxLoad = 'loaded' | 'loading' | 'error';
   imports: [
     BUTTON_IMPORTS,
     SWITCH_IMPORTS,
-    TEXTAREA_IMPORTS,
     AutoSurfaceDirective,
     ProvideColorDirective,
     NgTemplateOutlet,
     ShellPageComponent,
     CanvasFramesComponent,
     AgentLogoComponent,
+    CommentDraftComponent,
   ],
   host: { class: 'block h-screen w-full' },
 })
@@ -46,9 +48,11 @@ export class InboxComponent {
   public shellAction = output<ShellAction>();
   public send = output<string>();
   public draftTextChange = output<string>();
+  public discard = output();
   public pick = output<string>();
   public retry = output();
 
+  protected readonly LABELS = STUDIO_LABELS.commentDraft;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
   public readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
