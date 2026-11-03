@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -60,7 +60,10 @@ const makeCommit = (base, change) => {
   git(repo, 'config', 'user.email', 't@t.t');
   git(repo, 'config', 'user.name', 't');
   const write = (files) => {
-    for (const [name, text] of Object.entries(files)) writeFileSync(join(repo, name), text);
+    for (const [name, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(repo, name)), { recursive: true });
+      writeFileSync(join(repo, name), text);
+    }
   };
   write(base);
   git(repo, 'add', '.');
@@ -98,6 +101,23 @@ test('a module the commit adds is stubbed, so the assertions are red', () => {
     {
       'rule.mjs': "export function rule() {\n  return ['x'];\n}\n",
       'rule.spec.mjs': specOf("import { rule } from './rule.mjs';", "assert.deepEqual(rule(), ['x']);"),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /red: rule/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('a module the commit adds in a new folder is stubbed there', () => {
+  const repo = makeCommit(
+    { 'keep.txt': 'x\n' },
+    {
+      'fresh/rule.mjs': "export function rule() {\n  return ['x'];\n}\n",
+      'fresh/rule.spec.mjs': specOf("import { rule } from './rule.mjs';", "assert.deepEqual(rule(), ['x']);"),
     },
   );
   try {

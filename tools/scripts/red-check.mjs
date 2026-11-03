@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { linkNodeModules } from './link-node-modules.mjs';
@@ -152,6 +152,7 @@ export const redCheck = (repo, commit, { dir } = {}) => {
       if (isSpec(file) || status === 'D') continue;
       if (status === 'A') {
         if (/\.(ts|mjs)$/.test(file) && !file.endsWith('.d.ts')) {
+          mkdirSync(dirname(join(worktree, file)), { recursive: true });
           writeFileSync(join(worktree, file), stubOf(git(repo, 'show', `${sha}:${file}`)));
           stubbed.push(file);
         } else rmSync(join(worktree, file), { force: true });
