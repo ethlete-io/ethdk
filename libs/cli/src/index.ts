@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { join } from 'node:path';
 import {
   apiCommand,
   authCommand,
@@ -9,6 +10,7 @@ import {
   repoInvocation,
   updateCommand,
 } from './lib';
+import { staleCliBuildMessage } from './lib/source-hash';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
@@ -93,12 +95,21 @@ const cli = async (args: string[]): Promise<number> => {
         invocation: repoInvocation({ root: process.cwd(), subcommand: 'auth' }),
       });
 
-    case 'design':
+    case 'design': {
+      const stale = staleCliBuildMessage({ root: process.cwd(), buildDir: join(__dirname, '..') });
+
+      if (stale) {
+        console.error(stale);
+
+        return 1;
+      }
+
       return designCommand({
         root: process.cwd(),
         argv: args.slice(1),
         invocation: repoInvocation({ root: process.cwd(), subcommand: 'design' }),
       });
+    }
 
     case 'update':
       return updateCommand({
