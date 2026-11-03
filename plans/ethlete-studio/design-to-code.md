@@ -3555,3 +3555,14 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      nothing, while `sketch rebase` only rewrites baseline hashes (B220 not built). Lesson: a "needs rebase" signal
      says whether the change draws anything. Into B220: rebase ports new states; Studio marks a draw-free base change
      as "base refreshed, no visual change" instead of blocking the pick. title-bar is B220's real reproduction.
+
+### Title-bar rebase and canvas-frames merge decisions (2026-11-03)
+
+- B208 + settings restore: Tom typed the approval into the builder session himself.
+- Title-bar r3 (Tom): components/title-bar changed since the sketch was cut; the builder rebases the sketch onto the
+  current part. The uncommitted pick `"variant":"f"` is not committed: it was made on a stale base. Tom picks again
+  after the rebase. B220 (`sketch rebase` ports new states) is built first, with title-bar as its real reproduction;
+  a hand rebase is not a substitute.
+- B199 (Tom: "yes, I think"): the builder confirms that the tree is byte-equal to variant c and that the Studio
+  merge record names c. Both true -> commit c and migrate canvas-frames to `instant` (B194) in the same commit.
+  Either false -> report, commit nothing.
