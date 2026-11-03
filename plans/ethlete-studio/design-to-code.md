@@ -3657,3 +3657,13 @@ studio` on the new commits.
      - Stale dist: `nx compile cli` does not refresh dist/libs/cli/design, so a TYPE-ERROR came from a stale build,
        and only a separate WARN line said so. B235: with a dist older than its source, `design` exits 2 "dist stale -
        nx build cli" before it prints any finding.
+
+289. A merge regressed an embedding part unseen (builder, 2026-11-03, full studio check on a fresh dist). Full run:
+     29 parts, 271 findings, RENDER-TIMEOUT 0, and page-sketch draws, so B221 is done. B230 (50024f9b8) cleared the 13
+     spec type errors and dropped the filter; its node:test case still owes a red proof. New defect: 20 COVERED
+     findings sit in pages/system state comment-draft, where canvas-frames c's absolute overlay div covers the comment
+     draft (2 of 9 points, shot 6 of 25). The `--part elements/canvas-frames` run showed 0 COVERED and GO, so merging
+     c silently broke pages/system after its go. Why no tool caught it: a part-scoped check never runs the parts that
+     embed the part. Fix (B236, decided, technical): `design check --part X` also checks every part that embeds X, and
+     its GO line counts only when they pass as well. B237: Tom looks at pages/system comment-draft in Studio. If there
+     is a choice in the fix, the builder sketches variants; the pages/system go is then given again.
