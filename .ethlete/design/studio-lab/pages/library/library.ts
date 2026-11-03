@@ -33,13 +33,16 @@ export default definePart<Props>({
         ? `${empty.body}<div class="lab-page-action">${addButton.body}</div>`
         : films
             .slice(0, count)
-            .map((film) => `<div class="lab-page-row"><span>${film.title}</span><span>${film.year}</span></div>`)
+            .map(
+              (film) =>
+                `<div class="lab-page-row flex justify-between"><span>${film.title}</span><span>${film.year}</span></div>`,
+            )
             .join('');
     const framed = await shell.render({
       active: 'library',
       user,
       content: `<main class="lab-page"><h1>Library</h1>${rows}</main>${
-        dialog ? `<div class="lab-page-scrim">${dialog.body}</div>` : ''
+        dialog ? `<div class="lab-page-scrim fixed inset-0 grid place-items-center">${dialog.body}</div>` : ''
       }`,
     });
 
@@ -49,8 +52,8 @@ export default definePart<Props>({
         .lab-page { padding: 24px; font-family: sans-serif; color: var(--lab-ink); }
         .lab-page h1 { margin: 0 0 12px; font-size: 24px; }
         .lab-page-action { margin-top: 12px; }
-        .lab-page-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
-        .lab-page-scrim { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--lab-ink) 40%, transparent); }
+        .lab-page-row { padding: 8px 0; font-size: 14px; }
+        .lab-page-scrim { background: color-mix(in srgb, var(--lab-ink) 40%, transparent); }
       `,
     });
   },

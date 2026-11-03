@@ -10,9 +10,9 @@ export default definePart<Props>({
   render: ({ index, selected }) => {
     const film = films[index] ?? { title: 'Untitled', year: 0 };
     return drawing({
-      body: `<div class="lab-row ${selected ? 'is-selected' : ''}"><span>${film.title}</span><span>${film.year}</span></div>`,
+      body: `<div class="lab-row flex justify-between ${selected ? 'is-selected' : ''}"><span>${film.title}</span><span>${film.year}</span></div>`,
       styles: `
-        .lab-row { display: flex; justify-content: space-between; width: 320px; padding: 10px 14px; font: 14px sans-serif; color: var(--lab-ink); border-bottom: 1px solid var(--lab-surface); }
+        .lab-row { width: 320px; padding: 10px 14px; font: 14px sans-serif; color: var(--lab-ink); border-bottom: 1px solid var(--lab-surface); }
         .lab-row.is-selected { background: var(--lab-surface); font-weight: 600; }
       `,
     });
