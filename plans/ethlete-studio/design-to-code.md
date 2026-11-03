@@ -3605,3 +3605,9 @@ studio` on the new commits.
      (c02c7aede, 1eb065b87, f07311c49), but the go is missing (go.json holds the old hash 4fd4095b3c562d4f, merged is
      a8cacb703e9e5945). canvas-frames was restored to HEAD and waits for Tom's pick. B223 landed in 6ba7806c6 (B219's
      refreshedBy/cause had never landed before it).
+
+### Pace decision (2026-11-03)
+
+- Tom: slow down. No new sub-agents until 15:00 today. Running sub-agents finish their current slice and get no
+  follow-up. The builder works the queue alone, one slice at a time: TS2345 fix check, then B229, B220
+  (title-bar), B227/B228.
