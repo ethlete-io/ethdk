@@ -3579,3 +3579,10 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      --product/--part run fails with exit 1. (2) The frame.ts import retry stays until the next full-run failure shows
      its cause. B227 adds the unknown-arg guard to every design subcommand. Open: a full `design check --product
 studio` on the new commits.
+
+283. B199 merge without a record (builder, 2026-11-03). The tree is byte-equal to canvas-frames variant c, apart
+     from the `@shared` -> `./shared` import rewrite in merge-shared.ts. Nothing records that c was merged or who
+     decided: sketch.json at HEAD has no `decision`, the merge deleted the sketch dir, and merged.json/pictures.json
+     hold only hashes. So Tom could not say for sure whether he merged c. Why no tool caught it: `sketch merge` never
+     had to prove a pick. Fix (B228): merge writes `{variant, decidedBy, at}` into merged.json and refuses a merge
+     without a recorded pick. B208 landed in 2d3251bfd; the settings.json restore proved B224 live.
