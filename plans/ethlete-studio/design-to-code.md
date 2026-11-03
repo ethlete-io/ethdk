@@ -3177,3 +3177,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 240. `design shot --crop` with a box outside the content returns an empty canvas without error (builder,
      2026-11-03); an agent can review a blank picture and call it fine. Fix: B163, fail with "crop box outside content
      (content box ...)".
+241. Studio disclosure padded its panel instead of its body (fixed f05409524); compare was 12/12 green because the
+     demo body is `display: contents` inside the padded panel, so both forms give the same geometry (builder,
+     2026-11-03). A demo that cannot tell two layouts apart cannot guard either. Fix: B164, a disclosure state whose
+     demo brings its own block body. Same slice: compare counts the design's `sameToggle` output as missed because the
+     app uses a `[(sameOpen)]` model; decided: the tool maps `model()` as input + `<name>Change` output (into B153).
