@@ -3626,3 +3626,19 @@ studio` on the new commits.
      the files draw (same lesson as title-bar r3, 281). Order rule: declaration migrations of a merged part are made
      before Tom's go. If the check shows the go stale, Tom gives it again. A draw-free go refresh is part of B220's
      draw-free signal.
+
+286. `instant` breaks the part type (builder, 2026-11-03, design check on a fresh dist after d2f70de3c). B194
+     (649b04940) taught the parser `instant`, but `PartSource` lacks it: TS2353 at canvas-frames.ts:219. Why no tool
+     caught it: B194's specs parse `instant` from a string, and no spec type-checks a part source that uses it. B229
+     type-checks libs, not design products. Fix (B231): add `instant` to `PartSource`, plus a spec in which a fixture
+     part using every key the parser reads passes tsc, and which compares the parser keys with the type keys. Tom's
+     canvas-frames go held after the instant edit (AUTO ACCEPTED). B226 is proven on the real part. go.json is
+     committed by Tom or Studio only, never by an agent.
+
+287. B198 (builder agent, 2026-11-03, f31d50339). The spec edit adds only a jsdom clientWidth mock, so red-check is
+     not red. The red proof is the e2e case "first load creates one iframe per frame and aborts no frame request":
+     HEAD 0/3, fix 3/3. canvas 107/108. Still red: "Large: listing refresh every 1 s for 6 s re-navigates no iframe"
+     (60 re-navigations). That is a separate refresh-path bug, B232. sketches-tree failed in the full run (reload
+     47767 ms) and passed alone; load from the parallel canvas suite is the guess, unproven. Why no tool caught the
+     refresh bug: the e2e case existed and was red, but nothing tied a red e2e case to an open B-item. Rule: a red
+     e2e case in an e2e-check quote names its B-item, or the report proposes one.
