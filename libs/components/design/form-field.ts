@@ -84,6 +84,8 @@ export type TextareaMockOptions = {
   /** Grows with its content, from `minRows` (default `rows`). On by default, like the real textarea. */
   autosize?: boolean;
   minRows?: number;
+  /** The native textarea's `aria-label`, for a field without a visible label. */
+  ariaLabel?: string;
 };
 
 /** The stylesheets `formField()`, `input()` and `textarea()` draw with: the real `et-form-field` CSS. */
@@ -144,6 +146,7 @@ export const textarea = (options: TextareaMockOptions = {}): FormFieldControlMoc
       state.invalid && 'aria-invalid="true"',
       state.describedBy && `aria-describedby="${state.describedBy}"`,
       state.labelId && `aria-labelledby="${state.labelId}"`,
+      options.ariaLabel && `aria-label="${options.ariaLabel}"`,
       `data-resize="${autosize ? 'none' : 'vertical'}"`,
       autosize && 'data-et-textarea-autosize=""',
       autosize && `style="--et-textarea-min-rows: ${options.minRows ?? rows}"`,

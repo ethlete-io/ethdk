@@ -24,6 +24,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
       id: 'comment-draft',
       placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
       rows: 3,
+      ariaLabel: 'Kommentar',
       disabled: busy,
       ...(text ? { value: text } : {}),
     },
@@ -48,7 +49,7 @@ export const commentDraft = async ({ text = '', phase, reason = '' }: Props) => 
     body: html`<div
       class="relative z-20 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
     >
-      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}${phase === 'error' ? problem('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? problem(reason) : ''}
+      ${field.body}${phase === 'error' ? problem('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? problem(reason) : ''}
       <div class="flex justify-end gap-space-2">
         ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
       </div>

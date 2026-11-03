@@ -37,6 +37,7 @@ export const textareaField = (options: TextareaFieldMockOptions = {}) => {
     mixed,
     mixedLabel = 'Mixed',
     force,
+    ariaLabel,
     ...field
   } = options;
   const forced = forceList(force);
@@ -47,6 +48,7 @@ export const textareaField = (options: TextareaFieldMockOptions = {}) => {
     rows,
     autosize,
     minRows,
+    ariaLabel,
   });
 
   let html = formField({
