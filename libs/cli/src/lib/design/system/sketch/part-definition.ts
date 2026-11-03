@@ -277,6 +277,23 @@ export const unreachableOf = (source: string): UnreachableSource[] | null => {
 };
 
 /**
+ * What a part file writes in `definePart({ instant: '…' })`, read without running it: `none` without the field,
+ * `unreadable` when it is not a non-empty string literal.
+ */
+export type InstantSource = { kind: 'none' } | { kind: 'declared'; reason: string } | { kind: 'unreadable' };
+
+export const instantOf = (source: string): InstantSource => {
+  const { definition } = definitionOf(source);
+  const value = definition ? propertyOf(definition, 'instant')?.initializer : undefined;
+
+  if (!value) return { kind: 'none' };
+
+  const reason = literalOf(value)?.trim();
+
+  return reason ? { kind: 'declared', reason } : { kind: 'unreadable' };
+};
+
+/**
  * What a part file writes in `definePart({ implements })`, read without running it: `none` without one, `unreadable`
  * when it is not a string literal or a `{ route: '…', component?: '…' }` literal.
  */

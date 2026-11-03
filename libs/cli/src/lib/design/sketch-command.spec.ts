@@ -135,6 +135,23 @@ describe('designSketch', { timeout: 120_000 }, () => {
       'acme',
     );
 
+  it('prints a NOTE on ready when a variant declares instant state switches', async () => {
+    const target = acme();
+    const lines = output();
+    const variantFile = join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/button/button.ts');
+
+    newButton(target);
+    writeFileSync(
+      variantFile,
+      readFileSync(variantFile, 'utf8').replace('render:', "instant: 'No motion by design.',\n  render:"),
+    );
+    await write(target, 'ready', 'components/button', '--product', 'acme');
+
+    expect(lines).toContain(
+      'NOTE components/button a: components/button declares instant state switches (no motion between its states): No motion by design.',
+    );
+  });
+
   it('refuses ready on open points the variant adds and lists the ones the merged part already has', async () => {
     const target = acme();
     const lines = output();

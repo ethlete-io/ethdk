@@ -316,4 +316,22 @@ describe('sketchAddedPointsOf', () => {
       ],
     });
   });
+
+  it('asks no motion between different states of a part that declares instant switches, but still a loop in an ongoing-work state', () => {
+    expect(
+      openPointsOf(
+        input({
+          parts: [
+            {
+              key: 'components/a',
+              layer: 'components',
+              linked: true,
+              controls: true,
+              motion: { states: ['closed', 'open', 'pending'], motions: [], unreachable: [], instant: true },
+            },
+          ],
+        }),
+      ),
+    ).toEqual([{ part: 'components/a', points: [{ kind: 'missing-motion', from: 'pending', to: 'pending' }] }]);
+  });
 });

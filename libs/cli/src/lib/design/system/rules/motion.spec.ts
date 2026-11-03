@@ -204,4 +204,22 @@ describe('badUnreachableOf', () => {
       'MOTION-UNREACHABLE-LITERAL an unreachable pair needs from, to and reason as string literals',
     ]);
   });
+
+  it('flags an instant that gives no reason literal and passes one that does', () => {
+    const instantProblemsOf = (value: string) => {
+      const target = acme();
+
+      write(
+        target,
+        'acme/elements/hero/hero.ts',
+        `import { definePart } from '@design-system';\nexport default definePart({ note: '', states: { closed: {}, open: {} }, instant: ${value}, render: () => ({ body: '', styles: '' }) });\n`,
+      );
+
+      return badUnreachableOf(resolveAcme(target)).map(({ rule }) => rule);
+    };
+
+    expect(instantProblemsOf("'Instant by design.'")).toEqual([]);
+    expect(instantProblemsOf('true')).toEqual(['MOTION-INSTANT']);
+    expect(instantProblemsOf("''")).toEqual(['MOTION-INSTANT']);
+  });
 });

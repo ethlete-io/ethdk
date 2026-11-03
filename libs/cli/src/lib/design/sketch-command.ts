@@ -37,7 +37,7 @@ import { ACCEPTED_FILE, MERGED_FILE, recordAutoMerge } from './system/sketch/mer
 import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
-import { sketchOpenPointsOf } from './system/read-open-points';
+import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
 import { THEMING_TEXT } from './system/theming-text';
 import {
@@ -825,6 +825,14 @@ const readyRefusalOf = (
   const { added, inherited } = openPointLinesOf({ product, sketch });
 
   inherited.forEach((line) => console.log(`NOTE ${line} (inherited from the merged part)`));
+
+  sketch.variants
+    .filter((variant) => !rejectionOf(sketch, variant))
+    .forEach((variant) =>
+      instantLinesOf(overlaySketch({ product, sketch, variant }), sketch.targets).forEach((line) =>
+        console.log(`NOTE ${sketch.target} ${variant}: ${line}`),
+      ),
+    );
 
   if (added.length > 0) return fail(`${added.join('\n')}\n${sketch.target} adds open points - close them before ready`);
 

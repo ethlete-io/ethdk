@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { declaresControlsOf, stateNamesOf, unreachableOf, widthsOf, withMadeBy, withNote } from './part-definition';
+import {
+  declaresControlsOf,
+  instantOf,
+  stateNamesOf,
+  unreachableOf,
+  widthsOf,
+  withMadeBy,
+  withNote,
+} from './part-definition';
 
 const part = `import { definePart } from '@design-system';
 export default definePart({
@@ -87,5 +95,19 @@ describe('unreachableOf', () => {
       { from: null, to: 'default', reason: 'x', literal: false },
       { from: 'a', to: 'b', reason: null, literal: true },
     ]);
+  });
+});
+
+describe('instantOf', () => {
+  const withInstant = (value: string) => part.replace('render:', `instant: ${value},\n  render:`);
+
+  it('reads a reason literal, none without the field, and unreadable for anything else', () => {
+    expect(instantOf(part)).toEqual({ kind: 'none' });
+    expect(instantOf(withInstant("'The app swaps the state.'"))).toEqual({
+      kind: 'declared',
+      reason: 'The app swaps the state.',
+    });
+    expect(instantOf(withInstant('true'))).toEqual({ kind: 'unreadable' });
+    expect(instantOf(withInstant("' '"))).toEqual({ kind: 'unreadable' });
   });
 });

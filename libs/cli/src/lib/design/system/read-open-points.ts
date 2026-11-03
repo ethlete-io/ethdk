@@ -11,7 +11,14 @@ import {
 import { goStateOf } from './part-go';
 import { RenderIssue } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
-import { declaresControlsOf, motionRefsOf, partLinkOf, stateNamesOf, unreachableOf } from './sketch/part-definition';
+import {
+  declaresControlsOf,
+  instantOf,
+  motionRefsOf,
+  partLinkOf,
+  stateNamesOf,
+  unreachableOf,
+} from './sketch/part-definition';
 import { listSketches } from './sketch/sketch';
 
 const isPair = <T extends { from: string | null; to: string | null }>(
@@ -28,6 +35,7 @@ const motionOf = (source: string): Pick<OpenPointsInput['parts'][number], 'motio
       states,
       motions: motionRefsOf(source).motions.filter(isPair),
       unreachable: (unreachableOf(source) ?? []).filter((pair) => !!pair.reason?.trim()).filter(isPair),
+      instant: instantOf(source).kind === 'declared',
     },
   };
 };
@@ -141,3 +149,15 @@ export const unlinkedPartsOf = (product: ResolvedProduct): string[] =>
   product.parts
     .filter((part) => part.origin !== 'base' && part.layer !== 'foundations' && partLinkOf(part.source).kind === 'none')
     .map(partKeyOf);
+
+/** One line per part of `targets` that declares instant state switches, with its reason. */
+export const instantLinesOf = (product: ResolvedProduct, targets: string[]): string[] =>
+  product.parts
+    .filter((part) => targets.includes(partKeyOf(part)))
+    .flatMap((part) => {
+      const instant = instantOf(part.source);
+
+      return instant.kind === 'declared'
+        ? [`${partKeyOf(part)} declares instant state switches (no motion between its states): ${instant.reason}`]
+        : [];
+    });

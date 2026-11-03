@@ -45,6 +45,7 @@ export type PartMotions = {
   states: string[];
   motions: { from: string; to: string }[];
   unreachable: { from: string; to: string }[];
+  instant?: boolean;
 };
 
 /**
@@ -83,6 +84,7 @@ const missingMotionsOf = (layer: Layer, motion: PartMotions | undefined): OpenPo
   if (!motion || STATELESS_LAYERS.includes(layer)) return [];
 
   const covered = (from: string, to: string) =>
+    (motion.instant && from !== to) ||
     [...motion.motions, ...motion.unreachable].some((pair) => pair.from === from && pair.to === to);
 
   return motion.states.flatMap((from) =>

@@ -146,6 +146,7 @@ the part, with `MOTION-NAME` when a rule names a motion the part does not declar
 A motion with `from` equal to `to` is the looping motion inside that state. `unreachable: [{ from: 'empty', to: 'default', reason: '…' }]`
 marks a pair no user reaches; `et design check` fails with `MOTION-UNREACHABLE-STATE`, `MOTION-UNREACHABLE-REASON` or
 `MOTION-UNREACHABLE-LITERAL` for an unknown state, an empty reason or a value that is no literal.
+A part whose states all switch without motion declares `instant: 'reason'` instead of listing every pair: it covers every pair of different states (a loop in an ongoing-work state is still asked for), `et design check` fails with `MOTION-INSTANT` when the value is no non-empty string literal, and `design sketch ready` prints `NOTE <sketch> <variant>: <part> declares instant state switches` for each variant that declares it. Keep `unreachable` for pairs no user reaches.
 
 In a frame, a rule switches the part by a morph: the tool draws the new state and changes only what differs in the existing DOM,
 so CSS transitions and `@starting-style` run. The named motion then runs `play(ctx)`, inside a View Transition with
@@ -345,10 +346,14 @@ fails an element with `data-et-action` that the state hides (`visibility: hidden
 `hidden` attribute is left out), fades to `opacity: 0`, draws at zero size, gives `pointer-events: none`, or buries
 so that a click at every point of its unclipped box lands on another element, for example `UNREACHABLE studio
 pages/sketches far-out at desktop: … - "Übernehmen" (emit:merge) is hidden (visibility: hidden) in a state that
-declares it`. `COVERED` fails an action, and a projected region (`slot(...)`, `data-et-projected`), where an opaque
-element of another subtree paints above any of its sample points, for example a sticky column panned over a canvas;
-open overlay panes and tooltips do not count. Neither rule is silenced by a `CLIPPED` skip; an element panned or
-clipped fully out of view is not judged.
+declares it`. `COVERED` fails an action where another element takes the click at any of its sample points, opaque or
+transparent (a transparent button laid over it counts), or an opaque element of another subtree paints above one; a
+projected region (`slot(...)`, `data-et-projected`) fails only under an opaque element. Open overlay panes and
+tooltips do not count. Neither rule is silenced by a `CLIPPED` skip; an element panned or clipped fully out of view is
+not judged. A canvas whose content pans on the wheel is swept: the check pans each clipping ancestor of an action
+in 32 px steps right, left, down and up to its end and judges the actions at every position, so an action that a
+sticky column or a header covers only after a pan fails with the position in the finding (`… when <canvas> is
+panned 384px right`).
 
 The design server answers the same list as JSON: `GET /__design/open-points?product=` lists every part with
 open points as `{ drawn: false, parts: [{ part, points }] }`, and `&part=<layer>/<name>` answers one part as
@@ -386,6 +391,13 @@ A go also stores `actions`, the sorted `data-et-action` keys every state of the 
 `ACTION-LOST` for a key a go stored that no part of the product draws now: moving an action to another part is fine,
 dropping it is not. A new go of the part stores its current keys and so confirms the removal. A go stored before
 `actions` is not checked.
+
+A product can list what its users can do in `.ethlete/design/<product>/capabilities.json`: a `capabilities` array of
+`{ "id", "label", "place" }`, where `place` is `{ "part", "action" }`, the part and the `data-et-action` key that draw
+the capability. `et design check` fails `CAPABILITY-PLACE` for a place whose part does not declare that action, and for
+an entry without a place. An entry without a place that names its backlog item in `missing` (`"missing": "B157"`) is a
+warning instead, so the list of known gaps can only shrink: a new entry needs a place or a backlog item, and an entry
+that has a place again must drop `missing`.
 
 An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
 
