@@ -45,7 +45,12 @@
   "components/standings": "46256b5151c3d9d9",
   "components/stat-tile": "e9fae2c8fab9eab1",
   "components/stream": "17760abcf3d4d98c",
-  "components/switch": "c3640b8f0e66c93c",
+  "components/switch": {
+    "hash": "cf20ece50e513f7b",
+    "variant": "b",
+    "decidedBy": "plan: finding 325",
+    "at": "2026-11-03T16:27:49.935Z"
+  },
   "components/table": "c5df0dfe12037f23",
   "components/tabs": "965ae70a1a173a15",
   "components/textarea": "7ac4a67d54c0a797",

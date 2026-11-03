@@ -808,5 +808,12 @@
     "note": "Impl Q102/Q110 (Tom, 2026-11-01): the menu part keeps the row attributes and marks a forced focus-visible row keyboard-active",
     "hash": "f220b05e404df291",
     "at": "2026-11-01T17:24:43.924Z"
+  },
+  {
+    "part": "components/switch",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by finding 325",
+    "hash": "cf20ece50e513f7b",
+    "at": "2026-11-03T16:27:51.405Z"
   }
 ]

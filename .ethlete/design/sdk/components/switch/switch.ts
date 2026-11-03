@@ -28,7 +28,7 @@ const columns = ['rest', ...INTERACTIONS, 'disabled'] as const;
 
 export default definePart({
   note: 'The SDK switch, drawn by its mock from @ethlete/components/design: alone off, on and indeterminate in every interaction, and inside an et-choice-field with a label in each size and as a card. The label area skips CLIPPED: its 1.2 line height rounds the 12 and 16 px line box down by under a pixel, with no glyph cut.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   states: {
     ...rowStates,
     'label-sm': { label: 'Email me updates', size: 'sm', checked: true },

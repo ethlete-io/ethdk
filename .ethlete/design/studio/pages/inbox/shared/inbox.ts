@@ -1,6 +1,5 @@
 import { definePart, drawing, html, slot, withAction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
-import { switchStyles } from '@ethlete/components/design/switch';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { commentDraft } from '@system/components/comment-draft';
 import { commentPinMark } from '@system/components/comment-pin';
@@ -395,7 +394,7 @@ export const inbox = () =>
           (dialog?.styles ?? '') +
           (writing?.styles ?? '') +
           commentRowStyles +
-          switchStyles +
+          resolved.styles +
           styles,
       });
     },
