@@ -55,6 +55,18 @@ describe('staleCliBuildMessage', () => {
     expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
   });
 
+  it('does nothing when the build lives outside root (a worktree sharing dist by symlink)', () => {
+    const other = mkdtempSync(join(tmpdir(), 'b267b-'));
+
+    try {
+      write(join(other, 'libs/cli/src/index.ts'), 'export const a = 99;');
+
+      expect(staleCliBuildMessage({ root: other, buildDir })).toBeUndefined();
+    } finally {
+      rmSync(other, { recursive: true, force: true });
+    }
+  });
+
   it('does nothing outside the sdk repo', () => {
     rmSync(join(root, 'libs'), { recursive: true });
 
