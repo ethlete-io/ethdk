@@ -49,7 +49,7 @@ export type PartMotions = {
 };
 
 /**
- * What the open points are read from. `controls` is whether the part declares any, `motion` is left out when its
+ * What the open points are read from. `controls` is whether the part declares any, `declaredNoControls` that it says outright it has none, `motion` is left out when its
  * states cannot be read; `missingStates` and `contrasts` come
  * from drawing the parts, so a check without a browser leaves them out.
  */
@@ -60,6 +60,7 @@ export type OpenPointsInput = {
     linked: boolean;
     go?: 'current' | 'missing' | 'stale';
     controls: boolean;
+    declaredNoControls?: boolean;
     motion?: PartMotions;
   }[];
   comments: { id: string; part: string; state: string; answered: boolean; resolved: boolean }[];
@@ -102,10 +103,10 @@ const rankOf = (point: OpenPoint) => OPEN_POINT_KINDS.indexOf(point.kind);
 
 /** The open points of each part that has any, in the order of `parts`, each list in the order of `OPEN_POINT_KINDS`. */
 export const openPointsOf = (input: OpenPointsInput): PartOpenPoints[] =>
-  input.parts.flatMap(({ key, layer, linked, go, controls, motion }) => {
+  input.parts.flatMap(({ key, layer, linked, go, controls, declaredNoControls, motion }) => {
     const stateful = !STATELESS_LAYERS.includes(layer);
     const points: OpenPoint[] = [
-      ...(stateful && !controls ? [{ kind: 'missing-state' as const, control: null }] : []),
+      ...(stateful && !controls && !declaredNoControls ? [{ kind: 'missing-state' as const, control: null }] : []),
       ...(stateful ? (input.missingStates ?? []) : [])
         .filter((missing) => missing.part === key)
         .map(({ control }) => ({ kind: 'missing-state' as const, control })),

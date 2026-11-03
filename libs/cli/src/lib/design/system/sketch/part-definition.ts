@@ -217,6 +217,21 @@ export const declaresControlsOf = (source: string) => {
   );
 };
 
+/** Whether a part file writes an explicit empty `controls: {}`, the part saying it has none. */
+export const declaresNoControlsOf = (source: string) => {
+  const { definition } = definitionOf(source);
+  const property = definition?.properties.find(
+    (candidate) => candidate.name && nameOf(candidate.name) === fieldName('controls'),
+  );
+
+  return (
+    !!property &&
+    ts.isPropertyAssignment(property) &&
+    ts.isObjectLiteralExpression(property.initializer) &&
+    property.initializer.properties.length === 0
+  );
+};
+
 const literalOf = (node: ts.Expression | undefined) =>
   node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : null;
 

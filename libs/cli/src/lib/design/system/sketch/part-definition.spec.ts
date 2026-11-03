@@ -3,6 +3,7 @@ import { definePart, type Part } from '../../../../../design/define-part';
 import {
   PARSED_PART_FIELDS,
   declaresControlsOf,
+  declaresNoControlsOf,
   instantOf,
   stateNamesOf,
   unreachableOf,
@@ -136,5 +137,16 @@ describe('PARSED_PART_FIELDS', () => {
     });
 
     expect(PARSED_PART_FIELDS.filter((field) => !(field in written))).toEqual([]);
+  });
+});
+
+describe('declaresNoControlsOf', () => {
+  it('is true only for an explicit empty controls object', () => {
+    expect(declaresNoControlsOf(part)).toBe(false);
+    expect(declaresNoControlsOf(part.replace('render:', 'controls: {},\n  render:'))).toBe(true);
+    expect(declaresNoControlsOf(part.replace('render:', "controls: { a: { kind: 'button' } },\n  render:"))).toBe(
+      false,
+    );
+    expect(declaresNoControlsOf(part.replace('render:', 'controls,\n  render:'))).toBe(false);
   });
 });

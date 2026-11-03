@@ -13,6 +13,7 @@ import { RenderIssue } from './render-check';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import {
   declaresControlsOf,
+  declaresNoControlsOf,
   instantOf,
   motionRefsOf,
   partLinkOf,
@@ -47,6 +48,7 @@ const partInputsOf = (product: ResolvedProduct): OpenPointsInput['parts'] =>
     linked: partLinkOf(part.source).kind !== 'none',
     go: goStateOf({ product, part: partKeyOf(part) }),
     controls: declaresControlsOf(part.source),
+    declaredNoControls: declaresNoControlsOf(part.source),
     ...motionOf(part.source),
   }));
 

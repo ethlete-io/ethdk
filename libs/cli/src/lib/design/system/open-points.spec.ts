@@ -66,6 +66,23 @@ describe('openPointsOf', () => {
     ]);
   });
 
+  it('skips the no controls point for a part that declares an empty controls, not one without the key', () => {
+    const part = (key: string, declaredNoControls?: boolean) => ({
+      key,
+      layer: 'components' as const,
+      linked: true,
+      controls: false,
+      declaredNoControls,
+    });
+
+    expect(
+      openPointsOf(input({ parts: [part('components/a', true), part('components/b', false), part('components/c')] })),
+    ).toEqual([
+      { part: 'components/b', points: [{ kind: 'missing-state', control: null }] },
+      { part: 'components/c', points: [{ kind: 'missing-state', control: null }] },
+    ]);
+  });
+
   it('takes the rendered missing states and contrasts of each part, missing states not on a page', () => {
     expect(
       openPointsOf(
