@@ -3642,3 +3642,18 @@ studio` on the new commits.
      47767 ms) and passed alone; load from the parallel canvas suite is the guess, unproven. Why no tool caught the
      refresh bug: the e2e case existed and was red, but nothing tied a red e2e case to an open B-item. Rule: a red
      e2e case in an e2e-check quote names its B-item, or the report proposes one.
+
+288. B231 + canvas-frames commit (builder a6, fresh session, 2026-11-03). B231 7f431e9f1: the parser reads top-level
+     fields only through PARSED_PART_FIELDS, and a spec asserts that list ⊆ keyof Part plus a tsc fixture. ⊆ rather
+     than == is right, because Part also carries render-only fields the static parser never reads. red-check was not
+     run (owed). canvas-frames c + instant landed in b0996d580, 4aa34ad7e and 4c0336b02. Tom committed the go
+     (206b65635). B179's diff landed in dd5ff755d. part-go.spec "stores a go with an open point" failed once inside
+     `yarn commit` and passed alone; it gets a B-item if it recurs. B221-nobrowser: 7566ed0e9; red-check not proven
+     (killed twice under load); a full studio check is owed. Three tool decisions (doc-agent, technical):
+     - DROPPED-PROP on canvas-frames: the app component has no `mark` (loading/failed) or `heads` input, so compare
+       cannot check 4 states. The tool did its job. B233 adds the inputs after B216.
+     - CLASS-GLUED-INTERPOLATION at canvas-frames.ts:100 is a false positive: every branch of the hole starts with
+       whitespace. B234 lets such a hole pass, and the part stays unchanged after the go.
+     - Stale dist: `nx compile cli` does not refresh dist/libs/cli/design, so a TYPE-ERROR came from a stale build,
+       and only a separate WARN line said so. B235: with a dist older than its source, `design` exits 2 "dist stale -
+       nx build cli" before it prints any finding.
