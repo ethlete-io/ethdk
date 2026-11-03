@@ -34,12 +34,12 @@ import {
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergeAndRecord } from './system/sketch/merge-step';
 import { ACCEPTED_FILE, MERGED_FILE, recordAutoMerge } from './system/sketch/merged-parts';
-import { groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
+import { BusyState, groupedIssueLinesOf, renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
-import { withLoopMotionHint } from './loop-motion-hint';
+import { SketchVariant } from './system/system-modules';
 import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
 import {
@@ -678,6 +678,11 @@ const renderedAndReady = async (context: Context, found: { product: ResolvedProd
   if ('issues' in rendered && rendered.issues.length > 0)
     return fail(`${sketch.target} has problems - fix them before ready`);
 
+  const busyAdded = 'issues' in rendered ? openPointLinesOf({ product, sketch, busy: rendered.busy ?? [] }).added : [];
+
+  if (busyAdded.length > 0)
+    return fail(`${busyAdded.join('\n')}\n${sketch.target} adds open points - close them before ready`);
+
   return loadedAndReady(context, found);
 };
 
@@ -810,11 +815,24 @@ const variantGateProblemsOf = (options: {
   problems: Problem[];
 }): Problem[] => [...options.problems, ...formatProblemsOf(options), ...unusedInVariantOf(options)];
 
-const openPointLinesOf = ({ product, sketch }: { product: ResolvedProduct; sketch: Sketch }) => {
+const busyOfVariant = (busy: BusyState[], sketch: SketchVariant) =>
+  busy
+    .filter((entry) => entry.sketch?.target === sketch.target && entry.sketch.variant === sketch.variant)
+    .map(({ part, state }) => ({ part, state }));
+
+const openPointLinesOf = ({
+  product,
+  sketch,
+  busy = [],
+}: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  busy?: BusyState[];
+}) => {
   const pointLinesOf = (variant: string, list: PartOpenPoints[]) =>
     openPointsText(product.name, list)
       .slice(1)
-      .map((line) => `${sketch.target} ${variant}: ${withLoopMotionHint(line.trim())}`);
+      .map((line) => `${sketch.target} ${variant}: ${line.trim()}`);
   const points = sketch.variants
     .filter((variant) => !rejectionOf(sketch, variant))
     .map((variant) => ({
@@ -823,6 +841,7 @@ const openPointLinesOf = ({ product, sketch }: { product: ResolvedProduct; sketc
         merged: product,
         variant: overlaySketch({ product, sketch, variant }),
         targets: sketch.targets,
+        busy: { merged: [], variant: busyOfVariant(busy, { target: sketch.target, variant }) },
       }),
     }));
 
@@ -1076,6 +1095,23 @@ const checked = async (context: Context) => {
     failed ||= all.length > 0;
   }
 
+  if (!failed)
+    for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
+      (await aktuellPlaceholderWarnings({ target, config, product, sketch })).forEach((warning) =>
+        console.warn(warning),
+      );
+
+  const rendered = failed
+    ? null
+    : await renderedVariantsOf({
+        target,
+        config,
+        product,
+        entries: chosen,
+        drawn: true,
+      });
+  const busy = rendered !== null && 'issues' in rendered ? (rendered.busy ?? []) : [];
+
   let refused = 0;
   let notReady = false;
   const refuse = (lines: string[]) => {
@@ -1088,7 +1124,11 @@ const checked = async (context: Context) => {
 
     const before = refused;
 
-    refuse([...unloaded, ...openPointLinesOf({ product, sketch }).added, ...[roundNoteRefusalOf(sketch) ?? []].flat()]);
+    refuse([
+      ...unloaded,
+      ...openPointLinesOf({ product, sketch, busy }).added,
+      ...[roundNoteRefusalOf(sketch) ?? []].flat(),
+    ]);
 
     if (!failed && unloaded.length === 0) refuse(await identicalRenderLines({ target, config, product, sketch }));
 
@@ -1104,18 +1144,7 @@ const checked = async (context: Context) => {
 
   if (failed) return 1;
 
-  for (const sketch of new Set(chosen.map((entry) => entry.sketch)))
-    (await aktuellPlaceholderWarnings({ target, config, product, sketch })).forEach((warning) => console.warn(warning));
-
-  const rendered = await renderedVariantsOf({
-    target,
-    config,
-    product,
-    entries: chosen,
-    drawn: true,
-  });
-
-  if ('issues' in rendered && rendered.issues.length > 0) return 1;
+  if (rendered !== null && 'issues' in rendered && rendered.issues.length > 0) return 1;
 
   if (notReady) return 1;
 

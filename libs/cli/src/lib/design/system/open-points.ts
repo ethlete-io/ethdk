@@ -226,6 +226,9 @@ const contrastText = (points: OpenPoint[]) => {
 
 const LISTED_MOTIONS = 6;
 
+const loopEntriesOf = (states: string[]) =>
+  states.map((state) => `${state}: { from: '${state}', to: '${state}' }`).join(', ');
+
 const missingMotionText = (points: OpenPoint[]) => {
   const missing = points.flatMap((point) => (point.kind === 'missing-motion' ? [point] : []));
   const pairs = missing.filter(({ from, to }) => from !== to).map(({ from, to }) => `${from} -> ${to}`);
@@ -236,7 +239,7 @@ const missingMotionText = (points: OpenPoint[]) => {
   return [
     ...(pairs.length === 1 ? [`no motion ${pairs[0]}`] : []),
     ...(pairs.length > 1 ? [`${plural(pairs.length, 'missing motion')} (${listed}${more})`] : []),
-    ...(loops.length > 0 ? [`no looping motion in ${loops.join(', ')}`] : []),
+    ...(loops.length > 0 ? [`no looping motion in ${loops.join(', ')} (add to motions: ${loopEntriesOf(loops)})`] : []),
   ].join('; ');
 };
 

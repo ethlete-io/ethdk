@@ -198,6 +198,42 @@ describe('designSketch', { timeout: 120_000 }, () => {
     vi.mocked(sketchOpenPointsOf).mockImplementation(() => ({ added: [], inherited: [] }));
   });
 
+  it('counts a state the variant draws busy as ongoing work in check and ready', async () => {
+    const target = acme();
+    const lines = output();
+    const busyRender = {
+      issues: [],
+      warnings: [],
+      grids: [],
+      drawn: [],
+      busy: [
+        {
+          product: 'acme',
+          part: 'components/button',
+          state: 'long',
+          sketch: { target: 'components/button', variant: 'a' },
+        },
+      ],
+    };
+    const loop =
+      "components/button a: components/button: no looping motion in long (add to motions: long: { from: 'long', to: 'long' })";
+
+    vi.mocked(sketchOpenPointsOf).mockImplementation(await actualSketchOpenPoints());
+    newButton(target);
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void lines.push(String(line)));
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce(busyRender);
+
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines).toContain(`ready will refuse: ${loop}`);
+
+    vi.mocked(renderIssuesOf).mockResolvedValueOnce(busyRender);
+
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.at(-1)).toBe(`${loop}\ncomponents/button adds open points - close them before ready`);
+
+    vi.mocked(sketchOpenPointsOf).mockImplementation(() => ({ added: [], inherited: [] }));
+  });
+
   it('refuses ready on every open point of a new part', async () => {
     const target = acme();
     const lines = output();

@@ -279,7 +279,28 @@ describe('openPointsText', () => {
     expect(openPointsText('acme', list)).toEqual([
       'OPEN POINTS acme: 14 in 2 parts',
       '  components/a: no motion collapsed -> expanded',
-      '  components/b: 12 missing motions (rest -> hover, rest -> loading, rest -> disabled, hover -> rest, hover -> loading, hover -> disabled, +6 more); no looping motion in loading',
+      "  components/b: 12 missing motions (rest -> hover, rest -> loading, rest -> disabled, hover -> rest, hover -> loading, hover -> disabled, +6 more); no looping motion in loading (add to motions: loading: { from: 'loading', to: 'loading' })",
+    ]);
+  });
+
+  it('names one motions entry per looping state', () => {
+    const list = openPointsOf(
+      input({
+        parts: [
+          {
+            key: 'components/b',
+            layer: 'components',
+            linked: true,
+            controls: true,
+            motion: { states: ['loading', 'pending'], motions: [], unreachable: [], instant: true },
+          },
+        ],
+      }),
+    );
+
+    expect(openPointsText('acme', list)).toEqual([
+      'OPEN POINTS acme: 2 in 1 part',
+      "  components/b: no looping motion in loading, pending (add to motions: loading: { from: 'loading', to: 'loading' }, pending: { from: 'pending', to: 'pending' })",
     ]);
   });
 });
