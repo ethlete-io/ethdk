@@ -172,6 +172,28 @@ describe('listSystem', () => {
     expect(problemsOf('home')).toEqual([]);
   });
 
+  it('lists the component file a part implements, by its own path or by its route link', async () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/chip/chip.ts',
+      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: 'libs/chip/chip.component.ts', states: { default: {} }, render: () => drawing({ body: '' }) });\n",
+    );
+    write(
+      target,
+      'acme/elements/panel/panel.ts',
+      "import { definePart, drawing } from '@design-system';\nexport default definePart({ implements: { route: '/', component: './libs/panel.component.ts' }, states: { default: {} }, render: () => drawing({ body: '' }) });\n",
+    );
+
+    const [product] = await list(target, ['acme']);
+    const implementsOf = (name: string) => product?.parts.find((part) => part.name === name)?.implements;
+
+    expect(implementsOf('chip')).toBe('libs/chip/chip.component.ts');
+    expect(implementsOf('panel')).toBe('libs/panel.component.ts');
+    expect(implementsOf('hero')).toBeUndefined();
+  });
+
   it("lists a part's widths when they are a list of positive numbers, and a WIDTHS problem when they are not", async () => {
     const target = acme();
     const withWidths = (path: string, widths: string) => {

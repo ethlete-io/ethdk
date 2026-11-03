@@ -7,6 +7,7 @@ import {
   ListedSketch,
   PartAddress,
   SketchRound,
+  SystemProblem,
   callShotUrl,
   frameUrl,
   partFrameUrl,
@@ -94,17 +95,41 @@ export const partKeyOf = (part: Pick<ListedPart, 'layer' | 'name'>) => `${part.l
 
 const badgesOf = (
   part: ListedPart,
-  { sketched, marks }: { sketched: ReadonlySet<string>; marks: CommentMarks },
+  { sketched, marks, problems }: { sketched: ReadonlySet<string>; marks: CommentMarks; problems: SystemProblem[] },
 ): PartBadge[] => [
   ...(part.origin === 'base' ? (['from base'] as const) : []),
   ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
   ...(part.changedOutsideSketch ? (['changed'] as const) : []),
   ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
   ...commentBadgesOf(partKeyOf(part), marks),
-  ...(part.problems.length > 0 ? (['error'] as const) : []),
+  ...(problems.length > 0 ? (['error'] as const) : []),
 ];
 
+const problemTitleOf = (problems: SystemProblem[]) =>
+  problems.map((found) => `${found.rule}: ${found.message}`).join('\n');
+
+const ownerOf = (parts: ListedPart[], file: string) =>
+  parts.find((part) => part.implements === file) ??
+  parts.find((part) => part.implements !== undefined && file.startsWith(part.implements.replace(/[^/]*$/, '')));
+
+/** The product-level problems each part owns through the component file it implements, and those no part owns. */
+const productProblemsOf = (parts: ListedPart[], problems: SystemProblem[]) => {
+  const owned = new Map<ListedPart, SystemProblem[]>();
+  const unowned: SystemProblem[] = [];
+
+  for (const problem of problems) {
+    const owner = ownerOf(parts, problem.file);
+
+    if (owner) owned.set(owner, [...(owned.get(owner) ?? []), problem]);
+    else unowned.push(problem);
+  }
+
+  return { owned, unowned };
+};
+
 const SKETCH_KEY = 'sketch:';
+
+const PRODUCT_KEY = 'product';
 
 export const sketchKeyOf = (target: string) => `${SKETCH_KEY}${target}`;
 
@@ -118,7 +143,10 @@ const sketchEntryOf = (
 ): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
-  title: sketch.target,
+  title:
+    (sketch.problems ?? [])
+      .flatMap(({ variant, problems }) => problems.map((found) => `${variant}: ${found.rule}: ${found.message}`))
+      .join('\n') || sketch.target,
   ...commentsOf(sketch.target, marks),
   badges: [
     merging ? 'merging' : sketch.status,
@@ -265,8 +293,26 @@ export const treeOf = (
   };
   const partMarks = marksOf(false);
   const sketchMarks = marksOf(true);
+  const { owned, unowned } = productProblemsOf(parts, product?.problems ?? []);
+  const productGroups: TreeGroup[] =
+    product && unowned.length > 0
+      ? [
+          {
+            key: PRODUCT_KEY,
+            label: STUDIO_LABELS.systemTree.product,
+            entries: [
+              {
+                key: `${PRODUCT_KEY}:${product.name}`,
+                name: product.name,
+                title: problemTitleOf(unowned),
+                badges: ['error'],
+              },
+            ],
+          },
+        ]
+      : [];
 
-  return SYSTEM_GROUPS.flatMap(({ key, label, holds }) => {
+  const groups = SYSTEM_GROUPS.flatMap(({ key, label, holds }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);
     if (key === 'sketches')
       return [
@@ -281,14 +327,13 @@ export const treeOf = (
 
     const entryOf = (part: ListedPart): TreeEntry => {
       const frames = product ? treeFramesOf(product, part) : [];
+      const problems = [...part.problems, ...(owned.get(part) ?? [])];
 
       return {
         key: partKeyOf(part),
         name: part.name,
-        ...(part.problems.length > 0
-          ? { title: part.problems.map((found) => `${found.rule}: ${found.message}`).join('\n') }
-          : {}),
-        badges: badgesOf(part, { sketched, marks: partMarks }),
+        ...(problems.length > 0 ? { title: problemTitleOf(problems) } : {}),
+        badges: badgesOf(part, { sketched, marks: partMarks, problems }),
         ...commentsOf(partKeyOf(part), partMarks),
         ...(isWireframe(part) ? { count: part.kitUses } : {}),
         ...(frames.length > 1 ? { frames } : {}),
@@ -299,6 +344,8 @@ export const treeOf = (
 
     return [{ key, label, entries: parts.filter(holds).map(entryOf) }];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
+
+  return [...productGroups, ...groups];
 };
 
 export type FramesSource = {

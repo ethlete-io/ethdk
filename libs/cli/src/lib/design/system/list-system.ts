@@ -1,4 +1,4 @@
-import { dirname, relative, sep } from 'path';
+import { dirname, relative, resolve, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
 import { DesignColorScheme, DesignPreset } from '../paths';
 import { ruleProblemsOf } from './check-system';
@@ -7,6 +7,7 @@ import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
+import { partLinkOf } from './sketch/part-definition';
 import { SystemModules } from './system-modules';
 import { drawnStateNamesOf } from './unchanged-rows';
 import { unusedBasePartsOf } from './unused-base-parts';
@@ -19,6 +20,8 @@ export type ListedPart = {
   origin: PartOrigin;
   /** The part's module file, relative to the workspace. */
   file: string;
+  /** The app component file the part's `implements` names, relative to the workspace. */
+  implements?: string;
   note: string | null;
   /** The model ids that drew the part, written by the last sketch merge; empty when none is known. */
   madeBy: string[];
@@ -247,6 +250,13 @@ const pageReachOf = (system: SystemModules) =>
       }));
   });
 
+const implementsOf = (options: { target: string; source: string }) => {
+  const link = partLinkOf(options.source);
+  const path = link.kind === 'component' ? link.path : link.kind === 'route' ? link.component : null;
+
+  return path === null ? {} : { implements: relative(options.target, resolve(options.target, path)) };
+};
+
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
 
@@ -344,6 +354,7 @@ export const listSystem = async (options: {
                 name: part.name,
                 origin: part.origin,
                 file: relative(target, part.file),
+                ...implementsOf({ target, source: part.source }),
                 note,
                 madeBy,
                 states,

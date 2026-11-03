@@ -231,6 +231,8 @@ export type ListedPart = {
   origin: PartOrigin;
   /** The part's module file, relative to the checkout. Missing from an `@ethlete/cli` older than part files. */
   file?: string;
+  /** The app component file the part's `implements` names. Missing from an `@ethlete/cli` older than listed links. */
+  implements?: string;
   note: string | null;
   states: string[];
   widths?: number[];

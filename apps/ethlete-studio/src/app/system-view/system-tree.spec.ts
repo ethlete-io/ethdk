@@ -1,4 +1,5 @@
-import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches } from '../../host/design';
+import listing from './__fixtures__/studio-listing.json';
 import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
   callFramesOf,
@@ -15,6 +16,7 @@ import {
   sketchMatrixOf,
   sketchRoundsOf,
   stateRowKeyOf,
+  TreeEntry,
   treeOf,
 } from './system-tree';
 import { CompareRow, mergeOutlinesOf } from './merge-preview';
@@ -113,6 +115,66 @@ const call = (overrides: Partial<Extract<ListedCall, { headline: string }>> = {}
     { key: 'b', name: 'Ghost' },
   ],
   ...overrides,
+});
+
+describe('product problems in the tree', () => {
+  const problem = (file: string, message = 'm') => ({ rule: 'UNBOUND-INPUT', file, message });
+
+  it('puts a product problem on the part that implements its file, or whose component folder holds it', () => {
+    const parts = [
+      part({ layer: 'pages', name: 'inbox', implements: 'app/inbox/inbox.component.ts' }),
+      part({ layer: 'pages', name: 'system', implements: 'app/system/system.component.ts' }),
+    ];
+    const tree = treeOf(parts, {
+      product: {
+        ...product(parts),
+        problems: [problem('app/inbox/inbox.component.ts', 'draft'), problem('app/system/system-store.ts', 'send')],
+      },
+    });
+
+    expect(tree.map((group) => group.key)).toEqual(['pages']);
+    expect(tree[0]?.entries.map((entry) => [entry.name, entry.title, entry.badges])).toEqual([
+      ['inbox', 'UNBOUND-INPUT: draft', ['error']],
+      ['system', 'UNBOUND-INPUT: send', ['error']],
+    ]);
+  });
+
+  it('gives the problems no part owns one product row', () => {
+    const parts = [part({ implements: 'app/button/button.component.ts' })];
+    const tree = treeOf(parts, {
+      product: { ...product(parts), problems: [problem('app/shell.ts', 'a'), problem('app/other.ts', 'b')] },
+    });
+
+    expect(tree.map((group) => group.key)).toEqual(['product', 'components']);
+    expect(tree[0]?.entries).toEqual([
+      { key: 'product:acme', name: 'acme', title: 'UNBOUND-INPUT: a\nUNBOUND-INPUT: b', badges: ['error'] },
+    ]);
+    expect(tree[1]?.entries[0]?.badges).toEqual([]);
+  });
+
+  it('brings every problem of a captured studio listing to a tree row that shows the error', () => {
+    const [studio] = listing.system as unknown as ListedProduct[];
+    const { sketches } = listing.sketches as unknown as ListedSketches;
+
+    if (!studio) throw new Error('the captured listing has no product');
+
+    const rows = treeOf(studio.parts, { product: studio, sketches }).flatMap((group) => [
+      ...group.entries,
+      ...(group.sections ?? []).flatMap((section) => section.entries),
+    ]);
+    const lines = (entry: TreeEntry) => (entry.badges.includes('error') ? (entry.title ?? '').split('\n') : []);
+    const shown = rows.flatMap(lines);
+    const listed = [
+      ...studio.problems,
+      ...studio.parts.flatMap((listedPart) => listedPart.problems),
+      ...sketches.flatMap((listedSketch) => (listedSketch.problems ?? []).flatMap((entry) => entry.problems)),
+    ];
+
+    expect(listed.length).toBeGreaterThanOrEqual(6);
+    expect(listed.filter((found) => !shown.some((line) => line.endsWith(`${found.rule}: ${found.message}`)))).toEqual(
+      [],
+    );
+  });
 });
 
 describe('treeOf with calls', () => {
@@ -543,8 +605,29 @@ describe('sketches in the tree', () => {
     expect(tree[0]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
     expect(tree[1]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
       ['sketch:components/button', 'button', 'components/button', ['in progress']],
-      ['sketch:elements/header', 'header', 'elements/header', ['ready', 'error']],
+      ['sketch:elements/header', 'header', 'a: LAYER: m', ['ready', 'error']],
     ]);
+  });
+
+  it('titles a sketch with one line per problem, naming its variant and rule', () => {
+    const [, sketches] = treeOf([part()], {
+      sketches: [
+        sketch({
+          problems: [
+            { variant: 'a', problems: [] },
+            {
+              variant: 'b',
+              problems: [
+                { rule: 'LAYER', file: 'x', message: 'uses a page' },
+                { rule: 'HARD-CODED-COLOUR', file: 'y', message: '#fff' },
+              ],
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(sketches?.entries[0]?.title).toBe('b: LAYER: uses a page\nb: HARD-CODED-COLOUR: #fff');
   });
 
   it('marks a sketch only with the comments made in it, not those of an earlier sketch on its target', () => {
