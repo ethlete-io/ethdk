@@ -27,7 +27,6 @@ const frame = ({ width, shot, look = '', loading = false }: Props) =>
   html`<div
     class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]"
     data-sk-frame
-    data-et-skip="CLIPPED"
   >
     <div
       class="w-(--w) origin-top-left scale-(--sk-scale) ${look}"

@@ -18,7 +18,6 @@ export const variantCellStyles = styles + loaderStyles;
 const loadingBadge = html`<span
   class="flex shrink-0 items-center gap-space-1 text-ui-xs text-et-surface-muted"
   data-loading-badge
-  data-et-skip="CLIPPED"
   >${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span
 >`;
 
@@ -28,7 +27,6 @@ const frame = ({ width, shot, look = '', loading = false }: Props) =>
   html`<div
     class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]"
     data-sk-frame
-    data-et-skip="CLIPPED"
   >
     <div
       class="w-(--w) origin-top-left scale-(--sk-scale) ${look}"
