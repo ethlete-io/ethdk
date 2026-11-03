@@ -3594,3 +3594,14 @@ studio` on the new commits.
 - canvas-frames (Tom does not remember merging it; no recorded pick): the builder restores the element and the sketch
   to HEAD, and Tom picks again in Studio. The merge, the `instant` migration and the B226 real repro follow that
   pick. This case is B228's real reproduction.
+
+284. HEAD's cli did not compile (builder, 2026-11-03). 5f839ff40 (B221 timeout redraw) has TS2345 in
+     render-check.ts:526-536, so `yarn design` (nx build cli) failed and every run used a stale dist from 11:49. The
+     full studio check therefore did not cover a293f319f..ecf7b626b. Why no tool caught it: `yarn commit` runs only
+     the related vitest specs, and vitest transpiles without a type check, so a type error lands green. The pre-push
+     typecheck comes too late for unpushed slices that the next slice builds on. Fix (B229, decided, technical):
+     `yarn commit` also runs `tsc --noEmit -p <lib>/tsconfig.lib.json` for each lib it touches, in the same throwaway
+     worktree. B221 goes back to built until the type fix lands and the full check reruns. Also: pages/system merged
+     (c02c7aede, 1eb065b87, f07311c49), but the go is missing (go.json holds the old hash 4fd4095b3c562d4f, merged is
+     a8cacb703e9e5945). canvas-frames was restored to HEAD and waits for Tom's pick. B223 landed in 6ba7806c6 (B219's
+     refreshedBy/cause had never landed before it).
