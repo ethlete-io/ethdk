@@ -53,9 +53,7 @@ export const createRevisionWorktree = (repo, commit) => {
       git(repo, 'worktree', 'remove', '--force', dir);
     } catch {
       rmSync(dir, { recursive: true, force: true });
-      try {
-        git(repo, 'worktree', 'prune');
-      } catch {}
+      spawnSync('git', ['worktree', 'prune'], { cwd: repo });
     }
     rmSync(join(dir, '..'), { recursive: true, force: true });
   };
@@ -97,7 +95,7 @@ export const runSuite = (
   repo,
   suite,
   built,
-  { script, onLine = () => {}, heartbeatMs = HEARTBEAT_MS, idleMs = IDLE_MS, sample = sampleLoad } = {},
+  { script, onLine = () => undefined, heartbeatMs = HEARTBEAT_MS, idleMs = IDLE_MS, sample = sampleLoad } = {},
 ) =>
   new Promise((resolve) => {
     const started = Date.now();
@@ -172,6 +170,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(2);
   }
 
+  const startedAt = Date.now();
+  const stamp = (phase) =>
+    console.log(`[e2e-check ${new Date().toISOString()} +${((Date.now() - startedAt) / 1000).toFixed(1)}s] ${phase}`);
   const mainRepo = git(process.cwd(), 'rev-parse', '--show-toplevel');
   const files = changedFilesOf(mainRepo, commit);
   const tree = createRevisionWorktree(mainRepo, commit);
@@ -188,7 +189,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const results = [];
 
   console.log(
-    `e2e-check ${commit.slice(0, 9)} (suite sha ${tree.sha}): ${files.length} changed file${files.length === 1 ? '' : 's'}`,
+    `e2e-check ${commit.slice(0, 9)} (suite sha ${tree.sha}, tree ${tree.dir}): ${files.length} changed file${files.length === 1 ? '' : 's'}`,
   );
   uncovered.forEach((file) => console.log(`no e2e covers ${file}`));
 
@@ -201,6 +202,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const scratch = mkdtempSync(join(tmpdir(), 'e2e-check-'));
 
       try {
+        stamp('cli build starting');
         execFileSync('npx', ['nx', 'build', 'cli', '--skip-nx-cache'], {
           cwd: repo,
           stdio: 'ignore',
@@ -210,12 +212,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
         if (problem) throw new Error(`cli build does not match the revision: ${problem}`);
 
+        stamp('studio build starting');
         execFileSync(
           'npx',
           ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
           { cwd: repo, stdio: 'ignore', env: { ...process.env, NX_NO_CLOUD: 'true' } },
         );
+        stamp('studio build done');
         for (const suite of suites) {
+          stamp(`${suite} starting`);
           const run = await runSuite(repo, suite, scratch, {
             onLine: (line) => console.log(`  [${suite}] ${line}`),
           });

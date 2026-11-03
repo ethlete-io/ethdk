@@ -104,13 +104,15 @@ test('the worktree is the named revision, not the dirty main tree, and is remove
   assert.ok(!sh(repo, 'worktree', 'list').includes(tree.dir));
 });
 
-test('the result line carries the sha the suite ran at and no worktree is left behind', () => {
+test('the result line carries the sha the suite ran at and its own worktree is removed', () => {
   const repo = sh(process.cwd(), 'rev-parse', '--show-toplevel');
   const sha = sh(repo, 'rev-parse', '9e7ebf434');
-  const before = sh(repo, 'worktree', 'list');
   const out = spawnSync('node', ['tools/scripts/e2e-check.mjs', sha, '--list'], { cwd: repo, encoding: 'utf8' }).stdout;
+  const dir = /, tree (\S+)\)/.exec(out)?.[1];
+  assert.ok(dir, out);
   assert.ok(out.split('\n').some((line) => line.startsWith('E2E ') && line.includes(`suite sha ${sha}`)));
-  assert.equal(sh(repo, 'worktree', 'list'), before);
+  assert.equal(existsSync(dir), false);
+  assert.ok(!sh(repo, 'worktree', 'list').includes(dir));
 });
 
 test('a suite that goes silent is killed after the idle limit and names the last case it reached', async () => {
@@ -206,4 +208,12 @@ test('cliBuildProblem skips the hash for a revision before the guard', () => {
   rmSync(join(dir, 'libs/cli/src/lib/source-hash.ts'));
   assert.equal(check.cliBuildProblem(dir), undefined);
   rmSync(dir, { recursive: true, force: true });
+});
+
+test('a harness phase line carries the wall time and the seconds since the harness started', async () => {
+  const { phaseLine } = await import('./verify-studio-headless.mjs');
+  assert.equal(
+    phaseLine('design server ready on port 4500', Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1, 0, 0, 12, 340)),
+    '[studio-headless 2026-01-01T00:00:12.340Z +12.3s] design server ready on port 4500',
+  );
 });

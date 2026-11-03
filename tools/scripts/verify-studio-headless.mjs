@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripVTControlCharacters } from 'node:util';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const cliEntry = resolve(root, process.env['STUDIO_CLI_ENTRY'] ?? 'dist/libs/cli/src/index.js');
@@ -15,6 +16,9 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.json': 'application/json',
 };
+
+export const phaseLine = (phase, startedAt, now = Date.now()) =>
+  `[studio-headless ${new Date(now).toISOString()} +${((now - startedAt) / 1000).toFixed(1)}s] ${phase}`;
 
 const listen = (server) => new Promise((done) => server.listen(0, '::1', () => done(server.address().port)));
 
@@ -27,18 +31,24 @@ const serveStatic = (dir) =>
     response.end(readFileSync(path));
   });
 
-const startDesignServer = (checkout) =>
+const startDesignServer = (checkout, stamp) =>
   new Promise((resolvePort, reject) => {
+    stamp(`design server starting in ${checkout}`);
     const child = spawn(process.execPath, [cliEntry, 'design', checkout], {
       cwd: checkout,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
+    let ready = false;
     const onData = (chunk) => {
       output += chunk;
-      const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(output.replace(/\u001b\[[0-9;]*m/g, ''))?.[1];
+      const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(stripVTControlCharacters(output))?.[1];
 
-      if (port) resolvePort({ child, port: Number(port) });
+      if (port && !ready) {
+        ready = true;
+        stamp(`design server ready on port ${port}`);
+        resolvePort({ child, port: Number(port) });
+      }
     };
 
     child.stdout.on('data', onData);
@@ -56,6 +66,8 @@ const startDesignServer = (checkout) =>
  * without it the stubbed shell has no window chrome and Studio draws no title bar.
  */
 export const withStudio = async (run, { checkout = root, build = true, built, chrome } = {}) => {
+  const startedAt = Date.now();
+  const stamp = (phase) => console.log(phaseLine(phase, startedAt));
   const scratch = mkdtempSync(join(tmpdir(), 'studio-headless-'));
   const servers = [];
   let design;
@@ -65,6 +77,7 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
     if (!existsSync(cliEntry)) execFileSync('npx', ['nx', 'build', 'cli'], { cwd: root, stdio: 'inherit' });
 
     if (build && !built) {
+      stamp('studio build starting');
       execFileSync(
         'npx',
         ['nx', 'build', 'ethlete-studio', `--outputPath=${scratch}`, '--excludeTaskDependencies', '--skip-nx-cache'],
@@ -74,18 +87,21 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
           env: { ...process.env, NX_NO_CLOUD: 'true' },
         },
       );
+      stamp('studio build done');
     }
 
-    design = await startDesignServer(checkout);
+    design = await startDesignServer(checkout, stamp);
 
     const app = serveStatic(join(built ?? scratch, 'browser'));
     servers.push(app);
     const studioPort = await listen(app);
     const designUrl = `http://[::1]:${design.port}`;
 
+    stamp('chromium launching');
     const { chromium } = await import('playwright');
     browser = await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks'] });
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    stamp('chromium launched');
 
     await page.exposeFunction('__studioHost', async (command) => {
       if (command === 'design_roots') return { search: '', roots: [checkout] };
@@ -158,9 +174,10 @@ export const withStudio = async (run, { checkout = root, build = true, built, ch
         });
       }
       await new Promise((done) => setTimeout(done, downMs));
-      design = await startDesignServer(checkout);
+      design = await startDesignServer(checkout, stamp);
     };
 
+    stamp('first case starting');
     return await run({ page, studioUrl: `http://[::1]:${studioPort}`, designPort: design.port, restartDesign });
   } finally {
     await browser?.close();
