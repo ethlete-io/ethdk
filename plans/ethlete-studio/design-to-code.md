@@ -3096,3 +3096,8 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      exists nowhere afterwards fails `design check` until the user confirms the removal or a design shows it again.
      Generic, any project. Product fix (B145): the comment button returns top right next to the other buttons as a
      one-variant sketch; where page buttons belong in general follows as its own sketch with variants.
+     Builder facts: 8cf715654 removed the whole write path (pin pick, draft, thread, reply, resolve, withdraw, the four
+     app write calls); only display is left, while the CLI still serves the write endpoints (studio-api.ts:72-77).
+     ACTION-LOST would not have caught 231 (the buttons were never a design action). Added tool fix (B147,
+     technical): ORPHAN-ENDPOINT - every Studio API path the CLI serves needs an app caller, else `design check`
+     fails.
