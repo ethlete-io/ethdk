@@ -216,6 +216,7 @@ describe('CommentStore', () => {
 
     it('keeps the draft and its text after a failed send and shows the error phase', () => {
       const { store } = setup();
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       host.write.mockReset().mockReturnValue(throwError(() => new Error('offline')));
       store.toggle();
@@ -226,10 +227,13 @@ describe('CommentStore', () => {
       expect(store.sendPhase()).toBe('error');
       expect(store.draft()).toEqual(DRAFT);
       expect(store.draftText()).toBe('Zu eng');
+      expect(logged).toHaveBeenCalledTimes(1);
+      logged.mockRestore();
     });
 
     it('offers a retry after a server error and shows the reason of a refused send without one', () => {
       const { store } = setup();
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       store.toggle();
       store.start(DRAFT);
@@ -249,6 +253,8 @@ describe('CommentStore', () => {
       store.cancel();
 
       expect(store.sendReason()).toBe('');
+      expect(logged).toHaveBeenCalledTimes(2);
+      logged.mockRestore();
     });
 
     it('ends comment mode and drops the draft on a second toggle', () => {

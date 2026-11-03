@@ -17,6 +17,7 @@ class SystemViewStubComponent {
   public checkout = input('');
   public projectThemes = input<Record<string, Themes>>({});
   public lists = input(NO_LIST_REVISIONS);
+  public frameRevisions = input<unknown>(null);
   public project = input('');
   public projects = input<string[]>([]);
   public projectChange = output<string>();
