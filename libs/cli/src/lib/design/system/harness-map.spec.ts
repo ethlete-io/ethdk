@@ -176,7 +176,7 @@ describe('et design harness', () => {
     const compare = vi.fn(async () => ({ green: true, states: {} }));
     const shoot = vi.fn(async () => 'shoot must not run');
 
-    expect(markPartGo({ product, part: 'components/chip', by: 'tom' })).not.toBeTypeOf('string');
+    expect(markPartGo({ product, part: 'components/chip', by: 'tom', via: 'design go' })).not.toBeTypeOf('string');
 
     const stale = 'the harness map apps/app-a/src/harness/parts.ts is stale - run et design harness --product app-a';
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:1'];
@@ -228,6 +228,7 @@ describe('task --verify and the app stylesheet', () => {
         product: resolveProduct({ target, name: 'app-a', config: { harness: HARNESS } }),
         part: 'components/chip',
         by: 'tom',
+        via: 'design go',
       }),
     ).not.toBeTypeOf('string');
 

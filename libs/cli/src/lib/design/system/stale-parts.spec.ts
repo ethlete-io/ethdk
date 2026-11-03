@@ -94,7 +94,7 @@ describe('transitive part hash', () => {
   it('marks a go stale and names the file when an imported part changes, though the folder did not', () => {
     const { target, dir } = checkout();
 
-    expect(markPartGo({ product: productOf(target), part: CHIP, by: 'tom' })).not.toHaveProperty('status');
+    expect(markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' })).not.toHaveProperty('status');
     markImplemented({ product: productOf(target), part: CHIP, states: { default: {} } });
 
     const folder = partHashOf({ product: productOf(target), dir: join(dir, 'components/chip') });
@@ -124,7 +124,7 @@ describe('transitive part hash', () => {
   it('marks a done part stale when a file its app component reaches changes', () => {
     const { target } = checkout();
 
-    markPartGo({ product: productOf(target), part: CHIP, by: 'tom' });
+    markPartGo({ product: productOf(target), part: CHIP, by: 'tom', via: 'design go' });
     markImplemented({
       product: productOf(target),
       part: CHIP,

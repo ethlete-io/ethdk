@@ -9,15 +9,19 @@ export const GO_FILE = 'go.json';
 /**
  * Who released a part for implementation, and at which design hash, with the hash of each file it covers; the go holds
  * only while the hash does. `auto` marks a go carried to a new hash because no state's picture changed. `actions` holds
- * the sorted action keys the part declared at the go, for ACTION-LOST.
+ * the sorted action keys the part declared at the go, for ACTION-LOST. `via` names the command that wrote the entry;
+ * an automatic refresh keeps `by` and `via` and adds `refreshedBy` and `cause`.
  */
 export type PartGo = {
   hash: string;
   files?: FileHashes;
   by: string;
+  via?: string;
   at: string;
   note?: string;
   auto?: true;
+  refreshedBy?: string;
+  cause?: string;
   review?: string[];
   actions?: string[];
 };
@@ -105,6 +109,7 @@ export const markPartGo = (options: {
   product: ResolvedProduct;
   part: string;
   by: unknown;
+  via: string;
   hash?: unknown;
   note?: string;
   at?: string;
@@ -124,6 +129,7 @@ export const markPartGo = (options: {
     hash: found.hash,
     files: found.design.files,
     by: by.trim(),
+    via: options.via,
     at: options.at ?? new Date().toISOString(),
     ...(options.note ? { note: options.note } : {}),
     ...(options.actions ? { actions: [...new Set(options.actions)].sort((a, b) => a.localeCompare(b)) } : {}),

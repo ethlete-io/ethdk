@@ -392,7 +392,7 @@ describe('part compare', () => {
     expect(await compare(['--url', 'http://localhost:9'])).toBe(1);
     expect(lines.join('\n')).toContain('has no go');
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
 
     expect(await compare(['--url', 'http://localhost:9', '--state', 'default'])).toBe(0);
     expect(shoot).toHaveBeenCalledWith(
@@ -431,7 +431,7 @@ describe('part compare', () => {
         actions,
       });
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
 
     expect(await compare()).toBe(0);
     expect(actions).toHaveBeenCalledWith(
@@ -496,7 +496,7 @@ describe('part compare', () => {
     expect(await all(same)).toBe(0);
     expect(lines).toEqual(['app-a: no done parts to compare']);
 
-    markPartGo({ product: product(), part: 'components/chip', by: 'tom' });
+    markPartGo({ product: product(), part: 'components/chip', by: 'tom', via: 'design go' });
     markImplemented({ product: product(), part: 'components/chip', states: { default: {} } });
 
     const found = readyPartOf({ product: product(), part: 'components/chip' });
@@ -533,7 +533,7 @@ describe('part compare', () => {
     }));
     const argv = ['components/chip', '--product', 'app-a', '--url', 'http://localhost:9'];
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
     expect(await designCompare({ target, argv, invocation: 'et design', shoot, actions: async () => [] })).toBe(0);
     expect(lines.join('\n')).not.toContain('unapproved');
 
@@ -564,7 +564,7 @@ describe('part compare', () => {
         actions: async () => [],
       });
 
-    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom' });
+    markPartGo({ product: resolveProduct({ target, name: 'app-a', config: {} }), part: 'components/chip', by: 'tom', via: 'design go' });
 
     expect(await compare()).toBe(0);
     expect(start).toHaveBeenCalledWith(expect.objectContaining({ target }));

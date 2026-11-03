@@ -893,6 +893,7 @@ export const partGoAnswer = withProduct('POST', async (found) => {
     product: found.product,
     part,
     by: STUDIO_CLICK,
+    via: 'studio click',
     hash: body['hash'],
     note: 'studio click',
     ...(Array.isArray(actions) ? { actions } : {}),

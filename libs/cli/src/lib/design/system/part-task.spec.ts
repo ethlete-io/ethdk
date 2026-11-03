@@ -52,7 +52,7 @@ const checkout = () => {
 
 const productOf = (target: string) => resolveProduct({ target, name: 'app-a', config: {} });
 
-const go = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom' });
+const go = (target: string, part = 'components/chip') => markPartGo({ product: productOf(target), part, by: 'tom', via: 'design go' });
 
 const output = () => {
   const lines: string[] = [];
@@ -590,7 +590,7 @@ describe('doneParts', () => {
 
       return typeof found === 'string' ? found : found.hash;
     };
-    const go = (part: string) => markPartGo({ product: product(), part, by: 'tom' });
+    const go = (part: string) => markPartGo({ product: product(), part, by: 'tom', via: 'design go' });
     const tag = join(chip, '../../tag/tag.ts');
 
     go('components/chip');

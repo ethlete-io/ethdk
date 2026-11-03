@@ -66,6 +66,7 @@ export const goStepOf = (options: {
         product,
         part,
         by,
+        via: 'design go',
         note,
         ...(typeof actions === 'string' ? {} : { actions }),
       });

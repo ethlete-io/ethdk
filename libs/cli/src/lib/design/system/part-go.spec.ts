@@ -77,6 +77,7 @@ describe('part go', () => {
       hash,
       files: { '.ethlete/design/app-a/components/chip/chip.ts': expect.any(String) },
       by: 'user',
+      via: 'studio click',
       at: expect.any(String),
       note: 'studio click',
     });

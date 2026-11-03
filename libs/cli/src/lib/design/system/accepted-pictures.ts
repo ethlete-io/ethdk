@@ -44,6 +44,11 @@ export type DrawStates = (options: {
 }) => Promise<Map<string, StatePictures | string>>;
 
 /** Who an automatic review or go is recorded for: the `by` of the acceptance or go it carries forward. */
+const causeOf = (fresh: string[]) =>
+  fresh.length > 0
+    ? `new states without a known picture: ${fresh.join(', ')}`
+    : 'design hash changed, no state picture changed';
+
 export const autoAcceptBy = (previous: string | undefined) => previous ?? 'design check';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -380,9 +385,10 @@ export const autoAcceptOf = async (options: {
           ...(review.length > 0 ? { review } : {}),
           hash: need.now,
           files: designHashOf({ product, part: resolved }).files,
-          by: autoAcceptBy(previous.by),
           at: new Date().toISOString(),
           auto: true,
+          refreshedBy: 'design check',
+          cause: causeOf(fresh),
         };
 
         writeGo({ dir, part, go });
