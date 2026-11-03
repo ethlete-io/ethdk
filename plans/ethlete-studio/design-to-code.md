@@ -3499,3 +3499,9 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      timeout and a broken render. Fix (technical): B224 - agents:sync keeps the existing order of hook entries and
      only inserts or removes its own, so a second sync is a no-op; into B221 - a render timeout gets its own code,
      distinct from a render error, and is re-run once alone before it counts.
+277. B204 + B218 (builder, 2026-11-03, 480a22119): commit-hunks now splits every shared design JSON per entry, writes
+     sorted keys, never commits a pure reorder, and waits for the commit lock. Why no tool caught the gap earlier:
+     commit-hunks was spec'd only on synthetic repos holding the first incident's files, never on the real
+     .ethlete/design files. Lesson: same as 275 - a tool's spec runs on the real inputs it will meet; here one spec
+     walks every real shared JSON and fails on an unclassified kind. Decision: accepted.json lists keep append order
+     (a log), they are not sorted. Not run yet: a live go.json commit through commit-hunks.
