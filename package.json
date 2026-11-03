@@ -42,6 +42,7 @@
     "studio:e2e": "node apps/ethlete-studio/e2e/canvas.e2e.mjs",
     "studio:themes": "node tools/scripts/generate-studio-themes.mjs",
     "studio:verify": "node tools/scripts/verify-studio-headless.mjs",
+    "test:tools": "node --test tools/scripts/*.spec.mjs",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
     "tokens:report": "node ./tools/scripts/token-report.mjs",
