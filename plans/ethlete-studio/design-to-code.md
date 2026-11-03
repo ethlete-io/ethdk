@@ -3810,3 +3810,22 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      shell-main, inventory, system). B244 caught its first real case: HEAD carried two ethlete-studio lint errors
      from 0f7c28b68 (max-params on sketchRoundsOf, click-without-key on the comment-draft div), fixed in 8bf9046ca.
      Why no tool caught it then: 0f7c28b68 predates B244; the gate is the fix, no new item.
+
+303. Comment draft built into pages/system (Tom, 2026-11-03: "again wrongly part of the system view instead of an
+     element/component; this still happens far too often"). Facts (builder): pages/system/system.ts:99-137 holds an
+     inline draft card with its own busy and error states (:82-97, states :307-308) and an inline crosshair target
+     (:70-78), merged with the comment button sketch 63785ccd0. pages/inbox/shared/inbox.ts:316-329 holds a second,
+     different draft built from raw `<et-textarea>`/`<button et-button>` strings (4a960f125). The app already
+     reuses one `ethlete-comment-draft` across two hosts, under a page-named folder. There are 8 page-local
+     interactive places today: system commentTarget and commentDraft; inbox row, draft popover, raw `<et-switch>`,
+     raw "Erneut laden" button; merge listRow; sketch-status holdTrigger. capabilities.ts regex-patches `<button`
+     into embedded markup. Why no tool caught it: no rule looks at interactive UI inline in a page. CONTROL-PART-MISSING
+     only covers controls the page declares, and a page sketch may add UI freely, because the sketch check runs the
+     same rules. Q252's list of parts to extract never named the draft. Fix (B247, decided, technical): the problem
+     rule INLINE-UI-IN-PAGE scans page sources (and page sketch variants, so it blocks sketch ready and merge) for
+     `<button`, `role="button"`, `tabindex`, raw `<et-` and `data-et-action` outside an embedded part's output, and
+     names the part to create. The same rule is the design half of A10's embed-don't-copy check. Fix (B248, decided):
+     extract the 8 places into elements/components parts; a pixel-free extraction is a tidy. The two drafts differ, so
+     the shared components/comment-draft is a sketch with variants for Tom. B237 (the canvas-frames overlay covers the
+     draft) is fixed inside that sketch. The builder also verifies whether COMPONENT-COPY flags inbox.ts:309/316-335.
+     If it does not, that is a gap in the same item.
