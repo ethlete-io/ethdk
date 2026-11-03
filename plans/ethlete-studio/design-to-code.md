@@ -4258,6 +4258,17 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      variant) as ported and rebases without asking; it refuses only on a real content conflict and names the hunk.
      Queued in the builder handoff, not started (Tom: no new topics, 2026-11-03).
 
+339. Tom's merge of pages/sketches variant b (2026-11-03, after the 7a47470cd rebase) failed: the post-merge check
+     reports PART-REWRITE at pages/sketches/sketches.ts:175 (`replace(/ data-et-action="[^"]*"/)` rewrites
+     components/disclosure) and restores the product's old files. The builder had just reported `sketch check` exit 0
+     with that same PART-REWRITE per variant and said "Tom can look again". Why no tool caught it: `sketch check`
+     lists PART-REWRITE without failing, the merge check fails on it, so the same problem is a note in one gate and a
+     blocker in the other; and the builder reported the sketch pickable without asking whether the merge gate
+     passes. Fix: `sketch check` and `sketch ready` fail on every problem the merge check fails on (one shared
+     blocking set, a spec that compares both); a sketch whose variants carry a blocking problem is not offered for a
+     pick. Order: B286 (disclosure gets an option without data-et-action, the product and all variants pass it)
+     comes before the pages/sketches merge, together with finding 325.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
