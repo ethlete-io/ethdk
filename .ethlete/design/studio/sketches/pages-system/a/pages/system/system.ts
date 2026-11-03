@@ -1,4 +1,5 @@
 import { control } from '@ethlete/components/design/control';
+import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import { definePart, drawing, html, slot } from '@design-system';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
@@ -76,27 +77,61 @@ const commentTarget = (frame: string) =>
     data-et-action="comment-draft"
   ></div>`;
 
-const commentDraft = async (text: string) => {
+type SendPhase = 'busy' | 'error';
+
+const LOADER = `<div class="et-button-loader" aria-hidden="true" data-et-skip="CLIPPED"><div class="et-button-loader-spinner contents">${spinner({ diameter: 12, strokeWidth: 1.5 })}</div></div>`;
+
+const loading = (markup: string) =>
+  markup
+    .replace(/^<button /, '<button data-loading="true" aria-busy="true" aria-disabled="true" ')
+    .replace(/<\/button>$/, `${LOADER}</button>`);
+
+const sendError = html`<p
+  class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
+  data-et-semantic-color="error"
+  role="alert"
+>
+  ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span
+    >Nicht gesendet. Der Design-Server hat nicht geantwortet.</span
+  >
+</p>`;
+
+const commentDraft = async (text: string, phase?: SendPhase) => {
+  const busy = phase === 'busy';
   const field = await textarea.render({
     field: {
       id: 'comment-draft',
       placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
       rows: 3,
+      disabled: busy,
       ...(text ? { value: text } : {}),
     },
   });
-  const cancel = await button.render({ label: 'Abbrechen', variant: 'transparent', color: 'surface', size: 'xs' });
-  const send = await button.render({ label: 'Senden', variant: 'filled', size: 'xs', disabled: !text });
+  const cancel = await button.render({
+    label: 'Abbrechen',
+    variant: 'transparent',
+    color: 'surface',
+    size: 'xs',
+    disabled: busy,
+  });
+  const send = await button.render({
+    label: phase === 'error' ? 'Erneut senden' : 'Senden',
+    variant: 'filled',
+    size: 'xs',
+    disabled: !text,
+  });
+  const sendMarkup = busy ? loading(send.body) : text ? act(send.body, 'emit:sendComment') : send.body;
+  const cancelMarkup = busy ? cancel.body : act(cancel.body, 'comment-mode');
   return {
     body: html`<div
       class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
     >
-      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}
+      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}${phase === 'error' ? sendError : ''}
       <div class="flex justify-end gap-space-2">
-        ${control(act(cancel.body, 'comment-mode'), 'comment-cancel')}${control(text ? act(send.body, 'emit:sendComment') : send.body, 'comment-send')}
+        ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
       </div>
     </div>`,
-    styles: field.styles + cancel.styles + send.styles,
+    styles: field.styles + cancel.styles + send.styles + (busy ? loaderStyles : ''),
   };
 };
 
@@ -156,6 +191,8 @@ const popover = async (open: PartOpenPoints) => {
     styles: dialog.styles,
   };
 };
+
+const TYPED = 'Der Abstand unter der Kopfzeile wirkt zu knapp.';
 
 const FIT_PADDING = 64;
 
@@ -224,8 +261,9 @@ export default definePart<{
   chipFocus?: boolean;
   commentMode?: boolean;
   draft?: string;
+  send?: SendPhase;
 }>({
-  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden.',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas. A product without parts shows a short line in the panel and a centred card on the canvas, the same card as the empty Flows page: a ghost of four boxes, a title, what the layers are, an example prompt for the agent and a copy button. Top right, beside the open-points chip, the Kommentar toggle turns comment mode on: each frame becomes a crosshair target, and a click opens a draft at that point with a text field, Abbrechen and Senden. While a comment is sent, the field and Abbrechen are disabled and Senden shows a spinner; a failed send keeps the text, shows an error line under the field and turns Senden into Erneut senden.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6'],
   implements: {
     route: '/',
@@ -245,7 +283,19 @@ export default definePart<{
     'comment-draft-typed': {
       closed: true,
       commentMode: true,
-      draft: 'Der Abstand unter der Kopfzeile wirkt zu knapp.',
+      draft: TYPED,
+    },
+    'send-busy': {
+      closed: true,
+      commentMode: true,
+      draft: TYPED,
+      send: 'busy',
+    },
+    'send-error': {
+      closed: true,
+      commentMode: true,
+      draft: TYPED,
+      send: 'error',
     },
   },
   controls: {
@@ -264,6 +314,7 @@ export default definePart<{
     chipFocus = false,
     commentMode = false,
     draft,
+    send,
   }) => {
     if (manyStates) {
       return manyStatesView(await treeRowGrid());
@@ -286,7 +337,7 @@ export default definePart<{
     const shot = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
-    const writing = draft === undefined ? undefined : await commentDraft(draft);
+    const writing = draft === undefined ? undefined : await commentDraft(draft, send);
     const body = commentMode
       ? html`<div class="relative">${shot}${commentTarget('button')}${writing?.body ?? ''}</div>`
       : shot;

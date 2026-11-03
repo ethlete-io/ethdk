@@ -1,6 +1,6 @@
 {
   "target": "pages/system",
-  "status": "in progress",
+  "status": "ready",
   "createdAt": "2026-11-03T09:17:36.017Z",
   "baseline": {
     "foundations/agent-logos": "46bcf29865e6c1f4",
@@ -100,7 +100,7 @@
     "a": {
       "authors": ["claude-opus-5-5"],
       "round": "r1",
-      "note": "Kommentar-Button oben rechts neben dem Offene-Punkte-Chip, Umschalter wie früher (outline, sm). Gedrückt ist der Kommentar-Modus an: der Rahmen bekommt eine Fadenkreuz-Fläche (Kommentar zu …). Ein Klick darauf öffnet am Klickpunkt den Entwurf mit Textfeld, Abbrechen und Senden; Senden ist leer gesperrt. Kostet einen Platz mehr in der Kopfleiste."
+      "note": "Kommentar-Button oben rechts neben dem Offene-Punkte-Chip, Umschalter wie früher (outline, sm). Gedrückt ist der Kommentar-Modus an: der Rahmen bekommt eine Fadenkreuz-Fläche (Kommentar zu …). Ein Klick darauf öffnet am Klickpunkt den Entwurf mit Textfeld, Abbrechen und Senden; Senden ist leer gesperrt. Beim Senden sind Textfeld und Abbrechen gesperrt und Senden dreht einen Spinner; schlägt es fehl, bleibt der Text, eine Fehlerzeile steht unter dem Feld und Senden heißt Erneut senden. Kostet einen Platz mehr in der Kopfleiste."
     }
   }
 }
