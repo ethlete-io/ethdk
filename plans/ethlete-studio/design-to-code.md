@@ -3523,3 +3523,9 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      real case that reported it; synthetic specs come on top. Fix: the builder sub-agent brief carries each defect's
      real reproduction (part, state, element) and the slice report quotes the check on it; B201 stays open until
      `design check` on the part holding the Übernehmen buttons reports them.
+280. B194 (builder, 2026-11-03, 649b04940): `definePart({ instant: '<reason>' })` replaces per-pair `unreachable` for
+     parts whose states switch without motion; a loop in an ongoing-work state is still asked for; an empty or
+     non-literal reason is MOTION-INSTANT. Gap: only `sketch ready` prints the instant note, `design check` does not.
+     Why no tool caught it: each command assembles its own report lines, with no shared note list. Fix: B226 -
+     `design check` prints the instant lines from the same source. elements/canvas-frames moves to `instant` in the
+     B199 commit. Not run yet: B194 through the built CLI.
