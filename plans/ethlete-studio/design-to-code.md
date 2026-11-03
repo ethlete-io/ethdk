@@ -3980,8 +3980,9 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      for dialog hosts. Tool fix B266: a NESTED-SURFACE problem for a part root with its own fill and border that is
      the only content of another surface; and a sketch of a part that already has hosts also shoots each host page.
 314. A design check ran a stale CLI dist (builder, 2026-11-03, B248b). The emptied OPEN_INLINE_UI list lives in
-     libs/cli, and the first check ran dist/libs/cli from before the edit, so it judged with the old list and showed a
-     COVERED problem that the fresh dist does not show. Why no tool caught it: stale-dist.ts and the B256 guard watch
+     libs/cli, and the first check ran dist/libs/cli from before the edit, so it judged with the old list. Its COVERED
+     problem in 5 system states is gone on the fresh dist, most likely because that dist also carries fe2d8b87f (B258
+     settles embedded frames before a shot); not traced. Why no tool caught it: stale-dist.ts and the B256 guard watch
      the render packages and the design mocks, not the CLI itself. Tool fix B267: the design command refuses to run
      when libs/cli sources differ from what dist/libs/cli was built from, and names `NX_NO_CLOUD=true npx nx build cli`.
      B248b itself is accepted with "NOT RED": the change only empties a data list, the rule's own spec covers the
