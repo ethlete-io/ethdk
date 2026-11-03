@@ -3801,3 +3801,12 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
 - Tom: the go system is not extended any further; its rework (A10, "build-ready" replaces go and acceptance) is
   pulled forward now. So no rule on who commits a go carry, and B246 is dropped: both are go-system extensions. The
   go.json already in the tree (Tom's title-bar go plus the carries) is committed once as it is.
+
+302. B241 + B240 sketch + B244 at work (builder, 2026-11-03). B241 715f4857f: a Tauri command appends
+     `<ISO> <command> part=<p> status=<n> <message>` to /tmp/ethlete-studio-design-actions.log on every refused
+     design action (cargo test, 4 vitest cases, red-check RED; not yet exercised in the real app). B240 sketch
+     5e51db22a on pages/sketches: A an entry in the round select, B an SDK switch beside it (agent's pick), C a muted
+     footer row; Tom picks. go.json committed as it was in 66e71e8e3 (Tom's title-bar go plus the carries of
+     shell-main, inventory, system). B244 caught its first real case: HEAD carried two ethlete-studio lint errors
+     from 0f7c28b68 (max-params on sketchRoundsOf, click-without-key on the comment-draft div), fixed in 8bf9046ca.
+     Why no tool caught it then: 0f7c28b68 predates B244; the gate is the fix, no new item.
