@@ -1275,24 +1275,28 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const args = argsOf(rest, [
-    '--product',
-    '--variants',
-    '--note',
-    '--variant',
-    '--by',
-    '--from',
-    '--round',
-    '--round-note',
-    '--title',
-    '--like',
-    '--name',
-    '--drops',
-    '--variant-note',
-    '--reason',
-    '--allowed-by',
-    '--until',
-  ]);
+  const args = argsOf(
+    rest,
+    [
+      '--product',
+      '--variants',
+      '--note',
+      '--variant',
+      '--by',
+      '--from',
+      '--round',
+      '--round-note',
+      '--title',
+      '--like',
+      '--name',
+      '--drops',
+      '--variant-note',
+      '--reason',
+      '--allowed-by',
+      '--until',
+    ],
+    ['--done', '--fix', '--into-base', '--json', '--override', '--ported', '--reopen', '--replace-note'],
+  );
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
   if (!run || typeof args === 'string' || unauthored) {

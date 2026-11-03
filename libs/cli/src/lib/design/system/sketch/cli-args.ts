@@ -9,8 +9,11 @@ export type Args = {
   flags: Set<string>;
 };
 
-/** Splits an argument list into positionals, the flags that take a value, and switches. */
-export const argsOf = (argv: string[], valueFlags: string[]): Args | string => {
+/**
+ * Splits an argument list into positionals, the flags that take a value, and switches. With `switches`, any other
+ * `--flag` is refused with a message that lists the known flags.
+ */
+export const argsOf = (argv: string[], valueFlags: string[], switches?: string[]): Args | string => {
   const args: Args = { positional: [], values: {}, repeated: {}, flags: new Set() };
 
   for (let index = 0; index < argv.length; index++) {
@@ -25,6 +28,9 @@ export const argsOf = (argv: string[], valueFlags: string[]): Args | string => {
       args.repeated[arg] = [...(args.repeated[arg] ?? []), value];
       index++;
     } else if (arg.startsWith('--')) {
+      if (switches && !switches.includes(arg))
+        return `unknown flag ${arg} (flags: ${[...valueFlags, ...switches].join(', ') || 'none'})`;
+
       args.flags.add(arg);
     } else {
       args.positional.push(arg);

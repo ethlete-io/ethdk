@@ -78,7 +78,7 @@ const queueError = (error: unknown) => {
 /** `et design shot --asset <file>` draws an image file, inlined, into a PNG and prints where it wrote it. */
 export const designAssetShot = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--asset', '--product', '--width', '--out']);
+  const args = argsOf(argv, ['--asset', '--product', '--width', '--out'], []);
   const usage = `usage: ${invocation} ${ASSET_SHOT_USAGE}`;
 
   if (typeof args === 'string') {
@@ -159,7 +159,7 @@ export const designAssetShot = async (options: { target: string; argv: string[];
  */
 export const designToken = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product']);
+  const args = argsOf(argv, ['--product'], []);
   const usage = `usage: ${invocation} ${TOKEN_USAGE}`;
 
   if (typeof args === 'string') {

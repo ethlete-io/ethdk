@@ -274,7 +274,7 @@ const designMotionFlow = (options: {
  */
 export const designMotion = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, MOTION_FLAGS);
+  const args = argsOf(argv, MOTION_FLAGS, []);
   const usage = `usage: ${invocation} ${MOTION_USAGE}`;
 
   if (typeof args === 'string') {

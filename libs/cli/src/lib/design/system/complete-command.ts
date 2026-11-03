@@ -17,7 +17,7 @@ export const designComplete = async (options: {
   chromiumOf?: typeof chromiumOf;
 }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--request', '--reason', '--variant']);
+  const args = argsOf(argv, ['--product', '--request', '--reason', '--variant'], ['--handoff']);
   const usage = `usage: ${invocation} ${COMPLETE_USAGE}`;
   const request = typeof args === 'string' ? undefined : args.values['--request'];
   const handoff = typeof args !== 'string' && args.flags.has('--handoff');

@@ -596,7 +596,7 @@ export const designCompare = async (options: {
   actions?: typeof partActionFailuresOf;
 }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset', '--sketch']);
+  const args = argsOf(options.argv, ['--product', '--url', '--state', '--preset', '--sketch'], ['--all', '--live']);
 
   if (typeof args === 'string' || args.positional.length !== (args.flags.has('--all') ? 0 : 1)) {
     if (typeof args === 'string') console.error(args);

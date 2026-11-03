@@ -14,7 +14,7 @@ export const READY_USAGE = 'ready <layer>/<name> --product <name> --by <name> [-
  */
 export const designReady = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--by', '--url']);
+  const args = argsOf(argv, ['--product', '--by', '--url'], []);
   const usage = `usage: ${invocation} ${READY_USAGE}`;
 
   if (typeof args === 'string' || authorOf(args) === null || args.positional.length !== 1) {

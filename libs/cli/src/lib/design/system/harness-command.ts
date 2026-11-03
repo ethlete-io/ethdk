@@ -7,7 +7,7 @@ export const HARNESS_USAGE = 'harness --product <name> [--check]';
 /** `et design harness --product <name>` writes the product's part-to-component map into its harness app. */
 export const designHarness = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, invocation } = options;
-  const args = argsOf(options.argv, ['--product']);
+  const args = argsOf(options.argv, ['--product'], ['--check']);
 
   if (typeof args === 'string' || args.positional.length > 0) {
     if (typeof args === 'string') console.error(args);

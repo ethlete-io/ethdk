@@ -133,14 +133,14 @@ const fail = (message: string) => {
  */
 export const designCommitHunks = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--part', '--id', '--message']);
+  const args = argsOf(argv, ['--part', '--id', '--message'], []);
   const [asked, ...extra] = typeof args === 'string' ? [] : args.positional;
   const asParts = (typeof args === 'string' ? [] : (args.repeated['--part'] ?? [])).map(parseTarget);
   const ids = typeof args === 'string' ? [] : (args.repeated['--id'] ?? []);
   const bad = asParts.find((part) => typeof part === 'string');
 
   if (typeof args === 'string' || !asked || extra.length > 0 || asParts.length + ids.length === 0) {
-    return fail(`usage: ${invocation} ${COMMIT_HUNKS_USAGE}`);
+    return fail(`${typeof args === 'string' ? `${args}\n` : ''}usage: ${invocation} ${COMMIT_HUNKS_USAGE}`);
   }
 
   if (typeof bad === 'string') return fail(bad);

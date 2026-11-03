@@ -134,7 +134,7 @@ export const acceptStepOf = (options: {
  */
 export const designAccept = async (options: WriteCommandOptions) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--by', '--note']);
+  const args = argsOf(argv, ['--product', '--by', '--note'], []);
   const usage = `usage: ${invocation} ${ACCEPT_USAGE}`;
 
   if (typeof args === 'string') {

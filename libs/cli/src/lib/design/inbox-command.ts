@@ -20,8 +20,8 @@ const fail = (message: string, code = 1) => {
   return code;
 };
 
-const usage = (invocation: string, lines: string[]) =>
-  fail(lines.map((line) => `usage: ${invocation} ${line}`).join('\n'), 2);
+const usage = (invocation: string, lines: string[], problem?: string) =>
+  fail([...(problem ? [problem] : []), ...lines.map((line) => `usage: ${invocation} ${line}`)].join('\n'), 2);
 
 const unauthored = (options: { invocation: string; command: string; lines: string[] }) =>
   fail(
@@ -38,9 +38,9 @@ const unauthored = (options: { invocation: string; command: string; lines: strin
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--note', '--by']);
+  const args = argsOf(argv, ['--product', '--note', '--by'], ['--json', '--question']);
 
-  if (typeof args === 'string') return usage(invocation, INBOX_USAGE);
+  if (typeof args === 'string') return usage(invocation, INBOX_USAGE, args);
 
   const config = configOf(target);
 
@@ -155,9 +155,13 @@ const designCommentReply = (options: {
  */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--size', '--interaction', '--at', '--sketch', '--variant', '--by']);
+  const args = argsOf(
+    argv,
+    ['--product', '--size', '--interaction', '--at', '--sketch', '--variant', '--by'],
+    ['--json', '--question'],
+  );
 
-  if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
+  if (typeof args === 'string') return usage(invocation, COMMENT_USAGE, args);
 
   if (args.positional[0] === 'reply')
     return designCommentReply({

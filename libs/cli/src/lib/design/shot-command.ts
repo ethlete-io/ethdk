@@ -379,22 +379,26 @@ export const changedCropsIn = async (options: {
  */
 export const designShot = async (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, [
-    '--product',
-    '--at',
-    '--round',
-    '--variant',
-    '--state',
-    '--interaction',
-    '--preset',
-    '--width',
-    '--scale',
-    '--crop',
-    '--surface',
-    '--color',
-    '--scheme',
-    '--out',
-  ]);
+  const args = argsOf(
+    argv,
+    [
+      '--product',
+      '--at',
+      '--round',
+      '--variant',
+      '--state',
+      '--interaction',
+      '--preset',
+      '--width',
+      '--scale',
+      '--crop',
+      '--surface',
+      '--color',
+      '--scheme',
+      '--out',
+    ],
+    ['--all', '--diff-props', '--states', '--variants'],
+  );
   const usage = `usage: ${invocation} ${SHOT_USAGE}`;
 
   if (typeof args === 'string') {
