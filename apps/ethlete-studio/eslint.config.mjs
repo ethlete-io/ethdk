@@ -1,6 +1,8 @@
 import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
+import { CANVAS_CAMERA_KNOWN } from './eslint-rules/canvas-camera-known.mjs';
+import canvasCameraOwn from './eslint-rules/canvas-camera-own.mjs';
 
 export default [
   { ignores: ['src-tauri/target', 'src/styles/*.d.ts'] },
@@ -48,6 +50,12 @@ export default [
       'ethlete/no-native-observers': 'off',
       'no-restricted-globals': 'off',
     },
+  },
+  {
+    files: ['src/app/design-parts/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    plugins: { studio: { rules: { 'canvas-camera-own': canvasCameraOwn } } },
+    rules: { 'studio/canvas-camera-own': ['error', { known: CANVAS_CAMERA_KNOWN }] },
   },
   ethlete.configs.recommendedTemplate,
   ethlete.configs.recommendedSpec,
