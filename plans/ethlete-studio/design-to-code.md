@@ -3970,6 +3970,23 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      printed lines equal the count. The B240 pixel compare is not final yet: b and c are 0 px, a differs only in the
      caption strip, and the "after" side was a later HEAD, so the exact a7bad251a^ vs a7bad251a shot is still owed.
 
+313. The merged comment-draft card is a double surface in the inbox dialog (builder, 2026-11-03, B248b wiring
+     9cb6ce68e). Tom picked variant a, the bordered, filled card. In the inbox it sits inside the anchored-dialog
+     pane with a ~12 px dark band around it, and the comment-entry state grew from a 1-row field to a 3-row field with
+     Abbrechen. The sketch showed the part alone at 360px, never inside its hosts, so the pick could not show this.
+     Why no tool caught it: no rule flags a filled, bordered surface whose only parent is another surface pane, and a
+     sketch of a new part renders no host page. Decision (technical): B265 sketches the inbox dialog host for Tom with
+     two variants, (a) no dialog pane, the card placed directly (builder's pick), (b) a no-card variant of the part
+     for dialog hosts. Tool fix B266: a NESTED-SURFACE problem for a part root with its own fill and border that is
+     the only content of another surface; and a sketch of a part that already has hosts also shoots each host page.
+314. A design check ran a stale CLI dist (builder, 2026-11-03, B248b). The emptied OPEN_INLINE_UI list lives in
+     libs/cli, and the first check ran dist/libs/cli from before the edit, so it judged with the old list and showed a
+     COVERED problem that the fresh dist does not show. Why no tool caught it: stale-dist.ts and the B256 guard watch
+     the render packages and the design mocks, not the CLI itself. Tool fix B267: the design command refuses to run
+     when libs/cli sources differ from what dist/libs/cli was built from, and names `NX_NO_CLOUD=true npx nx build cli`.
+     B248b itself is accepted with "NOT RED": the change only empties a data list, the rule's own spec covers the
+     mechanism, and the check runs show 0 INLINE-UI hits on pages/inbox and pages/system.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
