@@ -720,7 +720,11 @@ describe('renderIssuesOf', () => {
         jobs: [{ product: 'shop', sketch: null, parts: null }],
         chromiumOf: async () => null,
       }),
-    ).resolves.toEqual({ unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' });
+    ).resolves.toEqual({
+      unavailable: expect.stringMatching(
+        new RegExp(`^neither ${target} nor this package \\(.+\\) resolves playwright or playwright-core`),
+      ),
+    });
   });
 
   it('keeps the skips of each sketch variant apart', async (context) => {

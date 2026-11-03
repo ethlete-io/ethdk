@@ -1,4 +1,5 @@
 import { dirname, relative } from 'path';
+import { chromiumOf } from '../browser';
 import { DesignConfig } from '../paths';
 import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
@@ -122,6 +123,7 @@ type CheckOptions = {
   drawPictures?: DrawStates;
   /** How the repo runs `et design`; defaults to the one its package.json implies. */
   invocation?: string;
+  chromiumOf?: typeof chromiumOf;
 };
 
 const PRODUCT_LEVEL = '(product)';
@@ -543,7 +545,10 @@ const renderSystem = async (
   });
 
   if ('unavailable' in rendered) {
-    console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+    const ci = Boolean(process.env['CI']);
+
+    if (ci) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+    else console.log(`RENDER CHECK FAILED - no usable browser: ${rendered.unavailable}`);
 
     for (const product of resolved) {
       const parts = product.parts
@@ -561,7 +566,7 @@ const renderSystem = async (
         );
     }
 
-    return { code, rendered: null, notDrawn: rendered.unavailable };
+    return { code: ci ? code : 1, rendered: null, notDrawn: rendered.unavailable };
   }
   const isInBase = (issue: RenderIssue) =>
     resolved.some((product) => product.name === issue.product && isBasePartKey(product, ownerPartOf(issue)));

@@ -670,7 +670,9 @@ export const renderIssuesOf = async (options: {
   if (jobs.length === 0) return { issues: [], warnings: [], grids: [], drawn: [] };
 
   if (!(await resolveChromium(target)))
-    return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
+    return {
+      unavailable: `neither ${target} nor this package (${__dirname}) resolves playwright or playwright-core, so there is no Chromium to launch`,
+    };
 
   const queue = createDrawQueue({ target, chromiumOf: resolveChromium });
   const server = await createDesignServer({ target, config, listen: true, port: 0 });

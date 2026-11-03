@@ -5,7 +5,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { checkSystem, summaryText } from './check-system';
+import { checkSystem, checkSystemRendered, summaryText } from './check-system';
 import { markPartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 import { recordMerged } from './sketch/merged-parts';
@@ -46,13 +46,15 @@ const withoutOpenPoints = (lines: string[]) =>
 const withoutBrowserLines = (lines: string[]) =>
   withoutOpenPoints(lines).filter(
     (line) =>
-      !line.startsWith('RENDER CHECK SKIPPED') &&
+      !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) &&
       !line.startsWith('NOT CHECKED') &&
       !line.startsWith('CONTROL-UNDECLARED'),
   );
 
+const noBrowser = async () => null;
+
 const renderWarningsOf = (lines: string[]) =>
-  lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))
+  lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))
     ? []
     : [expect.stringMatching(/^WARNING CONTROL-PART-INPUT acme components\/button /)];
 
@@ -180,7 +182,10 @@ export default definePart({
 });
 
 describe('checkDesign', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
 
   it('checks every product when run without flags', async () => {
     const target = acme();
@@ -208,7 +213,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines).toContainEqual(expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/));
@@ -225,7 +230,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines).toContainEqual(expect.stringMatching(/^RENDER acme elements\/hero - at -: - - .*hero will not load/));
@@ -254,7 +259,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines).toContainEqual(
@@ -541,7 +546,7 @@ describe('checkDesign', () => {
     expect(await checkDesign({ target: acme(), argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(
       withoutOpenPoints(lines).filter(
-        (line) => !line.startsWith('RENDER CHECK SKIPPED') && !line.startsWith('CONTROL-UNDECLARED'),
+        (line) => !/^RENDER CHECK (SKIPPED|FAILED)/.test(line) && !line.startsWith('CONTROL-UNDECLARED'),
       ),
     ).toEqual(['ok']);
   }, 60_000);
@@ -636,7 +641,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
@@ -659,7 +664,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(0);
     expect(withoutOpenPoints(lines).filter((line) => line.includes('components/card'))).toEqual([]);
@@ -687,7 +692,7 @@ describe('checkDesign', () => {
 
     const ungone = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(ungone).toBe(1);
     expect(lines).toContainEqual(expect.stringMatching(/^ACTION-UNDECLARED acme elements\/hero default at /));
@@ -721,7 +726,7 @@ describe('checkDesign', () => {
 
     const code = await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' });
 
-    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip('no browser');
+    if (lines.some((line) => /^RENDER CHECK (SKIPPED|FAILED)/.test(line))) return context.skip('no browser');
 
     expect(code).toBe(1);
     expect(lines.filter((line) => line.startsWith('  elements/hero'))).toEqual([
@@ -817,5 +822,42 @@ describe('summaryText', () => {
       'PARTS acme: 2 of 2 clean',
       'DONE acme: 1 of 2',
     ]);
+  });
+
+  it('fails a part check without a browser on a dev machine and names what it looked for', async () => {
+    vi.stubEnv('CI', '');
+    const target = acme();
+    const lines = output();
+    const code = await checkSystemRendered({
+      target,
+      config: readConfig(target) ?? {},
+      products: ['acme'],
+      part: 'elements/hero',
+      chromiumOf: noBrowser,
+    });
+
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(
+      expect.stringMatching(
+        /^RENDER CHECK FAILED - no usable browser: neither .+ nor this package .+ resolves playwright/,
+      ),
+    );
+  });
+
+  it('skips the render check without a browser under CI', async () => {
+    vi.stubEnv('CI', '1');
+    const target = acme();
+    const lines = output();
+    const code = await checkSystemRendered({
+      target,
+      config: readConfig(target) ?? {},
+      products: ['acme'],
+      part: 'elements/hero',
+      chromiumOf: noBrowser,
+    });
+
+    expect(code).toBe(0);
+    expect(lines).toContainEqual(expect.stringMatching(/^RENDER CHECK SKIPPED - neither /));
+    expect(lines.some((line) => line.startsWith('RENDER CHECK FAILED'))).toBe(false);
   });
 });
