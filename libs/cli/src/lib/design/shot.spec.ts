@@ -44,6 +44,7 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
     url: () => 'http://localhost/frame.html',
     screenshot,
     evaluate,
+    frames: () => [{ evaluate, url: () => 'http://localhost/frame.html' }],
     locator: (selector: string) => ({
       count: async () => (selector === 'vite-error-overlay' ? overlayCount : 0),
       locator: () => ({ innerText: async () => '  Failed to resolve import "./nope"  ' }),

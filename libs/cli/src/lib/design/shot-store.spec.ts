@@ -51,6 +51,7 @@ vi.mock('./browser', async (original) => ({
                   : script.includes('innerHTML')
                     ? '<p>card</p>'
                     : true,
+            frames: () => [{ evaluate: async () => true, url: () => 'http://localhost/frame.html' }],
             locator: () => ({
               count: async () => 0,
               first: () => ({ waitFor: async () => undefined }),

@@ -122,6 +122,14 @@ export const heldAnimations = `document.getAnimations()
   .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
   .forEach((animation) => animation.cancel())`;
 
+export const settleFrames = async (page: Pick<Page, 'frames'>) => {
+  for (const frame of page.frames()) {
+    await awaitSettled(frame);
+    await frame.evaluate(finished);
+    await frame.evaluate(heldAnimations);
+  }
+};
+
 export type DrawPriority = 'high' | 'low';
 
 /**

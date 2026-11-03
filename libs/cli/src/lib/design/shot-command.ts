@@ -1,7 +1,15 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
-import { changedCropsOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
+import {
+  boundsOf,
+  ChangedBox,
+  changedCropsOf,
+  changedSharesOf,
+  contactSheetOf,
+  pngSizeOf,
+  SheetCell,
+} from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { DesignConfig, workRootOf } from './paths';
@@ -158,6 +166,44 @@ export const planOf = (options: {
     });
   });
 };
+
+export type UnstableCell = { label: string; part: string; state: string; pixels: number; box: ChangedBox | null };
+
+export const unstableCellsOf = async (options: {
+  plan: Plan[][];
+  first: SheetCell[][];
+  second: SheetCell[][];
+  boxOf: BoxOf;
+  pixelsOf: (before: Buffer, after: Buffer) => Promise<number>;
+}): Promise<UnstableCell[]> => {
+  const found: UnstableCell[] = [];
+
+  for (const [rowIndex, row] of options.plan.entries()) {
+    for (const [index, { label, address }] of row.entries()) {
+      const before = options.first[rowIndex]?.[index];
+      const after = options.second[rowIndex]?.[index];
+
+      if (!before || !after || !('png' in before) || !('png' in after) || before.png.equals(after.png)) continue;
+
+      found.push({
+        label,
+        part: address.part,
+        state: address.state,
+        pixels: await options.pixelsOf(before.png, after.png),
+        box: boundsOf(await options.boxOf(before.png, after.png)),
+      });
+    }
+  }
+
+  return found;
+};
+
+export const unstableReportOf = (cells: UnstableCell[]) =>
+  cells.map(({ label, part, state, pixels, box }) => {
+    const where = box ? ` in ${box.x},${box.y} ${box.width}x${box.height}` : '';
+
+    return `design-explore: ${part} state "${state}" (${label}) draws differently in two renders: ${pixels} px differ${where}`;
+  });
 
 export type EmptyGridCell = { empty: string };
 
@@ -593,20 +639,20 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
 
     try {
-      const shoot = ({ label, address, absent }: Plan): Promise<SheetCell> =>
+      const shoot = ({ label, address, absent }: Plan, fresh = false): Promise<SheetCell> =>
         absent
           ? Promise.resolve({ label, note: NEW_STATE_NOTE })
-          : shooter.pictureOf({ ...address, params }).then(
+          : shooter.pictureOf({ ...address, params, fresh }).then(
               ({ png, markup }) => ({ label, png, ...(markup === undefined ? {} : { markup }) }),
               (error: unknown) => ({ label, error: error instanceof Error ? error.message : String(error) }),
             );
-      const shootAll = async () => {
+      const shootAll = async (fresh = false) => {
         const drawn: SheetCell[][] = [];
 
         for (const row of plan) {
           const cells: SheetCell[] = [];
 
-          for (const entry of row) cells.push(await shoot(entry));
+          for (const entry of row) cells.push(await shoot(entry, fresh));
 
           drawn.push(cells);
         }
@@ -614,6 +660,18 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return drawn;
       };
       let sheet = await shootAll();
+      const unstable = await unstableCellsOf({
+        plan,
+        first: sheet,
+        second: await shootAll(true),
+        boxOf: shooter.changedBoxesOf,
+        pixelsOf: async (before, after) => {
+          const [share = 0] = await queue.run((browser) => changedSharesOf({ browser, base: before, others: [after] }));
+          const [one, other] = [pngSizeOf(before), pngSizeOf(after)];
+
+          return Math.round(share * Math.max(one.width, other.width) * Math.max(one.height, other.height));
+        },
+      });
       const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
       const sheetOut = resolve(
         target,
@@ -682,7 +740,9 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         for (const line of shotReportOf({ out, diffs, sheet: shown })) console.log(line);
       }
 
-      return 0;
+      for (const line of unstableReportOf(unstable)) console.error(line);
+
+      return unstable.length > 0 ? 1 : 0;
     } finally {
       await shooter.close();
     }
