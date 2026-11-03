@@ -3227,6 +3227,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      return its input unchanged. Fix: B181 (technical) - a design helper `withAction(markup, action)` that throws when
      nothing matched, used everywhere actions are added; pages/sketches merge/discard fixed with it (no visual
      change); red on the two Übernehmen cases afterwards.
+     Correction (builder, 2026-11-03, after B181 d648d0395 + d961cb00d): the cause was refuted - a private build shows
+     emit:discard in all 21 states and emit:merge wherever a take is offered; the "0 occurrences" came from the stale
+     shared dist (finding 255) or finding 246. withAction still found a real silent bug: pages/sketches gave a comment
+     pin a second `data-et-action`, the browser kept the first, so the drawing hid the second (now a throw). The two
+     Übernehmen cases cannot go red: they only occur after a pan, no static state draws one, and COVERED counts only
+     opaque covers while Verwerfen is transparent. Decided (technical): B201 - reach sweeps pan positions on canvas
+     parts, and COVERED counts any element that takes the hit (`elementFromPoint` is not the target or inside it),
+     opaque or not, keeping the overlay/tooltip exemptions.
 246. Specs cannot render a real Studio part from source: "Cannot find module .../render-worker.js", and only the
      first error line reaches the RENDER issue, so a spec against a real design passes with 0 findings (builder,
      2026-11-03). A check that cannot run reports the same as a check that found nothing. Lesson: a render failure is
