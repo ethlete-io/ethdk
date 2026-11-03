@@ -89,6 +89,8 @@ nor `apps/timetrack`.
 - **`lint`** - re-run with `--fix` **scoped to the files you changed**:
   `npx eslint libs/components/src/lib/<domain> --fix`. Never
   `npx nx lint <project> --fix` - a project-wide fix races the user's editor autosave.
+- **`yarn red-check <commit>`** - proves a commit's new or changed specs fail without its source changes
+  (temp worktree at the parent, the commit's specs on top); exit 1 when every spec already passes.
 - **Pre-existing failures are not yours.** This repo takes concurrent commits from other
   sessions. Before chasing a failure, check `git diff`/`git log` on the failing file; if
   it is untouched by your change, report it and move on rather than fixing it silently.
