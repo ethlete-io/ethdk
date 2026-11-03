@@ -812,9 +812,7 @@ export const sketchMatrixOf = ({
 
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
     const rejected = rejectedLabelOf(sketch, variant);
-    const named = [variant, authorsLabelOf(authors), rejected && STUDIO_LABELS.systemTree.rejected]
-      .filter(Boolean)
-      .join(' · ');
+    const named = [variant, authorsLabelOf(authors), rejected?.tag].filter(Boolean).join(' · ');
     const note = [
       rejected && `${rejected.text} (${rejected.by})`,
       sketch.variantInfo?.[variant]?.note,
@@ -1257,11 +1255,23 @@ export const pickedVariantOf = (sketch: ListedSketch) =>
     ? sketch.decision.variant
     : null;
 
-/** "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; `null` while it is live. */
+/**
+ * The tag, "Rejected: <reason>" or "Rejected", and who rejected the variant and who wrote the reason; a variant its
+ * agent withdrew reads "withdrawn by the agent" instead. `null` while it is live.
+ */
 const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: string) => {
   const rejection = rejectionOf(sketch, variant);
 
   if (!rejection) return null;
+
+  if (rejection.status === 'withdrawn')
+    return {
+      tag: STUDIO_LABELS.systemTree.withdrawn,
+      text: rejection.reason
+        ? STUDIO_LABELS.systemTree.withdrawnWith(rejection.reason)
+        : STUDIO_LABELS.systemTree.withdrawnLabel,
+      by: STUDIO_LABELS.systemTree.rejectedBy(rejection.withdrawnBy ?? rejection.by, ''),
+    };
 
   const reasonBy =
     rejection.reason && rejection.reasonBy && rejection.reasonBy !== rejection.by
@@ -1269,6 +1279,7 @@ const rejectedLabelOf = (sketch: Pick<ListedSketch, 'rejections'>, variant: stri
       : '';
 
   return {
+    tag: STUDIO_LABELS.systemTree.rejected,
     text: rejection.reason
       ? STUDIO_LABELS.systemTree.rejectedWith(rejection.reason)
       : STUDIO_LABELS.systemTree.rejectedLabel,

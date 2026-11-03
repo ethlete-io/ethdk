@@ -399,6 +399,9 @@ export type SketchRejection = {
   reason?: string;
   reasonBy?: SketchVerdictBy;
   reopened?: { by: SketchVerdictBy; decidedAt: string; reason?: string };
+  /** `withdrawn`: the agent that drew the variant took it out, `withdrawnBy` is its model id. */
+  status?: 'withdrawn';
+  withdrawnBy?: string;
 };
 
 /** An open sketch of a product: `target` is `<layer>/<name>`, and each variant lists the rule problems it has laid over the product. */

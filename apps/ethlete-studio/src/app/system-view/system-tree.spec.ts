@@ -1235,6 +1235,26 @@ describe('picking a variant', () => {
     expect(pickedVariantOf(sketch())).toBeNull();
   });
 
+  it('labels a variant its agent withdrew as withdrawn by the agent, and a designer rejection as rejected', () => {
+    const decidedAt = '2026-10-30T11:00:00.000Z';
+    const button = part();
+    const judged = sketch({
+      variants: ['a', 'b'],
+      rejections: {
+        a: [{ by: 'designer', decidedAt, reason: 'zu laut' }],
+        b: [{ by: 'agent', decidedAt, reason: 'identisch mit a', status: 'withdrawn', withdrawnBy: 'model-x' }],
+      },
+    });
+    const columns = sketchMatrixOf({ port: 4400, product: product([button]), part: button, sketch: judged }).columns;
+    const columnOf = (key: string) => columns.find((column) => column.key === key);
+
+    expect(columnOf('a')?.label).toContain('abgelehnt');
+    expect(columnOf('a')?.note).toContain('Abgelehnt: zu laut');
+    expect(columnOf('b')?.label).toContain('vom Agent zurückgezogen');
+    expect(columnOf('b')?.label).not.toContain('abgelehnt');
+    expect(columnOf('b')?.note).toContain('Vom Agent zurückgezogen: identisch mit a (von model-x)');
+  });
+
   it('takes a rejected variant out of the pick until it is reopened', () => {
     const decidedAt = '2026-10-30T11:00:00.000Z';
     const rejected = sketch({

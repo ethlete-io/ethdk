@@ -141,6 +141,7 @@ export const STUDIO_LABELS = {
     legacy: 'Legacy',
     pending: 'Agent zeichnet noch',
     rejected: 'abgelehnt',
+    withdrawn: 'vom Agent zurückgezogen',
     noReport: 'Seit 30 Minuten kein Bericht',
     drawing: 'wird gezeichnet …',
     variantBy: (variant: string, authors: string) => `${variant} von ${authors}`,
@@ -158,6 +159,8 @@ export const STUDIO_LABELS = {
     reasonBy: (by: string) => `, Grund von ${by}`,
     rejectedWith: (reason: string) => `Abgelehnt: ${reason}`,
     rejectedLabel: 'Abgelehnt',
+    withdrawnWith: (reason: string) => `Vom Agent zurückgezogen: ${reason}`,
+    withdrawnLabel: 'Vom Agent zurückgezogen',
     rejectedBy: (by: string, reasonBy: string) => `von ${by}${reasonBy}`,
   },
   flows: {

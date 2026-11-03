@@ -9,7 +9,7 @@ import { INTERACTIONS } from './force-interactions';
 import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
-import { findSketch, parseTarget, rejectionOf, Sketch } from './system/sketch/sketch';
+import { findSketch, parseTarget, rejectionOf, Sketch, SketchRejection } from './system/sketch/sketch';
 import { createPartShooter, cropOf, drawParamsOf, isSchemeFlag, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
@@ -183,21 +183,28 @@ export const gridRowsOf = (row: Plan[], grid: ListedGrid): (Plan | EmptyGridCell
 export const sketchHoldingOf = <T extends Pick<Sketch, 'targets'>>(sketches: T[], part: string) =>
   sketches.find((sketch) => sketch.targets.includes(part));
 
+const rejectedLabelOf = (variant: string, rejection: SketchRejection | undefined) => {
+  if (!rejection) return variant;
+  if (rejection.status !== 'withdrawn') return `${variant} rejected`;
+
+  return `${variant} withdrawn by agent${rejection.reason ? `: ${rejection.reason}` : ''}`;
+};
+
 export const rowsOf = (options: {
   part: string;
   variants: string[] | null;
   merged: boolean;
-  rejected?: string[];
+  rejected?: Record<string, SketchRejection>;
   sketchTarget?: string;
 }): Axis[] => {
-  const { part, variants, merged, rejected = [], sketchTarget = part } = options;
+  const { part, variants, merged, rejected = {}, sketchTarget = part } = options;
 
   if (!variants) return [{ label: '', sketch: null }];
 
   return [
     ...(merged ? [{ label: 'merged', sketch: null }] : []),
     ...variants.map((variant) => ({
-      label: rejected.includes(variant) ? `${variant} rejected` : variant,
+      label: rejectedLabelOf(variant, rejected[variant]),
       sketch: { target: sketchTarget, variant },
     })),
   ];
@@ -495,7 +502,13 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     sketchTarget: sketch?.target,
     variants: shownVariants,
     merged: Boolean(system.partOf({ product, part })),
-    rejected: sketch?.variants.filter((variant) => rejectionOf(sketch, variant)),
+    rejected: Object.fromEntries(
+      (sketch?.variants ?? []).flatMap((variant) => {
+        const rejection = sketch && rejectionOf(sketch, variant);
+
+        return rejection ? [[variant, rejection]] : [];
+      }),
+    ),
   });
 
   if (!system.partOf({ product, part }) && !sketch) {

@@ -395,10 +395,32 @@ describe('rowsOf', () => {
   });
 
   it('still draws a rejected variant, labelled rejected', () => {
-    const rows = rowsOf({ part: 'pages/a', variants: ['one', 'two'], merged: false, rejected: ['two'] });
+    const rows = rowsOf({
+      part: 'pages/a',
+      variants: ['one', 'two'],
+      merged: false,
+      rejected: { two: { by: 'designer', decidedAt: '2026-11-03T10:00:00.000Z' } },
+    });
 
     expect(rows.map((row) => row.label)).toEqual(['one', 'two rejected']);
     expect(rows[1]?.sketch).toEqual({ target: 'pages/a', variant: 'two' });
+  });
+
+  it('labels a variant the agent withdrew as withdrawn by agent, with its reason, not as rejected', () => {
+    const withdrawn = {
+      by: 'agent',
+      decidedAt: '2026-11-03T10:00:00.000Z',
+      status: 'withdrawn',
+      withdrawnBy: 'm',
+    } as const;
+    const rows = rowsOf({
+      part: 'pages/a',
+      variants: ['one', 'two'],
+      merged: false,
+      rejected: { one: withdrawn, two: { ...withdrawn, reason: 'same as a' } },
+    });
+
+    expect(rows.map((row) => row.label)).toEqual(['one withdrawn by agent', 'two withdrawn by agent: same as a']);
   });
 });
 
