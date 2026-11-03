@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, Subscriber, of, throwError } from 'rxjs';
-import { CommentEvent, ListedComment, ListedComments, ProductAddress } from '../../host/design';
+import { CommentEvent, DesignAnswerError, ListedComment, ListedComments, ProductAddress } from '../../host/design';
 import { rememberedView } from '../studio-view/remembered';
 import { CommentSource, injectCommentStore, provideCommentStore } from './comment-store';
 
@@ -11,7 +11,8 @@ const host = vi.hoisted(() => ({
   write: vi.fn<(address: ProductAddress, comment: unknown) => Observable<ListedComment>>(),
 }));
 
-vi.mock('../../host/design', () => ({
+vi.mock('../../host/design', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../host/design')>()),
   listedComments$: host.list,
   commentChanges$: host.changes,
   writeComment$: host.write,
@@ -225,6 +226,29 @@ describe('CommentStore', () => {
       expect(store.sendPhase()).toBe('error');
       expect(store.draft()).toEqual(DRAFT);
       expect(store.draftText()).toBe('Zu eng');
+    });
+
+    it('offers a retry after a server error and shows the reason of a refused send without one', () => {
+      const { store } = setup();
+
+      store.toggle();
+      store.start(DRAFT);
+      host.write.mockReset().mockReturnValue(throwError(() => new DesignAnswerError('kaputt', 500)));
+      store.send('Zu eng');
+
+      expect(store.sendPhase()).toBe('error');
+      expect(store.sendReason()).toBe('');
+
+      host.write.mockReset().mockReturnValue(throwError(() => new DesignAnswerError('part gone', 422)));
+      store.send('Zu eng');
+
+      expect(store.sendPhase()).toBe('rejected');
+      expect(store.sendReason()).toBe('part gone');
+      expect(store.draft()).toEqual(DRAFT);
+
+      store.cancel();
+
+      expect(store.sendReason()).toBe('');
     });
 
     it('ends comment mode and drops the draft on a second toggle', () => {

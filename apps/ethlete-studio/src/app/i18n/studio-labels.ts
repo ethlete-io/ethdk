@@ -91,7 +91,7 @@ export const STUDIO_LABELS = {
     cancel: 'Abbrechen',
     send: 'Senden',
     sendAgain: 'Erneut senden',
-    notSent: 'Nicht gesendet. Der Design-Server hat nicht geantwortet.',
+    notSent: 'Kommentar nicht gesendet. Erneut versuchen.',
   },
   shell: {
     designSystem: 'Design-System',

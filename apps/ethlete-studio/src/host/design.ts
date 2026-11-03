@@ -489,6 +489,16 @@ export class MergeNeedsRebaseError extends Error {
   }
 }
 
+/** A design server answer that is not ok: its HTTP `status` and the server's own `error` message. */
+export class DesignAnswerError extends Error {
+  public readonly status: number;
+
+  public constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 /** A design server refusal that names its `reason`, with the `findings` lines that caused it, if any. */
 export class DesignRefusalError extends Error {
   public readonly reason: string;
@@ -515,7 +525,7 @@ const refusalOf = (body: unknown, status: number) => {
 
   return typeof reason === 'string'
     ? new DesignRefusalError({ message, reason, findings: Array.isArray(findings) ? findings.map(String) : [] })
-    : new Error(message);
+    : new DesignAnswerError(message, status);
 };
 
 /** Reads a design server answer, and fails with the server's own `error` message when it refuses. */

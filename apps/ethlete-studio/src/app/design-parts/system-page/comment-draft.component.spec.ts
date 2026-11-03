@@ -4,7 +4,7 @@ import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { CommentDraftComponent, CommentSendPhase, draftKeyOf } from './comment-draft.component';
 
-const render = async (text: string, phase: CommentSendPhase | null = null) => {
+const render = async (text: string, phase: CommentSendPhase | null = null, reason = '') => {
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), provideColorThemesWithTailwind4(THEMES)],
   });
@@ -13,6 +13,7 @@ const render = async (text: string, phase: CommentSendPhase | null = null) => {
 
   fixture.componentRef.setInput('text', text);
   fixture.componentRef.setInput('phase', phase);
+  fixture.componentRef.setInput('reason', reason);
   await fixture.whenStable();
 
   const element = fixture.nativeElement as HTMLElement;
@@ -53,13 +54,21 @@ describe('CommentDraftComponent', () => {
     expect(emitted).toEqual([]);
   });
 
-  it('shows the error line and Erneut senden after a failed send', async () => {
+  it('shows the retry line and Erneut senden after a failed send', async () => {
     const { element, button } = await render('Text', 'error');
 
     expect(element.querySelector('[role="alert"]')?.textContent?.trim()).toBe(
-      'Nicht gesendet. Der Design-Server hat nicht geantwortet.',
+      'Kommentar nicht gesendet. Erneut versuchen.',
     );
     expect(button('Erneut senden')).toBeDefined();
+  });
+
+  it('shows the server reason and no retry button after a refused send', async () => {
+    const { element, button } = await render('Text', 'rejected', 'components/card has no state "leer"');
+
+    expect(element.querySelector('[role="alert"]')?.textContent?.trim()).toBe('components/card has no state "leer"');
+    expect(button('Erneut senden')).toBeUndefined();
+    expect(button('Senden')).toBeDefined();
   });
 
   it('sends on Enter, breaks the line on Shift+Enter and cancels on Escape', () => {

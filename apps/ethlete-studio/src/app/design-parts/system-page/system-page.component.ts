@@ -82,6 +82,7 @@ export const FRAME_HEAD_CLASS =
                   <ethlete-comment-draft
                     [text]="draft() ?? ''"
                     [phase]="send()"
+                    [reason]="reason()"
                     (textChange)="draft.set($event)"
                     (send)="sendComment.emit($event)"
                     (discard)="draft.set(null)"
@@ -138,6 +139,7 @@ export class SystemPageComponent {
   public commentMode = model(false);
   public draft = model<string | null>(null);
   public send = input<CommentSendPhase | null>(null);
+  public reason = input('');
   public layers = input(SYSTEM_LAYERS);
   public manyStatesLayers = input(MANY_STATES_LAYERS);
   public frame = input('button');

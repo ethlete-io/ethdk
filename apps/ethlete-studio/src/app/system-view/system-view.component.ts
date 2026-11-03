@@ -252,6 +252,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 <ethlete-comment-draft
                   [(text)]="commentStore.draftText"
                   [phase]="commentStore.sendPhase()"
+                  [reason]="commentStore.sendReason()"
                   (send)="commentStore.send($event)"
                   (discard)="commentStore.cancel()"
                   canvasDraft

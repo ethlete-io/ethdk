@@ -2,7 +2,14 @@ import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { EMPTY, Observable, catchError, filter, map, of, retry, scan, startWith, switchMap, tap, timer } from 'rxjs';
-import { ListedComments, ProductAddress, commentChanges$, listedComments$, writeComment$ } from '../../host/design';
+import {
+  DesignAnswerError,
+  ListedComments,
+  ProductAddress,
+  commentChanges$,
+  listedComments$,
+  writeComment$,
+} from '../../host/design';
 import { CommentSendPhase } from '../design-parts/system-page/comment-draft.component';
 import { rememberView, rememberedView } from '../studio-view/remembered';
 import { CommentDraft, commentPlaceOf, numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
@@ -21,6 +28,9 @@ const RECONNECT_DELAY = 5000;
 const NO_SOURCE: CommentSource = { address: null, revision: 0 };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const refusalOf = (error: unknown) =>
+  error instanceof DesignAnswerError && error.status >= 400 && error.status < 500 ? error.message : null;
 
 const sameAddress = (a: ProductAddress | null, b: ProductAddress | null) =>
   a?.port === b?.port && a?.product === b?.product;
@@ -127,6 +137,9 @@ export class CommentStore {
 
   public sendPhase = signal<CommentSendPhase | null>(null);
 
+  /** The design server's reason for refusing the last send, empty unless the phase is `rejected`. */
+  public sendReason = signal('');
+
   /** Reads the comments of the product `source` names, again whenever its revision changes. */
   public connect(source: Signal<CommentSource>) {
     this.source.set(source);
@@ -154,7 +167,7 @@ export class CommentStore {
 
     this.draft.set(draft);
     this.draftText.set('');
-    this.sendPhase.set(null);
+    this.settle(null);
   }
 
   public cancel() {
@@ -162,7 +175,7 @@ export class CommentStore {
 
     this.draft.set(null);
     this.draftText.set('');
-    this.sendPhase.set(null);
+    this.settle(null);
   }
 
   /** Writes the draft with `text`; comment mode stays on, a failed send keeps the draft. */
@@ -173,18 +186,21 @@ export class CommentStore {
 
     if (!address || !draft || !trimmed || this.sendPhase() === 'busy') return;
 
-    this.sendPhase.set('busy');
+    this.settle('busy');
     writeComment$(address, { ...commentPlaceOf(draft.place, draft.point), text: trimmed })
       .pipe(
         tap(() => {
-          this.sendPhase.set(null);
+          this.settle(null);
           this.draft.set(null);
           this.draftText.set('');
           this.reloads.update((count) => count + 1);
         }),
         catchError((error: unknown) => {
+          const refusal = refusalOf(error);
+
           console.error('Writing the comment failed:', messageOf(error));
-          this.sendPhase.set('error');
+          if (refusal === null) this.settle('error');
+          else this.settle('rejected', refusal);
 
           return EMPTY;
         }),
@@ -203,6 +219,11 @@ export class CommentStore {
   public showResolved(shown: boolean) {
     this.resolvedShown.set(shown);
     rememberView({ resolvedShown: shown });
+  }
+
+  private settle(phase: CommentSendPhase | null, reason = '') {
+    this.sendPhase.set(phase);
+    this.sendReason.set(reason);
   }
 }
 

@@ -3,7 +3,7 @@ import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/c
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 
-export type CommentSendPhase = 'busy' | 'error';
+export type CommentSendPhase = 'busy' | 'error' | 'rejected';
 
 export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isComposing'>) => {
   if (event.isComposing) return null;
@@ -25,7 +25,7 @@ export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isCo
         rows="3"
       />
     </et-form-field>
-    @if (phase() === 'error') {
+    @if (phase() === 'error' || phase() === 'rejected') {
       <p
         [etProvideColor]="errorTheme()"
         class="m-0 flex items-center gap-space-1 text-ui-xs text-et-theme-ink"
@@ -46,7 +46,7 @@ export const draftKeyOf = (event: Pick<KeyboardEvent, 'key' | 'shiftKey' | 'isCo
           <circle cx="8" cy="8" r="5.5" />
           <path d="m6 6 4 4m0-4-4 4" />
         </svg>
-        <span>{{ LABELS.notSent }}</span>
+        <span>{{ phase() === 'rejected' ? reason() : LABELS.notSent }}</span>
       </p>
     }
     <div class="flex justify-end gap-space-2">
@@ -86,6 +86,7 @@ export class CommentDraftComponent {
 
   public text = model('');
   public phase = input<CommentSendPhase | null>(null);
+  public reason = input('');
 
   public send = output<string>();
   public discard = output();
