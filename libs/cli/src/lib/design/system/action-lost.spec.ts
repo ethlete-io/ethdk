@@ -1,9 +1,15 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { join, relative } from 'path';
+import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../paths';
-import { actionKeysOfMarkup, actionLostOf, declaredActionsOf, productActionsOf } from './action-lost';
+import {
+  actionKeysOfMarkup,
+  actionLostOf,
+  actionLostProblemsOf,
+  declaredActionsOf,
+  productActionsOf,
+} from './action-lost';
 import { PartGo } from './part-go';
 import { resolveProduct } from './resolve-product';
 
@@ -75,21 +81,32 @@ describe('ACTION-LOST', () => {
       'pages/home': go(),
       'components/gone': go(['emit:dismiss']),
     });
+    const lostOf = (declared: string[], part?: string) =>
+      actionLostOf({ product, declared: new Set(declared), invocation: 'et design', part }).map((problem) => ({
+        ...problem,
+        file: relative(target, problem.file),
+      }));
 
-    expect(
-      actionLostOf({ target, product, declared: new Set(['open', 'emit:remove']), invocation: 'et design' }),
-    ).toEqual([
+    expect(lostOf(['open', 'emit:remove'])).toEqual([
       {
         rule: 'ACTION-LOST',
         file: '.ethlete/design/app-a/go.json',
         message:
-          'app-a components/gone: action "emit:dismiss" was declared at the go of 2026-10-01 and exists nowhere now - draw it again, or confirm the removal with a new go: et design go components/gone --product app-a --by <name>',
+          'action "emit:dismiss" was declared at the go of components/gone on 2026-10-01 and exists nowhere in app-a now - draw it again, or confirm the removal with a new go: et design go components/gone --product app-a --by <name>',
       },
     ]);
-    expect(
-      actionLostOf({ target, product, declared: new Set(['open']), invocation: 'et design' }).map(
-        (problem) => problem.message.split(':')[0],
-      ),
-    ).toEqual(['app-a components/chip', 'app-a components/gone']);
+    expect(lostOf(['open']).map((problem) => problem.file)).toEqual([
+      '.ethlete/design/app-a/components/chip/chip.ts',
+      '.ethlete/design/app-a/go.json',
+    ]);
+    expect(lostOf(['open'], 'components/chip')).toHaveLength(1);
+  });
+
+  it('reads no part when no go recorded actions', async () => {
+    const { target, product } = checkout({ 'pages/home': go() });
+    const load = vi.fn();
+
+    expect(await actionLostProblemsOf({ target, config: {}, product, invocation: 'et design', load })).toEqual([]);
+    expect(load).not.toHaveBeenCalled();
   });
 });

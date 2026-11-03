@@ -8,6 +8,7 @@
     "libs/cli/src/lib/design/system/rules/*.ts",
     "libs/cli/src/lib/design/system/render-check.ts",
     "libs/cli/src/lib/design/system/nested-scroll.ts",
-    "libs/cli/src/lib/design/system/bespoke-controls.ts"
+    "libs/cli/src/lib/design/system/bespoke-controls.ts",
+    "libs/cli/src/lib/design/system/action-lost.ts"
   ]
 }

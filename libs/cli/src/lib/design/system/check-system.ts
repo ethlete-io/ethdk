@@ -4,6 +4,7 @@ import { autoAcceptOf, DrawStates, newStatesLineOf } from './accepted-pictures';
 import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
+import { actionLostProblemsOf } from './action-lost';
 import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
@@ -594,6 +595,11 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     const problems = [
       ...(await droppedPropProblemsOf({ ...options, product: resolved })),
       ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
+      ...(await actionLostProblemsOf({
+        ...options,
+        product: resolved,
+        invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
+      })),
     ];
 
     for (const problem of problems) {

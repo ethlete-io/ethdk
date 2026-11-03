@@ -361,6 +361,11 @@ confirm line names it, for example `go studio components/chip - Impl Q98 - desig
 The note is stored in the go entry. `et design accept --by tom` asks the same way. Any other `--by` and Studio's go
 button need no note and no confirm.
 
+A go also stores `actions`, the sorted `data-et-action` keys every state of the part draws. `et design check` fails
+`ACTION-LOST` for a key a go stored that no part of the product draws now: moving an action to another part is fine,
+dropping it is not. A new go of the part stores its current keys and so confirms the removal. A go stored before
+`actions` is not checked.
+
 An agent that prepares Tom's goes writes a go list, a JSON array, and Tom runs `et design go --batch <file>`:
 
 ```json

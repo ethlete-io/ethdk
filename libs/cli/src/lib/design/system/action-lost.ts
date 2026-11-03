@@ -1,7 +1,6 @@
-import { relative, resolve } from 'path';
+import { resolve } from 'path';
 import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
-import { partOwnerOf } from './inventory-approval';
 import { GO_FILE, readGo } from './part-go';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
@@ -96,35 +95,53 @@ export const withPartLoader = async <T>(
   }
 };
 
-/** The directories whose go.json can hold a go of a part of the product. */
-const goDirsOf = (product: ResolvedProduct) =>
-  new Set([product.dir, ...product.parts.map((part) => partOwnerOf({ product, part }).dir)]);
-
 /**
- * An ACTION-LOST problem for every action key a go recorded that no part of the product declares now. A go without
- * recorded actions is skipped; a new go of the part records its current actions and so confirms the removal.
+ * An ACTION-LOST problem for every action key a go in the product's go.json recorded that no part of the product
+ * declares now, at the part's file. A go without recorded actions is skipped; a new go of the part records its current
+ * actions and so confirms the removal.
  */
 export const actionLostOf = (options: {
-  target: string;
   product: ResolvedProduct;
   declared: ReadonlySet<string>;
   invocation: string;
+  part?: string;
 }): Problem[] => {
   const { product, declared, invocation } = options;
 
-  return [...goDirsOf(product)].flatMap((dir) => {
-    const file = relative(options.target, resolve(dir, GO_FILE));
+  return Object.entries(readGo(product.dir))
+    .filter(([part]) => !options.part || part === options.part)
+    .flatMap(([part, go]) => {
+      const file =
+        product.parts.find((candidate) => partKeyOf(candidate) === part)?.file ?? resolve(product.dir, GO_FILE);
 
-    return Object.entries(readGo(dir)).flatMap(([part, go]) =>
-      (go.actions ?? [])
+      return (go.actions ?? [])
         .filter((key) => !declared.has(key))
         .map((key) => ({
           rule: ACTION_LOST_RULE,
           file,
-          message: `${product.name} ${part}: action "${key}" was declared at the go of ${go.at.slice(0, 10)} and exists nowhere now - draw it again, or confirm the removal with a new go: ${invocation} go ${part} --product ${product.name} --by <name>`,
-        })),
-    );
-  });
+          message: `action "${key}" was declared at the go of ${part} on ${go.at.slice(0, 10)} and exists nowhere in ${product.name} now - draw it again, or confirm the removal with a new go: ${invocation} go ${part} --product ${product.name} --by <name>`,
+        }));
+    });
+};
+
+/** The ACTION-LOST problems of a product, against the actions its parts declare now. */
+export const actionLostProblemsOf = async (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  invocation: string;
+  part?: string;
+  load?: PartModuleLoader;
+}) => {
+  const recorded = Object.values(readGo(options.product.dir)).some((go) => (go.actions ?? []).length > 0);
+
+  if (!recorded) return [];
+
+  const declared = options.load
+    ? await productActionsOf({ load: options.load, product: options.product })
+    : await withPartLoader(options, (load) => productActionsOf({ load, product: options.product }));
+
+  return actionLostOf({ ...options, declared });
 };
 
 /** Reads the declared action keys of a part for its go, or why not. */
