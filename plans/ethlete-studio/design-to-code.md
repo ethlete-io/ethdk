@@ -3865,6 +3865,22 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      inline originals had none either). That becomes design work for Tom as sketches, and CONTROL-PART-MISSING becomes
      CONTROL-PART-INCOMPLETE.
 
+306. Red frames on the B240 sketch (Tom, 2026-11-03). In Studio, pages/sketches showed "Failed to fetch
+     dynamically imported module .../pages-sketches/a/pages/sketches/sketches.ts" in 3 states for the base, a and b,
+     while the badge said "Wartet auf deine Wahl". Cause (builder, not reproducible afterwards): the B248a sub-agent
+     edited pages/sketches files while Studio loaded those states. Vite failed one request mid-edit, and the browser
+     caches a failed dynamic import for the page's lifetime, so the frames stay red after the file is fixed. Why no tool
+     caught it: `sketch ready`/`sketch check` render every state, but on the CLI's own fresh design server, not on the
+     Studio dev server the user looks at. Their verdict was right; Studio never retries a failed frame and still offers
+     the pick. Fix (B254, decided, technical): in the sketch view, a variant with an errored frame shows no Übernehmen,
+     the badge says the round has a render error, and an errored frame re-imports (cache-busted) on the next
+     design-server change event; a sketch-view case joins the frame-load-failed e2e suite. Side facts: the B240 sketch
+     holds its own copies of sketches.ts and shared/sketch-status.ts with holdTrigger inline, so it is rebased onto the
+     B248a page before Tom's pick is merged (no picture change). The warning triangles in the part tree on inbox, merge,
+     sketches and system are the listed OPEN_INLINE_UI hits, but their title says "Render-Check: 1 Warnung"
+     (tree-row-item.component.ts:59). Fix (B255, decided, technical): the tree warning title names the rule and the
+     owner, so the user can tell an open-list entry from a render warning.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
