@@ -3794,5 +3794,4 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      unexplained go in his tree. Why no tool caught it: check writes go.json silently, and nothing flags an
      uncommitted refresh before the next commit. Fix (B246, decided, technical): the check prints each go it
      refreshed with the commit-hunks command to run, and `yarn commit` refuses while a refreshed go of a part in the
-     commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03). B245b built in
-     004169aa0: `yarn commit` reads the test:tools globs from package.json.
+     commit is uncommitted. Who may commit a carry refresh is Tom's call (asked 2026-11-03).
