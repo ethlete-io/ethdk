@@ -299,15 +299,22 @@ export type ActionOutcome = {
   reached?: string | null;
 };
 
-/** Why one input on an element missed its declared action, or `null` when it reached it. */
+/**
+ * Why one input on an element missed its declared action, or `null` when it reached it. A declared emit is also reached
+ * by one of its `modelChanges`.
+ */
 export const actionFailureOf = (options: {
   action: DeclaredAction;
   target: string;
   input: ActionInput;
   outcome: ActionOutcome;
+  modelChanges?: readonly string[];
 }): string | null => {
-  const { action, target, input, outcome } = options;
-  const reached = action.kind === 'emit' ? outcome.emitted.includes(action.output) : outcome.compare?.ok === true;
+  const { action, target, input, outcome, modelChanges = [] } = options;
+  const reached =
+    action.kind === 'emit'
+      ? [action.output, ...modelChanges].some((output) => outcome.emitted.includes(output))
+      : outcome.compare?.ok === true;
 
   if (reached) return null;
 

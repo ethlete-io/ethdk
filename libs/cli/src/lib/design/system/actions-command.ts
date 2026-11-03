@@ -30,6 +30,7 @@ import {
 } from './actions';
 import { awaitOutput, dropKeyboardFocus, INIT_SCRIPT, OVERLAY_ROOTS, settle, watchMutations } from './action-press';
 import { compareFrameOf } from './compare-command';
+import { componentOutputsOf, modelChangesForOf } from './component-outputs';
 import { checkLiveActions, liveLineOf, liveStateCompareOf, LiveLine } from './live-actions';
 import { pointerFocusVerdictOf, probePointerFocus } from './pointer-focus';
 import { reachedExpandedStateOf, reachedStateOf } from './reached-state';
@@ -267,6 +268,15 @@ export const checkActions = async (options: {
     const states =
       loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? (loaded as Record<string, unknown>) : {};
     const names = Object.keys(states);
+    const appOutputs = (() => {
+      const found = product.parts.find((candidate) => partKeyOf(candidate) === part);
+      const link = found ? partLinkOf(found.source) : null;
+      const component =
+        link?.kind === 'component' ? link.path : link?.kind === 'route' ? (link.component ?? null) : null;
+      const source = component === null ? null : resolve(target, component);
+
+      return source && existsSync(source) ? componentOutputsOf(readFileSync(source, 'utf8')) : null;
+    })();
 
     if (only !== null && !(only in states)) return `${part} has no state "${only}" - its states: ${names.join(', ')}`;
 
@@ -664,7 +674,16 @@ export const checkActions = async (options: {
                   after: run.after ?? [],
                 });
 
-              const failure = actionFailureOf({ action, target: goal, input, outcome });
+              const failure = actionFailureOf({
+                action,
+                target: goal,
+                input,
+                outcome,
+                modelChanges:
+                  action.kind === 'emit' && owner === part
+                    ? modelChangesForOf({ output: action.output, app: appOutputs, states })
+                    : [],
+              });
 
               if (failure !== null && result && result.kind !== 'ok' && goalPicture && run.app) {
                 dir ??= mkdtempSync(join(tmpdir(), 'et-design-actions-'));
