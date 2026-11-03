@@ -4,29 +4,33 @@
       "id": "comment-write",
       "label": "Kommentar schreiben",
       "place": null,
-      "confirmed": false,
-      "why": "pages/inbox draws the draft (state comment-draft) and its send button as control \"send\", but with no data-et-action; the full flow (comment-mode, emit:sendComment) is drawn only in the open sketch pages-system/a"
+      "confirmed": true,
+      "why": "pages/inbox draws the draft (state comment-draft) and its send button as control \"send\", but with no data-et-action; the full flow (comment-mode, emit:sendComment) is drawn only in the open sketch pages-system/a",
+      "missing": "B173"
     },
     {
       "id": "comment-reply",
       "label": "Auf Kommentar antworten",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/comment-reply is served, called nowhere in the app and drawn nowhere (B145)"
+      "confirmed": true,
+      "why": "/__design/comment-reply is served, called nowhere in the app and drawn nowhere (B145)",
+      "missing": "B145"
     },
     {
       "id": "comment-done",
       "label": "Kommentar erledigen",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/comment-done is served, called nowhere in the app and drawn nowhere (B145)"
+      "confirmed": true,
+      "why": "/__design/comment-done is served, called nowhere in the app and drawn nowhere (B145)",
+      "missing": "B145"
     },
     {
       "id": "comment-withdraw",
       "label": "Kommentar zurückziehen",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/comment-withdraw is served, called nowhere in the app and drawn nowhere (B145)"
+      "confirmed": true,
+      "why": "/__design/comment-withdraw is served, called nowhere in the app and drawn nowhere (B145)",
+      "missing": "B145"
     },
     {
       "id": "comment-open",
@@ -35,7 +39,7 @@
         "part": "pages/inbox",
         "action": "emit:pick"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "comments-show-resolved",
@@ -44,14 +48,15 @@
         "part": "pages/inbox",
         "action": "emit:showResolvedChange"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "comments-retry",
       "label": "Kommentare erneut laden",
       "place": null,
-      "confirmed": false,
-      "why": "the app's inbox has a retry button (retry.emit); pages/inbox draws no retry action"
+      "confirmed": true,
+      "why": "the app's inbox has a retry button (retry.emit); pages/inbox draws no retry action",
+      "missing": "B174"
     },
     {
       "id": "comment-pin-toggle",
@@ -60,77 +65,87 @@
         "part": "components/comment-pin",
         "action": "emit:pinToggle"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "note-write",
       "label": "Notiz schreiben",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/note is served, called nowhere in the app and drawn nowhere (B148)"
+      "confirmed": true,
+      "why": "/__design/note is served, called nowhere in the app and drawn nowhere (B148)",
+      "missing": "B148"
     },
     {
       "id": "note-change",
       "label": "Notiz ändern",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/note-change is served, called nowhere in the app and drawn nowhere (B148)"
+      "confirmed": true,
+      "why": "/__design/note-change is served, called nowhere in the app and drawn nowhere (B148)",
+      "missing": "B148"
     },
     {
       "id": "note-delete",
       "label": "Notiz löschen",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/note-delete is served, called nowhere in the app and drawn nowhere (B148)"
+      "confirmed": true,
+      "why": "/__design/note-delete is served, called nowhere in the app and drawn nowhere (B148)",
+      "missing": "B148"
     },
     {
       "id": "flow-note-write",
       "label": "Flow-Notiz schreiben",
       "place": null,
-      "confirmed": false,
-      "why": "/__design/flow-note(-change|-delete) are served, called nowhere in the app and drawn nowhere (B148)"
+      "confirmed": true,
+      "why": "/__design/flow-note(-change|-delete) are served, called nowhere in the app and drawn nowhere (B148)",
+      "missing": "B148"
     },
     {
       "id": "go-give",
       "label": "Go geben",
       "place": null,
-      "confirmed": false,
-      "why": "system-view/part-approval.component.ts calls /__design/part-go; no design part draws it"
+      "confirmed": true,
+      "why": "system-view/part-approval.component.ts calls /__design/part-go; no design part draws it",
+      "missing": "B175"
     },
     {
       "id": "edit-accept",
       "label": "Änderung annehmen",
       "place": null,
-      "confirmed": false,
-      "why": "system-view/part-approval.component.ts calls /__design/part-accept; no design part draws it"
+      "confirmed": true,
+      "why": "system-view/part-approval.component.ts calls /__design/part-accept; no design part draws it",
+      "missing": "B175"
     },
     {
       "id": "exception-approve",
       "label": "Ausnahme freigeben",
       "place": null,
-      "confirmed": false,
-      "why": "system-view/exception-list.component.ts calls /__design/exception-approve; no design part draws it"
+      "confirmed": true,
+      "why": "system-view/exception-list.component.ts calls /__design/exception-approve; no design part draws it",
+      "missing": "B175"
     },
     {
       "id": "inventory-approve",
       "label": "Inventory freigeben",
       "place": null,
-      "confirmed": false,
-      "why": "pages/inventory draws the button as control \"approve\", but with no data-et-action"
+      "confirmed": true,
+      "why": "pages/inventory draws the button as control \"approve\", but with no data-et-action",
+      "missing": "B173"
     },
     {
       "id": "inventory-reload",
       "label": "Inventory neu laden",
       "place": null,
-      "confirmed": false,
-      "why": "pages/inventory draws the button as control \"reload\", but with no data-et-action"
+      "confirmed": true,
+      "why": "pages/inventory draws the button as control \"reload\", but with no data-et-action",
+      "missing": "B173"
     },
     {
       "id": "inventory-toggle",
       "label": "Inventory ein- und ausblenden",
       "place": null,
-      "confirmed": false,
-      "why": "pages/inventory draws the toggle as control \"toggle\", but with no data-et-action"
+      "confirmed": true,
+      "why": "pages/inventory draws the toggle as control \"toggle\", but with no data-et-action",
+      "missing": "B173"
     },
     {
       "id": "sketch-open-merge",
@@ -139,7 +154,7 @@
         "part": "pages/sketches",
         "action": "emit:merge"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sketch-merge",
@@ -148,7 +163,7 @@
         "part": "pages/merge",
         "action": "emit:merge"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "merge-pick-change",
@@ -157,7 +172,7 @@
         "part": "pages/merge",
         "action": "emit:pick"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "merge-back",
@@ -166,7 +181,7 @@
         "part": "pages/merge",
         "action": "emit:back"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sketch-discard",
@@ -175,7 +190,7 @@
         "part": "pages/sketches",
         "action": "emit:discard"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sketch-same-toggle",
@@ -184,7 +199,7 @@
         "part": "pages/sketches",
         "action": "emit:sameToggle"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sketch-paused-reason",
@@ -193,56 +208,60 @@
         "part": "pages/sketches",
         "action": "paused-reason"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sketch-round",
       "label": "Runde wählen",
       "place": null,
-      "confirmed": false,
-      "why": "the app's sketches part has a round select (selectRound); pages/sketches draws no round action"
+      "confirmed": true,
+      "why": "the app's sketches part has a round select (selectRound); pages/sketches draws no round action",
+      "missing": "B176"
     },
     {
       "id": "sketch-diff",
       "label": "Geänderte Fläche im Merge zeigen",
       "place": null,
-      "confirmed": false,
+      "confirmed": true,
       "missing": "B151"
     },
     {
       "id": "sketch-crop",
       "label": "Ausschnitt der geänderten Fläche zeigen",
       "place": null,
-      "confirmed": false,
+      "confirmed": true,
       "missing": "B151"
     },
     {
       "id": "motion",
       "label": "Motion-Streifen in der Teilansicht",
       "place": null,
-      "confirmed": false,
+      "confirmed": true,
       "missing": "B151"
     },
     {
       "id": "call-transfer",
       "label": "Auftrag als übertragen markieren",
       "place": null,
-      "confirmed": false,
-      "why": "system-view.component.ts calls transferCall$ (markTransferred); no design part draws it"
+      "confirmed": true,
+      "why": "system-view.component.ts calls transferCall$ (markTransferred); no design part draws it",
+      "missing": "B175"
     },
     {
       "id": "theme-pick",
       "label": "Theme wählen",
       "place": null,
-      "confirmed": false,
-      "why": "system-view.component.ts has a theme switch (pickTheme); no design part draws it"
+      "confirmed": true,
+      "why": "system-view.component.ts has a theme switch (pickTheme); no design part draws it",
+      "missing": "B175"
     },
     {
       "id": "preset-pick",
       "label": "Viewport wählen",
       "place": null,
-      "confirmed": false,
-      "why": "flow-view.component.ts picks a viewport preset (presetChange); pages/flows draws no preset action"
+      "confirmed": true,
+      "why": "flow-view.component.ts picks a viewport preset (presetChange); pages/flows draws no preset action",
+      "missing": "B177"
     },
     {
       "id": "open-points-toggle",
@@ -251,7 +270,7 @@
         "part": "pages/system",
         "action": "points-closed"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "prompt-copy-start",
@@ -260,7 +279,7 @@
         "part": "pages/start",
         "action": "emit:copyPrompt"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "prompt-copy-system",
@@ -269,14 +288,15 @@
         "part": "pages/system",
         "action": "emit:copyPrompt"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "prompt-copy-flows",
       "label": "Prompt kopieren (keine Flows)",
       "place": null,
-      "confirmed": false,
-      "why": "the app's flows page has a copy-prompt button; pages/flows draws no copyPrompt action"
+      "confirmed": true,
+      "why": "the app's flows page has a copy-prompt button; pages/flows draws no copyPrompt action",
+      "missing": "B177"
     },
     {
       "id": "repo-open",
@@ -285,7 +305,7 @@
         "part": "pages/start",
         "action": "emit:openRepo"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "repo-other",
@@ -294,7 +314,7 @@
         "part": "pages/start",
         "action": "emit:otherRepo"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "project-switch",
@@ -303,7 +323,7 @@
         "part": "components/shell-project-switch",
         "action": "emit:projectChange"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "project-open",
@@ -312,7 +332,7 @@
         "part": "components/shell-project-switch",
         "action": "emit:openProject"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "product-switch",
@@ -321,7 +341,7 @@
         "part": "elements/shell-main",
         "action": "emit:productChange"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "section-switch",
@@ -330,7 +350,7 @@
         "part": "elements/shell-main",
         "action": "emit:sectionChange"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "sidebar-toggle",
@@ -339,7 +359,7 @@
         "part": "components/shell-collapse",
         "action": "emit:collapse"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "studio-menu-open",
@@ -348,7 +368,7 @@
         "part": "elements/studio-menu",
         "action": "open"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "server-start",
@@ -357,7 +377,7 @@
         "part": "elements/studio-menu",
         "action": "emit:serverAction"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "server-stop",
@@ -366,7 +386,7 @@
         "part": "elements/studio-menu",
         "action": "emit:serverAction"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "server-restart",
@@ -375,7 +395,7 @@
         "part": "elements/shell-main",
         "action": "emit:restartServer"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "part-pick",
@@ -384,7 +404,7 @@
         "part": "elements/part-tree",
         "action": "emit:activate"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "tree-expand",
@@ -393,7 +413,7 @@
         "part": "elements/part-tree",
         "action": "emit:expandedChange"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "flow-pick",
@@ -402,7 +422,7 @@
         "part": "pages/flows",
         "action": "emit:rowPress"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "zoom-in",
@@ -411,7 +431,7 @@
         "part": "components/zoom-chip",
         "action": "emit:zoomIn"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "zoom-out",
@@ -420,7 +440,7 @@
         "part": "components/zoom-chip",
         "action": "emit:zoomOut"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "zoom-reset",
@@ -429,7 +449,7 @@
         "part": "components/zoom-chip",
         "action": "emit:zoomReset"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "zoom-fit",
@@ -438,35 +458,39 @@
         "part": "components/zoom-chip",
         "action": "emit:fit"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "frame-select",
       "label": "Frame wählen",
       "place": null,
-      "confirmed": false,
-      "why": "the app's canvas frames select and activate on click and double click; elements/canvas-frames draws only the zoom actions"
+      "confirmed": true,
+      "why": "the app's canvas frames select and activate on click and double click; elements/canvas-frames draws only the zoom actions",
+      "missing": "B178"
     },
     {
       "id": "frame-resize",
       "label": "Frame-Größe ändern",
       "place": null,
-      "confirmed": false,
-      "why": "the app's canvas frames resize (widthChange, heightChange, cellsChange); no design part draws it"
+      "confirmed": true,
+      "why": "the app's canvas frames resize (widthChange, heightChange, cellsChange); no design part draws it",
+      "missing": "B178"
     },
     {
       "id": "grid-columns-toggle",
       "label": "Spalten und Gruppen im Raster umschalten",
       "place": null,
-      "confirmed": false,
-      "why": "design-canvas.component.html toggles columns and switches groups; no design part draws it"
+      "confirmed": true,
+      "why": "design-canvas.component.html toggles columns and switches groups; no design part draws it",
+      "missing": "B178"
     },
     {
       "id": "frame-reload",
       "label": "Frame neu laden",
       "place": null,
-      "confirmed": false,
-      "why": "canvas-frame.component.ts has a reload button for a failed frame; no design part draws it"
+      "confirmed": true,
+      "why": "canvas-frame.component.ts has a reload button for a failed frame; no design part draws it",
+      "missing": "B178"
     },
     {
       "id": "error-dismiss",
@@ -475,7 +499,7 @@
         "part": "components/error-toast",
         "action": "emit:dismiss"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "window-minimize",
@@ -484,7 +508,7 @@
         "part": "components/title-bar",
         "action": "emit:minimize"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "window-maximize",
@@ -493,7 +517,7 @@
         "part": "components/title-bar",
         "action": "emit:maximize"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "window-close",
@@ -502,7 +526,7 @@
         "part": "components/title-bar",
         "action": "emit:close"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "update-open",
@@ -511,7 +535,7 @@
         "part": "components/title-bar",
         "action": "emit:update"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "update-restart",
@@ -520,7 +544,7 @@
         "part": "components/update-dialog",
         "action": "emit:restart"
       },
-      "confirmed": false
+      "confirmed": true
     },
     {
       "id": "update-later",
@@ -529,7 +553,7 @@
         "part": "components/update-dialog",
         "action": "emit:later"
       },
-      "confirmed": false
+      "confirmed": true
     }
   ]
 }
