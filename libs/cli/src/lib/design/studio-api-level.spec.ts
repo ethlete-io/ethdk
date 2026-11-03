@@ -10,7 +10,7 @@ const routesOf = () => {
   for (const file of readdirSync(__dirname, { recursive: true }) as string[]) {
     if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
 
-    for (const [, route] of readFileSync(join(__dirname, file), 'utf8').matchAll(/'(\/__design\/[^'\s]*)'/g)) {
+    for (const [, route] of readFileSync(join(__dirname, file), 'utf8').matchAll(/'(\/__design\/[^'\s]+)'/g)) {
       routes.add(route as string);
     }
   }

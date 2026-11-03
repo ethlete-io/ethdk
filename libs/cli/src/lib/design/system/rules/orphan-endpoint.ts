@@ -4,6 +4,7 @@ import * as studioApi from '../../studio-api';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 import { partLinkOf } from '../sketch/part-definition';
+import { KNOWN_ORPHAN_ENDPOINTS, KnownOrphan } from './orphan-endpoint-known';
 
 const SERVED_PREFIX = '/__design/';
 
@@ -15,6 +16,8 @@ const sourcesOf = (dir: string): string[] =>
 
     return entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts') ? [readFileSync(path, 'utf8')] : [];
   });
+
+const sourcesCallDesign = (dir: string) => sourcesOf(dir).some((source) => source.includes('__design'));
 
 const isCalledIn = (path: string, sources: string[]) => {
   const tail = path.slice(SERVED_PREFIX.length);
@@ -60,11 +63,58 @@ const servedPathsOf = (): string[] => {
   );
 };
 
-/** A served path the app its parts implement never calls (`ORPHAN-ENDPOINT`); nothing for a product without such an app. */
-export const orphanEndpointProblemsOf = (product: ResolvedProduct): Problem[] => {
+const pathOf = (problem: Problem) => problem.message.slice(0, problem.message.indexOf(':'));
+
+/** Splits the orphans of an app into the unlisted ones and the listed ones (errors), and into warnings for the listed ones; a listed path that is no longer an orphan is an error. */
+export const orphanEndpointVerdictOf = (options: {
+  served: string[];
+  appDir: string;
+  checkout: string;
+  known: KnownOrphan[];
+}): { errors: Problem[]; warnings: Problem[] } => {
+  const orphans = orphanEndpointsOf(options);
+  const dir = relative(options.checkout, options.appDir);
+  const backlogOf = new Map(options.known.map(({ path, backlog }) => [path, backlog]));
+  const orphanPaths = new Set(orphans.map((problem) => pathOf(problem)));
+  const checked = sourcesCallDesign(options.appDir);
+
+  const errors = orphans.filter((problem) => !backlogOf.has(pathOf(problem)));
+  const warnings = orphans.flatMap((problem) => {
+    const path = pathOf(problem);
+    const backlog = backlogOf.get(path);
+
+    return backlog ? [{ ...problem, message: `${path}: orphan endpoint, known and tracked in ${backlog}` }] : [];
+  });
+  const stale = checked
+    ? options.known
+        .filter(({ path }) => !orphanPaths.has(path))
+        .map(({ path, backlog }) => ({
+          rule: 'ORPHAN-ENDPOINT',
+          file: dir,
+          message: `${path}: listed as a known orphan (${backlog}) but it has a caller again - remove it from KNOWN_ORPHAN_ENDPOINTS`,
+        }))
+    : [];
+
+  return { errors: [...errors, ...stale], warnings };
+};
+
+const verdictsOf = (product: ResolvedProduct) => {
   const checkout = resolve(product.configFile, '../../..');
 
-  return [...appDirsOf(product)].flatMap((app) =>
-    orphanEndpointsOf({ served: servedPathsOf(), appDir: resolve(checkout, app), checkout }),
+  return [...appDirsOf(product)].map((app) =>
+    orphanEndpointVerdictOf({
+      served: servedPathsOf(),
+      appDir: resolve(checkout, app),
+      checkout,
+      known: KNOWN_ORPHAN_ENDPOINTS,
+    }),
   );
 };
+
+/** A served path the app its parts implement never calls and the known list does not carry, or a listed path that has a caller again (`ORPHAN-ENDPOINT`); nothing for a product without such an app. */
+export const orphanEndpointProblemsOf = (product: ResolvedProduct): Problem[] =>
+  verdictsOf(product).flatMap((verdict) => verdict.errors);
+
+/** One warning per known orphan endpoint. */
+export const orphanEndpointWarningsOf = (product: ResolvedProduct): Problem[] =>
+  verdictsOf(product).flatMap((verdict) => verdict.warnings);
