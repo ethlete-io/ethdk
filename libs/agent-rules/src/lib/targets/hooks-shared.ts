@@ -101,9 +101,9 @@ type HookGroup = { matcher?: string; hooks?: HookCommand[] };
 type HookSettings = Record<string, unknown> & { hooks?: Record<string, HookGroup[]> };
 
 /**
- * Rewrites the generated entries declaratively: every entry whose command points into the
- * agent's `hooks/ethlete/` directory is dropped and the currently enabled hooks are re-added, so
- * disabling a hook in the config also unregisters it. Everything else in the file is untouched.
+ * Rewrites the generated entries declaratively: entries whose command points into the agent's
+ * `hooks/ethlete/` directory are updated in place, removed when the hook is disabled, and appended
+ * when new. Event and entry order of everything else in the file is untouched.
  */
 export const mergeHookSettings = (options: {
   agent: string;
@@ -116,17 +116,7 @@ export const mergeHookSettings = (options: {
   const settings = JSON.parse(existing.trim() || '{}') as HookSettings;
   const events = { ...(settings.hooks ?? {}) };
 
-  for (const [event, groups] of Object.entries(events)) {
-    const kept = groups
-      .map((group) => ({
-        ...group,
-        hooks: (group.hooks ?? []).filter((hook) => !(hook.command ?? '').includes(`${hooksDir}/`)),
-      }))
-      .filter((group) => group.hooks.length > 0);
-
-    if (kept.length > 0) events[event] = kept;
-    else delete events[event];
-  }
+  const desired: Record<string, Map<string, HookGroup>> = {};
 
   for (const name of hooks) {
     const definition = KNOWN_HOOKS[name];
@@ -134,14 +124,52 @@ export const mergeHookSettings = (options: {
     if (!definition) continue;
 
     for (const registration of eventsForAgent({ hook: name, agent })) {
-      events[registration.event] = [
-        ...(events[registration.event] ?? []),
-        {
-          ...(registration.matcher ? { matcher: registration.matcher } : {}),
-          hooks: [{ type: 'command', command: commandFor(definition.file), timeout: definition.timeout }],
-        },
-      ];
+      const command = commandFor(definition.file);
+
+      (desired[registration.event] ??= new Map()).set(command, {
+        ...(registration.matcher ? { matcher: registration.matcher } : {}),
+        hooks: [{ type: 'command', command, timeout: definition.timeout }],
+      });
     }
+  }
+
+  const isManaged = (hook: HookCommand) => (hook.command ?? '').includes(`${hooksDir}/`);
+
+  for (const [event, groups] of Object.entries(events)) {
+    const wanted = desired[event] ?? new Map<string, HookGroup>();
+    const kept: HookGroup[] = [];
+
+    for (const group of groups) {
+      const all = group.hooks ?? [];
+      const managed = all.filter(isManaged);
+
+      if (managed.length === 0) {
+        kept.push(group);
+        continue;
+      }
+
+      const rest = all.filter((hook) => !isManaged(hook));
+
+      if (rest.length > 0) kept.push({ ...group, hooks: rest });
+
+      const command = managed[0]?.command ?? '';
+      const replacement = wanted.get(command);
+
+      if (replacement && rest.length === 0) {
+        kept.push(replacement);
+        wanted.delete(command);
+      }
+    }
+
+    kept.push(...wanted.values());
+    delete desired[event];
+
+    if (kept.length > 0) events[event] = kept;
+    else delete events[event];
+  }
+
+  for (const [event, wanted] of Object.entries(desired)) {
+    if (wanted.size > 0) events[event] = [...wanted.values()];
   }
 
   if (Object.keys(events).length > 0) settings.hooks = events;
