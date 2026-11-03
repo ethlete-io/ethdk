@@ -39,6 +39,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { openPointsText, PartOpenPoints } from './system/open-points';
 import { instantLinesOf, sketchOpenPointsOf } from './system/read-open-points';
 import { overlaySketch } from './system/sketch/overlay';
+import { portBaseChanges } from './system/sketch/rebase-port';
 import { THEMING_TEXT } from './system/theming-text';
 import {
   addVariant,
@@ -668,6 +669,12 @@ const loadedAndReady = async (context: Context, { product, sketch }: { product: 
   return autoMerged({ context, product, sketch: ready, again: sketch.status === 'ready' });
 };
 
+const stillReady = (options: { sketch: Sketch; again: boolean }) => {
+  if (options.again) console.log(`${options.sketch.target} is still ready`);
+
+  return 0;
+};
+
 const autoMerged = async (options: { context: Context; product: ResolvedProduct; sketch: Sketch; again: boolean }) => {
   const { context, product, sketch, again } = options;
 
@@ -682,7 +689,7 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
   if (!sketch.targets.every((key) => product.parts.some((part) => partKeyOf(part) === key))) {
     console.log('auto-merge skipped: new part, the user merges');
 
-    return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
+    return stillReady({ sketch, again });
   }
 
   const noChange = await shotsShowNoChange({ target: context.target, config: context.config, product, sketch });
@@ -690,7 +697,7 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
   if (noChange !== true) {
     console.log(`auto-merge skipped: ${noChange}`);
 
-    return again ? fail(`${sketch.target} is ready, not in progress`) : 0;
+    return stillReady({ sketch, again });
   }
 
   const author = authorOf(context.args) ?? undefined;
@@ -843,8 +850,19 @@ const readyRefusalOf = (
 
 const rebased = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
+    const { ported, conflicts } = portBaseChanges({ target: context.target, product, sketch });
+
+    if (conflicts.length > 0)
+      return fail(
+        `${conflicts.join('\n')}\n${sketch.target} not rebased - port these by hand, then run sketch rebase again`,
+      );
+
+    ported.forEach(({ variant, file, how }) => console.log(`PORTED ${variant}: ${file} (${how})`));
     rebaseSketch({ product, sketch });
     console.log(`${sketch.target} now compares with the product as it is`);
+
+    if (ported.length > 0 && sketch.status === 'ready')
+      console.log(`variants changed - run sketch ready ${sketch.target} to check them again`);
 
     return 0;
   });

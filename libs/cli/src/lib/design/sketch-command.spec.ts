@@ -506,8 +506,8 @@ describe('designSketch', { timeout: 120_000 }, () => {
 
     expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(product, 'sketches/components-button'))).toBe(true);
-    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
-    expect(lines.pop()).toBe('components/button is ready, not in progress');
+    expect(await write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('components/button is still ready');
 
     vi.mocked(shotsShowNoChange).mockResolvedValueOnce(true);
 
