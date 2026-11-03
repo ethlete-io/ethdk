@@ -3,7 +3,7 @@ import { dirname, join } from 'path';
 import { BuildStamp, buildInfoOf, installedBuildInfoOf } from './stamp';
 
 /** Bumped whenever the contract between Studio and the design server changes. */
-export const STUDIO_API_LEVEL = 3;
+export const STUDIO_API_LEVEL = 4;
 
 export type ServerBuild = { stamp: BuildStamp; builtAt: number };
 

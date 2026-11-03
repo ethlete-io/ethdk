@@ -32,6 +32,7 @@ import { refreshHarnessMap } from './system/harness-map';
 import { goMarkOf, markPartGo } from './system/part-go';
 import { partActionsOf } from './system/action-lost';
 import { partPointsOf, readOpenPoints } from './system/read-open-points';
+import { staleDesignMocksOf } from './system/stale-design-mocks';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -91,6 +92,7 @@ export const MOTION_PATH = '/__design/motion';
 export const OPEN_POINTS_PATH = '/__design/open-points';
 export const PART_GO_PATH = '/__design/part-go';
 export const PART_ACCEPT_PATH = '/__design/part-accept';
+export const STALE_MOCKS_PATH = '/__design/stale-mocks';
 
 export type Answer = { status: number; body: unknown };
 
@@ -966,3 +968,9 @@ export const partAcceptAnswer = withProduct('POST', async (found) => {
 
   return { status: 200, body: { part, accepted: { by: STUDIO_CLICK, note } } };
 });
+
+/** The design mocks whose build is stale (`stale`), with the command that rebuilds them; `stale` is null while all are built. */
+export const staleMocksAnswer = ({ target, request }: Asked): Answer =>
+  (request.method ?? 'GET') === 'GET'
+    ? { status: 200, body: { stale: staleDesignMocksOf({ target }) } }
+    : failure(405, 'GET only');

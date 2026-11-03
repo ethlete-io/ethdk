@@ -30,6 +30,8 @@ import {
   inventoryApproveAnswer,
   OPEN_POINTS_PATH,
   openPointsAnswer,
+  STALE_MOCKS_PATH,
+  staleMocksAnswer,
   PART_GO_PATH,
   partGoAnswer,
   PART_ACCEPT_PATH,
@@ -894,6 +896,7 @@ const designExplore = ({
       studio(PART_ACCEPT_PATH, partAcceptAnswer);
       studio(EXCEPTIONS_PATH, exceptionsAnswer);
       studio(EXCEPTION_APPROVE_PATH, exceptionApproveAnswer);
+      studio(STALE_MOCKS_PATH, staleMocksAnswer);
       vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
       vite.httpServer?.on('close', () => {
         events.close();

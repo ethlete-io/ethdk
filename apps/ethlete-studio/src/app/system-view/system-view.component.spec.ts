@@ -219,6 +219,35 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
+  it('names the stale design mocks and the rebuild command in a warning banner, and drops it once they are built', async () => {
+    let stale: object | null = { stale: ['button.ts', 'menu.ts'], command: 'npx nx build components', message: '' };
+
+    TestBed.configureTestingModule({ providers: provideColorThemesWithTailwind4(THEMES) });
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/stale-mocks')) return json({ stale });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const banner = () => (fixture.nativeElement as HTMLElement).querySelector('main et-banner');
+
+    expect(banner()?.getAttribute('data-type')).toBe('warning');
+    expect(banner()?.textContent).toContain('Design-Mocks veraltet');
+    expect(banner()?.textContent).toContain(
+      'Die Zeichnungen nutzen alte Mocks (button.ts, menu.ts). Baue sie neu: npx nx build components',
+    );
+
+    stale = null;
+    await new Promise((resolve) => setTimeout(resolve, 5100));
+    await settle(fixture);
+
+    expect(banner()).toBeNull();
+  }, 10_000);
+
   it('passes a design server action of the studio menu on a system page to the host', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const actions: string[] = [];
