@@ -1036,6 +1036,96 @@ const CASES = [
     },
   },
   {
+    name: 'a variant equal to Aktuell keeps its iframes across a quick and a full listing',
+    pages: ['Sketches'],
+    labels: ['Large'],
+    run: async (page) => {
+      const sketchJson = join(checkout, '.ethlete/design/studio/sketches/elements-shell-main/sketch.json');
+      const original = readFileSync(sketchJson, 'utf8');
+      const listings = { quick: 0, full: 0 };
+      const onResponse = (response) => {
+        if (!response.url().includes('/__design/sketches?')) return;
+        listings[response.url().includes('unchanged=no') ? 'quick' : 'full'] += 1;
+      };
+      const refresh = async (content) => {
+        listings.quick = 0;
+        listings.full = 0;
+        writeFileSync(sketchJson, content);
+        const deadline = Date.now() + 15000;
+
+        while ((listings.quick === 0 || listings.full === 0) && Date.now() < deadline) await page.waitForTimeout(250);
+        await page.waitForTimeout(1000);
+
+        return { ...listings };
+      };
+      const watch = () =>
+        page.evaluate(() => {
+          const record = { added: 0, removed: 0 };
+          const touches = (node) =>
+            node instanceof Element &&
+            (node.matches('[data-sk-row="a"], [data-sk-variant="a"], iframe') || !!node.querySelector('iframe'));
+
+          window.__sameRow = record;
+          window.__sameObserver?.disconnect();
+          window.__sameObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+              for (const node of mutation.addedNodes) if (touches(node)) record.added += 1;
+              for (const node of mutation.removedNodes) if (touches(node)) record.removed += 1;
+            }
+          });
+          window.__sameObserver.observe(document.body, { childList: true, subtree: true });
+        });
+      const changes = () => page.evaluate(() => ({ ...window.__sameRow }));
+
+      page.on('response', onResponse);
+
+      try {
+        const folded = await page.evaluate(() => !!document.querySelector('[data-sk-same]'));
+
+        await watch();
+        const collapsedListings = await refresh(original.trimEnd() + '\n\n');
+        const collapsed = await changes();
+
+        await page.locator('[data-sk-same] button').first().click();
+        await settle(page);
+        await page.evaluate(() => {
+          window.__sameFrames = [
+            ...document.querySelectorAll('[data-sk-row="a"] iframe, [data-sk-variant="a"] iframe'),
+          ];
+        });
+        await watch();
+        const openListings = await refresh(original);
+        const open = await changes();
+        const kept = await page.evaluate(() => {
+          const now = [...document.querySelectorAll('[data-sk-row="a"] iframe, [data-sk-variant="a"] iframe')];
+
+          return {
+            before: window.__sameFrames.length,
+            same:
+              now.length === window.__sameFrames.length && now.every((frame, i) => frame === window.__sameFrames[i]),
+          };
+        });
+
+        const listed = (counts) => counts.quick > 0 && counts.full > 0;
+
+        return {
+          ok:
+            folded &&
+            listed(collapsedListings) &&
+            listed(openListings) &&
+            collapsed.added + collapsed.removed === 0 &&
+            open.added + open.removed === 0 &&
+            kept.before > 0 &&
+            kept.same,
+          detail: `folded ${folded}; collapsed: listings ${JSON.stringify(collapsedListings)}, iframe/row adds ${collapsed.added} removes ${collapsed.removed} (must be 0); open: listings ${JSON.stringify(openListings)}, adds ${open.added} removes ${open.removed} (must be 0), iframes ${kept.before} kept ${kept.same}`,
+        };
+      } finally {
+        page.off('response', onResponse);
+        writeFileSync(sketchJson, original);
+      }
+    },
+  },
+  {
     name: 'first load creates one iframe per frame and aborts no frame request',
     pages: ['Sketches'],
     run: async (page) => {

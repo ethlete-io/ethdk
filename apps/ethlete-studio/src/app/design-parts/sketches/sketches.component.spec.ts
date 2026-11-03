@@ -216,6 +216,70 @@ describe('SketchesComponent', () => {
     ).toEqual(['y', 'z']);
   });
 
+  it('keeps a folded variant folded while a quick listing knows nothing about its compare', async () => {
+    const same: SketchRow = {
+      key: 'y',
+      note: 'Gleich wie heute',
+      width: 400,
+      shots: [
+        { state: 'rest', changed: false, height: 100 },
+        { state: 'open', changed: false, height: 200 },
+      ],
+    };
+    const unknown = (row: SketchRow) =>
+      row.key === 'current' ? row : { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) };
+    const fixture = await render({ camera: '100', rows: [...ROWS, same] });
+    const root: HTMLElement = fixture.nativeElement;
+
+    fixture.componentRef.setInput('rows', [...ROWS, same].map(unknown));
+    await fixture.whenStable();
+
+    expect(textOf(root.querySelector('[data-sk-same] button'))).toBe(LABELS.sameVariants(['y']));
+    expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
+
+    fixture.componentRef.setInput('rows', [...ROWS, same]);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
+  });
+
+  it('does not carry a folded variant over to another part', async () => {
+    const same: SketchRow = {
+      key: 'y',
+      note: 'Gleich wie heute',
+      width: 400,
+      shots: [{ state: 'rest', changed: false, height: 100 }],
+    };
+    const fixture = await render({ camera: '100', part: 'components/title-bar', rows: [...ROWS, same] });
+    const root: HTMLElement = fixture.nativeElement;
+
+    fixture.componentRef.setInput('part', 'components/zoom-chip');
+    fixture.componentRef.setInput('rows', [
+      ...ROWS,
+      { ...same, shots: same.shots.map((shot) => ({ ...shot, changed: null })) },
+    ]);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-row="y"]')).not.toBeNull();
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+  });
+
+  it('keeps an unfolded variant unfolded while a quick listing knows nothing about its compare', async () => {
+    const pending = ROWS.map((row) =>
+      row.key === 'x' ? { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) } : row,
+    );
+    const fixture = await render({ camera: '100', rows: pending });
+    const root: HTMLElement = fixture.nativeElement;
+    const row = root.querySelector('[data-sk-row="x"]');
+
+    fixture.componentRef.setInput('rows', [...ROWS]);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-row="x"]')).toBe(row);
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+  });
+
   it('keeps a variant neutral and marks its head while its compare is pending', async () => {
     const pending = ROWS.map((row) =>
       row.key === 'x' ? { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) } : row,

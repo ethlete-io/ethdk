@@ -240,15 +240,20 @@ export class SketchesComponent {
   );
 
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
-  protected sameRows = computed(() =>
-    this.shownRows().filter(
-      (row) =>
-        row.key !== SKETCH_CURRENT &&
-        row.key !== this.drawnKey() &&
-        row.shots.length > 0 &&
-        row.shots.every((shot) => shot.changed === false),
-    ),
-  );
+  protected sameRows = linkedSignal<{ part: string; rows: SketchRow[]; drawn: string | null }, SketchRow[]>({
+    source: () => ({ part: this.part(), rows: this.shownRows(), drawn: this.drawnKey() }),
+    computation: ({ part, rows, drawn }, previous) => {
+      const wasSame = new Set(previous?.source.part === part ? previous.value.map((row) => row.key) : []);
+
+      return rows.filter(
+        (row) =>
+          row.key !== SKETCH_CURRENT &&
+          row.key !== drawn &&
+          row.shots.length > 0 &&
+          row.shots.every((shot) => shot.changed === false || (shot.changed === null && wasSame.has(row.key))),
+      );
+    },
+  });
   protected changedRows = computed(() => {
     const same = this.sameRows();
 
