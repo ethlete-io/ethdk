@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
+import { runPathSpecs, TESTED_TREE_ENV } from './precommit-specs.mjs';
 
 const gitDir = (root) =>
   spawnSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).stdout.trim();
@@ -27,8 +28,19 @@ export const waitForLock = async (lock, { intervalMs = 500, reportMs = 15000, lo
 };
 
 export const commit = async (root, args) => {
+  const separator = args.indexOf('--');
+  const paths = separator === -1 ? [] : args.slice(separator + 1);
+  const env = { ...process.env };
+  delete env[TESTED_TREE_ENV];
+
+  if (paths.length) {
+    const specs = runPathSpecs(root, paths);
+    if (specs.status !== 0) return specs.status;
+    env[TESTED_TREE_ENV] = specs.tree;
+  }
+
   await waitForLock(join(gitDir(root), 'index.lock'));
-  return spawnSync('git', ['commit', ...args], { cwd: root, stdio: 'inherit' }).status ?? 1;
+  return spawnSync('git', ['commit', ...args], { cwd: root, env, stdio: 'inherit' }).status ?? 1;
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {

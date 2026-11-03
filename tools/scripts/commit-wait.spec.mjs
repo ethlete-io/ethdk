@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { test } from 'node:test';
+import { basename, dirname, join, resolve } from 'node:path';
+import { after, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { waitForLock } from './commit-wait.mjs';
 
 test('waits while the lock exists, reports it and never deletes it', async () => {
@@ -24,4 +35,131 @@ test('returns at once without a lock', async () => {
   const started = Date.now();
   await waitForLock(join(tmpdir(), 'commit-wait-none.lock'), { intervalMs: 1000 });
   assert.ok(Date.now() - started < 500);
+});
+
+const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+const created = [];
+
+after(() => created.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+
+const put = (repo, file, text) => {
+  mkdirSync(dirname(join(repo, file)), { recursive: true });
+  writeFileSync(join(repo, file), text);
+};
+
+const leftovers = (tmp) => readdirSync(tmp).filter((name) => /^(yarn-commit|pre-commit)/.test(name));
+
+const repoWithCommitTool = () => {
+  const repo = mkdtempSync(join(tmpdir(), 'commit-wait-repo-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'commit-wait-tmp-'));
+  created.push(repo, tmp);
+  for (const file of [
+    '.husky/pre-commit',
+    'tools/scripts/commit-wait.mjs',
+    'tools/scripts/precommit-specs.mjs',
+    'tools/scripts/link-node-modules.mjs',
+    'tools/scripts/cli-related-map.mjs',
+    'tools/scripts/lint-css-properties.js',
+  ]) {
+    mkdirSync(dirname(join(repo, file)), { recursive: true });
+    copyFileSync(join(sdk, file), join(repo, file));
+  }
+  symlinkSync(join(sdk, 'node_modules'), join(repo, 'node_modules'));
+  put(repo, '.gitignore', 'node_modules\n');
+  put(
+    repo,
+    'libs/cli/vitest.config.mts',
+    "import { defineConfig } from 'vitest/config';\n\nexport default defineConfig({ test: { include: ['src/**/*.spec.ts'] } });\n",
+  );
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 1;\n');
+  put(
+    repo,
+    'libs/cli/src/value.spec.ts',
+    "import { expect, test } from 'vitest';\nimport { value } from './value';\n\ntest('value', () => expect(value).toBe(1));\n",
+  );
+  const env = { ...cleanEnv, TMPDIR: tmp };
+  const run = (command, args, extra = {}) =>
+    spawnSync(command, args, { cwd: repo, env: { ...env, ...extra }, encoding: 'utf8' });
+  for (const args of [
+    ['init', '-q'],
+    ['config', 'user.name', 't'],
+    ['config', 'user.email', 't@t'],
+    ['config', 'core.hooksPath', '.husky'],
+    ['add', '.'],
+    ['commit', '-qm', 'base'],
+  ]) {
+    assert.equal(run('git', args).status, 0);
+  }
+  const yarnCommit = (args, extra) => run('node', ['tools/scripts/commit-wait.mjs', ...args], extra);
+  const worktrees = () => run('git', ['worktree', 'list', '--porcelain']).stdout.match(/^worktree /gm).length;
+  return { repo, tmp, run, yarnCommit, worktrees };
+};
+
+test('runs the path specs before the lock in a worktree without foreign edits, and the hook skips them', () => {
+  const { repo, tmp, run, yarnCommit, worktrees } = repoWithCommitTool();
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 3;\n');
+  put(
+    repo,
+    'libs/cli/src/lock.spec.ts',
+    `import { existsSync } from 'node:fs';\nimport { expect, test } from 'vitest';\nimport { value } from './value';\n\ntest('lock', () => {\n  expect(value).toBe(1);\n  expect(existsSync(${JSON.stringify(join(repo, '.git/index.lock'))})).toBe(false);\n});\n`,
+  );
+  assert.equal(run('git', ['add', '-N', 'libs/cli/src/lock.spec.ts']).status, 0);
+
+  const result = yarnCommit(['-qm', 'lock', '--', 'libs/cli/src/lock.spec.ts']);
+
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /specs already ran for this exact tree/);
+  assert.deepEqual(run('git', ['show', '--name-only', '--format=', 'HEAD']).stdout.trim().split('\n'), [
+    'libs/cli/src/lock.spec.ts',
+  ]);
+  assert.equal(worktrees(), 1);
+  assert.deepEqual(leftovers(tmp), []);
+});
+
+test('a plain git commit with a stale marker still runs the specs in the hook', () => {
+  const { repo, run } = repoWithCommitTool();
+  const stale = run('git', ['rev-parse', 'HEAD^{tree}']).stdout.trim();
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 3;\n');
+
+  const result = run('git', ['commit', '-qm', 'broken', '--', 'libs/cli/src/value.ts'], {
+    PRECOMMIT_SPECS_TREE: stale,
+  });
+
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /a cli spec related to the staged files fails/);
+});
+
+test('a failing or timed-out path spec blocks the commit and removes the worktree', () => {
+  const { repo, tmp, run, yarnCommit, worktrees } = repoWithCommitTool();
+  const head = run('git', ['rev-parse', 'HEAD']).stdout;
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 3;\n');
+
+  for (const extra of [{}, { PRECOMMIT_SPECS_TIMEOUT_MS: '1' }]) {
+    const result = yarnCommit(['-qm', 'broken', '--', 'libs/cli/src/value.ts'], extra);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+    assert.equal(worktrees(), 1);
+    assert.deepEqual(leftovers(tmp), []);
+  }
+});
+
+test('re-runs a spec that failed only by timeout alone once, end to end', () => {
+  const { repo, tmp, run, yarnCommit, worktrees } = repoWithCommitTool();
+  const marker = join(tmp, '..', `${basename(repo)}-slow-ran`);
+  created.push(marker);
+  put(
+    repo,
+    'libs/cli/src/slow.spec.ts',
+    `import { existsSync, writeFileSync } from 'node:fs';\nimport { test } from 'vitest';\n\ntest('slow once', { timeout: 300 }, async () => {\n  if (existsSync(${JSON.stringify(marker)})) return;\n  writeFileSync(${JSON.stringify(marker)}, '');\n  await new Promise((done) => setTimeout(done, 2000));\n});\n`,
+  );
+  assert.equal(run('git', ['add', '-N', 'libs/cli/src/slow.spec.ts']).status, 0);
+
+  const result = yarnCommit(['-qm', 'slow', '--', 'libs/cli/src/slow.spec.ts']);
+
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /slow\.spec\.ts failed only by timeout; re-running alone once/);
+  assert.match(result.stderr, /specs already ran for this exact tree/);
+  assert.equal(worktrees(), 1);
+  assert.deepEqual(leftovers(tmp), []);
 });
