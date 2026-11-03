@@ -25,6 +25,7 @@ import { optionValuesChecker } from './rules/option-values';
 import { SEE_THROUGH_STATEMENTS } from './see-through';
 import { NESTED_SCROLL_RULE, NESTED_SCROLL_STATEMENTS } from './nested-scroll';
 import { INTERACTIVE_SELECTOR } from './actions';
+import { REACH_STATEMENTS } from './reach';
 
 /** One drawing of one state that breaks a render rule. `path` is a short selector path to the element. */
 export type RenderIssue = {
@@ -371,6 +372,7 @@ ${NESTED_SCROLL_STATEMENTS}
     seen.add('SKIP-SCOPE' + path);
     found.push({ rule: 'SKIP-SCOPE', path, detail: 'data-et-skip=CLIPPED on ' + path + ' covers interactive controls - put the skip on the clipped element itself' });
   }
+${REACH_STATEMENTS}
 
   const metrics = document.createElement('canvas').getContext('2d');
   for (const element of root.querySelectorAll('*')) {
