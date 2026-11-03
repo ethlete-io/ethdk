@@ -69,6 +69,27 @@ export default definePart({
 });
 `;
 
+const EMBEDDED = `<style>body{margin:0}.b{width:20px;height:20px;background:white;transition:background-color 10s linear}.b.on{background:black}</style><div class="b"></div><script>const b=document.querySelector('.b');b.addEventListener('transitionend',()=>parent.document.querySelector('.flag').classList.add('done'));requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('on')));</script>`;
+
+const FRAMED_STYLES = [
+  '.flag { width: 40px; height: 4px; } .flag.done { width: 300px; }',
+  '.dot { width: 40px; height: 20px; transition: transform 1000ms linear; } .dot--open { transform: translateX(10px); }',
+].join('\n');
+
+const FRAMED = `import { definePart, drawing } from '@design-system';
+
+export default definePart({
+  note: 'A fixture.',
+  states: { closed: { open: false }, open: { open: true } },
+  motions: { pop: { from: 'closed', to: 'open' } },
+  render: (state) =>
+    drawing({
+      body: '<div class="flag"></div><div class="dot' + (state.open ? ' dot--open' : '') + '"></div><iframe srcdoc="' + ${JSON.stringify(EMBEDDED.replace(/"/gu, '&quot;'))} + '" style="border:0;width:20px;height:20px"></iframe>',
+      styles: ${JSON.stringify(FRAMED_STYLES)},
+    }),
+});
+`;
+
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-motion-shot-'));
   const design = join(target, DESIGN_DIR);
@@ -79,6 +100,8 @@ const checkout = () => {
   writeFileSync(join(dir, 'bar.ts'), PART);
   mkdirSync(join(design, 'app-a', 'components', 'dot'), { recursive: true });
   writeFileSync(join(design, 'app-a', 'components', 'dot', 'dot.ts'), POP);
+  mkdirSync(join(design, 'app-a', 'components', 'framed'), { recursive: true });
+  writeFileSync(join(design, 'app-a', 'components', 'framed', 'framed.ts'), FRAMED);
   mkdirSync(join(design, 'app-a', 'components', 'swing'), { recursive: true });
   writeFileSync(join(design, 'app-a', 'components', 'swing', 'swing.ts'), SWING);
 
@@ -168,6 +191,10 @@ describe('createPartShooter motionOf', () => {
       expect(new Set(sizes.map(({ width }) => width)).size).toBe(1);
       expect(sizes[0]?.width).toBeGreaterThanOrEqual(136);
       expect((pop.tracks as { element: string }[]).map((track) => track.element)).toEqual(['[data-et-key="dot"]']);
+
+      const framed = await motionOf('full', 'components/framed', 'pop');
+
+      expect(pngSizeOf(framed.keyframes[0]?.png ?? Buffer.alloc(0)).width).toBeGreaterThanOrEqual(300);
 
       const swing = await motionOf('full', 'components/swing', 'swing');
 
