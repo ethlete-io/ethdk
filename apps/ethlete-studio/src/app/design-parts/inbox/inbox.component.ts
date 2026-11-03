@@ -55,7 +55,6 @@ export class InboxComponent {
   protected readonly LABELS = STUDIO_LABELS.commentDraft;
   protected readonly FRAME_CLASS = FRAME_CLASS;
   protected readonly FRAME_HEAD_CLASS = FRAME_HEAD_CLASS;
-  public readonly DRAFT_TEXT = 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.';
 
   public inScope = computed(() => {
     const openOn = this.openOn();
@@ -73,6 +72,6 @@ export class InboxComponent {
   protected openCount = computed(() => this.inScope().filter((c) => !c.resolved).length);
   protected onActivePart = computed(() => this.visible().filter((c) => c.part === this.activePart()));
   protected onOtherParts = computed(() => this.visible().filter((c) => c.part !== this.activePart()));
-  protected shownDraftText = computed(() => this.draftText() ?? this.DRAFT_TEXT);
+  protected shownDraftText = computed(() => this.draftText() ?? '');
   protected editorOpen = computed(() => this.draft() || this.entry());
 }
