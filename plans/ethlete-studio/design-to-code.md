@@ -3686,3 +3686,11 @@ studio` on the new commits.
      "conflict -> abort" never considered a variant that already holds the change. Into B220b: a conflict resolves on
      its own when the variant side holds every line the product added. The rebased sketch is committed as
      baseline-only. Tom's stale pick f stays uncommitted; his new pick overwrites it.
+
+292. Withdrawn variants read as Tom's rejection (builder, 2026-11-03, title-bar). b and e were withdrawn by the
+     drawing agent ("identisch mit a"). The ready rules skip them on purpose, and a pick refuses them. But
+     shot-command.ts:200 and Studio label them "rejected", so they read as Tom's own decision, and the shot diff
+     showed them with no change. Why no tool caught it: the label has one word for two actors. Fix (B240, decided,
+     technical): shot and Studio label a variant "withdrawn by agent: <reason>" when the agent withdrew it, and
+     "rejected" only when Tom did. Whether withdrawn variants are shown at all is Tom's product question. The
+     pickable set for title-bar is a, c, d, f, g, h.
