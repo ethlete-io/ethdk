@@ -456,11 +456,11 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
     if (upgraded.length > 0)
       console.log(`REHASHED ${name}: ${upgraded.map(({ part, marks }) => `${part} (${marks.join(', ')})`).join(', ')}`);
 
-    const ready = readyPartsOf(product);
+    const ready = readyPartsOf(product).filter((key) => !options.part || key === options.part);
 
     if (ready.length > 0) console.log(`READY ${name}: ${ready.join(', ')}`);
 
-    for (const part of ready.filter((key) => !options.part || key === options.part)) {
+    for (const part of ready) {
       const embedded = actionsRerunOf({ product, part });
 
       if (embedded.length === 0) continue;
@@ -472,11 +472,11 @@ const printOpenPoints = async (options: CheckOptions & { rendered: RenderIssue[]
       if (counted) counted.open += 1;
     }
 
-    const go = goPartsOf(product);
+    const go = goPartsOf(product).filter((key) => !options.part || key === options.part);
 
     if (go.length > 0) console.log(`GO ${name}: ${go.join(', ')}`);
 
-    for (const part of go.filter((key) => !options.part || key === options.part)) {
+    for (const part of go) {
       const review = goMarkOf({ product, part })?.review ?? [];
 
       if (review.length > 0) console.log(newStatesLineOf({ product: name, part, states: review }));
@@ -638,7 +638,10 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     const resolved = resolveProduct({ target: options.target, name, config: entry });
     const capabilities = await capabilityPlaceOf({ ...options, product: resolved });
 
-    capabilities.warnings.forEach((warning) => {
+    const isWanted = (problem: { file: string }) =>
+      !options.part || partOfFile(resolved, problem.file) === options.part;
+
+    capabilities.warnings.filter(isWanted).forEach((warning) => {
       console.warn(`WARNING ${lineOf(options.target, warning)}`);
       const counted = tallyOf(tally, { product: name, part: partOfFile(resolved, warning.file) });
 
@@ -653,7 +656,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
         invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
       })),
       ...capabilities.errors,
-    ];
+    ].filter(isWanted);
 
     for (const problem of problems) {
       console.error(lineOf(options.target, problem));
@@ -671,7 +674,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     const resolved = resolveProduct({ target: options.target, name, config: entry });
     const parts = resolved.parts.filter((part) => part.origin !== 'base').map(partKeyOf);
 
-    partsTotal += parts.length;
+    partsTotal += options.part ? parts.filter((key) => key === options.part).length : parts.length;
 
     summaryText({
       product: name,

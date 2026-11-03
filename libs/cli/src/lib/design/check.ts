@@ -415,6 +415,38 @@ const checkLive = async (options: { target: string; config: DesignConfig; produc
   return failed === 0 ? 0 : 1;
 };
 
+const VALUE_FLAGS = ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part', '--base'];
+
+const MODE_FLAGS: Record<string, string[]> = {
+  '--visible-change': ['--product', '--part', '--base'],
+  '--app-classes': ['--product'],
+  '--live': ['--product'],
+};
+
+const CALL_FLAGS = ['--lint', '--tsconfig', '--call', '--variant'];
+
+/** The first flag of `argv` no form of `check` reads, or one its mode ignores, as `--part with --live`. */
+const unreadArgumentOf = (argv: string[]) => {
+  const flags = argv.filter((argument) => argument.startsWith('-'));
+  const unknown = flags.find((flag) => !VALUE_FLAGS.includes(flag) && !(flag in MODE_FLAGS));
+
+  if (unknown) return unknown;
+
+  const modes = flags.filter((flag) => flag in MODE_FLAGS);
+  const [mode] = modes;
+
+  if (modes.length > 1) return `${modes[1]} with ${mode}`;
+
+  const system = flags.find((flag) => flag === '--product' || flag === '--part');
+  const scope = mode ?? system;
+  const allowed = mode ? (MODE_FLAGS[mode] ?? []) : system ? ['--product', '--part'] : CALL_FLAGS;
+  const ignored = flags.find((flag) => flag !== mode && !allowed.includes(flag));
+
+  if (!ignored) return null;
+
+  return scope ? `${ignored} with ${scope}` : ignored;
+};
+
 const checkWithStatus = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, invocation } = options;
   const appClasses = options.argv.includes('--app-classes');
@@ -424,12 +456,19 @@ const checkWithStatus = async (options: { target: string; argv: string[]; invoca
   const base = baseAt === -1 ? undefined : options.argv[baseAt + 1];
   const argv = options.argv.filter(
     (argument, index) =>
-      argument !== '--complete' &&
       argument !== '--app-classes' &&
       argument !== '--live' &&
       argument !== '--visible-change' &&
       (baseAt === -1 || (index !== baseAt && index !== baseAt + 1)),
   );
+  const unread = unreadArgumentOf(options.argv);
+
+  if (unread) {
+    console.error(`check does not read ${unread} - see ${invocation} check --help`);
+
+    return 2;
+  }
+
   const firstFlag = argv.findIndex((argument) => argument.startsWith('--'));
   const positionals = firstFlag === -1 ? argv : argv.slice(0, firstFlag);
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product', '--part']);

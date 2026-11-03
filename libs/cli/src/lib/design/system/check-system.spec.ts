@@ -409,6 +409,45 @@ describe('checkDesign', () => {
     ]);
   }, 60_000);
 
+  it('reports and lists only the part a positional names', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const product = resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} });
+
+    markPartGo({ product, part: 'elements/hero', by: 'tom' });
+
+    const lines = output();
+
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await checkDesign({ target, argv: ['components/button', '--product', 'acme'], invocation: 'et design' });
+
+    expect(lines.filter((line) => line.includes('elements/hero'))).toEqual([]);
+    expect(lines.at(-1)).toMatch(/^check complete: 1 part, /);
+  }, 60_000);
+
+  it('rejects an argument the check does not read', async () => {
+    const target = acme();
+    const errors: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line: unknown) => void errors.push(String(line)));
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme', '--bogus'], invocation: 'et design' })).toBe(2);
+    expect(await checkDesign({ target, argv: ['--prodcut', 'acme'], invocation: 'et design' })).toBe(2);
+    expect(
+      await checkDesign({
+        target,
+        argv: ['--part', 'elements/hero', '--live', '--product', 'acme'],
+        invocation: 'et design',
+      }),
+    ).toBe(2);
+    expect(errors).toEqual([
+      'check does not read --bogus - see et design check --help',
+      'check does not read --prodcut - see et design check --help',
+      'check does not read --part with --live - see et design check --help',
+    ]);
+  }, 60_000);
+
   it("warns of an export in a part's shared/ that nothing imports, and passes", async () => {
     const target = acme();
     const lines = output();
