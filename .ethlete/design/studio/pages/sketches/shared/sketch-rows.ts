@@ -100,6 +100,15 @@ export const PARTS: Record<PartKind, SketchPart> = {
 export const rowsOf = (part: SketchPart, fresh: boolean) =>
   fresh ? part.rows.filter((row) => row.key !== 'current') : part.rows;
 
+export const withSame = (part: SketchPart, same: RowKey[]): SketchPart => ({
+  ...part,
+  rows: part.rows.map((row) => (same.includes(row.key) ? { ...row, changed: [], look: '' } : row)),
+});
+
+export const isSame = (row: Row) => row.key !== 'current' && row.changed.length === 0;
+
+export const sameLabel = (rows: Row[]) => `Unverändert: ${rows.map((row) => `Variante ${row.key}`).join(', ')}`;
+
 export const isTransposed = (part: SketchPart, viewWidth: number) => part.width > viewWidth / 4;
 
 const shot: Record<string, string> = {};
@@ -134,9 +143,9 @@ const frame = (part: SketchPart, row: Row, state: string) => {
   </div>`;
 };
 
-export const cell = (part: SketchPart, row: Row, state: string, place = '') => {
-  const same = unchanged(row, state);
-  const first = state === firstChanged(row);
+export const cell = (part: SketchPart, row: Row, state: string, place = '', pending = false) => {
+  const same = !pending && unchanged(row, state);
+  const first = !pending && state === firstChanged(row);
   return html`<div
     class="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1 ${same ? 'opacity-50' : ''}"
     data-sk-state="${state}"
@@ -149,16 +158,16 @@ export const cell = (part: SketchPart, row: Row, state: string, place = '') => {
         class="min-w-0 font-code text-(length:--sk-label) leading-[1.35] wrap-anywhere ${
           same ? 'text-et-surface-muted' : 'text-et-surface'
         }"
-        >${state}${same ? ' · unverändert' : ''}</span
+        ><span class="in-data-sk-matrix:hidden">${state}${same ? ' · ' : ''}</span>${same ? 'unverändert' : ''}</span
       >${first ? html`<span class="text-ui-xs font-ui-medium text-et-surface">erste Änderung</span>` : ''}</span
     >
     ${frame(part, row, state)}
   </div>`;
 };
 
-export const wrapStage = (part: SketchPart, row: Row) =>
+export const wrapStage = (part: SketchPart, row: Row, pending = false) =>
   html`<div class="grid min-w-0 grid-cols-[repeat(var(--sk-cols),var(--sk-frame))] gap-x-6 gap-y-space-3" data-sk-stage>
-    ${part.states.map((state) => cell(part, row, state)).join('')}
+    ${part.states.map((state) => cell(part, row, state, '', pending)).join('')}
   </div>`;
 
 export const wrapColumns = (part: SketchPart) =>
@@ -167,8 +176,12 @@ export const wrapColumns = (part: SketchPart) =>
 const take = await button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
 export const takeStyles = take.styles;
 
-export const rowHead = (row: Row, action?: string) =>
-  html`<div class="flex min-w-0 flex-col gap-space-2" data-sk-row-head>
+export const comparingMark = html`<span class="text-ui-xs text-et-surface-muted whitespace-nowrap" data-sk-comparing
+  >vergleicht …</span
+>`;
+
+export const rowHead = (row: Row, action?: string, mark = '') =>
+  html`<div class="flex min-w-0 flex-col gap-space-2 in-data-sk-head-hidden:invisible" data-sk-row-head>
     <div class="flex flex-wrap items-center gap-x-space-2 gap-y-space-1">
       ${
         row.key === 'current'
@@ -184,6 +197,7 @@ export const rowHead = (row: Row, action?: string) =>
             >`
           : ''
       }
+      ${mark}
     </div>
     <p class="m-0 text-(length:--sk-note) leading-[1.35] text-et-surface-muted wrap-anywhere" data-sk-note>
       ${row.note}
@@ -215,9 +229,15 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   const width = Number(world.dataset['w']);
   const columns = Number(world.dataset['cols']);
   let mode = zoom;
+  let fitAt = 0;
+
+  const noteAt = (scale: number) => {
+    const floor = Math.max(MIN_TEXT, NOTE_TEXT * fitAt);
+    return scale >= fitAt ? Math.max(MIN_TEXT, NOTE_TEXT * scale) : (floor * scale) / fitAt;
+  };
 
   const apply = (scale: number) => {
-    const note = Math.max(MIN_TEXT, NOTE_TEXT * scale);
+    const note = noteAt(scale);
     const text = LABEL_TEXT * scale;
     world.style.setProperty('--sk-scale', `${scale}`);
     world.style.setProperty('--sk-frame', `${width * scale}px`);
@@ -226,15 +246,18 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     world.style.setProperty('--sk-head', `${(HEAD_WIDTH * note) / NOTE_TEXT}px`);
     world.style.setProperty('--sk-label', `${text}px`);
     world.toggleAttribute('data-sk-labels-hidden', text < MIN_LABEL);
+    world.toggleAttribute('data-sk-head-hidden', note < MIN_LABEL);
     world.querySelectorAll<HTMLElement>('[data-sk-frame]').forEach((element) => {
       const inner = element.querySelector<HTMLElement>('[data-sk-fit-inner]');
       if (inner) element.style.height = `${inner.offsetHeight * scale}px`;
     });
   };
 
-  const matrixFit = (matrix: HTMLElement, scale: number) => {
-    const fixed = matrix.offsetWidth - columns * width * scale;
-    return Math.min(1, (list.clientWidth - fixed) / (columns * width));
+  const matrixFit = (matrix: HTMLElement) => {
+    const first = matrix.querySelector<HTMLElement>('[data-sk-row]');
+    const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
+    const shown = Math.min(2, columns);
+    return Math.min(1, (list.clientWidth - lead - (shown - 1) * GAP - FIT_PADDING) / (shown * width));
   };
 
   const gridFit = (scale: number) => {
@@ -264,7 +287,7 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     let scale = 1;
     for (let pass = 0; pass < 6; pass++) {
       apply(scale);
-      const next = matrix ? matrixFit(matrix, scale) : gridFit(scale);
+      const next = matrix ? matrixFit(matrix) : gridFit(scale);
       if (Math.abs(next - scale) <= 0.002) break;
       scale = next;
     }
@@ -272,7 +295,9 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
   };
 
   const fit = () => {
-    const scale = mode === 'fit' ? fitScale() : mode;
+    fitAt = 0;
+    fitAt = fitScale();
+    const scale = mode === 'fit' ? fitAt : mode;
     apply(scale);
     if (label) label.textContent = `${Math.round(scale * 100)} %`;
   };
@@ -294,6 +319,8 @@ export const mountFit = (root: HTMLElement, zoom: Zoom, start = { x: 0, y: 0 }) 
     offset.x = Math.min(roomX, Math.max(0, offset.x + x));
     offset.y = Math.min(roomY, Math.max(0, offset.y + y));
     world.style.transform = `translate(${-offset.x}px, ${-offset.y}px)`;
+    world.style.setProperty('--sk-pan-x', `${offset.x}px`);
+    world.toggleAttribute('data-sk-panned', offset.x > 0);
   };
   list.addEventListener('wheel', (event) => {
     event.preventDefault();

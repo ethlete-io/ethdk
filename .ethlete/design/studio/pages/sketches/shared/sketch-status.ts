@@ -2,7 +2,7 @@ import { html } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
-export type SketchStatus = 'drawing' | 'paused' | 'idle';
+export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
 
 type Model = { name: string; agent: Agent };
 
@@ -13,7 +13,8 @@ export const HOLD = { until: 'B34/B36/B38', by: OPUS, since: 'seit 12 Min' };
 export const IDLE = { since: 'seit 25 Min', last: 'Letzte Änderung von Opus 5.5' };
 
 export const STATUS_LABEL: Record<SketchStatus, string> = {
-  drawing: 'In Arbeit',
+  drawing: 'zeichnet',
+  waiting: 'Wartet auf deine Wahl',
   paused: 'Pausiert',
   idle: 'Keine Aktivität',
 };
