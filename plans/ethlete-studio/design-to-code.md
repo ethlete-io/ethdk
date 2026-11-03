@@ -3505,3 +3505,13 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      .ethlete/design files. Lesson: same as 275 - a tool's spec runs on the real inputs it will meet; here one spec
      walks every real shared JSON and fails on an unclassified kind. Decision: accepted.json lists keep append order
      (a log), they are not sorted. Not run yet: a live go.json commit through commit-hunks.
+278. B215 (builder, 2026-11-03, 43295ce99) and the B214 live check. B215: a console.error in a Studio spec fails it;
+     ResizeObserver, document.fonts and display:block for canvas/viewport/form-field hosts are stubbed in jsdom only
+     (decision: keep the display:block stub, the host list grows per observed host). The new rule caught 12 spec gaps
+     and no component bug; 20 failures stay, the same set before and after (foreign uncommitted sketch work). B214
+     live: `yarn commit` ran the studio specs in the worktree, then the pre-commit hook ran them again instead of
+     skipping, and `git add` of a new untracked changeset lost to index.lock contention. Why no tool caught it: the
+     B214 end-to-end spec committed only modified files, never a new untracked file next to them. Lesson: third case
+     of 275 - the rule covers the shape of a spec's input too (commit shape, file set), not only parsed text. Fix:
+     B214 reopened - find why the marker missed, `yarn commit -- <paths>` adds untracked paths itself, spec on that
+     real shape, one live commit where the hook skips.
