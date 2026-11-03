@@ -3375,3 +3375,38 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      back to sample data. Lesson: sample data reachable through any fallback is the same defect as a sample default.
      Fix: B205 (technical) - SAMPLE-DEFAULT checks every expression in an implementing component that falls back to a
      sample identifier (`??`, `||`, ternary); the inbox fallback goes with B189.
+264. B186 cause (builder, 2026-11-03, 8d5d281cb): the pan clamps from 030fe2f36 (`clampPan`/room) and 5a29b1b94
+     (`Math.min(0, ...)` camera) stopped the Sketches canvas at the top-left edge. Why no tool caught it: canvas.e2e had
+     crashed before its first case since 5a29b1b94 - it pulled the deleted elements-shell-main sketch through
+     `git archive` - so it never ran on 030fe2f36, and a suite that crashes before any case reads like no suite.
+     CANVAS-CAMERA-OWN (B196) was never built. Lesson: an e2e suite that runs zero cases is a failure, not a pass, and
+     its fixtures come from the code, not from git history. Fix (technical): 8d5d281cb generates the fixture and adds
+     `--case <substr>`; new e2e "pan beyond every edge" (red on Sketches, Chip, Large before the fix). B197 maps
+     design-parts/sketches, components/design-canvas and system-view to canvas.e2e and fails a suite that crashes
+     before its first case; B196 also flags pan-clamp math outside design-canvas; B198 asserts iframe creations ==
+     frames (each of the 60 iframes is recreated once after the first render; 6 connections give a 15-20 s first
+     paint). The builder adds a pages/sketches design state with no report file. Not verified: the Tauri app, the
+     remembered camera after reload, the sticky column shadow while panning.
+265. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
+     (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
+     spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
+     happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
+     the spec stubs the installed-cli lookup instead of reading node_modules.
+266. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
+     against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
+     exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
+     compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
+     session. Lesson: in a multi-agent checkout a commit waits, it does not fail, and a ban targets the harmful
+     subcommand only. Fix (technical): B207 - a commit with no related spec starts none, and `yarn commit` waits for
+     the lock with a message; B208 - the stash ban covers only writing subcommands and leaves `list`/`show` alone.
+267. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
+     state draws identical frames" fired on linux-full-update while the shot showed 0 px change: the merged markup was
+     refactored after the sketch's baseline, so every variant trips it. (2) `design shot` still prints "not drawn" for
+     the hover, active and focus-visible cells of title-bar after B171. (3) `sketch variant --from e` built on a
+     withdrawn variant without a word. Why no tool caught them: ready and shot compute "changed" and "drawn" in two
+     places, and nothing compares them; withdrawn has no meaning outside `ready`. Lesson: one measurement of change
+     feeds every command that judges it. Fix (technical): B209 - ready takes each variant's first changed state from the
+     shot's pixel diff; B210 - shot draws the interaction cells the way `sketch check` drives them; B211 - a variant
+     made from a withdrawn one says "from withdrawn <v>". Also: a spec timed out at 5 s under load in pre-commit
+     (passes alone in 1.5 s) - goes into B207 (re-run a timed-out spec once alone); two checks in one session disagreed
+     after a dist rebuild - B191.
