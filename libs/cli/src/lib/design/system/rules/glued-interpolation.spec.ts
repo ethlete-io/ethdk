@@ -53,12 +53,12 @@ describe('gluedInterpolationsOf', { timeout: 30_000 }, () => {
     ).toEqual([]);
   });
 
-  it('runs as a warning of design check, not as an error', () => {
+  it('runs as a problem of design check, not as a warning', () => {
     const product = acme(`<div class="flex\${props.class}"></div>`);
     const glued = (problems: { rule: string }[]) =>
       problems.filter((problem) => problem.rule === 'CLASS-GLUED-INTERPOLATION');
 
-    expect(glued(warningProblemsOf(product))).toHaveLength(1);
-    expect(glued(ruleProblemsOf(product))).toHaveLength(0);
+    expect(glued(ruleProblemsOf(product))).toHaveLength(1);
+    expect(glued(warningProblemsOf(product))).toHaveLength(0);
   });
 });

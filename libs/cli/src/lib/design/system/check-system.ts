@@ -83,13 +83,13 @@ const RULES = [
   orphanEndpointProblemsOf,
   sampleDefaultProblemsOf,
   unboundInputProblemsOf,
+  gluedInterpolationsOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...unusedSharedExportsOf(product),
   ...staleReplacesOf(product),
   ...tokenSelectorsOf(product),
-  ...gluedInterpolationsOf(product),
   ...orphanEndpointWarningsOf(product),
   ...sampleDefaultWarningsOf(product),
   ...unboundInputWarningsOf(product),
