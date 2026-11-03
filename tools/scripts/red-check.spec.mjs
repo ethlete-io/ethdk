@@ -53,3 +53,75 @@ test('a spec that already passes at the parent state is not red', () => {
     rmSync(repo, { recursive: true, force: true });
   }
 });
+
+const makeCommit = (base, change) => {
+  const repo = mkdtempSync(join(tmpdir(), 'red-check-spec-'));
+  git(repo, 'init', '-q');
+  git(repo, 'config', 'user.email', 't@t.t');
+  git(repo, 'config', 'user.name', 't');
+  const write = (files) => {
+    for (const [name, text] of Object.entries(files)) writeFileSync(join(repo, name), text);
+  };
+  write(base);
+  git(repo, 'add', '.');
+  git(repo, 'commit', '-q', '-m', 'base');
+  write(change);
+  git(repo, 'add', '.');
+  git(repo, 'commit', '-q', '-m', 'change');
+  return repo;
+};
+
+const specOf = (importLine, body) =>
+  `import assert from 'node:assert/strict';\nimport { test } from 'node:test';\n${importLine}\ntest('rule', () => { ${body} });\n`;
+
+test('a spec that only fails to load is load-only, not red', () => {
+  const repo = makeCommit(
+    { 'value.mjs': 'export const a = 1;\n' },
+    {
+      'value.mjs': 'export const a = 1;\nexport const b = 2;\n',
+      'value.spec.mjs': specOf("import { b } from './value.mjs';", 'assert.equal(b, 2);'),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /LOAD-ONLY/);
+    assert.doesNotMatch(result.stdout, /red: /);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('a module the commit adds is stubbed, so the assertions are red', () => {
+  const repo = makeCommit(
+    { 'keep.txt': 'x\n' },
+    {
+      'rule.mjs': "export function rule() {\n  return ['x'];\n}\n",
+      'rule.spec.mjs': specOf("import { rule } from './rule.mjs';", "assert.deepEqual(rule(), ['x']);"),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /red: rule/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('an added module the auto stub cannot satisfy is reported', () => {
+  const repo = makeCommit(
+    { 'keep.txt': 'x\n' },
+    {
+      'rule.mjs': 'export default function rule() {}\n',
+      'rule.spec.mjs': specOf("import { missing } from './rule.mjs';", 'assert.equal(missing, 1);'),
+    },
+  );
+  try {
+    const result = run(repo);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /auto stub failed, hand stub needed/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
