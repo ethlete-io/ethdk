@@ -3354,3 +3354,11 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      Also: a `hold` set for a CLI bug outlives its fix and `ready` only refuses (B200: the refusal names
      `sketch release <part> --by`); parallel commit-hunks race on `.git/index.lock`, and d962c4109 picked up two foreign
      auto-accept entries (B184 retries on the lock and stages only its own hunks).
+261. `sketch new --name` (B185, 088b27cfb) gave sketches a second key form, but `check-sketches.ts` (~l.109) still
+     compares `sketch.target` with a part key, so it silently skips a named sketch (builder, 2026-11-03). Why no tool
+     caught it: the B185 specs cover only `sketch new`; no spec runs a named sketch through the code that reads
+     sketches, and a skipped sketch is silent (same class as findings 246, 254 and 260). Lesson: a new key form gets
+     a spec in every consumer of the key, not only in its producer. Fix: B203 (technical) - compare through
+     `partKeyOf`, grep every other `sketch.target` equality check, and add one spec that drives a named sketch through
+     `sketch check`/`ready`/`go`. Also open: `server-identity.spec` "reports no installed cli when the project has
+     none" failed in the full design vitest run; the builder re-runs it on a clean HEAD.
