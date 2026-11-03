@@ -63,7 +63,10 @@ const liveStateProblemsOf = (options: { product: ResolvedProduct; overlaid: Sket
       const own = stateNamesOf(part.source);
       const mergedNames = merged ? stateNamesOf(merged.source) : [];
 
-      if (own === null || mergedNames === null) return [];
+      if (own === null || mergedNames === null) {
+        console.warn(`NOTE ${key}: live states not checked: spread states`);
+        return [];
+      }
 
       const known = new Set([...own, ...mergedNames]);
 

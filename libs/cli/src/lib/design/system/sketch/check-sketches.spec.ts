@@ -1,7 +1,7 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { openSketchProblemsOf, typecheckVariant, variantProblemsOf, variantWarningsOf } from './check-sketches';
@@ -219,9 +219,13 @@ describe('openSketchProblemsOf', () => {
       }),
     );
 
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
     expect(openSketchProblemsOf(product).variants.flatMap(({ problems }) => problems.map((p) => p.rule))).not.toContain(
       'LIVE',
     );
+    expect(warn).toHaveBeenCalledWith('NOTE elements/hero: live states not checked: spread states');
+    warn.mockRestore();
   });
 
   it('lets the round of a variant drop a state on purpose, and no other', () => {
