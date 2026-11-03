@@ -19,15 +19,13 @@ const pending = html`<div
   class="flex h-30 items-center justify-center text-et-surface-muted"
   aria-busy="true"
   data-loading
+  data-et-skip="CLIPPED"
 >
   ${spinner({ diameter: 40, strokeWidth: 3 })}
 </div>`;
 
 const frame = ({ width, shot, look = '', loading = false }: Props) =>
-  html`<div
-    class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]"
-    data-sk-frame
-  >
+  html`<div class="sk-fit relative row-start-2 w-(--sk-frame) overflow-clip [overflow-clip-margin:8px]" data-sk-frame>
     <div
       class="w-(--w) origin-top-left scale-(--sk-scale) ${look}"
       data-sk-fit-inner
