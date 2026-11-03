@@ -59,7 +59,8 @@ export default definePart({
   note: 'Shared comment draft merged: no card of its own, the textarea grows from one to three rows, Abbrechen and a filled Senden, and the send error line. It stacks at z-20.',
   madeBy: ['claude-sonnet-5-5'],
   widths: [360],
-  instant: 'Typing, sending and the error line change the draft at once; the busy spinner is the button own.',
+  motions: { busy: { from: 'busy', to: 'busy' } },
+  instant: 'Typing and the error line change the draft at once; only the Senden spinner loops while busy.',
   controls: {
     'comment-send': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
     'comment-cancel': { kind: 'button', input: ['pointer', 'keyboard'], disabled: true },
@@ -67,7 +68,7 @@ export default definePart({
   states: {
     empty: {},
     typed: { text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.' },
-    sending: { text: 'Tonal wirkt neben filled zu blass.', phase: 'busy' },
+    busy: { text: 'Tonal wirkt neben filled zu blass.', phase: 'busy' },
     error: { text: 'Tonal wirkt neben filled zu blass.', phase: 'error' },
     rejected: {
       text: 'Tonal wirkt neben filled zu blass.',
