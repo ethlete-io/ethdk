@@ -43,6 +43,11 @@ output; the designed Studio is the side product.
   ad-hoc one that comes up mid-conversation, for example from a screenshot. Never free bullets.
 - Builder messages with design questions go into the next round. Never answer a design
   question for the user.
+- A question about how something looks (layout, background, placement, sticking) is never a grill question in
+  chat. Studio exists for it: send it to the builder as a sketch, with variants when there is a choice. The
+  grill round is for tool, process and product decisions only.
+- When the user says "as built" (wie umgesetzt), the app is the answer. What the app does there is a fact the
+  builder looks up and copies; never turn it into a question.
 
 ## When the user is away
 

@@ -3071,3 +3071,10 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      that pages copy instead of import reaches only the page that imports it, and a skip on a page root silences a
      whole page. Tool fix: CUT-CONTROL rule (own code, a CLIPPED skip does not silence it); a CLIPPED skip may not
      sit on an ancestor of an interactive control; shared canvas enforced by check (open, put to Tom).
+
+229. The grill session asked Tom a visual question in chat (2026-11-03: what sits behind the sticky state-name
+     column) right after Tom had answered "as built" (Tom: "you ask me again about things we want to change? ... you
+     ask me design questions in text again; we built this tool EXTRA for that"). Two errors: "as built" already
+     answers it (the builder looks up what the app does and copies it), and a look question belongs in Studio as a
+     sketch, not in a chat round. Lesson: the grill round had no rule that keeps look questions out. Fix: the
+     doc-agent skill now routes look questions to a sketch and treats "as built" as a fact for the builder.
