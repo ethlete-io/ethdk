@@ -3777,3 +3777,12 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      Decided (doc agent) on the eslint-rules gap: B245b, technical, but general rather than one more directory. `yarn
 commit` derives the selection from the spec list of `yarn test:tools`: a staged file in a directory that holds
      such specs runs those specs. A new directory in test:tools is then covered without another patch.
+
+300. B245b as built (builder, 2026-11-03). 004169aa0: `yarn commit` and the hook read the spec globs of
+     `test:tools` from package.json at the tested tree (toolSpecGlobsAt), and a staged file under a glob's directory
+     runs that directory's specs with `node --test`; tools/scripts and apps/ethlete-studio/eslint-rules are covered
+     now. Verified: e2e case with a `tools/lint/*.spec.mjs` glob refuses a failing change; red-check RED.
+     Also found: `design check` after a62942f0c carried the go of elements/shell-main and pages/inventory
+     (refreshedBy "design check", the decided B219/B223 carry), and the builder left that refresh uncommitted. Why
+     no tool caught it: check writes go.json silently and no commit gate sees an uncommitted refresh. Recommended
+     B246, sent to the grill session.
