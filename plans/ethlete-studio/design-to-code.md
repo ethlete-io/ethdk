@@ -3420,12 +3420,18 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      shared design file names its writer, or it becomes an orphan no agent may commit. Fix (technical): B218 -
      commit-hunks waits with `waitForLock` from `tools/scripts/commit-wait.mjs`, spec holds the lock; B219 - a refresh
      entry names `refreshedBy` and `cause`; the title-bar slice that added the icons commits the 11 refreshes.
-269. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
+269. Tom's merge of the pages/system sketch (pick b, 2026-11-03) failed in Studio: components/title-bar had changed
+     since the sketch was made. Why no tool caught it: Studio offered the pick on a sketch with a stale base and only
+     the merge checked the base, so Tom learned it after deciding. Lesson: a stale base shows before the pick, not at the
+     merge. Fix: the builder rebases the sketch and keeps pick b; B220 (technical) - Studio marks a sketch with a stale
+     base (also a child part) "braucht Rebase" before the pick and `sketch ready` refuses it; when only a child part no
+     variant touches changed, the tool rebases on its own and keeps the pick.
+270. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
      (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
      spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
      happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
      the spec stubs the installed-cli lookup instead of reading node_modules.
-270. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
+271. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
      against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
      exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
      compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
@@ -3438,7 +3444,7 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      19ec4dd67 (docs-only skip, timeout re-run), 74cf900b0 (`yarn commit` waits for the lock), b3c669203 (B206).
      Decided (technical): B214 - `yarn commit` runs the related specs before it takes the lock, in a throwaway worktree
      of HEAD + the paths; the hook then does not run them again. That fixes the lock time and the foreign edits at once.
-271. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
+272. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
      state draws identical frames" fired on linux-full-update while the shot showed 0 px change: the merged markup was
      refactored after the sketch's baseline, so every variant trips it. (2) `design shot` still prints "not drawn" for
      the hover, active and focus-visible cells of title-bar after B171. (3) `sketch variant --from e` built on a
