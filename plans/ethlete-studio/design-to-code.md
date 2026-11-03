@@ -3833,13 +3833,19 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
 304. Tom cannot pick on the B240 sketch (pages/sketches, 5e51db22a, 2026-11-03: "it does not seem ready, I cannot
      pick anything; this happens more and more often"). The badge says "Keine Aktivität" and no variant offers
      Übernehmen. The empty b/page-100 frame was only still loading (Tom), but the loading state looks bad. This is
-     finding 208 again: a drawn round committed while still in progress. Why no tool caught it: f7e66dbb6 made
-     ROUND-NOT-READY a warning, and a warning that nothing blocks on is no fix (finding 295). Cause of the missing
-     ready step: pending from builder. Fix (B252, decided, technical): ROUND-NOT-READY becomes a problem; the commit
-     hook and `sketch report --done` refuse a drawn round that is neither ready nor held. Loading state (B253): a
-     sketch of the variant-frame loading state with 2-3 variants, or a B251 case if loading is not a designed state
-     of the part. The builder checks whether the slow frame is the failing B241 e2e case (a listing refresh
-     re-navigates iframes and leaves 150px frames).
+     finding 208 again: a drawn round committed while still in progress. Cause (builder): ready was skipped, not
+     refused. 5e51db22a committed sketch.json as "in progress", and the builder's own handoff step ("Tom picks in
+     Studio") left ready out. ROUND-NOT-READY did fire (sketch-command.ts:802-805, printed :1053-1056 as console.warn,
+     exit 0). Why no tool caught it: f7e66dbb6 made ROUND-NOT-READY a warning, and a warning that nothing blocks on is
+     no fix (finding 295). Unblocked in 88a3f737e (`sketch ready` exit 0). Fix (B252, decided, technical):
+     ROUND-NOT-READY becomes a problem; the commit hook and `sketch report --done` refuse a drawn round that is neither
+     ready nor held. Loading state (B253): the sketch view renders a picture-loading state that no part designs. The
+     variant cell (pages/sketches/shared/sketch-rows.ts:128/:146) has no loading branch; only elements/canvas-frames
+     designs one (canvas-frames.ts:631, "Lädt" badge :171-180). That makes it a B251 case: an undesigned state the app
+     renders. Fix (B253, decided, technical): a sketch on pages/sketches that adds a loading state to the variant cell,
+     with 2-3 variants, one of them embedding (not copying) the canvas-frames loading look; Tom picks. Whether the cell
+     becomes its own element is decided after the pick. The builder checks whether the slow frame is the failing B241
+     e2e case (a listing refresh re-navigates iframes and leaves 150px frames).
 
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
