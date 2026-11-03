@@ -609,6 +609,18 @@
       "slots": true
     }
   },
+  "elements/variant-cell": {
+    "go": {
+      "hash": "48579bdc8e44919c",
+      "states": {
+        "changed": "11b6e396b2fe0f43",
+        "first": "4ec4023ba5acebb1",
+        "unchanged": "9d51588045becee5",
+        "loading": "0ee24850343e3e04"
+      },
+      "slots": true
+    }
+  },
   "foundations/agent-logos": {
     "review": {
       "hash": "46bcf29865e6c1f4",

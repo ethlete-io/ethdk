@@ -29,6 +29,12 @@
   "elements/part-tree": "4decbdf07174f4c8",
   "elements/shell-main": "ae33c034c1dd289c",
   "elements/studio-menu": "3e69133852294818",
+  "elements/variant-cell": {
+    "hash": "db45fed51718d389",
+    "variant": "b",
+    "decidedBy": "user",
+    "at": "2026-11-03T17:00:29.098Z"
+  },
   "foundations/agent-logos": "46bcf29865e6c1f4",
   "foundations/colors": "bc0d499f48f9253f",
   "foundations/icons": "9ed1f1902cc38349",
