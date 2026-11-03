@@ -3254,3 +3254,12 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
 ready` prints that command for every file it wrote; the brief uses it. Not an auto-commit inside ready.
 250. Sketch dirs are always `<layer>-<name>`, so a second sketch on the same part collides with the first (builder,
      2026-11-03). Fix: B185 (technical) - `sketch new --name`.
+251. While sketching B175 (builder, 2026-11-03): `data-et-skip=CLIPPED` sits on the canvas-viewport root, so it also
+     exempts the zoom chip from every check; SKIP-SCOPE tolerates this only while the page structure stays identical,
+     so a sketch that changes the page trips it. A skip wider than the element that is really clipped silently
+     exempts its neighbours. Fix: B187 (technical) - the skip moves onto the clipped content inside canvasView
+     (elements/canvas-frames); SKIP-SCOPE then holds without the identical-structure exception.
+252. The anchored-dialog arrow in the B175 sketch needed a hand-set offset because its anchor is not the element under
+     the chip (builder, 2026-11-03). A hand offset is right for one layout only and no check compares arrow tip with
+     anchor centre. Fix: B188 (technical, SDK) - an anchor option on the components anchored-dialog that points the
+     arrow at a given element; the render check measures arrow tip vs anchor centre. Changeset + docs guide.
