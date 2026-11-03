@@ -18,12 +18,18 @@ export const readsSourcePath = (text) =>
       (line) => LOCATES.test(line) && (line.match(SOURCE_LITERAL) ?? []).some((literal) => !NOT_SOURCE.test(literal)),
     );
 
-export const unmappedSpecs = (specs, map) => specs.filter((spec) => readsSourcePath(spec.text) && !(spec.path in map));
+export const unmappedSpecs = (specs, map) =>
+  specs.filter((spec) => readsSourcePath(spec.text) && !(spec.path in map) && !map.sourceWide?.includes(spec.path));
 
-export const specsForFiles = (files, map) =>
-  Object.entries(map)
+const SOURCE_WIDE = 'sourceWide';
+
+export const specsForFiles = (files, map) => [
+  ...Object.entries(map)
+    .filter(([spec]) => spec !== SOURCE_WIDE)
     .filter(([, globs]) => files.some((file) => globs.some((glob) => file === glob || matchesGlob(file, glob))))
-    .map(([spec]) => spec);
+    .map(([spec]) => spec),
+  ...(files.some((file) => file.startsWith('libs/cli/src/')) ? (map[SOURCE_WIDE] ?? []) : []),
+];
 
 const matchesGlob = (file, glob) => {
   const pattern = new RegExp(
@@ -58,7 +64,9 @@ if (command === 'check') {
       text: readFileSync(file, 'utf8'),
     }));
   const missing = unmappedSpecs(specs, map);
-  const stale = Object.keys(map).filter((spec) => !existsSync(join(root, cliRoot, spec)));
+  const stale = [...Object.keys(map).filter((key) => key !== SOURCE_WIDE), ...(map.sourceWide ?? [])].filter(
+    (spec) => !existsSync(join(root, cliRoot, spec)),
+  );
   for (const spec of missing) console.error(`${spec.path} reads a source path but has no entry in ${mapPath}`);
   for (const spec of stale) console.error(`${mapPath} maps ${spec}, which does not exist`);
   process.exit(missing.length || stale.length ? 1 : 0);

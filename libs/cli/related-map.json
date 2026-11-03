@@ -1,4 +1,10 @@
 {
+  "sourceWide": [
+    "src/lib/design/runtime-imports.spec.ts",
+    "src/lib/design/studio-api-level.spec.ts",
+    "src/lib/design/system/check-rules.spec.ts",
+    "src/lib/update/generator-requirements.spec.ts"
+  ],
   "src/bin.spec.ts": ["libs/cli/package.json", "libs/cli/src/index.ts"],
   "src/lib/design/frame-bootstrap.spec.ts": ["libs/cli/design/web/frame.ts"],
   "src/lib/design/frame-surfaces.spec.ts": ["libs/core/design/theme-css.ts"],

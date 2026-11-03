@@ -89,3 +89,29 @@ test('maps staged files to the Studio and cli suites', () => {
   );
   assert.deepEqual(suitesForFiles(['README.md'], {}), []);
 });
+
+test('runs the declared source-wide specs for a new unrelated cli source', () => {
+  const repo = repoWithValueSpec();
+  write(
+    repo,
+    'libs/cli/src/wide.spec.ts',
+    "import { readdirSync, readFileSync } from 'node:fs';\nimport { join } from 'node:path';\nimport { expect, test } from 'vitest';\n\ntest('no source says BROKEN', () => {\n  const bad = readdirSync(__dirname).filter((file) => readFileSync(join(__dirname, file), 'utf8').includes('BROKEN'));\n  expect(bad).toEqual([]);\n});\n",
+  );
+  write(repo, 'libs/cli/related-map.json', '{ "sourceWide": ["src/wide.spec.ts"] }\n');
+  assert.equal(sh(repo, 'git', ['add', '.']).status, 0);
+  assert.equal(sh(repo, 'git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'wide']).status, 0);
+
+  write(repo, 'libs/cli/src/other.ts', "export const other = 'BROKEN';\n");
+  assert.equal(sh(repo, 'git', ['add', 'libs/cli/src/other.ts']).status, 0);
+  const hook = sh(repo, 'sh', ['.husky/pre-commit']);
+  assert.notEqual(hook.status, 0, hook.stdout + hook.stderr);
+});
+
+test('adds the source-wide specs for any staged cli source', () => {
+  const map = { sourceWide: ['src/w.spec.ts'], 'src/m.spec.ts': ['libs/x/*.ts'] };
+  assert.deepEqual(suitesForFiles(['libs/cli/src/new.ts'], map)[0].files, [
+    'libs/cli/src/new.ts',
+    'libs/cli/src/w.spec.ts',
+  ]);
+  assert.deepEqual(suitesForFiles(['libs/cli/package.json'], map)[0].files, ['libs/cli/package.json']);
+});
