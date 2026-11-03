@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { isDocsOnly, suitesForFiles, timedOutSpecs } from './precommit-specs.mjs';
+import { blockingTypeErrors, isDocsOnly, suitesForFiles, timedOutSpecs } from './precommit-specs.mjs';
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -142,4 +142,14 @@ test('a docs-only staged commit starts no vitest', () => {
   assert.equal(hook.status, 0, hook.stdout + hook.stderr);
   assert.doesNotMatch(hook.stdout + hook.stderr, /vitest|RUN/i);
   assert.ok(Date.now() - started < 3000);
+});
+
+test('blockingTypeErrors blocks on every tsc error, in spec files the commit does not touch too', () => {
+  const output = ['libs/cli/src/a.spec.ts(1,1): error TS2532: Object is possibly undefined.', 'Found 1 error.'].join(
+    '\n',
+  );
+
+  assert.deepEqual(blockingTypeErrors(output), [
+    'libs/cli/src/a.spec.ts(1,1): error TS2532: Object is possibly undefined.',
+  ]);
 });

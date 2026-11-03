@@ -801,8 +801,8 @@ describe('two sketches on one part', () => {
     open(target, 'components/card');
     open(target, 'components/card@alt', ['x']);
 
-    expect(sketchJson(target, 'components-card').target).toBe('components/card');
-    expect(sketchJson(target, 'components-card.alt').target).toBe('components/card@alt');
+    expect(sketchJson(target, 'components-card')['target']).toBe('components/card');
+    expect(sketchJson(target, 'components-card.alt')['target']).toBe('components/card@alt');
     expect(existsSync(join(productDir, 'sketches/components-card/a'))).toBe(true);
     expect(existsSync(join(productDir, 'sketches/components-card.alt/x'))).toBe(true);
     expect(existsSync(join(productDir, 'sketches/components-card/x'))).toBe(false);

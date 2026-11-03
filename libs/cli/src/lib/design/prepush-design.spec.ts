@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from './paths';
-import { parseNameStatus } from './prepush-changes';
+import { parseNameStatus, type PrepushChange } from './prepush-changes';
 import { prepushDesignCheck, touchedPartsOf } from './prepush-design';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, rebaseSketch } from './system/sketch/sketch';
@@ -119,7 +119,7 @@ describe('prepushDesignCheck', () => {
     );
     appendFileSync(join(target, inAcme('elements/hero/hero.css')), '.acme-hero { padding: 0; }\n');
 
-    const changes = [{ status: 'M', file: inAcme('elements/hero/hero.css') }];
+    const changes: PrepushChange[] = [{ status: 'M', file: inAcme('elements/hero/hero.css') }];
     const result = prepushDesignCheck({ target, changes });
 
     expect(result.code).toBe(1);

@@ -76,7 +76,7 @@ describe('mergeHookSettings order', () => {
     const appended = JSON.parse(run({ hooks: { Stop: [foreign, warning] } }, ['context-warning', 'git-safety']));
 
     expect(appended.hooks.Stop).toEqual([foreign, warning]);
-    expect(Object.keys(appended.hooks).at(-1)).toBe('PreToolUse');
+    expect(Object.keys(appended.hooks).pop()).toBe('PreToolUse');
   });
 });
 

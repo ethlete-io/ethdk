@@ -103,21 +103,17 @@ export const typeProjectsForFiles = (root, files) =>
       .filter((project) => existsSync(join(root, project))),
   );
 
-/** Error lines of a `tsc` run that block the commit; a spec project only blocks on errors in `files`, since HEAD's specs carry older ones. */
-export const blockingTypeErrors = (output, project, files) =>
-  output
-    .split('\n')
-    .filter((line) => / error TS\d+:/.test(line))
-    .filter((line) => !project.endsWith('tsconfig.spec.json') || files.some((file) => line.startsWith(`${file}(`)));
+/** Error lines of a `tsc` run; any of them blocks the commit. */
+export const blockingTypeErrors = (output) => output.split('\n').filter((line) => / error TS\d+:/.test(line));
 
-const runTypeChecks = (checkout, projects, files) => {
+const runTypeChecks = (checkout, projects) => {
   for (const project of projects) {
     const run = spawnSync('npx', ['tsc', '--noEmit', '--pretty', 'false', '-p', project], {
       cwd: checkout,
       env: withoutGitEnv(),
       encoding: 'utf8',
     });
-    const errors = blockingTypeErrors(run.stdout + run.stderr, project, files);
+    const errors = blockingTypeErrors(run.stdout + run.stderr);
     if (errors.length) {
       console.error(errors.join('\n'));
       console.error(
@@ -208,7 +204,7 @@ export const runPathSpecs = (root, paths) => {
       cpSync(join(root, file), join(worktree, file), { verbatimSymlinks: true });
     }
     linkNodeModules(root, worktree);
-    const typed = runTypeChecks(worktree, projects, files);
+    const typed = runTypeChecks(worktree, projects);
     return { status: typed === 0 ? runSuites(worktree, suites) : typed, tree };
   } finally {
     signals.forEach((signal) => process.off(signal, onSignal));

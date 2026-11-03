@@ -229,7 +229,7 @@ describe('designCommitHunks over every shared file under .ethlete/design', () =>
       }
 
       if (base === 'capabilities.json') {
-        const list = (real as { capabilities: { id: string }[] }).capabilities;
+        const list = (real as { capabilities: [{ id: string }, ...{ id: string }[]] }).capabilities;
         const changed = { capabilities: [{ ...list[0], label: 'changed' }, ...list.slice(1), { id: 'brand-new' }] };
 
         write(target, 'p/x.json', changed);
@@ -255,7 +255,7 @@ describe('designCommitHunks over every shared file under .ethlete/design', () =>
         return;
       }
 
-      const [part, other = part] = Object.keys(real as object);
+      const [part, other = part] = Object.keys(real as object) as [string, ...string[]];
       const changed = { ...(real as object), [part]: 'changed', [other]: 'changed', 'components/zz-new': 1 };
 
       write(target, 'p/x.json', changed);

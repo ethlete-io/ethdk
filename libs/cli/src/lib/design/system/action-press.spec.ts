@@ -127,7 +127,7 @@ describe('dropKeyboardFocus', () => {
     <button aria-expanded="false" onclick="this.ariaExpanded = String(this.ariaExpanded !== 'true'); reason.hidden = !reason.hidden">Pausiert</button>
     <span id="reason" hidden>Wartet</span>`;
 
-  it.each(['Enter', 'Space'])(
+  it.for(['Enter', 'Space'])(
     'takes the focus ring off a toggle pressed with %s and keeps the state it reached',
     async (key, context) => {
       if (!browser) return context.skip('no browser');

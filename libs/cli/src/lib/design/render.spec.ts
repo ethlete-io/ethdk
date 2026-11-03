@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mountDrawing, ng, unseenStyles, withNgStyles } from '../../../design/define-call';
+import { mountDrawing, ng, unseenStyles, withNgStyles, type Drawing } from '../../../design/define-call';
 import { forceMiddleware, isStale, renderMiddleware } from './render';
 import {
   entryOf,
@@ -282,7 +282,7 @@ describe('withNgStyles', () => {
 
     expect(shot).toBe('<et-title-bar></et-title-bar>');
     expect(withNgStyles({ body: page, styles: '.page{}' }).styles).toBe('.page{}\n.et-title-bar{}');
-    expect(withNgStyles({ body: page }).styles).toBeUndefined();
+    expect(withNgStyles<Drawing>({ body: page }).styles).toBeUndefined();
   });
 });
 
