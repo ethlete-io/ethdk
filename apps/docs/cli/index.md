@@ -546,6 +546,19 @@ A sketch changes its targets' layers and the layers below them. A variant may al
 layer (a page that imports the component) when the edit only changes its imports and how it spells the imported names,
 such as `commentPinStyles` to `commentPin.styles`; the merge writes it with the targets.
 
+`sketch target add <sketch> <part> --by <model id>` adds a part to the targets of an open sketch, and `sketch target remove
+<sketch> <part> --by <model id>` drops one (both take `--product <name>`). `add` follows the layer rule of
+`UPWARD-DEPENDENCY`: the part is allowed only when the layer of some existing target may use the part's layer, or the
+part's layer may use it. A second `elements` part is refused next to an `elements` target, a `pages` part is allowed. A part that breaks the rule is
+refused up front and nothing is written:
+
+```
+elements/tag-list cannot target elements/tag (UPWARD-DEPENDENCY): elements may use foundations, components, not elements
+```
+
+`remove` deletes the target and its folder in every variant. It refuses the main target (the first one; discard the
+sketch instead) and a part that is no target of the sketch.
+
 A sketch of a part the product takes from its base (`et design sketch new components/button --product studio`)
 merges into the base: the part folder in the base, and the base's `merged.json`. `sketch new … --override` opens it as a
 product override instead, and the merge writes a product copy. When the product overrides the part already, `sketch new`
