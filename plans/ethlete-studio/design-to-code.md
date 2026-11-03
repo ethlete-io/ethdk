@@ -3616,3 +3616,4 @@ studio` on the new commits.
   repro). The builder commits c together with the `instant` migration and quotes B226's real repro.
 - pages/system: Tom gave the go. go.json holds hash 9117d961d91424fa, which is neither the old nor the merged hash.
   The builder checks it before committing.
+- canvas-frames: Tom also gave the go. The builder commits it with the pages/system go, after checking the hash.
