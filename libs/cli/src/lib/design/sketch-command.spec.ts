@@ -1811,6 +1811,51 @@ describe('sketch target add', () => {
   });
 });
 
+describe('sketch target remove', () => {
+  const acmeWrite = (target: string, ...argv: string[]) => write(target, ...argv, '--product', 'acme');
+  const jsonOf = (target: string, folder: string) =>
+    readFileSync(join(target, DESIGN_DIR, 'acme/sketches', folder, 'sketch.json'), 'utf8');
+
+  it('leaves the sketch.json as it was before the add', () => {
+    const target = acme();
+    const lines = output();
+
+    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a,b', '--override'), lines.join('\n')).toBe(0);
+
+    const before = jsonOf(target, 'components-button');
+
+    expect(acmeWrite(target, 'target', 'add', 'components/button', 'components/card')).toBe(0);
+    expect(jsonOf(target, 'components-button')).not.toBe(before);
+    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(0);
+    expect(jsonOf(target, 'components-button')).toBe(before);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/a/components/card'))).toBe(false);
+  });
+
+  it('refuses the main target and a part that is no target', () => {
+    const target = acme();
+    const lines = output();
+
+    expect(acmeWrite(target, 'new', 'components/button', '--variants', 'a', '--override'), lines.join('\n')).toBe(0);
+    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/button')).toBe(1);
+    expect(acmeWrite(target, 'target', 'remove', 'components/button', 'components/card')).toBe(1);
+    expect(lines.pop()).toContain('does not target components/card');
+  });
+
+  it('makes target add refuse a part the layer rule forbids, and writes nothing', () => {
+    const target = acme();
+    const lines = output();
+
+    expect(acmeWrite(target, 'new', 'elements/hero', '--variants', 'a', '--override'), lines.join('\n')).toBe(0);
+
+    const before = jsonOf(target, 'elements-hero');
+
+    expect(acmeWrite(target, 'target', 'add', 'elements/hero', 'elements/other')).toBe(1);
+    expect(lines.pop()).toContain('UPWARD-DEPENDENCY');
+    expect(jsonOf(target, 'elements-hero')).toBe(before);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/elements-hero/a/elements/other'))).toBe(false);
+  });
+});
+
 describe('sketch new --name', () => {
   afterEach(() => vi.restoreAllMocks());
 

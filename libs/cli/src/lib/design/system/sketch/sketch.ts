@@ -15,7 +15,7 @@ import { statusPath } from '../../status';
 import { ASSETS_FOLDER, filesBelow } from '../assets';
 import { SHARED_FOLDER, SHARED_PREFIX } from '../imports';
 import { isBuiltInBase } from '../base';
-import { isLayer, Layer } from '../layers';
+import { isLayer, Layer, LAYER_USES, mayUse } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
 import { withMadeBy } from './part-definition';
@@ -689,6 +689,10 @@ export const addTarget = (options: {
 
   if (sketch.targets.includes(key)) return `${sketch.target} targets ${key} already`;
 
+  const layerProblem = layerProblemOf({ sketch, part });
+
+  if (layerProblem) return layerProblem;
+
   const taken = findSketch({
     productDir: product.dir,
     product: product.name,
@@ -712,6 +716,43 @@ export const addTarget = (options: {
   writeSketchFile(added);
 
   return added;
+};
+
+const layerProblemOf = (options: { sketch: Sketch; part: SketchTarget }) => {
+  const { sketch, part } = options;
+  const layers = sketch.targets.map((key) => key.split('/')[0] ?? '').filter(isLayer);
+
+  if (
+    !isLayer(part.layer) ||
+    layers.some((layer) => mayUse({ from: layer, to: part.layer }) || mayUse({ from: part.layer, to: layer }))
+  ) {
+    return undefined;
+  }
+
+  const [first = part.layer] = layers;
+
+  return `${sketch.target} cannot target ${partKeyOf(part)} (UPWARD-DEPENDENCY): ${first} may use ${LAYER_USES[first as Layer].join(', ')}, not ${part.layer}`;
+};
+
+/**
+ * Removes `part` from the targets of an open sketch and deletes its folder in every variant. The first target
+ * cannot be removed.
+ */
+export const removeTarget = (options: { sketch: Sketch; part: SketchTarget }): Sketch | string => {
+  const { sketch, part } = options;
+  const key = partKeyOf(part);
+
+  if (!sketch.targets.includes(key)) return `${sketch.target} does not target ${key}`;
+  if (sketch.targets[0] === key) return `${key} is the main target of ${sketch.target} - discard the sketch instead`;
+
+  for (const variant of sketch.variants)
+    rmSync(resolve(sketch.dir, variant, part.layer, part.name), { recursive: true, force: true });
+
+  const removed: Sketch = { ...sketch, targets: sketch.targets.filter((target) => target !== key) };
+
+  writeSketchFile(removed);
+
+  return removed;
 };
 
 const reportSlugOf = (sketch: Sketch) => `sketches/${sketch.product}/${sketchFolderOf(sketch)}`;

@@ -48,6 +48,7 @@ import {
   decideSketch,
   editRound,
   addTarget,
+  removeTarget,
   editVariantNote,
   findSketch,
   finishSketchReport,
@@ -78,6 +79,7 @@ export const SKETCH_USAGE = [
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] [--drops <state,state>] --by <model id> [--product <name>]',
   'sketch note <layer>/<name> <variant> <text> --by <model id> [--product <name>]',
   'sketch target add <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
+  'sketch target remove <layer>/<name> <layer>/<name> --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--reopen] [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -600,11 +602,35 @@ const noteEdited = (context: Context) =>
     return 0;
   });
 
+const targetRemoved = (context: Context) => {
+  const usage = `usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch target remove'))}`;
+  const rest = context.args.positional.slice(1);
+  const [, part] = rest;
+
+  if (rest.length !== 2 || !part) return fail(usage);
+
+  const parsed = parseTarget(part);
+
+  if (typeof parsed === 'string') return fail(parsed);
+
+  return withSketch({ ...context, args: { ...context.args, positional: rest } }, ({ sketch }) => {
+    const removed = removeTarget({ sketch, part: parsed });
+
+    if (typeof removed === 'string') return fail(removed);
+
+    formatSketch({ target: context.target, sketch: removed, variants: removed.variants });
+    console.log(`${removed.target} now targets ${removed.targets.join(', ')}`);
+
+    return 0;
+  });
+};
+
 const targetAdded = (context: Context) => {
   const [action, ...rest] = context.args.positional;
   const [, part] = rest;
   const usage = `usage: ${SKETCH_USAGE.find((line) => line.startsWith('sketch target '))}`;
 
+  if (action === 'remove') return targetRemoved(context);
   if (action !== 'add' || rest.length !== 2 || !part) return fail(usage);
 
   const parsed = parseTarget(part);
