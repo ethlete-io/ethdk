@@ -27,6 +27,7 @@ const repoWithValueSpec = () => {
   for (const file of [
     '.husky/pre-commit',
     'tools/scripts/precommit-specs.mjs',
+    'tools/scripts/link-node-modules.mjs',
     'tools/scripts/cli-related-map.mjs',
     'tools/scripts/lint-css-properties.js',
   ]) {
@@ -72,6 +73,7 @@ test('passes a staged fix although the working tree holds a broken edit', () => 
 test('fails a staged break although the working tree holds a fix', () => {
   const hook = stageThenEdit(repoWithValueSpec(), 'export const value = 3;\n', 'export const value = 1;\n');
   assert.notEqual(hook.status, 0, hook.stdout + hook.stderr);
+  assert.match(hook.stderr, /a cli spec related to the staged files fails/);
 });
 
 test('maps staged files to the Studio and cli suites', () => {

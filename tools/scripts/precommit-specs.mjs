@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readlinkSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
+import { linkNodeModules } from './link-node-modules.mjs';
 
 const git = (root, args) => {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -35,42 +36,6 @@ export const suitesForFiles = (files, relatedMap) => {
     },
     cli.length && { name: 'cli', cwd: 'libs/cli', args: [], files: cli },
   ].filter(Boolean);
-};
-
-const linkNodeModules = (root, checkout) => {
-  const source = join(root, 'node_modules');
-  if (!existsSync(source)) return;
-
-  const target = join(checkout, 'node_modules');
-  mkdirSync(target);
-
-  for (const name of readdirSync(source)) {
-    const entry = join(source, name);
-    if (lstatSync(entry).isSymbolicLink()) {
-      symlinkSync(readlinkSync(entry), join(target, name));
-    } else if (name === '@ethlete') {
-      mkdirSync(join(target, name));
-      for (const scoped of readdirSync(entry)) {
-        symlinkSync(readlinkSync(join(entry, scoped)), join(target, name, scoped));
-      }
-    } else {
-      symlinkSync(entry, join(target, name));
-    }
-  }
-
-  for (const top of ['libs', 'apps', 'tools']) {
-    if (!existsSync(join(root, top))) continue;
-    for (const project of readdirSync(join(root, top))) {
-      const nested = join(top, project, 'node_modules');
-      if (
-        existsSync(join(root, nested)) &&
-        existsSync(dirname(join(checkout, nested))) &&
-        !existsSync(join(checkout, nested))
-      ) {
-        symlinkSync(join(root, nested), join(checkout, nested));
-      }
-    }
-  }
 };
 
 const stagedRelatedMap = (root) => {
