@@ -586,6 +586,9 @@ const seedTarget = (options: {
   }
 };
 
+const alreadySketched = (target: string) =>
+  `${target} already has an open sketch - merge or discard it first, or extract the region into a part and sketch that`;
+
 /**
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
  * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
@@ -618,8 +621,7 @@ export const createSketch = (options: {
     (target) => findSketch({ productDir: product.dir, product: product.name, sketch: target }) !== null,
   );
 
-  if (existsSync(dir) || taken)
-    return `${sketchIdOf(taken ?? sketch)} already has an open sketch - merge or discard it first`;
+  if (existsSync(dir) || taken) return alreadySketched(sketchIdOf(taken ?? sketch));
   if (variants.length === 0) return 'name at least one variant';
 
   const mergeProblem = mergeProblemOf({ product, targets, merge });
@@ -693,7 +695,7 @@ export const addTarget = (options: {
     sketch: { ...part, sketch: parseSketchName(sketch.target) },
   });
 
-  if (taken !== null) return `${key} already has an open sketch - merge or discard it first`;
+  if (taken !== null) return alreadySketched(key);
 
   const mergeProblem = mergeProblemOf({ product, targets: [key], merge: sketch.merge });
 

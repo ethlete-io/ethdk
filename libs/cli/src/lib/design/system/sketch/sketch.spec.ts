@@ -125,7 +125,7 @@ describe('createSketch', () => {
     open(target, 'elements/hero');
 
     expect(createSketch({ product: resolveAcme(target), sketch: parsed, variants: ['c'] })).toBe(
-      'elements/hero already has an open sketch - merge or discard it first',
+      'elements/hero already has an open sketch - merge or discard it first, or extract the region into a part and sketch that',
     );
   });
 
@@ -180,7 +180,9 @@ describe('a sketch with several targets', () => {
     ).toBe('components/button');
     expect(
       createSketch({ product: resolveAcme(target), sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] }),
-    ).toBe('elements/hero already has an open sketch - merge or discard it first');
+    ).toBe(
+      'elements/hero already has an open sketch - merge or discard it first, or extract the region into a part and sketch that',
+    );
   });
 
   it('reads a one-target sketch.json without targets as one target, and writes none back', () => {
