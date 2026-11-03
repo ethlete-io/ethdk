@@ -15,6 +15,7 @@ import { designMcp, MCP_USAGE } from './mcp-command';
 import { designMotion, MOTION_USAGE } from './motion-command';
 import { designSketch, SKETCH_USAGE, sketchFlagHelpOf } from './sketch-command';
 import { buildStampOf } from './stamp';
+import { runningCliStaleWarning } from './stale-cli-dist';
 import { CALL_STATES, designStatus } from './status';
 import { designPart, PART_USAGE } from './system/part-command';
 import { designGo, GO_USAGE } from './system/go-command';
@@ -318,6 +319,10 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
 
     return 0;
   }
+
+  const staleWarning = argv[0] === 'stamp' ? null : runningCliStaleWarning();
+
+  if (staleWarning) console.error(staleWarning);
 
   if (argv[0] === 'stamp') {
     console.log(JSON.stringify(buildStampOf()));
