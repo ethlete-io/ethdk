@@ -19,6 +19,16 @@ import { BoxOf } from './variant-diff';
 
 export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
+/** The state names a shot of a part can draw: the drawn ones, plus any asked-for state the part defines but its grid leaves out as unchanged. */
+export const shotStateNamesOf = async (definition: unknown, asked: string[]): Promise<string[]> => {
+  const drawn = await drawnStateNamesOf(definition);
+  const states =
+    typeof definition === 'object' && definition !== null ? (definition as { states?: unknown }).states : null;
+  const defined = typeof states === 'object' && states !== null && !Array.isArray(states) ? Object.keys(states) : [];
+
+  return [...drawn, ...asked.filter((name) => defined.includes(name) && !drawn.includes(name))];
+};
+
 type Axis = { label: string; sketch: SketchVariant | null };
 
 type Plan = { label: string; address: PartAddress; absent?: true };
@@ -474,7 +484,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       const module = (await server.ssrLoadModule(
         productModuleIdOf({ file: found.file, product, sketch: axis.sketch }),
       )) as { default?: { states?: unknown; grid?: unknown; widths?: unknown } };
-      const names = await drawnStateNamesOf(module.default);
+      const names = await shotStateNamesOf(module.default, asked);
 
       const first = Array.isArray(module.default?.widths) ? (module.default.widths[0] as unknown) : undefined;
 
