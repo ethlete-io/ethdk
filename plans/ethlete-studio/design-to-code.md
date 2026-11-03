@@ -3277,6 +3277,13 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      check resolves calls through the functions that build the path, not text. Fix: B190 (technical) - resolve
      callers through the host functions that call `designAnswer$` with the segment; a spec on the 8cf715654 tree
      reports all four comment endpoints, and after 4221e7cb3 still reports reply, done and withdraw (known list).
+     Correction (builder, 2026-11-03, after B190 2b91b06b6): the old rule did report all four endpoints on the
+     8cf715654 tree, but they sat on the known list under B145, so they came out as known warnings, not errors. The
+     real gap: a known entry silenced a regression - an endpoint that had a writer and lost it looked the same as one
+     that never had one. Lesson: a known entry names the state it expects. Fix: B195 (technical) - each ORPHAN-ENDPOINT
+     known entry says "never written" or "written by <fn>"; losing a writer reports the endpoint again. The builder
+     lists the other known lists where an entry can hide the same flip. B190 still landed (calls resolved through
+     the host functions; an import no longer counts).
 255. B180 could not reproduce the `--out` + `--variants` refusal from finding 244: the source already accepted it
      (now pinned by a spec). The refusal came from the shared cli `dist/`, which predates B172 (it still checked
      withdrawn variant b) (builder, 2026-11-03). B94 guards the design libs' dist that shots draw from, not the cli's
