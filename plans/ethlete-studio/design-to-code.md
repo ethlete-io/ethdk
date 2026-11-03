@@ -3092,4 +3092,7 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      writing a comment. Why no tool caught it: the checks compare the app against the designs, so a capability the
      designs never drew is "legacy" and its removal looks like a fix; nothing lists the user actions that existed
      before and are gone after. Lesson: matching the app to the design can delete a capability the design forgot.
-     Tool fix: open, put to Tom.
+     Tool fix (Tom, 2026-11-03; B146): ACTION-LOST - an action declared at the last go or in the last app state that
+     exists nowhere afterwards fails `design check` until the user confirms the removal or a design shows it again.
+     Generic, any project. Product fix (B145): the comment button returns top right next to the other buttons as a
+     one-variant sketch; where page buttons belong in general follows as its own sketch with variants.
