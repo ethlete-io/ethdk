@@ -1,5 +1,11 @@
 {
   "components/canvas-viewport": "24c59621b0af790a",
+  "components/comment-draft": {
+    "hash": "c0099831240764a9",
+    "variant": "a",
+    "decidedBy": "user",
+    "at": "2026-11-03T15:47:12.853Z"
+  },
   "components/comment-pin": "60a213cdfc41a3e3",
   "components/disclosure": "92834053fa3147f5",
   "components/shell-collapse": "fd8adc8a7443f113",
