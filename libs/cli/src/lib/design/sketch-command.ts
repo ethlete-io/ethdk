@@ -321,7 +321,6 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
   return [
     'Next:',
     `  sketch report ${at} --variant ${first} --by <model id> "<what you draw>"   while you draw a variant`,
-    `  sketch report ${at} --variant ${first} --by <model id> --done              when you stop drawing it; no report runs yet, so none is needed now`,
     ...(running.note.trim() === ''
       ? [
           `  sketch round ${sketch.target} ${running.key} --product ${product} --note "<what the round shows>" --by <model id>`,
@@ -329,6 +328,7 @@ const nextStepsOf = (sketch: Sketch, product: string) => {
       : []),
     `  sketch check ${at}`,
     `  sketch ready ${at} --by <model id>`,
+    `  sketch report ${at} --variant ${first} --by <model id> --done              after ready, once you stop drawing a variant; no report runs yet, so none is needed now`,
     `  a shared JSON file ready wrote (merged.json, accepted.json, go.json): commit it with \`et design commit-hunks <file> --part ${sketch.targets[0]}\`, never as a whole file another session also edits`,
     THEMING_TEXT,
   ];

@@ -1050,10 +1050,10 @@ describe('designSketch', { timeout: 120_000 }, () => {
     expect(next).toEqual([
       'Next:',
       expect.stringContaining('sketch report components/button --product acme --variant a --by <model id> "'),
-      expect.stringMatching(/sketch report .* --done .*none is needed now/u),
       expect.stringContaining('sketch round components/button r1 --product acme --note'),
       '  sketch check components/button --product acme',
       '  sketch ready components/button --product acme --by <model id>',
+      expect.stringMatching(/sketch report .* --done .*none is needed now/u),
       expect.stringContaining('et design commit-hunks <file> --part components/button'),
       THEMING_TEXT,
     ]);
