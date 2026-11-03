@@ -3829,3 +3829,36 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      the shared components/comment-draft is a sketch with variants for Tom. B237 (the canvas-frames overlay covers the
      draft) is fixed inside that sketch. The builder also verifies whether COMPONENT-COPY flags inbox.ts:309/316-335.
      If it does not, that is a gap in the same item.
+
+### Build-ready decisions (2026-11-03, A10 pulled forward)
+
+Tom: the go system is not extended any more; A10 replaces it now.
+
+1. Build-ready replaces go and acceptance. Tom's only approval is picking a sketch variant; an automatic merge
+   only when no picture changes. Build-ready is computed: the ready mark holds at the current design hash, every
+   embedded part is build-ready, no check problem is attributed to the part, and a small harness run renders every
+   state without SDK errors (new runner; today SDK errors are only a side effect of compare/live).
+2. No manual hold, no go withdrawal (B70 is moot): everything comes in through sketches that pass the checks.
+3. Who builds (Tom: "a designer should not have components built ... our system breaks once it gets complex", the
+   fifagg start page as the example): by content, not by layer. A part is designer-buildable when it is
+   presentational: inputs and outputs only, composed of SDK components and parts, no services, no data loading, no
+   routing. A tool checks it on the part before the build and on the generated code after it; a failure makes it a
+   developer part. Small fixes go through the same test.
+4. A developer part's spec is the build-ready part (design files, all states, compare target); done is a green
+   compare of app against design. No written brief from the designer.
+5. No sprawl: an implementation embeds each embedded part through that part's implemented component and never
+   copies its markup. The design half is INLINE-UI-IN-PAGE (B247); the app half reuses its detector.
+6. Missing state (Tom: "if it gets that far, Studio failed, but it must not tear the developer out of his work -
+   imagine the designer is on holiday"): the developer builds the missing state himself and may do anything,
+   including CSS ("otherwise he is stuck again because the SDK lacks the component"). The state is marked as
+   needing approval: Studio opens a sketch on the part with the developer's build as a variant (its screenshot),
+   and compare passes that one state while the sketch is open. The designer picks it or adds a replacement
+   variant; after the pick the code must match the design again. Studio's failure is caught earlier by a rule: a
+   part that takes data or lists is build-ready only with declared loading, error and empty states.
+
+Technical (doc agent): `design task` gates on build-ready and names the red checks; doneParts drops the go.hash term
+(implemented.hash vs the current design hash); open points no-go/stale-go become not-build-ready; ACTION-UNDECLARED
+is always on; go.actions/review carry moves to the ready mark; pictures.json kind go is rekeyed to ready; remove
+go.json, accepted.json, the go-*.ts commands, the Studio give-go and accept buttons and endpoints, the git-safety
+go rule, and the go docs, with a migration that deletes both files. Built as B249 (build-ready + removal), B250
+(designer/developer split check), B251 (undesigned-state sketch + required data states).
