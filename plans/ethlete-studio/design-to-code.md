@@ -3847,6 +3847,24 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      becomes its own element is decided after the pick. The builder checks whether the slow frame is the failing B241
      e2e case (a listing refresh re-navigates iframes and leaves 150px frames).
 
+305. B247 as built (builder, 2026-11-03, 74501d02b). INLINE-UI-IN-PAGE is a problem rule. The detector
+     (rules/inline-ui.ts, `inlineUiOf(source)`) reads string and template literals through the TS AST and flags
+     button/input/select/textarea, raw `<et-*>` tags and `et-*` attributes, and markup with an interactive role,
+     tabindex or data-et-action; `data-et-part` tags are skipped. It runs on page parts plus their relative/@shared
+     imports, and on sketch variants, so it blocks sketch ready and merge. Open list OPEN_INLINE_UI
+     (rules/inline-ui-in-page-open.ts): 14 entries keyed by product + place + anchor + kind, with an exact count and an
+     owner. An unlisted hit, a count overrun (on every hit of the group) and a stale entry (fewer hits than count) are
+     problems; a listed hit is a warning. Red-check: every mutation failed the spec. Renaming an anchored const gives an
+     unlisted problem plus a stale entry, as intended. The survey in finding 303 missed 2 more regex patches (`loading`
+     in merge.ts and system.ts write `<button data-loading>` into embedded markup); B248a owns them. COMPONENT-COPY gap
+     confirmed: it matches only component-part CSS classes, so it missed inbox.ts:309 and :316-335. Decision
+     (technical): the gap stays closed inside INLINE-UI-IN-PAGE (raw et- markup names the part to embed); COMPONENT-COPY
+     is not extended, because a second rule would report the same place twice and need its own list. B248a: the first
+     sub-agent ran out of context with nothing committed. A fresh one finishes it in slices, with a per-part pixel proof,
+     shrinking OPEN_INLINE_UI in the same commits. The extracted parts have no hover/active/focus-visible looks (the
+     inline originals had none either). That becomes design work for Tom as sketches, and CONTROL-PART-MISSING becomes
+     CONTROL-PART-INCOMPLETE.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
