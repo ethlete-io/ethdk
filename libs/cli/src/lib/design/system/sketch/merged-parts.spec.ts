@@ -4,7 +4,14 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { changedOutsideSketchOf, MERGED_FILE, readMerged, recordMerged } from './merged-parts';
+import {
+  changedOutsideSketchOf,
+  forgetMerged,
+  MERGED_FILE,
+  readMergeDecision,
+  readMerged,
+  recordMerged,
+} from './merged-parts';
 import { createSketch } from './sketch';
 
 const acme = () => {
@@ -84,5 +91,46 @@ describe('changedOutsideSketchOf', () => {
     expect(readMerged(productDir(target))).toEqual({});
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
     expect(readFileSync(join(productDir(target), MERGED_FILE), 'utf8')).toBe('{');
+  });
+});
+
+describe('merge decisions', () => {
+  const decision = { variant: 'c', decidedBy: 'user', at: '2026-11-03T12:00:00.000Z' };
+
+  it('reads a legacy hash-only entry as a hash without a decision', () => {
+    const target = acme();
+
+    writeFileSync(join(productDir(target), MERGED_FILE), JSON.stringify({ 'elements/hero': 'abc' }));
+
+    expect(readMerged(productDir(target))).toEqual({ 'elements/hero': 'abc' });
+    expect(readMergeDecision(productDir(target), 'elements/hero')).toBeNull();
+  });
+
+  it('writes the decision next to the hash and keeps it when the part is recorded again without one', () => {
+    const target = acme();
+    const product = { dir: productDir(target), base: null };
+
+    recordMerged({ product, parts: ['elements/hero', 'pages/home'] });
+    recordMerged({ product, parts: ['elements/hero'], decision });
+    changeHero(target);
+    recordMerged({ product, parts: ['elements/hero'] });
+
+    const file = JSON.parse(readFileSync(join(productDir(target), MERGED_FILE), 'utf8')) as Record<string, unknown>;
+
+    expect(file['elements/hero']).toEqual({ hash: readMerged(productDir(target))['elements/hero'], ...decision });
+    expect(typeof file['pages/home']).toBe('string');
+    expect(readMergeDecision(productDir(target), 'elements/hero')).toEqual(decision);
+  });
+
+  it('keeps the decisions of the other parts when one is forgotten', () => {
+    const target = acme();
+    const product = { dir: productDir(target), base: null };
+
+    recordMerged({ product, parts: ['elements/hero'], decision });
+    recordMerged({ product, parts: ['pages/home'] });
+    forgetMerged({ productDir: productDir(target), parts: ['pages/home'] });
+
+    expect(Object.keys(readMerged(productDir(target)))).toEqual(['elements/hero']);
+    expect(readMergeDecision(productDir(target), 'elements/hero')).toEqual(decision);
   });
 });

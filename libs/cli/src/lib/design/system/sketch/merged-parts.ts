@@ -9,8 +9,29 @@ export const MERGED_FILE = 'merged.json';
 
 const mergedFileOf = (productDir: string) => resolve(productDir, MERGED_FILE);
 
-/** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */
-export const readMerged = (productDir: string): Record<string, string> => {
+/** Who picked the variant a part's last sketch merge took, which variant, and when it was picked. */
+export type MergeDecision = { variant: string; decidedBy: string; at: string };
+
+type MergedEntry = { hash: string; decision: MergeDecision | null };
+
+const decisionOf = (value: Record<string, unknown>): MergeDecision | null => {
+  const { variant, decidedBy, at } = value;
+
+  return typeof variant === 'string' && typeof decidedBy === 'string' && typeof at === 'string'
+    ? { variant, decidedBy, at }
+    : null;
+};
+
+const entryOf = (value: unknown): MergedEntry | null => {
+  if (typeof value === 'string') return { hash: value, decision: null };
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const record = value as Record<string, unknown>;
+
+  return typeof record['hash'] === 'string' ? { hash: record['hash'], decision: decisionOf(record) } : null;
+};
+
+const readEntries = (productDir: string): Record<string, MergedEntry> => {
   const file = mergedFileOf(productDir);
 
   if (!existsSync(file)) return {};
@@ -18,41 +39,66 @@ export const readMerged = (productDir: string): Record<string, string> => {
   try {
     const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
 
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? Object.fromEntries(
-          Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
-        )
-      : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed).flatMap(([part, value]) => {
+        const entry = entryOf(value);
+
+        return entry ? [[part, entry]] : [];
+      }),
+    );
   } catch {
     return {};
   }
 };
 
+const writeEntries = (productDir: string, entries: Record<string, MergedEntry>) => {
+  const sorted = Object.entries(entries)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([part, { hash, decision }]) => [part, decision ? { hash, ...decision } : hash]);
+
+  writeFileSync(mergedFileOf(productDir), `${JSON.stringify(Object.fromEntries(sorted), null, 2)}\n`);
+};
+
+/** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */
+export const readMerged = (productDir: string): Record<string, string> =>
+  Object.fromEntries(Object.entries(readEntries(productDir)).map(([part, { hash }]) => [part, hash]));
+
+/** The pick the part's last sketch merge took, or `null` for a part merged before picks were recorded. */
+export const readMergeDecision = (productDir: string, part: string): MergeDecision | null =>
+  readEntries(productDir)[part]?.decision ?? null;
+
 type HashedProduct = Pick<ResolvedProduct, 'dir' | 'base'> & Partial<Pick<ResolvedProduct, 'config'>>;
 
-/** Records the current content hash of each named part of the product as merged. */
-export const recordMerged = (options: { product: HashedProduct; parts: string[] }) => {
-  const { product, parts } = options;
+/**
+ * Records the current content hash of each named part of the product as merged, with `decision` when a sketch merge
+ * records it. Without one, a part keeps the decision of its last merge.
+ */
+export const recordMerged = (options: { product: HashedProduct; parts: string[]; decision?: MergeDecision }) => {
+  const { product, parts, decision } = options;
   const productDir = product.dir;
-  const merged = readMerged(productDir);
+  const entries = readEntries(productDir);
 
-  for (const part of parts) merged[part] = partHashOf({ product, dir: resolve(productDir, part) });
+  for (const part of parts)
+    entries[part] = {
+      hash: partHashOf({ product, dir: resolve(productDir, part) }),
+      decision: decision ?? entries[part]?.decision ?? null,
+    };
 
-  const sorted = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
-
-  writeFileSync(mergedFileOf(productDir), `${JSON.stringify(sorted, null, 2)}\n`);
+  writeEntries(productDir, entries);
 };
 
 /** Drops the named parts from the product's `merged.json`. */
 export const forgetMerged = (options: { productDir: string; parts: string[] }) => {
   const { productDir, parts } = options;
-  const merged = readMerged(productDir);
+  const entries = readEntries(productDir);
 
-  if (!parts.some((part) => part in merged)) return;
+  if (!parts.some((part) => part in entries)) return;
 
-  for (const part of parts) delete merged[part];
+  for (const part of parts) delete entries[part];
 
-  writeFileSync(mergedFileOf(productDir), `${JSON.stringify(merged, null, 2)}\n`);
+  writeEntries(productDir, entries);
 };
 
 /** The product folder that holds the part now: the product's own, else its base's. */

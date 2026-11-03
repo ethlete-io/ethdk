@@ -1,11 +1,11 @@
-import { readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { readdirSync, readFileSync, rmSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
 import ts from 'typescript';
 import { listComments, resolveComment } from './comments/comment';
 import { partDependenciesOf } from './imports';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf } from './sketch/cli-args';
-import { MERGED_FILE, readMerged } from './sketch/merged-parts';
+import { forgetMerged } from './sketch/merged-parts';
 import { listSketches, parseTarget } from './sketch/sketch';
 import { writeEditorTsconfig } from './system-tsconfig';
 
@@ -77,15 +77,6 @@ const removalProblemOf = ({ target, product, key }: { target: string; product: R
   return null;
 };
 
-const forgetMerged = (productDir: string, key: string) => {
-  const merged = readMerged(productDir);
-
-  if (merged[key] === undefined) return;
-
-  delete merged[key];
-  writeFileSync(resolve(productDir, MERGED_FILE), `${JSON.stringify(merged, null, 2)}\n`);
-};
-
 /** `et design part remove <layer>/<name> …` deletes a part of a product with its `merged.json` entry, and resolves its comments. */
 export const designPart = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -131,7 +122,7 @@ export const designPart = (options: { target: string; argv: string[]; invocation
 
   if (part) rmSync(dirname(part.file), { recursive: true, force: true });
 
-  forgetMerged(product.dir, key);
+  forgetMerged({ productDir: product.dir, parts: [key] });
 
   const after = oneProductOf({ target, config, asked: product.name });
 

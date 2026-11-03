@@ -16,7 +16,7 @@ import {
 } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
-import { changedOutsideSketchOf, readMerged, recordMerged } from './merged-parts';
+import { changedOutsideSketchOf, readMergeDecision, readMerged, recordMerged } from './merged-parts';
 import {
   createSketch,
   decideSketch,
@@ -135,6 +135,51 @@ describe('mergeSketch', { timeout: 60_000 }, () => {
     writeFileSync(join(heroOf(target), 'hero.css'), '.acme-hero { padding: 0; }');
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
+  });
+
+  it('records the pick, who decided it and when, next to the hash, after the sketch is gone', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+    const sketch = picked(ready.sketch);
+    const at = sketch.decision?.decidedAt;
+
+    expect(merge(target, { ...ready, sketch })).toEqual(['elements/hero']);
+    expect(existsSync(sketch.dir)).toBe(false);
+    expect(readMergeDecision(join(target, DESIGN_DIR, 'acme'), 'elements/hero')).toEqual({
+      variant: 'b',
+      decidedBy: 'user',
+      at,
+    });
+  });
+
+  it('records who else decided the pick when the merge names them', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+
+    mergeSketch({
+      target,
+      config: readConfig(target) ?? {},
+      product: resolveAcme(target),
+      sketch: picked(ready.sketch, 'a'),
+      decidedBy: 'plan: B1',
+    });
+
+    expect(readMergeDecision(join(target, DESIGN_DIR, 'acme'), 'elements/hero')).toMatchObject({
+      variant: 'a',
+      decidedBy: 'plan: B1',
+    });
+  });
+
+  it('refuses a merge without a recorded pick and writes no record', () => {
+    const target = acme();
+    const ready = readySketch(target);
+
+    expect(merge(target, ready)).toContain('has no pick');
+    expect(readMergeDecision(join(target, DESIGN_DIR, 'acme'), 'elements/hero')).toBeNull();
   });
 
   it('copies the variant over the product, sets the note, checks and deletes the sketch', () => {

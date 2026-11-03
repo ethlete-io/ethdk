@@ -57,7 +57,7 @@ const pickOf = (sketch: Sketch) => {
   if (!sketch.variants.includes(decision.variant))
     return `${sketch.target} has no variant "${decision.variant}", the one picked - it has ${sketch.variants.join(', ') || 'none'}`;
 
-  return { variant: decision.variant };
+  return { variant: decision.variant, at: decision.decidedAt };
 };
 
 type NotedTarget = {
@@ -158,6 +158,7 @@ const mergeOrReason = (options: {
   note?: string;
   replaceNote?: boolean;
   author?: string;
+  decidedBy?: string;
 }): string[] | string | MergeRefusal => {
   const { target, config, product, sketch, note, replaceNote, author } = options;
 
@@ -169,6 +170,7 @@ const mergeOrReason = (options: {
   if (typeof pick === 'string') return pick;
 
   const { variant } = pick;
+  const decision = { variant, decidedBy: options.decidedBy ?? 'user', at: pick.at };
   const rejected = rejectedProblemOf(sketch, variant);
 
   if (rejected) return rejected;
@@ -277,10 +279,10 @@ const mergeOrReason = (options: {
   swapped.drop();
   const productKeys = mergedKeys.filter((key) => !baseKeys.includes(key));
 
-  if (productKeys.length > 0) recordMerged({ product, parts: productKeys });
+  if (productKeys.length > 0) recordMerged({ product, parts: productKeys, decision });
 
   if (base && baseKeys.length > 0) {
-    recordMerged({ product: { dir: base.dir, base: null }, parts: baseKeys });
+    recordMerged({ product: { dir: base.dir, base: null }, parts: baseKeys, decision });
     forgetMerged({ productDir: product.dir, parts: removedKeys });
   }
 
@@ -305,7 +307,7 @@ const mergeOrReason = (options: {
  * over the product's - a part the product takes from its base over the base's, unless the sketch was opened with
  * `override`; `into-base` also removes the product copy and its `merged.json` entry - keeps the target's note (replaces it with `note`
  * only with `replaceNote`; an empty one takes the variant note) and sets `madeBy` (the file's own plus the variant's authors) on the target, runs the check
- * records each merged part's hash in `merged.json` and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. When the check fails, the
+ * records each merged part's hash in `merged.json`, with the pick (variant, `decidedBy` - default `user` - and when), and deletes the sketch. With `override`, a target the product only takes from its base is copied into the product first. When the check fails, the
  * product's old files come back and the sketch stays. Each file in the variant's `assets/` goes into the product's `assets/`. A file of the sketch's `shared/` folder whose path the product's `shared/` holds
  * replaces it there; the rest goes into the target's folder when the target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the addressed comments on its variants, and those on the merged parts that have no sketch, are resolved, and the open ones on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
@@ -319,6 +321,7 @@ export const mergeSketch = (options: {
   note?: string;
   replaceNote?: boolean;
   author?: string;
+  decidedBy?: string;
 }): string[] | MergeRefusal => {
   const merged = mergeOrReason(options);
 

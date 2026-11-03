@@ -34,7 +34,16 @@ export const mergeAndRecord = (options: {
 
   if (typeof decided === 'string') return decided;
 
-  const result = mergeSketch({ target, config, product, sketch: decided, note, replaceNote, author: by });
+  const result = mergeSketch({
+    target,
+    config,
+    product,
+    sketch: decided,
+    note,
+    replaceNote,
+    author: by,
+    ...(allowed ? { decidedBy: `plan: ${allowed.planRef.trim()}` } : {}),
+  });
 
   if (!Array.isArray(result)) return result.reason;
 

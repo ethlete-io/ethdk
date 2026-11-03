@@ -709,7 +709,14 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
 
   const written = sharedFilesOf(product);
   const before = written.map((file) => contentOf(file));
-  const result = mergeSketch({ target: context.target, config: context.config, product, sketch: decided, author });
+  const result = mergeSketch({
+    target: context.target,
+    config: context.config,
+    product,
+    sketch: decided,
+    author,
+    decidedBy: 'auto: no visible change',
+  });
 
   if (!Array.isArray(result)) {
     console.warn(`${sketch.target} shows no visible change but did not merge: ${result.reason}`);
