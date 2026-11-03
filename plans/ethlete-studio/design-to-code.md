@@ -3694,3 +3694,9 @@ studio` on the new commits.
      technical): shot and Studio label a variant "withdrawn by agent: <reason>" when the agent withdrew it, and
      "rejected" only when Tom did. Whether withdrawn variants are shown at all is Tom's product question. The
      pickable set for title-bar is a, c, d, f, g, h.
+
+### Withdrawn variant decisions (2026-11-03)
+
+- Tom: an agent-withdrawn variant is hidden by default in the Studio sketch view and in the shot. A toggle in
+  Studio (`--all` on the CLI) shows it again, labelled "withdrawn by agent: <reason>", so Tom can reopen it. Part
+  of B240.
