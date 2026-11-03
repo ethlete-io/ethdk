@@ -3762,4 +3762,6 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      tsc error block, but its end-to-end case in commit-wait.spec.mjs still asserted the opposite and failed; aligned
      in f4e6e5b8b. Why no tool caught it: `yarn commit` selects only Studio and cli suites, so a change in
      tools/scripts runs none of `yarn test:tools`. Recommended fix (B245): a tools/scripts change runs the
-     tools/scripts specs (node --test) in the same worktree.
+     tools/scripts specs (node --test) in the same worktree. Decided (doc agent): B245 as recommended, technical. The
+     plain `git commit` gap is closed by B244b (decided, technical): the pre-commit hook runs the same lint on the
+     projects of the staged files, unless `yarn commit` already linted that exact tree.
