@@ -4061,6 +4061,15 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      so the variants use SketchBadgeStatus = SketchStatus | 'failed'. A merge adds `failed` to SketchStatus and the
      tags map instead; showing the badge on the sketches page is its own pages/sketches sketch after the pick.
 
+322. The B256 Studio banner shipped as visible UI without a picked sketch (builder, 2026-11-03, 14bf51766). Finding
+     307 decided "a banner", but no sketch fixed its look or placement; the builder placed an SDK warning et-banner
+     top-left over the canvas. Why no tool caught it: nothing refuses a commit that adds visible app UI with no picked
+     sketch or implements link behind it. Decision (Tom's standing rule: any look goes to a sketch): revert only the
+     visible hunks (system-view.component.ts/.spec.ts, studio-labels.ts); the /__design/stale-mocks route and the
+     stream stay. Then sketch the banner on the system view page for Tom. Tool fix B275: a problem UNSKETCHED-UI for
+     an app template diff in a design-part or system-view file that adds an element or label with no picked sketch or
+     implements entry behind it.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
