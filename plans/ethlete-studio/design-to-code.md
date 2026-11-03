@@ -3034,6 +3034,17 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      while it has an open sketch whose base no longer matches, unless the sketch is rebased in the same commit; the
      refusal names the rebase command.
 
+### Capability list decisions (Tom, 2026-11-03)
+
+- Every product keeps a list of its user capabilities (write comment, write note, give go, merge sketch, toggle
+  sidebar, ...). Each capability must point to a design action, the place in the design where the user triggers it.
+  `design check` reports every capability without a place. The builder writes the first list from the code; Tom
+  confirms it once; after that it changes with each change (B157, finding 231). The confirmed list, not the code,
+  says what a product must be able to do.
+- B151 orphan endpoints: the changed-area view in merge (`sketch-diff`, `sketch-crop`) and the motion strip in the
+  part view (`motion`) go on the studio capability list and come back later as Studio sketches; the motion strip
+  much later, as planned. `part-ready` is deleted: "ready to build" follows from green checks.
+
 ### Go ownership and sketch rebase decisions (Tom, 2026-11-02)
 
 - pages/sketches round 2: the builder rebases the round-2 sketch onto the current merged design and re-runs
