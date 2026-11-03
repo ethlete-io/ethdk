@@ -4070,6 +4070,15 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      an app template diff in a design-part or system-view file that adds an element or label with no picked sketch or
      implements entry behind it.
 
+323. The B267 stale-CLI guard broke the e2e suite server-restart (builder, 2026-11-03, e2e-check of 117eb20bb). In the
+     throwaway e2e tree the guard refused "This CLI build is stale" before the first case, because that tree's
+     dist/libs/cli carries no matching source hash. Why no tool caught it: B267 changed the CLI entry and build but ran
+     no e2e-check, since the rule asked for it only on view slices. Decision (technical): fix slice B267b (the hash is
+     part of the nx build output; no refusal for shas before 91aadd6dd), and the slice rule widens: any change to a
+     libs/cli entry point, build target or guard also quotes `yarn e2e-check <sha>`. B255 (117eb20bb) stays 🔨 until a
+     clean e2e run and its red-check line; a frame-load-failed miss of the render-error badge (1 of 2 runs) is open
+     until B270 lands.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
