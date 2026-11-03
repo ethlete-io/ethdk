@@ -3284,3 +3284,12 @@ ready` prints that command for every file it wrote; the brief uses it. Not an au
      older than its own source. Fix: B191 (technical) - in a repo checkout `et design` prints a first-line WARN
      "cli dist older than libs/cli/src (built <time>, source changed <time>), run <rebuild command>" and repeats it in
      every report header; rebuild the shared cli dist once the parallel slices settle.
+256. Sketching B178 (canvas frames, builder, 2026-11-03) the action vocabulary was too small for real interactions:
+     no double-click form for `data-et-action`; capabilities.json cannot say a capability happens automatically
+     (frame fit via ResizeObserver has no place to draw); instant state switches must each be declared `unreachable`
+     to pass ready, so the part lists all 90 pairs. Each gap pushes an agent to fake a place or to bulk-declare
+     exceptions that then hide real ones. Parallel agents also overwrote each other's scratch files. Lesson: when the
+     declaration language cannot say the true thing, agents write a false one that passes. Fix (technical): B192
+     `dblclick:` prefix read by CAPABILITY-PLACE; B193 `"automatic": true` with a required `why`, accepted without a
+     place but listed in every capability report (never silent); B194 an `instant` declaration replacing per-pair
+     `unreachable`. Scratch names are slugged per agent in the builder brief.
