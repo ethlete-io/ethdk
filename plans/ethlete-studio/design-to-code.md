@@ -4158,6 +4158,18 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      suppresses no problem in any rendered state is a problem naming the element, so a skip lives only while it hides
      something. Count its hits on studio, studio-lab and sdk before landing; each is removed, not suppressed.
 
+331. Contradicting instruction in the check output (builder, 2026-11-03). After the pages/system carry refresh
+     (go kept by auto refresh, committed 3eb81ca97, 0f3b2d4f6 through commit-hunks), the check printed "WARNING
+     UNCOMMITTED-DECISIONS ... Studio or Tom commits them; an agent never commits go.json"
+     (uncommitted-decisions.ts, 66f1acb49, 2026-11-02). That rule was superseded by the go carry decisions after
+     finding 301: Tom set no rule on who commits a carry, and agents commit carries of their own parts through
+     commit-hunks (66e71e8e3, d16ea1786, 3eb81ca97 stand). Why no tool caught it: the message text is a hand-written
+     rule copy, and no spec ties tool messages to the plan's current decisions. Fix (technical, no go-system
+     extension): the warning names the files and the commit-hunks command to run, and drops the "never commits"
+     clause; a spec asserts the message names commit-hunks. The rest of that check run (145 findings, exit 1) is
+     sorted separately: LOST-SURFACE comes from b266's uncommitted rule, the STALE line is stale SDK mocks
+     (`nx build components`), SKIP-SCOPE/COVERED/DROPPED-PROP need a count on HEAD alone.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
