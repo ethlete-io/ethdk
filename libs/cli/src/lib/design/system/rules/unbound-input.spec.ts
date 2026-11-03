@@ -10,6 +10,8 @@ export class SketchesComponent {
   public hold = input<SketchHold>(SKETCH_HOLD);
   public reason = input(false);
   public rows = input<Row[]>(ROWS);
+  public open = model(false);
+  public tab = model.required<string>();
 }`;
 
 const appWith = (files: Record<string, string>) => {
@@ -39,18 +41,22 @@ describe('unboundInputsOf', () => {
     ).toEqual([
       ['UNBOUND-INPUT', 'src/sketches.component.ts', 'hold'],
       ['UNBOUND-INPUT', 'src/sketches.component.ts', 'reason'],
+      ['UNBOUND-INPUT', 'src/sketches.component.ts', 'open'],
+      ['UNBOUND-INPUT', 'src/sketches.component.ts', 'tab'],
     ]);
   });
 
   it('counts a plain attribute and a two-way binding as bound', () => {
-    const appDir = appWith({ 'a.html': '<et-sketches reason="x" [(hold)]="h" [rows]="r"></et-sketches>' });
+    const appDir = appWith({
+      'a.html': '<et-sketches reason="x" [(hold)]="h" [rows]="r" [(open)]="o" [tab]="t"></et-sketches>',
+    });
 
     expect(unboundInputsOf({ components, appDir })).toEqual([]);
   });
 });
 
 describe('unboundInputVerdictOf', () => {
-  const appDir = appWith({ 'a.html': '<et-sketches [rows]="r" />' });
+  const appDir = appWith({ 'a.html': '<et-sketches [rows]="r" [open]="o" [tab]="t" />' });
 
   it('fails an unlisted hit and a listed input that is bound again, and warns for a listed hit', () => {
     const verdict = unboundInputVerdictOf({

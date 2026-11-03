@@ -11,6 +11,8 @@ const components = [
   public rows = input<Row[]>(SKETCH_ROWS);
   public first = input(FLOWS_SAMPLE[0]);
   public idle = input(false);
+  public picked = model(PICKED_SAMPLE);
+  public tab = model.required<string>();
   public name = input<string>(options.SAMPLE_NAME);
 `),
   },
@@ -22,6 +24,7 @@ describe('sampleDefaultsOf', () => {
       'SAMPLE-DEFAULT shell: defaults to the sample data SHELL_SAMPLE',
       'SAMPLE-DEFAULT rows: defaults to the sample data SKETCH_ROWS',
       'SAMPLE-DEFAULT first: defaults to the sample data FLOWS_SAMPLE',
+      'SAMPLE-DEFAULT picked: defaults to the sample data PICKED_SAMPLE',
     ]);
   });
 });
@@ -37,7 +40,7 @@ describe('sampleDefaultVerdictOf', () => {
       ],
     });
 
-    expect(verdict.errors.map(({ message }) => message.split(':')[0])).toEqual(['first', 'idle']);
+    expect(verdict.errors.map(({ message }) => message.split(':')[0])).toEqual(['first', 'picked', 'idle']);
     expect(verdict.warnings.map(({ message }) => message.split(':')[0])).toEqual(['shell', 'rows']);
   });
 });

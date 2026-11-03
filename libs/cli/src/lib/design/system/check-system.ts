@@ -42,6 +42,8 @@ import { CHECK_RULES } from './check-rules';
 import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { utilityCssOf } from './rules/utility-css';
 import { orphanEndpointProblemsOf, orphanEndpointWarningsOf } from './rules/orphan-endpoint';
+import { sampleDefaultProblemsOf, sampleDefaultWarningsOf } from './rules/sample-default';
+import { unboundInputProblemsOf, unboundInputWarningsOf } from './rules/unbound-input';
 import { uncoveredViewsOf, uncoveredViewsText } from './rules/view-coverage';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
@@ -77,6 +79,8 @@ const RULES = [
   nativeTitlesOf,
   utilityCssOf,
   orphanEndpointProblemsOf,
+  sampleDefaultProblemsOf,
+  unboundInputProblemsOf,
 ];
 
 export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
@@ -85,6 +89,8 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...tokenSelectorsOf(product),
   ...gluedInterpolationsOf(product),
   ...orphanEndpointWarningsOf(product),
+  ...sampleDefaultWarningsOf(product),
+  ...unboundInputWarningsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>

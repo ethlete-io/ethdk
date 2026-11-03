@@ -18,7 +18,7 @@ export const appSourcesOf = (dir: string): { path: string; text: string }[] =>
       : [];
   });
 
-const INPUT_PATTERN = /\bpublic\s+(\w+)\s*=\s*input(?:\.required)?\s*(?:<[^(]*>)?\s*\(([^\n]*)\)\s*;/gu;
+const INPUT_PATTERN = /\bpublic\s+(\w+)\s*=\s*(?:input|model)(?:\.required)?\s*(?:<[^(]*>)?\s*\(([^\n]*)\)\s*;/gu;
 
 export const inputsOf = (source: string): AppInput[] =>
   [...source.matchAll(INPUT_PATTERN)].map((match) => ({ name: match[1] as string, initializer: match[2] as string }));

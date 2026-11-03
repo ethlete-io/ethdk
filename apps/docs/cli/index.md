@@ -314,6 +314,12 @@ names its route, `implements: { route: '/system' }`, and for compare the present
 with `IMPLEMENTS-MISSING` when a path does not exist, and with `IMPLEMENTS-SHAPE` when the link is not a literal or not
 the shape of its layer.
 
+`et design check` fails with `UNBOUND-INPUT` when an `input()` or `model()` of an app component that implements a part is
+bound by no template of the app (a consumer binds it with `[x]`, `[(x)]` or a plain attribute), and with `SAMPLE-DEFAULT`
+when such an input defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in
+`libs/cli/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is bound or fixed
+again fails until it comes off the list.
+
 After the checks, `et design check` lists the open points of each product: one line per part, with the total,
 for example `components/tree-row: 1 open comment (c-1); sketch ready, not merged`. A point is a
 comment the user has not resolved (an addressed one too, listed as `c-2 addressed, waits on the user`), or a sketch on the part that is not merged yet. A part outside `foundations/` without `implements` is
