@@ -1,7 +1,8 @@
-import { definePart, drawing, html, ng, slot, withAction } from '@design-system';
+import { definePart, drawing, html, slot, withAction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import { switchStyles } from '@ethlete/components/design/switch';
 import anchoredDialog from '@system/components/anchored-dialog';
+import { commentDraft } from '@system/components/comment-draft';
 import { commentPinMark } from '@system/components/comment-pin';
 import { commentRow, commentRowStyles, type Thread } from '@system/components/comment-row';
 import button from '@system/components/button';
@@ -251,8 +252,8 @@ export const inbox = () =>
     },
     controls: {
       pin: { kind: 'button' as const, part: 'components/comment-pin' },
-      comment: { kind: 'field' as const, part: 'components/textarea' },
-      send: { kind: 'button' as const, part: 'components/button' },
+      'comment-cancel': { kind: 'button' as const, part: 'components/button' },
+      'comment-send': { kind: 'button' as const, part: 'components/button' },
       resolved: { kind: 'button' as const, part: 'components/switch' },
       row: { kind: 'row' as const, part: 'components/comment-row' as const },
       retry: { kind: 'button' as const, part: 'components/button' },
@@ -263,24 +264,23 @@ export const inbox = () =>
         attributes: 'aria-label="Erledigte zeigen" data-et-action="emit:showResolvedChange"',
       });
       const controls = html`<span class="ib-control inline-flex">${control(resolved.body, 'resolved')}</span>`;
-      const dialog =
+      const writing =
         draft || entry
-          ? await anchoredDialog.render({
-              label: 'Kommentar',
-              modal: false,
-              placement: 'bottom-start',
-              content: await ng(
-                withAction(
-                  `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
-                  'emit:send',
-                ),
-                { imports: ['TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'] },
-              ),
+          ? await commentDraft({
+              text: draft ? 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.' : '',
             })
           : null;
+      const dialog = writing
+        ? await anchoredDialog.render({
+            label: 'Kommentar',
+            modal: false,
+            placement: 'bottom-start',
+            content: writing.body,
+          })
+        : null;
       const editor = dialog
         ? html`<div class="fixed top-46.75 left-152.25 w-80 z-10 text-ui-sm">
-            ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true }).replace(/^<button\s/u, '<button data-et-control="pin" ')}
+            ${commentPinMark({ author: 'Tom Bornholdt', initials: 'TB', selected: true })}
             <div class="mt-1.25">${dialog.body}</div>
           </div>`
         : '';
@@ -393,6 +393,7 @@ export const inbox = () =>
           menu.styles +
           canvasFrameStyles +
           (dialog?.styles ?? '') +
+          (writing?.styles ?? '') +
           commentRowStyles +
           switchStyles +
           styles,

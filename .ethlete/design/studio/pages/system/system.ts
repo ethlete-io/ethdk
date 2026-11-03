@@ -1,9 +1,9 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, slot, withAction } from '@design-system';
+import { commentDraft } from '@system/components/comment-draft';
 import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { commentTarget } from '@system/components/comment-target';
-import textarea from '@system/components/textarea';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -70,55 +70,6 @@ const commentButton = async (on: boolean, acting: boolean) => {
 type SendPhase = 'busy' | 'error' | 'rejected';
 
 const REFUSED = 'part components/button no longer exists';
-
-const sendError = (text: string) =>
-  html`<p
-    class="m-0 flex items-center gap-space-1 text-et-theme-ink text-ui-xs"
-    data-et-semantic-color="error"
-    role="alert"
-  >
-    ${icon('error', { size: 14, cls: 'flex-none text-et-theme' })}<span>${text}</span>
-  </p>`;
-
-const commentDraft = async (text: string, phase?: SendPhase, reason = '') => {
-  const busy = phase === 'busy';
-  const field = await textarea.render({
-    field: {
-      id: 'comment-draft',
-      placeholder: 'Enter sendet, Umschalt+Enter macht einen Zeilenumbruch',
-      rows: 3,
-      disabled: busy,
-      ...(text ? { value: text } : {}),
-    },
-  });
-  const cancel = await button.render({
-    label: 'Abbrechen',
-    variant: 'transparent',
-    color: 'surface',
-    size: 'xs',
-    disabled: busy,
-  });
-  const send = await button.render({
-    label: phase === 'error' ? 'Erneut senden' : 'Senden',
-    variant: 'filled',
-    size: 'xs',
-    disabled: !text,
-    loading: busy,
-  });
-  const sendMarkup = busy ? send.body : text ? withAction(send.body, 'emit:sendComment') : send.body;
-  const cancelMarkup = busy ? cancel.body : withAction(cancel.body, 'comment-mode');
-  return {
-    body: html`<div
-      class="absolute left-[38%] top-[42%] z-4 flex w-80 flex-col gap-space-2 rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg"
-    >
-      ${field.body.replace('<textarea', '<textarea aria-label="Kommentar"')}${phase === 'error' ? sendError('Kommentar nicht gesendet. Erneut versuchen.') : phase === 'rejected' ? sendError(reason) : ''}
-      <div class="flex justify-end gap-space-2">
-        ${control(cancelMarkup, 'comment-cancel')}${control(sendMarkup, 'comment-send')}
-      </div>
-    </div>`,
-    styles: field.styles + cancel.styles + send.styles,
-  };
-};
 
 const kindIcon = (name: IconName) => icon(name, { size: 14, cls: 'flex-none text-(--et-surface-color-muted-solid)' });
 
@@ -387,9 +338,13 @@ export default definePart<{
     const shot = fit
       ? html`<div class="w-md h-45" ${slot('shot')}></div>`
       : html`<div ${slot('shot')}>${await buttonGrid()}</div>`;
-    const writing = draft === undefined ? undefined : await commentDraft(draft, send, reason);
+    const writing = draft === undefined ? undefined : await commentDraft({ text: draft, phase: send, reason });
     const target = control(commentTarget({ frame: 'button', action: 'comment-draft' }), 'comment-target');
-    const body = commentMode ? html`<div class="relative">${shot}${target}${writing?.body ?? ''}</div>` : shot;
+    const body = commentMode
+      ? html`<div class="relative">
+          ${shot}${target}${writing ? html`<div class="absolute left-[38%] top-[42%]">${writing.body}</div>` : ''}
+        </div>`
+      : shot;
     const frames = await canvasView([canvasFrame('button', body)], '100%', {}, 'w-full', true);
     const points = clear ? nothingOpen : buttonPoints;
     const acting = !fit && !clear;

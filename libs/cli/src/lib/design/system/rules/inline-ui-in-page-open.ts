@@ -11,37 +11,4 @@ export type OpenInlineUi = {
   owner: string;
 };
 
-export const OPEN_INLINE_UI: OpenInlineUi[] = [
-  {
-    product: 'studio',
-    place: 'pages/inbox/shared/inbox.ts',
-    anchor: 'dialog',
-    kind: '<et-textarea>',
-    count: 1,
-    owner: 'B248b',
-  },
-  {
-    product: 'studio',
-    place: 'pages/inbox/shared/inbox.ts',
-    anchor: 'dialog',
-    kind: '<button>',
-    count: 1,
-    owner: 'B248b',
-  },
-  {
-    product: 'studio',
-    place: 'pages/inbox/shared/inbox.ts',
-    anchor: 'editor',
-    kind: '<button>',
-    count: 1,
-    owner: 'B248b',
-  },
-  {
-    product: 'studio',
-    place: 'pages/system/system.ts',
-    anchor: 'commentDraft',
-    kind: '<textarea>',
-    count: 2,
-    owner: 'B248b',
-  },
-];
+export const OPEN_INLINE_UI: OpenInlineUi[] = [];
