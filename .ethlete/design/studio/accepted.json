@@ -1812,5 +1812,52 @@
     "hash": "3e69133852294818",
     "at": "2026-11-03T10:25:45.793Z",
     "auto": true
+  },
+  {
+    "part": "elements/canvas-frames",
+    "by": "claude-opus-5-5",
+    "note": "merged without a pick: allowed by B178 Tom 2026-11-03: variant a, switch label Unveränderte Zustände zeigen - merged: B178: Tom picked a (frames fit content), switch label Unveränderte Zustände zeigen, off by default",
+    "hash": "9187f7aa728d28fa",
+    "at": "2026-11-03T10:38:38.690Z"
+  },
+  {
+    "part": "components/comment-pin",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "60a213cdfc41a3e3",
+    "at": "2026-11-03T10:57:00.502Z",
+    "auto": true
+  },
+  {
+    "part": "components/shell-project-switch",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "9306921f2b0a9db8",
+    "at": "2026-11-03T10:57:00.517Z",
+    "auto": true
+  },
+  {
+    "part": "components/tree-row",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "9b985495f700b73f",
+    "at": "2026-11-03T10:57:00.529Z",
+    "auto": true
+  },
+  {
+    "part": "components/zoom-chip",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "eac0eac1e633a857",
+    "at": "2026-11-03T10:57:00.540Z",
+    "auto": true
+  },
+  {
+    "part": "pages/start",
+    "by": "user",
+    "note": "accepted automatically: every state draws as at the last acceptance",
+    "hash": "18019d23722921e9",
+    "at": "2026-11-03T10:57:00.576Z",
+    "auto": true
   }
 ]

@@ -44,7 +44,7 @@ const columnHead = ({ label, note }: Column) =>
 const groupHead = async (round: RoundSample) =>
   html`<div class="flex items-center gap-space-2 text-(length:--text-sm) whitespace-nowrap">
     ${await ng(
-      `<button et-button type="button" variant="transparent" color="surface" size="sm" aria-expanded="true" data-et-action="emit:columnToggle">${round.title}</button><button et-button type="button" variant="outline" color="surface" size="sm" [pressed]="false" data-et-action="emit:groupSwitch">Unverändert zeigen</button>`,
+      `<button et-button type="button" variant="transparent" color="surface" size="sm" aria-expanded="true" data-et-action="emit:columnToggle">${round.title}</button><button et-button type="button" variant="outline" color="surface" size="sm" [pressed]="false" data-et-action="emit:groupSwitch">Unveränderte Zustände zeigen</button>`,
       BUTTON_IMPORTS,
     )}
     <span class="min-w-0 truncate text-et-surface-muted">${round.note}</span>

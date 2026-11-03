@@ -456,34 +456,28 @@
     {
       "id": "frame-select",
       "label": "Frame wählen",
-      "place": null,
-      "confirmed": true,
-      "why": "the app's canvas frames select and activate on click and double click; elements/canvas-frames draws only the zoom actions",
-      "missing": "B178"
+      "place": { "part": "elements/canvas-frames", "action": "selected" },
+      "confirmed": true
     },
     {
       "id": "frame-resize",
       "label": "Frame-Größe ändern",
       "place": null,
       "confirmed": true,
-      "why": "the app's canvas frames resize (widthChange, heightChange, cellsChange); no design part draws it",
+      "why": "automatic: frames fit content (Tom 2026-11-03, B178 a); needs B193 automatic flag",
       "missing": "B178"
     },
     {
       "id": "grid-columns-toggle",
       "label": "Spalten und Gruppen im Raster umschalten",
-      "place": null,
-      "confirmed": true,
-      "why": "design-canvas.component.html toggles columns and switches groups; no design part draws it",
-      "missing": "B178"
+      "place": { "part": "elements/canvas-frames", "action": "emit:columnToggle" },
+      "confirmed": true
     },
     {
       "id": "frame-reload",
       "label": "Frame neu laden",
-      "place": null,
-      "confirmed": true,
-      "why": "canvas-frame.component.ts has a reload button for a failed frame; no design part draws it",
-      "missing": "B178"
+      "place": { "part": "elements/canvas-frames", "action": "emit:reload" },
+      "confirmed": true
     },
     {
       "id": "error-dismiss",

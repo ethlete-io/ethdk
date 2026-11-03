@@ -3,6 +3,19 @@ import { buttonStyles } from '@ethlete/components/design/button';
 import button from '@system/components/button';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import zoomChip from '@system/components/zoom-chip';
+import {
+  FAILURE_REASON,
+  failureBanner,
+  foldedRound,
+  liveBadge,
+  MARK_ACTION,
+  MARK_CLASS,
+  openRound,
+  ROUNDS,
+  type FrameMark,
+  type GridHeads,
+  type RoundSample,
+} from './shared/canvas-marks';
 import styles from './canvas-frames.css?inline';
 
 export type GridRow = { label: string; cells: (string | undefined)[] };
@@ -75,15 +88,17 @@ export const stateGrid = (
   </div>`;
 };
 
-/** The head of a frame: its name and optional width, set above the frame box. */
-export const canvasFrameHead = (name: string, width = '') =>
+/** The head of a frame: its name, an optional width and an optional trailing mark, set above the frame box. */
+export const canvasFrameHead = (name: string, width = '', extra = '') =>
   html`<figcaption class="st-cframe-head absolute bottom-full left-0 flex pb-space-2 text-et-surface whitespace-nowrap">
-    ${name}${width ? `<span class="text-et-surface-muted tabular-nums">${width}</span>` : ''}
+    ${name}${width ? `<span class="text-et-surface-muted tabular-nums">${width}</span>` : ''}${extra}
   </figcaption>`;
 
-/** The box of a frame: a hairline-edged surface around the body, with an optional head above it. */
-export const canvasFrameBox = (body: string, head = '') =>
-  html`<figure class="st-cframe relative m-0 bg-et-surface-bg">${head}${body}</figure>`;
+/** The box of a frame: a hairline-edged surface around the body, with an optional head above it and extra classes and attributes on the box. */
+export const canvasFrameBox = (body: string, head = '', { class: extra = '', attrs = '' } = {}) =>
+  html`<figure class="st-cframe relative m-0 bg-et-surface-bg${extra ? ` ${extra}` : ''}" ${attrs ? ` ${attrs}` : ''}>
+    ${head}${body}
+  </figure>`;
 
 /** One frame on the canvas: the head above the box, the body inside. */
 export const canvasFrame = (name: string, body: string, width = '') =>
@@ -115,7 +130,14 @@ export const canvasView = async (
     : html`<div class="${classes}" data-et-skip="CLIPPED">${body}</div>`;
 };
 
-type Props = { class?: string; part: string; states: string[]; zoom: string } & ChipState;
+type Props = {
+  class?: string;
+  part: string;
+  states: string[];
+  zoom: string;
+  mark?: FrameMark;
+  heads?: GridHeads;
+} & ChipState;
 
 const buttonStates = {
   filled: { label: 'Save', variant: 'filled' },
@@ -125,8 +147,55 @@ const buttonStates = {
 
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
 
-const forcedOf = (interaction: (typeof interactions)[number]) =>
+type Interaction = (typeof interactions)[number];
+
+const forcedOf = (interaction: Interaction) =>
   interaction === 'rest' || interaction === 'pressed' ? {} : { interaction };
+
+const buttonGrid = async (states: string[], columns: readonly Interaction[] = interactions) => {
+  const rows = await Promise.all(
+    states.map(async (state) => {
+      const base = buttonStates[state as keyof typeof buttonStates];
+      const cells = await Promise.all(
+        columns.map((interaction) =>
+          button.render(interaction === 'pressed' ? { ...base, pressed: true } : base, forcedOf(interaction)),
+        ),
+      );
+      return { label: state, cells: cells.map((c) => c.body) };
+    }),
+  );
+  return stateGrid({ columns: [...columns], rows }, { cellWidth: '120px', place: 'center' });
+};
+
+const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
+  const action = MARK_ACTION[mark ?? 'rest'];
+
+  return canvasFrameBox(
+    mark === 'failed' ? body + (await failureBanner(FAILURE_REASON)) : body,
+    canvasFrameHead(name, '', mark === 'active' ? liveBadge : ''),
+    {
+      class: mark ? MARK_CLASS[mark] : '',
+      attrs: [action && `data-et-action="${action}"`, mark && `data-${mark}`].filter(Boolean).join(' '),
+    },
+  );
+};
+
+const roundOf = async (part: string, round: RoundSample) => ({
+  ...round,
+  columns: await Promise.all(
+    round.columns.map(async (column) => ({
+      ...column,
+      frame: canvasFrame(`${part} · ${column.label}`, await buttonGrid(['filled'], ['rest', 'hover', 'pressed'])),
+    })),
+  ),
+});
+
+const gridOf = async (part: string, heads: GridHeads) =>
+  heads === 'open'
+    ? openRound(await roundOf(part, ROUNDS.first))
+    : html`<div class="flex items-start gap-20">
+        ${await foldedRound(ROUNDS.first)} ${await openRound(await roundOf(part, ROUNDS.second))}
+      </div>`;
 
 const ZOOM = { kind: 'button', part: 'components/zoom-chip' } as const;
 
@@ -139,7 +208,7 @@ const defaultFrames: Props = {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/canvas-frames/canvas-frames.component.ts',
-  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
+  note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. A click selects a frame (a 2 px primary outline), a second click on the selected frame, the double click, makes it live (a dashed outline and the Live · Esc badge in its head; Escape leaves it). A frame keeps following the size of its content; it has no size control. A frame whose page failed to load shows the reason and Neu laden on top of it. On the variant grid each round has a head: its title folds the round to one narrow column with its note, the switch beside it shows the unchanged states; a column head names the variant above its frames. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
   unreachable: [
@@ -168,6 +237,36 @@ export default definePart({
         'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
     },
     {
+      from: 'default',
+      to: 'selected',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'default',
+      to: 'active',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'default',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'default',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'default',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
       from: 'out',
       to: 'default',
       reason:
@@ -190,6 +289,36 @@ export default definePart({
       to: 'fit',
       reason:
         'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'out',
+      to: 'selected',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'out',
+      to: 'active',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'out',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'out',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'out',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
     },
     {
       from: 'reset',
@@ -216,6 +345,36 @@ export default definePart({
         'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
     },
     {
+      from: 'reset',
+      to: 'selected',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'reset',
+      to: 'active',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'reset',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'reset',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'reset',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
       from: 'in',
       to: 'default',
       reason:
@@ -240,6 +399,36 @@ export default definePart({
         'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
     },
     {
+      from: 'in',
+      to: 'selected',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'in',
+      to: 'active',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'in',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'in',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'in',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
       from: 'fit',
       to: 'default',
       reason:
@@ -262,6 +451,304 @@ export default definePart({
       to: 'in',
       reason:
         'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
+    },
+    {
+      from: 'fit',
+      to: 'selected',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'fit',
+      to: 'active',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'fit',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'fit',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'fit',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'selected',
+      to: 'default',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'selected',
+      to: 'out',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'selected',
+      to: 'reset',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'selected',
+      to: 'in',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'selected',
+      to: 'fit',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'selected',
+      to: 'active',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'selected',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'selected',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'selected',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'active',
+      to: 'default',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'active',
+      to: 'out',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'active',
+      to: 'reset',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'active',
+      to: 'in',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'active',
+      to: 'fit',
+      reason:
+        'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
+    },
+    {
+      from: 'active',
+      to: 'selected',
+      reason:
+        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
+    },
+    {
+      from: 'active',
+      to: 'load-failed',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'active',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'active',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'load-failed',
+      to: 'default',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'out',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'reset',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'in',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'fit',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'selected',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'active',
+      reason:
+        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
+    },
+    {
+      from: 'load-failed',
+      to: 'rounds',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'load-failed',
+      to: 'round-folded',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'default',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'out',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'reset',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'in',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'fit',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'selected',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'active',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'load-failed',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'rounds',
+      to: 'round-folded',
+      reason: 'Folding or unfolding a round lays the grid out again at once; no motion runs between them.',
+    },
+    {
+      from: 'round-folded',
+      to: 'default',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'out',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'reset',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'in',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'fit',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'selected',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'active',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'load-failed',
+      reason:
+        'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
+    },
+    {
+      from: 'round-folded',
+      to: 'rounds',
+      reason: 'Folding or unfolding a round lays the grid out again at once; no motion runs between them.',
     },
   ],
   states: {
@@ -270,6 +757,11 @@ export default definePart({
     reset: { ...defaultFrames, target: 'reset', interaction: 'hover' },
     in: { ...defaultFrames, zoom: '250%', target: 'in', interaction: 'hover' },
     fit: { ...defaultFrames, target: 'fit', interaction: 'hover' },
+    selected: { ...defaultFrames, mark: 'selected' },
+    active: { ...defaultFrames, mark: 'active' },
+    'load-failed': { ...defaultFrames, mark: 'failed' },
+    rounds: { ...defaultFrames, zoom: '75%', heads: 'open' },
+    'round-folded': { ...defaultFrames, zoom: '75%', heads: 'folded' },
   },
   controls: {
     button: { kind: 'button', part: 'components/button' },
@@ -278,28 +770,12 @@ export default definePart({
     in: ZOOM,
     fit: ZOOM,
   },
-  render: async ({ class: extra, part, states, zoom, target, interaction }: Props) => {
-    const rows = await Promise.all(
-      states.map(async (state) => {
-        const base = buttonStates[state as keyof typeof buttonStates];
-        const cells = await Promise.all(
-          interactions.map((interaction) =>
-            button.render(interaction === 'pressed' ? { ...base, pressed: true } : base, forcedOf(interaction)),
-          ),
-        );
-        return { label: state, cells };
-      }),
-    );
-    const grid = stateGrid(
-      {
-        columns: [...interactions],
-        rows: rows.map(({ label, cells }) => ({ label, cells: cells.map((c) => c.body) })),
-      },
-      { cellWidth: '120px', place: 'center' },
-    );
+  render: async ({ class: extra, part, states, zoom, target, interaction, mark, heads }: Props) => {
+    const frames = heads ? await gridOf(part, heads) : await markedFrame(part, await buttonGrid(states), mark);
+
     return drawing({
       body: await canvasView(
-        [html`<div class="contents" ${slot('frames')}>${canvasFrame(part, grid)}</div>`],
+        [html`<div class="contents" ${slot('frames')}>${frames}</div>`],
         zoom,
         {
           target,
