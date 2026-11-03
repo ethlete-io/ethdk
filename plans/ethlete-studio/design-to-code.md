@@ -3411,12 +3411,21 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      foreign hunk lost; the copy-aside risk B204 removes). Fix (technical): B216 - a follow-up sketch declares the
      controls; B217 - `sketch ready` runs CONTROL-UNDECLARED per variant, `sketch merge --decided-by tom` records Tom.
      A pairwise `unreachable` list costing 2n entries per new state goes to B194 `instant`.
-268. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
+268. Committing Tom's by-tom lines (builder, 2026-11-03, 8dd3679b1, 2f6fcf90f): `design commit-hunks` fails at once on a
+     busy `.git/index.lock`, against the decision in finding 260 (B184 retries on the lock). Why no tool caught it: no
+     spec runs commit-hunks while the lock is held. Also: go.json holds uncommitted hash and file-list refreshes for 11
+     parts that are not Tom's (comment-pin, error-toast, shell-collapse, shell-project-switch, tree-row, zoom-chip,
+     shell-main, studio-menu, pages/merge, pages/sketches, pages/start), caused by the new icon assets of the title-bar
+     work; no one knows which run wrote them. Why: an automatic refresh records no writer. Lesson: every write to a
+     shared design file names its writer, or it becomes an orphan no agent may commit. Fix (technical): B218 -
+     commit-hunks waits with `waitForLock` from `tools/scripts/commit-wait.mjs`, spec holds the lock; B219 - a refresh
+     entry names `refreshedBy` and `cause`; the title-bar slice that added the icons commits the 11 refreshes.
+269. `server-identity.spec` "reports no installed cli when the project has none" fails on a clean HEAD worktree too
      (builder, 2026-11-03). The worktree used the symlinked node_modules, which may supply the installed cli, so the
      spec depends on its environment. Why no tool caught it: specs run only in the main checkout, where the result
      happened to pass. Lesson: a spec about "nothing installed" controls what is installed. Fix: B206 (technical) -
      the spec stubs the installed-cli lookup instead of reading node_modules.
-269. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
+270. Commit contention (builder agents and this session, 2026-11-03): the pre-commit hook runs related cli specs
      against an index checkout for minutes while `.git/index.lock` is held, so parallel commits fail with "File
      exists" and agents retry by hand (a docs-only commit here waited over 4 minutes). A Bash hook also denied a whole
      compound command because it contained `git stash list`. Why no tool caught it: the hook was built for one
@@ -3429,7 +3438,7 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      19ec4dd67 (docs-only skip, timeout re-run), 74cf900b0 (`yarn commit` waits for the lock), b3c669203 (B206).
      Decided (technical): B214 - `yarn commit` runs the related specs before it takes the lock, in a throwaway worktree
      of HEAD + the paths; the hook then does not run them again. That fixes the lock time and the foreign edits at once.
-270. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
+271. Title-bar r2/r3 (builder, 2026-11-03, 4054edf4c, 9e94a2dc3): three tool gaps. (1) The ready rule "first changed
      state draws identical frames" fired on linux-full-update while the shot showed 0 px change: the merged markup was
      refactored after the sketch's baseline, so every variant trips it. (2) `design shot` still prints "not drawn" for
      the hover, active and focus-visible cells of title-bar after B171. (3) `sketch variant --from e` built on a
