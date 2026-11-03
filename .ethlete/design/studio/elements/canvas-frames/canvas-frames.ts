@@ -1,5 +1,6 @@
 import { definePart, drawing, html, slot } from '@design-system';
 import { buttonStyles } from '@ethlete/components/design/button';
+import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import button from '@system/components/button';
 import { canvasViewport, canvasViewportStyles } from '@system/components/canvas-viewport';
 import zoomChip from '@system/components/zoom-chip';
@@ -23,7 +24,7 @@ export type StateGridDrawing = { columns: string[]; rows: GridRow[] };
 export type StateGridOptions = { cellWidth?: string; place?: 'fill' | 'center' };
 
 /** The CSS for `stateGrid`, the frame parts and `canvasView`, with the zoom chip's; add it once to the drawing's styles. */
-export const canvasFrameStyles = styles + buttonStyles + canvasViewportStyles;
+export const canvasFrameStyles = styles + buttonStyles + canvasViewportStyles + loaderStyles;
 
 const perLine = 4;
 
@@ -167,12 +168,16 @@ const buttonGrid = async (states: string[], columns: readonly Interaction[] = in
   return stateGrid({ columns: [...columns], rows }, { cellWidth: '120px', place: 'center' });
 };
 
+const loadingBody = `<div class="h-72 w-4xl" aria-busy="true" data-loading></div>`;
+
+const loadingBadge = `<span class="flex shrink-0 items-center gap-space-1 text-et-surface-muted" data-loading-badge>${spinner({ diameter: 14, strokeWidth: 1.75 })}Lädt</span>`;
+
 const markedFrame = async (name: string, body: string, mark?: FrameMark) => {
   const action = MARK_ACTION[mark ?? 'rest'];
 
   return canvasFrameBox(
-    mark === 'failed' ? body + (await failureBanner(FAILURE_REASON)) : body,
-    canvasFrameHead(name, '', mark === 'active' ? liveBadge : ''),
+    mark === 'loading' ? loadingBody : mark === 'failed' ? body + (await failureBanner(FAILURE_REASON)) : body,
+    canvasFrameHead(name, '', mark === 'active' ? liveBadge : mark === 'loading' ? loadingBadge : ''),
     {
       class: mark ? MARK_CLASS[mark] : '',
       attrs: [action && `data-et-action="${action}"`, mark && `data-${mark}`].filter(Boolean).join(' '),
@@ -211,51 +216,11 @@ export default definePart({
   note: 'The frames of one part on the canvas, in the state grid look: a sunken frame body, the cells as one component sheet with hairline dividers, labels outside the sheet. A click selects a frame (a 2 px primary outline), a second click on the selected frame, the double click, makes it live (a dashed outline and the Live · Esc badge in its head; Escape leaves it). A frame keeps following the size of its content; it has no size control. A frame whose page failed to load shows the reason and Neu laden on top of it. On the variant grid each round has a head: its title folds the round to one narrow column with its note, the switch beside it shows the unchanged states; a column head names the variant above its frames. The element also exports that look (stateGrid, canvasFrameHead, canvasFrameBox, canvasFrame, canvasView, canvasFrameStyles) for pages that draw their own frames; canvasView places components/zoom-chip in the corner. It fills its container and leaves room for a side panel through --st-shell-inset-left.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5'],
   widths: [1440],
+  instant:
+    'Selecting, going live, leaving with Escape, a failed load and every zoom state switch at once: the outline, the Live badge and the banner appear with no motion, and the canvas never moves between states.',
   unreachable: [
     {
       from: 'default',
-      to: 'out',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'default',
-      to: 'reset',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'default',
-      to: 'in',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'default',
-      to: 'fit',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'default',
-      to: 'selected',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
-    },
-    {
-      from: 'default',
-      to: 'active',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
-    },
-    {
-      from: 'default',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'default',
       to: 'rounds',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
@@ -265,30 +230,6 @@ export default definePart({
       to: 'round-folded',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
-    },
-    {
-      from: 'out',
-      to: 'default',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'out',
-      to: 'reset',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'out',
-      to: 'in',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'out',
-      to: 'fit',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
     },
     {
       from: 'out',
@@ -304,12 +245,6 @@ export default definePart({
     },
     {
       from: 'out',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'out',
       to: 'rounds',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
@@ -322,30 +257,6 @@ export default definePart({
     },
     {
       from: 'reset',
-      to: 'default',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'reset',
-      to: 'out',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'reset',
-      to: 'in',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'reset',
-      to: 'fit',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'reset',
       to: 'selected',
       reason:
         'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
@@ -355,12 +266,6 @@ export default definePart({
       to: 'active',
       reason:
         'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
-    },
-    {
-      from: 'reset',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
     },
     {
       from: 'reset',
@@ -376,30 +281,6 @@ export default definePart({
     },
     {
       from: 'in',
-      to: 'default',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'in',
-      to: 'out',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'in',
-      to: 'reset',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'in',
-      to: 'fit',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'in',
       to: 'selected',
       reason:
         'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
@@ -409,12 +290,6 @@ export default definePart({
       to: 'active',
       reason:
         'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
-    },
-    {
-      from: 'in',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
     },
     {
       from: 'in',
@@ -430,30 +305,6 @@ export default definePart({
     },
     {
       from: 'fit',
-      to: 'default',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'fit',
-      to: 'out',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'fit',
-      to: 'reset',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'fit',
-      to: 'in',
-      reason:
-        'Every state is one canvas at rest with a single zoom control forced to hover; the canvas never moves between them.',
-    },
-    {
-      from: 'fit',
       to: 'selected',
       reason:
         'A zoom state holds the canvas at rest with the zoom control forced to hover; selecting a frame is no step from it and changes no zoom.',
@@ -466,12 +317,6 @@ export default definePart({
     },
     {
       from: 'fit',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'fit',
       to: 'rounds',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
@@ -481,12 +326,6 @@ export default definePart({
       to: 'round-folded',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
-    },
-    {
-      from: 'selected',
-      to: 'default',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
     },
     {
       from: 'selected',
@@ -514,18 +353,6 @@ export default definePart({
     },
     {
       from: 'selected',
-      to: 'active',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
-    },
-    {
-      from: 'selected',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'selected',
       to: 'rounds',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
@@ -535,12 +362,6 @@ export default definePart({
       to: 'round-folded',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
-    },
-    {
-      from: 'active',
-      to: 'default',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
     },
     {
       from: 'active',
@@ -568,18 +389,6 @@ export default definePart({
     },
     {
       from: 'active',
-      to: 'selected',
-      reason:
-        'A click, the second click and Escape swap the outline and the Live badge at once; no motion runs between them.',
-    },
-    {
-      from: 'active',
-      to: 'load-failed',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'active',
       to: 'rounds',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
@@ -589,48 +398,6 @@ export default definePart({
       to: 'round-folded',
       reason:
         'The variant grid of a sketch and the single frame of a part are different canvases; no step leads from one to the other.',
-    },
-    {
-      from: 'load-failed',
-      to: 'default',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'out',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'reset',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'in',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'fit',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'selected',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
-    },
-    {
-      from: 'load-failed',
-      to: 'active',
-      reason:
-        'A failed load is the result of a page fetch, not a step from another state; the banner shows at once with no motion.',
     },
     {
       from: 'load-failed',
@@ -749,8 +516,109 @@ export default definePart({
       from: 'round-folded',
       to: 'rounds',
       reason: 'Folding or unfolding a round lays the grid out again at once; no motion runs between them.',
+    },
+    {
+      from: 'default',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from default leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'default',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'out',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from out leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'out',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'reset',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from reset leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'reset',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'in',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from in leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'in',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'fit',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from fit leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'fit',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'selected',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from selected leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'selected',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'active',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from active leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'active',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'load-failed',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from load-failed leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'load-failed',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'rounds',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from rounds leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'rounds',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
+    },
+    {
+      from: 'round-folded',
+      to: 'loading',
+      reason: 'A frame starts in the loading state when its page is fetched; no step from round-folded leads into it.',
+    },
+    {
+      from: 'loading',
+      to: 'round-folded',
+      reason: 'The loaded or failed frame replaces the loading frame at once; no motion runs between them.',
     },
   ],
+  motions: { loading: { from: 'loading', to: 'loading' } },
   states: {
     default: defaultFrames,
     out: { ...defaultFrames, zoom: '25%', target: 'out', interaction: 'hover' },
@@ -760,6 +628,7 @@ export default definePart({
     selected: { ...defaultFrames, mark: 'selected' },
     active: { ...defaultFrames, mark: 'active' },
     'load-failed': { ...defaultFrames, mark: 'failed' },
+    loading: { ...defaultFrames, mark: 'loading' },
     rounds: { ...defaultFrames, zoom: '75%', heads: 'open' },
     'round-folded': { ...defaultFrames, zoom: '75%', heads: 'folded' },
   },

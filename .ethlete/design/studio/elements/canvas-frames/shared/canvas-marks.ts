@@ -1,6 +1,6 @@
 import { html, ng } from '@design-system';
 
-export type FrameMark = 'selected' | 'active' | 'failed';
+export type FrameMark = 'selected' | 'active' | 'failed' | 'loading';
 export type GridHeads = 'open' | 'folded';
 
 const BUTTON_IMPORTS = { imports: ['BUTTON_IMPORTS'] };
@@ -9,6 +9,7 @@ export const MARK_CLASS: Record<FrameMark, string> = {
   selected: 'outline-2 outline-solid outline-(--et-theme-color-primary-solid)',
   active: 'outline-2 outline-dashed outline-(--et-theme-color-primary-solid)',
   failed: '',
+  loading: '',
 };
 
 /** The click a frame answers in each mark: the first selects it, a click on the selected frame (the double click) makes it live. */
@@ -17,6 +18,7 @@ export const MARK_ACTION: Record<FrameMark | 'rest', string> = {
   selected: 'active',
   active: '',
   failed: 'selected',
+  loading: '',
 };
 
 export const liveBadge = `<span class="shrink-0 rounded-sm bg-(--et-theme-color-primary-solid) px-[0.4em] text-(--et-theme-color-on-primary)" data-live-badge>Live · Esc</span>`;
