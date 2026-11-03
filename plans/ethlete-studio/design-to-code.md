@@ -4249,6 +4249,15 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      merged-side busy is passed as [], so a busy state the merged part already has under a non-loading name shows
      as "added" in a sketch; the builder states whether that needs a row.
 
+338. Rebasing the pages/sketches sketch (7a47470cd): `sketch rebase` refused because variants a/b/c and the product
+     all changed sketch-rows.ts, sketch-status.ts and sketches.ts. A hand port was started, but nothing needed
+     porting: the shared files were byte-identical to the product and every variant already carried the product
+     commits, and `sketch rebase --ported` succeeded at once. Why no tool caught it: the rebase compares "changed on
+     both sides" by file, not by content, so an already-applied change looks like a conflict. Fix: `sketch rebase`
+     treats a file whose variant and product content already agree (or whose product delta is already in the
+     variant) as ported and rebases without asking; it refuses only on a real content conflict and names the hunk.
+     Queued in the builder handoff, not started (Tom: no new topics, 2026-11-03).
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
