@@ -3586,3 +3586,11 @@ studio` on the new commits.
      hold only hashes. So Tom could not say for sure whether he merged c. Why no tool caught it: `sketch merge` never
      had to prove a pick. Fix (B228): merge writes `{variant, decidedBy, at}` into merged.json and refuses a merge
      without a recorded pick. B208 landed in 2d3251bfd; the settings.json restore proved B224 live.
+
+### Unrecorded merge decisions (2026-11-03)
+
+- pages/system (Tom: merged): HEAD's sketch records pick b and the tree equals variant b, so the builder commits
+  the merge.
+- canvas-frames (Tom does not remember merging it; no recorded pick): the builder restores the element and the sketch
+  to HEAD, and Tom picks again in Studio. The merge, the `instant` migration and the B226 real repro follow that
+  pick. This case is B228's real reproduction.
