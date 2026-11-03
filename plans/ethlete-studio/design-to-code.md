@@ -3765,3 +3765,12 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      tools/scripts specs (node --test) in the same worktree. Decided (doc agent): B245 as recommended, technical. The
      plain `git commit` gap is closed by B244b (decided, technical): the pre-commit hook runs the same lint on the
      projects of the staged files, unless `yarn commit` already linted that exact tree.
+
+299. B245 + B244b as built (builder, 2026-11-03). 9c015d2af: a tools/scripts change adds a `tools/scripts` suite
+     that runs every tools/scripts/*.spec.mjs with `node --test` in the worktree (NODE_TEST_CONTEXT stripped, or the
+     nested run skips itself). The pre-commit hook lints the projects of the staged files in its index checkout, and
+     skips only when yarn commit tested that exact tree, or when the files committed since select no specs and lint
+     no project. Verified: two node:test cases (a failing tools spec refuses yarn commit; a lint error refuses a
+     plain `git commit -i -- <path>`), red-check RED (3 cases); a real hook probe (5-param arrow in libs/cli) was
+     refused by max-params in 5 s. Not verified: the eslint-rules specs of `yarn test:tools`
+     (apps/ethlete-studio/eslint-rules) are still not selected by a commit.
