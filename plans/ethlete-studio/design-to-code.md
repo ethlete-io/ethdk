@@ -4013,6 +4013,19 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      PART-REWRITE (a page or sketch that rewrites an imported part's markup or class string instead of passing an
      option). A merge of variant b turns the strip into a `card` option on comment-draft.
 
+318. red-check cannot judge a slice spread over several commits (builder, 2026-11-03, B259). The watchdog landed in
+     5f6a7e7fc and f1b295520, so `yarn red-check f1b295520` says "passes at the parent state" (the parent already has
+     the watchdog), and 405e73693 gives LOAD-ONLY. The builder proved red by hand: the final spec against the scripts
+     of 855305f90 fails 2 cases, against 405e73693 1 case. Why no tool caught it: red-check takes one sha and compares
+     with its parent only. Decision (technical, B271): `yarn red-check <base>..<head>` runs the specs of head against
+     the code of base and prints the same verdict; a slice report of several commits quotes the range form.
+     B259 probe on 9e7ebf434 (load 15-20) moved the B254 blocker: canvas finished in 682 s (its failure is the B232
+     re-navigation, fixed in 21dcfc17f), while sketches-tree hangs silently (watchdog: TIMEOUT 180 s, no case reached).
+     Decision: B254 waits on a bisect of sketches-tree alone, after B270 gives that suite per-case output. Two
+     behaviour cases failed once under load, frame-load-failed "variant frames retried" (B254's own new case) and
+     canvas "ctrl-wheel keeps the world point" (171 px). Behaviour cases are not excused by load: each must pass 3 of 3
+     at a load below the core count, or it is a defect with a finding.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
