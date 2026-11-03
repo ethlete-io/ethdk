@@ -776,16 +776,27 @@
   },
   "pages/system": {
     "review": {
-      "hash": "e1357c586c79616d",
+      "hash": "a8cacb703e9e5945",
       "states": {
-        "part": "253839ff437533ed",
+        "part": "df23c311d17aea1b",
         "empty": "f932d40afa6126cc",
         "many-states": "b7b0928dd3e7948d",
-        "fit": "0b973541539c0c96",
-        "points-closed": "00437d5b1d8f6eaa",
-        "nothing-open": "d4ae1ca95980a11d",
-        "part-focus-visible": "f984687ed281e54b",
-        "points-closed-focus-visible": "27fa860380d4c643"
+        "fit": "cf9965ca7c47e3ae",
+        "points-closed": "1c8eb34a2d3d0465",
+        "nothing-open": "5e20380a8268be88",
+        "part-focus-visible": "9d120568552bc02f",
+        "points-closed-focus-visible": "9f90b36ae20dede6",
+        "comment-mode": "fd1ccf8a555a9305",
+        "comment-draft": "85873260ab1cded4",
+        "comment-draft-typed": "be4c5128d4521cf1",
+        "send-busy": "28aa1233836c1b0f",
+        "send-error": "a5a5c530b70932e4",
+        "send-rejected": "eec8feba439a98d6",
+        "go-given": "376fb05b90fc17bc",
+        "direct-edit": "2b424cf9880c405e",
+        "edit-accepted": "0154385791d51959",
+        "call": "4e2d361ab0b31ba4",
+        "call-transferred": "768ec5b1bcc253ff"
       },
       "slots": true
     }
