@@ -552,7 +552,7 @@ the same pixels as a sibling variant in its first changed state. `sketch.json` k
 treats it like a rejected variant. `sketch reject`, `reopen` and `withdraw` refuse a `--by` that is neither `designer`
 nor a model id (`claude-…`, `gpt-…`, `gemini-…`, `codex-…`).
 
-`sketch check` skips a withdrawn variant and prints one `NOTE <target> <variant>: withdrawn, not checked` line for it. `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
+`sketch check` skips a withdrawn or rejected variant and prints one `NOTE <target> <variant>: withdrawn, not checked` (or `rejected, not checked`) line for it. `sketch check` fails on the same `UNUSED` problems. It warns of every other reason `sketch ready` would refuse that
 does not depend on the sketch's status, as `ready will refuse: <reason>` lines, and still passes: a variant that does
 not load, an open point a live variant adds, a running round without a note, and a variant that adds nothing visible
 or that the sketch view shows like another. Its last line then reads `check ok - ready will refuse <count> (see
@@ -666,7 +666,7 @@ needs a state in each of those columns, so the open row is drawn hovered too. In
 column and none in another leaves an empty cell: the shot sheet draws it as "not drawn", and `sketch check` prints it
 on the grid line (`draws no selected active`). A row whose forced elements are only SDK components rendered through
 `ng()` with no class, inline style or styled content of the part's own is drawn at rest only: Studio, `shot`, `compare`
-and the visible-change gate skip its interaction states, though `shot --state <name>` still draws one you name. Flat states such as
+and the visible-change gate skip its interaction states, though `shot --state <name>` alone, without `--states` or `--variants`, still draws one you name. A shot refused for its flags prints which flag is missing or conflicts (for example `--at needs --variants`) before the usage line. Flat states such as
 `hovered` and `pressed` fail with `CONTROL-GRID-MISSING`. Each forced state must force the
 interaction on the control, for example with `forceInteraction`, and draw different pixels in
 the control's box than the same frame at rest. When a descendant of the control draws an interaction or carries
