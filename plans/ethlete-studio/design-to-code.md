@@ -3233,3 +3233,24 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      never zero findings, and its full error must reach the report. Fix: B182 (technical) - vitest global setup
      builds the render worker once into a private dir; RENDER detail prints the full error. Probably the same family
      as the private-build "Transform failed" after B155 (cause checked in the B169 slice).
+247. Tom (2026-11-03) on the B167 r2 sketch (46 px tiles, variant e): "the size of the buttons is correct, the size of
+     the icons is definitely not". The note declares a "10 px glyph", but the drawn ink is about 6 px: the 10 px is the
+     icon box, and the icon's viewBox has padding around the stroke. Native Windows 11 caption glyphs are 10 px of
+     ink. No check measured the ink; the declared measure and the measured box agreed with each other. Lesson: a
+     platform measure for a glyph is the visible ink, not the box it sits in. Fix: B167 r3 (sketch: glyph ink sizes as
+     variants, tiles stay 46 px); B168 measures declared glyph sizes as the ink bounding box (non-transparent pixels in
+     the shot), not the element box.
+248. B174 (inbox "Erneut laden") is blocked by 5 LIVE false positives in `sketch check`/`sketch ready` (builder,
+     2026-11-03): `liveStateProblemsOf` (system/sketch/check-sketches.ts) reads state names with `stateNamesOf`, which
+     is null unless the part has a literal `states: {}`; pages/inbox spreads its states from shared/. A static read of
+     source shape stood in for the real state list. Lesson: a check reads what the part exports at runtime, never a
+     literal in its source. Fix: B183 (technical, priority) - read state names from the loaded module; null on both
+     sides is skipped as in STATES.
+249. `sketch ready` auto-merges and writes shared JSON hunks (merged/accepted) that the agent cannot commit under the
+     pathless-commit hook, and the subagent brief's hunk-patch flow ends in a pathless `git commit` the hook denies
+     (builder, 2026-11-03). Two tools disagreed on how a commit works, and only a human-run hook noticed. Lesson: a tool
+     that writes shared files must also name the exact way to commit its own lines. Fix: B184 (technical) - a
+     `design commit-hunks <file> --part <p>` helper (HEAD + own hunks, `commit -- file`, restore the rest); `sketch
+ready` prints that command for every file it wrote; the brief uses it. Not an auto-commit inside ready.
+250. Sketch dirs are always `<layer>-<name>`, so a second sketch on the same part collides with the first (builder,
+     2026-11-03). Fix: B185 (technical) - `sketch new --name`.
