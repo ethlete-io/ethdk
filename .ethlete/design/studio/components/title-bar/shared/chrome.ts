@@ -2,7 +2,7 @@ import { forceInteraction, interactionRows, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import { icon } from '@system/foundations/icons';
 
-type WindowButton = 'minimize' | 'maximize' | 'close';
+export type WindowButton = 'minimize' | 'maximize' | 'close';
 
 type Os = 'linux' | 'windows' | 'macos';
 
@@ -89,7 +89,11 @@ const TRAFFIC_LIGHTS = '<span class="size-3 rounded-full bg-et-surface-border" a
 /** The 78 px macOS keeps for its native traffic lights; the drawn ones are demo content that compare empties. */
 export const MAC_RESERVE = `<div class="flex w-19.5 shrink-0 items-center gap-2 pl-1.75" data-tauri-drag-region ${slot('traffic-lights')}>${TRAFFIC_LIGHTS}</div>`;
 
-const LABELS: Record<WindowButton, string> = { minimize: 'Minimieren', maximize: 'Maximieren', close: 'Schließen' };
+export const LABELS: Record<WindowButton, string> = {
+  minimize: 'Minimieren',
+  maximize: 'Maximieren',
+  close: 'Schließen',
+};
 
 /** The window buttons of one side as an Angular template for `ng()`: round on Linux, square tiles on Windows. */
 export const windowControls = (props: Props, buttons: WindowButton[]) => {
@@ -111,3 +115,7 @@ export const windowControls = (props: Props, buttons: WindowButton[]) => {
 
   return `<div class="flex items-center ${os === 'linux' ? 'gap-1.5' : 'gap-0.5'}">${items}</div>`;
 };
+
+/** Gives a Windows close tile the error theme's fill and ink on hover, focus and press. */
+export const errorClose = (markup: string) =>
+  `<span class="contents [--et-window-control-button-close-background-active:rgb(var(--et-color-primary-active))] [--et-window-control-button-close-background:var(--et-theme-color-primary-solid)] [--et-window-control-button-close-color:var(--et-theme-color-on-primary-solid)]" data-et-semantic-color="error">${markup}</span>`;

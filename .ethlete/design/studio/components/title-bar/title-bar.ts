@@ -1,17 +1,47 @@
-import { definePart, drawing, html, ng, withAction } from '@design-system';
+import { definePart, drawing, html, ng, svgAsset, withAction } from '@design-system';
+import captionClose from '@assets/icons/caption-close.svg?raw';
+import captionMaximize from '@assets/icons/caption-maximize.svg?raw';
+import captionMinimize from '@assets/icons/caption-minimize.svg?raw';
 import { button } from '@ethlete/components/design/button';
 import titleSearchPart from '@system/components/title-search';
 import {
   controls,
+  errorClose,
   grid,
   imports,
+  LABELS,
   MAC_RESERVE,
   states,
   titleBarControl,
   windowControls,
   type Props,
+  type WindowButton,
 } from './shared/chrome';
 import styles from './title-bar.css?inline';
+
+const captionGlyphs: Record<WindowButton, string> = {
+  minimize: captionMinimize,
+  maximize: captionMaximize,
+  close: captionClose,
+};
+
+const captionControls = (props: Props, buttons: WindowButton[]) =>
+  `<div class="flex self-stretch">${buttons
+    .map((button) => {
+      const tile = titleBarControl(
+        `<button et-window-control-button type="button" color="surface" size="md" shape="caption"${
+          button === 'close' ? ' kind="close"' : ''
+        } data-et-action="emit:${button}" aria-label="${LABELS[button]}">${svgAsset(captionGlyphs[button], { size: '1em', attrs: { 'aria-hidden': 'true' } })}</button>`,
+        button,
+        props,
+      );
+
+      return button === 'close' ? errorClose(tile) : tile;
+    })
+    .join('')}</div>`;
+
+const sideControls = (props: Props, buttons: WindowButton[]) =>
+  props.os === 'windows' ? captionControls(props, buttons) : windowControls(props, buttons);
 
 const update = (props: Props) =>
   titleBarControl(
@@ -33,15 +63,15 @@ export default definePart({
 
     return drawing({
       body: html`<div
-        class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg px-1.5 text-et-surface font-ui text-ui-sm"
+        class="st-title-bar grid h-8 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-et-surface-border bg-et-surface-bg ${props.os === 'windows' ? 'pl-1.5' : 'px-1.5'} text-et-surface font-ui text-ui-sm"
         data-et-surface
         data-tauri-drag-region="deep"
       >
         ${await ng(
-          `<div class="flex items-center gap-2">${props.os === 'macos' ? MAC_RESERVE : ''}${windowControls(props, props.left)}</div>`,
+          `<div class="flex items-center gap-2">${props.os === 'macos' ? MAC_RESERVE : ''}${sideControls(props, props.left)}</div>`,
           { imports },
         )}${search.body}${await ng(
-          `<div class="flex items-center justify-end gap-2">${props.update ? update(props) : ''}${windowControls(props, props.right)}</div>`,
+          `<div class="flex items-center justify-end gap-2${props.os === 'windows' ? ' self-stretch' : ''}">${props.update ? update(props) : ''}${sideControls(props, props.right)}</div>`,
           { imports },
         )}
       </div>`,
