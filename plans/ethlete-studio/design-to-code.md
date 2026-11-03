@@ -3617,3 +3617,12 @@ studio` on the new commits.
 - pages/system: Tom gave the go. go.json holds hash 9117d961d91424fa, which is neither the old nor the merged hash.
   The builder checks it before committing.
 - canvas-frames: Tom also gave the go. The builder commits it with the pages/system go, after checking the hash.
+
+285. B229 + canvas-frames instant (builder, 2026-11-03, fe03eb979). B229: `yarn commit` now type-checks lib and spec
+     projects. HEAD already carries 13 spec type errors (cli 12, agent-rules 1), so for now a spec project blocks only
+     on errors in the committed files. B230 clears the 13 and drops that filter. canvas-frames: 40 pairs became
+     `instant` and 70 real `unreachable` pairs stayed. That declaration edit landed after Tom's go (12:09:43Z), so
+     the go can go stale through a change that draws nothing. Why no tool caught it: go covers file hashes, not what
+     the files draw (same lesson as title-bar r3, 281). Order rule: declaration migrations of a merged part are made
+     before Tom's go. If the check shows the go stale, Tom gives it again. A draw-free go refresh is part of B220's
+     draw-free signal.
