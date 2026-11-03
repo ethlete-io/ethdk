@@ -222,7 +222,7 @@ export class SketchViewComponent {
     this.remembered().roundsFor === this.sketch().createdAt ? (this.remembered().rounds ?? {}) : {},
   );
 
-  private shownRounds = computed(() => sketchRoundsOf(this.sketch(), this.openRounds()));
+  private shownRounds = computed(() => sketchRoundsOf(this.sketch(), { openRounds: this.openRounds() }));
 
   protected rounds = computed(() =>
     this.shownRounds()

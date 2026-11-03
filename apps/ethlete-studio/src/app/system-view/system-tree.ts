@@ -628,8 +628,7 @@ export type ShownRound = SketchRound & { variants: string[]; open: boolean };
  */
 export const sketchRoundsOf = (
   sketch: ListedSketch,
-  openRounds: Record<string, boolean> = {},
-  hideWithdrawn = false,
+  { openRounds = {}, hideWithdrawn = false }: { openRounds?: Record<string, boolean>; hideWithdrawn?: boolean } = {},
 ): ShownRound[] => {
   const rounds: SketchRound[] = sketch.rounds?.length ? sketch.rounds : [{ key: 'r1', title: '', note: '' }];
   const fallback = rounds[0]?.key;
@@ -791,7 +790,7 @@ export const sketchMatrixOf = ({
   const sizes = sketchSizesOf({ product, sketch, part });
   const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
   const cell = cellSizeOf(product, size);
-  const rounds = sketchRoundsOf(sketch, openRounds, hideWithdrawn);
+  const rounds = sketchRoundsOf(sketch, { openRounds, hideWithdrawn });
   const shown = new Set(rounds.flatMap((round) => (round.open ? round.variants : [])));
   const interactions = sketchInteractionsOf({
     sketch: { ...sketch, targets: sketch.targets?.filter((target) => shown.has(target.variant)) },

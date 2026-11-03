@@ -219,6 +219,7 @@
       [style.transform]="'scale(' + labelScale() + ')'"
       (click)="$event.stopPropagation()"
       class="absolute z-4 origin-top-left"
+      role="presentation"
       data-comment-draft
     >
       <ng-content select="[canvasDraft]" />
