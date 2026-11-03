@@ -1,5 +1,4 @@
 import { html } from '@design-system';
-import { control } from '@ethlete/components/design/control';
 import { type Agent, agentLogo } from '@system/foundations/agent-logos';
 
 export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
@@ -35,20 +34,6 @@ export const drawingPlaceholder = (model: Model) =>
     </span>
     <span class="text-ui-sm">Der Rahmen füllt sich, sobald die erste Ansicht steht.</span>
   </div>`;
-
-export const holdTrigger = (inner: string, cls: string, open: boolean) =>
-  control(
-    html`<button
-      class="${cls}"
-      type="button"
-      data-sk-hold
-      data-et-action="${open ? 'paused' : 'paused-reason'}"
-      aria-expanded="${String(open)}"
-    >
-      ${inner}
-    </button>`,
-    'hold',
-  );
 
 export const toggleHold = (root: HTMLElement) => {
   const trigger = root.querySelector<HTMLElement>('[data-sk-hold]');

@@ -4,6 +4,7 @@ import select from '@system/components/select';
 import switchPart from '@system/components/switch';
 import badge from '@system/components/badge';
 import { commentPinMark } from '@system/components/comment-pin';
+import { holdTrigger } from '@system/components/hold-trigger';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 import { studioMenu } from '@system/elements/studio-menu';
@@ -20,7 +21,6 @@ import {
   type SketchStatus,
   drawingPlaceholder,
   modelName,
-  holdTrigger,
   toggleHold,
 } from '@shared/sketch-status';
 import {
@@ -118,7 +118,7 @@ const tags = {
 const statusMarkup = (status: SketchStatus, reason: boolean) => {
   if (status === 'paused') {
     return html`<span class="flex min-w-0 items-center gap-space-2">
-      ${holdTrigger(`${tags.paused.body}`, `flex cursor-pointer border-0 bg-transparent p-0`, reason)}
+      ${holdTrigger({ content: tags.paused.body, open: reason, action: reason ? 'paused' : 'paused-reason' })}
       <span
         class="flex min-w-0 items-center gap-space-2 text-ui-sm text-et-surface-muted whitespace-nowrap"
         data-sk-hold-reason
@@ -269,7 +269,7 @@ export default definePart<Props>({
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/sketches/sketches.component.ts' },
   controls: {
     canvas: { kind: 'field', part: 'components/canvas-viewport' },
-    hold: { kind: 'button', input: ['pointer', 'keyboard'] },
+    hold: { kind: 'button', part: 'components/hold-trigger' },
     toggle: { kind: 'button', input: ['pointer', 'keyboard'] },
   },
   states: {
