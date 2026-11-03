@@ -1,8 +1,26 @@
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { judgeServerIdentity, ServerIdentity, serverIdentityOf, STUDIO_API_LEVEL } from './server-identity';
+
+const resolution = vi.hoisted(() => ({ missing: false }));
+
+vi.mock('module', async (importOriginal) => {
+  const original = await importOriginal<typeof import('module')>();
+  return {
+    ...original,
+    createRequire: (...args: Parameters<typeof original.createRequire>) => {
+      const require = original.createRequire(...args);
+      if (!resolution.missing) return require;
+      return Object.assign(() => require, require, {
+        resolve: () => {
+          throw new Error('MODULE_NOT_FOUND');
+        },
+      });
+    },
+  };
+});
 
 const roots: string[] = [];
 
@@ -27,6 +45,7 @@ const projectWithCli = (options: { code: string; builtAt: number; version?: stri
 };
 
 afterEach(() => {
+  resolution.missing = false;
   while (roots.length) rmSync(roots.pop() as string, { recursive: true, force: true });
 });
 
@@ -91,6 +110,7 @@ describe('serverIdentityOf', () => {
     const project = mkdtempSync(join(tmpdir(), 'identity-'));
     roots.push(project);
     writeFileSync(join(project, 'package.json'), '{}');
+    resolution.missing = true;
 
     expect(serverIdentityOf(project)().installed).toBeNull();
   });
