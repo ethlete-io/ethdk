@@ -3798,5 +3798,6 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
 
 ### Go carry decisions (2026-11-03)
 
-- Tom: agents commit an automatic go carry themselves (`auto: true`, design hash changed, no state picture
-  changed) with `design commit-hunks`. A new go, or a go after a state picture changed, stays Tom's or Studio's.
+- Tom: the go system is not extended any further; its rework (A10, "build-ready" replaces go and acceptance) is
+  pulled forward now. So no rule on who commits a go carry, and B246 is dropped: both are go-system extensions. The
+  go.json already in the tree (Tom's title-bar go plus the carries) is committed once as it is.
