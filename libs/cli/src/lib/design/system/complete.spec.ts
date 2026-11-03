@@ -939,8 +939,11 @@ describe('completenessOf', () => {
     const { target, config, product } = checkout();
 
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(checkSystem({ target, config, products: ['app-a'] })).toBe(0);
+    const checked: string[] = [];
+
+    vi.spyOn(console, 'error').mockImplementation((line: string) => checked.push(line));
+    checkSystem({ target, config, products: ['app-a'] });
+    expect(checked.filter((line) => !line.startsWith('INLINE-UI-IN-PAGE '))).toEqual([]);
 
     const merge = await completenessOf({ target, config, product, part: 'pages/merge' });
 
@@ -1395,7 +1398,8 @@ export default definePart({
 
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation((line: string) => errors.push(line));
-    expect(checkSystem({ target, config, products: ['app-a'] })).toBe(0);
+    checkSystem({ target, config, products: ['app-a'] });
+    expect(errors.filter((line) => !line.startsWith('INLINE-UI-IN-PAGE '))).toEqual([]);
 
     const probe = await completenessOf({ target, config, product, part: 'components/bare' });
 

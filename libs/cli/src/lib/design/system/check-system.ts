@@ -30,6 +30,7 @@ import { badLinksOf } from './rules/implements';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
+import { inlineUiInPageProblemsOf, inlineUiInPageWarningsOf } from './rules/inline-ui-in-page';
 import { inlineSvgsOf } from './rules/inline-svg';
 import { badMotionsOf, badUnreachableOf, hardCodedMotionOf, scriptedMotionOf } from './rules/motion';
 import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './rules/stale-comment';
@@ -72,6 +73,7 @@ const RULES = [
   badLinksOf,
   unknownInteractionsOf,
   kitOutsidePagesOf,
+  inlineUiInPageProblemsOf,
   flowProblemsOf,
   badSvgAssetsOf,
   inlineSvgsOf,
@@ -93,6 +95,7 @@ export const warningProblemsOf = (product: ResolvedProduct): Problem[] => [
   ...orphanEndpointWarningsOf(product),
   ...sampleDefaultWarningsOf(product),
   ...unboundInputWarningsOf(product),
+  ...inlineUiInPageWarningsOf(product),
 ];
 
 export const ruleLinesOf = (target: string, product: ResolvedProduct) =>

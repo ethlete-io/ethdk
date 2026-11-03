@@ -262,6 +262,16 @@ folder, writes an `<svg>` inline. Put the icon in `assets/` and draw it with a h
 foundations part exports. An `<svg>` that the code computes, for example the edges of a flow
 diagram, passes with a `data-et-drawing` attribute.
 
+`et design check` fails with `INLINE-UI-IN-PAGE` when a page, a file its folder holds, or a `shared/` file it imports
+writes interactive UI as markup instead of embedding an element or component part: a `<button>`, `<input>`, `<select>`
+or `<textarea>`, a raw SDK tag such as `<et-switch>` or attribute such as `et-button`, or bare markup with an interactive
+`role`, a `tabindex` or a `data-et-action`. A string that patches such a tag into embedded markup, like
+`.replace(/<button/, '<button data-x')`, counts too. Markup that carries `data-et-part` is an embedded part's and passes.
+The message names the part to create, or the SDK part to embed. The rule also runs on every sketch variant, so it blocks
+`et design sketch ready` and the merge. Places that still wait for their move are listed in `OPEN_INLINE_UI`, by file,
+enclosing declaration, kind and count, and warn instead; the list only shrinks: an extra hit in a listed place fails, and
+so does an entry with fewer hits left than it allows.
+
 `et design check` warns with `STALE-REPLACE` when a `.replace` or `.replaceAll` pattern with a `<` matches no markup of
 the part or the parts it uses. A replace on markup a package draws, such as `button(options).replace(...)` with `button`
 from `@ethlete/components`, is not checked: the rule cannot read that markup.
