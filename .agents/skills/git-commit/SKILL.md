@@ -34,4 +34,5 @@ Commits in this repo are **lean** and follow the **commitlint rules**
   refuses an untracked file: run `git add -N <that file>` for that one path
   first. Pass a formatter or `eslint --fix` the exact paths you changed, never a
   list from `git diff` or `git status` - that list holds other sessions' files.
+- `yarn commit -m "..." -- <paths>` takes the same arguments as `git commit`: it runs the related specs first in a throwaway worktree of HEAD plus those paths, before it takes `.git/index.lock`, and the pre-commit hook then skips them for that exact tree (a plain `git commit` still runs them in the hook).
 - Don't push unless asked.

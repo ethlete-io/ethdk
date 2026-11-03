@@ -78,4 +78,6 @@ If the prompt of the agent holds typed text, the dispatcher waits until that tex
 4. After each larger step, run `inbox` again. Most agents cannot wake on new output, so you must pull messages yourself.
 5. When you finish, run `release`. A claim also expires after 4 hours, or after `--ttl` hours.
 
+In this repo commit with `yarn commit -m "..." -- <paths>`: it runs the related specs first in a throwaway worktree of HEAD plus those paths, before it takes `.git/index.lock`, and the pre-commit hook then skips them for that exact tree (a plain `git commit` still runs them in the hook).
+
 A claim is advisory, not a lock. `--force` claims over another agent: use it only after the holder agreed. Silence is not approval. Acknowledge each handoff in words. No agent starts automatically. The user starts each one.
