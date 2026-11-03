@@ -531,6 +531,24 @@ const refusalOf = (body: unknown, status: number) => {
     : new DesignAnswerError(message, status);
 };
 
+const logRefusedAction = ({ url, status, message }: { url: string; status: number; message: string }) => {
+  if (!hasHostShell()) return;
+
+  try {
+    const { pathname, searchParams } = new URL(url);
+
+    invoke('design_action_refused', {
+      at: new Date().toISOString(),
+      command: pathname.split('/').pop() ?? '',
+      part: searchParams.get('part') ?? searchParams.get('sketch') ?? '',
+      status,
+      message,
+    }).catch(() => undefined);
+  } catch {
+    return;
+  }
+};
+
 /** Reads a design server answer, and fails with the server's own `error` message when it refuses. */
 export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
   fromFetch(url, init).pipe(
@@ -539,7 +557,10 @@ export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observa
         map((body) => {
           if (response.ok) return body as TResult;
 
-          throw refusalOf(body, response.status);
+          const refusal = refusalOf(body, response.status);
+          logRefusedAction({ url, status: response.status, message: refusal.message });
+
+          throw refusal;
         }),
       ),
     ),

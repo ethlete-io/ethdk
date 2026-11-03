@@ -16,6 +16,7 @@
     "allow-design-roots-forget",
     "allow-design-roots-search",
     "allow-design-scan",
+    "allow-design-action-refused",
     "allow-design-status-watch",
     "allow-design-server-start",
     "allow-design-server-restart",

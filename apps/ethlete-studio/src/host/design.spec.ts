@@ -134,3 +134,69 @@ describe('shot urls under a preferred colour scheme', () => {
     expect(partShotUrl(part)).toContain('&scheme=light&');
   });
 });
+
+describe('designAnswer$ action log', () => {
+  const invoke = vi.fn();
+
+  const answer = (status: number, body: unknown) =>
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } }),
+        ),
+      ),
+    );
+
+  beforeEach(() => {
+    invoke.mockReset().mockResolvedValue(undefined);
+    vi.stubGlobal('__TAURI_INTERNALS__', { invoke });
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const url = 'http://localhost:1/__design/sketch-merge?product=studio&sketch=studio%2Ftitle-bar';
+
+  it('logs a refused answer with command, part, status and message', async () => {
+    answer(422, { error: 'baseline changed' });
+
+    await expect(firstValueFrom(designAnswer$(url))).rejects.toThrow('baseline changed');
+
+    expect(invoke).toHaveBeenCalledWith(
+      'design_action_refused',
+      {
+        at: expect.any(String),
+        command: 'sketch-merge',
+        part: 'studio/title-bar',
+        status: 422,
+        message: 'baseline changed',
+      },
+      undefined,
+    );
+  });
+
+  it('does not log an ok answer', async () => {
+    answer(200, { merged: [] });
+
+    await firstValueFrom(designAnswer$(url));
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('keeps the refusal when the logger fails', async () => {
+    answer(422, { error: 'baseline changed' });
+    invoke.mockRejectedValueOnce(new Error('no log'));
+
+    await expect(firstValueFrom(designAnswer$(url))).rejects.toThrow('baseline changed');
+  });
+
+  it('does nothing outside the desktop shell', async () => {
+    vi.unstubAllGlobals();
+    delete (globalThis as Record<string, unknown>)['__TAURI_INTERNALS__'];
+    answer(422, { error: 'baseline changed' });
+
+    await expect(firstValueFrom(designAnswer$(url))).rejects.toThrow('baseline changed');
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});

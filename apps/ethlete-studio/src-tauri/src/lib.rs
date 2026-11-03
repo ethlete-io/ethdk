@@ -2,6 +2,7 @@ mod call_source;
 mod call_status;
 mod child_env;
 mod design;
+mod design_action_log;
 mod design_roots;
 mod design_server;
 mod error;
@@ -190,6 +191,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
             design::design_project,
+            design_action_log::design_action_refused,
             design_roots::design_roots,
             design_roots::design_roots_add,
             design_roots::design_roots_forget,
