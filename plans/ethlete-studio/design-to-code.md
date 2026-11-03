@@ -4222,6 +4222,23 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      a round show only the states it touches (plus a reference state) instead of every base state; recommend with
      facts. B256 is not pickable until B240 phase 2 lands and the view renders.
 
+336. Two corrections from Tom (2026-11-03). (a) The grill session asked Tom which states a sketch round shows, but
+     that was decided several times: unchanged states fold away (finding 77, b879f640e), each variant row stacks its
+     states with unchanged ones dimmed and the first change marked (pages/sketches round 2, variant e), and a round
+     names its question states (`sketch round --asks`, default the states the round added) with `ready` refusing
+     variant pairs below ~2 % visible diff. Why no tool caught it: the grill session asked without searching the
+     plan for the topic first; the builder recommended the same without checking either. Rule: before any grill
+     question or recommendation, grep the plan for the topic and quote the earlier decision; if it exists, the
+     question is "why does the tool not do what was decided", sent to the builder. The pages/system and
+     sketch-status-badge views (findings 332, 335) show all states unfolded and identical variants, so the decided
+     behaviour is missing or regressed; the builder finds which commit and why no spec held it. B281 and the "touched
+     states" part of B284 collapse into that. (b) The B256 variant c draws a "Mocks veraltet" popover with an
+     `nx build components` command. A designer can do nothing with it; stale mocks must never reach the Studio UI.
+     Decision (Tom): no banner, no variant of it. Studio and the design server rebuild stale SDK mocks themselves
+     before they draw; the CLI refusal for agents (check, ready, shot) stays. Why no tool caught it: nothing checks
+     that Studio UI text is for a designer. Fix: a rule flags command text (`npx`, `nx `, `yarn `, `--flag`,
+     env assignments) in a studio product drawing or app template. The pages/system sketch 2862bad2e is withdrawn.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
