@@ -206,7 +206,7 @@ test('re-runs a spec that failed only by timeout alone once, end to end', () => 
   assert.deepEqual(leftovers(tmp), []);
 });
 
-test('a type error vitest passes blocks the commit, an older one in an untouched spec does not', () => {
+test('a type error vitest passes blocks the commit, an older one in an untouched spec too', () => {
   const { repo, run, yarnCommit } = repoWithCommitTool();
   put(
     repo,
@@ -242,7 +242,7 @@ test('a type error vitest passes blocks the commit, an older one in an untouched
   assert.notEqual(refused.status, 0, refused.stdout + refused.stderr);
   assert.match(refused.stderr, /libs\/cli\/src\/value\.spec\.ts\(4,7\): error TS2322/);
   assert.match(refused.stderr, /libs\/cli\/tsconfig\.spec\.json has type errors/);
-  assert.doesNotMatch(refused.stderr, /old\.spec\.ts/);
+  assert.match(refused.stderr, /libs\/cli\/src\/old\.spec\.ts\(3,7\): error TS2322/);
   assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
 
   put(
@@ -250,6 +250,48 @@ test('a type error vitest passes blocks the commit, an older one in an untouched
     'libs/cli/src/value.spec.ts',
     "import { expect, test } from 'vitest';\nimport { value } from './value';\n\ntest('value', () => expect(value).toBe(1));\ntest('more', () => expect(value + 1).toBe(2));\n",
   );
-  const passed = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.spec.ts']);
+  const stillOld = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.spec.ts']);
+  assert.match(stillOld.stderr, /old\.spec\.ts\(3,7\)/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+
+  put(repo, 'libs/cli/src/old.spec.ts', "import { test } from 'vitest';\n\ntest('old', () => undefined);\n");
+  const passed = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.spec.ts', 'libs/cli/src/old.spec.ts']);
+  assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+});
+
+test('a lint error in a project of the staged files blocks the commit, docs files lint nothing', () => {
+  const { repo, run, yarnCommit } = repoWithCommitTool();
+  put(repo, 'package.json', JSON.stringify({ name: 'repo', private: true }));
+  put(repo, 'nx.json', JSON.stringify({}));
+  put(
+    repo,
+    'libs/cli/project.json',
+    JSON.stringify({
+      name: 'cli',
+      targets: { lint: { executor: 'nx:run-commands', options: { command: 'eslint src', cwd: 'libs/cli' } } },
+    }),
+  );
+  put(
+    repo,
+    'libs/cli/eslint.config.mjs',
+    "export default [{ files: ['**/*.ts'], rules: { 'no-debugger': 'error' } }];\n",
+  );
+  run('git', ['add', '.']);
+  run('git', ['commit', '-qm', 'nx', '--no-verify']);
+  const head = run('git', ['rev-parse', 'HEAD']).stdout;
+
+  put(repo, 'libs/cli/src/value.ts', 'debugger;\nexport const value = 1;\n');
+  const refused = yarnCommit(['-qm', 'lint', '--', 'libs/cli/src/value.ts']);
+  assert.notEqual(refused.status, 0, refused.stdout + refused.stderr);
+  assert.match(refused.stdout + refused.stderr, /no-debugger/);
+  assert.match(refused.stderr, /lint fails in cli/);
+  assert.equal(run('git', ['rev-parse', 'HEAD']).stdout, head);
+
+  put(repo, 'libs/cli/NOTES.md', 'notes\n');
+  const docs = yarnCommit(['-qm', 'docs', '--', 'libs/cli/NOTES.md']);
+  assert.equal(docs.status, 0, docs.stdout + docs.stderr);
+
+  put(repo, 'libs/cli/src/value.ts', 'export const value = 1;\nexport const other = 2;\n');
+  const passed = yarnCommit(['-qm', 'clean', '--', 'libs/cli/src/value.ts']);
   assert.equal(passed.status, 0, passed.stdout + passed.stderr);
 });

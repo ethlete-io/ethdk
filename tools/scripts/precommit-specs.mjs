@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { specsForFiles } from './cli-related-map.mjs';
@@ -125,6 +125,47 @@ const runTypeChecks = (checkout, projects) => {
   return 0;
 };
 
+const owningProject = (root, file) => {
+  for (let dir = dirname(file); dir !== '.'; dir = dirname(dir)) {
+    const config = join(root, dir, 'project.json');
+    if (!existsSync(config)) continue;
+    const project = JSON.parse(readFileSync(config, 'utf8'));
+    const lints = Boolean(project.targets?.lint) || existsSync(join(root, dir, 'eslint.config.mjs'));
+    return lints ? project.name : null;
+  }
+  return null;
+};
+
+/** The nx projects owning `files` that have a lint target, by name. */
+export const lintProjectsForFiles = (root, files) => [
+  ...new Set(
+    files
+      .filter((file) => !DOCS_ONLY.test(file))
+      .map((file) => owningProject(root, file))
+      .filter(Boolean),
+  ),
+];
+
+const runLint = (root, checkout, projects) => {
+  if (!projects.length) return 0;
+  const run = spawnSync('npx', ['nx', 'run-many', '-t', 'lint', '-p', projects.join(','), '--outputStyle=static'], {
+    cwd: checkout,
+    env: {
+      ...withoutGitEnv(),
+      NX_NO_CLOUD: 'true',
+      NX_DAEMON: 'false',
+      NX_CACHE_DIRECTORY: join(root, '.nx', 'cache'),
+    },
+    encoding: 'utf8',
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (run.status === 0) return 0;
+  process.stdout.write(run.stdout ?? '');
+  process.stderr.write(run.stderr ?? '');
+  console.error(`pre-commit: lint fails in ${projects.join(', ')} (above); run \`npx nx lint <project> --fix\`.`);
+  return 1;
+};
+
 export const TESTED_TREE_ENV = 'PRECOMMIT_SPECS_TREE';
 
 const treeOfIndex = (root, index) => {
@@ -178,8 +219,9 @@ export const runPathSpecs = (root, paths) => {
     );
   const files = changes.filter((change) => change.status !== 'D').map((change) => change.file);
   const projects = typeProjectsForFiles(root, files);
+  const linted = lintProjectsForFiles(root, files);
   const noSpecs = selectsNoSpecs(root, files, tree);
-  if (noSpecs && projects.length === 0) return { status: 0, tree };
+  if (noSpecs && projects.length === 0 && linted.length === 0) return { status: 0, tree };
   const suites = noSpecs ? [] : suitesForFiles(files, relatedMapAt(root, tree));
 
   const worktree = join(mkdtempSync(join(tmpdir(), 'yarn-commit-')), 'tree');
@@ -204,8 +246,8 @@ export const runPathSpecs = (root, paths) => {
       cpSync(join(root, file), join(worktree, file), { verbatimSymlinks: true });
     }
     linkNodeModules(root, worktree);
-    const typed = runTypeChecks(worktree, projects);
-    return { status: typed === 0 ? runSuites(worktree, suites) : typed, tree };
+    const status = runTypeChecks(worktree, projects) || runLint(root, worktree, linted) || runSuites(worktree, suites);
+    return { status, tree };
   } finally {
     signals.forEach((signal) => process.off(signal, onSignal));
     cleanup();
