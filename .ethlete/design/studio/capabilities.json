@@ -213,10 +213,11 @@
     {
       "id": "sketch-round",
       "label": "Runde wählen",
-      "place": null,
-      "confirmed": true,
-      "why": "the app's sketches part has a round select (selectRound); pages/sketches draws no round action",
-      "missing": "B176"
+      "place": {
+        "part": "pages/sketches",
+        "action": "emit:roundChange"
+      },
+      "confirmed": true
     },
     {
       "id": "sketch-diff",
@@ -258,10 +259,11 @@
     {
       "id": "preset-pick",
       "label": "Viewport wählen",
-      "place": null,
-      "confirmed": true,
-      "why": "flow-view.component.ts picks a viewport preset (presetChange); pages/flows draws no preset action",
-      "missing": "B177"
+      "place": {
+        "part": "pages/flows",
+        "action": "emit:presetChange"
+      },
+      "confirmed": true
     },
     {
       "id": "open-points-toggle",
@@ -293,10 +295,11 @@
     {
       "id": "prompt-copy-flows",
       "label": "Prompt kopieren (keine Flows)",
-      "place": null,
-      "confirmed": true,
-      "why": "the app's flows page has a copy-prompt button; pages/flows draws no copyPrompt action",
-      "missing": "B177"
+      "place": {
+        "part": "pages/flows",
+        "action": "emit:copyPrompt"
+      },
+      "confirmed": true
     },
     {
       "id": "repo-open",
