@@ -4,7 +4,8 @@
 
 Denies, for a Bash call:
 - `git add -A`, `git add --all` and `git add .` (they stage other sessions' work)
-- any `git stash`
+- every `git stash` that writes (bare, `push`, `save`, `pop`, `apply`, `drop`, `clear`, `branch`,
+  `create`, `store`); `git stash list` and `git stash show` stay allowed
 - `git commit --amend`
 - `git commit` without a ` -- <paths>` pathspec
 - any `git add` or `git commit` whose paths name an `.ethlete/**/go.json` (a go is granted
@@ -92,6 +93,14 @@ def git_calls_in(command):
                 yield rest[0], rest[1:]
 
 
+STASH_READS = ("list", "show")
+
+
+def stash_subcommand_of(args):
+    """The stash subcommand `args` run; a bare `git stash` or one starting with an option is `push`."""
+    return args[0] if args and not args[0].startswith("-") else "push"
+
+
 def violation_in(command):
     """(rule, allowed form) for the first forbidden git call, or None."""
     for sub, args in git_calls_in(command):
@@ -101,9 +110,9 @@ def violation_in(command):
                     "`git add -A`, `--all` and `.` stage other sessions' work",
                     "stage named paths: `git add <path> ...`, or skip staging and use `git commit -m \"...\" -- <paths>`",
                 )
-        if sub == "stash":
+        if sub == "stash" and stash_subcommand_of(args) not in STASH_READS:
             return (
-                "`git stash` hides other sessions' uncommitted work",
+                f"`git stash {stash_subcommand_of(args)}` hides or rewrites other sessions' uncommitted work",
                 "leave the working tree alone; commit your own paths with `git commit -m \"...\" -- <paths>`",
             )
         if sub == "commit":

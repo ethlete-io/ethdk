@@ -40,9 +40,28 @@ describe('git-safety', () => {
     },
   );
 
-  it.each(['git stash', 'git stash pop', 'git stash push -- a.ts'])('denies %s', (command) => {
-    expect(reasonOf(command)).toContain('git stash');
+  it.each([
+    ['git stash', 'git stash push'],
+    ['git stash -u', 'git stash push'],
+    ['git stash push -- a.ts', 'git stash push'],
+    ['git stash save "wip"', 'git stash save'],
+    ['git stash pop', 'git stash pop'],
+    ['git stash apply stash@{0}', 'git stash apply'],
+    ['git stash drop', 'git stash drop'],
+    ['git stash clear', 'git stash clear'],
+    ['git stash branch b', 'git stash branch'],
+    ['git stash create', 'git stash create'],
+    ['git stash store abc', 'git stash store'],
+  ])('denies %s and names its subcommand', (command, named) => {
+    expect(reasonOf(command)).toContain(named);
   });
+
+  it.each(['git stash list', 'git stash show', 'git stash show -p stash@{1}', 'git -C apps stash list'])(
+    'allows the read-only %s',
+    (command) => {
+      expect(runHook(command)).toBeNull();
+    },
+  );
 
   it('denies git commit --amend', () => {
     expect(reasonOf('git commit --amend -m "x" -- a.ts')).toContain('--amend');
