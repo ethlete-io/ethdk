@@ -3523,6 +3523,12 @@ ready` and the merge do not run CONTROL-UNDECLARED on the variants. Also: `sketc
      real case that reported it; synthetic specs come on top. Fix: the builder sub-agent brief carries each defect's
      real reproduction (part, state, element) and the slice report quotes the check on it; B201 stays open until
      `design check` on the part holding the Übernehmen buttons reports them.
+     Real check (builder, rebuilt dist with 2afda8d28): `design check --product studio --part pages/sketches` gives 94
+     findings, the same as base; nothing on emit:merge (Übernehmen, sketch-rows.ts:205) or emit:discard (Verwerfen,
+     sketches.ts:328) in any state, while far-out (finding 242) and the 228/235 state should flag them. So the fix is
+     proven only on synthetic specs. Hypotheses (unverified): the reach check does not list emit:merge/emit:discard
+     as declared actions of pages/sketches, or a hidden head is skipped before the visibility test. Next slice starts
+     from this repro and is done only when check reports the Übernehmen button UNREACHABLE or COVERED.
 280. B194 (builder, 2026-11-03, 649b04940): `definePart({ instant: '<reason>' })` replaces per-pair `unreachable` for
      parts whose states switch without motion; a loop in an ongoing-work state is still asked for; an empty or
      non-literal reason is MOTION-INSTANT. Gap: only `sketch ready` prints the instant note, `design check` does not.
