@@ -18,13 +18,13 @@ import {
   send,
   noteFailure,
   sendShot,
-  settleFrames,
   ShotFailedError,
   ShotTimeoutError,
   ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
 import { MotionMode, MotionPictures, motionPicturesOf } from './motion-shot';
+import { settleFrames } from './settle-frames';
 import { createWarmPages } from './warm-pages';
 import { ShotStore, StoredAddress } from './shot-store';
 

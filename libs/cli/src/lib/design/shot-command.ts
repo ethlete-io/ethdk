@@ -1,15 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { AddressInfo } from 'net';
 import { dirname, resolve } from 'path';
-import {
-  boundsOf,
-  ChangedBox,
-  changedCropsOf,
-  changedSharesOf,
-  contactSheetOf,
-  pngSizeOf,
-  SheetCell,
-} from './contact-sheet';
+import { changedCropsOf, changedSharesOf, contactSheetOf, pngSizeOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { DesignConfig, workRootOf } from './paths';
@@ -23,6 +15,7 @@ import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 import { BoxOf } from './variant-diff';
+import { unstableCellsOf, unstableReportOf } from './unstable-cells';
 
 export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--round <key>[,<key>...]] [--variant <name>[,<name>...]] [--all] [--at <commit>] [--diff-props]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--crop <x,y,width,height> | --crop changed] [--product <name>] [--surface <name>] [--color <name>] [--scheme <light|dark>] [--out <file>]`;
 
@@ -166,44 +159,6 @@ export const planOf = (options: {
     });
   });
 };
-
-export type UnstableCell = { label: string; part: string; state: string; pixels: number; box: ChangedBox | null };
-
-export const unstableCellsOf = async (options: {
-  plan: Plan[][];
-  first: SheetCell[][];
-  second: SheetCell[][];
-  boxOf: BoxOf;
-  pixelsOf: (before: Buffer, after: Buffer) => Promise<number>;
-}): Promise<UnstableCell[]> => {
-  const found: UnstableCell[] = [];
-
-  for (const [rowIndex, row] of options.plan.entries()) {
-    for (const [index, { label, address }] of row.entries()) {
-      const before = options.first[rowIndex]?.[index];
-      const after = options.second[rowIndex]?.[index];
-
-      if (!before || !after || !('png' in before) || !('png' in after) || before.png.equals(after.png)) continue;
-
-      found.push({
-        label,
-        part: address.part,
-        state: address.state,
-        pixels: await options.pixelsOf(before.png, after.png),
-        box: boundsOf(await options.boxOf(before.png, after.png)),
-      });
-    }
-  }
-
-  return found;
-};
-
-export const unstableReportOf = (cells: UnstableCell[]) =>
-  cells.map(({ label, part, state, pixels, box }) => {
-    const where = box ? ` in ${box.x},${box.y} ${box.width}x${box.height}` : '';
-
-    return `design-explore: ${part} state "${state}" (${label}) draws differently in two renders: ${pixels} px differ${where}`;
-  });
 
 export type EmptyGridCell = { empty: string };
 
