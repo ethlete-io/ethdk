@@ -1,5 +1,5 @@
 import { control } from '@ethlete/components/design/control';
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -181,7 +181,7 @@ export default definePart<Props>({
         <div class="flex flex-none items-center gap-space-3 px-space-4 h-14">
           <span class="text-ui-lg font-ui-strong">pages/flows</span>
           <span class="flex-1"></span>
-          ${control(toggle.body, 'inventory-toggle')}
+          ${control(withAction(toggle.body, 'emit:toggleInventory'), 'inventory-toggle')}
         </div>
         <div class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-et-surface-bg">
           <header
@@ -190,7 +190,8 @@ export default definePart<Props>({
             <h2 class="m-0 text-ui-lg font-ui-strong">Inventory</h2>
             ${loading ? '' : `<span class="text-ui-sm text-et-surface-muted">${APPROVAL[inventory]}</span>`}
             <span class="flex-1"></span>
-            ${control(reload.body, 'reload')} ${control(approve.body, 'approve')}
+            ${control(withAction(reload.body, 'emit:reloadInventory'), 'reload')}
+            ${control(withAction(approve.body, 'emit:approveInventory'), 'approve')}
           </header>
           ${body}
         </div>

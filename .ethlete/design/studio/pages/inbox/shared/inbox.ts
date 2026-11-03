@@ -1,4 +1,4 @@
-import { definePart, drawing, html, ng, slot } from '@design-system';
+import { definePart, drawing, html, ng, slot, withAction } from '@design-system';
 import { control } from '@ethlete/components/design/control';
 import anchoredDialog from '@system/components/anchored-dialog';
 import { commentPinMark } from '@system/components/comment-pin';
@@ -316,7 +316,10 @@ export const inbox = () =>
               modal: false,
               placement: 'bottom-start',
               content: await ng(
-                `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
+                withAction(
+                  `<div class="box-border flex flex-col items-stretch w-80 p-3"><et-textarea data-et-control="comment" class="flex-1 min-w-0" aria-label="Kommentar" placeholder="Kommentar hinzufügen" rows="${draft ? '3' : '1'}" resize="none" ${draft ? 'value="Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist."' : ''} /><button et-button data-et-control="send" type="button" variant="transparent" color="surface" size="xs" ${draft ? 'class="self-end"' : 'disabled class="self-end text-et-surface-muted [--et-button-opacity-disabled:1]"'}>Senden</button></div>`,
+                  'emit:send',
+                ),
                 { imports: ['TEXTAREA_IMPORTS', 'BUTTON_IMPORTS'] },
               ),
             })
