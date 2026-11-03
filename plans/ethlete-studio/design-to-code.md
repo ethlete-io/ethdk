@@ -3667,3 +3667,10 @@ studio` on the new commits.
      embed the part. Fix (B236, decided, technical): `design check --part X` also checks every part that embeds X, and
      its GO line counts only when they pass as well. B237: Tom looks at pages/system comment-draft in Studio. If there
      is a choice in the fix, the builder sketches variants; the pages/system go is then given again.
+
+290. B230 red proof (builder, 2026-11-03). The new node:test case is red on 50024f9b8^, but by a crash (TypeError:
+     the old function took 3 args), not by an assertion. The behavioural red was shown by hand: the old function
+     returns [] for a type error in an untouched spec. Why no tool caught it: red-check counts any failure as red, so a
+     signature change passes as proof. Fix (B238, decided, technical): red-check labels a failure that is a thrown
+     TypeError/ReferenceError outside an assertion "RED BY CRASH", and that is not proof. The slice then quotes a
+     behavioural red.
