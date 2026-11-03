@@ -13,7 +13,7 @@ export type SketchRow = {
   shots: SketchShot[];
 };
 
-export type SketchStatus = 'drawing' | 'paused' | 'idle';
+export type SketchStatus = 'drawing' | 'waiting' | 'paused' | 'idle';
 
 export type SketchHold = { until: string; by: SketchModel; since: string };
 

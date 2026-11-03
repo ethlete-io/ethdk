@@ -426,6 +426,8 @@ export type ListedSketch = {
   rounds?: SketchRound[];
   /** Per variant, every rejection it had, oldest first. Missing from an `@ethlete/cli` without variant rejection. */
   rejections?: Record<string, SketchRejection[]>;
+  /** Set while `sketch hold` pauses the sketch: what it waits on, the model id that held it and when. */
+  hold?: { until: string; by: string; heldAt: string };
 };
 
 /** The rejection that holds on a variant now, or `null` when it is live. */

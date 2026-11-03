@@ -389,6 +389,70 @@ describe('SketchViewComponent', () => {
     expect(completed).toEqual([]);
   });
 
+  it('derives the head badge from the drawing report and readiness, never from the sketch status alone', async () => {
+    const badgeOf = (root: HTMLElement) => root.querySelector('header et-badge')?.textContent?.trim();
+    const fresh = new Date(Date.now() - 5 * 60_000).toISOString();
+    const stale = new Date(Date.now() - 40 * 60_000).toISOString();
+    const open = { ...SKETCH, status: 'in progress' as const, decision: undefined };
+    const status = STUDIO_LABELS.sketches.status;
+
+    const drawing = await render(
+      { ...open, report: { message: 'zeichnet', updatedAt: fresh, variant: 'b', author: 'claude-opus-5-5' } },
+      noComments,
+    );
+
+    expect(badgeOf(drawing.root)).toBe(status.drawing);
+    expect(buttonNamed(drawing.root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+    drawing.fixture.destroy();
+
+    const stalled = await render(
+      { ...open, report: { message: 'zeichnet', updatedAt: stale, variant: 'b', author: 'claude-opus-5-5' } },
+      noComments,
+    );
+
+    expect(badgeOf(stalled.root)).toBe(status.idle);
+    expect(stalled.root.querySelector('header')?.textContent).toContain(
+      STUDIO_LABELS.sketches.lastChange('Opus 5.5', STUDIO_LABELS.sketches.since(40)),
+    );
+    stalled.fixture.destroy();
+
+    const silent = await render({ ...open, report: null }, noComments);
+
+    expect(badgeOf(silent.root)).toBe(status.idle);
+    silent.fixture.destroy();
+
+    const ready = await render({ ...SKETCH, decision: undefined }, noComments);
+
+    expect(badgeOf(ready.root)).toBe(status.waiting);
+    expect(buttonNamed(ready.root, STUDIO_LABELS.sketches.merge)).toBeDefined();
+  });
+
+  it('shows a held sketch as paused with what it waits on, who held it and since when', async () => {
+    const heldAt = new Date(Date.now() - 7 * 60_000).toISOString();
+    const { root } = await render(
+      {
+        ...SKETCH,
+        status: 'in progress',
+        decision: undefined,
+        report: null,
+        hold: { until: 'B99 und B100', by: 'claude-sonnet-5-5', heldAt },
+      },
+      noComments,
+    );
+
+    expect(root.querySelector('header et-badge')?.textContent?.trim()).toBe(STUDIO_LABELS.sketches.status.paused);
+    expect(buttonNamed(root, STUDIO_LABELS.sketches.merge)).toBeUndefined();
+
+    root.querySelector<HTMLButtonElement>('[data-sk-hold]')?.click();
+    await new Promise((done) => setTimeout(done));
+
+    const reason = root.querySelector('[data-sk-hold-reason]')?.textContent ?? '';
+
+    expect(reason).toContain(STUDIO_LABELS.sketches.holdUntil('B99 und B100'));
+    expect(reason).toContain('Sonnet 5.5');
+    expect(reason).toContain(STUDIO_LABELS.sketches.since(7));
+  });
+
   it('discards the sketch from Verwerfen', async () => {
     const asked: string[] = [];
     const { fixture, root } = await render(SKETCH, (url) => {

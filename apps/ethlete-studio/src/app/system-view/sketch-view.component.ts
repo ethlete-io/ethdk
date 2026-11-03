@@ -50,7 +50,7 @@ import {
 import { MergeComponent } from '../design-parts/merge/merge.component';
 import { MergeRow, MergeTarget, MergeUnchanged } from '../design-parts/merge/merge-sample';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
-import { SketchPin, SketchRow, SketchStatus } from '../design-parts/sketches/sketches-sample';
+import { SketchHold, SketchIdle, SketchPin, SketchRow, SketchStatus } from '../design-parts/sketches/sketches-sample';
 import { STUDIO_LABELS } from '../i18n/studio-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
@@ -80,6 +80,8 @@ const MEASURING_HEIGHT = 150;
 
 type Mode = 'sketches' | 'merge';
 
+const minutesSince = (at: number) => Math.max(0, Math.round((Date.now() - at) / 60_000));
+
 const FALLBACK_SIZE = { width: 1440, height: 900 };
 
 @Component({
@@ -103,10 +105,13 @@ const FALLBACK_SIZE = { width: 1440, height: 900 };
       />
     } @else {
       <ethlete-sketches
+        [(sameOpen)]="sameOpen"
         [part]="sketch().target"
         [rows]="rows()"
         [fresh]="!part()"
         [status]="sketchStatus()"
+        [idle]="lastChange()"
+        [hold]="held()"
         [drawn]="drawnVariant()"
         [rounds]="rounds()"
         [round]="shownRoundKey()"
@@ -448,11 +453,38 @@ export class SketchViewComponent {
       ),
   );
 
-  protected sketchStatus = computed<SketchStatus | undefined>(() =>
-    this.sketch().status === 'in progress' ? 'drawing' : undefined,
-  );
+  protected lastChange = computed<SketchIdle>(() => {
+    const report = this.sketch().report;
+    const at = report ? Date.parse(report.updatedAt) : NaN;
+
+    return {
+      by: report?.author ? modelNameOf(report.author) : '',
+      since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
+    };
+  });
+
+  protected held = computed<SketchHold>(() => {
+    const hold = this.sketch().hold;
+    const at = hold ? Date.parse(hold.heldAt) : NaN;
+    const by = hold?.by ?? '';
+
+    return {
+      until: hold?.until ?? '',
+      by: { short: by ? modelNameOf(by) : '', id: by, agent: senderOf('agent', by).agent ?? 'claude' },
+      since: Number.isNaN(at) ? '' : STUDIO_LABELS.sketches.since(minutesSince(at)),
+    };
+  });
+
+  protected sameOpen = signal(false);
 
   protected drawnVariant = computed(() => this.matrix().columns.find((column) => column.drawing)?.key ?? null);
+
+  protected sketchStatus = computed<SketchStatus>(() => {
+    if (this.drawnVariant() !== null) return 'drawing';
+    if (this.sketch().hold) return 'paused';
+
+    return this.sketch().status === 'ready' ? 'waiting' : 'idle';
+  });
 
   private contextPages = computed(
     () =>

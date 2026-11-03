@@ -59,7 +59,7 @@ describe('SketchesComponent', () => {
       'current',
       'x',
     ]);
-    expect(textOf(states[0])).toBe(`rest${LABELS.unchanged}`);
+    expect(textOf(states[0])).toBe(`rest${LABELS.stateSeparator}${LABELS.unchanged}`);
     expect(states[0]?.classList.contains('opacity-50')).toBe(true);
     expect(states[1]?.classList.contains('opacity-50')).toBe(false);
     expect(textOf(variant?.querySelector('[data-sk-first-change]'))).toBe(LABELS.firstChange);
@@ -180,6 +180,54 @@ describe('SketchesComponent', () => {
     await fixture.whenStable();
 
     expect(sizes()[1]).toBe(`${13 * 0.7}px`);
+  });
+
+  it('folds variants that match Aktuell in every state into one collapsed bar and opens it', async () => {
+    const same: SketchRow = {
+      key: 'y',
+      note: 'Gleich wie heute',
+      width: 400,
+      shots: [
+        { state: 'rest', changed: false, height: 100 },
+        { state: 'open', changed: false, height: 200 },
+      ],
+    };
+    const fixture = await render({ camera: '100', rows: [...ROWS, same, { ...same, key: 'z' }] });
+    const root: HTMLElement = fixture.nativeElement;
+    const bar = root.querySelector<HTMLButtonElement>('[data-sk-same] button');
+
+    expect(textOf(bar)).toBe(LABELS.sameVariants(['y', 'z']));
+    expect(root.querySelector('[data-sk-row="y"]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="x"]')).not.toBeNull();
+
+    bar?.click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.sameOpen()).toBe(true);
+    expect(
+      [...root.querySelectorAll('[data-sk-same] [data-sk-row]')].map((row) => row.getAttribute('data-sk-row')),
+    ).toEqual(['y', 'z']);
+  });
+
+  it('keeps a variant neutral and marks its head while its compare is pending', async () => {
+    const pending = ROWS.map((row) =>
+      row.key === 'x' ? { ...row, shots: row.shots.map((shot) => ({ ...shot, changed: null })) } : row,
+    );
+    const root: HTMLElement = (await render({ camera: '100', rows: pending })).nativeElement;
+
+    expect(textOf(root.querySelector('[data-sk-row="x"] [data-sk-comparing]'))).toBe(LABELS.comparing);
+    expect(root.querySelector('[data-sk-row="current"] [data-sk-comparing]')).toBeNull();
+    expect(root.querySelector('[data-sk-row="x"] .opacity-50')).toBeNull();
+    expect(root.querySelector('[data-sk-same]')).toBeNull();
+  });
+
+  it('offers Übernehmen only while the sketch waits for a pick', async () => {
+    const waiting: HTMLElement = (await render({ camera: '100', status: 'waiting' })).nativeElement;
+    const idle: HTMLElement = (await render({ camera: '100', status: 'idle' })).nativeElement;
+
+    expect(textOf(waiting.querySelector('header et-badge'))).toBe(LABELS.status.waiting);
+    expect(textOf(waiting.querySelector('[data-sk-row="x"] button'))).toBe(LABELS.merge);
+    expect(idle.querySelector('[data-sk-row="x"] button')).toBeNull();
   });
 
   it('opens at a restored camera and selects a clicked frame', async () => {

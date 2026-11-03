@@ -10,9 +10,11 @@ import {
   Injector,
   input,
   linkedSignal,
+  model,
   output,
   signal,
   TemplateRef,
+  untracked,
   viewChild,
   viewChildren,
   ViewEncapsulation,
@@ -33,6 +35,7 @@ import { CanvasViewportComponent } from '../canvas-viewport/canvas-viewport.comp
 import { STUDIO_LABELS } from '../../i18n/studio-labels';
 import { AgentLogoComponent } from '../../icons/agent-logo.component';
 import { CommentPinComponent } from '../comment-pin/comment-pin.component';
+import { DisclosureComponent } from '../disclosure/disclosure.component';
 import { PartTreeComponent } from '../part-tree/part-tree.component';
 import { SHELL_SAMPLE, ShellAction, ShellPageComponent, ShellState } from '../shell-main/shell-page.component';
 import { ZoomChipComponent } from '../zoom-chip/zoom-chip.component';
@@ -84,6 +87,8 @@ const FIT_PASSES = 6;
 
 const FIT_SETTLED = 0.002;
 
+const FIT_COLUMNS = 2;
+
 type FitDom = {
   columns: number;
   list: HTMLElement;
@@ -93,12 +98,29 @@ type FitDom = {
   notes: HTMLElement[];
   labels: HTMLElement[];
   labelRows: HTMLElement[];
+  gutters: HTMLElement[];
+  matrix: HTMLElement | null;
 };
+
+type Pan = { x: number; y: number };
 
 const frameKeyOf = (row: SketchRow, state: string) => `${row.key} ${state}`;
 
 const zoomOf = (camera: 'fit' | '100' | Camera): Zoom =>
   camera === 'fit' ? 'fit' : camera === '100' ? 1 : camera.zoom;
+
+const noteAt = (scale: number, fit: number) => {
+  const floor = Math.max(MIN_TEXT, NOTE_TEXT * fit);
+
+  return scale >= fit ? Math.max(MIN_TEXT, NOTE_TEXT * scale) : (floor * scale) / fit;
+};
+
+const isPending = (row: SketchRow) => row.shots.some((shot) => shot.changed === null);
+
+const clampPan = ({ x, y }: Pan, room: Pan): Pan => ({
+  x: Math.min(0, Math.max(-room.x, x)),
+  y: Math.min(0, Math.max(-room.y, y)),
+});
 
 @Component({
   selector: 'ethlete-sketches',
@@ -114,6 +136,7 @@ const zoomOf = (camera: 'fit' | '100' | Camera): Zoom =>
     AgentLogoComponent,
     CanvasViewportComponent,
     CommentPinComponent,
+    DisclosureComponent,
     PartTreeComponent,
     ShellPageComponent,
     ZoomChipComponent,
@@ -132,7 +155,7 @@ export class SketchesComponent {
   public part = input('components/title-bar');
   public rows = input<SketchRow[]>(SKETCH_ROWS);
   public fresh = input(false);
-  public status = input<SketchStatus | undefined>(undefined);
+  public status = input<SketchStatus>('waiting');
   public drawn = input<string | null>(SKETCH_DRAWN);
   public hold = input<SketchHold>(SKETCH_HOLD);
   public idle = input<SketchIdle>(SKETCH_IDLE);
@@ -140,6 +163,7 @@ export class SketchesComponent {
   public rounds = input(SKETCH_ROUNDS);
   public round = input(SKETCH_ROUNDS[0]?.value ?? '');
   public pins = input<SketchPin[]>(SKETCH_PINS);
+  public sameOpen = model(false);
 
   public shot = input<TemplateRef<SketchShotContext> | null>(null);
   public tree = input(SKETCH_TREE);
@@ -154,6 +178,8 @@ export class SketchesComponent {
   public expandedChange = output<readonly string[]>();
   public cameraChange = output<Camera | null>();
   private list = viewChild.required('list', { read: ElementRef<HTMLElement> });
+  private world = viewChild.required('world', { read: ElementRef<HTMLElement> });
+  private matrix = viewChild('matrix', { read: ElementRef<HTMLElement> });
   private stages = viewChildren('stage', { read: ElementRef<HTMLElement> });
   private sections = viewChildren('section', { read: ElementRef<HTMLElement> });
   private frames = viewChildren('frame', { read: ElementRef<HTMLElement> });
@@ -162,7 +188,7 @@ export class SketchesComponent {
   private labels = viewChildren('stateLabel', { read: ElementRef<HTMLElement> });
   private labelRows = viewChildren('labelRow', { read: ElementRef<HTMLElement> });
   private listSize = signalElementDimensions(this.list);
-  private gutterSize = signalElementDimensions(this.gutters);
+  private worldSize = signalElementDimensions(this.world);
 
   protected readonly LABELS = STUDIO_LABELS.sketches;
   protected readonly CURRENT = SKETCH_CURRENT;
@@ -172,8 +198,8 @@ export class SketchesComponent {
   public zoom = linkedSignal<Zoom>(() => this.restoredCamera()?.zoom ?? zoomOf(this.camera()));
   protected reasonOpen = linkedSignal(() => this.reason());
   protected selectedFrame = signal<string | null>(null);
-  private fitOverride = signal<number | null>(null);
-  private pan = linkedSignal(() => {
+  private fitAt = signal<number | null>(null);
+  private pan = linkedSignal<Pan>(() => {
     const restored = this.restoredCamera();
     const camera = this.camera();
 
@@ -182,10 +208,9 @@ export class SketchesComponent {
     return typeof camera === 'object' ? { x: Math.min(0, camera.x), y: Math.min(0, camera.y) } : { x: 0, y: 0 };
   });
   private userCamera$ = new Subject<Camera | null>();
-  protected shownRows = computed(() =>
+  public shownRows = computed(() =>
     this.fresh() ? this.rows().filter((row) => row.key !== SKETCH_CURRENT) : this.rows(),
   );
-
   public columns = computed(() => {
     const rows = this.shownRows();
     const widest = Math.max(1, ...rows.map((row) => row.width));
@@ -199,28 +224,15 @@ export class SketchesComponent {
   protected matrixStates = computed(() => [
     ...new Set(this.shownRows().flatMap((row) => row.shots.map((shot) => shot.state))),
   ]);
-  private fitScale = computed(() => {
-    const widest = this.widest();
+  private fitScale = computed(() => this.fitAt() ?? 1);
 
-    if (this.transposed()) {
-      const count = this.shownRows().length;
-
-      const gutter = this.gutterSize().offset?.width ?? 0;
-
-      return Math.min(1, (this.listWidth() - gutter - count * COLUMN_GAP) / (count * widest));
-    }
-
-    return this.fitOverride() ?? 1;
-  });
   protected scale = computed(() => {
     const zoom = this.zoom();
 
     return zoom === 'fit' ? this.fitScale() : zoom;
   });
-  protected matrixColumns = computed(
-    () => `max-content repeat(${this.shownRows().length}, ${this.widest() * this.scale()}px)`,
-  );
-  protected noteSize = computed(() => Math.max(MIN_TEXT, NOTE_TEXT * this.scale()));
+  protected noteSize = computed(() => noteAt(this.scale(), this.fitScale()));
+  protected headHidden = computed(() => this.noteSize() < MIN_LABEL);
   protected headColumns = computed(() => `${(HEAD_WIDTH * this.noteSize()) / NOTE_TEXT}px minmax(0, 1fr)`);
   protected labelFont = computed(() => LABEL_TEXT * this.scale());
   protected labelSize = computed(() => {
@@ -229,11 +241,48 @@ export class SketchesComponent {
     return size < MIN_LABEL ? null : size;
   });
   protected drawnKey = computed(() => (this.status() === 'drawing' ? this.drawn() : null));
+  protected sameRows = computed(() =>
+    this.shownRows().filter(
+      (row) =>
+        row.key !== SKETCH_CURRENT &&
+        row.key !== this.drawnKey() &&
+        row.shots.length > 0 &&
+        row.shots.every((shot) => shot.changed === false),
+    ),
+  );
+  protected changedRows = computed(() => {
+    const same = this.sameRows();
+
+    return this.shownRows().filter((row) => !same.includes(row));
+  });
+  protected sameLabel = computed(() => this.LABELS.sameVariants(this.sameRows().map((row) => row.key)));
+  protected matrixRows = computed(() =>
+    this.sameOpen() ? [...this.changedRows(), ...this.sameRows()] : this.changedRows(),
+  );
+  protected matrixTop = computed(() => (this.sameRows().length > 0 && this.sameOpen() ? 2 : 1));
+  protected sameColumn = computed(() => this.changedRows().length + 2);
+  protected matrixColumns = computed(
+    () => `max-content repeat(${this.matrixRows().length}, ${this.widest() * this.scale()}px) auto`,
+  );
   protected percent = computed(() => {
     return Math.round(this.shownZoom() * 100);
   });
+  private room = computed<Pan | null>(() => {
+    const world = this.worldSize().offset;
+    const list = this.listSize().client;
+
+    if (!world?.width || !list) return null;
+
+    return { x: Math.max(0, world.width - list.width), y: Math.max(0, world.height - list.height) };
+  });
+  private shownPan = computed(() => {
+    const room = this.room();
+
+    return room ? clampPan(this.pan(), room) : this.pan();
+  });
+  protected panX = computed(() => -this.shownPan().x);
   protected worldTransform = computed(() => {
-    const { x, y } = this.pan();
+    const { x, y } = this.shownPan();
 
     return `translate(${x}px, ${y}px) scale(1)`;
   });
@@ -243,7 +292,7 @@ export class SketchesComponent {
       const teardown = mountFrameZoomViewport({
         viewport: this.list().nativeElement,
         frameSelector: '[data-sk-frame]',
-        camera: () => ({ ...this.pan(), zoom: this.shownZoom() }),
+        camera: () => ({ ...this.shownPan(), zoom: this.shownZoom() }),
         move: (camera) => this.move(camera),
         show: (target, frame) => this.show(target, frame),
         select: (frame) => this.selectedFrame.set(frame.dataset['skFrame'] ?? null),
@@ -254,24 +303,35 @@ export class SketchesComponent {
     });
 
     afterRenderEffect(() => {
-      if (this.zoom() !== 'fit' || this.transposed()) return;
-
       this.listSize();
       this.shownRows();
+      this.matrixRows();
+      this.sections();
+      this.stages();
+      this.frames();
+      this.notes();
+      this.labels();
+      this.labelRows();
+      this.gutters();
+      const list: HTMLElement = this.list().nativeElement;
       const elementsOf = (refs: readonly ElementRef<HTMLElement>[]) => refs.map(({ nativeElement }) => nativeElement);
+      const dom: FitDom = {
+        columns: this.transposed() ? this.matrixRows().length : this.columns(),
+        list,
+        sections: elementsOf(this.sections()),
+        stages: elementsOf(this.stages()),
+        frames: elementsOf(this.frames()),
+        notes: elementsOf(this.notes()),
+        labels: elementsOf(this.labels()),
+        labelRows: elementsOf(this.labelRows()),
+        gutters: elementsOf(this.gutters()),
+        matrix: this.matrix()?.nativeElement ?? null,
+      };
 
-      this.fitOverride.set(
-        this.fitGrid({
-          columns: this.columns(),
-          list: this.list().nativeElement,
-          sections: elementsOf(this.sections()),
-          stages: elementsOf(this.stages()),
-          frames: elementsOf(this.frames()),
-          notes: elementsOf(this.notes()),
-          labels: elementsOf(this.labels()),
-          labelRows: elementsOf(this.labelRows()),
-        }),
-      );
+      untracked(() => {
+        this.fitAt.set(this.fitScaleOf(dom));
+        this.applyScale({ scale: this.scale(), note: this.noteSize() }, dom);
+      });
     });
 
     this.userCamera$
@@ -288,11 +348,21 @@ export class SketchesComponent {
   }
 
   protected matrixLineOf(state: string) {
-    return `${2 + this.matrixStates().indexOf(state) * 2} / span 2`;
+    return `${this.matrixTop() + 1 + this.matrixStates().indexOf(state) * 2} / span 2`;
+  }
+
+  protected isSame(row: SketchRow, unchanged: boolean | null) {
+    return row.key !== SKETCH_CURRENT && unchanged === false && !isPending(row);
+  }
+
+  protected isPending(row: SketchRow) {
+    return row.key !== SKETCH_CURRENT && isPending(row);
   }
 
   protected firstChangeOf(row: SketchRow) {
-    return row.key === SKETCH_CURRENT ? null : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
+    return row.key === SKETCH_CURRENT || isPending(row)
+      ? null
+      : (row.shots.find((shot) => shot.changed === true)?.state ?? null);
   }
 
   protected pinOf(key: string) {
@@ -325,13 +395,13 @@ export class SketchesComponent {
     this.zoomTo(this.shownZoom() / ZOOM_STEP);
   }
 
-  private fitGrid(dom: FitDom) {
+  private fitScaleOf(dom: FitDom) {
     let scale = 1;
 
     for (let pass = 0; pass < FIT_PASSES; pass++) {
-      this.applyGridScale(scale, dom);
+      this.applyScale({ scale, note: Math.max(MIN_TEXT, NOTE_TEXT * scale) }, dom);
 
-      const next = this.gridFit(scale, dom);
+      const next = dom.matrix ? this.matrixFit(dom.matrix, dom) : this.gridFit(scale, dom);
 
       if (Math.abs(next - scale) <= FIT_SETTLED) break;
 
@@ -341,11 +411,28 @@ export class SketchesComponent {
     return scale;
   }
 
-  private applyGridScale(scale: number, { columns, sections, stages, frames, notes, labels, labelRows }: FitDom) {
-    const note = Math.max(MIN_TEXT, NOTE_TEXT * scale);
+  private matrixFit(matrix: HTMLElement, { columns, list, sections }: FitDom) {
+    const first = sections[0];
+    const lead = first ? first.getBoundingClientRect().left - matrix.getBoundingClientRect().left : 0;
+    const shown = Math.max(1, Math.min(FIT_COLUMNS, columns));
+
+    return Math.min(1, (list.clientWidth - lead - (shown - 1) * COLUMN_GAP - FIT_PADDING) / (shown * this.widest()));
+  }
+
+  private applyScale(
+    { scale, note }: { scale: number; note: number },
+    { columns, sections, stages, frames, notes, labels, labelRows, gutters, matrix }: FitDom,
+  ) {
     const { setStyle } = this.renderer;
 
-    for (const section of sections) {
+    for (const gutter of gutters) setStyle(gutter, { fontSize: `${note}px` });
+    if (matrix) {
+      setStyle(matrix, {
+        gridTemplateColumns: `max-content repeat(${columns}, ${this.widest() * scale}px) auto`,
+      });
+    }
+
+    for (const section of matrix ? [] : sections) {
       setStyle(section, { gridTemplateColumns: `${(HEAD_WIDTH * note) / NOTE_TEXT}px minmax(0, 1fr)` });
     }
     for (const element of notes) setStyle(element, { fontSize: `${note}px` });
@@ -355,14 +442,17 @@ export class SketchesComponent {
       const inner = frames.find((frame) => stage.contains(frame))?.firstElementChild;
 
       if (inner instanceof HTMLElement) {
-        setStyle(stage, { gridTemplateColumns: `repeat(${columns}, ${inner.offsetWidth * scale}px)` });
+        setStyle(stage, { gridTemplateColumns: `repeat(${columns}, ${parseFloat(inner.style.width) * scale}px)` });
       }
     }
     for (const frame of frames) {
       const inner = frame.firstElementChild;
 
       if (inner instanceof HTMLElement) {
-        setStyle(frame, { width: `${inner.offsetWidth * scale}px`, height: `${inner.offsetHeight * scale}px` });
+        setStyle(frame, {
+          width: `${parseFloat(inner.style.width) * scale}px`,
+          height: `${parseFloat(inner.style.height) * scale}px`,
+        });
       }
     }
   }
@@ -403,7 +493,7 @@ export class SketchesComponent {
   }
 
   private zoomTo(zoom: number) {
-    this.move({ ...this.pan(), zoom });
+    this.move({ ...this.shownPan(), zoom });
   }
 
   private move(camera: Camera) {
@@ -411,7 +501,10 @@ export class SketchesComponent {
 
     if (zoom !== this.shownZoom()) this.zoom.set(zoom);
     this.pan.set({ x: camera.x, y: camera.y });
-    this.userCamera$.next({ x: camera.x, y: camera.y, zoom });
+
+    const { x, y } = this.shownPan();
+
+    this.userCamera$.next({ x, y, zoom });
   }
 
   private show(target: CameraTarget, pressed: HTMLElement | null) {
@@ -439,7 +532,7 @@ export class SketchesComponent {
         write: () => {
           const moved = frame.getBoundingClientRect();
           const view = list.getBoundingClientRect();
-          const { x, y } = this.pan();
+          const { x, y } = this.shownPan();
 
           this.move({
             x: x + view.left + FOCUS_PADDING - moved.left,
