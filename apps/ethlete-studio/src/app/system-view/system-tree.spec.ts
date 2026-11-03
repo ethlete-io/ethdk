@@ -1255,6 +1255,33 @@ describe('picking a variant', () => {
     expect(columnOf('b')?.note).toContain('Vom Agent zurückgezogen: identisch mit a (von model-x)');
   });
 
+  it('leaves out a variant its agent withdrew when asked to, and shows it again once reopened', () => {
+    const decidedAt = '2026-10-30T11:00:00.000Z';
+    const button = part();
+    const withdrawn = { by: 'agent', decidedAt, status: 'withdrawn' as const, withdrawnBy: 'model-x' };
+    const keysOf = (judged: ReturnType<typeof sketch>, hideWithdrawn: boolean) =>
+      sketchMatrixOf({
+        port: 4400,
+        product: product([button]),
+        part: button,
+        sketch: judged,
+        hideWithdrawn,
+      }).columns.map((column) => column.key);
+    const judged = sketch({
+      variants: ['a', 'b', 'c'],
+      rejections: { a: [{ by: 'designer', decidedAt }], b: [withdrawn] },
+    });
+    const reopened = sketch({
+      variants: ['a', 'b'],
+      rejections: { b: [{ ...withdrawn, reopened: { by: 'designer', decidedAt } }] },
+    });
+
+    expect(keysOf(judged, true)).not.toContain('b');
+    expect(keysOf(judged, true)).toEqual(expect.arrayContaining(['a', 'c']));
+    expect(keysOf(judged, false)).toContain('b');
+    expect(keysOf(reopened, true)).toContain('b');
+  });
+
   it('takes a rejected variant out of the pick until it is reopened', () => {
     const decidedAt = '2026-10-30T11:00:00.000Z';
     const rejected = sketch({

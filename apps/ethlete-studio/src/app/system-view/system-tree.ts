@@ -590,6 +590,8 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   openRounds?: Record<string, boolean>;
   /** Whether the user opened (`true`) or folded (`false`) a state no shown variant changes, by state. */
   openStates?: Record<string, boolean>;
+  /** Leaves out the variants their agent withdrew. */
+  hideWithdrawn?: boolean;
   /** The time in ms the agent's report is judged against; without it, a report never expires. */
   now?: number;
 };
@@ -624,18 +626,29 @@ export type ShownRound = SketchRound & { variants: string[]; open: boolean };
  * choice, so it opens alone and every older round folds again. Data older than rounds reads as one
  * untitled round `r1`.
  */
-export const sketchRoundsOf = (sketch: ListedSketch, openRounds: Record<string, boolean> = {}): ShownRound[] => {
+export const sketchRoundsOf = (
+  sketch: ListedSketch,
+  openRounds: Record<string, boolean> = {},
+  hideWithdrawn = false,
+): ShownRound[] => {
   const rounds: SketchRound[] = sketch.rounds?.length ? sketch.rounds : [{ key: 'r1', title: '', note: '' }];
   const fallback = rounds[0]?.key;
   const newest = rounds[rounds.length - 1]?.key ?? '';
   const chosen = newest in openRounds ? openRounds : {};
+  const hidden = new Set(hideWithdrawn ? withdrawnVariantsOf(sketch) : []);
 
   return rounds.map((round) => ({
     ...round,
-    variants: sketch.variants.filter((variant) => (sketch.variantInfo?.[variant]?.round ?? fallback) === round.key),
+    variants: sketch.variants.filter(
+      (variant) => !hidden.has(variant) && (sketch.variantInfo?.[variant]?.round ?? fallback) === round.key,
+    ),
     open: chosen[round.key] ?? round.key === newest,
   }));
 };
+
+/** The variants whose agent withdrew them and nobody reopened. */
+export const withdrawnVariantsOf = (sketch: Pick<ListedSketch, 'variants' | 'rejections'>) =>
+  sketch.variants.filter((variant) => rejectionOf(sketch, variant)?.status === 'withdrawn');
 
 /** The canvas column or column group key of a round. */
 export const roundColumnKeyOf = (round: string) => `round ${round}`;
@@ -767,6 +780,7 @@ export const sketchMatrixOf = ({
   interaction: pickedInteraction = null,
   openRounds = {},
   openStates = {},
+  hideWithdrawn = false,
   now,
   epoch,
   revision,
@@ -777,7 +791,7 @@ export const sketchMatrixOf = ({
   const sizes = sketchSizesOf({ product, sketch, part });
   const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
   const cell = cellSizeOf(product, size);
-  const rounds = sketchRoundsOf(sketch, openRounds);
+  const rounds = sketchRoundsOf(sketch, openRounds, hideWithdrawn);
   const shown = new Set(rounds.flatMap((round) => (round.open ? round.variants : [])));
   const interactions = sketchInteractionsOf({
     sketch: { ...sketch, targets: sketch.targets?.filter((target) => shown.has(target.variant)) },
@@ -1349,7 +1363,7 @@ export const sketchRowsOf = ({
   view,
   surface,
   color,
-}: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'now'> & {
+}: Omit<SketchFramesSource, 'size' | 'interaction' | 'openRounds' | 'openStates' | 'hideWithdrawn' | 'now'> & {
   variants: string[];
 }): SketchRowOf[] => {
   const size = sketchSizesOf({ product, sketch, part })[0] ?? null;
