@@ -9,6 +9,19 @@
       "slots": true
     }
   },
+  "components/comment-draft": {
+    "review": {
+      "hash": "c0099831240764a9",
+      "states": {
+        "empty": "4f82a9613c1d95de",
+        "typed": "4098af9e0e52d16e",
+        "busy": "e4dc495cb48b6823",
+        "error": "bc858cbadaf728d2",
+        "rejected": "77b653fdfa4992e1"
+      },
+      "slots": true
+    }
+  },
   "components/comment-pin": {
     "review": {
       "hash": "60a213cdfc41a3e3",
