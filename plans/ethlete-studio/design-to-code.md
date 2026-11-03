@@ -3182,3 +3182,13 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      2026-11-03). A demo that cannot tell two layouts apart cannot guard either. Fix: B164, a disclosure state whose
      demo brings its own block body. Same slice: compare counts the design's `sameToggle` output as missed because the
      app uses a `[(sameOpen)]` model; decided: the tool maps `model()` as input + `<name>Change` output (into B153).
+242. After B134 declared actions on title-bar, update-dialog and tree-row, compare reports 63 + 2 + 36 "fired no
+     output" misses, though the window buttons work in the app: the app components call the window API themselves
+     instead of emitting (builder, 2026-11-03). Separately, at far-out zoom on pages/sketches the column head is
+     visibility:hidden, so "Übernehmen" and the pin toggle cannot be reached; COVERED would not see it (nothing covers a
+     hidden element) and the static capability list cannot see a zoom state. Lesson: a declared action must be
+     reachable in every state that declares it, and an app component that does the work itself hides it from the
+     compare. Decided (technical): app title-bar and update-dialog get real outputs (update/minimize/maximize/close,
+     later/restart), the consumer calls the window API; tree-row gets an app output `rowPress` + design
+     `emit:rowPress` (B166). B158 checks reach, not only cover: UNREACHABLE <part> <state>: <action> for hidden,
+     invisible, zero-size or covered. Look fix for far-out as variants in the B142(b) sketch.
