@@ -5,6 +5,7 @@ import { importProblemsOf } from './imports';
 import { CompletenessGap, partsCompletenessOf } from './complete';
 import { actionsRerunLineOf } from './embedded-actions';
 import { actionLostProblemsOf } from './action-lost';
+import { capabilityPlaceOf } from './rules/capability-place';
 import { actionUndeclaredUnderGoOf } from './action-undeclared';
 import { bespokeControlProblemsOf } from './bespoke-controls';
 import { droppedPropProblemsOf } from './dropped-props';
@@ -641,6 +642,14 @@ export const checkSystemRendered = async (options: CheckOptions) => {
     if (!entry) continue;
 
     const resolved = resolveProduct({ target: options.target, name, config: entry });
+    const capabilities = await capabilityPlaceOf({ ...options, product: resolved });
+
+    capabilities.warnings.forEach((warning) => {
+      console.warn(`WARNING ${lineOf(options.target, warning)}`);
+      const counted = tallyOf(tally, { product: name, part: partOfFile(resolved, warning.file) });
+
+      if (counted) counted.warnings += 1;
+    });
     const problems = [
       ...(await droppedPropProblemsOf({ ...options, product: resolved })),
       ...(await bespokeControlProblemsOf({ ...options, product: resolved })),
@@ -649,6 +658,7 @@ export const checkSystemRendered = async (options: CheckOptions) => {
         product: resolved,
         invocation: options.invocation ?? repoInvocation({ root: options.target, subcommand: 'design' }),
       })),
+      ...capabilities.errors,
     ];
 
     for (const problem of problems) {

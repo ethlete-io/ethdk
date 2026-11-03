@@ -126,21 +126,37 @@ describe('CAPABILITY-PLACE', () => {
   const repo = resolve(__dirname, '../../../../../../..');
 
   it.runIf(existsSync(join(repo, 'dist/libs/components')))(
-    'reports the studio list: places that resolve, the known missing ones as warnings',
+    'reports the confirmed studio list: every place resolves, the known missing ones are warnings',
     async () => {
       const target = repo;
       const config = readConfig(target) ?? {};
       const product = resolveProduct({ target, name: 'studio', config: config.products?.['studio'] ?? {} });
+      const listed = readCapabilities(product.dir);
+      const missing = (Array.isArray(listed) ? listed : []).flatMap((entry) =>
+        typeof entry === 'object' && entry !== null && 'missing' in entry && 'id' in entry ? [String(entry.id)] : [],
+      );
 
       const { errors, warnings } = await capabilityPlaceOf({ target, config, product });
 
-      expect(errors.filter((problem) => !problem.message.includes('no design action draws it'))).toEqual([]);
-      expect(warnings.map((problem) => problem.message.split(' ')[0])).toEqual([
-        'sketch-diff',
-        'sketch-crop',
-        'motion',
-      ]);
-      expect(errors.map((problem) => problem.message.split(' ')[0])).toContain('comment-write');
+      expect(errors).toEqual([]);
+      expect(missing.length).toBeGreaterThan(0);
+      expect(warnings.map((problem) => problem.message.split(' ')[0])).toEqual(missing);
+
+      const placed = (listed as { id: string; place: unknown }[]).find((entry) => entry.place !== null);
+      const copy = mkdtempSync(join(tmpdir(), 'cli-design-capability-place-real-'));
+
+      writeFileSync(
+        join(copy, 'capabilities.json'),
+        JSON.stringify({
+          capabilities: (listed as { id: string }[]).map((entry) =>
+            entry.id === placed?.id ? { ...entry, place: null } : entry,
+          ),
+        }),
+      );
+
+      const unplaced = await capabilityPlaceOf({ target, config, product: { ...product, dir: copy } });
+
+      expect(unplaced.errors.map((problem) => problem.message.split(' ')[0])).toEqual([placed?.id]);
     },
     120_000,
   );

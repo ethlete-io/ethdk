@@ -264,6 +264,33 @@ describe('checkDesign', () => {
     ]);
   }, 120_000);
 
+  it('fails a capability no design action draws, and warns of one known as missing', async () => {
+    const target = acme();
+    const lines = output();
+    const warnings: string[] = [];
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme/capabilities.json'),
+      JSON.stringify({
+        capabilities: [
+          { id: 'film-rate', label: 'Rate a film', place: null },
+          { id: 'film-share', label: 'Share a film', place: null, missing: 'B1' },
+        ],
+      }),
+    );
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
+    expect(lines).toContainEqual(
+      expect.stringMatching(
+        /^CAPABILITY-PLACE .*capabilities\.json: film-rate \(Rate a film\): no design action draws it/,
+      ),
+    );
+    expect(warnings).toContainEqual(
+      expect.stringMatching(/^WARNING CAPABILITY-PLACE .*capabilities\.json: film-share .* tracked in B1$/),
+    );
+  }, 120_000);
+
   it('leaves the problems of a base part to the base, and checks a part the product overrides as its own', async () => {
     const target = acme();
     const lines = output();
