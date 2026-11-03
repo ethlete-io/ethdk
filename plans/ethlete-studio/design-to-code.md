@@ -4279,6 +4279,16 @@ e2e-check 21dcfc17f` at load 15-21 of 32: canvas TIMEOUT after 180 s with no cas
      before reporting a merge; a state the harness cannot drive (missing focus target) is a check problem on the
      part, not an unjudged push failure. First item tomorrow, before A10: make the push pass.
 
+341. The push of 2026-11-03 (finding 340) passes every hook check after 1b2692ae9..1eb7277e8, except
+     components/title-search: 3aae1d37c split it out of title-bar, db86c73d9 and 6e3c4f00b changed its look, and
+     no sketch of it was ever picked. Tom picks it in Studio. The gate now passes a state that neither the base nor
+     the HEAD app can be driven into as "undrivable, a problem of the part" (Tom kept this rule). pages/system has
+     two such states (part-focus-visible, points-closed-focus-visible): the design chip counts exceptions ("49
+     offen", Tom's pick c02c7aede), the app chip counts only open points, and the app has no exceptions group and
+     no footer. Open task: implement those in apps/ethlete-studio/src/app/design-parts/system-page/. The four
+     comment inputs of system-page (commentMode, draft, send, reason) are on KNOWN_UNBOUND_INPUTS, because no app
+     template uses the component yet.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
