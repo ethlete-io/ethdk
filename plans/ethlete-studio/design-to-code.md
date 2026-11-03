@@ -3742,3 +3742,12 @@ components/title-bar --prodct studio`. The behavioural red is quoted. Why no too
      drawing changed. Both classes are also used unglued elsewhere, so Tailwind emitted their CSS anyway, and compare
      and pictures saw no difference. The defect was latent, and the only signal was a warning nothing blocked on.
      Both tidy fixes change no pixel, so neither needs a sketch.
+
+297. B227b + lint slip (builder, 2026-11-03). e8a64d994: product, new and system parse via argsOf and refuse
+     unknown flags with exit 2; each sketch subcommand derives its flags from its SKETCH_USAGE line (so `sketch check
+<part> --by x` now exits 2); commit-hunks exits 2 on bad usage. check.ts and the visible-change flag already
+     refused. Red-check RED. Defect: B227 (2699545b4) committed 2 max-params lint errors and a guard-return-newline,
+     fixed in 75a0174b1. Why no tool caught it: `yarn commit` runs the specs but not lint, and lint ran only at
+     pre-push, which is 523 commits away on next. "The builder should remember" is no fix. Fix (B244, decided,
+     technical): `yarn commit` runs `nx lint` on the projects of the staged files (cached, so cheap) and refuses the
+     commit on a lint error.
