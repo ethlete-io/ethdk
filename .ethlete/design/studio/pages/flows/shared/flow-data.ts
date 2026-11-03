@@ -21,7 +21,10 @@ const picker = await select.render({
   options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }],
 });
 
-export const presetPicker = picker.body;
+export const presetPicker = picker.body.replace(
+  'class="et-select-trigger"',
+  'data-et-action="emit:presetChange" class="et-select-trigger"',
+);
 
 export const presetPickerStyles = picker.styles;
 
@@ -47,7 +50,7 @@ export const emptyCanvas = html`<div class="h-full flex items-center justify-cen
       Ein Flow verbindet Seiten und ihre Zustände zu einem Weg, den du von links nach rechts liest. Dein Agent legt ihn
       an. Bitte ihn zum Beispiel so:
     </p>
-    ${prompt} ${copy.body}
+    ${prompt} ${copy.body.replace(/<button\b/, '<button data-et-action="emit:copyPrompt"')}
   </div>
 </div>`;
 
