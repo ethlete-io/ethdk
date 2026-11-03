@@ -40,6 +40,9 @@ const lead = ({ kind, expanded, inert }: Row) => (kind === 'leaf' ? dot(inert) :
 
 const statusClass = { 'in-progress': 'text-et-surface-muted', ready: 'text-et-theme' };
 
+const defaultAction = ({ kind, expanded }: Row) =>
+  kind === 'leaf' ? 'selected' : `${kind}-${expanded === true ? 'closed' : 'open'}`;
+
 const rowMarkup = (r: Row) => {
   const accent = r.selected ? 'text-et-theme-ink' : 'text-et-surface-muted';
   const color = r.selected ? 'text-et-theme-ink' : r.kind === 'group' ? 'text-et-surface-muted' : 'text-et-surface';
@@ -51,7 +54,7 @@ const rowMarkup = (r: Row) => {
         aria-level="${r.depth + 1}"
         ${r.kind === 'leaf' ? '' : `aria-expanded="${r.expanded === true}"`}
         tabindex="0"
-        ${r.action ? `data-et-action="${r.action}"` : ''}
+        data-et-action="${r.action ?? defaultAction(r)}"
         data-et-surface-interactive
         data-kind="${r.kind}"
         ${r.selected ? 'data-selected aria-current="true"' : ''}

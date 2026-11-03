@@ -14,7 +14,14 @@ import {
 import styles from './title-bar.css?inline';
 
 const update = (props: Props) =>
-  titleBarControl(button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }), 'update', props);
+  titleBarControl(
+    button({ label: 'Update', variant: 'filled', color: 'brand', size: 'xs' }).replace(
+      /<button\b/,
+      '<button data-et-action="emit:update"',
+    ),
+    'update',
+    props,
+  );
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/components/title-bar/title-bar.component.ts',

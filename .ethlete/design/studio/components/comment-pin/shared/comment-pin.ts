@@ -66,6 +66,7 @@ export const pin = (p: Props, placement: CountPlacement = 'beside') => {
         class="${pinClass(p)}"
         ${p.selected && !p.agent && !p.resolved ? '' : 'data-et-auto-surface'}
         data-et-surface-interactive
+        data-et-action="emit:pinToggle"
         aria-label="${label(p)}"
         ${p.selected ? 'aria-pressed="true"' : ''}
       >${face(p, inside ? badge : '')}</button>`;

@@ -102,7 +102,7 @@ export const windowControls = (props: Props, buttons: WindowButton[]) => {
       titleBarControl(
         `<button et-window-control-button type="button" color="surface" size="md" shape="${shape}"${
           button === 'close' ? ' kind="close"' : ''
-        } aria-label="${LABELS[button]}">${icon(button, { size: '1em' })}</button>`,
+        } data-et-action="emit:${button}" aria-label="${LABELS[button]}">${icon(button, { size: '1em' })}</button>`,
         button,
         props,
       ),

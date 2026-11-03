@@ -22,8 +22,8 @@ export default definePart({
             <span class="text-et-surface-muted">${RESTART_NOTE}</span>
           </div>
           <div class="flex justify-end gap-space-2">
-            ${mark('later', '<button et-button type="button" variant="outline" color="surface" size="xs">Später</button>', props)}
-            ${mark('restart', '<button et-button type="button" variant="filled" color="brand" size="xs">Neu starten</button>', props)}
+            ${mark('later', '<button et-button type="button" data-et-action="emit:later" variant="outline" color="surface" size="xs">Später</button>', props)}
+            ${mark('restart', '<button et-button type="button" data-et-action="emit:restart" variant="filled" color="brand" size="xs">Neu starten</button>', props)}
           </div>
         </div>`,
         { imports: ['BUTTON_IMPORTS'] },
