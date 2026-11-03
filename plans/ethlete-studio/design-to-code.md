@@ -3117,3 +3117,14 @@ pages/sketches` then said "changed since its go", so Tom has to give a go for a 
      gaps already in the base. Lesson: two checks that judge the same input differently block work for a reason the
      user cannot act on. Tool fix (B152, technical): sketch check and ready count a gap only when the variant adds it
      (unchanged-since-base logic as in the ratchet), and the sketch and product checks agree on the same input.
+
+234. Sketches app slice (pages/sketches r2, builder, 2026-11-03): the design's "Pausiert" badge can never show in the
+     app, because the sketch list the app reads carries no hold data; the app also has inputs nobody binds (hold,
+     reason, camera) and inputs that default to sample data (SHELL_SAMPLE, SKETCH_ROWS). Compare refused the design
+     prop `comparing` although the harness map turns it into row data (and accepts `same`, mapped the same way), so the
+     comparing states stay unchecked. Why no tool caught it: no check asks whether each design state of an implemented
+     part has a data source in the app, and no check looks for unbound or sample-default inputs. Lesson: a state the
+     design draws but the app can never reach passes every pixel check, because compare feeds it in by hand. Tool fixes
+     (technical): B153 compare accepts every design prop the harness map consumes (first); B154 STATE-NO-SOURCE - each
+     design state prop of an implemented part maps to app data or to an input a consumer binds; B155 UNBOUND-INPUT and
+     SAMPLE-DEFAULT, both ratcheted. App fix: the sketch list delivers the hold data.
