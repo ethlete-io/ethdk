@@ -3941,6 +3941,16 @@ commit` derives the selection from the spec list of `yarn test:tools`: a staged 
      product-level problem attaches to the part that owns its file (one product row only when no part owns the file);
      a spec asserts that every listed problem reaches some tree row.
 
+310. One open sketch per target blocks B253 and B261 (builder, 2026-11-03). pages/sketches holds the B240 round r1,
+     ready and waiting for Tom's pick. A second question about the same page (the loading state of the variant cell, the
+     look of the render-error badge) would have to start round r2, which records r1 as lost without Tom deciding. Why no
+     tool caught it earlier: page-local UI kept unrelated questions on one target, so they queue behind each other.
+     Decision (technical): one open sketch per target stays, because it keeps a pick coherent. An independent question
+     gets its own part: the render-error badge becomes components/sketch-status-badge and the variant cell becomes
+     elements/variant-cell, each as a pixel-free extraction (the same direction as B248a). B253 and B261 are then
+     sketched on those parts, in parallel with B240. The refusal of a second sketch on the same target names this way
+     out ("extract the region into a part and sketch that") instead of only refusing.
+
 ### Build-ready decisions (2026-11-03, A10 pulled forward)
 
 Tom: the go system is not extended any more; A10 replaces it now.
