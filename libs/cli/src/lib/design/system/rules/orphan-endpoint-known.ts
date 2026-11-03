@@ -1,10 +1,9 @@
 export type KnownOrphan = { path: string; backlog: string };
 
 export const KNOWN_ORPHAN_ENDPOINTS: KnownOrphan[] = [
-  { path: '/__design/comment', backlog: 'B145' },
-  { path: '/__design/comment-done', backlog: 'B145' },
-  { path: '/__design/comment-withdraw', backlog: 'B145' },
-  { path: '/__design/comment-reply', backlog: 'B145' },
+  { path: '/__design/comment-done', backlog: 'B189' },
+  { path: '/__design/comment-withdraw', backlog: 'B189' },
+  { path: '/__design/comment-reply', backlog: 'B189' },
   { path: '/__design/notes', backlog: 'B148' },
   { path: '/__design/note', backlog: 'B148' },
   { path: '/__design/note-change', backlog: 'B148' },

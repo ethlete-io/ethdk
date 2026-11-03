@@ -19,17 +19,38 @@ const sourcesOf = (dir: string): string[] =>
 
 const sourcesCallDesign = (dir: string) => sourcesOf(dir).some((source) => source.includes('__design'));
 
-const isCalledIn = (path: string, sources: string[]) => {
-  const tail = path.slice(SERVED_PREFIX.length);
-  const written = new RegExp(
-    `/__design/${tail}(?![\\w-])|\\bpath\\s*:\\s*['"\`]${tail}['"\`]|Url\\([^()]*,\\s*['"\`]${tail}['"\`]`,
-    'u',
-  );
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
-  return sources.some((source) => written.test(source));
+const declarationsOf = (source: string) => {
+  const starts = [...source.matchAll(/^(?:export\s+)?(?:const|function)\s+([\w$]+)/gmu)];
+
+  return starts.map((match, index) => ({
+    name: match[1] as string,
+    text: source.slice(match.index, starts[index + 1]?.index ?? source.length),
+  }));
 };
 
-/** Every `/__design/…` path the CLI serves that no source file of `appDir` writes, as a path, as a `path:` property or as the name argument of a `…Url(…)` helper. */
+const isCalledIn = (path: string, sources: string[]) => {
+  const tail = path.slice(SERVED_PREFIX.length);
+  const direct = new RegExp(`/__design/${tail}(?![\\w-])|\\bpath\\s*:\\s*['"\`]${tail}['"\`]`, 'u');
+  const viaHelper = new RegExp(`Url\\([^()]*,\\s*['"\`]${tail}['"\`]`, 'u');
+
+  if (sources.some((source) => direct.test(source))) return true;
+
+  const code = sources.map((source) => source.replace(/^import\s[^;]*;/gmu, ''));
+
+  return code.some((source) =>
+    declarationsOf(source)
+      .filter(({ text }) => viaHelper.test(text))
+      .some(({ name, text }) => {
+        const mention = new RegExp(`(?<![\\w$])${escaped(name)}(?![\\w$])`, 'u');
+
+        return code.some((other) => mention.test(other.split(text).join('')));
+      }),
+  );
+};
+
+/** Every `/__design/…` path the CLI serves that no source file of `appDir` writes, as a path, as a `path:` property or as the name argument of a `…Url(…)` helper inside a function the app calls. */
 export const orphanEndpointsOf = (options: { served: string[]; appDir: string; checkout: string }): Problem[] => {
   const sources = sourcesOf(options.appDir);
 
