@@ -9,8 +9,8 @@ const sourcesOf = () => [
   ...readdirSync(join(__dirname, 'rules'))
     .filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts'))
     .map((file) => join(__dirname, 'rules', file)),
-  ...['render-check.ts', 'nested-scroll.ts', 'bespoke-controls.ts', 'action-lost.ts'].map((file) =>
-    join(__dirname, file),
+  ...['render-check.ts', 'nested-scroll.ts', 'surface-nesting.ts', 'bespoke-controls.ts', 'action-lost.ts'].map(
+    (file) => join(__dirname, file),
   ),
 ];
 

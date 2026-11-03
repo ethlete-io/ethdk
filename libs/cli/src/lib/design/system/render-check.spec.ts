@@ -381,6 +381,59 @@ describe('renderIssuesOf', () => {
     ]);
   }, 120_000);
 
+  it('flags a card that doubles the pane it fills and a card whose fill equals the surface around it', async (context) => {
+    const card = (fill: string, edge = 'border: 1px solid rgb(90 90 90)') =>
+      `<div class="card" style="background: ${fill}; ${edge}; padding: 8px"><p style="margin: 0">Kommentar</p></div>`;
+    const pane = (inner: string) =>
+      `<div class="pane" role="dialog" style="width: 300px; background: rgb(30 30 30); padding: 12px">${inner}</div>`;
+    const target = checkout({
+      'components/doubled': { body: pane(card('rgb(30 30 30)')) },
+      'components/raised': { body: pane(card('rgb(50 50 50)')) },
+      'components/beside-title': { body: pane(`<h2 style="margin: 0">Titel</h2>${card('rgb(30 30 30)')}`) },
+      'components/on-canvas': {
+        body: `<div style="width: 300px">${card('rgb(255 255 255)', 'box-shadow: 0 1px 3px rgb(0 0 0 / 0.3)')}</div>`,
+      },
+      'components/field': {
+        body: '<div style="width: 300px"><textarea style="width: 200px; height: 60px; background: white; border: 1px solid gray"></textarea></div>',
+      },
+      'components/declared': { body: pane(card('rgb(30 30 30)')), extra: "checks: { skip: ['NESTED-SURFACE'] }," },
+    });
+    const config = readConfig(target) ?? {};
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const rendered = await renderIssuesOf({ target, config, jobs: [{ product: 'shop', sketch: null, parts: null }] });
+
+    if ('unavailable' in rendered) return skipWithoutBrowser(context, rendered.unavailable);
+
+    expect(
+      rendered.issues
+        .filter((issue) => issue.rule === 'NESTED-SURFACE' || issue.rule === 'LOST-SURFACE')
+        .map((issue) => [issue.rule, issue.part, issue.path, issue.detail.split(';')[0]])
+        .sort(),
+    ).toEqual([
+      [
+        'LOST-SURFACE',
+        'components/beside-title',
+        'div[data-et-part=components/beside-title] > div.card',
+        'fills with rgb(30, 30, 30), the fill of div[data-et-part=components/beside-title] around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill',
+      ],
+      [
+        'LOST-SURFACE',
+        'components/on-canvas',
+        'div[data-et-part=components/on-canvas] > div.card',
+        'fills with rgb(255, 255, 255), the fill of the canvas around it, so only its edge shows the card - give it the surface it is placed on (data-et-auto-surface) or drop the fill',
+      ],
+      [
+        'NESTED-SURFACE',
+        'components/doubled',
+        'div[data-et-part=components/doubled] > div.card',
+        'is the only content of div[data-et-part=components/doubled], which draws the same fill rgb(30, 30, 30) with a band of 12/12/12/12px around it, so two surfaces draw as one - drop the card or the pane',
+      ],
+    ]);
+  }, 120_000);
+
   it('finds the drawings the other checks pass: overflow, clipping, wrapping and zero size', async (context) => {
     const target = checkout();
     const config = readConfig(target) ?? {};

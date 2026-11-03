@@ -28,6 +28,7 @@ import { BusyState, ownerPartOf, RenderIssue, renderIssueLineOf, renderIssuesOf 
 import { flowProblemsOf } from './rules/flow';
 import { badLinksOf } from './rules/implements';
 import { statesNotInComponentOf } from './rules/state-in-component';
+import { partRewritesOf } from './rules/part-rewrite';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
@@ -73,6 +74,7 @@ const RULES = [
   badWidthsOf,
   badLinksOf,
   statesNotInComponentOf,
+  partRewritesOf,
   unknownInteractionsOf,
   kitOutsidePagesOf,
   inlineUiInPageProblemsOf,

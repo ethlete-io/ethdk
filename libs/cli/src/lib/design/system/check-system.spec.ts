@@ -758,7 +758,7 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { border-color: #fff; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(1);
-    expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
+    expect(lines.filter((line) => /^PARTS? /u.test(line))).toEqual([
       `PART acme components/button: ${renderWarningsOf(lines).length > 0 ? '1 warning, ' : ''}3 open points`,
       'PART acme elements/hero: 1 problem (HARD-CODED-COLOUR), 1 open point',
       'PART acme components/card: 3 open points',
@@ -790,7 +790,7 @@ describe('checkDesign', () => {
     expect(
       await checkDesign({ target, argv: ['--product', 'acme', '--part', 'elements/hero'], invocation: 'et design' }),
     ).toBe(1);
-    expect(lines.filter((line) => /^(HARD-CODED-COLOUR \.|PART|OPEN POINTS| {2})/.test(line))).toEqual([
+    expect(lines.filter((line) => /^(HARD-CODED-COLOUR \.|PARTS? |OPEN POINTS| {2})/.test(line))).toEqual([
       expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/),
       'OPEN POINTS acme: 1 in 1 part',
       '  elements/hero: no controls declared',
@@ -802,9 +802,7 @@ describe('checkDesign', () => {
     const lines = output();
 
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/home'], invocation: 'et design' })).toBe(0);
-    expect(lines.filter((line) => line.startsWith('PART'))).toEqual([
-      expect.stringMatching(/^PART acme pages\/home: /),
-    ]);
+    expect(lines.filter((line) => /^PARTS? /u.test(line))).toEqual([expect.stringMatching(/^PART acme pages\/home: /)]);
     expect(await checkDesign({ target: acme(), argv: ['--part', 'pages/gone'], invocation: 'et design' })).toBe(1);
     expect(lines.at(-1)).toBe('NO PART "pages/gone" in any product of config.json.');
   }, 60_000);
